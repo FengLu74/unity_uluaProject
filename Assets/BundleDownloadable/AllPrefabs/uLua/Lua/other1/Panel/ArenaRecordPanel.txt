@@ -1,0 +1,147 @@
+﻿module('ArenaRecordPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ArenaRecordPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "RecordPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local panelId = ENUMPANELID.ENUM_PANEL_ARENA_RECORD;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(panelId);
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+    SetGameObjectEvent("BackGround/ZheZhao", OnButtonCloseClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    ArenaProtocol.RequestBattleRecords();
+    InitList();
+end
+
+function InitList()
+    m_List:RemoveAll();
+    local count = 0;
+    local records = ArenaManager.records;
+    if records ~= nil then
+        count = #records;
+        for i = 1, count do 
+            m_List:AddData(records[i]);
+        end
+    end
+    SetGameObjectState("Blank", count == 0, m_PanelObject);
+end
+
+------------------------------------------事件方法------------------------------------
+
+function OnCloseClick()
+    closePanel(panelId);
+end
+
+-- 关闭按钮
+function OnButtonCloseClick(gameObject)
+    OnCloseClick()
+end
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local rankDiff = data.rankDiff;
+    local isAtk = data.isAtk;
+    local isDef = not isAtk;
+    local result = data.result; -- 1:成功 0:失败
+    if data.rank <= 0 then
+        SetLabelTextByID("Label_Rank", 9111, go);
+    else
+        SetLabelContent("Label_Rank", data.rank, go);
+    end
+    SetGameObjectState("Label_RankDiff/Up", rankDiff > 0, go);
+    SetGameObjectState("Label_RankDiff/Down", rankDiff < 0, go);
+    if rankDiff == 0 then
+        SetLabelTextByID("Label_RankDiff", 9108, go);
+    else
+        local text = CCommonTool.GetTxtData(9109).m_str;
+        text = string_format(text, math.abs(rankDiff));
+        SetLabelContent("Label_RankDiff", text, go);
+    end
+    
+    local text = CCommonTool.GetTxtData(isAtk and 9103 or 9104).m_str;
+    text = string_format(text, data.name, "CEA31F");
+    SetLabelContent("Label_Name", text, go);
+
+    -- 对战结果
+    SetGameObjectState("Result/Label_Succ", isAtk and result == 1, go);
+    SetGameObjectState("Result/Label_Fail", isAtk and result ~= 1, go);
+    SetGameObjectState("Result/Label_DefSucc", isDef and result == 1, go);
+    SetGameObjectState("Result/Label_DefFail", isDef and result ~= 1, go);
+end
+
+-- 列表点击
+function OnListViewClick(listView, cell, go)
+    
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function RefreshList()
+    if IsOpenPanel(panelId) == 1 then
+        InitList();
+    end
+end

@@ -1,0 +1,1 @@
+﻿lua_LoginUser={account=nil,password=nil,selectZoneId=nil};

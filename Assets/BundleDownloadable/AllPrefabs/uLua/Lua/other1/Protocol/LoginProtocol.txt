@@ -1,0 +1,314 @@
+﻿module("LoginProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 登录后NGS 返回给客户端的结构体
+    network.Register(E_NTOC_LOGIN_RETURN, OnLoginReturn);
+    -- 退出登录返回
+    network.Register(E_NTOC_LEAVE_GAME_RETURN, OnLogoutReturn);
+    -- 列角色返回
+    network.Register(E_NTOC_LISTCHARACTER_RETURN, OnListCharacterReturn);
+    -- 列角色完成 参数:WORD 告诉有几个角色
+    network.Register(E_NTOC_LISTROLE_OK, OnListRoleOK);
+    -- 创建角色返回
+    network.Register(E_NTOC_CREATEROLE_RETURN, OnCreateRoleReturn);
+    -- 删除角色返回
+    network.Register(E_NTOC_DELETEROLE_RETURN, OnDeleteRoleReturn);
+    -- 该账号在别的地方登录
+    network.Register(E_NTOC_KICK_USER_RETURN, OnKickUserReturn);
+    -- 角色登录错误返回
+    network.Register(E_NTOC_ENTER_GAMESERVER_RETURNEX, OnEnterGameServerReturnEx);
+    -- 角色进入场景返回
+    network.Register(E_NTOC_ENTER_GAME_RETURN, OnEnterRoomReturn);
+    -- 进入游戏排队等待面板
+    network.Register(E_NTOC_WAIT_ENTER_GAME, OnWaitEnterGame);
+    -- 功能：提示客户端信息
+    network.Register(E_NTOC_ERROR_MESSAGE, OnZoneCloesedMessage);
+    -- 西游 今日头条
+    network.Register(E_NTOC_NGS_REGIST_USERID,OnRegisterReturnsData);
+end
+
+function OnRegisterReturnsData(protocolId, buffer)
+    local state = buffer:ReadByte();
+    error("onTtRegister_XYonTtRegister_XYonTtRegister_XYonTtRegister_XY1111111111111");
+    if CSDKManager.IsXiYouAndTouTiao == true then
+        error("onTtRegister_XYonTtRegister_XYonTtRegister_XYonTtRegister_XY");
+        CSDKManager.onTtRegister_XY("xiyou",true);
+    end
+end
+
+-- 用户登录后返回登录结果数据
+function OnLoginReturn(protocolId, buffer)
+    -- 登录返回结果数据放到登录界面处理(OnLogin)
+    -- 登录返回消息
+    STOCTables.LoginReturn.m_dwUserID = buffer:ReadInt();
+    STOCTables.LoginReturn.m_n64UserLogedID = buffer:ReadInt64();
+    STOCTables.LoginReturn.m_nUserConnectID = buffer:ReadInt();
+    STOCTables.LoginReturn.m_nLoginResult = buffer:ReadInt();
+    STOCTables.LoginReturn.m_wZoneID = buffer:ReadShort();
+    STOCTables.LoginReturn.m_yHaveProtectPwd = buffer:ReadByte();
+    STOCTables.LoginReturn.m_yIsAdult = buffer:ReadByte();
+    STOCTables.LoginReturn.m_dwLoginTime = buffer:ReadUInt();
+    if buffer.Postion < buffer.Length then
+        STOCTables.LoginReturn.m_dwSDKUserID = buffer:ReadUInt();
+        error("m_dwSDKUserID"..STOCTables.LoginReturn.m_dwSDKUserID)
+    end
+
+    -- OnLogin.OnLoginReturn(STOCTables.LoginReturn);
+    local log = "用户登录后返回登录结果数据::LoginProtocol.OnLoginReturn -> ";
+    log = log .. "result : {0}, userId : {1}, userLogId : {2}, userConnectId : {3}, zoneId: {4}";
+    error(string_format(log, STOCTables.LoginReturn.m_nLoginResult,
+    STOCTables.LoginReturn.m_dwUserID,
+    STOCTables.LoginReturn.m_n64UserLogedID,
+    STOCTables.LoginReturn.m_nUserConnectID,
+    STOCTables.LoginReturn.m_wZoneID));
+
+    local m_dwUserID = STOCTables.LoginReturn.m_dwUserID;
+    local m_nLoginResult = STOCTables.LoginReturn.m_nLoginResult;
+    local str = nil;
+    if m_nLoginResult == 0 then
+        PlayerPrefs.SetString(UserID, m_dwUserID);
+        -- 用户名密码无错误时异步加载选择角色的场景
+        -- 加载选择和创建角色场景
+        G_GameMng:OnLoginClick();
+        local sdkUserId = STOCTables.LoginReturn.m_dwSDKUserID or 0;
+        local key = "firstlogin_" .. sdkUserId;
+        local isFirstLogin = PlayerPrefs.GetInt(key, -1);
+        if isFirstLogin == -1 then
+            PlayerPrefs.SetInt(key, 1);
+            CSDKManager.Call("RequestSubmReg", string_format([[{"uid":{0}}]], sdkUserId), function() end);
+        end
+        CSDKManager.Call("RequestSubmLogin", string_format([[{"uid":{0}}]], sdkUserId), function() end);
+        return;
+    elseif m_nLoginResult == 1 then
+        str = CCommonTool.GetTxtData(10092).m_str;
+    elseif m_nLoginResult == 2 then
+        str = CCommonTool.GetTxtData(10117).m_str;
+    elseif m_nLoginResult == 3 then
+        str = CCommonTool.GetTxtData(10093).m_str;
+    elseif m_nLoginResult == 4 then
+        str = CCommonTool.GetTxtData(10094).m_str;
+    elseif m_nLoginResult == 2001 then
+        str = CCommonTool.GetTxtData(10095).m_str;
+    elseif m_nLoginResult == 2002 then
+        PlayerPrefs.SetString(PassWord, "");
+        str = CCommonTool.GetTxtData(10096).m_str;
+    elseif m_nLoginResult == 2004 then
+        str = CCommonTool.GetTxtData(10097).m_str;
+    elseif m_nLoginResult == 4001 then
+        str = CCommonTool.GetTxtData(9003).m_str;
+        str = "ERROR ID:" .. m_nLoginResult .. str;
+    elseif m_nLoginResult == 4002 then
+        str = CCommonTool.GetTxtData(9004).m_str;
+        str = "ERROR ID:" .. m_nLoginResult .. str;
+    elseif m_nLoginResult == 4003 then
+        str = CCommonTool.GetTxtData(9005).m_str;
+        str = "ERROR ID:" .. m_nLoginResult .. str;
+    elseif m_nLoginResult ~= 0 then
+        str = "login fail,error num::" .. m_nLoginResult;
+    end
+    ParameterToMessageTextBox.OnLoginBack(str);
+    ComeInGame.OnLoginFail();
+    if m_nLoginResult == 4002 then
+        -- SDK登录信息已失效
+        CSDKManager.Logout( function() end);
+    end
+    GameReportManager.AddReportData(9172,true);
+end
+
+-- 退出登录返回
+function OnLogoutReturn(protocolId, buffer)
+    PlayerSettingPanel.OnLogoutReturn(buffer);
+end
+
+-- 账号在其他地方登录
+function OnKickUserReturn(protocolId, buffer)
+    error("此账号在其他地方登陆了");
+    local tempTable = { };
+    table.insert(tempTable, 1, "");
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8993).m_str);
+    table.insert(tempTable, 3, OnRestartNetworkCasueKickClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnRestartNetworkCasueKickClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, false);
+    table.insert(tempTable, 8, 1);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnRestartNetworkCasueKickClick()
+    G_GameMng:RestartNetWork();
+end
+
+-- 角色登录错误返回
+function OnEnterGameServerReturnEx(protocolId, buffer)
+    -- SelectRole.RoleLoginErrorReturn(buffer);
+    -- 这里不应该这么处理了，应该把C#的代码复制过来
+end
+
+-- 用户登录成功后返回的角色列表数据
+function OnListCharacterReturn(protocolId, buffer)
+    -- 登录成功后返回的角色列表数据放到角色选择界面处理(SelectRole)
+    SelectRole.OnListCharacterReturn(buffer);
+end
+
+-- 列角色完成--
+function OnListRoleOK(protocolId, buffer)
+    -- 列角色完成后去角色选择界面处理角色数据--
+    SelectRole.OnListRoleOK(buffer);
+end
+
+-- 返回角色创建结果
+function OnCreateRoleReturn(protocolId, buffer)
+    -- 创建结果在角色创建界面处理并提示创建结果
+    CreateRole.OnCreateRoleReturn(buffer);
+end
+
+-- 角色进入场景返回
+function OnEnterRoomReturn(protocolId, buffer)
+    local ConnectID = buffer:ReadInt();
+    local nResult = buffer:ReadInt();
+
+    local str = "";
+    if nResult == 0 then
+        return;
+    elseif nResult == 1 then
+        str = CCommonTool.GetTxtData(8022).m_str;
+    elseif nResult == 2 then
+        str = CCommonTool.GetTxtData(8023).m_str;
+    elseif nResult == 3 then
+        str = CCommonTool.GetTxtData(8024).m_str;
+    elseif nResult == 4 then
+        str = CCommonTool.GetTxtData(8025).m_str;
+    elseif nResult == 5 then
+        str = CCommonTool.GetTxtData(8026).m_str;
+    elseif nResult == 6 then
+        str = CCommonTool.GetTxtData(8027).m_str;
+    elseif nResult == 7 then
+        str = CCommonTool.GetTxtData(8028).m_str;
+    elseif nResult == 1012 then
+        str = CCommonTool.GetTxtData(8029).m_str;
+    elseif nResult == 1015 then
+        str = CCommonTool.GetTxtData(8030).m_str;
+    else
+        error("未处理的错误:::" .. nResult);
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    ParameterToMessageTextBox.OnLoginBack(str);
+end
+
+-- 删除角色返回--
+function OnDeleteRoleReturn(protocolId, buffer)
+    -- 删除角色返回的数据在选择角色界面处理
+    SelectRole.OnDeleteRoleReturn(buffer);
+end
+
+-- 进入游戏排队等待面板
+function OnWaitEnterGame(protocolId, buffer)
+    local num = buffer:ReadInt();
+    EnterGameWaitPanel.OnSetData(num);
+end
+
+-- 用来提示服务器战区关闭的
+function OnZoneCloesedMessage(protocolId, buffer)
+    -- 提示文本ID
+    local txtId = buffer:ReadInt();
+    ParameterToMessageTextBox.OnCloseZoneMessage(txtId);
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+-- 请求登录接口
+-- @param string accountId 帐号ID
+-- @param string password 密码
+-- @param number zoneId 战区ID
+function RequestLogin(accountId, password, zoneId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(E_CTON_LOGIN);
+    buffer:WriteByte(0);
+    --增加一个是否是testuser白名单的变量，由ZLS给返回的值赋值
+    local isTestUser = CCommonTool.GetIsTestUser(); 
+    if isTestUser == true then
+       buffer:WriteByte(1);
+    else
+       buffer:WriteByte(0);
+    end
+    buffer:WriteStringByByte(accountId);
+    buffer:WriteStringByByte(password);
+    buffer:WriteUInt(1);
+    buffer:WriteShort(1);
+    buffer:WriteShort(1);
+    buffer:WriteByte(0);
+    buffer:WriteShort(zoneId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求登录接口, 通过第三方SDK
+function RequestLoginByNextmv(userToken, zoneId)
+    error("nextmove::userToken:" .. tostring(userToken));
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(E_CTON_LOGIN);
+    buffer:WriteByte(1);
+    --增加一个是否是testuser白名单的变量，由ZLS给返回的值赋值
+    local isTestUser = CCommonTool.GetIsTestUser(); 
+    if isTestUser == true then
+       buffer:WriteByte(1);
+    else
+       buffer:WriteByte(0);
+    end
+    buffer:WriteStringByByte(userToken);
+    buffer:WriteUInt(1);
+    buffer:WriteShort(1);
+    buffer:WriteShort(1);
+    buffer:WriteByte(0);
+    buffer:WriteShort(zoneId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 西游登录
+function RequestLoginByXiYou(userToken, zoneId)
+    error("nextmove::userToken:" .. tostring(userToken));
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(E_CTON_LOGIN);
+    buffer:WriteByte(2);
+    --增加一个是否是testuser白名单的变量，由ZLS给返回的值赋值
+    local isTestUser = CCommonTool.GetIsTestUser(); 
+    if isTestUser == true then
+       buffer:WriteByte(1);
+    else
+       buffer:WriteByte(0);
+    end
+    buffer:WriteStringByByte(userToken);
+    buffer:WriteUInt(1);
+    buffer:WriteShort(1);
+    buffer:WriteShort(1);
+    buffer:WriteByte(0);
+    buffer:WriteShort(zoneId);
+    local masterId = CSDKManager.GetInt("getMasterId", "");
+    local deviceId = CSDKManager.GetString("getDeviceId", "");
+    buffer:WriteInt(masterId);
+    buffer:WriteStringByByte(deviceId);
+
+    local brand = CSDKManager.GetString("getDeviceBrand", "") or "";    -- 手机品牌
+    local model = CSDKManager.GetString("getDeviceModel", "") or "";    -- 手机型号
+    local androidId = CSDKManager.GetString("getAndroidId", "") or "";  -- ANDROID_ID (Android)
+    local imei = CSDKManager.GetString("getIMEI", "") or "";            -- IMEI (Android)
+    local idfa = CSDKManager.GetString("getIDFA", "") or "";            -- IDFA (iOS)
+    buffer:WriteStringByByte(brand);
+    buffer:WriteStringByByte(model);
+    buffer:WriteStringByByte(androidId);
+    buffer:WriteStringByByte(imei);
+    buffer:WriteStringByByte(idfa);
+
+    G_NetWorkMng:SendMessage(buffer);
+
+    --[[
+    local flag = CSDKManager.GetString("getCurrFlag", "");
+    local channelId = CSDKManager.GetInt("getCurrChannel", "");
+    local masterId = CSDKManager.GetInt("getMasterId", "");
+    local deviceId = CSDKManager.GetString("getDeviceId", "");
+    error(string_format("Get Order Id :: flag:{0} channelId:{1} masterId:{2} deviceId:{3}",
+        flag, tostring(channelId), tostring(masterId), tostring(deviceId)));
+    ]]
+end
+

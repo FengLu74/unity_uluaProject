@@ -1,0 +1,161 @@
+﻿module('GuildApprovalPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildApprovalPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+-- 清空列表按钮
+local m_ClearButtonPath = "ClearButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 空列表对象
+local m_BlankPath = "Blank";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "ApprovalList/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+-- 空列表对象
+local m_Blank = nil;
+
+-- 是否有操作权限
+local m_HasPermission = false;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+	m_Blank = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_APPROVAL);
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_Blank = child(m_PanelObject, m_BlankPath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonClosePath, OnCloseClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+	SetGameObjectEvent(m_ClearButtonPath, OnClearButtonClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_HasPermission = GuildManager.HasPermission(E_GUILD_PERMISSION.APPROVE);
+    InitList();
+end
+
+-- 初始化审批列表信息
+function InitList()
+    local applicants = GuildManager.guildApplicants or {};
+    m_List:RemoveAll();
+    for i, data in ipairs(applicants) do
+        m_List:AddData(data);
+    end
+    m_Blank:SetActive(#applicants == 0);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_APPROVAL);
+end
+
+-- 关闭按钮点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_APPROVAL);
+end
+
+-- 列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Name", data.applyName, go);
+    SetLabelContent("Level", data.level, go);
+    SetLabelContent("FightPower", string_format(--[[战斗力 {0}]]CCommonTool.GetTxtData(994).m_str,data.fightPower), go);
+    SetSpriteByAtlasID("Icon", CCommonTool.GetRoleDateInfo(data.professsion).HeadRes, go, true);
+    -- 没有权限置灰
+    CCommonTool.SetGameObjectGrey(child(go, "RefuseButton").gameObject, not m_HasPermission);
+    CCommonTool.SetGameObjectGrey(child(go, "AgreeButton").gameObject, not m_HasPermission);
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "RefuseButton" then
+        if m_HasPermission then
+            GuildProtocol.RequestRefuseJoin(data.globalId);
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        end
+    elseif go.name == "AgreeButton" then
+        if m_HasPermission then
+            GuildProtocol.RequestAgreeJoin(data.globalId);
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        end
+    end
+end
+
+-- 清空列表点击事件
+function OnClearButtonClick(gameObject)
+    if m_HasPermission then
+        if not GuildManager.guildApplicants then return; end
+        GuildProtocol.RequestBatchRefuseJoin();
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新审批列表
+-- @param globalId 单个玩家ID
+function Refresh(globalId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_APPROVAL) == 1 then
+        InitShow();
+    end
+end

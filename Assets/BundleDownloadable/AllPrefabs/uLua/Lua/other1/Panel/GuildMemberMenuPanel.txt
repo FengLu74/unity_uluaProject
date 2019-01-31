@@ -1,0 +1,420 @@
+﻿module('GuildMemberMenuPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildMemberPanel/Content_MemberInfo';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 开除成员
+local m_ButtonFirePath = "Content/Grid/Button_Fire";
+-- 罢免副会长
+local m_ButtonDismissViceChairmanPath = "Content/Grid/Button_DismissViceChairman";
+-- 罢免团长
+local m_ButtonDismissHallHostPath = "Content/Grid/Button_DismissHallHost";
+-- 请出分团
+local m_ButtonSubHallOutPath = "Content/Grid/Button_SubHallOut";
+-- 调入先锋团
+local m_ButtonCallInElitePath = "Content/Grid/Button_CallInElite";
+-- 调入骑士团
+local m_ButtonCallInKnightPath = "Content/Grid/Button_CallInKnight";
+-- 禅让会长
+local m_ButtonAbdicateChairmanPath = "Content/Grid/Button_AbdicateChairman";
+-- 任命副会长
+local m_ButtonAppointViceChairmanPath = "Content/Grid/Button_AppointViceChairman";
+-- 任命堂主
+local m_ButtonAppointHallHostPath = "Content/Grid/Button_AppointHallHost";
+-- 邀请组队
+local m_ButtonTeamPath = "Content/Grid/Button_Team";
+-- 查看
+local m_ButtonLookupPath = "Content/Grid/Button_Lookup";
+-- 私聊
+local m_ButtonChatPath = "Content/Grid/Button_Chat";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 内容对象
+local m_ContentPath = "Content";
+-- 列表Grid
+local m_GridPath = "Content/Grid";
+-- 背景
+local m_BgPath = "Background/Bg";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 内容对象
+local m_Content = nil;
+-- 列表Grid
+local m_Grid = nil;
+-- 开除成员
+local m_ButtonFire = nil;
+-- 罢免副会长
+local m_ButtonDismissViceChairman = nil;
+-- 罢免团长
+local m_ButtonDismissHallHost = nil;
+-- 请出分团
+local m_ButtonSubHallOut = nil;
+-- 调入先锋团
+local m_ButtonCallInElite = nil;
+-- 调入骑士团
+local m_ButtonCallInKnight = nil;
+-- 禅让会长
+local m_ButtonAbdicateChairman = nil;
+-- 任命副会长
+local m_ButtonAppointViceChairman = nil;
+-- 任命堂主
+local m_ButtonAppointHallHost = nil;
+-- 邀请组队
+local m_ButtonTeam = nil;
+-- 查看
+local m_ButtonLookup = nil;
+-- 私聊
+local m_ButtonChat = nil;
+-- 背景
+local m_Bg = nil;
+
+-- 成员数据
+local m_Member = nil;
+-- 玩家自己数据
+local m_SelfInfo = nil;
+-- 点击位置
+local m_ClickPos = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    --InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        --InitShow();
+    end
+end
+
+function OnDisable()
+    m_Member = nil;
+    m_ClickPos = nil;
+    m_SelfInfo = nil;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Content = nil;
+	m_Grid = nil;
+	m_ButtonFire = nil;
+	m_ButtonDismissViceChairman = nil;
+	m_ButtonDismissHallHost = nil;
+	m_ButtonSubHallOut = nil;
+	m_ButtonCallInElite = nil;
+	m_ButtonCallInKnight = nil;
+	m_ButtonAbdicateChairman = nil;
+	m_ButtonAppointViceChairman = nil;
+	m_ButtonAppointHallHost = nil;
+    m_ButtonTeam = nil;
+	m_ButtonLookup = nil;
+	m_ButtonChat = nil;
+	m_Bg = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_Content = child(m_PanelObject, m_ContentPath);
+    m_Grid = GetComponent(m_PanelObject, m_GridPath, "UIGrid");
+    m_ButtonFire = child(m_PanelObject, m_ButtonFirePath).gameObject;
+    m_ButtonDismissViceChairman = child(m_PanelObject, m_ButtonDismissViceChairmanPath).gameObject;
+    m_ButtonDismissHallHost = child(m_PanelObject, m_ButtonDismissHallHostPath).gameObject;
+    m_ButtonSubHallOut = child(m_PanelObject, m_ButtonSubHallOutPath).gameObject;
+    m_ButtonCallInElite = child(m_PanelObject, m_ButtonCallInElitePath).gameObject;
+    m_ButtonCallInKnight = child(m_PanelObject, m_ButtonCallInKnightPath).gameObject;
+    m_ButtonAbdicateChairman = child(m_PanelObject, m_ButtonAbdicateChairmanPath).gameObject;
+    m_ButtonAppointViceChairman = child(m_PanelObject, m_ButtonAppointViceChairmanPath).gameObject;
+    m_ButtonAppointHallHost = child(m_PanelObject, m_ButtonAppointHallHostPath).gameObject;
+    m_ButtonTeam = child(m_PanelObject, m_ButtonTeamPath).gameObject;
+    m_ButtonLookup = child(m_PanelObject, m_ButtonLookupPath).gameObject;
+    m_ButtonChat = child(m_PanelObject, m_ButtonChatPath).gameObject;
+    m_Bg = GetComponent(m_PanelObject, m_BgPath, "UISprite");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+    UIEventListener.Get(m_ButtonFire).onClick = LuaHelper.OnClick(OnButtonFireClick);
+    UIEventListener.Get(m_ButtonDismissViceChairman).onClick = LuaHelper.OnClick(OnButtonDismissViceChairmanClick);
+    UIEventListener.Get(m_ButtonDismissHallHost).onClick = LuaHelper.OnClick(OnButtonDismissHallHostClick);
+    UIEventListener.Get(m_ButtonSubHallOut).onClick = LuaHelper.OnClick(OnButtonSubHallOutClick);
+    UIEventListener.Get(m_ButtonCallInElite).onClick = LuaHelper.OnClick(OnButtonCallInEliteClick);
+    UIEventListener.Get(m_ButtonCallInKnight).onClick = LuaHelper.OnClick(OnButtonCallInKnightClick);
+    UIEventListener.Get(m_ButtonAbdicateChairman).onClick = LuaHelper.OnClick(OnButtonAbdicateChairmanClick);
+    UIEventListener.Get(m_ButtonAppointViceChairman).onClick = LuaHelper.OnClick(OnButtonAppointViceChairmanClick);
+    UIEventListener.Get(m_ButtonAppointHallHost).onClick = LuaHelper.OnClick(OnButtonAppointHallHostClick);
+    UIEventListener.Get(m_ButtonTeam).onClick = LuaHelper.OnClick(OnButtonTeamClick);
+    UIEventListener.Get(m_ButtonLookup).onClick = LuaHelper.OnClick(OnButtonLookupClick);
+    UIEventListener.Get(m_ButtonChat).onClick = LuaHelper.OnClick(OnButtonChatClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local t = m_Grid.transform;
+    local childCount = t.childCount;
+    for i = 0, childCount-1 do
+        t:GetChild(i).gameObject:SetActive(false);
+    end
+
+    -- 开除成员
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.FIRE_GENERAL_MEMBER, m_Member) then
+        m_ButtonFire:SetActive(true);
+    end
+    -- 禅让会长
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.DEMISE_LEADER, m_Member) then
+        m_ButtonAbdicateChairman:SetActive(true);
+    end
+    -- 罢免副会长
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.FIRE_VICE_LEADER, m_Member) then
+        m_ButtonDismissViceChairman:SetActive(true);
+    end
+
+    -- 罢免团长
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.FIRE_PETERXS, m_Member) then
+        m_ButtonDismissHallHost:SetActive(true);
+    end
+    -- 请出分堂
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.FIRE_PETERXS_MEMBER, m_Member) then
+        m_ButtonSubHallOut:SetActive(true);
+    end
+    -- 任命副会长
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.APPOINT_VICE_LEADER, m_Member) then
+        m_ButtonAppointViceChairman:SetActive(true);
+    end
+    -- 任命堂主
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.APPOINT_PETERXS, m_Member) then
+        m_ButtonAppointHallHost:SetActive(true);
+    end
+    -- 调入青龙/白虎堂
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.APPOINT_MEMBER_PETERXS, m_Member) then
+        local selfRank = m_SelfInfo.rankLevel;
+        if selfRank == E_GUILD_RANKLEVEL.PETERXS then
+            if m_SelfInfo.kindredType == EKINDREDTYPE.ELITE then
+                m_ButtonCallInElite:SetActive(true);
+            elseif m_SelfInfo.kindredType == EKINDREDTYPE.KNIGHT then
+                m_ButtonCallInKnight:SetActive(true);
+            end
+        else
+            m_ButtonCallInElite:SetActive(true);
+            m_ButtonCallInKnight:SetActive(true);
+        end
+    end
+    -- 邀请组队
+    m_ButtonTeam:SetActive(true);
+    --查看
+    m_ButtonLookup:SetActive(true);
+    --私聊              
+    m_ButtonChat:SetActive(true);
+
+    m_Grid:Reposition();
+    local buttonShowCount = m_Grid:GetChildList().Count;
+    m_Bg.height = math.ceil(buttonShowCount / 2) * 70 + 164;
+
+    InitBaseInfo();
+end
+
+function InitBaseInfo()
+    local data = m_Member;
+    local go = child(m_PanelObject, "Content/Info").gameObject;
+    -- 名字
+    SetLabelContent("Name", data.name, go);
+    -- 角色头像
+    local iconId =  CCommonTool.GetRoleDateInfo(data.profession).HeadRes;
+    SetSpriteByAtlasID("Icon", iconId, go, true);
+    -- 等级
+    SetLabelContent("Level", data.level, go);
+    -- 阵营
+    SetGameObjectState("CampIcon", true, go);
+    SetCampIcon("CampIcon", G_UserInfo.RoleAttribute.JoinCampType, go);
+
+    local guild = GuildManager.myGuild;
+    SetGameObjectState("Guild", true, go);
+    SetLabelContent("Guild/Name", guild.name, go);
+    SetLabelContent("Guild/FlagName", guild.nickName, go);
+    local info = CCommonTool.GetGuildInfoByIndex(guild.level);
+    SetSpriteByAtlasID("Guild/Icon", info.FlagIconBig, go, true);
+end
+
+-- 关闭菜单面板
+function Close()
+    error(m_CreateSuccess);
+    if m_CreateSuccess == true and m_PanelObject.activeSelf == true then
+        m_PanelObject:SetActive(false);
+        GuildMemberPanel.DeselectList();
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    Close();
+end
+
+-- 开除成员按钮点击事件
+function OnButtonFireClick(gameObject)
+    GuildProtocol.RequestExpelMember(m_Member.globalId);
+    Close();
+end
+
+-- 罢免副会长按钮点击事件
+function OnButtonDismissViceChairmanClick(gameObject)
+    GuildProtocol.RequestDepose(m_Member.globalId, m_Member.rankLevel);
+    Close();
+end
+
+-- 罢免团长按钮点击事件
+function OnButtonDismissHallHostClick(gameObject)
+    GuildProtocol.RequestDepose(m_Member.globalId, m_Member.rankLevel);
+    Close();
+end
+
+-- 请出分团按钮点击事件
+function OnButtonSubHallOutClick(gameObject)
+    GuildProtocol.RequestAddKindred(m_Member.globalId, EKINDREDTYPE.GENERAL);
+    Close();
+end
+
+-- 调入先锋团按钮点击事件
+function OnButtonCallInEliteClick(gameObject)
+    GuildProtocol.RequestAddKindred(m_Member.globalId, EKINDREDTYPE.ELITE);
+    Close();
+end
+
+-- 调入骑士团按钮点击事件
+function OnButtonCallInKnightClick(gameObject)
+    GuildProtocol.RequestAddKindred(m_Member.globalId, EKINDREDTYPE.KNIGHT);
+    Close();
+end
+
+-- 禅让会长按钮点击事件
+function OnButtonAbdicateChairmanClick(gameObject)
+    local title = CCommonTool.GetTxtData(1500).m_str;
+    local content = CCommonTool.GetTxtData(1501).m_str;
+    content = string_format(content, m_Member.name, CCommonTool.GetTxtData(50371).m_str);
+    local callback = function()
+        GuildProtocol.RequestDemiseLeader(m_Member.globalId);
+        Close();
+        CloseConfirmPanel();
+    end
+    Confirm(title, content, callback);
+end
+
+-- 任命副会长按钮点击事件
+function OnButtonAppointViceChairmanClick(gameObject)
+    local title = CCommonTool.GetTxtData(1500).m_str;
+    local content = CCommonTool.GetTxtData(1501).m_str;
+    content = string_format(content, m_Member.name, CCommonTool.GetTxtData(50372).m_str);
+    local callback = function()
+        GuildProtocol.RequestAppoint(m_Member.globalId, E_GUILD_RANKLEVEL.VICE_LEADER);
+        Close();
+        CloseConfirmPanel();
+    end
+    Confirm(title, content, callback);
+end
+
+-- 任命团长按钮点击事件
+function OnButtonAppointHallHostClick(gameObject)
+    local title = CCommonTool.GetTxtData(1500).m_str;
+    local content = CCommonTool.GetTxtData(1501).m_str;
+    if m_Member.kindredType == EKINDREDTYPE.ELITE then
+        content = string_format(content, m_Member.name, CCommonTool.GetTxtData(50373).m_str);
+    elseif m_Member.kindredType == EKINDREDTYPE.KNIGHT then
+        content = string_format(content, m_Member.name, CCommonTool.GetTxtData(50374).m_str);
+    end
+    local callback = function()
+        GuildProtocol.RequestAppoint(m_Member.globalId, E_GUILD_RANKLEVEL.PETERXS);
+        Close();
+        CloseConfirmPanel();
+    end
+    Confirm(title, content, callback);
+end
+
+-- 邀请组队按钮点击事件
+function OnButtonTeamClick(gameObject)
+    print("m_Member = ",SerializeTable(m_Member));
+    if m_Member.onlineScene == -1 then 
+        ShowSystemFlowTips(2607);
+        Close();
+        return;
+    end
+    -- 邀请组队
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM);
+    if not TeamManager.HasTeam() then
+        buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_APPLY);
+    else
+        buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_INVITE);
+    end
+    buffer:WriteInt(-1);
+    buffer:WriteUInt(m_Member.globalId);
+    G_NetWorkMng:SendMessage(buffer);
+    Close();
+end
+
+-- 查看按钮点击事件
+function OnButtonLookupClick(gameObject)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_OTHERPLAYER_STATE);
+    buffer:WriteInt(m_Member.globalId);
+    G_NetWorkMng:SendMessage(buffer);
+    Close();
+end
+
+-- 私聊按钮点击事件
+function OnButtonChatClick(gameObject)
+    FriendsProtocol.RequestSearch(m_Member.name, 3);
+    Close();
+end
+
+-- 邀请自己加入公会
+function Confirm(title, content, callback)
+    local tempTable = { };
+    table.insert(tempTable, 1, title);
+    table.insert(tempTable, 2, content);
+    table.insert(tempTable, 3, function() callback(); end);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, CloseConfirmPanel);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, false);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function CloseConfirmPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 显示菜单面板
+-- @param member 成员数据
+-- @param clickPos 点击位置
+function Show(member, clickPos)
+    error("show");
+    error(member);
+    m_Member = member;
+    m_ClickPos = clickPos;
+    m_SelfInfo = GuildManager.GetSelfInfo();
+    InitShow();
+end

@@ -1,0 +1,93 @@
+﻿module("CameraTypeChangePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮路径
+local m_CloseButton = "Button_Close";
+-- 2.5D摄像机选择按钮
+local m_25DTypeButton = "Button_2_5D";
+-- 3D摄像机选择按钮
+local m_3DTypeButton = "Button_3D";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+
+----------------------------------通用的名称路径---------------------------------------
+
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建完成
+local m_createSuccess = false;
+-- 玩家设置管理器
+local m_settingManager = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化管理器
+    InitMng();
+    -- 初始化点击事件
+    InitEvent();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_createSuccess = true;
+end
+
+function OnEnable()
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_createSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CAMERATYPECHANGEPANEL);
+end
+
+function InitMng()
+    m_settingManager = G_UserInfo.PlayerSettingManager;
+end
+
+-- 初始化点击事件
+function InitEvent()
+    SetGameObjectEvent(m_CloseButton,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_25DTypeButton,On25DTypeClick,m_panelObject);
+    SetGameObjectEvent(m_3DTypeButton,On3DTypeClick,m_panelObject);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    -- 这个界面打开就默认设置摄像机位3D的视角
+    m_settingManager.CameraType = 1;
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 点击关闭的按钮事件
+function OnCloseClick(e)
+    closePanel(ENUMPANELID.ENUM_PANEL_CAMERATYPECHANGEPANEL);
+end
+
+function On25DTypeClick(e)
+    m_settingManager.CameraType = 2;
+    OnCloseClick();
+    CSDKManager.EventHook("select-angle-2.5D", function() end);
+end
+
+function On3DTypeClick(e)
+    m_settingManager.CameraType = 1;
+    OnCloseClick();
+    CSDKManager.EventHook("select-angle-3D", function() end);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

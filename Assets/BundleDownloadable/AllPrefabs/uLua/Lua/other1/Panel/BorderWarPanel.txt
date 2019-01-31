@@ -1,0 +1,659 @@
+﻿module('BorderWarPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'BorderWarPanel';
+---------------------------------------label路径---------------------------------------
+-- 边境名称
+local m_BorderNamePath = "Sub_Top/lb_Border";
+-- 剩余时间
+local m_BorderRestTimePath = "Sub_Top/lb_Time";
+-- 积分
+local m_ScorePath = "Sub_Top/lb_Score";
+-- 今日任务
+local m_MissionNumPath = "Sub_Top/lb_AllMissionNum"
+-- 宝箱
+local m_BoxPath = "Sub_Top/lb_GetBox";
+
+-- 右侧任务名字
+local m_CellMissionNamePath = "Sub_Right/lb_Title";
+-- 右侧任务描述
+local m_CellMissionContentPath = "Sub_Right/lb_Content";
+-- 右侧任务次数
+local m_CellMissionNumPath = "Sub_Right/lb_MissionNum";
+-- 右侧子任务
+local m_CellMissionPath = "Sub_Right/Sub_Mission";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_BtnClosePath = "btn_Close";
+-- 子任务前往按钮
+local m_BtnGo1Path = "Sub_Right/Sub_Mission1/btn_Go";
+local m_BtnGo2Path = "Sub_Right/Sub_Mission2/btn_Go";
+local m_BtnGo3Path = "Sub_Right/Sub_Mission3/btn_Go";
+-- 子任务提交按钮
+local m_BtnSubmit1Path = "Sub_Right/Sub_Mission1/btn_Submit";
+local m_BtnSubmit2Path = "Sub_Right/Sub_Mission2/btn_Submit";
+local m_BtnSubmit3Path = "Sub_Right/Sub_Mission3/btn_Submit";
+-- 领取宝箱
+local m_GetBoxPath = "Sub_Top/lb_GetBox/sp_Box";
+-- 任务提交弹窗取消
+local m_BtnCancelPath = "Sub_Submit/btn_Cancel";
+-- 任务提交弹窗提交
+local m_BtnSubmitPath = "Sub_Submit/btn_Get";
+
+-- 解释说明按钮
+local m_explainButton = "Sub_Mid/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 加注释
+local m_BtnBgPath = "Sub_BG/btn_Bg";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 左侧任务列表
+local m_UIGridPath = "Sub_LeftTag/UIGrid";
+-- 中间地图区域
+local m_SpAreaPath = "Sub_Mid/sp_Area";
+-- 
+local m_AreaPath = "Sub_Mid/sp_Area1/Area";
+
+-- 任务提交弹窗
+local m_SubmitPath = "Sub_Submit";
+-- 任务提交弹窗的任务
+local m_SubmitMissionPath = "Sub_Submit/Sub_Cost/Item/";
+-- 任务提交弹窗奖励列表路径
+local m_RewardListPath = "Sub_Submit/Sub_Reward/UIGrid";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 左侧任务列表
+local m_UIGrid = nil;
+
+-- 任务类型表数据
+local m_BorderTaskTypeData = nil;
+-- 任务前往坐标表
+local m_MissionGoTable = { [1] = { x = 0, y = 0 }, [2] = { x = 0, y = 0 }, [3] = { x = 0, y = 0 }, };
+-- 提交任务ID
+local m_MissionIDTable = { [1] = 0, [2] = 0, [3] = 0, };
+-- 选中的任务
+local m_SelectMission = 0;
+-- 任务提交弹窗奖励列表
+local m_RewardList = nil;
+-- 当前要提交任务ID
+local m_CurMissionID = nil;
+-- 当前大任务ID
+local m_CurMissionTypeID = nil;
+-- 当前所有任务数据
+local m_CurMissionData = { };
+-- 当前边境场景是攻方还是守方(1：守 2：攻)
+local m_CurCampType = 1;
+-----------------------------------一些写死的规定--------------------------------------
+-- 各任务位置
+local m_TaskPosition = {
+    [101] = { [1] = { x = - 406, y = 108, pinZhi = 103 }, [2] = { x = - 370, y = - 201, pinZhi = 104 }, [3] = { x = - 121, y = - 67, pinZhi = 102 }, },
+    -- 军书速递
+    [102] = { [1] = { x = - 284, y = 104, pinZhi = 104 }, [2] = { x = - 88, y = 8, pinZhi = 103 }, [3] = { x = 174, y = - 106, pinZhi = 102 }, [4] = { x = 208, y = - 332, pinZhi = 103 }, },
+    -- 采集物资
+    [103] = { [1] = { x = - 365, y = - 266, pinZhi = 105 }, [2] ={ x = -358, y = -186, pinZhi = 103 }, [3] ={ x = -305, y = -236, pinZhi = 104 }},
+    -- 驻守边疆
+    [104] = { [1] = { x = - 231, y = 128, pinZhi = 104 }, [2] = { x = - 23, y = 18, pinZhi = 103 }, [3] = { x = 218, y = - 127, pinZhi = 102 }, [4] = { x = 95, y = - 318, pinZhi = 103 }, },
+    -- 边境缉盗
+    [105] = { [1] = { x = 141, y = 103, pinZhi = 105 }, [2] ={ x = 200, y = 60, pinZhi = 103 }, [3] ={ x = 150, y = 37, pinZhi = 104 }},
+    -- 守护将领
+    [201] = { [1] = { x = - 444, y = 39, pinZhi = 104 }, [2] = { x = - 370, y = - 198, pinZhi = 103 }, [3] = { x = - 110, y = - 315, pinZhi = 103 }, [4] = { x = 162, y = 64, pinZhi = 105 }, },
+    -- 窃取资源
+    [202] = { [1] = { x = - 421, y = 110, pinZhi = 104 }, [2] = { x = - 114, y = - 86, pinZhi = 103 }, [3] = { x = 166, y = 68, pinZhi = 105 }, },
+    -- 间谍密信
+    [203] = { [1] = { x = - 410, y = 108, pinZhi = 103 }, [2] = { x = - 120, y = - 73, pinZhi = 104 }, [3] = { x = 163, y = 62, pinZhi = 105 }, },
+    -- 击杀敌军
+    [204] = { [1] = { x = - 379, y = - 18, pinZhi = 104 }, [2] = { x = - 370, y = - 198, pinZhi = 103 }, [3] = { x = - 113, y = - 322, pinZhi = 103 }, [4] = { x = 46, y = 87, pinZhi = 105 }, },
+    -- 偷袭守卫
+    [205] = { [1] = { x = 141, y = 103, pinZhi = 105 }, [2] ={ x = 200, y = 60, pinZhi = 103 }, [3] ={ x = 150, y = 37, pinZhi = 104 } },-- 击杀将领
+};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitDatas();
+    InitShow();
+    RefreshBorderWarData();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitDatas();
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_UIGrid = nil;
+    m_RewardList = nil;
+    m_BorderTaskTypeData = nil;
+    m_MissionGoTable = { [1] = { x = 0, y = 0 }, [2] = { x = 0, y = 0 }, [3] = { x = 0, y = 0 }, };
+    m_MissionIDTable = { [1] = { }, [2] = { }, [3] = { }, };
+    m_CurMissionID = nil;
+    m_CurMissionTypeID = nil;
+    m_CurMissionData = { };
+    m_CurCampType = 1;
+    G_TimerMng:RemoveTimeTask("RequestBorderWar");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+    m_UIGrid = GetComponent(m_PanelObject, m_UIGridPath, "UIListView");
+    m_RewardList = GetComponent(m_PanelObject, m_RewardListPath, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_BtnBgPath, OnBtnBgClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnGo1Path, OnBtnGo1Click, m_PanelObject);
+    SetGameObjectEvent(m_BtnGo2Path, OnBtnGo2Click, m_PanelObject);
+    SetGameObjectEvent(m_BtnGo3Path, OnBtnGo3Click, m_PanelObject);
+    SetGameObjectEvent(m_BtnSubmit1Path, OnBtnSubmit1Click, m_PanelObject);
+    SetGameObjectEvent(m_BtnSubmit2Path, OnBtnSubmit2Click, m_PanelObject);
+    SetGameObjectEvent(m_BtnSubmit3Path, OnBtnSubmit3Click, m_PanelObject);
+
+    m_UIGrid:SetInitCallback(OnUIGridViewInit);
+    m_UIGrid:SetClickCallback(OnUIGridViewClick);
+    SetGameObjectEvent(m_GetBoxPath, OnGetBoxClick, m_PanelObject);
+    m_RewardList:SetInitCallback(OnRewardListInit);
+    m_RewardList:SetClickCallback(OnRewardListClick);
+
+    SetGameObjectEvent(m_BtnCancelPath, OnBtnCancelClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnSubmitPath, OnBtnSubmitClick, m_PanelObject);
+    SetGameObjectEvent(m_explainButton, OnExplainPanelClick, m_PanelObject);
+end
+
+-- 初始化数据
+function InitDatas()
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    print("BorderWarManager.BorderWarData",SerializeTable(BorderWarManager.BorderWarData));
+    print("BorderWarManager.BorderWarMissionTypeData",SerializeTable(BorderWarManager.BorderWarMissionTypeData));
+    print("BorderWarManager.BorderWarMissionData",SerializeTable(BorderWarManager.BorderWarMissionData));
+    if BorderWarManager.BorderWarData then
+        InitBorderWarData();
+        -- 初始化任务信息
+        m_UIGrid:RemoveAll();
+        for i, v in pairs(m_CurMissionData) do
+            m_UIGrid:AddData(v);
+        end
+        m_UIGrid:SetSelect(m_SelectMission, true);
+    end
+end
+
+-- 初始化基础信息
+function InitBorderWarData()
+    if BorderWarManager.BorderWarData then
+        -- 初始化边境信息
+        local borderData = BorderWarManager.BorderWarData;
+        local borderName = "";
+        if borderData.curCamp == 1 then
+            borderName = GetTextToId(9058);
+        elseif borderData.curCamp == 2 then
+            borderName = GetTextToId(9059);
+        end
+        SetLabelContent(m_BorderNamePath, string_format(GetTextToId(9057), borderName), m_PanelObject);
+        -- 边境战场时间剩余
+        local ishaveTimer = G_TimerMng:GetTimeTask("BorderWarOver");
+        if ishaveTimer == nil then
+            AddTimerEvent("BorderWarOver", borderData.endTime, CallBackOver, ETimeShowType.TypeNumberEight, updateCallBack);
+        end
+        -- 积分
+        SetLabelContent(m_ScorePath, string_format(GetTextToId(9061), borderData.score), m_PanelObject);
+        -- 宝箱
+        if borderData.missionDownNum < 10 then
+            SetGameObjectState(m_MissionNumPath, true, m_PanelObject);
+            SetGameObjectState(m_BoxPath, false, m_PanelObject);
+
+            SetLabelContent(m_MissionNumPath, string_format(GetTextToId(9062), borderData.missionDownNum .. "/10"), m_PanelObject);
+        else
+            if BorderWarManager.BorderWarBoxState == 0 then
+                SetGameObjectState(m_MissionNumPath, false, m_PanelObject);
+                SetGameObjectState(m_BoxPath, true, m_PanelObject);
+            elseif BorderWarManager.BorderWarBoxState == 1 then
+                SetGameObjectState(m_MissionNumPath, true, m_PanelObject);
+                SetGameObjectState(m_BoxPath, false, m_PanelObject);
+                SetLabelContent(m_MissionNumPath, string_format(GetTextToId(9062), borderData.missionDownNum .. "/10"), m_PanelObject);
+            end
+        end
+        -- 初始化任务数据
+        local data = CCommonTool.GetBorderTaskTypeInfo();
+        if BorderWarManager.BorderWarMissionData and data then
+            local missionDefData = { };
+            local missionAtaData = { };
+            for i = 1, data.Count do
+                if data[i - 1].Belong == 1 then
+                    table.insert(missionDefData, data[i - 1]);
+                elseif data[i - 1].Belong == 2 then
+                    table.insert(missionAtaData, data[i - 1]);
+                end
+            end
+            local m_joinCampType = G_UserInfo.RoleAttribute.JoinCampType;
+            -- 如果阵营类型相同则是守方反之攻方（1：守 2：攻）
+            if borderData.curCamp == m_joinCampType then
+                m_CurCampType = 1;
+            else
+                m_CurCampType = 2;
+            end
+            if m_CurCampType == 1 then
+                m_CurMissionData = missionDefData;
+            else
+                m_CurMissionData = missionAtaData;
+            end
+        end
+        InitRightMissionInfo(m_CurMissionData[m_SelectMission + 1]);
+    end
+end
+
+-- 初始化右侧子任务信息
+function InitRightMissionInfo(missionData)
+    -- 主任务信息
+    SetLabelContent(m_CellMissionNamePath, GetTextToId(missionData.Name), m_PanelObject);
+
+    local taskID1 = missionData.TaskID1;
+    local taskID2 = missionData.TaskID2;
+    local taskID3 = missionData.TaskID3;
+
+    local data1 = CCommonTool.GetBorderTaskByIndex(taskID1);
+    local data2 = CCommonTool.GetBorderTaskByIndex(taskID2);
+    local data3 = CCommonTool.GetBorderTaskByIndex(taskID3);
+    local cellMissionTable = { };
+    cellMissionTable[1] = data1;
+    cellMissionTable[2] = data2;
+    cellMissionTable[3] = data3;
+
+    if data1 == nil then error("data1 == nil") return end
+    SetLabelContent(m_CellMissionContentPath, GetTextToId(data1.DescriptionId), m_PanelObject);
+    local missionTypeID = missionData.Type;
+    m_CurMissionTypeID = missionTypeID;
+    local missonTypeCompeteTimes = BorderWarManager.BorderWarMissionTypeData[missionTypeID].competeTimes;
+    SetLabelContent(m_CellMissionNumPath, string_format(GetTextToId(9063), missonTypeCompeteTimes .. "/" .. missionData.Maxtime), m_PanelObject);
+    -- 子任务信息
+    for i = 1, 3 do
+        local cellData = cellMissionTable[i];
+        local cellTaskData = BorderWarManager.BorderWarMissionData[cellData.TaskID];
+        SetSpriteByAtlasID(m_CellMissionPath .. i .. "/Item/Sprite_Icon", cellData.PictureId, m_PanelObject, true);
+        SetLabelContent(m_CellMissionPath .. i .. "/Item/Label_Name", GetTextToId(cellData.NameID), m_PanelObject);
+        SetLabelPinZhi(m_CellMissionPath .. i .. "/Item/Label_Name", cellData.QualityId + 1, m_PanelObject);
+        SetSpriteContent(m_CellMissionPath .. i .. "/Item/Sprite_Apptitude", "ItemAtlasV04", "UI_DJ_PinZhi_00" .. cellData.QualityId + 1, m_PanelObject);
+        SetSpriteContent(m_CellMissionPath .. i .. "/Item/Sprite_Equip_Apptitude", "ItemAtlasV04", "UI_DJ_PinZhi_10" .. cellData.QualityId + 1, m_PanelObject);
+        SetSpriteContent(m_CellMissionPath .. i .. "/Item/Sprite_Apptitude2", "ItemAtlasV04", "UI_DJ_PinZhi_20" .. cellData.QualityId + 1, m_PanelObject);
+        local numString = "";
+        if cellTaskData.taskCompeteTimes < cellData.GoalNum then
+            numString = "[ff0000]" .. cellTaskData.taskCompeteTimes .. "[-]/" .. cellData.GoalNum;
+        else
+            numString = "[ffffff]" .. cellTaskData.taskCompeteTimes .. "[-]/" .. cellData.GoalNum;
+        end
+        SetLabelContent(m_CellMissionPath .. i .. "/Item/Label_Num", numString, m_PanelObject);
+        --        SetGameObjectState(m_CellMissionPath .. i .. "/Label_Need", cellData.LeftId == 1, m_PanelObject);
+        -- 是否显示剩余
+        if cellData.LeftId == 1 then
+            SetLabelContent(m_CellMissionPath .. i .. "/Label_Need", string_format(GetTextToId(9064), cellTaskData.remainCount), m_PanelObject);
+        elseif cellData.LeftId == 0 then
+            SetLabelContent(m_CellMissionPath .. i .. "/Label_Need", string_format(GetTextToId(9064), GetTextToId(9073)), m_PanelObject);
+        end
+        -- 是否显示刷新时间
+        if cellData.RefreshId == 1 then
+            local m_BarRefresh = GetComponent(m_PanelObject, m_CellMissionPath .. i .. "/bar_Refresh", "UIProgressBar");
+            local ishaveTimer = G_TimerMng:GetTimeTask("Refresh" .. cellData.TaskID);
+            if cellTaskData.isHaveRefres == 1 then
+                SetGameObjectState(m_CellMissionPath .. i .. "/Sub_NoRefresh", false, m_PanelObject);
+                SetGameObjectState(m_CellMissionPath .. i .. "/bar_Refresh", true, m_PanelObject);
+                if cellTaskData.refreshTime > 0 then 
+                    if m_BarRefresh ~= nil and ishaveTimer == nil then
+                        AddTimerEvent("Refresh" .. cellData.TaskID, cellTaskData.refreshTime, RefreshCallBackOver, ETimeShowType.TypeNumberEight, updateRefreshCallBack, cellData.TaskID, cellData.TaskID, nil, 2);
+                    end
+                end
+            elseif cellTaskData.bossTime > 0 then
+                SetGameObjectState(m_CellMissionPath .. i .. "/Sub_NoRefresh", false, m_PanelObject);
+                SetGameObjectState(m_CellMissionPath .. i .. "/bar_Refresh", true, m_PanelObject);
+                if m_BarRefresh ~= nil and ishaveTimer == nil then
+                    local time = cellTaskData.bossTime - G_TimerMng:GetCurrentSeconds();
+                    AddTimerEvent("Refresh" .. cellData.TaskID, time, RefreshCallBackOver, ETimeShowType.TypeNumberEight, updateBossCallBack, cellData.TaskID, cellData.TaskID, nil, 2);
+                end
+            else
+                SetGameObjectState(m_CellMissionPath .. i .. "/Sub_NoRefresh", true, m_PanelObject);
+                SetGameObjectState(m_CellMissionPath .. i .. "/bar_Refresh", false, m_PanelObject);
+            end
+        else
+            SetGameObjectState(m_CellMissionPath .. i .. "/bar_Refresh", false, m_PanelObject);
+            SetGameObjectState(m_CellMissionPath .. i .. "/Sub_NoRefresh", false, m_PanelObject);
+        end
+        -- 按钮前往坐标
+        if cellData.TracePublishiValue1 == 0 and cellData.TracePublishiValue2 == 0 then
+            SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", false, m_PanelObject);
+        else
+            SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", true, m_PanelObject);
+            if cellTaskData.missionState == 2 then
+                m_MissionGoTable[i].x = cellData.TraceCompleteValue1;
+                m_MissionGoTable[i].y = cellData.TraceCompleteValue2;
+            else
+                m_MissionGoTable[i].x = cellData.TracePublishiValue1;
+                m_MissionGoTable[i].y = cellData.TracePublishiValue2;
+            end
+        end
+        -- 按钮提交任务数据
+        m_MissionIDTable[i] = cellData;
+
+        -- 各任务按钮状态（放在最后）
+        local borderData = BorderWarManager.BorderWarData;
+        if borderData.missionDownNum < 10 then
+            if missonTypeCompeteTimes >= missionData.Maxtime then
+                SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", false, m_PanelObject);
+                SetGameObjectState(m_CellMissionPath .. i .. "/btn_Submit", false, m_PanelObject);
+                SetGameObjectState(m_CellMissionPath .. i .. "/btn_Compete", true, m_PanelObject);
+            else
+                if cellTaskData.taskCompeteTimes < cellData.GoalNum then
+                    SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", true, m_PanelObject);
+                    if cellData.TracePublishiValue1 == 0 and cellData.TracePublishiValue2 == 0 then
+                        SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", false, m_PanelObject);
+                    end
+                    SetGameObjectState(m_CellMissionPath .. i .. "/btn_Submit", false, m_PanelObject);
+                else
+                    SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", false, m_PanelObject);
+                    SetGameObjectState(m_CellMissionPath .. i .. "/btn_Submit", true, m_PanelObject);
+                end
+                SetGameObjectState(m_CellMissionPath .. i .. "/btn_Compete", false, m_PanelObject);
+                if cellTaskData.missionState == 2 then
+                    SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", true, m_PanelObject);
+                    SetGameObjectState(m_CellMissionPath .. i .. "/btn_Submit", false, m_PanelObject);
+                end
+            end
+        else
+            SetGameObjectState(m_CellMissionPath .. i .. "/btn_Go", false, m_PanelObject);
+            SetGameObjectState(m_CellMissionPath .. i .. "/btn_Submit", false, m_PanelObject);
+            SetGameObjectState(m_CellMissionPath .. i .. "/btn_Compete", true, m_PanelObject);
+        end
+    end
+    -- 地图信息
+    local mapData = m_TaskPosition[missionData.Type];
+    for Index = 1, 4 do
+        if Index <= #mapData then
+            SetGameObjectState(m_SpAreaPath .. Index, true, m_PanelObject);
+        else
+            SetGameObjectState(m_SpAreaPath .. Index, false, m_PanelObject);
+        end
+    end
+    for i = 1, #mapData do
+        SetGameObjectPos(m_SpAreaPath .. i, Vector3.New(mapData[i].x, mapData[i].y, 0), m_PanelObject);
+        SetSpriteContent(m_SpAreaPath .. i .. "/sp_PinZhi", "ItemAtlasV04", "UI_DJ_PinZhi_" .. mapData[i].pinZhi, m_PanelObject);
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 加注释
+function OnBtnBgClick(gameObject)
+
+end
+
+-- 关闭按钮
+function OnBtnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+end
+
+-- 前往按钮
+function OnBtnGo1Click(gameObject)
+    local m_pos = Vector3.New(tonumber(m_MissionGoTable[1].x), 0, tonumber(m_MissionGoTable[1].y));
+    G_UserInfo:GetCurPlayer():SetSeekTarget(G_SceneMng.SceneID, m_pos);
+    closePanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+end
+function OnBtnGo2Click(gameObject)
+    local m_pos = Vector3.New(tonumber(m_MissionGoTable[2].x), 0, tonumber(m_MissionGoTable[2].y));
+    G_UserInfo:GetCurPlayer():SetSeekTarget(G_SceneMng.SceneID, m_pos);
+    closePanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+end
+function OnBtnGo3Click(gameObject)
+    local m_pos = Vector3.New(tonumber(m_MissionGoTable[3].x), 0, tonumber(m_MissionGoTable[3].y));
+    G_UserInfo:GetCurPlayer():SetSeekTarget(G_SceneMng.SceneID, m_pos);
+    closePanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+end
+
+-- 提交按钮
+function OnBtnSubmit1Click(gameObject)
+    BorderWarProtocol.RequestReward(m_MissionIDTable[1].TaskID);
+    m_CurMissionID = m_MissionIDTable[1].TaskID;
+end
+function OnBtnSubmit2Click(gameObject)
+    BorderWarProtocol.RequestReward(m_MissionIDTable[2].TaskID);
+    m_CurMissionID = m_MissionIDTable[2].TaskID;
+end
+function OnBtnSubmit3Click(gameObject)
+    BorderWarProtocol.RequestReward(m_MissionIDTable[3].TaskID);
+    m_CurMissionID = m_MissionIDTable[3].TaskID;
+end
+
+-- 领取宝箱
+function OnGetBoxClick(gameObject)
+    BorderWarProtocol.RequestGetBox();
+end
+
+-- 左侧任务列表初始化
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Active/lb_Name", GetTextToId(data.Name), go);
+    SetLabelContent("Deactive/lb_Name", GetTextToId(data.Name), go);
+    for Index = 1, 5 do
+        if Index <= data.Star then
+            SetGameObjectState("Sub_Stars/Sprite_" .. Index, true, go);
+        else
+            SetGameObjectState("Sub_Stars/Sprite_" .. Index, false, go);
+        end
+    end
+    SetGameObjectState("sp_Us", m_CurCampType == 1, go);
+    SetGameObjectState("sp_Enemy", m_CurCampType == 2, go);
+    --    RepositionUITableComp("Sub_Stars", go);
+end
+
+-- 左侧任务列表点击
+function OnUIGridViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    m_SelectMission = cell.dataIndex;
+    InitRightMissionInfo(data);
+end
+
+-- 任务提交弹窗奖励列表初始化 
+function OnRewardListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.excelId;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, data.num, false, 11, ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_BORDERWARPANEL, false, excelId);
+end
+
+-- 任务提交弹窗奖励列表点击
+function OnRewardListClick(listView, cell, go)
+
+end
+
+-- 关闭提交弹窗
+function OnBtnCancelClick(gameObject)
+    SetGameObjectState(m_SubmitPath, false, m_PanelObject);
+end
+
+-- 提交任务
+function OnBtnSubmitClick(gameObject)
+    BorderWarProtocol.RequestAchieveReward(m_CurMissionID);
+    SetGameObjectState(m_SubmitPath, false, m_PanelObject);
+end
+
+-- 解释说明按钮
+function OnExplainPanelClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL, 1);
+end
+
+function RefreshBorderWarData()
+    -- 只要该页面打开，两秒请求一次数据用以实现实时刷新
+    AddTimerEvent("RequestBorderWar", 1, RefreshBorderWarData);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        BorderWarProtocol.RequestBorderData();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 战场倒计时结束函数
+function CallBackOver()
+    G_TimerMng:RemoveTimeTask("BorderWarOver");
+    closePanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+end
+-- 战场倒计时结刷新函数
+function updateCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        SetLabelContent(m_BorderRestTimePath, string_format(GetTextToId(9060), timeTxt), m_PanelObject);
+    end
+end
+
+-- 任务所需元素刷新倒计时结束函数
+function RefreshCallBackOver(taskID)
+    G_TimerMng:RemoveTimeTask("Refresh" .. taskID);
+end
+-- 任务所需元素刷新倒计时刷新函数
+function updateRefreshCallBack(timeTxt, taskID)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        local isBelongCurMiss, misPos = GetTaskPosition(taskID);
+        if isBelongCurMiss == false then return end
+        SetLabelContent(m_CellMissionPath .. misPos .. "/bar_Refresh/lb_Num", string_format(GetTextToId(9069), timeTxt), m_PanelObject);
+
+        local m_BarRefresh = GetComponent(m_PanelObject, m_CellMissionPath .. misPos .. "/bar_Refresh", "UIProgressBar");
+        local missonData = CCommonTool.GetBorderTaskByIndex(taskID);
+        local seconds = StringToSeconds(timeTxt);
+        if missonData ~= nil and m_BarRefresh ~= nil then
+            m_BarRefresh.value = seconds / missonData.RefreshTime;
+        end
+    end
+end
+-- boss持续时间刷新函数
+function updateBossCallBack(timeTxt, taskID)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        local isBelongCurMiss, misPos = GetTaskPosition(taskID);
+        if isBelongCurMiss == false then return end
+        SetLabelContent(m_CellMissionPath .. misPos .. "/bar_Refresh/lb_Num", string_format(GetTextToId(9074), timeTxt), m_PanelObject);
+
+        local m_BarRefresh = GetComponent(m_PanelObject, m_CellMissionPath .. misPos .. "/bar_Refresh", "UIProgressBar");
+        local missonData = CCommonTool.GetBorderTaskByIndex(taskID);
+        local seconds = StringToSeconds(timeTxt);
+        if missonData ~= nil and m_BarRefresh ~= nil then
+            m_BarRefresh.value = seconds / 300;
+        end
+    end
+end
+
+-- 打开任务提交窗口
+function OnShowSubmit(cellData, nums)
+    m_CurMissionID = cellData.TaskID;
+    SetGameObjectState(m_SubmitPath, true, m_PanelObject);
+    -- 任务信息显示
+    SetSpriteByAtlasID(m_SubmitMissionPath .. "Sprite_Icon", cellData.PictureId, m_PanelObject, true);
+    SetLabelContent(m_SubmitMissionPath .. "Label_Name", GetTextToId(cellData.NameID), m_PanelObject);
+    SetLabelPinZhi(m_SubmitMissionPath .. "Label_Name", cellData.QualityId + 1, m_PanelObject);
+    SetSpriteContent(m_SubmitMissionPath .. "Sprite_Apptitude", "ItemAtlasV04", "UI_DJ_PinZhi_00" .. cellData.QualityId + 1, m_PanelObject);
+    SetSpriteContent(m_SubmitMissionPath .. "Sprite_Equip_Apptitude", "ItemAtlasV04", "UI_DJ_PinZhi_10" .. cellData.QualityId + 1, m_PanelObject);
+    SetSpriteContent(m_SubmitMissionPath .. "Sprite_Apptitude2", "ItemAtlasV04", "UI_DJ_PinZhi_20" .. cellData.QualityId + 1, m_PanelObject);
+    SetLabelContent(m_SubmitMissionPath .. "Label_Num", cellData.GoalNum, m_PanelObject);
+    -- 任务奖励显示
+    local rewardID = cellData.RewardshowId;
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+    local itemTable = { };
+    if rewardInfo ~= nil then
+        local list = rewardInfo:GetAllItem();
+        local count = list.Count;
+        for i = 1, count do
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            table.insert(itemTable, { excelId = excelId, num = nums[i] });
+        end
+        m_RewardList:RemoveAll();
+        for i, v in pairs(itemTable) do
+            m_RewardList:AddData(v);
+        end
+    end
+end
+
+-- 刷新页面任务情况
+function OnRefreshMission(missionID)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        local borderData = BorderWarManager.BorderWarData;
+        if borderData ~= nil then
+            if borderData.missionDownNum < 10 then
+                SetGameObjectState(m_MissionNumPath, true, m_PanelObject);
+                SetGameObjectState(m_BoxPath, false, m_PanelObject);
+
+                SetLabelContent(m_MissionNumPath, string_format(GetTextToId(9062), borderData.missionDownNum .. "/10"), m_PanelObject);
+            else
+                if BorderWarManager.BorderWarBoxState == 0 then
+                    SetGameObjectState(m_MissionNumPath, false, m_PanelObject);
+                    SetGameObjectState(m_BoxPath, true, m_PanelObject);
+                elseif BorderWarManager.BorderWarBoxState == 1 then
+                    SetGameObjectState(m_MissionNumPath, true, m_PanelObject);
+                    SetGameObjectState(m_BoxPath, false, m_PanelObject);
+                    SetLabelContent(m_MissionNumPath, string_format(GetTextToId(9062), borderData.missionDownNum .. "/10"), m_PanelObject);
+                end
+            end
+        end
+        if m_CurMissionTypeID == missionID then
+            m_UIGrid:Refresh();
+            InitRightMissionInfo(m_CurMissionData[m_SelectMission + 1]);
+        end
+    end
+end
+
+-- 打开提交弹窗
+function OnOpenSubmit(t)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        local data = CCommonTool.GetBorderTaskByIndex(m_CurMissionID);
+        if data == nil then return end
+        OnShowSubmit(data, t);
+    end
+end
+
+-- 检测是否属于当前主任务以及第几个子任务
+function GetTaskPosition(taskID)
+    if m_CurMissionTypeID ~= nil then
+        local curMissionData = CCommonTool.GetBorderTaskTypeByIndex(m_CurMissionTypeID);
+        if curMissionData ~= nil and taskID ~= nil then
+            for i = 1, 3 do
+                if taskID == curMissionData["TaskID" .. i] then
+                    return true, i;
+                end
+            end
+        end
+    end
+    return false, 0;
+end
+
+-- 00:00 转换为秒数
+function StringToSeconds(string)
+    local table = string_split(string, ":");
+    local seconds = tonumber(table[1]) * 60 + tonumber(table[2]);
+    return seconds;
+end
+
+-- 打开边境战场
+function OnOpenBorderWar()
+    if m_CreateSuccess == true and IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then
+        InitBorderWarData();
+        m_UIGrid:Refresh();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL);
+    end
+end

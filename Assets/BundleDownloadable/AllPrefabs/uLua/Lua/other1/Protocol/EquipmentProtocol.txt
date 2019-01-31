@@ -1,0 +1,755 @@
+﻿module("EquipmentProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 接受服务器装备分解结果信息
+    network.Register(GMI_STOC_SEND_RESOLVE_RETURN_TO_CLIENT, OnEuipResolveResult);
+
+    -- 装备强化信息初始化
+    network.Register(GMI_STOC_EQUIPFORCE_INIT, OnEquipForceInit);
+    -- 装备强化一次的消息返回
+    network.Register(GMI_STOC_EQUIPFORCE_RETURN, OnEquipForceOnceReturn);
+
+    -- 装备洗练信息返回
+    network.Register(GMI_STOC_START_EQUIPRANDEFF, OnEquipStartRandEffReturn);
+    -- 装备保存洗练属性信息返回
+    network.Register(GMI_STOC_SAVE_EQUIPRANDEFF, OnEquipSaveRandEffReturn);
+
+    -- 符石消息初始化
+    network.Register(GMI_STOC_ITEM_STONE_POS_INFO, OnGemInit);
+    -- 服务器通知前端符石的变化情况[一个位置]
+    network.Register(GMI_STOC_ITEM_STONE_POS_CHANGE, OnGemPositionUpdate);
+
+    -- 装备升星结果
+    network.Register(GMI_STOC_LGS_EQUIP_STAR_LV_RESULT, OnStarUpReturn);
+
+    -- 附魔信息初始化的消息
+    network.Register(GMI_STOC_ENCHANT_UPDATE_INFO, EnchantInit);
+    -- 附魔开孔返回的消息
+    network.Register(GMI_STOC_ENCHANT_OPEN_HOLE, EnchantOpenHoleReturn);
+    -- 附魔附魔返回的消息
+    network.Register(GMI_STOC_ENCHANT_ENCHANT_RETURN, EnchantEnchantReturn);
+    -- 附魔养成返回的消息
+    network.Register(GMI_STOC_ENCHANT_GETEXP_RETURN, EnchantGetExpReturn);
+
+    -- 装备传承属性信息返回
+    network.Register(GMI_STOC_LGS_EQUIP_EFFECT_TRANSFER_SUCC, OnEquipInheritReturn);
+end
+
+-- 分解返回消息
+function OnEuipResolveResult(protocolId, buffer)
+    local resultReturn = buffer:ReadByte();
+    if resultReturn == 1 then
+        local itemCount = buffer:ReadUShort();
+        local list = { };
+        for Index = 1, itemCount do
+            local itemAtt = ItemAttribute.New(0);
+            itemAtt.ExcelID = buffer:ReadInt();
+            itemAtt.ItemNum = buffer:ReadInt();
+            table.insert(list, Index, itemAtt);
+        end
+        ResolvePanel.ResultBack(list);
+    else
+        error("分解返回消息为false");
+    end
+end
+
+-- 附魔信息初始化的消息
+function EnchantInit(protocolId, buffer)
+    EquipMng.EnchantData = {};
+    local posNum = buffer:ReadByte();
+    for Index = 1,posNum do
+        local enchantLevel = buffer:ReadInt();
+        EquipMng.EnchantData[Index] = {};
+        EquipMng.EnchantData[Index].EnchantLevel = enchantLevel;
+        local enchantExp = buffer:ReadInt();
+        EquipMng.EnchantData[Index].EnchantExp = enchantExp;
+        local holeNum = buffer:ReadByte();
+        local holesDataTable = {};
+        for j = 1,holeNum do
+            local apptitudeLevel = buffer:ReadInt();
+            holesDataTable[j] = apptitudeLevel;
+        end
+        EquipMng.EnchantData[Index].EnchantHolesDataTable = holesDataTable;
+    end
+end
+
+-- 附魔开孔返回
+function EnchantOpenHoleReturn(protocolId, buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        local partPos = buffer:ReadByte();
+        local holePos = buffer:ReadByte();
+        if EquipMng.EnchantData[partPos] ~= nil or EquipMng.EnchantData[partPos].EnchantHolesDataTable ~= nil then
+            EquipMng.EnchantData[partPos].EnchantHolesDataTable[holePos] = 0;
+            Equip_Enchant.SuccessOpenHoleRefreshPanel(partPos,holePos);
+        else
+            
+        end
+    elseif result == -1 then
+        log("服务器:附魔开孔:附魔开关关闭");
+        ShowSystemFlowTips(7400);
+    elseif result == -2 then
+        log("服务器:附魔开孔:附魔系统未开启");
+        ShowSystemFlowTips(7401);
+    elseif result == -3 then
+        log("服务器:附魔开孔:玩家死亡");
+        ShowSystemFlowTips(7402);
+    elseif result == -4 then
+        log("服务器:附魔开孔:栏位个数不超过0");
+        ShowSystemFlowTips(7403);
+    elseif result == -5 then
+        log("服务器:附魔开孔:开孔位置越界");
+        ShowSystemFlowTips(7404);
+    elseif result == -6 then
+        log("服务器:附魔开孔:此位置已经开孔了");
+        ShowSystemFlowTips(7405);
+    elseif result == -7 then
+        log("服务器:附魔开孔:enchant_hole表不存在");
+        ShowSystemFlowTips(7406);
+    elseif result == -8 then
+        log("服务器:附魔开孔:enchant_hole表找不到数据");
+        ShowSystemFlowTips(7407);
+    elseif result == -9 then
+        log("服务器:附魔开孔:开孔等级数据小于等于0");
+        ShowSystemFlowTips(7408);
+    elseif result == -10 then
+        log("服务器:附魔开孔:玩家等级不足");
+        ShowSystemFlowTips(7409);
+    elseif result == -11 then
+        log("服务器:附魔开孔:开孔花费出错金币数量为负");
+        ShowSystemFlowTips(7410);
+    elseif result == -12 then
+        log("服务器:附魔开孔:开孔金币不足");
+        ShowSystemFlowTips(7411);
+    elseif result == -13 then
+        log("服务器:附魔开孔:扣钱失败");
+        ShowSystemFlowTips(7412);
+    else
+        log("服务器:附魔开孔:未约定的错误号{0}"..result);
+        ShowSystemFlowTips(7413,nil,{result});
+    end
+end
+
+-- 附魔附魔返回
+function EnchantEnchantReturn(protocolId, buffer)
+    EquipMng.CanClickEquipEnchantEnchantButton = true;
+    local result = buffer:ReadInt();
+    if result == 1 then
+        local partPos = buffer:ReadByte();
+        local holePos = buffer:ReadByte();
+        local apptitudeID = buffer:ReadByte();
+        if EquipMng.EnchantData[partPos] ~= nil or EquipMng.EnchantData[partPos].EnchantHolesDataTable ~= nil then
+            EquipMng.EnchantData[partPos].EnchantHolesDataTable[holePos] = apptitudeID;
+            Equip_Enchant.SuccessEnchantRefreshPanel();
+        else
+            
+        end
+    elseif result == -1 then
+        log("服务器:附魔附魔:附魔开关关闭");
+        ShowSystemFlowTips(7414);
+    elseif result == -2 then
+        log("服务器:附魔附魔:附魔系统未开启");
+        ShowSystemFlowTips(7415);
+    elseif result == -3 then
+        log("服务器:附魔附魔:玩家死亡");
+        ShowSystemFlowTips(7416);
+    elseif result == -4 then
+        log("服务器:附魔附魔:栏位个数不超过0");
+        ShowSystemFlowTips(7417);
+    elseif result == -5 then
+        log("服务器:附魔附魔:开孔位置越界");
+        ShowSystemFlowTips(7418);
+    elseif result == -6 then
+        log("服务器:附魔附魔:此位置未开孔");
+        ShowSystemFlowTips(7419);
+    elseif result == -7 then
+        log("服务器:附魔附魔:enchant_need表不存在");
+        ShowSystemFlowTips(7420);
+    elseif result == -8 then
+        log("服务器:附魔附魔:enchant_need表找不到数据");
+        ShowSystemFlowTips(7421);
+    elseif result == -9 then
+        log("服务器:附魔附魔:ehchant_need中找不到匹配excelID的数据");
+        ShowSystemFlowTips(7422);
+    elseif result == -10 then
+        log("服务器:附魔附魔:item表不存在");
+        ShowSystemFlowTips(7423);
+    elseif result == -11 then
+        log("服务器:附魔附魔:item表找不到数据");
+        ShowSystemFlowTips(7424);
+    elseif result == -12 then
+        log("服务器:附魔附魔:item中品质有数据不为1~6");
+        ShowSystemFlowTips(7425);
+    elseif result == -13 then
+        log("服务器:附魔附魔:材料不足，无法附魔");
+        ShowSystemFlowTips(7426);
+    elseif result == -14 then
+        log("服务器:附魔附魔:附魔操作扣除道具失败");
+        ShowSystemFlowTips(7427);
+    else
+        log("服务器:附魔附魔:未约定的错误号{0}"..result);
+        ShowSystemFlowTips(7428,nil,{result});
+    end
+end
+
+-- 附魔养成返回
+function EnchantGetExpReturn(protocolId, buffer)
+    EquipMng.CanClickEquipGetExpButton = true;
+    local result = buffer:ReadInt();
+    if result == 1 then
+        local partPos = buffer:ReadByte();
+        local enchantLevel = buffer:ReadInt();
+        local enchantExp = buffer:ReadInt();
+        if EquipMng.EnchantData[partPos] ~= nil then
+            EquipMng.EnchantData[partPos].EnchantLevel = enchantLevel;
+            EquipMng.EnchantData[partPos].EnchantExp = enchantExp;
+            Equip_Enchant.GetExpRefreshPanel();
+        else
+        end
+    elseif result == -1 then
+        log("服务器:附魔养成:附魔开关关闭");
+        ShowSystemFlowTips(7429);
+    elseif result == -2 then
+        log("服务器:附魔养成:附魔系统未开启");
+        ShowSystemFlowTips(7430);
+    elseif result == -3 then
+        log("服务器:附魔养成:玩家死亡");
+        ShowSystemFlowTips(7431);
+    elseif result == -4 then
+        log("服务器:附魔养成:客户端发送道具超过了10个");
+        ShowSystemFlowTips(7432);
+    elseif result == -5 then
+        log("服务器:附魔养成:客户端发送道具中有相同的CRID");
+        ShowSystemFlowTips(7433);
+    elseif result == -6 then
+        log("服务器:附魔养成:位置<%d>越界");
+        ShowSystemFlowTips(7434);
+    elseif result == -7 then
+        log("服务器:附魔养成:已经达到最大等级，无法继续附魔养成");
+        ShowSystemFlowTips(7435);
+    elseif result == -8 then
+        log("服务器:附魔养成:已经达到当前玩家可附魔的最大等级");
+        ShowSystemFlowTips(7436);
+    elseif result == -9 then
+        log("服务器:附魔养成:道具不存在");
+        ShowSystemFlowTips(7437);
+    elseif result == -10 then
+        log("服务器:附魔养成:道具数量超过拥有的道具数量");
+        ShowSystemFlowTips(7438);
+    elseif result == -11 then
+        log("服务器:附魔养成:找不到表格:item.txt");
+        ShowSystemFlowTips(7439);
+    elseif result == -12 then
+        log("服务器:附魔养成:道具不存在");
+        ShowSystemFlowTips(7440);
+    elseif result == -13 then
+        log("服务器:附魔养成:道具不是附魔道具");
+        ShowSystemFlowTips(7441);
+    elseif result == -14 then
+        log("服务器:附魔养成:item中找不到数据");
+        ShowSystemFlowTips(7442);
+    elseif result == -15 then
+        log("服务器:附魔养成:道具品质不为1~6");
+        ShowSystemFlowTips(7443);
+    elseif result == -16 then
+        log("服务器:附魔养成:配置消耗货币出错不是大于0的数值");
+        ShowSystemFlowTips(7444);
+    elseif result == -17 then
+        log("服务器:附魔养成:玩家货币不足");
+        ShowSystemFlowTips(7445);
+    elseif result == -18 then
+        log("服务器:附魔养成:删除道具失败");
+        ShowSystemFlowTips(7446);
+    elseif result == -19 then
+        log("服务器:附魔养成:扣除金币失败");
+        ShowSystemFlowTips(7447);
+    elseif result == -20 then
+        log("服务器:附魔养成:enchant_level.txt不存在");
+        ShowSystemFlowTips(7448);
+    elseif result == -21 then
+        log("服务器:附魔养成:enchant_level.txt中，找不到数据");
+        ShowSystemFlowTips(7449);
+    elseif result == -22 then
+        log("服务器:附魔养成:enchant_level.txt中，下一级所需经验不大于0");
+        ShowSystemFlowTips(7450);
+    else
+        log("服务器:附魔养成:未约定的错误号{0}"..result);
+        ShowSystemFlowTips(7451,nil,{result});
+    end
+end
+
+-- 装备强化初始化
+function OnEquipForceInit(protocolId, buffer)
+    local equipCount = buffer:ReadByte();
+    for Index = 1, equipCount do
+        local forceLevel = buffer:ReadInt();
+        local forceLevelTimes = buffer:ReadInt();
+        if EquipMng.EquipForceData[Index - 1] ~= nil then
+            EquipMng.EquipForceData[Index - 1] = forceLevel;
+        end
+        if EquipMng.EquipForceTimesData[Index - 1] ~= nil then
+            EquipMng.EquipForceTimesData[Index - 1] = forceLevelTimes;
+        end
+    end
+end
+
+-- 装备强化一次结果返回
+function OnEquipForceOnceReturn(protocolId, buffer)
+    EquipMng.CanClickEquipForceButton = true;
+    EquipMng.CanClickOneEquipForceButton = true;
+
+    local result = buffer:ReadInt();
+    local pos = buffer:ReadInt();
+    local len= buffer.Length;
+    local lv=1;
+    if len>8 then
+        lv = buffer:ReadInt(); 
+    end
+    if result == 1 then
+        if EquipMng.EquipForceData[pos] ~= nil then
+            EquipMng.EquipForceData[pos] = EquipMng.EquipForceData[pos] + lv;
+        end
+        if EquipMng.EquipForceTimesData[pos] ~= nil then
+            EquipMng.EquipForceTimesData[pos] = 0;
+        end
+        local posName = "";
+        local posTxtInfo = CCommonTool.GetTxtData(10028 + pos);
+        if pos > 11 then 
+            posTxtInfo = CCommonTool.GetTxtData(10153 + pos - 11);
+        end
+        if posTxtInfo ~= nil then
+            posName = posTxtInfo.m_str;
+        else
+            error("装备强化系统:::" ..(10028 + pos) .. "文本不存在");
+        end
+        local posNameInfo = CCommonTool.GetTxtData(862);
+        if posNameInfo ~= nil then
+            posName = posName .. posNameInfo.m_str;
+        else
+            error("装备强化系统:::|栏位|文本不存在");
+        end
+        local nameTable = { posName, tostring(EquipMng.EquipForceData[pos]) };
+        ShowSystemFlowTips(6480, nil, nameTable);
+        Equip_Force.SuccessRefreshPanel();
+        return;
+    elseif result == 2 then
+        if EquipMng.EquipForceTimesData[pos] ~= nil then
+            EquipMng.EquipForceTimesData[pos] = EquipMng.EquipForceTimesData[pos] + 1;
+        end
+        ShowSystemFlowTips(6470);
+        Equip_Force.FailRefreshPanel();
+        return;
+    elseif result == -1 then
+        log("服务器装备强化开关关了无法强化");
+        ShowSystemFlowTips(6200);
+    elseif result == -2 then
+        log("此玩家装备强化系统还没有解锁无法强化");
+        ShowSystemFlowTips(6210);
+    elseif result == -3 then
+        log("玩家死亡无法强化");
+        ShowSystemFlowTips(6220);
+    elseif result == -4 then
+        log("道具不存在无法强化");
+        ShowSystemFlowTips(6230);
+    elseif result == -5 then
+        log("装备部位不在约定范围内无法强化");
+        ShowSystemFlowTips(6240);
+    elseif result == -6 then
+        log("达到服务器最大设定等级无法强化");
+        ShowSystemFlowTips(6250);
+    elseif result == -7 then
+        log("达到玩家最大等级无法强化");
+        ShowSystemFlowTips(6260);
+    elseif result == -8 then
+        log("服务器装备表不存在无法强化");
+        ShowSystemFlowTips(6270);
+    elseif result == -9 then
+        log("服务器装备强化属性表存在无法强化");
+        ShowSystemFlowTips(6290);
+    elseif result == -10 then
+        log("服务器装备强化需求表不存在无法强化");
+        ShowSystemFlowTips(6300);
+    elseif result == -11 then
+        log("服务器装备表中不存在主键ID为道具ExcelID的信息无法强化");
+        ShowSystemFlowTips(6310);
+    elseif result == -12 then
+        log("服务器装备强化表中不存在主键ID为道具ExcelID的信息无法强化");
+        ShowSystemFlowTips(6320);
+    elseif result == -13 then
+        log("服务器装备强化需求表中不存在主键ID为道具ExcelID的信息无法强化");
+        ShowSystemFlowTips(6330);
+    elseif result == -14 then
+        log("服务器装备强化需求表中金币数量不为正无法强化");
+        ShowSystemFlowTips(6340);
+    elseif result == -15 then
+        log("金币不足无法强化");
+        ShowSystemFlowTips(6350);
+    elseif result == -16 then
+        log("需求道具不足无法强化");
+        ShowSystemFlowTips(6360);
+    else
+        log("装备强化，未约定的服务器错误号::::" .. result);
+        ShowSystemFlowTips(6370);
+    end
+    Equip_Force.ErrorHandle();
+end
+
+--装备传承消息返回
+function OnEquipInheritReturn(protocolId,buffer)
+    local success=buffer:ReadByte();
+--error(string_format("服务器返回:success={0}",success))
+    local leftEquipResult=nil;
+    local rightEquipResult=nil;
+    local getHole=nil;
+    EquipMng.CanClickEquipInheritButton = true;
+    if success==1 then
+        leftEquipResult=buffer:ReadInt();
+        --error(string_format("服务器返回:左边新装备ID={0}",leftEquipResult))
+        rightEquipResult=buffer:ReadInt();
+        --error(string_format("服务器返回:右边新装备ID={0}",rightEquipResult))
+        getHole=buffer:ReadByte();
+        --error(string_format("服务器返回:是否保留装备={0}",getHole))
+    else
+        leftEquipResult=-1;
+        rightEquipResult=-1;
+        getHole=1;
+    end
+    local ProtocalData={};
+    ProtocalData[1]=getHole;
+    ProtocalData[2]=leftEquipResult;
+    ProtocalData[3]=rightEquipResult;
+    ProtocalData[4]=success;
+    EquipMng.InheritTempPrtocolData=ProtocalData;
+    Equip_Inherit.SuccessRefreshEquipInheritPanel();
+end
+-- 装备洗练消息返回
+function OnEquipStartRandEffReturn(protocolId, buffer)
+    EquipMng.CanClickEquipRandEffButton = true;
+    local result = buffer:ReadInt();
+    if result == 1 then
+        Equip_RandEff.OnStartAttrBack();
+    elseif result == 0 then
+        log("服务器返回:玩家指针不存在，无法洗练")
+        ShowSystemFlowTips(6760);
+    elseif result == -1 then
+        log("服务器返回:服务器洗练开关关了，无法洗练")
+        ShowSystemFlowTips(6770);
+    elseif result == -2 then
+        log("服务器返回:这个玩家没有解锁洗练系统，无法洗练")
+        ShowSystemFlowTips(6780);
+    elseif result == -3 then
+        log("服务器返回:装备指针不存在，无法洗练")
+        ShowSystemFlowTips(6790);
+    elseif result == -4 then
+        log("服务器返回:装备一个随机属性也没，无法洗练")
+        ShowSystemFlowTips(6800);
+    elseif result == -5 then
+        log("服务器返回:装备品质不为1~6，无法洗练")
+        ShowSystemFlowTips(6810);
+    elseif result == -6 then
+        log("服务器返回:装备洗练金钱计算消耗为负，无法洗练")
+        ShowSystemFlowTips(6820);
+    elseif result == -7 then
+        log("服务器返回:玩家金钱不足，无法洗练")
+        ShowSystemFlowTips(6830);
+    elseif result == -8 then
+        log("服务器返回:装备洗练道具消耗为负，无法洗练")
+        ShowSystemFlowTips(6840);
+    elseif result == -9 then
+        log("服务器返回:玩家洗练消耗道具不足，无法洗练")
+        ShowSystemFlowTips(6850);
+    elseif result == -10 then
+        log("服务器返回:玩家死亡，无法洗练")
+        ShowSystemFlowTips(6860);
+    else
+        log("服务器返回:装备洗练，未约定的服务器错误号::::" .. result);
+        ShowSystemFlowTips(6870);
+    end
+end
+
+-- 装备保存洗练消息返回
+function OnEquipSaveRandEffReturn(protocolId, buffer)
+    EquipMng.CanClickEquipRandEffSaveAttrButton = true;
+    local result = buffer:ReadInt();
+    if result == 1 then
+        Equip_RandEff.OnSaveAttrBack();
+    elseif result == -1 then
+        log("服务器返回:服务器洗练开关关了，无法保存洗练属性")
+        ShowSystemFlowTips(6890);
+    elseif result == -2 then
+        log("服务器返回:装备指针不存在，无法保存洗练属性")
+        ShowSystemFlowTips(6900);
+    elseif result == -3 then
+        log("服务器返回:装备没有未保存的属性，无法保存洗练属性")
+        ShowSystemFlowTips(6910);
+    elseif result == -4 then
+        log("服务器返回:玩家没有解锁洗练系统，无法保存洗练属性")
+        ShowSystemFlowTips(6920);
+    elseif result == -5 then
+        log("服务器返回:玩家死亡，无法保存洗练属性")
+        ShowSystemFlowTips(6930);
+    else
+        log("服务器返回:装备洗练保存属性，未约定的服务器错误号::::" .. result);
+        ShowSystemFlowTips(6750);
+    end
+end
+
+-- 宝石数据初始化(玩家上线，玩家升级有自动开的孔)
+function OnGemInit(protocolId, buffer)
+    local gemData = { };
+    local equipCount = buffer:ReadByte();
+    local gemCount = buffer:ReadByte();
+    for equipIndex = 1, equipCount do
+        local posIndex = buffer:ReadByte();
+        local singleEquipGemsData = { };
+        for gemIndex = 1, gemCount do
+            local singleGemData = { };
+            singleGemData.GemIndex = buffer:ReadByte();
+            singleGemData.ExcelID = buffer:ReadInt();
+--            log("OnGemInit:::::start");
+--            log( singleGemData.GemIndex );
+--            log( singleGemData.ExcelID);
+--            log("OnGemInit::::end");
+            singleEquipGemsData[gemIndex] = singleGemData;
+        end
+        gemData[posIndex] = singleEquipGemsData;
+    end
+    EquipMng.GemData = gemData;
+    Equip_Gem.RefreshEquipGemPanel();
+end
+
+-- 符石位置更新 参数：int pos,int desId
+function OnGemPositionUpdate(protocolId, buffer)
+    if EquipMng.IsPlayingParticle then
+        EquipMng.EventExcuteAfterPlaying = {OnGemPositionUpdate,{protocolId,buffer}}
+        return;
+    end
+    EquipMng.CanClickEquipGemButton = true;
+    local opType = buffer:ReadByte();
+    local nResult = buffer:ReadInt();
+    if nResult == 1 then
+        if opType == GEM_OP_TYPE.OPEN_HOLE then
+            ShowSystemFlowTips(7290);
+        elseif opType == GEM_OP_TYPE.SET_STONE then
+            ShowSystemFlowTips(7291);
+        elseif opType == GEM_OP_TYPE.UNSET_STONE then
+            ShowSystemFlowTips(7292);
+        end
+        local equipPos = buffer:ReadByte();
+        local singleGemData = { };
+        singleGemData.GemIndex = buffer:ReadByte();
+        singleGemData.ExcelID = buffer:ReadInt();
+        local gemData = EquipMng.GemData;
+        if gemData[equipPos] ~= nil then
+            local singleEquipGemsData = gemData[equipPos];
+            if singleEquipGemsData[singleGemData.GemIndex] ~= nil then
+                singleEquipGemsData[singleGemData.GemIndex] = singleGemData;
+                Equip_Gem.RefreshEquipGemPanel();
+            else
+                error("singleEquipGemsData中不存在宝石索引号为:" .. singleGemData.GemIndex .. "的符石数据")
+            end
+        else
+            error("gemData中不存在部位号为:" .. equipPos .. "的符石数据")
+        end
+    end
+    if nResult == 1 then
+        return;
+    end
+    if opType == GEM_OP_TYPE.OPEN_HOLE then
+        if nResult == -1 then
+            log("服务器:符石开孔:符石开关关闭");
+            ShowSystemFlowTips(7251);
+        elseif nResult == -2 then
+            log("服务器:符石开孔:玩家未开启符石系统");
+            ShowSystemFlowTips(7252);
+        elseif nResult == -3 then
+            log("服务器:符石开孔:玩家死亡无法开孔");
+            ShowSystemFlowTips(7253);
+        elseif nResult == -4 then
+            log("服务器:符石开孔:符石装备数据数组个数为0");
+            ShowSystemFlowTips(7254);
+        elseif nResult == -5 then
+            log("服务器:符石开孔:镶嵌位置越界");
+            ShowSystemFlowTips(7255);
+        elseif nResult == -6 then
+            log("服务器:符石开孔:镶嵌位置越界");
+            ShowSystemFlowTips(7256);
+        elseif nResult == -7 then
+            log("服务器:符石开孔:此位置已开启");
+            ShowSystemFlowTips(7257);
+        elseif nResult == -8 then
+            log("服务器:符石开孔:gem_hole表不存在");
+            ShowSystemFlowTips(7258);
+        elseif nResult == -9 then
+            log("服务器:符石开孔:gem_hole表不存在相关表格数据");
+            ShowSystemFlowTips(7259);
+        elseif nResult == -10 then
+            log("服务器:符石开孔:gem_hole表中开启等级数据小于等于0");
+            ShowSystemFlowTips(7260);
+        elseif nResult == -11 then
+            log("服务器:符石开孔:gem_hole表金钱数据小于0");
+            ShowSystemFlowTips(7261);
+        elseif nResult == -12 then
+            log("服务器:符石开孔:金钱不足");
+            ShowSystemFlowTips(7262);
+        elseif nResult == -13 then
+            log("服务器:符石开孔:扣钱失败");
+            ShowSystemFlowTips(7263);
+        else
+            log("服务器:符石开孔:未约定的错误结果"..nResult);
+            ShowSystemFlowTips(7264,nil,{nResult});
+        end
+    elseif opType == GEM_OP_TYPE.SET_STONE then
+        if nResult == -1 then
+            log("服务器:符石镶嵌:符石开关关闭");
+            ShowSystemFlowTips(7265);
+        elseif nResult == -2 then
+            log("服务器:符石镶嵌:玩家未开启符石系统");
+            ShowSystemFlowTips(7266);
+        elseif nResult == -3 then
+            log("服务器:符石镶嵌:玩家死亡无法镶嵌");
+            ShowSystemFlowTips(7267);
+        elseif nResult == -4 then
+            log("服务器:符石镶嵌:镶嵌位置越界");
+            ShowSystemFlowTips(7268);
+        elseif nResult == -5 then
+            log("服务器:符石镶嵌:镶嵌位置越界");
+            ShowSystemFlowTips(7269);
+        elseif nResult == -6 then
+            log("服务器:符石镶嵌:此位置已有符石");
+            ShowSystemFlowTips(7270);
+        elseif nResult == -7 then
+            log("服务器:符石镶嵌:此位置没有开孔");
+            ShowSystemFlowTips(7271);
+        elseif nResult == -8 then
+            log("服务器:符石镶嵌:没有宝石无法镶嵌");
+            ShowSystemFlowTips(7272);
+        elseif nResult == -9 then
+            log("服务器:符石镶嵌:物品表不存在");
+            ShowSystemFlowTips(7273);
+        elseif nResult == -10 then
+            log("服务器:符石镶嵌:item表找不到物品");
+            ShowSystemFlowTips(7274);
+        elseif nResult == -11 then
+            log("服务器:符石镶嵌:不符合栏位要求的符石，无法镶嵌");
+            ShowSystemFlowTips(7275);
+        elseif nResult == -12 then
+            log("服务器:符石镶嵌:扣道具失败");
+            ShowSystemFlowTips(7276);
+        else
+            log("服务器:符石镶嵌:未约定的错误结果"..nResult);
+            ShowSystemFlowTips(7277,nil,{nResult});
+        end
+    elseif opType == GEM_OP_TYPE.UNSET_STONE then
+        if nResult == -1 then
+            log("服务器:符石摘除:符石开关关闭");
+            ShowSystemFlowTips(7278);
+        elseif nResult == -2 then
+            log("服务器:符石摘除:玩家未开启符石系统");
+            ShowSystemFlowTips(7279);
+        elseif nResult == -3 then
+            log("服务器:符石摘除:玩家死亡无法摘除");
+            ShowSystemFlowTips(7280);
+        elseif nResult == -4 then
+            log("服务器:符石摘除:摘除位置越界");
+            ShowSystemFlowTips(7281);
+        elseif nResult == -5 then
+            log("服务器:符石摘除:当前位置无符石无法摘除");
+            ShowSystemFlowTips(7282);
+        elseif nResult == -6 then
+            log("服务器:符石摘除:背包已满无法摘除");
+            ShowSystemFlowTips(7283);
+        elseif nResult == -7 then
+            log("服务器:符石摘除:item表不存在");
+            ShowSystemFlowTips(7284);
+        elseif nResult == -8 then
+            log("服务器:符石摘除:没有找到符石数据");
+            ShowSystemFlowTips(7285);
+        elseif nResult == -9 then
+            log("服务器:符石摘除:给物品失败");
+            ShowSystemFlowTips(7286);
+        elseif nResult == -10 then
+            log("服务器:符石摘除:删除符石附加效果失败");
+            ShowSystemFlowTips(7287);
+        else
+            log("服务器:符石摘除:未约定的错误结果"..nResult);
+            ShowSystemFlowTips(7288,nil,{nResult});
+        end
+    end
+end
+
+-- 装备精炼返回
+function OnStarUpReturn(protocolId, buffer)
+    EquipMng.CanClickEquipStarUpButton = true;
+    local result = buffer:ReadByte();
+    if result == 0 then
+        log("升星失败")
+        ShowSystemFlowTips(7300);
+        Equip_StarUp.FailRefreshEquipStarUpPanel();
+        return;
+    elseif result == 1 then
+        log("升星成功")
+        ShowSystemFlowTips(7301);
+        Equip_StarUp.SuccessRefreshEquipStarUpPanel();
+        return;
+    elseif result == -1 then
+        log("服务器升星开关关了")
+        ShowSystemFlowTips(7302);
+    elseif result == -2 then
+        log("服务器:这个玩家升星系统没解锁")
+        ShowSystemFlowTips(7303);
+    elseif result == -3 then
+        log("服务器:这个玩家没有这件装备无法升星")
+        ShowSystemFlowTips(7304);
+    elseif result == -4 then
+        log("服务器:装备表不存在")
+        ShowSystemFlowTips(7305);
+    elseif result == -5 then
+        log("服务器:装备表中不存在此装备excelID")
+        ShowSystemFlowTips(7306);
+    elseif result == -6 then
+        log("服务器:此装备最大装备星级配置小于0")
+        ShowSystemFlowTips(7307);
+    elseif result == -7 then
+        log("服务器:装备升星需求ID配置小于0")
+        ShowSystemFlowTips(7308);
+    elseif result == -8 then
+        log("服务器:装备升星表不存在")
+        ShowSystemFlowTips(7309);
+    elseif result == -9 then
+        log("服务器:装备升星需求表中不存在此装备升星数据")
+        ShowSystemFlowTips(7310);
+    elseif result == -10 then
+        log("服务器:装备升星需求表需求银币配置小于0")
+        ShowSystemFlowTips(7311);
+    elseif result == -11 then
+        log("服务器:装备升星玩家银币不足无法升星")
+        ShowSystemFlowTips(7312);
+    elseif result == -12 then
+        log("服务器:装备升星道具不足无法升星")
+        ShowSystemFlowTips(7313);
+    elseif result == -13 then
+        log("服务器:装备升星道具需求小于0")
+        ShowSystemFlowTips(7314);
+    elseif result == -14 then
+        log("服务器:装备升星消耗道具配置出错")
+        ShowSystemFlowTips(7315);
+    elseif result == -15 then
+        log("服务器:装备升星成功率配置出错")
+        ShowSystemFlowTips(7316);
+    elseif result == -16 then
+        log("服务器:装备升星扣除金钱失败")
+        ShowSystemFlowTips(7317);
+    elseif result == -17 then
+        log("服务器:装备升星扣除道具失败")
+        ShowSystemFlowTips(7318);
+    elseif result == -18 then
+        log("服务器:LGOpMng指针不存在")
+        ShowSystemFlowTips(7319);
+    else
+        log("服务器:升星未约定的返回值:::"..result);
+        ShowSystemFlowTips(7326,nil,{result});
+    end
+    Equip_StarUp.ErrorHandle();
+end

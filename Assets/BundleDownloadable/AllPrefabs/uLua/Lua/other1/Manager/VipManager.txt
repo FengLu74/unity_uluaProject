@@ -1,0 +1,77 @@
+﻿module("VipManager", package.seeall)
+
+VipData = nil;             
+VipSwitchData = nil;
+MyVipData = nil;
+IsTargetPos = false;        -- 小飞鞋传送是否立即开启自动流程
+TargetPosSceneID = nil;     --  小飞鞋传送后场景id
+isNow = nil;
+VipCardTimeInfo = nil;
+
+function CheckIsTargetPos()
+    return IsTargetPos;
+end
+
+function SetIsTargetPos()
+    IsTargetPos = false;
+end
+
+function GetTargetPosSceneID()
+    return IsTargetPos;
+end
+
+-- 检测小飞鞋传送时的对象是否创建成功
+function AddFlyShoeTimer()
+    AddTimerEvent("FlyShoeTimer", 0.1, CallBackOver);
+end
+
+function CallBackOver()
+    local missionState = G_MissionMng:GetMissionStateById(_G.LogicData_CurTraceTaskID);
+    local m_nFindNpcExcelId = G_MissionMng:GetMissionNpcExcelIdById(missionState, _G.LogicData_CurTraceTaskID);
+    local targetPos = G_MissionMng:GetMissionPosById(missionState, _G.LogicData_CurTraceTaskID, false, false);
+    if G_MissionMng:SearchNpc(m_nFindNpcExcelId, targetPos) == true then
+        if isNow == 0 then 
+            IsTargetPos = true;
+        else
+            G_MissionMng:TraceTypeOperate(_G.LogicData_CurTraceTaskID, true, false);
+        end
+    else
+        AddFlyShoeTimer();
+    end
+end
+
+-- 得到打折值
+function GetDiscountNum(id)
+    local data = VIPPrivilegeTable.Get(id);
+    if VipManager.MyVipData == nil or VipManager.MyVipData.vipLv <= 0 or data["VIP"..VipManager.MyVipData.vipLv] == nil then 
+        return 0;
+    end
+    return data["VIP"..VipManager.MyVipData.vipLv];
+end
+
+-- 检测是否有这张卡
+function CheckIsHave(cardID)
+    for i, v in pairs(VipManager.VipCardTimeInfo) do 
+        if v.cardID == cardID then 
+            if v.timeNum < 0 then 
+                return true;
+            end
+            if v.timeNum > 0 then 
+                if v.timeNum - G_TimerMng:GetCurrentSeconds() > 0 then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+function Clear()
+    VipData = nil;
+    VipSwitchData = nil;
+    MyVipData = nil;
+    IsTargetPos = false;
+    TargetPosSceneID = nil;
+    isNow = nil;
+    VipCardTimeInfo = nil;
+end

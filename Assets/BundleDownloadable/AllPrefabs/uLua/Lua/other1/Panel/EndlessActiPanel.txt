@@ -1,0 +1,363 @@
+﻿module("EndlessActiPanel", package.seeall)
+-- 本面板名称
+local m_coinAndExpPanelName = "EndlessActiPanel";
+-----------------------------------------label路径---------------------------------------
+-- 自己最大层数文本路径
+local m_mylayerMaxLabel = "RankList/Label_MyStorey";
+-- 排行榜最大层数文本路径
+local m_layerMaxLabel = "RankList/Label_StoreyMax";
+-- 扫荡次数文本路径
+local m_sweepTimes = "Label_SweepTimes";
+-- 当前显示层文本路径
+local m_curLayerShowLabel = "StoreyReward/Label_StoreyIndex";
+-- 推荐战斗力文本显示
+local m_fightShowLabel = "StoreyReward/Label_Fight";
+
+-------------------------------------------按钮路径--------------------------------------
+-- 扫荡按钮
+local m_buttonSweep = "Buttons/SweepButton";
+-- 挑战按钮
+local m_buttonFight = "Buttons/FightButton";
+-- 解释说明按钮
+local m_buttonExplain = "Button_Explain";
+-------------------------------------------Sprite路径------------------------------------
+------------------------------------gameobject所在的路径---------------------------------
+-- 层数预设体所在的路径
+local m_ItemStr = "StoreyIndex/Item";
+-- grid所在的路径
+local m_gridStr = "StoreyIndex/Grid";
+-- 当前挑战层数对象
+local m_layerIndex = "StoreyIndex";
+-- 本层奖励对象
+local m_layerRewardItem = "StoreyReward/Grid1/Item";
+-- 首次奖励对象
+local m_firstRewardItem = "StoreyReward/Grid2/Item";
+-- 挑战按钮背景
+local m_buttonBg = "Buttons/FightButton/Background";
+------------------------------------通用的名称路径---------------------------------------
+-- 创建的对象item所在的路径
+local m_creatItemStr = "/Item";
+-- 创建层数文本对象路径
+local m_creatLabelStr = "Label";
+-- “层”文本对象路径
+local m_creatLabelStr1 = "Label1";
+-- 选中框图片路径
+local m_layerSelectStr = "Sprite_Select";
+-- 奖励图标
+local m_itemIcon = "/Icon";
+-- 奖励品质
+local m_itemPinZhi = "/PinZhi";
+-- 奖励数量
+local m_itemNum = "/Num";
+-------------------------------------引用的对象------------------------------------------
+------ 面板对象
+----local m_panelObject = nil;
+-- 动态加载层数的数据
+local m_itemObject = nil;
+-- gird组件
+local m_gridObject = nil;
+---- 表中的所有数据
+-- local m_allTableData = nil;
+-- 活动解锁的状态(0代表解锁，1代表未解锁)
+local lockState = 0;
+-- 数据是否已经初始化完毕
+local m_AlreadyInitData = false;
+-- 能够显示的最大层数
+local m_storeyCount = 10;
+-- 在活动列表中的索引
+local m_activityListIndex = 6;
+-- 当前显示的所有层数
+local storeyTabel = { };
+-- 当前选中的预设体编号
+local m_selectStoreyIndex = 1;
+--------------------服务器发送的数据
+-- 当前所在层数
+local m_curStoreyIndex = 14;
+-- 全服最高通关的层数
+local serverStoryMax = 100;
+-- 每日最大扫荡次数
+local m_sweepCountMax = 1;
+-- 已扫荡次数
+local sweepedTimes = 0;
+-- 扫荡状态
+local sweepState = 0;
+-------------------------------------一些写死的规定--------------------------------------
+
+--------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化活动解锁情况
+    InitLockInfo();
+    -- 初始化数据
+    InitData();
+    -- 将当前层数信息存进表中
+    CurStoreyTabel();
+    -- 初始化一些对象
+    InitObjects();
+    -- 初始化按钮点击事件
+    InitButtonClick();
+    -- 初始化层数显示
+    InitAllActivitiesInfo();
+    -- 初始化层数信息
+    SetCurStoreyInfo(m_curStoreyIndex);
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        -- 初始化活动解锁情况
+        InitLockInfo();
+        -- 将当前层数信息存进表中
+        CurStoreyTabel();
+        -- 初始化层数显示
+        InitAllActivitiesInfo();
+        -- 初始化层数信息
+        SetCurStoreyInfo(m_curStoreyIndex);
+    end
+end
+
+function OnDisable()
+    storeyTabel = { };
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_itemObject = nil;
+    m_gridObject = nil;
+    m_panelInitAlready = false;
+    storeyTabel = { };
+end
+-------------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    if not m_AlreadyInitData then
+        m_AlreadyInitData = true;
+    end
+end
+
+-- 初始化对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_panelObject = child(m_panelObject, m_coinAndExpPanelName).gameObject;
+    -- UIListView组件
+    m_gridObject = GetComponent(m_panelObject, m_gridStr, "UIListView");
+    m_gridObject:SetInitCallback(OnLeftListViewInit);
+    m_gridObject:SetSelectedCallback(OnLeftListViewSelected);
+    -- 生成预设体
+    for Index = 1, m_storeyCount do
+        local data =
+        {
+            Index = Index,
+            Layer = m_storeyCount - Index + 1,
+        };
+        m_gridObject:AddData(data);
+    end
+end
+
+function OnLeftListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local index = data.Index;
+    local layer = data.Layer;
+    if m_storeyCount - m_curStoreyIndex + 1 == index then
+        SetGameObjectState(m_layerSelectStr, true, item);
+    else
+        SetGameObjectState(m_layerSelectStr, false, item);
+    end
+    SetLabelContent(m_creatLabelStr, layer, item);
+    if layer > m_curStoreyIndex then
+        SetLabelColor(m_creatLabelStr, "64605b", item);
+        SetLabelColor(m_creatLabelStr1, "64605b", item);
+    elseif storeyTabel[Index] == m_curStoreyIndex then
+        SetLabelColor(m_creatLabelStr, "ff2a00", item);
+        SetLabelColor(m_creatLabelStr1, "ff2a00", item);
+    else
+        SetLabelColor(m_creatLabelStr, "dd8f3c", item);
+        SetLabelColor(m_creatLabelStr1, "dd8f3c", item);
+    end
+end
+function OnLeftListViewSelected(listView, dataIndex)
+    local layer = m_storeyCount - dataIndex;
+    m_selectStoreyIndex = layer;
+    SetCurStoreyInfo(layer);
+end
+
+
+-- 初始化活动解锁情况
+function InitLockInfo()
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    local lockInfo = CCommonTool.GetActivityListDataInfo(m_activityListIndex);
+    if lockInfo.AListLevel <= playerLevel then
+        if lockInfo.AListQuestID ~= 0 and not G_MissionMng:IsMissioncomplete(lockInfo.AListQuestID) then
+            lockState = 1;
+        else
+            lockState = 0;
+        end
+    else
+        lockState = 1;
+    end
+end
+-- 初始化按钮点击事件
+function InitButtonClick()
+    SetGameObjectEvent(m_buttonSweep, OnSweepButtonClick, m_panelObject);
+    SetGameObjectEvent(m_buttonFight, OnFightButtonClick, m_panelObject);
+end
+-- 将当前显示层数存进表中
+function CurStoreyTabel()
+    -- 将当前层数信息存入表中storeyTabel
+    m_curStoreyIndex = G_UserInfo.EndlessFBIndex + 1;
+    storeyTabel = { };
+    if m_curStoreyIndex < 1 then
+        error("服务器玩家层数发送错误" .. m_curStoreyIndex);
+        m_curStoreyIndex = 1;
+    end
+
+    m_storeyCount = m_curStoreyIndex + 6;
+    if m_storeyCount >= 100 then
+        m_storeyCount = 100;
+    end
+    for Index = 1, m_storeyCount do
+        table.insert(storeyTabel, Index, m_storeyCount - Index + 1);
+    end
+end
+-- 初始化所有活动
+function InitAllActivitiesInfo()
+    m_selectStoreyIndex = m_storeyCount - m_curStoreyIndex;
+    m_gridObject:LookAt(m_storeyCount - m_curStoreyIndex, true);
+    -- 排行榜内容
+    SetLabelContent(m_mylayerMaxLabel,(m_curStoreyIndex - 1), m_panelObject);
+    SetLabelContent(m_layerMaxLabel, serverStoryMax, m_panelObject);
+    -- 说明标题，说明文本（TXT_id）
+    local tempTable = { 11921, 11922 };
+    SetSystemExplainEvent(m_panelObject, m_buttonExplain, tempTable);
+end
+-- 设置前层数信息
+function SetCurStoreyInfo(index)
+    -- 选中层信息
+    local storeyInfo = nil;
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR then
+        storeyInfo = CCommonTool.GetActivityEndlessFBDice(index);
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_BALL then
+        storeyInfo = CCommonTool.GetActivityJewelInfo(index);
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+        storeyInfo = CCommonTool.GetActivityGodInfo(index);
+    elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET then
+        storeyInfo=ActivityPetTable.Get(index);
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+        storeyInfo = ActivityMountTable.Get(index);
+    end
+    if storeyInfo ~= nil then
+        SetLabelContent(m_curLayerShowLabel, index, m_panelObject);
+        SetLabelContent(m_fightShowLabel, storeyInfo.FightingCapacity, m_panelObject);
+        -- 本层奖励
+        local rewardItems = storeyInfo:GetAllItems();
+        for Index = 1, rewardItems.count do
+            local path = m_layerRewardItem .. Index;
+            SetGameObjectState(path, true, m_panelObject);
+            local m_itemExcelID = CCommonTool.GetProfessionItemId(rewardItems[Index - 1].ExcelID);
+            if m_itemExcelID == 0 or rewardItems[Index - 1].ItemNum == 0 then
+                SetGameObjectState(path, false, m_panelObject);
+            else
+                SetSpriteByAtlasID(path .. m_itemIcon, CCommonTool.GetImageIDByExcelID(m_itemExcelID), m_panelObject, true);
+                SetItemIconEffect(m_panelObject, path .. m_itemIcon, m_itemExcelID, 0);
+                SetSpriteApptitudeV04(path .. m_itemPinZhi, CCommonTool.GetAptitudeIDByExcelID(m_itemExcelID), m_panelObject);
+                SetLabelContent(path .. m_itemNum, rewardItems[Index - 1].ItemNum, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, path, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, false, m_itemExcelID);
+            end
+        end
+        for Index = rewardItems.count + 1, 3 do
+            SetGameObjectState(m_layerRewardItem .. Index, false, m_panelObject);
+        end
+        -- 首次奖励
+        local firstRwards = storeyInfo:GetFirstItems();
+        for Index = 1, firstRwards.count do
+            local path = m_firstRewardItem .. Index;
+            SetGameObjectState(path, true, m_panelObject);
+            local m_itemExcelID = CCommonTool.GetProfessionItemId(firstRwards[Index - 1].ExcelID);
+            if m_itemExcelID == 0 or firstRwards[Index - 1].ItemNum == 0 then
+                SetGameObjectState(path, false, m_panelObject);
+            else
+                SetSpriteByAtlasID(path .. m_itemIcon, CCommonTool.GetImageIDByExcelID(m_itemExcelID), m_panelObject, true);
+                SetItemIconEffect(m_panelObject, path .. m_itemIcon, m_itemExcelID, 0);
+                SetSpriteApptitudeV04(path .. m_itemPinZhi, CCommonTool.GetAptitudeIDByExcelID(m_itemExcelID), m_panelObject);
+                SetLabelContent(path .. m_itemNum, firstRwards[Index - 1].ItemNum, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, path, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, false, m_itemExcelID);
+            end
+        end
+        for Index = firstRwards.count + 1, 3 do
+            SetGameObjectState(m_firstRewardItem .. Index, false, m_panelObject);
+        end
+
+        -- 设置按钮颜色
+        if index == m_curStoreyIndex then
+            GetComponent(m_panelObject, m_buttonBg, "UISprite").saturationAmount = 1;
+        else
+            GetComponent(m_panelObject, m_buttonBg, "UISprite").saturationAmount = 0.3;
+        end
+    else
+        error("当前层数表信息未找到:::" .. index);
+        return;
+    end
+end
+----------------------------------------按钮事件方法------------------------------------
+-- 层数点击事件
+function OnStoreyClick(e)
+    local num = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    if m_selectStoreyIndex ~= storeyTabel[num] then
+        m_selectStoreyIndex = storeyTabel[num];
+        SetCurStoreyInfo(m_selectStoreyIndex);
+    end
+end
+-- 扫荡按钮点击事件
+function OnSweepButtonClick()
+    if lockState == 0 then
+        if sweepState == 1 or sweepState == 2 then
+            createPanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTSWEEPPANEL);
+            return;
+        end
+
+        if sweepedTimes >= m_sweepCountMax then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ENDLESSACTI_NOT_TIMES);
+        else
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_AOTAIACTIVITY_SWEEP_MSG);
+            -- 0:点击进入下一层 1:开始扫荡2：扫荡接受3：领奖
+            buffer:WriteByte(1);
+            G_NetWorkMng:SendMessage(buffer);
+            -- createPanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTSWEEPPANEL);
+        end
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ENTER_DUNGEON_LEVEL);
+    end
+end
+-- 挑战按钮点击事件
+function OnFightButtonClick(e)
+    if lockState == 0 then
+        if m_selectStoreyIndex == m_curStoreyIndex then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_ENTER_ACTIVITY_ROOM);
+            -- 401:奥泰幻境（原无尽的炼狱，100层副本）
+            buffer:WriteInt(401);
+            G_NetWorkMng:SendMessage(buffer);
+            error("发送了消息");
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ENDLESSACTI_NOT_CHALLENGE);
+        end
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ENTER_DUNGEON_LEVEL);
+    end
+end
+----------------------------外部调用的(或内部)更新此界面信息的方法------------------------
+function RefreshEndlessInfo(list)
+    -- 当前所在层数(通关层数+1)
+    m_curStoreyIndex = list[0] + 1;
+    -- 全服最高通关的层数
+    serverStoryMax = list[1];
+    -- 每日最大扫荡次数
+    m_sweepCountMax = list[2];
+    -- 已扫荡次数
+    sweepedTimes = list[3];
+    -- 扫荡状态
+    sweepState = list[4];
+    -- （按钮显示：扫荡、扫荡中、领奖、置灰）
+end

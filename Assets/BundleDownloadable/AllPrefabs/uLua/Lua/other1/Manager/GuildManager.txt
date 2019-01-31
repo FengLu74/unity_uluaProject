@@ -1,0 +1,861 @@
+﻿module("GuildManager", package.seeall)
+
+INVITE_OVER_TIME_TASK_NAME = "invite_over_task";
+SHOP_TYPE_ID = 2001;
+
+-- 所有公会ID -> {guildName, flagName, guildLevel}
+guildIdNames = nil;
+-- 公会列表
+guilds = nil;
+-- 公会列表最大个数
+guildMaxCount = 0;
+-- 成员列表
+members = nil;
+-- 成员字典
+membersDict = nil;
+-- 公会审批列表
+guildApplicants = nil;
+-- 公会公告
+guildNotice = nil;
+-- 公会信息
+myGuild = nil;
+-- 公会申请记录(未加入公会时)
+applyRecords = nil;
+-- 公会事件
+guildEvents = nil;
+-- 公会ID
+guildId = 0;
+-- 公会列表版本号
+guildListVersion = -1;
+-- 成员列表版本号
+memberListVersion = -1;
+-- 公会信息版本号
+guildInfoVersion = -1;
+-- 审批列表版本号
+approvalListVersion = -1;
+-- 公会事件列表版本号
+--eventListVersion = -1;
+-- 公告信息版本号
+noticeVersion = -1;
+-- 邀请数据
+inviteDatas = nil;
+-- 今日捐献信息 0未捐献 1:已捐献
+donationValue = 0;
+-- 建筑最大等级信息
+maxLevels = nil;
+-- 公会技能等级信息
+skillLevels = nil;
+
+-- 公会竞拍信息
+guildAuctionInfo = nil;
+-- 公会据点战信息
+strongHoldInfo = nil;
+
+-- 删除申请记录
+function RemoveApplyRecord(guildId)
+    if applyRecords then
+        if applyRecords[guildId] then
+            applyRecords[guildId] = nil;
+        end
+    end
+end
+
+-- 是否已申请过此公会
+function IsApplied(guildId)
+    if not applyRecords then return false end
+    return applyRecords[guildId] ~= nil;
+end
+
+-- 玩家是否在自己的公会中
+function IsInGuild(globalId)
+    if not members then return false; end
+    for i, mem in ipairs(members) do
+        if mem.globalId == globalId then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否有公会审批信息
+function HasGuildApplicant()
+    if guildApplicants and #guildApplicants > 0 and HasPermission(E_GUILD_PERMISSION.APPROVE) then
+        return true;
+    end
+    return false;
+end
+
+-- 退出公会
+function ExitGuild()
+    guilds = nil;
+    members = nil;
+    membersDict = nil;
+    guildApplicants = nil;
+    guildNotice = nil;
+    myGuild = nil;
+    guildEvents = nil;
+    guildId = 0;
+    G_GuildMng.GuildId = 0;
+    donationValue = 0;
+    ChatVoiceManager.QuitGuildRoom();
+    error("你已退出公会");
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    end
+    Main_MiddleBottom.AutoSelectRecordChannel();
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_REWARD, GuildManager.CanGetReward());
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_MEMBER, GuildManager.HasGuildApplicant());
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_BUILDING, GuildManager.HasUpgradableBuilding());
+    --RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+end
+
+-- 通过名称查找(模糊查找)公会ID
+function SearchGuilds(guildName)
+    local guilds = {};
+    if not guildIdNames or not guildName or string.len(guildName) == 0 then
+        return guilds;
+    end
+    for id, data in pairs(guildIdNames) do
+        local name = data[1];
+        if string.find(name, guildName, 0, true) then
+            table.insert(guilds, id);
+        end
+    end
+    return guilds;
+end
+
+-- 获取公会名称
+function GetGuildName(guildId)
+    if guildIdNames then
+        local data = guildIdNames[guildId];
+        if data ~= nil then
+            return data[1];
+        end
+    end
+    return nil;
+end
+
+-- 获取分会旌旗名称
+function GetGuildFlagName(guildId)
+    if guildIdNames then
+        local data = guildIdNames[guildId];
+        if data ~= nil then
+            return data[2];
+        end
+    end
+    return nil;
+end
+
+-- 公会名称是否已存在
+function IsExistGuildName(guildName)
+    if not guildIdNames or not guildName or guildName.Length == 0 then
+        return false;
+    end
+    for id, data in pairs(guildIdNames) do
+        local name = data[1];
+        if name == guildName then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 获取公会名称/旌旗名称/公会等级
+-- {guildName, flagName, guildLevel}
+function GetGuildNameLevelAndFlag(guildId)
+    if guildId ~= nil and guildIdNames then
+        local data = guildIdNames[guildId];
+        if data ~= nil then
+            return data;
+        end
+    end
+    return nil;
+end
+
+-- 获取公会成员信息
+function GetMember(globalId)
+    if membersDict then
+        return membersDict[globalId];
+    end
+    return nil;
+end
+
+-- 通过分堂类型查找成员
+function GetMembersByKindred(typeId)
+    if not members then
+        return {}
+    end
+    local items = {};
+    for i, mem in ipairs(members) do
+        if mem.kindredType == typeId then
+            table.insert(items, mem);
+        end
+    end
+    return items;
+end
+
+-- 获取公会所有成员
+function GetOnlineMembers(includeSelf)
+    if not members then
+        return {};
+    end
+    local globalId = G_UserInfo.GlobalDBID;
+    local items = {};
+    for i, mem in ipairs(members) do
+        if mem.onlineScene ~= -1 then
+            if includeSelf == true or mem.globalId ~= globalId then
+                table.insert(items, mem);
+            end
+        end
+    end
+    return items;
+end
+
+-- 判断权限
+function HasPermission(permissionId, member)
+    local selfInfo = GetMember(G_UserInfo.GlobalDBID);
+    if selfInfo == nil then return false end
+    local selfRank = selfInfo.rankLevel;
+    local rank = E_GUILD_RANKLEVEL.MEMBER;
+    if member then rank = member.rankLevel; end
+
+    --任命副会长
+    if permissionId == E_GUILD_PERMISSION.APPOINT_VICE_LEADER then
+        return selfRank == E_GUILD_RANKLEVEL.LEADER and rank ~= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --开除副会长
+    if permissionId == E_GUILD_PERMISSION.FIRE_VICE_LEADER then
+        return selfRank == E_GUILD_RANKLEVEL.LEADER and rank == E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+    
+    --任命堂主
+    if permissionId == E_GUILD_PERMISSION.APPOINT_PETERXS then
+        return selfRank < rank 
+                and selfRank < E_GUILD_RANKLEVEL.PETERXS 
+                and rank == E_GUILD_RANKLEVEL.MEMBER
+                and member.kindredType ~= EKINDREDTYPE.GENERAL;
+    end
+
+    --开除堂主
+    if permissionId == E_GUILD_PERMISSION.FIRE_PETERXS then
+        return selfRank < rank and rank == E_GUILD_RANKLEVEL.PETERXS;
+    end
+
+    --任命分堂成员
+    if permissionId == E_GUILD_PERMISSION.APPOINT_MEMBER_PETERXS then
+        return selfRank < rank and rank == E_GUILD_RANKLEVEL.MEMBER
+                and member.kindredType == EKINDREDTYPE.GENERAL;
+    end
+
+    --请出分堂
+    if permissionId == E_GUILD_PERMISSION.FIRE_PETERXS_MEMBER then
+        return rank == E_GUILD_RANKLEVEL.MEMBER 
+                and member.kindredType ~= EKINDREDTYPE.GENERAL
+                and (selfRank < E_GUILD_RANKLEVEL.PETERXS 
+                    or selfRank == E_GUILD_RANKLEVEL.PETERXS 
+                    and member.kindredType == selfInfo.kindredType);
+    end
+
+    --开除普通成员
+    if permissionId == E_GUILD_PERMISSION.FIRE_GENERAL_MEMBER then
+        return selfRank < rank  
+                and (selfRank < E_GUILD_RANKLEVEL.PETERXS 
+                    or selfRank==E_GUILD_RANKLEVEL.PETERXS 
+                        and member.kindredType == EKINDREDTYPE.GENERAL
+                        and rank == E_GUILD_RANKLEVEL.MEMBER);
+    end
+
+    --禅让会长
+    if permissionId == E_GUILD_PERMISSION.DEMISE_LEADER then
+        return selfRank == E_GUILD_RANKLEVEL.LEADER;
+    end
+
+    --邀请加入公会
+    if permissionId == E_GUILD_PERMISSION.INVITE_JOIN_IN then
+        return selfRank < E_GUILD_RANKLEVEL.MEMBER ;
+    end
+
+    --审批申请
+    if permissionId == E_GUILD_PERMISSION.APPROVE then
+        return selfRank <= E_GUILD_RANKLEVEL.PETERXS;
+    end
+
+    --编辑公告
+    if permissionId == E_GUILD_PERMISSION.EDIT_NOTICE then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --编辑招募宣言
+    if permissionId == E_GUILD_PERMISSION.EDIT_DECLARATION then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --升级建筑
+    if permissionId == E_GUILD_PERMISSION.UPGRADE_BUILDING then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --研究技能
+    if permissionId == E_GUILD_PERMISSION.RESEARCH_SKILLS then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --发起领地争战
+    if permissionId == E_GUILD_PERMISSION.LAUNCH_WAR then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --开启聚会
+    if permissionId == E_GUILD_PERMISSION.OPEN_MEETING then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+
+    --是否有麦克风权限(公会领地)
+    if permissionId == E_GUILD_PERMISSION.VOICE_MIC then
+        return selfRank <= E_GUILD_RANKLEVEL.VICE_LEADER;
+    end
+    return false;
+end
+
+-- 是否有公会邀请信息
+function HasGuildInviteData()
+    return inviteDatas ~= nil and #inviteDatas > 0;
+end
+
+-- 添加一条邀请数据(有人邀请自己加入公会)
+function PushInviteData(data)
+    if not inviteDatas then
+        inviteDatas = {};
+    end
+    table.insert(inviteDatas, data);
+    AddTimerEvent(INVITE_OVER_TIME_TASK_NAME,600,InviteCallBackOver);
+end
+
+-- 移除一条邀请数据
+function PopInviteData()
+    if inviteDatas and #inviteDatas > 0 then
+        local data = table.remove(inviteDatas, 1);
+        if #inviteDatas == 0 then
+            G_TimerMng:RemoveTimeTask(INVITE_OVER_TIME_TASK_NAME);
+        end
+        return data;
+    end
+end
+
+-- 清除邀请数据
+function ClearInviteData()
+    Main_RightBottom.RemoveAllTypeInTipTable(ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_INVITE);
+    inviteDatas = nil;
+    G_TimerMng:RemoveTimeTask(INVITE_OVER_TIME_TASK_NAME);
+end
+
+-- 10分钟后清除邀请数据
+function InviteCallBackOver()
+    inviteDatas = nil;
+end
+
+-- 清除公会列表数据
+function ClearGuilds()
+    guilds = nil;
+    guildListVersion = -1;
+    guildMaxCount = 0;
+end
+
+-- 获取职位名称
+-- @param rankId 职位ID
+-- @param kindredType 分堂ID
+function GetJobTitleName(rankId, kindredType)
+    local enumID = EDefineContentID.TypeNone;
+    if rankId == E_GUILD_RANKLEVEL.LEADER then
+        enumID = EDefineContentID.TypeChairman;
+    elseif rankId == E_GUILD_RANKLEVEL.VICE_LEADER then
+        enumID = EDefineContentID.TypeViceChairman;
+    elseif rankId == E_GUILD_RANKLEVEL.PETERXS then
+        if kindredType == EKINDREDTYPE.ELITE then
+            enumID = EDefineContentID.TypeTsingLungHallHost;
+        elseif kindredType == EKINDREDTYPE.KNIGHT then
+            enumID = EDefineContentID.TypeTigerHallHost;
+        end
+    elseif rankId == E_GUILD_RANKLEVEL.MEMBER then 
+        if kindredType == EKINDREDTYPE.ELITE then
+            enumID = EDefineContentID.TypeTsingLungHallMember;
+        elseif kindredType == EKINDREDTYPE.KNIGHT then
+            enumID = EDefineContentID.TypeTigerHallMember;
+        else
+            enumID = EDefineContentID.TypeGuildMember
+        end
+    end
+    if enumID == 0 then
+        error(rankId);
+        error(kindredType);
+        error("公会职位名称没找到: id:"..tostring(rankId) .. " kindredType:"..tostring(kindredType));
+        return "";
+    end
+    local id = CCommonTool.GetDefineInfo(enumID):GetIntContent();
+    return CCommonTool.GetTxtData(id).m_str;
+end
+
+function GetProfessionName(profession)
+    local txtId = CCommonTool.GetRoleDateInfo(profession).NameTxt;
+    return CCommonTool.GetTxtData(txtId).m_str;
+end
+
+function GetShopItems()
+--    local items = {};
+--    local shopNpcInfo = CCommonTool.GetShopNpcInfo(SHOP_TYPE_ID);
+--    if not shopNpcInfo then
+--        error("shop_npc.xlsm没有公会商店数据:2001");
+--        return;
+--    end
+--    local shopTypeId = shopNpcInfo.Tab1Date;
+--    local allItems = CCommonTool.GetAllShopItemInfo();
+
+--    for i = 0, allItems.Count - 1 do
+--        local item = allItems[i];
+--        if item.ShopDate == shopTypeId then
+--            table.insert(items, item);
+--        end
+--    end
+--    return items;
+end
+
+-- 玩家自己的贡献度
+function GetSelfContribution()
+    if membersDict ~= nil then
+        local member = membersDict[G_UserInfo.GlobalDBID];
+        if member then return member.contribution end
+    end
+    return 0;
+end
+
+-- 设置自己的贡献度
+function SetSelfContribution(value)
+    if membersDict ~= nil then
+        local member = membersDict[G_UserInfo.GlobalDBID];
+        if member then 
+            member.contribution = math.max(0, value); 
+        end
+    end
+end
+
+-- 玩家自己的公会信息
+function GetSelfInfo()
+    if membersDict ~= nil then
+        return membersDict[G_UserInfo.GlobalDBID];
+    end
+    return nil;
+end
+
+-- 获取公会事件列表
+-- @param listType 0:所有 1:历史 2:当天
+function GetGuildEvents(listType)
+    local events = guildEvents or {};
+    listType = listType or 0;
+    local zeroTime = G_TimerMng:GetTodayZeroTimestamp();
+    local list = {};
+    for i, data in ipairs(events) do
+        if listType == 0 then
+            table.insert(list, data);
+        elseif listType == 1 and data.time < zeroTime then
+            table.insert(list, data);
+        elseif listType == 2 and data.time >= zeroTime then
+            table.insert(list, data);
+        end
+    end
+    return list;
+end
+
+---- 公会建筑最大等级信息
+--function GetBuildingMaxLevel()
+--    if not maxLevels then
+--        maxLevels = {};
+--        local list = CCommonTool.GetAllGuildInfo();
+--        maxLevels.guildMaxLevel = list[list.Count-1].Id;
+
+--        local list = CCommonTool.GetAllGuildShopInfo();
+--        maxLevels.shopMaxLevel = list[list.Count-1].Id;
+--    end
+--    return maxLevels;
+--end
+
+-- 获取公会维护资金
+function GetGuildMaintainMoney()
+    local memberCount = myGuild.memberCount;
+    local createTime = myGuild.createTime;
+    local nowTime = G_TimerMng:GetCurrentSeconds();
+    -- 公会创建一段时间内不扣维护资金(小时)
+    local totalSeconds = CCommonTool.GetDefineInfo(3629):GetIntContent() * 3600;
+    if nowTime - createTime < totalSeconds then
+        return 0;
+    end
+    local info = CCommonTool.GetGuildInfoByIndex(myGuild.level);
+    local floatMoney = math.max(0, math.floor(info.MoneyDailyRatio * memberCount * info.MoneyDaily));
+    return info.MoneyDaily + floatMoney;
+end
+
+-- 公会维护资金警戒值
+function GetGuildMoneyWarnValue()
+    return GetGuildMaintainMoney() * 2;
+end
+
+-- 公会每日产出木材数量
+function GetGuildDailyWoodOutCount()
+    local guild = GuildManager.myGuild;
+    local level = guild.guildWoodLevel;
+    local buildType = GUILD_BUILDING_TYPE.WOOD;
+    local buildingId = buildType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    if info ~= nil then
+        return info.Num;
+    end
+    return 0;
+end
+
+-- 获取公会建筑信息
+-- @param buildingType 建筑类型
+-- @param level 建筑等级
+function GetBuildingInfo(buildingType, level)
+    local buildingId = buildingType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    return info;
+end
+
+-- 公会技能是否可升级
+-- @param index 技能索引
+-- @param showTip true:条件不足时显示提示
+function SkillCanUpgrade(index, showTip)
+    if not HasGuild() then
+        return false;
+    end
+    if skillLevels == nil then
+        return false;
+    end
+
+    local roleInfo = G_UserInfo.RoleAttribute.RoleDateInfo;
+    if roleInfo == nil then
+        return false;
+    end
+    local skillId = roleInfo["Long"..(index+1)];
+    local level = skillLevels[index+1] or 0;
+    local info = CCommonTool.GetGuildSkillInfo(skillId);
+    local buildingInfo = GuildManager.GetBuildingInfo(GUILD_BUILDING_TYPE.SKILL, myGuild.guildSkillLevel);
+    local canUpLevel = buildingInfo.Num;
+    local maxLevel = info.MaxLv;
+
+    if level >= maxLevel then
+        if showTip == true then ShowSystemFlowTips(4300); end
+        return false;
+    end
+
+    if level >= canUpLevel then
+        if showTip == true then ShowSystemFlowTips(4310); end
+        return false;
+    end
+
+    --角色等级判断
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local levelInfo = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level);
+    if userLevel < levelInfo.NeedRoleLevel then
+        if showTip == true then ShowSystemFlowTips(4320); end
+        return false;
+    end
+
+    --公会贡献度判断
+    local contribution = GuildManager.GetSelfContribution();
+    if contribution < levelInfo.Exp then
+        if showTip == true then ShowSystemFlowTips(4330); end
+        return false;
+    end
+
+    --消耗判断
+    if GetMoneyCount(levelInfo.MoneyType) < levelInfo.Money then
+        if showTip == true then ShowSystemFlowTips(4340); end
+        return false;
+    end
+    return true;
+end
+
+function GetMoneyCount(moneyType)
+    if moneyType == 0 then
+        return G_UserInfo.BindCoin;
+    elseif moneyType == 1 then
+        return G_UserInfo.NotBindCoin;
+    elseif moneyType == 2 then
+        return G_UserInfo.BindDiamond;
+    elseif moneyType == 3 then
+        return G_UserInfo.NotBindDiamond;
+    end
+    return 0;
+end
+
+function HasUpgradableSkill()
+    if skillLevels == nil then
+        return false;
+    end
+    for i, v in ipairs(skillLevels) do
+        if SkillCanUpgrade(i-1, false) == true then
+            return true;
+        end
+    end
+    return false;
+end
+
+function GetGuildShopLevel()
+    if not HasGuild() then
+        return 0;
+    else
+        return myGuild.guildShopLevel;
+    end
+end
+
+function GetGuildWelfareValue(level)
+    local config = myGuild.welfareConfig[level];
+    if config.newValue > 0 and config.effectiveTime > 0 and G_TimerMng:GetCurrentSeconds() >= config.effectiveTime then
+        return config.newValue;
+    end
+    return config.value;
+end
+
+-- 设置的俸禄领取条件是否生效
+function IsEffectiveWelfareValue(level)
+    local config = myGuild.welfareConfig[level];
+    if G_TimerMng:GetCurrentSeconds() >= config.effectiveTime then
+        return true;
+    end
+    return false;
+end
+
+-- 获取将要生效的俸禄领取贡献值
+function GetWillEffectiveWelfareValue(level)
+    local config = myGuild.welfareConfig[level];
+    if G_TimerMng:GetCurrentSeconds() < config.effectiveTime then
+        return config.newValue;
+    end
+    return 0;
+end
+
+-- 获取领取俸禄需要的贡献值范围
+function GetGuildWelfareLimitValues(level)
+    local min = GuildSalaryMinLimit[level]
+    local max = GuildSalaryMaxLimit[level]
+    if max ~= nil and min ~= nil then
+        return min, max;
+    end
+    error("领取俸禄需要的贡献值范围出错");
+    return 0, 0;
+end
+
+-- 是否有公会
+function HasGuild()
+    return myGuild ~= nil;
+end
+
+-- 是否可领取每日俸禄奖励
+function CanGetReward()
+    local selfInfo = GetSelfInfo();
+    if selfInfo == nil then
+        return false;
+    end
+    local value = selfInfo.yesterdayContribution;
+    if value == 0 then
+        return false;
+    end
+    if G_UserInfo.RoleAttribute.IsGetGuildWelfare == true then
+        return false;
+    end
+
+    if myGuild.money <= GetGuildMoneyWarnValue() then
+        return false;
+    end
+
+    for i = 1, 3 do
+        local needValue = GuildManager.GetGuildWelfareValue(i);
+        if value >= needValue then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 根据类型获取建筑等级
+-- @param number buildingType 建筑类型 -1表示公会建筑
+function GetBuildingLevel(buildingType)
+    if not HasGuild() then
+        return 0;
+    end
+    local level = 0;
+    local guild = myGuild;
+    if buildingType == -1 then
+        level = guild.level;
+    elseif buildingType == GUILD_BUILDING_TYPE.INTERIOR then
+        level = guild.guildAffairsLevel;
+    elseif buildingType == GUILD_BUILDING_TYPE.SHOP then
+        level = guild.guildShopLevel;
+    elseif buildingType == GUILD_BUILDING_TYPE.SKILL then
+        level = guild.guildSkillLevel;
+    elseif buildingType == GUILD_BUILDING_TYPE.WOOD then
+        level = guild.guildWoodLevel;
+    elseif buildingType == GUILD_BUILDING_TYPE.WOOD_STORAGE then
+        level = guild.guildWoodStorageLevel;
+    end
+    return level;
+end
+
+-- 判断建筑是否可升级
+-- @param number buildingType 建筑类型 -1表示公会建筑
+-- @return true:可升级
+function CanUpgradeBuilding(buildingType)
+    if not HasPermission(E_GUILD_PERMISSION.UPGRADE_BUILDING) then
+        return false;
+    end
+    if not HasGuild() then
+        return false;
+    end
+    if myGuild.buildingEndTime > G_TimerMng:GetCurrentSeconds() then
+        return false;
+    end
+
+    local guild = myGuild;
+    local maxLevel = guild.maxLevel;
+    local guildLevel = guild.level;
+    if buildingType == -1 then
+        if guildLevel < maxLevel then
+            local data = CCommonTool.GetGuildInfoByIndex(guildLevel);
+            if guild.money >= (data.MoneyNeed + GetGuildMaintainMoney()) and guild.guildWoodCount >= data.WoodNeed then
+                return true;
+            end
+        end
+        return false;
+    else
+        local level = GetBuildingLevel(buildingType);
+        local data = GuildManager.GetBuildingInfo(buildingType, level);
+        if level < maxLevel then
+            if guildLevel >= data.LevelNeed and guild.money >= data.MoneyNeed and guild.guildWoodCount >= data.WoodNeed then
+                return true;
+            end
+        end
+        return false;
+    end
+end
+
+-- 是否有可升级的公会建筑
+function HasUpgradableBuilding()
+    if CanUpgradeBuilding(-1) 
+        or CanUpgradeBuilding(GUILD_BUILDING_TYPE.INTERIOR) 
+        or CanUpgradeBuilding(GUILD_BUILDING_TYPE.SHOP) 
+        or CanUpgradeBuilding(GUILD_BUILDING_TYPE.SKILL) 
+        or CanUpgradeBuilding(GUILD_BUILDING_TYPE.WOOD) 
+        or CanUpgradeBuilding(GUILD_BUILDING_TYPE.WOOD_STORAGE) then
+        return true;
+    end
+    return false;
+end
+
+-- 是否开启领地战
+function IsGuildWarTime()
+    return true;
+end
+
+-- 得到公会战竞拍或准备战场前二十分钟时间戳
+function GetGuildWarTime()
+    local isHaveGuildWar = false;
+    local week = nil; -- 周几
+    local time = nil; -- 开始时间
+    local state = nil; -- 状态 1：竞拍时间 2：战斗时间
+    local weekTag = nil; -- 时间标识1：本周时间 2：下周时间
+    local zeroTime = G_TimerMng:GetTodayZeroTimestamp();
+    if GuildManager.strongHoldInfo ~= nil then 
+        local data = GuildManager.strongHoldInfo;
+        state = data.state;
+        week = data.week;
+        weekTag = data.weekTag;
+        local weekDay = G_TimerMng:GetCurrentWeekDay();
+        local showTime = 0;
+        if state == 1 then
+            showTime = ActivityManager.TimeToSeconds(time) - 1200;
+        else
+            showTime = ActivityManager.TimeToSeconds(time) - 600;
+        end
+        local curTime = ActivityManager.GetSecondsSinceZeroTime();
+        if weekTag == 1 then 
+            if weekDay == week then 
+                if curTime > showTime then 
+                    isHaveGuildWar = false;
+                else
+                    isHaveGuildWar = true;
+                    time = zeroTime + showTime;
+                end
+            elseif weekDay > week then
+                isHaveGuildWar = false;
+            elseif weekDay < week then
+                isHaveGuildWar = true;
+                time = zeroTime + 86400 * (week - weekDay) + showTime;
+            end
+        elseif weekTag == 2 then 
+            isHaveGuildWar = true;
+            time = zeroTime + 86400 * (weekDay - week + 7) + showTime;
+        end
+    end
+
+    return isHaveGuildWar, state, time;
+end
+
+-- 获得当前占领据点等级
+function GetStrongHoldLv()
+    if GuildManager.strongHoldInfo ~= nil and GuildManager.strongHoldInfo.ownSceneLv ~= nil then
+        return GuildManager.strongHoldInfo.ownSceneLv;
+    end
+    return 0;
+end
+
+-- 获得公会占领据点的高中低等级: 0:没有据点
+function GetStrongHoldLvByTable()
+    if GuildManager.strongHoldInfo ~= nil and GuildManager.strongHoldInfo.ownID ~= nil then
+        local ownID = GuildManager.strongHoldInfo.ownID;
+        local data = CCommonTool.GetActivityWarInfoIndex(ownID);
+        if data ~= nil then
+            return data.LevelId;
+        end
+    end
+    return 0;
+end
+
+-- 获得自己加入公会的天数
+function GetJoinGuildDays(globalId)
+    local data = GetMember(globalId);
+    if data == nil then return 0 end
+    local joinTime = data.joinTime;
+    local curTime = G_TimerMng:GetCurrentSeconds();
+    if curTime > joinTime then 
+        local deltaTime = curTime - joinTime;
+        local t1, t2 = math.modf(deltaTime / 86400);
+        return t1;
+    end
+    return 0;
+end
+-- 数据清理
+function ClearData()
+    guilds = nil;
+    members = nil;
+    membersDict = nil;
+    guildApplicants = nil;
+    guildNotice = nil;
+    myGuild = nil;
+    applyRecords = nil;
+    guildEvents = nil;
+    guildId = 0;
+    G_GuildMng.GuildId = 0;
+    guildListVersion = -1;
+    memberListVersion = -1;
+    guildInfoVersion = -1;
+    approvalListVersion = -1;
+    --eventListVersion = -1;
+    donationValue = 0;
+    noticeVersion = -1;
+    inviteDatas = nil;
+    guildIdNames = nil;
+    skillLevels = nil;
+    guildAuctionInfo = nil;
+    strongHoldInfo = nil;
+end

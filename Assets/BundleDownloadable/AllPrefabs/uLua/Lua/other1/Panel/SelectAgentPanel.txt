@@ -1,0 +1,168 @@
+﻿module('SelectAgentPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'SelectAgentPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_MaskPath = "Mask";
+-- 背景
+local m_DynamicBackgroundPath1 = "Content/Bg/Sprite_Bg1";
+local m_DynamicBackgroundPath2 = "Content/Bg/Sprite_Bg2";
+
+local m_DynamicScrollViewPath = "Content/Scroll View";
+----------------------------------通用的名称路径---------------------------------------
+-- 加注释
+local m_GridPath = "Content/Scroll View/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_Mask = nil;
+-- 加注释
+local m_Grid = nil;
+
+local m_DynamicBackground1 = nil;
+local m_DynamicBackground2 = nil;
+local m_DynamicScrollView = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- Npc相关数据
+local m_OpenData;
+
+local m_IsOpen = false;
+
+local m_ClickFrameCount = 0;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    error("Start");
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        error("OnEnable");
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Mask = nil;
+	m_Grid = nil;
+    m_DynamicBackground1 = nil;
+    m_DynamicBackground2 = nil;
+    m_DynamicScrollView = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_SELECTAGENTPANEL);
+    m_Mask = child(m_PanelObject, m_MaskPath).gameObject;
+    m_Grid = GetComponent(m_PanelObject, m_GridPath, "UIListView");
+    m_DynamicBackground1 = GetComponent(m_PanelObject, m_DynamicBackgroundPath1, "UISprite");
+    m_DynamicBackground2 = GetComponent(m_PanelObject, m_DynamicBackgroundPath2, "UISprite");
+
+    m_DynamicScrollView = GetComponent(m_PanelObject, m_DynamicScrollViewPath, "UIPanel");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Mask).onPress = LuaHelper.OnPress(OnMaskPress);
+    m_Grid:SetInitCallback(OnGridViewInit);
+    m_Grid:SetClickCallback(OnGridViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_ClickFrameCount = Time.frameCount;
+    InitAnentData();
+end
+
+function InitAnentData()
+    m_Grid:RemoveAll();
+    if m_OpenData ~= nil then
+        local count = m_OpenData.Count; 
+        SetPanelSize(count);
+        for index = 1 , count do
+            local data = m_OpenData[index - 1];
+            if tostring(data.BaseAttribute.BrObjType) ~= "CtPlayer" then  
+                m_Grid:AddData(data,"Item2");
+            else
+                m_Grid:AddData(data,"Item2");
+            end
+        end
+    end
+end
+
+-- 设置界面的大小
+function SetPanelSize(count)
+    local minCount = 2;
+    local maxCount = 6;
+    local curCount = count;
+    if curCount <= minCount then
+        curCount = minCount;
+    end
+    if curCount >= maxCount then
+        curCount = maxCount;
+    end
+    local titleHeight = 45;
+    local cellHeight = 70;
+    local height = cellHeight * curCount;
+    m_DynamicBackground1.height = titleHeight + height;
+    m_DynamicBackground2.height = titleHeight + height + 2;
+    m_DynamicScrollView.clipOffset = Vector2.New(0,(280 - height) / 2);
+    m_DynamicScrollView.baseClipRegion =Vector4.New(0,0,234,height);
+end
+------------------------------------------事件方法------------------------------------
+
+-- 加注释
+function OnMaskPress(gameObject,isPress)
+    if isPress == true then
+        if m_ClickFrameCount ~= Time.frameCount then
+            closePanel(ENUMPANELID.ENUM_SELECTAGENTPANEL);
+        end
+    end
+end
+
+
+-- 加注释
+function OnGridViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local name = data.BaseAttribute.Name;
+    SetLabelContent("Label",name,item);
+end
+
+-- 加注释
+function OnGridViewClick(listView, cell, go)
+     local data = listView:GetData(cell.dataIndex);
+     local agentData = {};
+     table.insert(agentData,data);
+     LuaEventDispatcher.TriggerEvent("SelectAgentPanel.SelectAgent",agentData);
+     closePanel(ENUMPANELID.ENUM_SELECTAGENTPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function Show(data)
+    error("Show");
+    if IsOpenPanel(ENUMPANELID.ENUM_SELECTAGENTPANEL) == 0 then
+        m_OpenData = data;
+        createPanel(ENUMPANELID.ENUM_SELECTAGENTPANEL);
+    end
+end

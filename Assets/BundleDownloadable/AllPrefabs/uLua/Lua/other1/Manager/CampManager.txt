@@ -1,0 +1,152 @@
+﻿module("CampManager", package.seeall)
+
+CampAllInfo = nil;
+
+-- 清理数据
+function ClearData()
+    CampAllInfo = nil;
+end
+
+-- 处理本地阵营数据
+function DealTableData()
+    -- 阵营表数据
+    local table_Camp = CCommonTool.GetCreditDataInfos();
+    if table_Camp == nil then return end
+    -- 处理后的表
+    local table_End = { };
+    local table_Temp = { };
+    local count = table_Camp[0].NameIDUpgrade;
+    local count_Temp = 1;
+    table_End[count] = { };
+    table.insert(table_End[count], 1, table_Camp[0]);
+    table.insert(table_Temp, 1, table_Camp[0].NameIDUpgrade);
+    for i = 1, table_Camp.Count - 1 do
+        local index = table_Camp[i].NameIDUpgrade;
+        for j = 1, #table_Temp do
+            if table_Camp[i].NameIDUpgrade == table_Temp[j] then
+                table.insert(table_End[index], #table_End[index] + 1, table_Camp[i]);
+            else
+                count_Temp = count_Temp + 1;
+                if table_End[index] == nil then table_End[index] = { }; end
+                table.insert(table_End[index], #table_End[index] + 1, table_Camp[i]);
+                table.insert(table_Temp, count_Temp, index);
+                break;
+            end
+        end
+    end
+
+    local keys = GetKeys(table_End);
+    table.sort(keys);
+    local i = 0;
+    local table_Result = { };
+    for k, v in pairs(keys) do
+        i = i + 1;
+        table.insert(table_Result, i, table_End[v]);
+    end
+    return table_Result;
+end
+
+-- 得到表数据的索引
+function GetKeys(t)
+    local keys = { }
+    for k, _ in pairs(t) do
+        keys[#keys + 1] = k
+    end
+    return keys
+end
+
+-- 设置军衔属性
+function SetMilitaryAttrValue(index, creditData, m_PanelObject, m_LabelNumPath)
+    local attr, attrValue = GetTableAttrAndValue(index, creditData);
+    if attr == 0 then
+        SetGameObjectState(m_LabelNumPath .. "/" .. index .. "/Label_Attr", false, m_PanelObject);
+        SetGameObjectState(m_LabelNumPath .. "/" .. index .. "/Label_Num", false, m_PanelObject);
+    else
+        SetGameObjectState(m_LabelNumPath .. "/" .. index .. "/Label_Attr", true, m_PanelObject);
+        SetGameObjectState(m_LabelNumPath .. "/" .. index .. "/Label_Num", true, m_PanelObject);
+        SetLabelContent(m_LabelNumPath .. "/" .. index .. "/Label_Attr", CCommonTool.GetAttrNameByAttrID(attr), m_PanelObject);
+        SetLabelContent(m_LabelNumPath .. "/" .. index .. "/Label_Num", attrValue, m_PanelObject);
+    end
+end
+
+function GetTableAttrAndValue(index, creditData)
+    if index == 1 then
+        return creditData.Attr1, creditData.AttrValue1;
+    elseif index == 2 then
+        return creditData.Attr2, creditData.AttrValue2;
+    elseif index == 3 then
+        return creditData.Attr3, creditData.AttrValue3;
+    elseif index == 4 then
+        return creditData.Attr4, creditData.AttrValue4;
+    elseif index == 5 then
+        return creditData.Attr5, creditData.AttrValue5;
+    end
+end
+
+-- 设置军衔俸禄
+function SetRewards(data, m_PanelObject, m_RewardsPath, panelId)
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(data.Salary);
+    if rewardInfo == nil then return end
+    local list = rewardInfo:GetAllItem();
+    local count = list.Count;
+    local itemData = nil;
+    local path = nil;
+    if count > 3 then
+        error("the rewards item num is more than 3,wrong!!!!!which reward id is" .. m_creditData[m_leftSelectNum - 1].Salary);
+    else
+        for i = 1, count do
+            path = m_RewardsPath .. i;
+            SetGameObjectState(path, true, m_PanelObject);
+            itemData = list[i - 1];
+            if itemData.ItemDealType == 3 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+            elseif itemData.ItemDealType == 4 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+            SetItemShowByExcelIDV04(m_PanelObject, path, m_itemExcelID, itemData.ItemNum, false, 5, panelId);
+            SetItemToolTipsEvent(m_PanelObject, path, ENUMPANELID.ENUM_PANEL_CAMPPANEL, false, m_itemExcelID);
+        end
+        for i = count + 1, 3 do
+            path = m_RewardsPath .. i;
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+end
+
+-- 加入阵营时调用执行
+function OnJoinCamp()
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_INFO, CampBeyond3DPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_SEAL, CampSealManager.IsShowRedHint());
+end
+
+function GetMilitaryRank()
+--    local m_MilitaryNum = 0;
+--    local m_creditData = CCommonTool.GetCreditDataInfos();
+--    if m_creditData == nil then
+--        return m_MilitaryNum;
+--    end
+--     -- 累积功勋值
+--    local allExploits = G_UserInfo.RoleAttribute.N64AllExploits;
+--    -- 以累积功勋值跟每阶军衔所需总功勋相比较，得出人物军衔
+--    for Index = 1,m_creditData.Count do
+--        if m_creditData[Index - 1] == nil then
+--            return m_MilitaryNum;
+--        end
+--        if m_creditData[Index - 1].curTotalNeed > allExploits then
+--            m_MilitaryNum = Index;
+--            break;
+--        end
+--        if Index == m_creditData.Count then
+--            m_MilitaryNum = Index;
+--        end
+--    end
+--    return m_MilitaryNum;
+    if CampAllInfo ~= nil and CampAllInfo.MyMilitary ~= nil then 
+        if CampAllInfo.MyMilitary < 1 then CampAllInfo.MyMilitary = 1 end
+        return CampAllInfo.MyMilitary;
+    end
+    return 1;
+end

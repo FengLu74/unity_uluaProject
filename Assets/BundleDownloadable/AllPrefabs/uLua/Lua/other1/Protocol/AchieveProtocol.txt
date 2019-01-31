@@ -1,0 +1,95 @@
+﻿require "Manager/AchieveManager";
+require "Panel/AchieveFinishPanel";
+
+module("AchieveProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --角色成就数据
+    network.Register(GMI_STOC_LGS_PLAYER_ACHIEVEDATA, OnAchieveList);
+    --成就数据的刷新
+    network.Register(GMI_STOC_LGS_UPDATE_ACHIEVEDATA, OnAchieveUpdate);
+    -- 领取宝箱返回
+    network.Register(GMI_STOC_LGS_UPDATE_ACHIEVEREWARDS, OnGotAchieveBox);
+end
+
+--角色成就数据
+function OnAchieveList(protocolId, buffer)
+--    local tabId = buffer:ReadByte();
+--    local count = buffer:ReadUShort();
+--    local achieves = {};
+--    for i = 1, count do
+--        local typeId = buffer:ReadInt();
+--        local id = buffer:ReadShort();
+--        local state = buffer:ReadByte();
+--        local num = buffer:ReadInt(); --计数
+--        local num2 = buffer:ReadInt();  --计数2(暂时没用)
+--        achieves[typeId] = {id=id,typeId=typeId,state=state,count=num,count2=num2};
+--    end
+--    AchieveManager.totalPoint = buffer:ReadInt();
+--    AchieveManager.boxTotalPoint = buffer:ReadInt();
+--    AchieveManager.UpdateAchieves(achieves, tabId);
+--    AchievePanel.RefreshList();
+--    RedHintMng.SetRedHintState(CREDHINTENUM.ACHIEVE,AchieveManager.HasFinishStateAchieve());
+end
+
+--角色成就数据
+function OnAchieveUpdate(protocolId, buffer)
+--    local id = buffer:ReadShort();
+--    local state = buffer:ReadByte();
+--    local count = buffer:ReadInt();
+--    AchieveManager.totalPoint = buffer:ReadInt();
+--    AchieveManager.boxTotalPoint = buffer:ReadInt();
+--    --error(string_format("OnAchieveUpdate::id:{0},state:{1},count:{2}", id, state, count));
+--    AchieveManager.UpdateAchieve(id, state, count);
+
+--    if G_SceneMng.isInGame == true and IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACHIEVE) ~= 1 then
+--        if state == AchieveManager.STATE_FINISH then
+--            G_UserInfo:CallPlayAchieveFinishEffect(id);
+--        end
+--    end
+--    AchievePanel.RefreshList();
+--    RedHintMng.SetRedHintState(CREDHINTENUM.ACHIEVE,AchieveManager.HasFinishStateAchieve());
+end
+
+-- 领取宝箱返回
+function OnGotAchieveBox(protocolId, buffer)
+    AchieveManager.totalPoint = buffer:ReadInt();
+    AchieveManager.boxTotalPoint = buffer:ReadInt();
+    AchievePanel.RefreshList();
+    AchievePanel.OnGetReward();
+    RedHintMng.SetRedHintState(CREDHINTENUM.ACHIEVE,AchieveManager.HasFinishStateAchieve());
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求成就列表
+function RequestList(tabId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_ACHIEVE_DATAS);
+    buffer:WriteInt(tabId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取单个成就奖励
+function RequestAchieveReward(achieveId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_ACHIEVE_REWARDS);
+    buffer:WriteByte(1);
+    buffer:WriteShort(achieveId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取成就点数宝箱奖励
+function RequestBoxReward(tabId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_ACHIEVE_REWARDS);
+    buffer:WriteByte(2);
+    buffer:WriteShort(tabId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

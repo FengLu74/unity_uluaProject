@@ -1,0 +1,269 @@
+﻿module('SkillTooltipPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'SkillTooltipPanel';
+---------------------------------------label路径---------------------------------------
+
+-- 技能名称
+local m_NamePath = "Content/Head/Name";
+-- 技能CD
+local m_CDPath = "Content/CD";
+-- 技能消耗
+local m_CostPath = "Content/Cost";
+-- 解锁条件
+local m_ConditionPath = "Content/Condition";
+-- 技能类型Label
+local m_TypeLabelPath = "Content/Head/Type";
+-- 描述Label
+local m_DescPath = "Content/Desc";
+-----------------------------------------按钮路径--------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-----------------------------------------Sprite路径------------------------------------
+local m_SpriteBgPath = "Content/Sprite_Bg";
+local m_SpriteFramePath = "Content/Sprite_Frame";
+local m_SpriteShadowPath = "Content/Sprite_TouYing";
+
+-- 技能图标
+local m_IconPath = "Content/Head/Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 已装备图标
+local m_EquipedPath = "Content/Head/Equiped";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 内容面板
+local m_ContentPath = "Content";
+-- tips锚点
+local m_AnchorPath = "Anchor";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 内容面板
+local m_Content = nil;
+local m_SpriteBg = nil;
+local m_SpriteFrame = nil;
+local m_SpriteShadow = nil;
+-- tips锚点
+local m_Anchor = nil;
+-- 技能类型
+local m_TypeLabel = nil;
+-- 技能CD
+local m_CD = nil;
+-- 技能消耗
+local m_Cost = nil;
+-- 解锁条件
+local m_Condition = nil;
+-- 已装备图标
+local m_Equiped = nil;
+local m_Desc = nil;
+
+-- ID 技能/天赋ID
+local m_Id = 0;
+-- 技能等级
+local m_Level = 0;
+-- 子技能ID
+local m_SubId = 0;
+-- tips触发位置
+local m_Position = nil;
+-- 是否解锁
+local m_Unlocked = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Content = nil;
+    m_Anchor = nil;
+	m_TypeLabel = nil;
+	m_CD = nil;
+	m_Cost = nil;
+	m_Equiped = nil;
+    m_SpriteBg = nil;
+    m_SpriteFrame = nil;
+    m_SpriteShadow = nil;
+    m_Desc = nil;
+
+    m_Id = 0;
+    m_SubId = 0;
+    m_Position = nil;
+    m_Unlocked = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SKILLTOOLTIPPANEL);
+    m_Content = child(m_PanelObject, m_ContentPath);
+    m_Anchor = child(m_PanelObject, m_AnchorPath);
+    m_TypeLabel = GetComponent(m_PanelObject, m_TypeLabelPath, "UILabel");
+    m_CD = GetComponent(m_PanelObject, m_CDPath, "UILabel")
+    m_Cost = GetComponent(m_PanelObject, m_CostPath, "UILabel")
+    m_Desc = GetComponent(m_PanelObject, m_DescPath, "UILabel")
+    m_Condition = GetComponent(m_PanelObject, m_ConditionPath, "UILabel");
+    m_SpriteBg = GetComponent(m_PanelObject, m_SpriteBgPath, "UISprite");
+    m_SpriteFrame = GetComponent(m_PanelObject, m_SpriteFramePath, "UISprite");
+    m_SpriteShadow = GetComponent(m_PanelObject, m_SpriteShadowPath, "UISprite");
+    m_Equiped = child(m_PanelObject, m_EquipedPath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local info = CCommonTool.GetSkillMainData(m_Id);
+    if info == nil then 
+        error(string_format("skill_main表ID:{0}不存在!", tostring(m_Id)));
+        return;
+    end
+    if m_SubId == 0 then
+        m_SubId = info.SonSkill0;
+    end
+    local manager = SkillManager;
+    local nameInfo = CCommonTool.GetSkillNameData(m_SubId);
+    if nameInfo == nil  then
+        error(string_format("skill_name表ID:{0}不存在!", tostring(m_SubId)));
+        return;
+    end
+
+    local dateInfo = CCommonTool.GetSkillDateByIndex(m_SubId);
+    local skillType = info.SkillType;
+    if dateInfo == nil then
+        error(string_format("skill_date表ID:{0}不存在!", tostring(m_SubId)));
+        return;
+    end
+
+    local isPetSkill = m_Id >= 5000 and m_Id < 6000;
+    -- 神将技能
+    local isGodSkill = m_Id>=6000 and m_Id <7000;
+    m_Equiped:SetActive(not isPetSkill and manager.IsEquipedSkill(m_Id));
+    SetSpriteByAtlasID(m_IconPath, dateInfo.Icon, m_PanelObject, true);
+    SetLabelTextByID(m_NamePath, nameInfo.SkillName, m_PanelObject);
+    
+    local desc = CCommonTool.GetTxtData(nameInfo.Describe).m_str;
+    local level = m_Level;
+    -- 替换描述中的{0}, 策划给的公式
+    desc = string_format(
+        desc, 
+        NumberToString(nameInfo.Att1Fixed + (level - 1) * nameInfo.Att1Up), 
+        NumberToString(nameInfo.Att2Fixed + (level - 1) * nameInfo.Att2Up), 
+        NumberToString(nameInfo.Att3Fixed + (level - 1) * nameInfo.Att3Up)
+    );
+    m_Desc.text = desc;
+    m_Desc:UpdateAnchors();
+    m_Desc:Update();
+
+    if isPetSkill then
+        if skillType == 1 then
+            m_TypeLabel.text = CCommonTool.GetTxtData(852).m_str;
+        else
+            m_TypeLabel.text = CCommonTool.GetTxtData(853).m_str;
+        end
+    else
+         if skillType == 101  then-- 专属   
+             m_TypeLabel.text = CCommonTool.GetTxtData(9250).m_str;
+        elseif skillType == 102  then-- 附加
+            m_TypeLabel.text = CCommonTool.GetTxtData(9249).m_str;
+        else
+             m_TypeLabel.text = CCommonTool.GetTxtData(852).m_str;
+        end
+    end
+    error("m_Desc.height::"..m_Desc.height);
+    local h = 178 + m_Desc.height + 15;
+    if not isPetSkill or skillType == 1 then  -- 附加技能也不显示cd
+        if skillType == 102 then
+            m_CD.gameObject:SetActive(false);
+        else
+            m_CD.text = string_format(CCommonTool.GetTxtData(861).m_str, dateInfo.BackCd);
+            m_CD.gameObject:SetActive(true);
+            h  = h + 78;
+        end
+        
+    else
+        m_CD.gameObject:SetActive(false);
+    end
+    --神将技能cd为0 不显示魔法消耗
+    if not isPetSkill and not isGodSkill then
+        m_Cost.text = string_format("{0}MP", dateInfo.MpNeed);
+        m_Cost.gameObject:SetActive(true);
+        h  = h + 78;
+    else
+        m_Cost.gameObject:SetActive(false);
+    end
+    
+     if not isPetSkill and not isGodSkill then
+        local skill = SkillManager.GetPlayerSkill(m_Id);
+        m_Unlocked = m_Unlocked and skill ~= nil;
+        if m_Unlocked then
+            m_Condition.gameObject:SetActive(false);
+        else
+            m_Condition.gameObject:SetActive(true);
+            if skill.skillKind == 1 then
+                m_Condition.text = string_format(--[[角色{0}级解锁]]CCommonTool.GetTxtData(992).m_str, SkillManager.GetSkillData(m_Id).info.UnlockLv);
+            else
+                local talentData = SkillManager.GetTalentData(skill.talentId)
+                local talentName = CCommonTool.GetTxtData(talentData.info.TalentName).m_str;
+                local genreInfo = CCommonTool.GetTalentTypeByID(talentData.genreId);
+                local genreName = CCommonTool.GetTxtData(genreInfo.TypeName).m_str;
+                m_Condition.text = string_format(--[[学习{0}系{1}解锁]]CCommonTool.GetTxtData(993).m_str, genreName, talentName);
+            end
+            h  = h + 78;
+        end
+    else
+        m_Condition.gameObject:SetActive(false);
+    end
+
+    h = math.floor(h / 2) * 2 + 1;
+    m_SpriteBg.height = h;
+    m_SpriteFrame.height = h+44;
+    m_SpriteShadow.height = h+44;
+end
+
+function NumberToString(number)
+    if math.floor(number) < number then
+        return string.format("%0.1f", number);
+    else
+        return string.format("%d", number);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_SKILLTOOLTIPPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 技能tips界面打开时传入的参数
+function SetTipsData(position, data)
+    m_Position = position;
+    m_Level = data.level or 0;
+    m_Id = data.id;
+    m_SubId = data.subId;
+    m_Unlocked = data.unlocked or false;
+end

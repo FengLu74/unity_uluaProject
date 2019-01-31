@@ -1,0 +1,375 @@
+﻿module('ActivityTimesItemPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityTimesItemPanel';
+---------------------------------------label路径---------------------------------------
+-- 提示内容
+local m_LabelContentPath = "Label_Content";
+-- 剩余额外进入次数
+local m_LabelTimesPath = "Label_Times";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_ZheZhaoPath = "ZheZhao";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 次数道具
+local m_ItemPath = "Item";
+-- 购买按钮
+local m_ButtonBuyPath = "Button_Buy";
+-- 使用按钮
+local m_ButtonUsePath = "Button_Use";
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 提示内容
+local m_LabelContent = nil;
+-- 剩余额外进入次数
+local m_LabelTimes = nil;
+-- 次数道具
+local m_Item = nil;
+-- 购买按钮
+local m_ButtonBuy = nil;
+-- 使用按钮
+local m_ButtonUse = nil;
+-- 增加活动次数界面ID
+local m_PanelId = ENUMPANELID.ENUM_PANEL_ACTIVITY_TIMES;
+-- 当前活动ID
+local m_ActivityId = 0;
+-- 商品信息
+local m_ShopItem = nil;
+-- 道具ID
+local m_ItemId = 0;
+--钱币类型
+local moneyType=0;
+--消耗钻石个数
+local moneyNumber=0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+    Event.Add(GetWayPanel.GetWayJumpEvent, OnGetWayPanelJumpClick);
+end
+
+function OnDisable()
+    m_ActivityId = 0;
+    m_ShopItem = nil;
+    m_ItemId = 0;
+    Event.Remove(GetWayPanel.GetWayJumpEvent, OnGetWayPanelJumpClick);
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_LabelContent = nil;
+	m_LabelTimes = nil;
+	m_Item = nil;
+	m_ButtonBuy = nil;
+	m_ButtonUse = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(m_PanelId);
+    m_LabelContent = GetComponent(m_PanelObject, m_LabelContentPath, "UILabel");
+    m_LabelTimes = GetComponent(m_PanelObject, m_LabelTimesPath, "UILabel");
+    m_Item = child(m_PanelObject, m_ItemPath).gameObject;
+    m_ButtonBuy = child(m_PanelObject, m_ButtonBuyPath).gameObject;
+    m_ButtonUse = child(m_PanelObject, m_ButtonUsePath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ZheZhaoPath, OnZheZhaoClick, m_PanelObject);
+    SetGameObjectEvent(m_ButtonClosePath, OnZheZhaoClick, m_PanelObject);
+    UIEventListener.Get(m_ButtonBuy).onClick = LuaHelper.OnClick(OnButtonBuyClick);
+    UIEventListener.Get(m_ButtonUse).onClick = LuaHelper.OnClick(OnButtonUseClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_ActivityId == 0 then
+        error("增加活动次数界面出错: ActivityId == 0");
+        closePanel(m_PanelId);
+        return;
+    end
+
+    local data = ActivityManager.GetActivity(m_ActivityId);
+    if data == nil then
+        error("增加活动次数界面出错: 活动数据不存在!");
+        closePanel(m_PanelId);
+        return;
+    end
+
+--    if data.addTimesItemId == 0 then
+--        error("增加活动次数界面出错: 添加活动次数的道具ID为0!");
+--        closePanel(m_PanelId);
+--        return;
+--    end
+
+    local info = data.info;
+    if info == nil then
+        info = CCommonTool.GetActivityListDataInfo(data.id);
+    end
+
+    if info == nil then
+        error("增加活动次数界面出错: 活动信息不存在!");
+        closePanel(m_PanelId);
+        return;
+    end
+
+    --[[
+    local itemId = data.addTimesItemId;
+    local hasItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemId);
+    m_ItemId = itemId;
+    local itemNameId =  CCommonTool.GetNameIDByExcelID(itemId);
+    local itemName = CCommonTool.GetTxtData(itemNameId).m_str;
+    itemName = string_format("{0}{1}[-]", GetColorStrByPinZhi(CCommonTool.GetAptitudeIDByExcelID(itemId)), itemName);
+
+    local activityName = CCommonTool.GetTxtData(info.Name).m_str;
+    -- [使用"{0}"减少一次进入次数, 即可再次进入{1}, 是否确认使用?]
+    local content = CCommonTool.GetTxtData(9092).m_str;
+    m_LabelContent.text = string_format(content, itemName, activityName);
+    
+    SetItemShowByExcelIDV04(m_PanelObject, m_ItemPath, itemId, 0, false, 35, m_PanelId);
+    SetLabelContent("Label_Num", hasItemNum .. "/1", m_Item);
+    if hasItemNum <= 0 then
+        SetGameObjectEvent("", function() GetWayPanel.Show(itemId, m_PanelId); end, m_Item);
+        SetGameObjectState("Sprite_Mask", true, m_Item);
+        SetGameObjectState("Label_Buy", true, m_Item);
+    else
+        SetItemToolTipsEvent(m_Item, "", m_PanelId, false, itemId);
+        SetGameObjectState("Sprite_Mask", false, m_Item);
+        SetGameObjectState("Label_Buy", false, m_Item);
+    end
+
+    local remainTimes = data.addMaxTimes - data.timesByUseItem;
+    local timesText = CCommonTool.GetTxtData(9091).m_str;
+    m_LabelTimes.text = string_format(timesText, remainTimes);
+    --]]
+    local data = ActivityManager.GetActivity(m_ActivityId);
+    local increaseNum=data.timesByUseItem;  --得到增加的次数
+    error("increaseNum="..increaseNum);
+    local mainKeyID=m_ActivityId*100+increaseNum+1;
+    error("mainkey="..mainKeyID);
+    --在表：Copynum_increase--根据主键找到消耗钱币类型，消耗红钻个数
+    local listRow = CopynumIncreaseTable.Get(mainKeyID);
+    moneyType = listRow.MoneyType;          --得到消耗钱币类型
+    moneyNumber = listRow.UpgradeNeed;      --得到消耗钱币个数
+
+    -----
+    local moneyTypeStr="";
+    if moneyType==1 then
+        moneyTypeStr="红钻";
+        moneyType=MONEY_NEW_TYPE.NOTBIND_DIAMOND;
+    elseif moneyType==2 then
+        moneyTypeStr="蓝钻";
+        moneyType=MONEY_NEW_TYPE.BIND_DIAMOND;
+    else 
+        error("未定义的moneyType！");
+        moneyTypeStr="";
+        moneyType=0;
+    end
+    --{0}{1}{2}  次数  钱币类型 钻石数  [是否花费{0}个{1}购买{2}次副本？]
+    increaseNum=1;
+    local content = CCommonTool.GetTxtData(2603).m_str;
+    m_LabelContent.text = string_format(content, moneyNumber,moneyTypeStr, increaseNum);
+    --CCommonTool.SetGameObjectGrey(m_ButtonUse, remainTimes <= 0 or hasItemNum <= 0);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(m_PanelId);
+end
+
+-- 遮罩点击事件
+function OnZheZhaoClick(gameObject)
+    OnCloseClick();
+end
+
+-- 购买按钮点击事件--》改为取消按钮点击事件
+function OnButtonBuyClick(gameObject)
+    OnCloseClick();
+--    local data = ActivityManager.GetActivity(m_ActivityId);
+--    local itemId = data.addTimesItemId;
+--    local shopItem = StoreManager.GetShopItemByItemId(StoreManager.GetShopType(MainMenuType.MMT_Red), itemId);
+--    m_ShopItem = shopItem;
+--    if shopItem ~= nil then
+--        OnSecondaryConfirmBuyClick();
+--    else
+--        error("没有找到该商品信息!!!");
+--    end
+end
+
+-- 使用按钮点击事件
+function OnButtonUseClick(gameObject)
+    local data = ActivityManager.GetActivity(m_ActivityId);
+    local itemId = data.addTimesItemId;
+    local mainKeyID=m_ActivityId*100+data.timesByUseItem+1;
+-- 检测金币是否充足，如果没开自动兑换，金钱不足弹出兑换的界面，开了的话兑换后足够，则兑换
+-- @param1 金钱类型-->默认红钻=6
+-- @param2 金钱数量
+-- @param3 玩家手动兑换后回调的函数
+-- @param4 回调函数的参数
+    if MoneyExchangePanel.CheckIsEnoughMoney(moneyType,moneyNumber , ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, SendMessageForIncreaseNum) then
+        SendMessageForIncreaseNum();
+    else
+        error("钱币不足！");
+    end
+end
+
+function SendMessageForIncreaseNum()
+    ActivityProtocol.RequestIncreaseActNumData(m_ActivityId,moneyNumber);
+    closePanel(m_PanelId);
+end
+
+function OnSecondaryConfirmBuyClick()
+    if m_ShopItem ~= nil then
+        local shopType = m_ShopItem.ShopType;
+        local currencyText = "";
+        if shopType == 0 then
+            currencyText = GetTextToId(103101);--红钻
+        elseif shopType == 1 then
+            currencyText = GetTextToId(103102);--蓝钻
+        end
+        local currencyNum = m_ShopItem.CurDot;
+        local excelId = m_ShopItem.ExcelId;
+        local pinZhiNum = CCommonTool.GetAptitudeIDByExcelID(excelId);
+        local itemNameId = CCommonTool.GetNameIDByExcelID(excelId);
+        local itemName = string_format("{0}{1}[-]", GetColorStrByPinZhi(pinZhiNum), GetTextToId(itemNameId));
+        local titleText = string_format(GetTextToId(1551), currencyNum, currencyText, 1, itemName);
+        local tempTable = { };
+        table.insert(tempTable, 1, GetTextToId(949));
+        table.insert(tempTable, 2, titleText);
+        table.insert(tempTable, 3, OnConfirmBuyClick);
+        table.insert(tempTable, 4, GetTextToId(375));
+        table.insert(tempTable, 5, OnCancelBuyClick);
+        table.insert(tempTable, 6, GetTextToId(407));
+        table.insert(tempTable, 7, true);
+        table.insert(tempTable, 10, true);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+    end
+end
+function OnConfirmBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local curHaveNum = GetCurHavebyBuyType(m_ShopItem.ShopType);
+    if curHaveNum >= m_ShopItem.CurDot then
+        local data = 
+        {
+            ItemData = m_ShopItem;
+            BuyNum = 1;
+        };
+        StoreProtocol.RequestBuyProp(data);
+    else
+        if m_ShopItem.ShopType == 0 then        --红钻不足
+            --ShowSystemFlowTips(3631);
+			GoToChargePanel();
+        elseif m_ShopItem.ShopType == 1 then    --蓝钻不足
+            --需要添加蓝钻兑换界面
+            local num = m_NeedCostNum;
+            if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND,num,ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL, OnExchangeMoneyCallBack) then
+                log("OnBuyButtonClick 红钻不足!!!!");
+                return;
+            end
+        end
+    end
+end
+
+function GoToChargePanel()
+	local tempTable = { };
+	table.insert(tempTable, 1, GetTextToId(6000));
+	table.insert(tempTable, 2, GetTextToId(9135));
+	table.insert(tempTable, 3, OnConGoToChargeClick);
+	table.insert(tempTable, 4, GetTextToId(6010));
+	table.insert(tempTable, 5, OnCancelBuyClick);
+	table.insert(tempTable, 6, GetTextToId(6011));
+	table.insert(tempTable, 7, true);
+	table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);	
+	
+end
+
+function OnConGoToChargeClick()
+	OnCancelBuyClick();
+	closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_TIMES);
+	StorePanel.OpenPanelRecharge(ENUMPANELID.ENUM_PANEL_ACTIVITY_TIMES);
+end
+
+--获取当前拥有钻石
+function GetCurHavebyBuyType(moneyType)
+    if moneyType == 0 then
+        return G_UserInfo.NotBindDiamond;
+    elseif moneyType == 1 then
+        return G_UserInfo.BindDiamond;
+    else
+        return 0;
+    end
+end
+
+function OnCancelBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+function OnExchangeMoneyCallBack()
+    if m_ShopItem ~= nil then
+        local curHaveNum = GetCurHavebyBuyType(m_ShopItem.ShopType);
+        if curHaveNum >= m_NeedCostNum then
+            local data = 
+            {
+                ItemData = m_ShopItem;
+                BuyNum = m_BuyNum;
+            };
+            StoreProtocol.RequestBuyProp(data);
+        else
+            error("红钻不足！！！！");
+        end
+    else
+        error("请选择道具！！！！");
+    end
+end
+
+function OnGetWayPanelJumpClick(jumpParam)
+    closePanel(m_PanelId);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(activityId)
+    m_ActivityId = activityId;
+    if IsOpenPanel(m_PanelId) == 1 then
+        InitShow();
+    else
+        createPanel(m_PanelId);
+    end
+end
+
+function RefreshItem(itemId)
+    if m_ItemId == itemId then
+        if IsOpenPanel(m_PanelId) == 1 then
+            InitShow();
+        end
+    end
+end

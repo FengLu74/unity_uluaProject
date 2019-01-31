@@ -1,0 +1,598 @@
+﻿module('SkillLevelupPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'SkillLevelupPanel';
+---------------------------------------label路径---------------------------------------
+-- 技能名称
+local m_NameLabelPath = "Info/NameLabel";
+-- 技能等级
+local m_LevelLabelPath = "Info/LevelLabel";
+-- 技能CD
+local m_CDLabelPath = "Info/CDLabel";
+-- 技能效果
+local m_EffectLabelPath = "Info/EffectLabel";
+-- 消耗银币
+local m_LabelCostBindCoinPath = "Info/CostContent/Label_CostBindCoin";
+-- 现有银币
+local m_LabelHasBindCoinPath = "Info/CostContent/Label_HasBindCoin";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 升级按钮
+local m_UpButtonPath = "Info/UpButton";
+local m_AllUpButtonPath = "Info/AllUpButton";
+-----------------------------------------Sprite路径------------------------------------
+
+-- 升级按钮红点
+local m_SpriteRedHintPath = "Info/UpButton/Sprite_RedHint";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 下一等级信息
+local m_LevelUpInfoPath = "Info/LevelUpInfo";
+-- 下一等级信息1
+local m_LevelUpLabel1Path = "Info/LevelUpInfo/LevelUpLabel1";
+-- 下一等级信息2
+local m_LevelUpLabel2Path = "Info/LevelUpInfo/LevelUpLabel2";
+-- 消耗面板
+local m_CostContentPath = "Info/CostContent";
+-- 消耗银币点击区域
+local m_LabelCostBindCoinBgPath = "Info/CostContent/Label_CostBindCoin/Bg";
+-- 现有银币点区域
+local m_LabelHasBindCoinBgPath = "Info/CostContent/Label_HasBindCoin/Bg";
+-- 消耗道具1
+local m_Item1Path = "Info/CostContent/Items/Item1";
+-- 消耗道具2
+--local m_Item2Path = "Info/CostContent/Items/Item2";
+-- 消耗道具3
+--local m_Item3Path = "Info/CostContent/Items/Item3";
+-- 已达最大等级
+local m_MaxLevelPath = "Info/MaxLevel";
+----------------------------------通用的名称路径---------------------------------------
+-- 通用技能列表
+local m_GeneralListPath = "General/ListPanel/generalList";
+-- 天赋技能列表1
+local m_Talent1ListPath = "Talent1/ListPanel/talent1List";
+-- 天赋技能列表2
+local m_Talent2ListPath = "Talent2/ListPanel/talent2List";
+-- 技能升级消耗UIGrid
+local m_ItemsPath = "Info/CostContent/Items";
+-- 流派1未解锁图标
+local m_Genre1LockIconPath = "GenreLockContent/Genre1LockIcon";
+-- 流派2未解锁图标
+local m_Genre2LockIconPath = "GenreLockContent/Genre2LockIcon";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 技能升级消耗UIGrid
+--local m_ItemsGrid = nil;
+-- 通用技能列表
+local m_GeneralList = nil;
+-- 天赋技能列表1
+local m_Talent1List = nil;
+-- 天赋技能列表2
+local m_Talent2List = nil;
+-- 技能等级
+local m_LevelLabel = nil;
+-- 技能CD
+local m_CDLabel = nil;
+-- 升级按钮
+local m_UpButton = nil;
+-- 全部升级按钮
+local m_AllUpButton = nil;
+-- 消耗道具对象
+--local m_ItemPaths = nil;
+
+-- 当前选中的技能栏ID
+local m_SelectId = 0;
+-- 升级所需银币
+local m_NeedCoin = 0;
+-- 升级所需玩家等级
+local m_NeedLevel = 0;
+
+-- 特效TimerData
+local timerProc = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitList();
+    InitEvents();
+    InitShow();
+    InitGenreHeaderInfo();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+        InitGenreHeaderInfo();
+    end
+end
+
+function OnDisable()
+    m_SelectId = 0;
+    ClearEffectTimer();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    --m_ItemsGrid = nil;
+	m_GeneralList = nil;
+	m_Talent1List = nil;
+    m_Talent2List = nil;
+	m_NameLabel = nil;
+	m_LevelLabel = nil;
+    m_LevelUpInfo = nil;
+	m_CDLabel = nil;
+	m_UpButton = nil;
+    m_AllUpButton = nil;
+    m_SelectId = 0;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    --m_ItemsGrid = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid")
+    m_GeneralList = GetComponent(m_PanelObject, m_GeneralListPath, "UIListView")
+    m_Talent1List = GetComponent(m_PanelObject, m_Talent1ListPath, "UIListView")
+    m_Talent2List = GetComponent(m_PanelObject, m_Talent2ListPath, "UIListView")
+    m_LevelLabel = GetComponent(m_PanelObject, m_LevelLabelPath, "UILabel")
+    m_CDLabel = GetComponent(m_PanelObject, m_CDLabelPath, "UILabel")
+    m_LevelUpInfo = child(m_PanelObject, m_LevelUpInfoPath).gameObject;
+    m_UpButton = child(m_PanelObject, m_UpButtonPath).gameObject;
+    m_AllUpButton = child(m_PanelObject, m_AllUpButtonPath).gameObject;
+    m_ItemPaths = {m_Item1Path};
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_GeneralList:SetInitCallback(OnGeneralListViewInit);
+    m_GeneralList:SetClickCallback(OnGeneralListViewClick);
+    m_Talent1List:SetInitCallback(OnTalentListViewInit);
+    m_Talent1List:SetClickCallback(OnTalentListViewClick);
+    m_Talent2List:SetInitCallback(OnTalentListViewInit);
+    m_Talent2List:SetClickCallback(OnTalentListViewClick);
+    UIEventListener.Get(m_UpButton).onClick = LuaHelper.OnClick(OnUpButtonClick);
+    UIEventListener.Get(m_AllUpButton).onClick = LuaHelper.OnClick(OnAllUpButtonClick);
+end
+
+-- 初始化列表
+function InitList()
+    local skills = nil;
+    skills = SkillManager.generalSkillInfos;
+    for _, skill in ipairs(skills) do
+        m_GeneralList:AddData(skill);
+    end
+    skills = SkillManager.talentSkillInfos;
+    for i, skill in ipairs(skills) do
+        if i <= 2 then
+            m_Talent1List:AddData(skill);
+        else
+            m_Talent2List:AddData(skill);
+        end
+    end
+end
+
+function InitGenreHeaderInfo()
+    local genreIds = SkillManager.genreIds;
+    local currentGenreId = 0;
+    if SkillManager.playerGenreData ~= nil then
+        currentGenreId = SkillManager.playerGenreData.currentGenreId;
+    end
+    local info = CCommonTool.GetTalentTypeByID(genreIds[1].id);
+    SetLabelTextByID("Talent1/Header/Label_Genre1", info.TypeName, m_PanelObject);
+    CCommonTool.SetGameObjectGrey(child(m_PanelObject, "Talent1/Header/Bg").gameObject, genreIds[1].id ~= currentGenreId);
+
+    info = CCommonTool.GetTalentTypeByID(genreIds[2].id);
+    SetLabelTextByID("Talent2/Header/Label_Genre2", info.TypeName, m_PanelObject);
+    CCommonTool.SetGameObjectGrey(child(m_PanelObject, "Talent2/Header/Bg").gameObject, genreIds[2].id ~= currentGenreId);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_SelectId == 0 then
+        m_SelectId = GetDefaultId();
+    end
+    RefreshList();
+    InitSkillInfo();
+    InitGenreLockState();
+end
+
+function GetDefaultId()
+    local hasLastId = false;
+    local params = panelParams
+    if panelParams ~= nil then
+        local params = panelParams;
+        panelParams = nil;
+        local selectId = params.selectId;
+        if selectId ~= nil and SkillManager.skillDict[selectId] ~= nil then
+            return selectId;
+        end
+    end
+    return SkillManager.generalSkillInfos[1].id;
+end
+
+function RefreshList()
+    m_GeneralList:Refresh();
+    m_Talent1List:Refresh();
+    m_Talent2List:Refresh();
+end
+
+function InitGenreLockState()
+    local genreIds = SkillManager.genreIds;
+    local needLevel = CCommonTool.GetTalentTypeByID(genreIds[1].id).NendLevel;
+    local locked = needLevel > G_UserInfo.RoleAttribute.Level;
+    SetGameObjectState(m_Genre1LockIconPath, locked, m_PanelObject);
+    m_Talent1List.gameObject:SetActive(not locked);
+
+    needLevel = CCommonTool.GetTalentTypeByID(genreIds[2].id).NendLevel;
+    locked = needLevel > G_UserInfo.RoleAttribute.Level;
+    SetGameObjectState(m_Genre2LockIconPath, locked, m_PanelObject);
+    m_Talent2List.gameObject:SetActive(not locked);
+end
+
+-- 初始化技能信息
+function InitSkillInfo()
+    local id = m_SelectId;
+    if id == 0 then return; end
+    local data = SkillManager.GetSkillData(id);
+    local info = data.info;
+    local playerSkill = SkillManager.GetPlayerSkill(id);
+    local nameInfo = SkillManager.GetSkillNameInfo(playerSkill.subId);
+    local dateInfo = CCommonTool.GetSkillDateByIndex(playerSkill.subId);
+    local level = playerSkill.level;
+    local maxLevel = info.MaxLv;
+    local locked = playerSkill.locked;
+    if nameInfo ~= nil then SetLabelTextByID(m_NameLabelPath, nameInfo.SkillName, m_PanelObject); end
+    m_LevelLabel.text = string_format("Lv.{0}", playerSkill.level);
+    --m_CDLabel.text = string_format("CD:{0}s  MP:{1}", dateInfo.BackCd, dateInfo.MpNeed);
+    m_CDLabel.text = string_format(CCommonTool.GetTxtData(1991).m_str, dateInfo.BackCd, dateInfo.MpNeed);
+    --SetGameObjectState(m_SpriteRedHintPath, SkillManager.CanUpgrade(id), m_PanelObject);
+    SetGameObjectState(m_SpriteRedHintPath, false, m_PanelObject);
+    if nameInfo ~= nil then 
+        local desc = CCommonTool.GetTxtData(nameInfo.Describe).m_str;
+        desc = string_format(
+            desc, 
+            NumberToString(nameInfo.Att1Fixed + (level - 1) * nameInfo.Att1Up), 
+            NumberToString(nameInfo.Att2Fixed + (level - 1) * nameInfo.Att2Up), 
+            NumberToString(nameInfo.Att3Fixed + (level - 1) * nameInfo.Att3Up)
+        );
+        SetLabelContent(m_EffectLabelPath, desc, m_PanelObject);
+    end
+    if level < maxLevel then
+        local textIds = {};
+        if nameInfo ~= nil then
+            if nameInfo.LvUpTxt1 > 0 then table.insert(textIds, nameInfo.LvUpTxt1) end
+            if nameInfo.LvUpTxt2 > 0 then table.insert(textIds, nameInfo.LvUpTxt2) end
+        end
+        local paths = {m_LevelUpLabel1Path, m_LevelUpLabel2Path};
+        for i, path in ipairs(paths) do
+            local textId = textIds[i];
+            SetGameObjectState(path, textId ~= nil, m_PanelObject);
+            if textId ~= nil then SetLabelTextByID(path, textId, m_PanelObject); end
+        end
+        SetGameObjectState(m_MaxLevelPath, false, m_PanelObject);
+        SetGameObjectState(m_CostContentPath, true, m_PanelObject);
+        CCommonTool.SetGameObjectGrey(m_UpButton, false);
+        m_LevelUpInfo:SetActive(true);
+    else
+        SetGameObjectState(m_MaxLevelPath, true, m_PanelObject);
+        SetGameObjectState(m_CostContentPath, false, m_PanelObject);
+        CCommonTool.SetGameObjectGrey(m_UpButton, true);
+        m_LevelUpInfo:SetActive(false);
+    end
+    
+    local levelInfo = CCommonTool.GetSkillLvUpData(info.LvupData, level);
+    m_NeedLevel = levelInfo.Need_lv;
+    m_NeedCoin = levelInfo.Need_money;
+    local hasCoin = G_UserInfo.BindCoin;
+    SetLabelContent(m_LabelCostBindCoinPath, m_NeedCoin, m_PanelObject);
+    SetLabelColor(m_LabelCostBindCoinPath, hasCoin >= m_NeedCoin and "FFFFFF" or "FF0000", m_PanelObject);
+    SetLabelContent(m_LabelHasBindCoinPath, G_UserInfo.BindCoin, m_PanelObject);
+
+    if hasCoin >= m_NeedCoin then
+        SetItemToolTipsEvent(m_PanelObject, m_LabelCostBindCoinBgPath, ENUMPANELID.ENUM_PANEL_SKILLPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+    else
+        SetGameObjectEvent(m_LabelCostBindCoinBgPath, function() MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY,false,nil,ENUMPANELID.ENUM_PANEL_SKILLPANEL); end, m_PanelObject);
+    end
+    SetItemToolTipsEvent(m_PanelObject, m_LabelHasBindCoinBgPath, ENUMPANELID.ENUM_PANEL_SKILLPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+
+    local items = {
+        --{id=G_ItemToolTipDefine.BINDMONEY, num=m_NeedCoin, haveNum=G_UserInfo.BindCoin},
+        {id=levelInfo.Need_item_id, num=levelInfo.Need_item_num, haveNum=G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,levelInfo.Need_item_id)}
+    }
+    local itemCount = #items;
+    for i, itemPath in ipairs(m_ItemPaths) do
+        if i <= itemCount then
+            SetGameObjectState(itemPath, true, m_PanelObject);
+            local itemId = items[i].id;
+            local num = items[i].num
+            local haveNum = items[i].haveNum;
+            SetItemShowByExcelIDV04(m_PanelObject,itemPath,itemId,0,true,21,ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+            SetLabelColor(itemPath.."/Label_Num", haveNum < num and "FF0000" or "B2B2B2", m_PanelObject); 
+            SetLabelContent(itemPath.."/Label_Num", string_format("{0}/{1}", haveNum, num), m_PanelObject);
+            if haveNum < num then
+                SetGameObjectState(itemPath.."/Sprite_Less", true, m_PanelObject);
+                SetGameObjectEvent(itemPath, function() GetWayPanel.Show(itemId, ENUMPANELID.ENUM_PANEL_SKILLPANEL); end, m_PanelObject);
+            else
+                SetGameObjectState(itemPath.."/Sprite_Less", false, m_PanelObject);
+                SetItemToolTipsEvent(m_PanelObject, itemPath, ENUMPANELID.ENUM_PANEL_SKILLPANEL, false, itemId);
+            end
+        else
+            SetGameObjectState(itemPath, false, m_PanelObject);
+        end
+    end
+    --m_ItemsGrid:Reposition();
+end
+
+function NumberToString(number)
+    if math.floor(number) < number then
+        return string.format("%0.1f", number);
+    else
+        return string.format("%d", number);
+    end
+end
+
+function GetCellBySkillId(skillId)
+    local dataCount = m_GeneralList.dataCount;
+    for i = 0, dataCount-1 do
+        local data = m_GeneralList:GetData(i);
+        if data.id == skillId then
+            return m_GeneralList:GetCell(i);
+        end
+    end
+    local dataCount = m_Talent1List.dataCount;
+    for i = 0, dataCount-1 do
+        local data = m_Talent1List:GetData(i);
+        if data.id == skillId then
+            return m_Talent1List:GetCell(i);
+        end
+    end
+    local dataCount = m_Talent1List.dataCount;
+    for i = 0, dataCount-1 do
+        local data = m_Talent2List:GetData(i);
+        if data.id == skillId then
+            return m_Talent2List:GetCell(i);
+        end
+    end
+    return nil;
+end
+
+------------------------------------------事件方法------------------------------------
+
+function InitListCell(cell, data)
+    local go = cell.gameObject;
+    local info = data.info;
+    local id = data.id;
+    local skillKind = data.skillKind;
+    local skillData = SkillManager.GetPlayerSkill(id);
+    local nameInfo = SkillManager.GetSkillNameInfo(skillData.subId);
+    local dateInfo = CCommonTool.GetSkillDateByIndex(skillData.subId);
+    local equiped = SkillManager.IsEquipedSkill(id);
+    local locked = SkillManager.IsLockedSkill(id);
+    local actived = true;
+    if skillKind == 2 then
+        actived = SkillManager.IsActiveGenre(skillData.talentId);
+    end
+
+    SetSpriteByAtlasID("Icon", dateInfo ~= nil and dateInfo.Icon or 0, go, true);
+    if nameInfo ~= nil then
+        SetLabelTextByID("Name", nameInfo.SkillName, go);
+    end
+    SetLabelContent("Level", string_format("Lv.{0}", skillData.level), go);
+    SetGameObjectState("Equiped", equiped, go);
+    SetGameObjectState("Select", m_SelectId == id, go);
+    SetGameObjectState("Sprite_RedHint", SkillManager.CanUpgrade(id), go);
+
+    SetGameObjectState("Lock", actived and locked, go);
+    CCommonTool.SetGameObjectGrey(child(go, "Icon").gameObject, actived and locked);
+    SetGameObjectState("Black", locked or not actived, go);
+
+    if skillKind == 2 then
+        SetGameObjectState("Level", not locked or not actived, go);
+        SetGameObjectState("TalentUnactive", not actived, go);
+    end
+
+    SetGameObjectState("EffectPos/Effect", false, go);
+end
+
+function HandleListViewLick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if m_SelectId == data.id then
+        return;
+    end
+    m_SelectId = data.id;
+    InitShow();
+end
+
+-- 通用技能列表初始化事件
+function OnGeneralListViewInit(listView, cell, data)
+    InitListCell(cell, data);
+end
+
+-- 通用技能列表点击事件
+function OnGeneralListViewClick(listView, cell, go)
+    HandleListViewLick(listView, cell, go);
+end
+
+-- 天赋技能列表初始化事件
+function OnTalentListViewInit(listView, cell, data)
+    InitListCell(cell, data);
+end
+
+-- 天赋技能列表点击事件
+function OnTalentListViewClick(listView, cell, go)
+    HandleListViewLick(listView, cell, go);
+end
+
+-- 升级按钮点击事件
+function OnUpButtonClick(gameObject)
+    if SkillManager.IsLockedSkill(m_SelectId) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLUNLOCK);
+        G_MusicMng:OnLoadMusic(4011);
+        return;
+    end
+    if G_UserInfo.RoleAttribute.Level < m_NeedLevel then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKLEVEL);
+        G_MusicMng:OnLoadMusic(4011);
+        return;
+    end
+    local data = SkillManager.GetSkillData(m_SelectId);
+    local info = data.info;
+    local levelInfo = CCommonTool.GetSkillLvUpData(info.LvupData, SkillManager.GetPlayerSkill(m_SelectId).level);
+    local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, levelInfo.Need_item_id);
+	if G_UserInfo.BindCoin < m_NeedCoin then
+	-- 金币不足
+        if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, m_NeedCoin,ENUMPANELID.ENUM_PANEL_SKILLPANEL, SkillProtocol.RequestSkillLevelUp, m_SelectId) then
+            --ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKMONEY);
+            --G_MusicMng:OnLoadMusic(4011);
+			MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+            return;
+        end
+    end
+    if itemNum < levelInfo.Need_item_num then
+        -- 道具不足
+		if levelInfo.Need_item_id>0 and  CCommonTool.GetQuickToBuyByExcelID(levelInfo.Need_item_id)~=nil then
+            
+            MaterialExchangePanel.ShowPanel(levelInfo.Need_item_id,ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+			
+            return;       
+        end  
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKITEM);
+        G_MusicMng:OnLoadMusic(4011);
+        return;
+    end
+    
+    
+    SkillProtocol.RequestSkillLevelUp(m_SelectId);
+    ReportManager.RequestReportPanel(10302);
+end
+
+-- 全部升级按钮
+function OnAllUpButtonClick(gameObject)
+    if SkillManager.HasSkillLessPlayerLevel() == true then
+        local list = SkillManager.GetAllSkillLvUpInfos();
+        if list == nil or #list == 0 then
+            if GetIsCanQuickBuy() == true then
+                return;
+            else
+                ShowSystemFlowTips(301);
+            end
+
+            return;
+        end
+        SkillProtocol.RequestAllSkillLevelUp(list);
+    else
+        ShowSystemFlowTips(5417);
+    end
+    ReportManager.RequestReportPanel(10302);
+end
+
+function GetIsCanQuickBuy()
+    local generalSkillInfos = SkillManager.GetGeneralSkillInfos();
+    if generalSkillInfos~=nil and #generalSkillInfos>0 then
+        --以第一个为例
+        local skillId = generalSkillInfos[1].id;
+        if SkillManager.IsLockedSkill(skillId) then
+            return false;
+        end
+
+        local info = SkillManager.GetSkillData(skillId).info;
+        if info == nil then
+            error("技能是否可升级::空指针::skillId"..tostring(skillId));
+            return false;
+        end
+        local playerSkill =SkillManager.GetPlayerSkill(skillId);
+        local level = playerSkill.level;
+        local maxLevel = info.MaxLv;
+        if level >= maxLevel then
+            return false;
+        end
+
+        local levelInfo = CCommonTool.GetSkillLvUpData(info.LvupData, level);
+        if G_UserInfo.RoleAttribute.Level < levelInfo.Need_lv then
+            return false;
+        end
+        if G_UserInfo.BindCoin < levelInfo.Need_money then
+            MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+            return true;
+        end
+
+        local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, levelInfo.Need_item_id);
+        if itemNum < levelInfo.Need_item_num then
+            if levelInfo.Need_item_id>0 and  CCommonTool.GetQuickToBuyByExcelID(levelInfo.Need_item_id)~=nil then
+            
+                MaterialExchangePanel.ShowPanel(levelInfo.Need_item_id,ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+                
+                return true;
+            end     
+        end         
+    end
+    
+    return false;   
+end
+
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新界面
+function Refresh()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+-- 技能升级返回
+function OnSkillLevelUp(skillId)
+    if m_CreateSuccess then
+        OnAllSkillLevelUp({skillId});
+    end
+end
+
+-- 清除特效Timer
+function ClearEffectTimer()
+    if timerProc ~= nil then
+        Timer.Instance:StopTimer(timerProc);
+        timerProc = nil;
+    end
+end
+
+-- 技能全部升级返回
+function OnAllSkillLevelUp(list)
+    ClearEffectTimer();
+    timerProc = Timer.Instance:AddTimer(0.1, 0, function() 
+        if not m_CreateSuccess then
+            return;
+        end
+        for _, id in ipairs(list) do
+            local cell = GetCellBySkillId(id);
+            if cell ~= nil then
+                local effect = child(cell.gameObject, "EffectPos/Effect").gameObject;
+                effect:SetActive(false);
+                effect:SetActive(true);
+            end
+        end
+    end);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {selectId = m_SelectId};
+end
+
+function SetJumpCloseData(paramTable)
+    panelParams = paramTable;
+end
+
+-- 货币改变
+function OnBindMoneyChange()
+    if m_CreateSuccess then
+        InitSkillInfo();
+    end
+end

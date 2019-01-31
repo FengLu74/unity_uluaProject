@@ -1,0 +1,154 @@
+﻿
+module("JewelPanelManager", package.seeall)
+------------------------------------------------宝珠-----------------------------------------
+-- 玩家宝珠数据信息
+LogicData_JewePlayerInfo = {};
+-- 初始化god table
+function ConstructData()
+
+    LogicData_JewePlayerInfo = {};
+
+    LogicData_JewePlayerInfo.JeweInfos = {};
+    --星级
+    LogicData_JewePlayerInfo.JeweInfos.StarLvl = 0;
+    --阶段
+    LogicData_JewePlayerInfo.JeweInfos.StageLvl = -1;
+    --经验
+    LogicData_JewePlayerInfo.JeweInfos.Exp = 0;
+    --附加技能
+    LogicData_JewePlayerInfo.SkillInfos = {};
+
+end
+--上线 持久化宝珠数据
+function SetJeweInfos(star_lvl,stage_lvl,exp)
+	if LogicData_JewePlayerInfo ~=nil and LogicData_JewePlayerInfo.JeweInfos ~=nil then
+
+		LogicData_JewePlayerInfo.JeweInfos.StarLvl = star_lvl;
+		LogicData_JewePlayerInfo.JeweInfos.StageLvl = stage_lvl;		
+		LogicData_JewePlayerInfo.JeweInfos.Exp = exp;
+	end
+end
+--上线 持久化宝珠附加技能数据
+function SetJeweSkillInfos(id,lvl)
+	
+	if LogicData_JewePlayerInfo ~=nil and LogicData_JewePlayerInfo.SkillInfos ~=nil then
+		local tables = {};
+		tables.SkillId = id;
+		tables.SkillLvl = lvl;
+		table.insert(LogicData_JewePlayerInfo.SkillInfos,tables)
+	end
+
+end
+function SortSkillInfos()
+	local tables = LogicData_JewePlayerInfo.SkillInfos;
+	table.sort( tables, sortfunction1 );
+end
+function sortfunction1(a,b)
+	if a ~= nil and b~=nil then
+		if a.SkillId ~=nil and b.SkillId ~=nil then
+			return a.SkillId < b.SkillId;
+		end		
+	end
+	return false;
+end
+--培养 更新星级
+function UpdateJeweInfo(star_lvl,stage_lvl,exp)
+
+	if star_lvl ~= nil then
+		LogicData_JewePlayerInfo.JeweInfos.StarLvl  = star_lvl;
+	end
+	
+	if stage_lvl~=nil then
+		LogicData_JewePlayerInfo.JeweInfos.StageLvl  = stage_lvl;
+	end
+	if exp ~= nil then
+		LogicData_JewePlayerInfo.JeweInfos.Exp = exp;
+	end
+	--刷新宝珠界面
+	JewelPanel.RefreshJewePanel();
+end
+
+-- 技能升级
+function UpdateJeweSkillInfo(id,lvl)
+	
+	if LogicData_JewePlayerInfo ~=nil and LogicData_JewePlayerInfo.SkillInfos ~=nil then
+		local SkillInfos = LogicData_JewePlayerInfo.SkillInfos;
+		local isExit = false;
+		for index=1,#SkillInfos do
+			if SkillInfos[index].SkillId == id then
+				SkillInfos[index].SkillLvl = lvl;
+				isExit = true;
+			end
+		end
+		if isExit == false then
+			
+		end
+	
+	end
+	for i=1, #LogicData_JewePlayerInfo.SkillInfos do
+		--error("SkillId"..LogicData_JewePlayerInfo.SkillInfos[i].SkillId.."  SkillLvl::"..LogicData_JewePlayerInfo.SkillInfos[i].SkillLvl);
+	end
+	--刷新宝珠界面
+	JewelPanel.RefreshJewePanel();
+end
+-- 得到当前阶数
+function GetCurPlayerJeweInfo()
+	if LogicData_JewePlayerInfo ~=nil and LogicData_JewePlayerInfo.JeweInfos ~= nil then
+		return LogicData_JewePlayerInfo.JeweInfos.StageLvl,LogicData_JewePlayerInfo.JeweInfos.StarLvl,LogicData_JewePlayerInfo.JeweInfos.Exp;
+	else
+		return -1,0,0;
+	end
+end
+-- 得到宝珠附加技能数据
+function GetJeweSkillInfos( )
+	if LogicData_JewePlayerInfo ~=nil and LogicData_JewePlayerInfo.SkillInfos ~=nil then
+		local skill_table = LogicData_JewePlayerInfo.SkillInfos;
+		return skill_table;
+	end
+	return nil;
+end
+---------------------我要变强分数宝珠计算需要--------------
+-- 品质系数写死
+m_QualityScoreTable =
+{
+    --for ceshi
+--    [1]=1,
+--    [2]=1,
+--    [3]=1,
+--    [4]=1,
+--    [5]=1,
+--    [6]=1,
+--    [7]=1,
+--    [8]=1,
+--    [9]=1,
+--    [10]=1,
+    [1] = 68, 
+    [2] = 136, 
+    [3] = 204, 
+    [4] = 272, 
+    [5] = 340, 
+    [6] = 408, 
+    [7] = 476, 
+    [8] = 544, 
+    [9] = 612, 
+    [10] =680, 
+}
+
+-- 得到变强界面系统的品质系数对应的分数
+function GetScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_JEWE) == false then return score end
+	local Infos = LogicData_JewePlayerInfo.JeweInfos;
+    if Infos.StageLvl<=0 then
+        return 0;
+    end
+    for index=1,Infos.StageLvl do
+        if index ~= Infos.StageLvl then
+            score=score+10*m_QualityScoreTable[index];
+        else
+            score=score+Infos.StarLvl*m_QualityScoreTable[index];--正好当前阶分数score=score+当前阶培养等级*系数
+        end
+    end
+    return score;
+end
+------------------

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <EditText
+        android:id="@+id/xyw_fm_usercard_name_et"
+        android:layout_marginTop="5dp"
+        android:layout_width="match_parent"
+        android:drawablePadding="4dp"
+        android:hint="真实姓名"
+        android:drawableLeft="@drawable/xy_ic_user"
+        style="@style/xy_edit_text"
+        />
+    <EditText
+        android:id="@+id/xyw_fm_usercard_namecard_et"
+        style="@style/xy.edit.text.id"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:drawablePadding="4dp"
+        android:hint="身份证"
+        android:drawableLeft="@drawable/xy_ic_idcard"
+        />
+    <Button
+        android:layout_marginTop="15dp"
+        android:id="@+id/xyw_fm_usercard_bind_bt"
+        style="@style/xy.button.positive"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginBottom="15dp"
+        android:text="@string/xy_account_bind_bind"/>
+</LinearLayout>

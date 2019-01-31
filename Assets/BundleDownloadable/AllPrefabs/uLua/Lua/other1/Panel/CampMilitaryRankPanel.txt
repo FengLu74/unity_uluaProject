@@ -1,0 +1,299 @@
+﻿module("CampMilitaryRankPanel", package.seeall)
+-- 当前所在面板名字
+local m_PanelName = "CampMilitaryRankPanel";
+---------------------------------------label路径---------------------------------------
+-- 军衔标头
+local m_LbTitlePath = "Sub_Info/sp_Title/lb_Title";
+local m_LbCurTitlePath = "Sub_Info/sp_Title/lb_Curent";
+-----------------------------------------按钮路径--------------------------------------
+-- 加注释
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 军衔等级图片
+local m_SpMilitaryRankPath = "Sub_Info/sp_MilitaryRank";
+-- 军衔等级名称
+local m_LbMilitaryRankDataPath = "Sub_Info/lb_MilitaryRankData";
+-- 军功
+local m_LbExploitDataPath = "Sub_Info/lb_ExploitData";
+----------------------------------gameobject所在的路径---------------------------------
+-- 军衔属性信息
+local m_AttrPath = "Sub_Info/Sub_Attr";
+-- 军衔每日俸禄
+local m_SubRewardsPath = "Sub_Info/Sub_Rewards/Item";
+-- 军衔进度
+local m_BarMilitaryPath = "Sub_Info/bar_Military";
+----------------------------------通用的名称路径---------------------------------------
+-- 大等阶列表
+local m_GridTabsPath = "Sub_Tabs/Grid";
+-- 军衔等级列表
+local m_GridMilitaryRankPath = "Sub_MilitaryRankList/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_GridTabs = nil;
+-- 加注释
+local m_GridMilitaryRank = nil;
+-- 阵营数据
+local m_CreditData = nil;
+-- 当前军衔
+local m_MilitaryNum = nil;
+-- 当前军衔数据
+local m_MilitaryData = nil;
+-- 当前大军衔索引
+local m_NameIDUpgrade = nil;
+-- 军衔进度
+local m_BarMilitary = nil;
+-- 是否第一次打开
+local isFirstOpen = true;
+-----------------------------------一些写死的规定--------------------------------------
+-- 各大等阶对应的文字颜色
+local LvColor ={ [1] = {ColorTop = "ddc7a1",ColorDown = "9b7a5d"},
+                 [2] = {ColorTop = "ffffff",ColorDown = "8ba3a5"},
+                 [3] = {ColorTop = "fcf1ab",ColorDown = "b59730"},
+                 [4] = {ColorTop = "f2fffc",ColorDown = "9bf4fe"},
+                 [5] = {ColorTop = "f2fffc",ColorDown = "c59bfe"},
+                 [6] = {ColorTop = "fffec0",ColorDown = "ffdc64"},
+                 [7] = {ColorTop = "fffec0",ColorDown = "ffdc64"},
+                 [8] = {ColorTop = "fffec0",ColorDown = "ffdc64"}, };
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    --InitDatas();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    isFirstOpen = true;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_GridTabs = nil;
+    m_BarMilitary = nil;
+	m_GridMilitaryRank = nil;
+    isFirstOpen = true;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_GridTabs = GetComponent(m_PanelObject, m_GridTabsPath, "UIListView");
+    m_GridMilitaryRank = GetComponent(m_PanelObject, m_GridMilitaryRankPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+--	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+    m_GridTabs:SetInitCallback(OnGridTabsViewInit);
+    m_GridTabs:SetClickCallback(OnGridTabsViewClick);
+    m_GridMilitaryRank:SetInitCallback(OnGridMilitaryRankViewInit);
+    m_GridMilitaryRank:SetClickCallback(OnGridMilitaryRankViewClick);
+    m_BarMilitary = GetComponent(m_PanelObject, m_BarMilitaryPath, "UIProgressBar");
+end
+-- 初始化数据
+function InitDatas()
+    m_CreditData = CampManager.DealTableData();
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitDatas();
+    GetMilitaryRank();
+    m_GridTabs:RemoveAll();
+    for i,value in pairs(m_CreditData) do
+        local data = value[1];
+        m_GridTabs:AddData(data);
+        if data.NameIDUpgrade == m_MilitaryData.NameIDUpgrade then
+            m_GridTabs:LookAt(i-1,true);
+            m_NameIDUpgrade = i;
+            InitUpgrade(i-1);
+            InitCurMilitaryRankInfo(m_MilitaryData);
+        end
+    end
+end
+
+-- 得到当前军衔
+function GetMilitaryRank()
+    local m_creditData = CCommonTool.GetCreditDataInfos();
+    if m_creditData == nil then return end
+--     -- 累积功勋值
+--    local allExploits = G_UserInfo.RoleAttribute.N64AllExploits;
+--    -- 以累积功勋值跟每阶军衔所需总功勋相比较，得出人物军衔
+--    for Index = 1,m_creditData.Count do
+--        if m_creditData[Index - 1] == nil then return end
+--        if m_creditData[Index - 1].curTotalNeed > allExploits then
+--            m_MilitaryNum = Index - 1;
+--            m_MilitaryData = m_creditData[m_MilitaryNum];
+--            break;
+--        end
+--        if Index == m_creditData.Count then
+--            m_MilitaryNum = Index - 1;
+--            m_MilitaryData = m_creditData[m_MilitaryNum];
+--        end
+--    end
+    m_MilitaryNum = CampManager.GetMilitaryRank();
+    m_MilitaryData = m_creditData[m_MilitaryNum - 1];
+end
+
+
+-- 初始化当前小等阶显示
+function InitUpgrade(Index)
+    m_GridMilitaryRank:RemoveAll();
+    for i, value in pairs (m_CreditData[Index+1]) do
+        m_GridMilitaryRank:AddData(value);
+        if value.ID == m_MilitaryData.ID then
+            m_GridMilitaryRank:SetSelect(i - 1,true);
+            InitCurMilitaryRankInfo(value);
+        end
+    end
+end
+
+-- 获得阵营类型
+function getIsUnion()
+    local isUnion = true;
+    if G_UserInfo.RoleAttribute.JoinCampType == JOINCAMPENUM.UNION then
+        isUnion = true;
+    elseif G_UserInfo.RoleAttribute.JoinCampType == JOINCAMPENUM.TRIBE then
+        isUnion = false;
+    end
+    return isUnion;
+end
+------------------------------------------事件方法------------------------------------
+-- 显示军衔大等阶列表
+function OnGridTabsViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local isUnion = getIsUnion();
+    if isUnion then
+        SetLabelTextByID("Label",data.NameIDUpgrade,go);
+    else
+        SetLabelTextByID("Label",data.NameIDUpgrade1,go)
+    end
+    SetLabelGradientColor(LvColor[data.Upgrade].ColorTop, LvColor[data.Upgrade].ColorDown, "Label", go);
+    SetSpriteContent("sp_Icon", "PanelAloneThreeAtlasV04", "UI_ZY_JunXian_JieWei_00"..data.Upgrade, go, true);
+end
+
+-- 点击大等阶显示详细等级
+function OnGridTabsViewClick(listView, cell, go)
+    InitUpgrade(cell.dataIndex);
+end
+
+-- 各大等阶等级显示
+function OnGridMilitaryRankViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    -- 设置军衔图片
+    SetSpriteByAtlasID("sp_MilitaryRank", data.PictureId, go, true);
+    for Index = 1, 5 do
+        if Index <= data.UpgradeStar then
+            SetGameObjectState("Stars" .. "/Sprite_" .. Index, true, go);
+        else
+            SetGameObjectState("Stars" .. "/Sprite_" .. Index, false, go);
+        end
+    end
+    RepositionUITableComp("Stars", go);
+    
+    -- 名字
+    local isUnion = getIsUnion();
+    if isUnion then
+        SetLabelTextByID("lb_MilitaryRankData",data.NameID,go);
+    else
+        SetLabelTextByID("lb_MilitaryRankData",data.NameID1,go);
+    end
+    SetLabelGradientColor(LvColor[data.Upgrade].ColorTop, LvColor[data.Upgrade].ColorDown, "lb_MilitaryRankData", go);
+
+    SetGameObjectState("Sub_Curent", data.ID == m_MilitaryData.ID, go);
+end
+
+-- 小等级选中
+function OnGridMilitaryRankViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    InitCurMilitaryRankInfo(data);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 得到当前军衔等级
+function GetCurMilitaryRankLevel()
+    local curLevel = 0;
+    local allExploits = G_UserInfo.RoleAttribute.N64AllExploits;
+    local creditsTableInfo = CCommonTool.GetCreditDataInfos();
+    for Index = 1, creditsTableInfo.Count do
+        if creditsTableInfo[Index - 1].curTotalNeed > allExploits then
+            curLevel = Index;
+            break;
+        end
+        if Index == creditsTableInfo.Count then
+            curLevel = Index;
+        end
+    end
+    return curLevel;
+end
+
+-- 初始化当前选中的军衔信息
+function InitCurMilitaryRankInfo(data)
+    -- 阵营信息
+    local campData = CampManager.CampAllInfo;
+    -- 军衔图片，名字
+    SetSpriteByAtlasID(m_SpMilitaryRankPath, data.PictureId, m_PanelObject, true);
+    if campData.unionID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then
+        SetLabelContent(m_LbMilitaryRankDataPath, GetTextToId(data.NameID), m_PanelObject);
+    else
+        SetLabelContent(m_LbMilitaryRankDataPath, GetTextToId(data.NameID1), m_PanelObject);
+    end
+    -- 军衔属性
+    for Index = 1, 5 do
+        local attr, attrValue = CampManager.GetTableAttrAndValue(Index, data);
+        if attr == 0 then
+            SetGameObjectState(m_AttrPath .. "/" .. Index .. "/Label_Num", false, m_PanelObject);
+            SetGameObjectState(m_AttrPath .. "/" .. Index .. "/sp_Icon", false, m_PanelObject);
+        elseif attr ~= nil then 
+            SetGameObjectState(m_AttrPath .. "/" .. Index .. "/Label_Num", true, m_PanelObject);
+            SetGameObjectState(m_AttrPath .. "/" .. Index .. "/sp_Icon", false, m_PanelObject);
+            SetLabelContent(m_AttrPath .. "/" .. Index .. "/Label_Attr", CCommonTool.GetAttrNameByAttrID(attr), m_PanelObject);
+            SetLabelContent(m_AttrPath .. "/" .. Index .. "/Label_Num", "+ "..attrValue, m_PanelObject);
+        end
+    end
+    -- 每日军衔俸禄
+    CampManager.SetRewards(data, m_PanelObject, m_SubRewardsPath, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    -- 功勋
+    --error("campData.unionExploit::"..campData.unionExploit);
+    m_BarMilitary.value = G_UserInfo.RoleAttribute.N64AllExploits / data.CurTotalNeed;
+    SetLabelContent(m_LbExploitDataPath, G_UserInfo.RoleAttribute.N64AllExploits .. "/".. data.CurTotalNeed,m_PanelObject);     
+    -- 军衔标头
+    SetGameObjectState(m_LbTitlePath, data.ID == m_MilitaryData.ID, m_PanelObject);
+    SetGameObjectState(m_LbCurTitlePath, data.ID ~= m_MilitaryData.ID, m_PanelObject);
+end
+
+function GetNameByLevel(level)
+    if level == nil then
+        return "";
+    else
+        local creditData = CCommonTool.GetCreditDataInfo(level);
+        if creditData ~= nil then
+            local isUnion = getIsUnion();
+            if isUnion then
+                return GetTextToId(creditData.NameID);
+            else
+                return GetTextToId(creditData.NameID1);
+            end
+        else
+            return "";
+        end
+    end
+end

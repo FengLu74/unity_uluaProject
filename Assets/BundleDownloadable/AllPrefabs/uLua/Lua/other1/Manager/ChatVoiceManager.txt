@@ -1,0 +1,629 @@
+﻿module("ChatVoiceManager", package.seeall)
+
+-- 队伍房间类型
+ROOM_TYPE_TEAM = 2;
+-- 公会/国战房间类型
+ROOM_TYPE_NATIONAL = 1;
+
+-- 主播身份类型
+ROLE_TYPE_ANCHOR = 1;
+-- 听众身份类型
+ROLE_TYPE_AUDIENCE = 2;
+
+-- 语音管理器
+VoiceManager = nil;
+
+-- 队伍名称前缀
+TeamPrefix = "Team_";
+
+GuildPrefix = "Guild_";
+
+-- 上次播放的语音文件ID
+LastPlayFileId = "";
+
+-- 当前实时语音频道ID
+ChannelId = CHAT_CHANNEL_ID.CHAT_IVALID_ID;
+
+-- 麦克风是否开启
+MicOpened = false;
+
+-- 扬声器是否开启
+SpeakerOpened = false;
+
+-- 当前实时语音是否静音
+IsMuted = true;
+
+-- 等待加入的房间名称
+WaitToJoinRoomName = "";
+
+-- 是否为首次检测实时语音状态
+IsFirstCheckRoomState = true;
+
+-- 语音时游戏最小音量
+GameMinVolume = 0.1;
+
+-- 游戏音量渐变值
+VolumeSpeed = 0.1;
+
+-- 等待播放的语音文件
+waitingPlayFileId = nil;
+
+function InitVoiceCallback()
+    VoiceManager = CVoiceManager.Instance;
+    -- 设置上传语音文件完成回调
+    VoiceManager:SetUploadRecordCompleteCallback(OnUploadRecordComplete);
+    -- 设置语音识别回调
+    VoiceManager:SetSpeechToTextCallback(OnSpeechToText)
+    -- 设置语音文件下载完成回调
+    VoiceManager:SetDownloadRecordCompleteCallback(OnUploadRecordComplete);
+    -- 设置语音文件开始播放回调
+    VoiceManager:SetRecordedFileStartPlayCallback(OnRecordedFileStartPlay);
+    -- 设置语音文件播放完成回调
+    VoiceManager:SetRecordedFilePlayEndCallback(OnRecordedFilePlayEnd);
+    -- 设置加房间完成后的回调
+    VoiceManager:SetJoinRoomCompleteCallback(OnJoinRoomComplete);
+    -- 设置退出房间后的回调
+    VoiceManager:SetQuitRoomCompleteCallback(OnQuitRoomComplete);
+    -- 设置房间中的其他成员开始说话或者停止说话的状态改变回调
+    VoiceManager:SetMemberVoiceCallback(OnMemberVoice);
+    -- 设置玩家从房间离线回调
+    VoiceManager:SetStatusUpdateCallback(OnStatusUpdate);
+    -- 设置语音SDK方法返回值若为非0时的回调
+    VoiceManager:SetReturnErrCodeCallback(OnReturnErrCode);
+    -- 语音SDK事件触发时回调
+    VoiceManager:SetEventCompleteCallback(OnEventComplete);
+    -- 最小音量配置
+    local info = CCommonTool.GetDefineInfo(6090);
+    if info ~= nil then GameMinVolume = info:GetFloatContent(); end
+    -- 语音Timer事件
+    Timer.Instance:AddTimer(1, -1, OnTimer);
+end
+
+-- 设置上传语音文件完成回调(上传成功后才会调用)
+-- @param msgdata CVoiceMsgData对象
+function OnUploadRecordComplete(msgdata)
+    local voiceMng = CVoiceManager.Instance;
+    if voiceMng.autoSpeech == false then
+        SendVoiceMessage(msgdata);
+    end
+end
+
+-- 设置语音识别回调
+-- @param msgdata CVoiceMsgData对象
+function OnSpeechToText(msgdata)
+    SendVoiceMessage(msgdata);
+end
+
+-- 上传或翻译完成后,发送语音消息
+function SendVoiceMessage(msgdata)
+    local channelId = msgdata.channelId;
+    if channelId == CHAT_CHANNEL_ID.CHAT_ALONE_ID then
+        ChatManager.SendVoiceMessage(msgdata.channelId, msgdata.speechText, msgdata.fileId, msgdata.fileLength, msgdata.data);
+    else
+        ChatManager.SendVoiceMessage(msgdata.channelId, msgdata.speechText, msgdata.fileId, msgdata.fileLength, 0);
+    end
+end
+
+-- 设置语音文件下载完成回调(下载成功后才会调用)
+-- @param msgdata CVoiceMsgData对象
+function OnDownloadRecordComplete(msgdata)
+end
+
+-- 设置语音文件开始播放回调
+-- @param fileId 文件ID
+-- @param fileLength 文件播放长度
+function OnRecordedFileStartPlay(fileId, fileLength)
+    ChatPanel.OnRecordedFileStartPlay(fileId, fileLength);
+    FriendsChatPanel.OnRecordedFileStartPlay(fileId, fileLength);
+end
+
+-- 设置语音文件播放完成回调
+-- @param fileId 文件ID
+function OnRecordedFilePlayEnd(fileId)
+    ChatPanel.OnRecordedFilePlayEnd(fileId);
+    FriendsChatPanel.OnRecordedFilePlayEnd(fileId);
+    ChatManager.OnRecordedFilePlayEnd(fileId);
+end
+
+-- 设置加房间完成后的回调
+-- @param string roomName 房间名称
+-- @param int memberId 成员ID
+function OnJoinRoomComplete(roomName, memberId)
+    error("设置加房间完成后的回调:::::::");
+end
+
+-- 设置退出房间后的回调
+-- @param string roomName 房间名称
+-- @param int memberId 成员ID
+function OnQuitRoomComplete(roomName, memberId)
+    
+end
+
+-- 设置房间中的其他成员开始说话或者停止说话的状态改变回调
+-- @param int[] 改变状态的member成员，其值为[memberID | status]这样的对，总共有count对
+-- status有“0”：停止说话; “1”：开始说话; “2”:继续说话。
+-- @param count 成员个数
+function OnMemberVoice(members, count)
+end
+
+-- 设置玩家从房间离线回调
+-- @param string roomName 房间名称
+-- @param int memberId 成员ID
+function OnStatusUpdate(roomName, memberId)
+end
+
+-- 获取队伍的房间名称
+function GetTeamRoomName()
+    if TeamManager.HasTeam() == true then
+        return TeamPrefix .. TeamManager.teamData.id;
+    end
+    return nil;
+end
+
+-- 获取公会的房间名称
+function GetGuildRoomName()
+    if GuildManager.HasGuild() == true then
+        return GuildPrefix .. GuildManager.guildId;
+    end
+    return nil;
+end
+
+-- 是否有麦克风权限
+function HasMicRight()
+    if ChannelId == CHAT_CHANNEL_ID.CHAT_JOIN_ID then
+        return TeamManager.HasTeam();
+    end
+    if ChannelId == CHAT_CHANNEL_ID.CHAT_GUILD_ID then
+        if not GuildManager.HasGuild() then
+            return false;
+        else
+            -- 公共模式
+            if GuildManager.IsGuildWarTime() then
+                return GuildManager.HasPermission(E_GUILD_PERMISSION.VOICE_MIC);
+            else
+                -- 公共模式, 暂时返回false, 功能没做
+                return false;
+            end
+        end
+    end
+    return false;
+end
+
+-- 帧频事件(2秒执行一次)
+function OnTimer()
+    if G_SceneMng == nil or G_SceneMng.isInGame ~= true then
+        return;
+    end
+
+    -- 初始化SDK
+    if not VoiceManager.engineInited then
+        VoiceManager:InitEngine();
+    end
+
+    -- 首次进入游戏, 自动选择频道
+    if IsFirstCheckRoomState == true then
+        IsFirstCheckRoomState = false;
+        G_MusicMng.volumeSpeed = VolumeSpeed;
+        return;
+    end
+
+    if waitingPlayFileId ~= nil then
+        VoiceManager:PlayVoiceByFileId(waitingPlayFileId);
+        waitingPlayFileId = nil;
+    end
+
+    local inOfflineMode = VoiceManager:InOfflineMode();
+    local gameSoundMuted = false;
+    -- 离线模式被占用时不处理实时语音逻辑
+    if inOfflineMode == true and not VoiceManager.gettingAuthKey then 
+        gameSoundMuted = true;
+    end
+
+    if not inOfflineMode then
+        local hasTeam = TeamManager.HasTeam();
+        local hasGuild = GuildManager.HasGuild();
+        local isRoomWaiting = VoiceManager:IsRoomWaiting();
+        local haveJoinRoom = VoiceManager.haveJoinRoom;
+        local roleType = VoiceManager.roleType;
+        if haveJoinRoom == true then
+            if IsMuted == true then -- 静音模式
+                if VoiceManager.speakerOpened == true then
+                    VoiceManager:CloseSpeaker();
+                end
+                if roleType == ROLE_TYPE_ANCHOR then 
+                    if VoiceManager.micOpened == true then
+                        VoiceManager:CloseMic(); 
+                    end
+                end
+                if SpeakerOpened == true then
+                    SpeakerOpened = false;
+                    gameSoundMuted = false;
+                    RefreshPanel();
+                end
+            else -- 非静音模式
+                if not VoiceManager.speakerOpened == true then
+                    if VoiceManager.mode ~= 0 then
+                        SetRealtimeMode();
+                    else
+                        VoiceManager:OpenSpeaker();
+                    end
+                end
+                if roleType == ROLE_TYPE_ANCHOR then 
+                    if MicOpened and VoiceManager.micOpened ~= true then
+                        if VoiceManager.mode ~= 0 then
+                            SetRealtimeMode();
+                        else
+                            VoiceManager:OpenMic();
+                        end
+                    end
+                    if not MicOpened and VoiceManager.micOpened then
+                        VoiceManager:CloseMic();
+                    end
+                elseif MicOpened then
+                    MicOpened = false;
+                end
+                if VoiceManager.mode ~= 0 then
+                    SetRealtimeMode();
+                end
+                if SpeakerOpened ~= true then
+                    SpeakerOpened = true;
+                    gameSoundMuted = true;
+                    RefreshPanel();
+                end
+            end
+        end
+
+        -- 请求房间操作等待中不处理实时语音逻辑
+        if not isRoomWaiting then
+            local roomType = VoiceManager.roomType;
+            local roomName = VoiceManager.roomName;
+            local teamRoomName = GetTeamRoomName();
+            local guildRoomName = GetGuildRoomName();
+            local hasMicRight = HasMicRight();
+            if haveJoinRoom == true then
+                -- 已加入房间, 判断状态是否正确
+                if (roomType == ROOM_TYPE_TEAM and not hasTeam) --房间是队伍,当前已没有队伍
+                    or (roomType == ROOM_TYPE_TEAM and roomName ~= teamRoomName) -- 队伍房间发生改变
+                    or (roomType == ROOM_TYPE_NATIONAL and roomName ~= guildRoomName) -- 公会房间发生改变
+                    or (roomType == ROOM_TYPE_NATIONAL and not hasGuild) --房间是公会, 当前已没有公会
+                    or (WaitToJoinRoomName ~= "" and roomName ~= WaitToJoinRoomName) --将要加入的房间名称与当前房间名称不一致
+                    or (roomType == ROOM_TYPE_NATIONAL and roleType == ROLE_TYPE_AUDIENCE and hasMicRight == true) --房间是公会, 主播身份, 已没有权限
+                    or (roomType == ROOM_TYPE_NATIONAL and roleType == ROLE_TYPE_ANCHOR and hasMicRight == false) then --房间是公会, 听众身份, 已拥有权限
+                    QuitRoom();
+                else
+                    gameSoundMuted = not IsMuted;
+                end
+            else
+                if WaitToJoinRoomName ~= "" then
+                    if WaitToJoinRoomName == teamRoomName then
+                        VoiceManager:JoinTeamRoom(WaitToJoinRoomName);
+                    elseif WaitToJoinRoomName == guildRoomName then
+                        if hasMicRight == true then
+                            VoiceManager:JoinNationalRoomByAnchor(WaitToJoinRoomName);
+                        else
+                            VoiceManager:JoinNationalRoomByAudience(WaitToJoinRoomName);
+                        end
+                    else
+                        error("请求加入的房间名称有误! WaitToJoinRoomName:"..WaitToJoinRoomName);
+                    end
+                else
+                    gameSoundMuted = false;
+                end
+            end
+        end
+    end
+    CheckGameSound(gameSoundMuted);
+end
+
+-- 刷新界面显示
+function RefreshPanel()
+    RealTimeVoicePanel.Refresh();
+end
+
+-- 退出房间
+function QuitRoom()
+    VoiceManager:QuitRoom(VoiceManager.roomName);
+end
+
+function CheckGameSound(muted)
+    -- 正在录音时, 会设置静音
+    if UIRecordOperate.pressed == true then
+        return;
+    end
+    local volume = G_MusicMng:GetAudioListenerVolume();
+    if muted == true then
+        if volume == 0 or volume > GameMinVolume then
+            G_MusicMng:Pause(GameMinVolume);
+        end
+    elseif volume < 1 then
+        G_MusicMng:Restore(1);
+    end
+end
+
+-- 清理数据
+function ClearData()
+    LastPlayFileId = "";
+    WaitToJoinRoomName = "";
+    ChannelId = CHAT_CHANNEL_ID.CHAT_IVALID_ID;
+    MicOpened = false;
+    SpeakerOpened = true;
+    IsFirstCheckRoomState = true;
+    IsMuted = true;
+    if VoiceManager.haveJoinRoom == true then
+        QuitRoom();
+    end
+end
+
+--------------------------------------------------------外部调用接口--------------------------------------------------------
+
+function SetMessageMode()
+    if VoiceManager.mode == 0 then
+        if VoiceManager.autoSpeech then
+            VoiceManager:SetMode(2);
+        else
+            VoiceManager:SetMode(1);
+        end
+    end
+end
+
+function SetRealtimeMode()
+    if VoiceManager.mode ~= 0 then
+        VoiceManager:SetMode(0);
+    end
+end
+
+-- 播放语音
+function PlayVoice(fileId)
+    LastPlayFileId = fileId;
+    if VoiceManager.mode == 0 then
+        SetMessageMode();
+        waitingPlayFileId = fileId;
+    else
+        waitingPlayFileId = nil;
+        VoiceManager:PlayVoiceByFileId(fileId);
+    end
+end
+
+-- 停止播放语音
+function StopVoice(fileId)
+    LastPlayFileId = "";
+    VoiceManager:StopPlayFile();
+end
+
+-- 正在发送语音时, 再次进行录音处理
+function VoiceUploadingTips()
+    ShowSystemFlowTips(8220);
+    error("正在发送语音消息, 请稍候!");
+end
+
+-- 没有开启Mic权限
+function VoiceNoPermissionTips()
+    ShowSystemFlowTips(8221);
+    error("没有开启Mic权限");
+end
+
+-- 加入队伍实时语音房间
+function JoinTeamRoom()
+    error("加入队伍实时语音房间");
+    if TeamManager.HasTeam() ~= true then
+        error("没有队伍不能加入房间");
+        return;
+    end
+    ChannelId = CHAT_CHANNEL_ID.CHAT_JOIN_ID;
+    WaitToJoinRoomName = GetTeamRoomName();
+    RefreshPanel();
+end
+
+-- 退出队伍房间(退出队伍时)
+function QuitTeamRoom()
+    if ChannelId == CHAT_CHANNEL_ID.CHAT_JOIN_ID then
+        ChannelId = CHAT_CHANNEL_ID.CHAT_IVALID_ID;
+        WaitToJoinRoomName = "";
+        RefreshPanel();
+    end
+end
+
+-- 加入公会实时语音房间
+function JoinGuildRoom()
+    error("加入公会实时语音房间");
+    if GuildManager.HasGuild() ~= true then
+        error("没有队伍不能加入房间");
+        return;
+    end
+    ChannelId = CHAT_CHANNEL_ID.CHAT_GUILD_ID;
+    WaitToJoinRoomName = GetGuildRoomName();
+    RefreshPanel();
+end
+
+-- 退出公会房间(退出公会时)
+function QuitGuildRoom()
+    if ChannelId == CHAT_CHANNEL_ID.CHAT_GUILD_ID then
+        ChannelId = CHAT_CHANNEL_ID.CHAT_IVALID_ID;
+        WaitToJoinRoomName = "";
+        RefreshPanel();
+    end
+end
+
+-- 自动加入实时语音房间
+function AutoJoinRoom()
+    if TeamManager.HasTeam() == true then
+        JoinTeamRoom();
+        return true;
+    elseif GuildManager.HasGuild() == true then
+        JoinGuildRoom();
+        return true;
+    end
+    return false;
+end
+
+-- 设置实时语音静态模式
+function SetRealTimeVoiceMuteMode(muted)
+    IsMuted = muted == true;
+    if IsMuted ~= true then
+        if ChannelId == CHAT_CHANNEL_ID.CHAT_IVALID_ID then
+            AutoJoinRoom();
+        end
+    end
+end
+
+-- 开启麦克风
+function OpenMic()
+    if IsMuted == true then
+        return;
+    end
+    MicOpened = true;
+end
+
+-- 关闭麦克风
+function CloseMic()
+    MicOpened = false;
+end
+
+--------------------------------------------------------错误CODE处理--------------------------------------------------------
+-- 设置语音SDK方法返回值若为非0时的回调
+function OnReturnErrCode(methodName, ret)
+    --[[
+    //common base err
+	GCLOUD_VOICE_PARAM_NULL = 0x1001,	//4097, some param is null
+	GCLOUD_VOICE_NEED_SETAPPINFO = 0x1002,	//4098, you should call SetAppInfo first before call other api
+	GCLOUD_VOICE_INIT_ERR = 0x1003,	//4099, Init Erro
+	GCLOUD_VOICE_RECORDING_ERR = 0x1004,		//4100, now is recording, can't do other operator
+	GCLOUD_VOICE_POLL_BUFF_ERR = 0x1005,	//4101, poll buffer is not enough or null 
+	GCLOUD_VOICE_MODE_STATE_ERR = 0x1006,	//4102, call some api, but the mode is not correct, maybe you shoud call SetMode first and correct
+	GCLOUD_VOICE_PARAM_INVALID = 0x1007,	//4103, some param is null or value is invalid for our request, used right param and make sure is value range is correct by our comment 
+	GCLOUD_VOICE_OPENFILE_ERR = 0x1008, //4104, open a file err
+	GCLOUD_VOICE_NEED_INIT = 0x1009, //4105, you should call Init before do this operator
+	GCLOUD_VOICE_ENGINE_ERR = 0x100A, //4106, you have not get engine instance, this common in use c# api, but not get gcloudvoice instance first
+	GCLOUD_VOICE_POLL_MSG_PARSE_ERR = 0x100B, //4107, this common in c# api, parse poll msg err
+	GCLOUD_VOICE_POLL_MSG_NO = 0x100C, //4108, poll, no msg to update
+
+	//realtime err
+	GCLOUD_VOICE_REALTIME_STATE_ERR = 0x2001, //8193, call some realtime api, but state err, such as OpenMic but you have not Join Room first
+	GCLOUD_VOICE_JOIN_ERR = 0x2002, //8194, join room failed
+	GCLOUD_VOICE_QUIT_ROOMNAME_ERR = 0x2003,	//8195, quit room err, the quit roomname not equal join roomname
+	GCLOUD_VOICE_OPENMIC_NOTANCHOR_ERR = 0x2004,//8196, open mic in bigroom,but not anchor role
+
+	//message err
+	GCLOUD_VOICE_AUTHKEY_ERR = 0x3001, //12289, apply authkey api error
+	GCLOUD_VOICE_PATH_ACCESS_ERR = 0x3002, //12290, the path can not access ,may be path file not exists or deny to access
+	GCLOUD_VOICE_PERMISSION_MIC_ERR = 0x3003,	//12291, you have not right to access micphone in android
+	GCLOUD_VOICE_NEED_AUTHKEY = 0x3004,		//12292,you have not get authkey, call ApplyMessageKey first
+	GCLOUD_VOICE_UPLOAD_ERR = 0x3005,   //12293, upload file err
+    GCLOUD_VOICE_HTTP_BUSY = 0x3006,    //12294, http is busy,maybe the last upload/download not finish.
+    GCLOUD_VOICE_DOWNLOAD_ERR = 0x3007, //12295, download file err
+    GCLOUD_VOICE_SPEAKER_ERR = 0x3008, //12296, open or close speaker tve error
+    GCLOUD_VOICE_TVE_PLAYSOUND_ERR = 0x3009, //12297, tve play file error
+    GCLOUD_VOICE_AUTHING = 0x300a, // 12298, Already in applying auth key processing
+
+    GCLOUD_VOICE_INTERNAL_TVE_ERR = 0x5001,		//20481, internal TVE err, our used
+	GCLOUD_VOICE_INTERNAL_VISIT_ERR = 0x5002,	//20482, internal Not TVE err, out used
+	GCLOUD_VOICE_INTERNAL_USED = 0x5003, //20483, internal used, you should not get this err num
+
+            GCLOUD_VOICE_BADSERVER = 0x06001, // 24577, bad server address,should be "udp://capi.xxx.xxx.com"
+        
+        GCLOUD_VOICE_STTING =  0x07001, // 28673, Already in speach to text processing
+    ]]
+    if ret == 4098 then
+        -- GCLOUD_VOICE_NEED_SETAPPINFO
+        ShowSystemFlowTips(8209);
+        error("未设置语音SDK的参数!");
+    elseif ret == 4105 then
+        -- GCLOUD_VOICE_NEED_INIT
+        ShowSystemFlowTips(8210);
+        error("语音SDK没有初始化!");
+        VoiceManager:InitEngine();
+    elseif ret == 4102 then
+        -- GCLOUD_VOICE_MODE_STATE_ERR:
+        ShowSystemFlowTips(8211);
+        error("当前语音模式设置有误!");
+    elseif ret == 4103 then
+        -- GCLOUD_VOICE_PARAM_INVALID
+        ShowSystemFlowTips(8212);
+        error("调用语音SDK API传入参数有误!");
+    elseif ret == 12292 then
+        -- GCLOUD_VOICE_NEED_AUTHKEY
+        ShowSystemFlowTips(8213);
+        error("未获取语音消息安全密钥key信息!");
+        VoiceManager:ApplyMessageKey();
+    elseif ret == 12290 then
+        -- GCLOUD_VOICE_PATH_ACCESS_ERR
+        ShowSystemFlowTips(8214);
+        error("语音消息文件写入失败!");
+    elseif ret == 12294 then
+        -- GCLOUD_VOICE_HTTP_BUSY
+        ShowSystemFlowTips(8215);
+        error("还在上一次上传或者下载中，需要等待后再尝试");
+    elseif ret == 12296 then
+        -- GCLOUD_VOICE_SPEAKER_ERR
+        ShowSystemFlowTips(8216);
+        error("打开麦克风失败");
+    elseif ret == 8193 then
+        -- GCLOUD_VOICE_REALTIME_STATE_ERR
+        --ShowSystemFlowTips(8217);
+        error("实时语音状态不对，比如已经加入房间了，需要先调用QuitRoom才能再次加入");
+    elseif ret == 8196 then
+        -- GCLOUD_VOICE_OPENMIC_NOTANCHOR_ERR
+        ShowSystemFlowTips(8218);
+        error("当前以听众身份加入的大房间，不能开麦");
+    elseif ret == 12291 then
+        -- GCLOUD_VOICE_PERMISSION_MIC_ERR
+        ShowSystemFlowTips(8219);
+        error("没有开启麦克风权限");
+    elseif ret == 12293 then
+        ShowSystemFlowTips(8216);
+        error("上传录音失败");
+    end
+end
+
+-- 语音SDK事件触发时回调
+function OnEventComplete(eventName, code, codeName)
+    --[[
+        GV_ON_JOINROOM_SUCC = 1,    //join room succ
+        GV_ON_JOINROOM_TIMEOUT,  //join room timeout
+        GV_ON_JOINROOM_SVR_ERR,  //communication with svr occur some err, such as err data recv from svr
+        GV_ON_JOINROOM_UNKNOWN, //reserved, our internal unknow err
+
+        GV_ON_NET_ERR,  //net err,may be can't connect to network
+
+        GV_ON_QUITROOM_SUCC, //quitroom succ, if you have join room succ first, quit room will alway return succ
+
+        GV_ON_MESSAGE_KEY_APPLIED_SUCC,  //apply message authkey succ
+        GV_ON_MESSAGE_KEY_APPLIED_TIMEOUT,      //apply message authkey timeout
+        GV_ON_MESSAGE_KEY_APPLIED_SVR_ERR,  //communication with svr occur some err, such as err data recv from svr
+        GV_ON_MESSAGE_KEY_APPLIED_UNKNOWN,  //reserved,  our internal unknow err
+
+        GV_ON_UPLOAD_RECORD_DONE,  //upload record file succ
+        GV_ON_UPLOAD_RECORD_ERROR,  //upload record file occur error
+        GV_ON_DOWNLOAD_RECORD_DONE, //download record file succ
+        GV_ON_DOWNLOAD_RECORD_ERROR,    //download record file occur error
+
+        GV_ON_STT_SUCC, // speech to text successful
+        GV_ON_STT_TIMEOUT, // speech to text with timeout
+        GV_ON_STT_APIERR, // server's error
+
+        GV_ON_RSTT_SUCC, // speech to text successful
+        GV_ON_RSTT_TIMEOUT, // speech to text with timeout
+        GV_ON_RSTT_APIERR, // server's error
+
+        GV_ON_PLAYFILE_DONE,  //the record file played end
+
+		GV_ON_ROOM_OFFLINE, // Dropped from the room
+    ]]
+
+    if codeName == "GV_ON_JOINROOM_TIMEOUT" then
+        ShowSystemFlowTips(8204);
+        error("请求连接实时语音超时!");
+    elseif codeName == "GV_ON_MESSAGE_KEY_APPLIED_TIMEOUT" then
+        ShowSystemFlowTips(8205);
+        error("请求获取语音消息安全密钥key信息超时!");
+    elseif codeName == "GV_ON_UPLOAD_RECORD_ERROR" then
+        ShowSystemFlowTips(8206);
+        error("上传语音消息出错!");
+    elseif codeName == "GV_ON_DOWNLOAD_RECORD_ERROR" then
+        ShowSystemFlowTips(8206);
+        error("下载语音消息出错!");
+    elseif codeName == "GV_ON_STT_TIMEOUT" then
+        ShowSystemFlowTips(8207);
+        error("请求语音转文本超时!");
+    end
+end

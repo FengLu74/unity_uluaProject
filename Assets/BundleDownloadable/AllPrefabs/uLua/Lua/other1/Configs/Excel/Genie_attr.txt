@@ -1,0 +1,96 @@
+﻿--[[
+    field=Id, type=int, desc=神将ID，对应神将表主键ID
+    field=ActivateSenior1, type=byte, desc=特殊属性1激活阶数（填255表示不激活）
+    field=TypeSenior1, type=int, desc=特殊属性1类型（不成长）
+    field=ValueSenior1, type=int, desc=特殊属性1增加的属性值
+    field=ActivateSenior2, type=byte, desc=特殊属性2激活阶数
+    field=TypeSenior2, type=int, desc=特殊属性2类型（不成长）
+    field=ValueSenior2, type=int, desc=特殊属性2增加的属性值
+    field=ActivateSenior3, type=byte, desc=特殊属性3激活阶数
+    field=TypeSenior3, type=int, desc=特殊属性3类型（不成长）
+    field=ValueSenior3, type=int, desc=特殊属性3增加的属性值
+    field=ActivateSenior4, type=byte, desc=特殊属性4激活阶数
+    field=TypeSenior4, type=int, desc=特殊属性4类型（不成长）
+    field=ValueSenior4, type=int, desc=特殊属性4增加的属性值
+]]
+module("GenieAttrTable", package.seeall)
+local list={
+    {Id=100,ActivateSenior1=3,TypeSenior1=71,ValueSenior1=250,ActivateSenior2=6,TypeSenior2=61,ValueSenior2=250,ActivateSenior3=8,TypeSenior3=71,ValueSenior3=500,ActivateSenior4=10,TypeSenior4=61,ValueSenior4=500},
+    {Id=200,ActivateSenior1=3,TypeSenior1=61,ValueSenior1=250,ActivateSenior2=6,TypeSenior2=71,ValueSenior2=250,ActivateSenior3=8,TypeSenior3=61,ValueSenior3=500,ActivateSenior4=10,TypeSenior4=71,ValueSenior4=500},
+    {Id=300,ActivateSenior1=3,TypeSenior1=71,ValueSenior1=250,ActivateSenior2=6,TypeSenior2=61,ValueSenior2=250,ActivateSenior3=8,TypeSenior3=71,ValueSenior3=500,ActivateSenior4=10,TypeSenior4=61,ValueSenior4=500},
+    {Id=400,ActivateSenior1=3,TypeSenior1=61,ValueSenior1=250,ActivateSenior2=6,TypeSenior2=71,ValueSenior2=250,ActivateSenior3=8,TypeSenior3=61,ValueSenior3=500,ActivateSenior4=10,TypeSenior4=71,ValueSenior4=500},
+    {Id=500,ActivateSenior1=3,TypeSenior1=71,ValueSenior1=250,ActivateSenior2=6,TypeSenior2=61,ValueSenior2=250,ActivateSenior3=8,TypeSenior3=71,ValueSenior3=500,ActivateSenior4=10,TypeSenior4=61,ValueSenior4=500},
+    {Id=600,ActivateSenior1=3,TypeSenior1=61,ValueSenior1=250,ActivateSenior2=6,TypeSenior2=71,ValueSenior2=250,ActivateSenior3=8,TypeSenior3=61,ValueSenior3=500,ActivateSenior4=10,TypeSenior4=71,ValueSenior4=500},
+    {Id=700,ActivateSenior1=3,TypeSenior1=71,ValueSenior1=500,ActivateSenior2=6,TypeSenior2=61,ValueSenior2=500,ActivateSenior3=8,TypeSenior3=71,ValueSenior3=1000,ActivateSenior4=10,TypeSenior4=61,ValueSenior4=1000},
+    {Id=800,ActivateSenior1=3,TypeSenior1=61,ValueSenior1=500,ActivateSenior2=6,TypeSenior2=71,ValueSenior2=500,ActivateSenior3=8,TypeSenior3=61,ValueSenior3=1000,ActivateSenior4=10,TypeSenior4=71,ValueSenior4=1000},
+    {Id=900,ActivateSenior1=3,TypeSenior1=71,ValueSenior1=500,ActivateSenior2=6,TypeSenior2=61,ValueSenior2=500,ActivateSenior3=8,TypeSenior3=71,ValueSenior3=1000,ActivateSenior4=10,TypeSenior4=61,ValueSenior4=1000},
+    {Id=1000,ActivateSenior1=3,TypeSenior1=61,ValueSenior1=500,ActivateSenior2=6,TypeSenior2=71,ValueSenior2=500,ActivateSenior3=8,TypeSenior3=61,ValueSenior3=1000,ActivateSenior4=10,TypeSenior4=71,ValueSenior4=1000},
+    {Id=1100,ActivateSenior1=3,TypeSenior1=71,ValueSenior1=500,ActivateSenior2=6,TypeSenior2=61,ValueSenior2=500,ActivateSenior3=8,TypeSenior3=71,ValueSenior3=1000,ActivateSenior4=10,TypeSenior4=61,ValueSenior4=1000}
+};
+local map = {[100]=list[1],[200]=list[2],[300]=list[3],[400]=list[4],[500]=list[5],[600]=list[6],[700]=list[7],[800]=list[8],[900]=list[9],[1000]=list[10],[1100]=list[11]};
+
+count = 11;
+Count = 11;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

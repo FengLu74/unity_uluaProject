@@ -1,0 +1,674 @@
+﻿module("StoreProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    --服务器向客户端发送商城菜单显示信息
+    network.Register(GMI_STOC_SEND_SHOPMENU_OPEN_INFO, OnStoreMenuOpen);
+    --服务器发送的商城消息
+    network.Register(GMI_STOC_GAME_SHOP_PRICE, OnStoreGameShopPrice);
+    --通知客户端商场道具购买成功
+    network.Register(GMI_STOC_GAME_SHOP_BUY_SUCC, OnStoreGameShopBuySucc);
+    --玩家上线通知客户端月卡周卡数据
+    network.Register(GMI_STOC_MEMBERCARD_INIT, OnMemberCardInit);
+    --通知客户端刷新月卡周卡数据 
+    network.Register(GMI_STOC_MEMBERCARD_REFRESH, OnMemberCardRefresh);
+    -- 通知客户端月卡周卡跨天了
+    network.Register(GMI_STOC_MEMBERCARD_OVERDAY, OnMemberCardOverDay);
+    -- 客户端请求领取月卡周卡每日奖励返回
+    network.Register(GMI_CTOS_REQUEST_MEMBERCARD_REWARD_RETURN, OnRequestMemberCardRewardReturn);
+    -- 玩家上线通知玩家购买钻石产品的数据
+    network.Register(GMI_STOC_GETDIAMOND_PRODUCT_INIT, OnGetDiamondProductInit);
+    -- 通知客户端刷新购买钻石产品的购买状态
+    network.Register(GMI_STOC_GETDIAMOND_PRODUCT_REFRESH, OnGetDiamondProductRefresh);
+    -- 客户端请求验证单号返回
+    network.Register(GMI_STOC_SEND_DEPOSIT_TRANSACTIONID_RETURN, OnSendDepositTransactionIDReturn);
+    --服务器通知客户端直购信息
+    network.Register(GMI_STOC_SEND_CLIENT_DIRECT_PURCHASE_SHOP_GOODS_INFO, OnGiftBagItemInfos);
+    --服务器通知客户端可以购买直购物品
+    network.Register(GMI_STOC_NOTIFY_CLIENT_BUY_DIRECT_PURCHASE_SHOP_GOODS, OnGiftBagCanBuy);
+    --服务器通知客户端玩家直购限购信息
+    network.Register(GMI_STOC_SEND_CLIENT_DIRECT_PURCHASE_SHOP_LIMITTIM_GOODS_PLAYER_BUY_INFO, OnGiftBagLimitDatas);
+end
+
+--服务器向客户端发送商城菜单显示信息
+function OnStoreMenuOpen(protocolId, buffer)
+    --error("OnStoreMenuOpen protocolId : "..protocolId);
+    local version = buffer:ReadInt();
+    --error("OnStoreMenuOpen version : "..version);
+    local count = buffer:ReadByte();
+    --error("OnStoreMenuOpen count : "..count);
+    local datas = {};
+    for index = 1 , count do
+        local id = buffer:ReadInt();
+        --error("OnStoreMenuOpen id : "..id);
+        local open = buffer:ReadByte();
+        --error("OnStoreMenuOpen open : "..open);
+        datas[id] = open;
+    end
+    StoreManager.SetMainMenuOpenStates(datas);
+end
+
+--服务器发送的商城消息
+function OnStoreGameShopPrice(protocolId, buffer)
+    --error("OnStoreGameShopPrice protocolId : "..protocolId);
+    local version = buffer:ReadByte();
+    local shopType = buffer:ReadByte();
+    local itemSize = buffer:ReadInt();
+    --error("OnStoreGameShopPrice itemSize :"..itemSize);
+    local datas = {};
+    for index = 1 , itemSize do
+        --索引
+        local itemIndex = buffer:ReadInt(); 
+        --道具ID  
+        local itemExcelID = buffer:ReadUInt();  
+        --现在的价格
+        local itemDot = buffer:ReadInt();   
+        --原价       
+        local itemOldDot = buffer:ReadInt();
+        --VIP价格       
+        local itemVipDot = buffer:ReadInt();       
+        -- 道具类型
+        local itemType = buffer:ReadByte();
+        -- 类型文本Id
+        local itemTypeTextId = buffer:ReadInt();
+        -- 位置
+        local pagePos = buffer:ReadByte();
+        -- 道具个数
+        local itemNumber = buffer:ReadByte();
+        -- 道具Flag
+        local singleItemFlag = buffer:ReadByte();
+        -- 新品的位置
+        local newPagePos = buffer:ReadByte();
+        -- 热销的位置
+        local hotPagePos = buffer:ReadByte();
+        -- 促销页面位置
+        local promotePos = buffer:ReadByte();
+        local n64BeginTime = 0;
+        local n64EndTime = 0;
+        -- 是否限时
+        local isLimit = bit:IsEnumFlagOpen(singleItemFlag, E_SHOPITEM_FLAG.E_SHOPITEM_LIMITTIME);
+        if  isLimit == true then
+            --开始时间
+            n64BeginTime = buffer:ReadInt64();
+            --结束时间
+            n64EndTime = buffer:ReadInt64();
+        end
+        -- 是否是新品
+        local isNew = bit:IsEnumFlagOpen(singleItemFlag, E_SHOPITEM_FLAG.E_SHOPITEM_NEWITEM);
+        -- 是否打折
+        local isPromote =bit:IsEnumFlagOpen(singleItemFlag, E_SHOPITEM_FLAG.E_SHOPITEM_PROMOTEITEM);
+        -- 是否热销
+        local isHot = bit:IsEnumFlagOpen(singleItemFlag, E_SHOPITEM_FLAG.E_SHOPITEM_HOTITEM);
+        -- 暂时没有用
+        buffer:ReadString();
+        local itemData = 
+        {
+            Version = version;
+            ShopType = shopType;
+            Index = itemIndex;
+            ExcelId = itemExcelID;
+            CurDot = itemDot;
+            OldDot = itemOldDot;
+            VipDot = itemVipDot;
+            ItemType = itemType;
+            ItemTypeTextId = itemTypeTextId;
+            Pos = pagePos;
+            Num = itemNumber;
+            NewPagePos = newPagePos;
+            HotPagePos = hotPagePos;
+            PromotePos = promotePos;
+            BeginTime = n64BeginTime;
+            EndTime = n64EndTime;
+            IsLimit = isLimit;
+            IsNew = isNew;
+            IsPromote = isPromote;
+            IsHot = isHot;
+        };
+        local data = datas[itemType];
+        local itemDatas = {};
+        if data ~= nil then
+            if data.ItemDatas ~= nil then
+                itemDatas = data.ItemDatas;
+            end
+        end
+        table.insert(itemDatas,itemData);
+        data = 
+        {
+            ItemType = itemType;
+            ItemTypeTextId = itemTypeTextId;
+            ItemDatas = itemDatas;
+        }
+        datas[itemType] = data;
+    end
+    StoreManager.RefreshShopDatas(shopType,datas);
+end
+
+-- 购买返回结果
+function OnStoreGameShopBuySucc(protocolId, buffer)
+    local result = buffer:ReadByte();
+    if result == 1 then
+        error("购买成功!");
+        if Constants.branch == "kr" then
+            ShowSystemFlowTips(3640);
+        end
+        StorePanel.RefreshItemData();
+    end
+end
+
+--玩家上线通知客户端月卡周卡数据
+function OnMemberCardInit(protocolId, buffer)
+	-- 是否有月卡
+	local bIsHaveMonthMemberCard = buffer:ReadByte();
+	-- 是否有过购买
+	local bIsHaveBoughtMonthMemberCard = buffer:ReadByte();
+	-- 今日是否领取过月卡每日奖励
+	local bIsHaveGetMonthMemberCardEveryDayReward = buffer:ReadByte();
+	-- 月卡剩余天数
+	local yLeftDaysMonthCard = buffer:ReadByte();
+    -- 单号
+    local sMonthCardPID = buffer:ReadInt();
+    -- 以前的韩元花费
+    local nMonthCardOldKRWCostMoney = buffer:ReadInt();
+    -- 以前的美元花费(单位:美分)
+    local nMonthCardOldUSDCostMoney = buffer:ReadInt();
+    -- 现在的韩元花费
+    local nMonthCardCurKRWMoney = buffer:ReadInt();
+    -- 现在的美元花费(单位:美分)
+    local nMonthCardCurUSDCostMoney = buffer:ReadInt();
+    -- 月卡数据信息
+    local data = 
+    {
+        CardType = 1;
+        Id = sMonthCardPID;
+        IsBuy = bIsHaveMonthMemberCard == 1;
+        IsBought = bIsHaveBoughtMonthMemberCard == 1;
+        IsPick = bIsHaveGetMonthMemberCardEveryDayReward == 1;
+        OldKRWMoney = nMonthCardOldKRWCostMoney;
+        OldUSDMoney = nMonthCardOldUSDCostMoney;
+        KRWMoney = nMonthCardCurKRWMoney;
+        USDMoney = nMonthCardCurUSDCostMoney;
+        Day = yLeftDaysMonthCard;
+    };
+    StoreManager.MemberCardDatas[1] = data;
+
+	-- 是否有周卡
+	local bIsHaveWeekMemberCard = buffer:ReadByte();
+	-- 是否有过购买
+	local bIsHaveBoughtWeekMemberCard = buffer:ReadByte();
+	-- 今日是否领取过周卡每日奖励
+	local bIsHaveGetWeekMemberCardEveryDayReward = buffer:ReadByte();
+	-- 周卡剩余天数
+	local yLeftDaysWeekCard = buffer:ReadByte();
+    -- 单号
+    local sWeekCardPID = buffer:ReadInt();
+    -- 以前的韩元花费
+    local nWeekCardOldKRWCostMoney = buffer:ReadInt();
+    -- 以前的美元花费(单位:美分)
+    local nWeekCardOldUSDCostMoney = buffer:ReadInt();
+    -- 现在的韩元花费
+    local nWeekCardCurKRWMoney = buffer:ReadInt();
+    -- 现在的美元花费(单位:美分)
+    local nWeekCardCurUSDCostMoney = buffer:ReadInt();
+    -- 周卡数据信息
+    local data = 
+    {
+        CardType = 0;
+        Id = sWeekCardPID;
+        IsBuy = bIsHaveWeekMemberCard == 1;
+        IsBought = bIsHaveBoughtWeekMemberCard == 1;
+        IsPick = bIsHaveGetWeekMemberCardEveryDayReward == 1;
+        OldKRWMoney = nWeekCardOldKRWCostMoney;
+        OldUSDMoney = nWeekCardOldUSDCostMoney;
+        KRWMoney = nWeekCardCurKRWMoney;
+        USDMoney = nWeekCardCurUSDCostMoney;
+        Day = yLeftDaysWeekCard;
+    };
+    StoreManager.MemberCardDatas[0] = data;
+end
+
+--通知客户端刷新月卡周卡数据
+function OnMemberCardRefresh(protocolId, buffer)
+--    error("OnMemberCardRefresh protocolId : "..protocolId);
+	-- 会员卡类型(0代表周卡，1代表月卡)
+	local yType = buffer:ReadByte();
+--    error("yType:::"..yType);
+	-- 购买结果(0代表失败，1代表成功)
+	local bResult = buffer:ReadByte();
+--    error("bResult:::"..bResult);
+	local Day = buffer:ReadByte();
+--	error("Day"..Day);
+	-- 这里客户端自己刷新相关数据(权限，今日是否可购买，剩余天数)
+    if bResult == 1 then
+        local memberCardData = StoreManager.MemberCardDatas[yType];
+        if memberCardData ~= nil then
+            memberCardData.IsBuy = true;
+            memberCardData.Day = Day ;
+            StoreManager.MemberCardDatas[yType] = memberCardData;
+        end
+        StorePanel.RefreshMonthCardList();
+    else
+        error("购买失败！！！");
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.STORE_CHARGE, StoreManager.IsShowMonthMemberCardRedHint());
+    StorePanel.RefreshMainMenu();
+end
+
+--通知客户端刷新月卡周卡数据
+function OnMemberCardOverDay(protocolId, buffer)
+	-- 这里客户端自己刷新相关数据(权限，今日是否可购买，剩余天数)
+--    error("OnMemberCardOverDay protocolId : "..protocolId);
+    StoreManager.RefreshMonthMemberCardDatas();
+    StorePanel.RefreshMonthCardList();
+    RedHintMng.SetRedHintState(CREDHINTENUM.STORE_CHARGE, StoreManager.IsShowMonthMemberCardRedHint());
+    StorePanel.RefreshMainMenu();
+end
+
+-- 客户端请求领取月卡周卡每日奖励返回
+function OnRequestMemberCardRewardReturn(protocolId, buffer)
+--    error("OnRequestMemberCardRewardReturn protocolId:::"..protocolId);
+	-- 会员卡类型(0代表周卡，1代表月卡)
+	local yType = buffer:ReadByte();
+--    error("yType:::"..yType);
+	-- 领取结果(0代表失败，1代表成功)
+	local bResult = buffer:ReadByte();
+--    error("bResult:::"..bResult);
+    if bResult == 1 then
+        local memberCardData = StoreManager.MemberCardDatas[yType];
+        if memberCardData ~= nil then
+            memberCardData.IsPick = true;
+            StoreManager.MemberCardDatas[yType] = memberCardData;
+        end
+        StorePanel.RefreshMonthCardList();
+    else
+        error((yType == 0 and "周卡" or "月卡") .. "领取失败！！！");
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.STORE_CHARGE, StoreManager.IsShowMonthMemberCardRedHint());
+    StorePanel.RefreshMainMenu();
+end
+
+-- 玩家上线通知玩家购买钻石产品的数据
+function OnGetDiamondProductInit(protocolId, buffer)
+    local yCount = buffer:ReadByte();
+--    error("yCount:::"..yCount);
+    for index = 1,yCount do
+        -- 购买钻石的类型(0代表6元的，1代表30,2代表68,3代表128,4代表328,5代表648)
+        local nGetDiamondType = buffer:ReadInt();
+--        error("nGetDiamondType:::"..nGetDiamondType);
+        -- 商品ID
+        local nProductID = buffer:ReadInt();
+--        error("nProductID:::"..nProductID);
+        -- 以前的韩元花费
+        local nOldKRWCostMoney = buffer:ReadInt();
+--    error("nOldKRWCostMoney:::"..nOldKRWCostMoney);
+        -- 以前的美元花费(单位:美分)
+        local nOldUSDCostMoney = buffer:ReadInt();
+--    error("nOldUSDCostMoney:::"..nOldUSDCostMoney);
+        -- 现在的韩元花费
+        local nCurKRWMoney = buffer:ReadInt();
+--    error("nCurKRWMoney:::"..nCurKRWMoney);
+        -- 现在的美元花费(单位:美分)
+        local nCurUSDCostMoney = buffer:ReadInt();
+--    error("nCurUSDCostMoney:::"..nCurUSDCostMoney);
+        -- 获得钻石
+        local nGetDiamond = buffer:ReadInt();
+--        error("nGetDiamond:::"..nGetDiamond);
+        -- 首次购买获得钻石
+        local nFirstGetDiamond = buffer:ReadInt();
+--        error("nFirstGetDiamond:::"..nFirstGetDiamond);
+        -- 非首次购买获得钻石
+        local nNotFirstGetDiamond = buffer:ReadInt();
+--        error("nNotFirstGetDiamond:::"..nNotFirstGetDiamond);
+        -- 是否是热卖(1是0否)
+        local nIsHotSale = buffer:ReadInt();
+--        error("nIsHotSale:::"..nIsHotSale);
+        -- 是否有购买过(1是0否)
+        local bHasBoughtProduct = buffer:ReadInt();
+--        error("bHasBoughtProduct:::"..bHasBoughtProduct);
+        --活动开始时间
+        local beginTime = buffer:ReadInt();
+        --error("beginTime:::"..beginTime);
+        --活动结束时间
+        local endTime = buffer:ReadInt();
+        --error("endTime:::"..endTime);
+        --第一次购买赠送蓝钻
+        local firstBindGoldNum = buffer:ReadInt();
+        --error("firstBindGoldNum:::"..firstBindGoldNum);
+        --赠送蓝钻
+        local bindGoldNum = buffer:ReadInt();
+        --error("bindGoldNum:::"..bindGoldNum);
+
+        local data = 
+        {
+            Index = index;
+            DiamondType = nGetDiamondType;
+            Id = nProductID;
+            OldKRWMoney = nOldKRWCostMoney;
+            OldUSDMoney = nOldUSDCostMoney;
+            KRWMoney = nCurKRWMoney;
+            USDMoney = nCurUSDCostMoney;
+            GetDiamond = nGetDiamond;
+            FirstGetDiamond = nFirstGetDiamond;
+            NotFirstGetDiamond = nNotFirstGetDiamond;
+            IsHotSale = nIsHotSale == 1;
+            HasBoughtProduct = bHasBoughtProduct == 1;
+            BeginTime = beginTime;
+            EndTime = endTime;
+            FirstBindGoldNum = firstBindGoldNum;
+            BindGoldNum = bindGoldNum;
+        }
+        StoreManager.RechargeDatas[index] = data;
+    end
+end
+
+-- 通知客户端刷新购买钻石产品的购买状态
+function OnGetDiamondProductRefresh(protocolId, buffer)
+    -- 购买钻石的类型(0代表6元的，1代表30,2代表68,3代表128,4代表328,5代表648)
+    local yGetDiamondType = buffer:ReadByte();
+--    error("yGetDiamondType:::"..yGetDiamondType);
+    local rechargeType = yGetDiamondType + 1;
+    local rechargeData = StoreManager.RechargeDatas[rechargeType];
+    if rechargeData ~= nil then
+        rechargeData.HasBoughtProduct = true;
+        StoreManager.RechargeDatas[rechargeType] = rechargeData;
+    end
+    StorePanel.RefreshRechargeList();
+end
+
+-- 客户端请求验证单号返回
+function OnSendDepositTransactionIDReturn(protocolId, buffer)
+    local nResult = buffer:ReadInt();
+    if nResult == 1 then
+        error("购买成功");
+        ShowSystemFlowTips(8230);
+    elseif nResult == -1001 then
+        error("充值单号验证网页无响应");
+        ShowSystemFlowTips(8231,nil,{nResult});
+    elseif nResult == -1002 then
+        local nErrorCode = buffer:ReadInt();
+        error("单号验证失败,网页返回错误码"..nErrorCode);
+        ShowSystemFlowTips(8232,nil,{nResult,nErrorCode});
+    elseif nResult == -1003 then
+        error("此单已经使用,无法再次使用");
+        ShowSystemFlowTips(8233,nil,{nResult});
+    elseif nResult == -1004 then
+        error("不存在请求订单验证的用户ID");
+        ShowSystemFlowTips(8234,nil,{nResult});
+    elseif nResult == -1005 then
+        error("DBIS的存储过程(_DBIS_Deposit_Verify_Result)内部的Sql语句执行失败");
+        ShowSystemFlowTips(8235,nil,{nResult});
+    elseif nResult == -1006 then
+        error("DBIS的存储过程(_DBIS_Deposit_Verify_Result)执行失败");
+        ShowSystemFlowTips(8236,nil,{nResult});
+    elseif nResult == -2001 then
+        error("DBIS的存储过程(_DBIS_Deposit_Request_Get)内部的Sql语句执行失败");
+        ShowSystemFlowTips(8237,nil,{nResult});
+    elseif nResult == -2002 then
+        error("不存在的充值单号");
+        ShowSystemFlowTips(8238,nil,{nResult});
+    elseif nResult == -2003 then
+        error("DBIS的存储过程(_DBIS_Deposit_Request_Get)执行失败");
+        ShowSystemFlowTips(8239,nil,{nResult});
+    else
+        error("未知的错误返回号"..nResult);
+        ShowSystemFlowTips(8240,nil,{nResult});
+    end
+end
+
+--客户端请求直购商城数据
+function RequestGiftBagDatas(giftBagType,send)
+	local buffer = ByteBuffer:New();
+	buffer:WriteUShort(GMI_CTOS_ASK_DIRECT_PURCHASE_SHOP_INFO);
+    local updateTime =0;
+    if send~=nil then
+        updateTime=0;
+    else
+        updateTime=StoreManager.GetGiftBagUpdateTime(giftBagType);
+    end
+    error("客户端请求直购商城数据 updateTime : "..updateTime);
+    buffer:WriteInt64(0);
+    buffer:WriteByte(giftBagType);
+	G_NetWorkMng:SendMessage(buffer);
+    error("SendOver : "..0);
+
+end
+
+--服务器通知客户端直购信息
+function OnGiftBagItemInfos(protocolId, buffer)
+    error("siOnGiftBagItemInfosze protocolId : "..protocolId);
+    local version = buffer:ReadByte();
+    error("version : "..version);
+    local giftBagType = buffer:ReadByte();
+    error("giftBagType : "..giftBagType);
+    local updateTime = buffer:ReadInt64();
+    --error("updateTime : "..updateTime);
+    local size = buffer:ReadByte();
+    local datas = {};
+    local tableInsert={};
+    --error("size : "..size);
+    StoreManager.WholeDatas={};
+    for i = 1, size do
+        local id = buffer:ReadInt();
+        --error("id : "..id);
+        local picId = buffer:ReadInt();
+        --error("picId : "..picId);
+        local pos = buffer:ReadUShort();
+        --error("pos : "..pos);
+        local itemType = buffer:ReadUShort();
+        --error("itemType : "..itemType);
+        local itemTypeTextId = buffer:ReadInt();
+        --error("itemTypeTextId : "..itemTypeTextId);
+        local textLength = buffer:ReadInt();
+        local wszName = buffer:ReadString(textLength);
+        --error("wszName : "..wszName);
+        local moneyType = buffer:ReadByte();
+        --error("moneyType : "..moneyType);
+        local oldKRWDot = buffer:ReadInt();
+        --error("oldKRWDot : "..oldKRWDot);
+        local oldUSDDot = buffer:ReadInt();
+        --error("oldUSDDot : "..oldUSDDot);
+	    local nowKRWDot = buffer:ReadInt();
+        --error("nowKRWDot : "..nowKRWDot);
+        local nowUSDDot = buffer:ReadInt();
+        --error("nowUSDDot : "..nowUSDDot);
+	    local limitNum = buffer:ReadInt();
+        --error("limitNum : "..limitNum);
+	    local limitCycle = buffer:ReadInt();
+        --error("limitCycle : "..limitCycle);
+	    local itemFlag = buffer:ReadInt();
+        --是否是推荐（推荐加Hot图标否则不加）
+        local isHot = bit:IsEnumFlagOpen(itemFlag, StoreGiftBagFlag.GB_Hot);
+       -- error("itemFlag : "..itemFlag);
+	    local isLimitTime = buffer:ReadByte();
+        --error("isLimitTime : "..isLimitTime);
+        local beginTime = 0;
+        local endTime = 0;
+        if isLimitTime == 1 then
+            beginTime = buffer:ReadInt64();
+            --error("beginTime : "..beginTime);
+            endTime = buffer:ReadInt64();
+            --error("endTime : "..endTime);
+        end
+        local itemSize = buffer:ReadByte();
+        --error("itemSize : "..itemSize);
+        local itemDatas = {};
+        for i = 1, itemSize do
+            local itemId = buffer:ReadInt();
+            --error("itemId : "..itemId);
+            local itemNum = buffer:ReadUShort();
+            --error("itemNum : "..itemNum);
+            local itemData = 
+            {
+                ItemId = itemId;
+                ItemNum = itemNum;
+            }
+            table.insert(itemDatas,itemData);
+        end
+        local length = buffer:ReadInt();
+        local content = buffer:ReadString(length);
+        --error("content : "..content);
+        local giftBagItemData = 
+        {
+            Id = id;
+            GiftBagType = giftBagType;
+            PicId = picId;
+            Pos = pos;
+            ItemType = itemType;
+            ItemTypeTextId = itemTypeTextId;
+            WszName = wszName;
+            MoneyType = moneyType;
+            OldKRWDot = oldKRWDot;
+            NowKRWDot = nowKRWDot;
+            OldUSDDot = oldUSDDot;
+            NowUSDDot = nowUSDDot;
+            IsHot = isHot;
+            LimitNum = limitNum;
+            LimitCycle = limitCycle;
+            IsLimitTime = isLimitTime == 1;
+            BeginTime = beginTime;
+            EndTime = endTime;
+            ItemDatas = itemDatas;
+            Content = content;
+        }
+        local data = datas[itemType];
+        local giftBagItemDatas = {};
+        if data ~= nil then
+            if data.ItemDatas ~= nil then
+                giftBagItemDatas = data.ItemDatas;
+            end
+        end
+        local can_timeShow,offsetTime = CanShowItemBysTime(giftBagItemData);
+        if can_timeShow == true then
+            
+            table.insert(giftBagItemDatas,giftBagItemData);
+            data = 
+            {
+                ItemType = itemType;
+                ItemTypeTextId = itemTypeTextId;
+                ItemDatas = giftBagItemDatas;
+            }
+            datas[itemType] = data;
+        end
+        tableInsert[i]={};
+        tableInsert[i].Id = id;
+        tableInsert[i].GiftBagType = giftBagType;
+        tableInsert[i].PicId = picId;
+        tableInsert[i].Pos = pos;
+        tableInsert[i].ItemType = itemType;
+        tableInsert[i].ItemTypeTextId = itemTypeTextId;
+        tableInsert[i].WszName = wszName;
+        tableInsert[i]. MoneyType = moneyType;
+        tableInsert[i].OldKRWDot = oldKRWDot;
+        tableInsert[i].NowKRWDot = nowKRWDot;
+        tableInsert[i].OldUSDDot = oldUSDDot;
+        tableInsert[i].NowUSDDot = nowUSDDot;
+        tableInsert[i].IsHot = isHot;
+        tableInsert[i].LimitNum = limitNum;
+        tableInsert[i].LimitCycle = limitCycle;
+        tableInsert[i].IsLimitTime = isLimitTime == 1;
+        tableInsert[i].BeginTime = beginTime;
+        tableInsert[i].EndTime = endTime;
+        tableInsert[i].ItemDatas = itemDatas;
+        tableInsert[i].Content = content;
+        tableInsert[i].UpdateSaveTime=updateTime;
+        tableInsert[i].OffsetTime=offsetTime;
+        table.insert(StoreManager.WholeDatas,i,tableInsert[i]);
+    end
+    error(#StoreManager.WholeDatas);
+    StoreManager.RefreshGiftBagDatas(giftBagType,datas,updateTime);
+    StoreManager.flag=true;
+
+end
+
+function CanShowItemBysTime(giftBagItemData)
+    local local_time = G_TimerMng:GetCurrentSeconds();
+    local offset=giftBagItemData.EndTime-local_time;
+    if giftBagItemData.BeginTime<=0 and giftBagItemData.EndTime <=0 then
+        return true,offset;
+    end
+    if giftBagItemData.BeginTime <= local_time and giftBagItemData.EndTime>=local_time then
+        return true,offset;
+    end
+    --通用显示
+    return false,0;
+end
+
+
+--服务器通知客户端可以购买直购物品（礼包可购买）
+function OnGiftBagCanBuy(protocolId, buffer)
+    --error("OnGiftBagCanBuy protocolId : "..protocolId);
+    local id = buffer:ReadInt();
+end
+
+--服务器通知客户端玩家限购信息
+function OnGiftBagLimitDatas(protocolId, buffer)
+    --error("OnGiftBagLimitInfos protocolId : "..protocolId);
+    local datas = {};
+    local isAll = buffer:ReadByte();
+    --error("isAll : "..isAll);
+    local size = buffer:ReadByte();
+    --error("size : "..size);
+    for i = 1, size do
+        local id = buffer:ReadInt();
+        local num = buffer:ReadUShort();
+        local data =
+        {
+            Id = id;
+            Num = num;
+        };
+        table.insert(datas,data);
+    end
+    StoreManager.RefreshGiftBagLimitDatas(isAll,datas);
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+--请求商店道具列表
+function RequestItemList(shopType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GETSHOPPAGE);
+    buffer:WriteByte(shopType);
+    error("RequestItemList shopType : "..shopType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--商城购买道具
+function RequestBuyProp(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_BUY_GOODS_FROM_SYS);
+    buffer:WriteByte(data.ItemData.Version);
+    error("RequestBuyProp Version : "..data.ItemData.Version);
+    buffer:WriteInt(data.ItemData.CurDot);
+    error("RequestBuyProp CurDot : "..data.ItemData.CurDot);
+    buffer:WriteInt(data.ItemData.ExcelId);
+    error("RequestBuyProp ExcelId : "..data.ItemData.ExcelId);
+    buffer:WriteInt(data.ItemData.Index);
+    error("RequestBuyProp Index : "..data.ItemData.Index);
+    buffer:WriteByte(data.ItemData.ShopType);
+    error("RequestBuyProp ShopType : "..data.ItemData.ShopType);
+    buffer:WriteByte(data.ItemData.Num);
+    error("RequestBuyProp Num : "..data.ItemData.Num);
+    buffer:WriteUShort(data.BuyNum);
+    error("RequestBuyProp BuyNum : "..data.BuyNum);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求领取月卡周卡每天奖励
+function RequestMemberCardReward(yMemberCardType)
+	local buffer = ByteBuffer:New();
+	buffer:WriteUShort(GMI_CTOS_REQUEST_MEMBERCARD_REWARD);
+	buffer:WriteByte(yMemberCardType);
+	G_NetWorkMng:SendMessage(buffer);
+end
+
+--客户端请求直购购买
+function RequestBuyGiftBag(giftBagType,id)
+	local buffer = ByteBuffer:New();
+	buffer:WriteUShort(GMI_CTOS_ASK_BUY_DIRECT_PURCHASE_SHOP_GOODS);
+    error("RequestGiftBagItemInfos id : "..id);
+    buffer:WriteInt(id);
+    error("RequestGiftBagItemInfos giftBagType : "..giftBagType);
+    buffer:WriteByte(giftBagType);
+	G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

@@ -1,0 +1,230 @@
+﻿require "Panel/AuctionBuy";
+require "Panel/AuctionSell";
+module("AuctionPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+--拍卖行菜单
+local m_MenuListStr = "Menu/Scroll View/Grid";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+local m_MenuList = nil;
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+
+local m_AllAuctionItems = {};
+-----------------------------------一些写死的规定--------------------------------------
+local m_OpenData = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+
+local m_isOpenTableSelectIndex = 0;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    --加载文字
+    LoadTexts();
+    --初始化object对象
+    InitObjects();
+    --初始化事件信息
+    InitEvents();
+    --初始化按钮信息
+    InitOnClick();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_panelInitAlready = true;
+    SetViewState(m_OpenData);
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    G_TimerMng:RemoveTimeTask("AuctionPutaway");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+--加载文本
+function LoadTexts()
+    AuctionManager.LoadTexts();
+end
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    --菜单列表
+    m_MenuList = GetComponent(m_panelObject, m_MenuListStr, "UIListView");
+    --设置购买object对象
+    AuctionBuy.InitObjects(m_panelObject);
+    --设置出售object对象
+    AuctionSell.InitObjects(m_panelObject);
+end
+
+--初始化事件信息
+function InitEvents()
+    --设置菜单列表信息
+    m_MenuList:SetInitCallback(OnMenuListInit);
+    --设置菜单列表点击事件
+    m_MenuList:SetClickCallback(OnMenuListClick);
+    --初始化购买事件信息
+    AuctionBuy.InitEvents();
+    --初始化出售事件信息
+    AuctionSell.InitEvents();
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    AuctionProtocol.RequestOpenItems();
+    --初始化菜单列表
+    InitMenuList();
+    --初始化购买所有界面信息
+    AuctionBuy.InitAllInfo();
+    --初始化出售所有界面信息
+    AuctionSell.InitAllInfo();
+    InitData();
+end
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_isOpenTableSelectIndex = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    else
+        if nil == m_isOpenTableSelectIndex then
+            m_isOpenTableSelectIndex = 0;
+        end
+    end
+    SetMenuIndex(m_isOpenTableSelectIndex);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    --初始化购买按钮信息
+    AuctionBuy.InitOnClick();
+    --初始化出售按钮信息
+    AuctionSell.InitOnClick();
+end
+
+--初始化菜单列表
+function InitMenuList()
+    m_MenuList:RemoveAll();
+    for index = 1, 2 do
+        local data = 
+        {
+            Text = AuctionManager.MainMenuTexts[index];
+        };
+        m_MenuList:AddData(data);
+    end
+    
+end
+
+--设置菜单单个列表信息
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param data 列表Item数据信息
+function OnMenuListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local text = data.Text;
+    SetLabelContent("Background/Label",text,item);
+    SetLabelContent("Toggle/Label",text,item);
+end
+--菜单点击事件
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param go 列表Item对象
+function OnMenuListClick(listView, cell, go)
+    m_isOpenTableSelectIndex = cell.dataIndex;
+    SetMenuIndex(cell.dataIndex);
+end
+
+--设置菜单状态
+--@param index 列表菜单指针对象
+function SetMenuIndex(index)
+    m_MenuList:LookAt(index,true);
+    if index == 0 then 
+        AuctionBuy.Show();
+        AuctionSell.Hide();
+    else
+        AuctionBuy.Hide();
+        AuctionSell.Show();
+    end
+end
+
+--关闭拍卖行
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+--设置当前显示界面状态
+function SetViewState(data)
+    if data ~= nil then
+        if data.Type == 1 then
+            SetMenuIndex(1);
+            local propData =
+            {
+                MoneyType = 1;
+                Info = data.Info;
+            };
+            AuctionSell.SetSellPropData(propData);
+        end
+        if data.Type == 2 then
+            SetMenuIndex(0);
+            local excelId = data.Info;
+            AuctionBuy.SetSearchData(excelId);
+        end
+    end
+    m_OpenData = nil;
+end
+--外部调用上架物品
+function OpenSellPropItem(itemAttribute)
+    local data = 
+    {
+        Type = 1;
+        Info = itemAttribute;
+    };
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 0 then
+        m_OpenData = data;
+        createPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        if m_panelInitAlready == true then
+            SetViewState(data);
+        end
+    end
+end
+--外部调用查找物品
+function OpenFindItem(excelId)
+    local data = 
+    {
+        Type = 2;
+        Info = excelId;
+    };
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 0 then
+        m_OpenData = data;
+        createPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        if m_panelInitAlready == true then
+            SetViewState(data);
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_isOpenTableSelectIndex };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

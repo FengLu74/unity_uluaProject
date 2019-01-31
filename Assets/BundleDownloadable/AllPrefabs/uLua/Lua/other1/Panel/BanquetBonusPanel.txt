@@ -1,0 +1,162 @@
+﻿module('BanquetBonusPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'BanquetBonusPanel';
+---------------------------------------label路径---------------------------------------
+-- 时间
+local m_LbTimePath = "Sub_Content/lb_Time";
+-- 公会加成路径
+local m_LbGuildBonusPath = "Sub_Content/lb_GuildBonus";
+-- 宴会加成路径
+local m_LbBanqueBonusPath = "Sub_Content/lb_BanqueBonus";
+-- 饮酒加成路径
+local m_LbWineBonusPath = "Sub_Content/lb_WineBonus";
+-- 数据路径
+local m_Data = "/lb_Data";
+-- 宴会未开启
+local m_LbNotOpenPath = "Sub_Content/lb_NotOpen";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 倒计时
+local m_Time = nil;
+-- 公会加成
+local m_GuildBonus = nil;
+-- 宴会加成
+local m_BanqueBonus = nil;
+-- 饮酒加成
+local m_WineBonus = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+-- 要显示的lable位置
+local table_position = { [1] = 20, [2] = - 23, [3] = - 66, };
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL);
+end
+
+-- 初始化对象事件
+function InitEvents()
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local sceneType = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID).Category;
+    if sceneType ~= EMapType.MAP_TYPE_GUILD then
+        error("do BanquetBonusPanel InitShow 当前场景不是公会领地");
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL) == 1 then
+            closePanel(ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL);
+        end
+        return;
+    end
+    local ishaveTimer = G_TimerMng:GetTimeTask("BanquetBonus");
+    SetGameObjectState(m_LbGuildBonusPath, true, m_PanelObject);
+    SetGameObjectState(m_LbBanqueBonusPath, true, m_PanelObject);
+    SetGameObjectState(m_LbWineBonusPath, true, m_PanelObject);
+
+    local m_guild, m_banque, m_wine;
+    if m_GuildBonus == 0 then
+        m_banque = table_position[1];
+        m_wine = table_position[2];
+        if m_BanqueBonus == 0 then
+            m_wine = table_position[1];
+            if m_WineBonus == 0 then
+                error("没有加成");
+            end
+        end
+    else
+        m_guild = table_position[1];
+        m_banque = table_position[2];
+        m_wine = table_position[3];
+        if m_BanqueBonus == 0 then
+            m_wine = table_position[2];
+        end
+    end
+    SetGameObjectPos(m_LbGuildBonusPath, Vector3.New(-47, m_guild, 0), m_PanelObject);
+    SetGameObjectPos(m_LbBanqueBonusPath, Vector3.New(-47, m_banque, 0), m_PanelObject);
+    SetGameObjectPos(m_LbWineBonusPath, Vector3.New(-47, m_wine, 0), m_PanelObject);
+
+    SetLabelContent(m_LbGuildBonusPath .. m_Data, m_GuildBonus .. "%", m_PanelObject);
+    SetLabelContent(m_LbBanqueBonusPath .. m_Data, m_BanqueBonus .. "%", m_PanelObject);
+    SetLabelContent(m_LbWineBonusPath .. m_Data, m_WineBonus .. "%", m_PanelObject);
+
+    SetGameObjectState(m_LbGuildBonusPath, m_GuildBonus ~= 0, m_PanelObject);
+    SetGameObjectState(m_LbBanqueBonusPath, m_BanqueBonus ~= 0, m_PanelObject);
+    SetGameObjectState(m_LbWineBonusPath, m_WineBonus ~= 0, m_PanelObject);
+    if m_Time > 0 then
+        SetGameObjectState(m_LbNotOpenPath, false, m_PanelObject);
+        SetGameObjectState(m_LbTimePath, true, m_PanelObject);
+        SetGameObjectState("Sub_Content/lb_Title", true, m_PanelObject);
+        if ishaveTimer == nil then
+            AddTimerEvent("BanquetBonus", m_Time, BanquetBonusCallBackOver, ETimeShowType.TypeNumberTen, CloseCallBack);
+        end
+    else
+        SetGameObjectState(m_LbNotOpenPath, true, m_PanelObject);
+        SetGameObjectState(m_LbTimePath, false, m_PanelObject);
+        SetGameObjectState("Sub_Content/lb_Title", false, m_PanelObject);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function functionParameter(paraTable)
+    m_Time = paraTable[3];
+    m_GuildBonus = paraTable[4];
+    m_BanqueBonus = paraTable[5];
+    m_WineBonus = paraTable[6];
+    if m_CreateSuccess then
+        -- 初始化界面所有信息
+        InitShow();
+    end
+    error("m_Time:::" .. m_Time);
+end
+
+function CloseCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL) == 1 then
+        SetLabelContent(m_LbTimePath, timeTxt, m_PanelObject);
+    end
+end
+
+function BanquetBonusCallBackOver()
+    SetGameObjectState(m_LbNotOpenPath, true, m_PanelObject);
+    SetGameObjectState(m_LbTimePath, false, m_PanelObject);
+    SetGameObjectState("Sub_Content/lb_Title", false, m_PanelObject);
+    G_TimerMng:RemoveTimeTask("BanquetBonus");
+end

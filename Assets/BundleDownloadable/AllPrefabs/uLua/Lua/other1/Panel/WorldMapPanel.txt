@@ -1,0 +1,628 @@
+﻿module("WorldMapPanel", package.seeall)
+-----------------------------------Label路径------------------------------------------
+-- 场景名称位置
+local m_sceneNameStr = "Content-CurrentMap/Label-Name";
+-- 切换线路文本
+local m_LabelGSLinePath = "Content-CurrentMap/Label_GSLine";
+-- 底图场景等级
+local m_worldMapLevelStr = "/Sprite_LevelBg/Label_Enable";
+local m_worldMapLevelDisableStr = "/Sprite_LevelBg/Label_Disable";
+-----------------------------------Sprite路径------------------------------------------
+-- 地图中npc位置的信息
+-- local m_NpcSpritePrefabStr = "Content-CurrentMap/SceneMap/Sprite-NPC";
+-- 点击的地点
+local m_clickSpriteStr = "Content-CurrentMap/SceneMap/NPCList/Sprite-Click";
+-- 目标寻路点
+local m_TargetPosStr = "Content-CurrentMap/SceneMap/NPCList/Sprite-Target";
+-----------------------------------Button路径------------------------------------------
+-- 切换场景的按钮路径
+local m_changeSceneBtnStr = "Content-WorldMap/WorldMap/Sprite_Map/SceneTransBtnGroup/Button-Scene";
+-- 关闭按钮位置
+local m_closeButtonStr = "Content_Top/Sprite-BG/Button-Close";
+-- 当前右侧角色类型-NPC标记
+local m_toggleNpcStr = "Content-CurrentMap/RoleTypeGroup/Toggle_NPC";
+-- 当前右侧角色类型-怪物标记
+local m_toggleMonsterStr = "Content-CurrentMap/RoleTypeGroup/Toggle_Monster";
+-- 当前右侧角色类型--传送标记
+local m_toggleTransferStr = "Content-CurrentMap/RoleTypeGroup/Toggle_Transfer";
+-- 切换线路按钮
+local m_ButtonGSLinePath = "Content-CurrentMap/Button_GSLine";
+-- 世界地图页签按钮路径
+local m_worldMapBtnStr = "ContentLeftToggle/MapChangeGroup/Toggle_World";
+-- 场景地图页签按钮路径
+local m_sceneMapBtnStr = "ContentLeftToggle/MapChangeGroup/Toggle_Scene";
+-- 世界地图按钮
+local m_worldMapScrollView = "Content-WorldMap/WorldMap";
+---------------------------------Texture路径-----------------------------------------
+-- 当前场景地图的位置
+local m_mapTextureStr = "Content-CurrentMap/SceneMap/MapTexture";
+----------------------------------gameobject所在的路径---------------------------------
+-- 当前右侧加载npc的单个object
+local m_itemPrefabStr = "Content-CurrentMap/NPCScrollView/Item";
+-- grid的位置
+local m_NpcGridStr = "Content-CurrentMap/NPCScrollView/Grid";
+-- 地图npc标签的位置
+local m_NPCListStr = "Content-CurrentMap/SceneMap/NPCList"
+-- 右侧列表控件
+local m_rolyTypeScrollView = "Content-CurrentMap/NPCScrollView";
+-- 世界地图
+local m_worldMap = "Content-WorldMap";
+-- 场景地图
+local m_curSceneMap = "Content-CurrentMap";
+-- 当前场景你Npc类型按钮选中状态
+local m_npcButtonDeactive = "/Anim_Sprite";
+-- 当前场景你Npc类型按钮未选中状态
+local m_npcButtonActive = "/Sprite_Light";
+----------------------------------通用的名称路径---------------------------------------
+-- npc名字
+local m_npcName = "Label-Name";
+-- npc描述
+local m_npcDescribe = "Label-Des";
+-- 场景地图中npc的单个Object
+local m_sceneMapItemStr = "/Item";
+-- A场景地图中object的名字
+local m_sceneMapItemName = "/Label";
+-- 未开锁时场景名称显示
+local m_mapNameNotOpen = "/Background/Label_Disable";
+-- 开锁时的场景名称
+local m_mapNameOpen = "/Background/Label_Enable";
+-- 场景名称背景
+local m_spriteSceneName = "/Background";
+-- 场景开启等级的背景
+local m_labelSceneLevel = "/Sprite_LevelBg";
+-- 角色所在场景的显示
+local m_spriteCurScene = "/Sprite_Sign";
+-- 场景地点图标
+local m_sprieSite = "/Sprite";
+----------------------------------一些写死的规定---------------------------------------
+-- 地图背景图片所在图集
+local m_iconAtlas = "PanelAloneTwoAtlasV04";
+-- 场景底图所在的图集
+local m_spriteAtlas = "GeneralAtlasV04";
+-- 场景开启底图
+local m_sceneOpen = "UI_TY_DiBan_903";
+-- 场景未开启底图
+local m_sceneNotOpen = "UI_TY_DiBan_904";
+-- 地图中的npc显示图片
+local m_spriteNpc = "UI_DT_NPC_101";
+-- 地图中的怪物显示图片
+local m_spritemMonster = "UI_DT_GuaiWu_101";
+-- 地图中的传送点显示图片
+local m_spriteSend = "UI_DT_ChuanSong_101";
+-- 当前场景3个按钮的对应变量
+local m_curSceneButtonsTable = { [1] = m_toggleNpcStr, [2] = m_toggleMonsterStr, [3] = m_toggleTransferStr }
+-----------------------------------引用的对象------------------------------------------
+-- 面板的对象
+local m_panelObject = nil;
+-- 场景id
+local m_sceneID = nil;
+-- 右侧角色类型单个对象
+local m_itemPrefab = nil;
+-- grid对象
+local m_NpcGrid = nil;
+local m_roleTypeSV = nil;
+-- 世界地图对象
+local m_worldMapSV = nil;
+-- 场景名称对象
+local m_sceneNameObj = nil;
+-- 场景等级对象
+local m_sceneLevelObj = nil;
+-- 地图中npc位置对象
+local m_NpcSpritePrefab = nil;
+-- 地图中npc标签对象
+local m_NPCListObject = nil;
+-- 地图内点击的地点对象引用
+local m_clickSprite = nil;
+-- 地图内目标寻路点对象引用
+local m_TargetPos = nil;
+-- 当前场景中要显示的npc们的信息
+local m_currentSceneRolesInfo = nil;
+-- 世界地图信息
+local m_mapWorldInfo = nil;
+-- 界面创建成功的标记
+local m_bCreateSuccess = false;
+-- 当前场景的地图信息
+local m_mapDataInfo = nil;
+-- 当前地图的缩放
+local m_mapScale = 1;
+-- 是否正在寻路
+local m_isSeekRoad = false;
+-- 当前地图状态，是当前的地图还是世界的地图,1为当前的地图状态，2为世界的地图状态
+local m_currentMapState = 1;
+-- 场景内角色类型索引
+local m_clickRoleType = 1;
+-- 角色类型判断<3,4代表怪物>
+local m_monsterType = false;
+-- 角色类型NPC表
+local m_npcTable = { };
+-- 角色类型怪物表
+local m_monsterTable = { };
+-- 角色类型传送表
+local m_transferTable = { };
+-- 右侧NPC列表索引
+local m_npcIndex = 0;
+-- 右侧怪物列表索引
+local m_monsterIndex = 0;
+-- 右侧传送列表索引
+local m_transferIndex = 0;
+-- 场景地图Toggle对象
+local m_sceneMapToggle = nil;
+local m_isClickWorldMap = false;
+-- npc名称对象
+local m_itemNameObjcet = nil;
+-- 世界场景信息
+local m_mapInfoCount = 0;
+-- listView对象
+local m_listView = nil;
+local m_listTable = nil;
+-- 路线文本
+local m_LabelGSLine = nil;
+-- 切换路线按钮
+local m_ButtonGSLine = nil;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- start方法，同unity的start
+function Start()
+    -- 初始化界面objects
+    InitObjects();
+    -- 初始化界面中按钮的点击事件
+    InitOnClick();
+    -- 初始化界面的信息
+    InitInfo();
+    -- 界面创建成功
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    -- 如果界面创建成功
+    if m_bCreateSuccess == true then
+        m_clickRoleType = 1;
+        -- 初始化界面的信息
+        InitInfo();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_currentMapState = 1;
+    m_bCreateSuccess = false;
+    m_clickRoleType = 1;
+    m_panelObject = nil;
+    m_sceneID = nil;
+    m_npcTable = { };
+    m_monsterTable = { };
+    m_transferTable = { };
+    m_npcIndex = 0;
+    m_monsterIndex = 0;
+    m_transferIndex = 0;
+    m_TargetPos = nil;
+    m_LabelGSLine = nil;
+	m_ButtonGSLine = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化界面objects
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_WORLDMAPPANEL);
+    -- 世界地图ScrollView对象
+    m_worldMapSV = GetComponent(m_panelObject, m_worldMapScrollView, "CUIScrollViewEx");
+    -- 场景地图
+    m_listView = GetComponent(m_panelObject, m_NpcGridStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+    --    -- 地图中npc的sprite对象
+    --    m_NpcSpritePrefab = child(m_panelObject, m_NpcSpritePrefabStr).gameObject;
+    -- npc标的上一级
+    m_NPCListObject = child(m_panelObject, m_NPCListStr).gameObject;
+    -- 点击的地点
+    m_clickSprite = child(m_panelObject, m_clickSpriteStr).gameObject;
+    -- 目标寻路点
+    m_TargetPos = child(m_panelObject, m_TargetPosStr).gameObject;
+    -- 场景地图按钮Toggle
+    m_sceneMapToggle = GetComponent(m_panelObject, m_sceneMapBtnStr, "UIToggle");
+    m_LabelGSLine = GetComponent(m_panelObject, m_LabelGSLinePath, "UILabel");
+    m_ButtonGSLine = child(m_panelObject, m_ButtonGSLinePath).gameObject;
+end
+
+-- 初始化界面中按钮的点击事件
+function InitOnClick()
+    -- 设置关闭按钮事件
+    SetGameObjectEvent(m_closeButtonStr, OnCloseClick, m_panelObject);
+    -- 设置点击地图内事件
+    SetGameObjectEvent(m_mapTextureStr, OnMapTextureClick, m_panelObject);
+    -- 设置点击右侧类型转换按钮
+    SetGameObjectEvent(m_toggleNpcStr, OnToggleNpcClick, m_panelObject);
+    SetGameObjectEvent(m_toggleMonsterStr, OnToggleMonsterClick, m_panelObject);
+    SetGameObjectEvent(m_toggleTransferStr, OnToggleTransferClick, m_panelObject);
+    -- 设置地图转换按钮
+    SetGameObjectEvent(m_worldMapBtnStr, OnWorldMapClick, m_panelObject);
+    SetGameObjectEvent(m_sceneMapBtnStr, OnSceneMapClick, m_panelObject);
+    m_mapInfoCount = CCommonTool.GetMapWorldInfoByIndex(1);
+    UIEventListener.Get(m_ButtonGSLine).onClick = LuaHelper.OnClick(OnButtonGSLineClick);
+    if m_mapInfoCount.Count > 0 then
+        -- 设置点击传送场景按钮
+        for index = 1, m_mapInfoCount.Count do
+            m_mapWorldInfo = CCommonTool.GetMapWorldInfoByIndex(index);
+            if m_mapWorldInfo ~= nil then
+                SetGameObjectEvent(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index, OnChangeSceneClick, m_panelObject);
+            end
+        end
+    end
+end
+-- 初始化界面的信息
+function InitInfo()
+    -- 加载当前场景右侧tem数据
+    InitItemDataList();
+    loadMapInfo();
+    RefreshRightContent();
+    InitGSLineInfo();
+    SetGameObjectState(m_curSceneMap, true, m_panelObject);
+    SetGameObjectState(m_worldMap, false, m_panelObject);
+end
+
+-- 初始化item数据
+function InitItemDataList()
+    m_listTable = { };
+    m_listView:RemoveAll();
+    -- 获得场景的id
+    m_sceneID = G_SceneMng.SceneID;
+    -- 得到当前场景的地图信息
+    m_mapDataInfo = CCommonTool.GetMapdateInfo(m_sceneID);
+    if m_mapDataInfo == nil then
+        error("m_mapDataInfo is nil");
+        return;
+    end
+    -- 设置场景的名称
+    SetLabelTextByID(m_sceneNameStr, m_mapDataInfo.SceneName, m_panelObject);
+    -- 隐藏目标点
+    if m_isSeekRoad == false then
+        m_TargetPos:SetActive(false);
+    end
+    -- 得到当前场景雷达角色的信息,这个table中需要访问table[0],从0开始的
+    m_currentSceneRolesInfo = CCommonTool.GetMapRadarInfoBySceneID(m_sceneID);
+
+    for Index = 1, m_currentSceneRolesInfo.count do
+        if m_currentSceneRolesInfo[Index - 1].NameTxtID > 0 and m_currentSceneRolesInfo[Index - 1].RoleType == m_clickRoleType then
+            -- npc
+            if m_clickRoleType == 1 then
+                table.insert(m_listTable, m_currentSceneRolesInfo[Index - 1]);
+                -- 怪物
+            elseif m_clickRoleType == 3 then
+                table.insert(m_listTable, m_currentSceneRolesInfo[Index - 1]);
+                -- 传送点
+            elseif m_clickRoleType == 5 then
+                table.insert(m_listTable, m_currentSceneRolesInfo[Index - 1]);
+            end
+            -- boss
+            if m_clickRoleType == 3 then
+                if m_currentSceneRolesInfo[Index - 1].RoleType == 4 then
+                    table.insert(m_listTable, m_currentSceneRolesInfo[Index - 1]);
+                end
+            end
+        end
+    end
+    for i, data in ipairs(m_listTable) do
+        m_listView:AddData(data);
+    end
+    setAllNPCPrefabInfo();
+end
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    if data.RoleType == m_clickRoleType or monsterState or data.RoleType == m_clickRoleType + 1 then
+        -- 设置当前的npc名字
+        SetLabelTextByID(m_npcName, data.NameTxtID, go);
+        m_itemNameObjcet = GetComponent(go, m_npcName, "UILabel");
+        if data.DesID > 0 then
+            CCommonTool.SetWidgetPivot(m_itemNameObjcet, ENUM_PIVOT.Left);
+            SetGameObjectPos(m_npcName, Vector3(-174, 0, 0), go);
+            SetGameObjectState(m_npcDescribe, true, go);
+            -- 设置当前的npc描述
+            SetLabelTextByID(m_npcDescribe, data.DesID, go);
+        elseif data.MonsterLevel > 0 then
+            CCommonTool.SetWidgetPivot(m_itemNameObjcet, ENUM_PIVOT.Left);
+            SetGameObjectPos(m_npcName, Vector3(-174, 0, 0), go);
+            SetGameObjectState(m_npcDescribe, true, go);
+            -- 怪物等级
+            SetLabelContent(m_npcDescribe, "Lv." .. data.MonsterLevel, go);
+        else
+            SetGameObjectState(m_npcDescribe, false, go);
+            CCommonTool.SetWidgetPivot(m_itemNameObjcet, ENUM_PIVOT.Center);
+            SetGameObjectPos(m_npcName, Vector3.zero, go);
+        end
+    end
+
+end
+
+function OnListViewClick(listView, cell, go)
+    local goPosition = Vector3.zero;
+    -- 寻路要去的坐标点
+    if m_clickRoleType == 1 then
+        goPosition = Vector3.New(m_npcTable[cell.dataIndex].PositionX, m_npcTable[cell.dataIndex]:GetLayerTittle(), m_npcTable[cell.dataIndex].PositionZ);
+    elseif m_clickRoleType == 3 then
+        goPosition = Vector3.New(m_monsterTable[cell.dataIndex].PositionX, m_monsterTable[cell.dataIndex]:GetLayerTittle(), m_monsterTable[cell.dataIndex].PositionZ);
+    elseif m_clickRoleType == 5 then
+        goPosition = Vector3.New(m_transferTable[cell.dataIndex].PositionX, m_transferTable[cell.dataIndex]:GetLayerTittle(), m_transferTable[cell.dataIndex].PositionZ);
+    end
+    -- 执行寻路
+    G_UserInfo:GetCurPlayer():SetMovePathwithNoTarget(m_sceneID, goPosition);
+    -- 关闭事件执行
+    OnCloseClick();
+end
+-- 加载世界地图坐标信息
+function loadMapInfo()
+    m_sceneMapToggle:Set(true, true);
+    m_worldMapSV:ResetPosition();
+    for Index = 1, m_currentSceneRolesInfo.count do
+        if m_currentSceneRolesInfo[Index - 1].RoleType == 1 then
+            m_npcIndex = m_npcIndex + 1;
+            table.insert(m_npcTable, m_npcIndex - 1, m_currentSceneRolesInfo[Index - 1]);
+        elseif m_currentSceneRolesInfo[Index - 1].RoleType == 3 or m_currentSceneRolesInfo[Index - 1].RoleType == 4 then
+            m_monsterIndex = m_monsterIndex + 1;
+            table.insert(m_monsterTable, m_monsterIndex - 1, m_currentSceneRolesInfo[Index - 1]);
+        elseif m_currentSceneRolesInfo[Index - 1].RoleType == 5 then
+            m_transferIndex = m_transferIndex + 1;
+            table.insert(m_transferTable, m_transferIndex - 1, m_currentSceneRolesInfo[Index - 1]);
+        end
+    end
+end
+-- 加载世界地图信息
+function loadWorldMapInfo()
+    local level = G_UserInfo.RoleAttribute.Level;
+    local sceneID = Ioo.SceneManager.SceneID;
+    for index = 1, m_mapInfoCount.Count do
+        m_mapWorldInfo = CCommonTool.GetMapWorldInfoByIndex(index);
+        if m_mapWorldInfo ~= nil then
+            SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index, true, m_panelObject);
+            SetLabelTextByID(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_mapNameOpen, m_mapWorldInfo[index - 1].SceneName, m_panelObject);
+            SetLabelTextByID(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_mapNameNotOpen, m_mapWorldInfo[index - 1].SceneName, m_panelObject);
+            local txtInfo = CCommonTool.GetTxtData(m_mapWorldInfo[index - 1].Level);
+            if txtInfo ~= nil then
+                SetLabelContent(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelStr, txtInfo.m_str, m_panelObject);
+                SetLabelContent(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelDisableStr, txtInfo.m_str, m_panelObject);
+            end
+            if sceneID == m_mapWorldInfo[index - 1].SceneId then
+                SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_spriteCurScene, true, m_panelObject);
+            else
+                SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_spriteCurScene, false, m_panelObject);
+            end
+            local mapInfo = CCommonTool.GetMapdateInfo(m_mapWorldInfo[index - 1].SceneId);
+            if mapInfo ~= nil then
+                if mapInfo.NeedLv == 0 then
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelStr, false, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_labelSceneLevel, false, m_panelObject);
+                end
+                local siteSprite = GetComponent(m_panelObject, m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_sprieSite, "UISprite");
+                if level < mapInfo.NeedLv then
+                    SetSpriteContent(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_spriteSceneName, m_spriteAtlas, m_sceneNotOpen, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_mapNameNotOpen, true, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_mapNameOpen, false, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelDisableStr, true, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelStr, false, m_panelObject);
+                    CCommonTool.SetGameObjectGrey(siteSprite.gameObject, true);
+                else
+                    SetSpriteContent(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_spriteSceneName, m_spriteAtlas, m_sceneOpen, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_mapNameNotOpen, false, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_mapNameOpen, true, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelDisableStr, false, m_panelObject);
+                    SetGameObjectState(m_changeSceneBtnStr .. m_mapWorldInfo[index - 1].Index .. m_worldMapLevelStr, true, m_panelObject);
+                    CCommonTool.SetGameObjectGrey(siteSprite.gameObject, false);
+                end
+            end
+        end
+    end
+end
+-- 给当前所有的npc设置信息
+function setAllNPCPrefabInfo()
+    local UITextureComponent = GetComponent(m_panelObject, m_mapTextureStr, "UITexture");
+    if UITextureComponent == nil then
+        return;
+    end
+    m_mapScale = m_mapDataInfo.RadarmapScale * UITextureComponent.width / UITextureComponent.mainTexture.width / 2;
+    for Index = 1, m_currentSceneRolesInfo.count do
+        -- 设置当前的npc在地图中的小点的坐标
+        local posX = m_currentSceneRolesInfo[Index - 1].PositionX * m_mapScale + m_mapDataInfo.ScenemapX;
+        local posY = m_currentSceneRolesInfo[Index - 1].PositionZ * m_mapScale + m_mapDataInfo.ScenemapY;
+        local NPCSpriteObject = child(m_panelObject, m_NPCListStr .. m_sceneMapItemStr .. Index).gameObject;
+        SetGameObjectState(m_NPCListStr .. m_sceneMapItemStr .. Index, false, m_panelObject);
+        NPCSpriteObject.transform.localPosition = Vector3.New(posX, posY, 0);
+        -- 根据显示地图内标志类型确定文本的位置
+        --        if m_currentSceneRolesInfo[Index - 1].RoleType == 1 or m_currentSceneRolesInfo[Index - 1].RoleType == 3 or m_currentSceneRolesInfo[Index - 1].RoleType == 4 then
+        --            SetGameObjectPos(m_NPCListStr .. m_sceneMapItemStr .. Index .. m_sceneMapItemName, Vector3.New(0, -20, 0), m_panelObject);
+        --        elseif m_currentSceneRolesInfo[Index - 1].RoleType == 5 then
+        --            SetGameObjectPos(m_NPCListStr .. m_sceneMapItemStr .. Index .. m_sceneMapItemName, Vector3.New(0, -53, 0), m_panelObject);
+        --        end
+        -- 这是对象的图片
+        if m_currentSceneRolesInfo[Index - 1].PicterId > 0 then
+            SetSpriteByAtlasID(m_NPCListStr .. m_sceneMapItemStr .. Index, m_currentSceneRolesInfo[Index - 1].PicterId, m_panelObject);
+        end
+        -- 设置对象的文本
+        if m_currentSceneRolesInfo[Index - 1].TxtId > 0 then
+            SetGameObjectState(m_NPCListStr .. m_sceneMapItemStr .. Index .. m_sceneMapItemName, true, m_panelObject);
+            -- 文本id
+            SetLabelTextByID(m_NPCListStr .. m_sceneMapItemStr .. Index .. m_sceneMapItemName, m_currentSceneRolesInfo[Index - 1].TxtId, m_panelObject);
+            local txtPath = GetComponent(m_panelObject, m_NPCListStr .. m_sceneMapItemStr .. Index .. m_sceneMapItemName, "UILabel");
+            -- 字号
+            txtPath.fontSize = m_currentSceneRolesInfo[Index - 1].TxtSize;
+        else
+            SetGameObjectState(m_NPCListStr .. m_sceneMapItemStr .. Index .. m_sceneMapItemName, false, m_panelObject);
+        end
+        -- 按照当前角色类型选择设置标志是否显示
+        if m_currentSceneRolesInfo[Index - 1].RoleType == m_clickRoleType or m_monsterType and m_currentSceneRolesInfo[Index - 1].RoleType == m_clickRoleType + 1 then
+            SetGameObjectState(m_NPCListStr .. m_sceneMapItemStr .. Index, true, m_panelObject);
+        else
+            SetGameObjectState(m_NPCListStr .. m_sceneMapItemStr .. Index, false, m_panelObject);
+        end
+    end
+end
+
+-- 设置选中按钮的状态
+function RefreshRightContent()
+    for Index = 1, #m_curSceneButtonsTable do
+        if m_clickRoleType == 2 * Index - 1 then
+            SetGameObjectState(m_curSceneButtonsTable[Index] .. m_npcButtonDeactive, false, m_panelObject);
+            SetGameObjectState(m_curSceneButtonsTable[Index] .. m_npcButtonActive, true, m_panelObject);
+        else
+            SetGameObjectState(m_curSceneButtonsTable[Index] .. m_npcButtonDeactive, true, m_panelObject);
+            SetGameObjectState(m_curSceneButtonsTable[Index] .. m_npcButtonActive, false, m_panelObject);
+        end
+    end
+end
+
+-- 切线信息
+function InitGSLineInfo()
+    local info = SceneProtocol.gsLineInfo;
+    local currentId = info.currentGSID;
+    local sceneID = Ioo.SceneManager.SceneID;
+    local lineInfo = info.dict[currentId];
+    if currentId > 0 and lineInfo ~= nil then
+        m_LabelGSLine.text = lineInfo.gsName;
+        CCommonTool.SetGameObjectGrey(m_ButtonGSLine, false);
+    else
+        m_LabelGSLine.text = "";
+        CCommonTool.SetGameObjectGrey(m_ButtonGSLine, true);
+    end
+end
+
+--------------------------------------按钮事件方法-----------------------------------
+-- 点击传送场景
+function OnChangeSceneClick(e)
+    if TeamManager.IsTeamFollowing() == true then
+        ShowSystemFlowTips(8052);
+        return;
+    end
+    local index = tonumber(string.sub(e.name, 13, string.len(e.name)));
+    local sceneId = CCommonTool.GetMapWorldInfo(index).SceneId
+    if sceneId > 0 then
+        if G_UserInfo.RoleAttribute:GetAttackState() then
+            ShowSystemFlowTips(252);
+        else
+            JumpManager.SceneTransfer(sceneId, function(jumpType, success)
+                if success == true then
+                    OnCloseClick();
+                end
+            end );
+            --[[
+            if SceneProtocol.RequestSceneTransfer(sceneId, true) then
+                OnCloseClick();
+            end
+            ]]
+        end
+    end
+end
+
+-- 关闭要执行的事件
+function OnCloseClick()
+    -- 关闭当前界面
+    closePanel(ENUMPANELID.ENUM_PANEL_WORLDMAPPANEL);
+end
+
+-- 点击右侧类型转换事件
+-- NPC
+function OnToggleNpcClick()
+    if m_clickRoleType ~= 1 then
+        m_clickRoleType = 1;
+        RefreshRightContent();
+    end
+    m_monsterType = false;
+    InitItemDataList();
+end
+-- 怪物
+function OnToggleMonsterClick()
+    if m_clickRoleType ~= 3 then
+        m_clickRoleType = 3;
+        RefreshRightContent();
+    end
+    m_monsterType = true;
+    InitItemDataList();
+end
+-- 传送点
+function OnToggleTransferClick()
+    if m_clickRoleType ~= 5 then
+        m_clickRoleType = 5;
+        RefreshRightContent();
+    end
+    m_monsterType = false;
+    InitItemDataList();
+end
+-- 地图切换时间
+function OnWorldMapClick()
+    SetGameObjectState(m_curSceneMap, false, m_panelObject);
+    SetGameObjectState(m_worldMap, true, m_panelObject);
+    loadWorldMapInfo();
+end
+function OnSceneMapClick()
+    m_clickRoleType = 1;
+    InitItemDataList();
+    RefreshRightContent();
+    SetGameObjectState(m_curSceneMap, true, m_panelObject);
+    SetGameObjectState(m_worldMap, false, m_panelObject);
+
+end
+-- 点击地图内事件
+function OnMapTextureClick()
+    if TeamManager.IsTeamFollowing() == true then
+        ShowSystemFlowTips(8052);
+        return;
+    end
+    -- 将点击的物体放在鼠标点击的位置
+    m_clickSprite.transform.position = UICamera.mainCamera:ScreenToWorldPoint(Input.mousePosition);
+    local localPosX = m_clickSprite.transform.localPosition.x;
+    local localPosY = m_clickSprite.transform.localPosition.y;
+    -- 要去的x坐标点
+    local goPosX =(localPosX - m_mapDataInfo.ScenemapX) / m_mapScale;
+    -- 要去的Z坐标点
+    local goPosZ =(localPosY - m_mapDataInfo.ScenemapY) / m_mapScale;
+    local targetPos = Vector3.New(goPosX, 0, goPosZ);
+    -- 判断是否可以去
+    if G_UserInfo:GetCurPlayer():IsCanGoToTarget(targetPos) == true then
+        -- 执行寻路并设置目标点
+        m_TargetPos.transform.localPosition = m_clickSprite.transform.localPosition;
+
+        G_UserInfo:GetCurPlayer():SetMovePathwithNoTarget(m_sceneID, targetPos);
+        if m_TargetPos ~= nil then
+            m_TargetPos:SetActive(true);
+        end
+        m_isSeekRoad = true;
+    else
+        Logger.Log("cannot go to the pos that your click");
+    end
+end
+
+-- 切线路线按钮点击事件
+function OnButtonGSLineClick(gameObject)
+    local info = SceneProtocol.gsLineInfo;
+    local currentId = info.currentGSID;
+    local lineInfo = info.dict[currentId];
+    local sceneID = Ioo.SceneManager.SceneID;
+    tostring("scenes[sceneID]::"..tostring(lineInfo.scenes[sceneID]));
+    if currentId <= 0 or lineInfo.scenes[sceneID] ~= true then
+        ShowSystemFlowTips(5802);
+        return;
+    end
+    SceneProtocol.RequestGetGSOnlineInfo();
+    createPanel(ENUMPANELID.ENUM_PANEL_GS_LINE);
+end
+
+--------------------------外部调用(或内部)此界面信息的方法----------------------
+-- 目标寻路点隐藏
+function HideTargetPos()
+    m_isSeekRoad = false;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WORLDMAPPANEL) == 1 and m_bCreateSuccess then
+        -- 隐藏目标点
+        if m_TargetPos ~= nil then
+            m_TargetPos:SetActive(false);
+        end
+    end
+    -- 领地战主界面小地图寻路目标点隐藏
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then 
+        Main_MiddleTop.RefreshTargetState();
+    end
+end
+
+function OnMapLoadSuccess()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WORLDMAPPANEL) == 1 then
+        setAllNPCPrefabInfo();
+    end
+end

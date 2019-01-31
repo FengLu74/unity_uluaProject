@@ -1,0 +1,489 @@
+﻿module("SceneProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+-- 当前的GSID
+gsLineInfo = {
+    version = -1,
+    currentGSID = -1,   -- 当前GSID
+    list = {},          -- GS切线列表
+    dict = {},          -- GS切线字典
+    states = {},        -- GS当前状态
+};
+
+function RegisterProtocols()
+    -- 服务器发送目标地点
+    network.Register(GMI_STOC_LGS_GOTO_WORLD_BOSS_POS, AutomaticFindWay);
+    -- //攻击者的相关信息向客户端发送数据
+    -- network.Register(GMI_STOC_ATTACK_INFO, OnAttackPlayerInfo);
+    network.Register(GMI_STOC_ATTACK_INFO_NEW, OnAttackPlayerInfoNew);
+    -- 位面返回协议
+    network.Register(GMI_STOC_PLANES_LEFT_TIME, OnPlaneData);
+
+    -- 服务器通知客户端GS线路信息
+    network.Register(E_NTOC_CLIENT_ASK_GS_PLAYER_ONLINE_INFO_RETURN, OnGetGsOnlineInfo);
+    -- 切换GS时，错误提示
+    network.Register(E_NTOC_NGS_CHANGE_GS_ERROR, OnChangeGSError);
+end
+
+-- 自动寻路到服务器发送的坐标点
+function AutomaticFindWay(protocolId, buffer)
+    -- 目标场景id
+    local sceneId = buffer:ReadUShort();
+    -- 目标x坐标
+    local scenex = buffer:ReadFloat();
+    -- 目标z坐标
+    local scenez = buffer:ReadFloat();
+    -- 是否立刻生效,值为0是非立刻生效，1为立刻寻路
+    local yIsNowGotoPos = buffer:ReadByte();
+
+    error(string_format("服务器发送的自动寻路坐标({0}, {1}), 是否立刻寻路:{2}", scenex, scenez, yIsNowGotoPos));
+
+    -- 角色行走层信息
+    local layer = buffer:ReadByte();
+    local mapnpcId = buffer:ReadInt();
+    error("服务器发送的自动寻路坐标 mapnpcId:" .. mapnpcId);
+    if mapnpcId > 0 then
+        local mapnpcInfo = CCommonTool.GetMapNpcInfo(mapnpcId);
+        if mapnpcInfo ~= nil then
+            G_MissionMng.FindNpcExcelId = mapnpcInfo.NpcId;
+            G_MissionMng.FindPos = Vector3.New(scenex, 0, scenez);
+        end
+    end
+    local goPosition = Vector3.New(scenex, CCommonTool.GetMoveLayer(layer), scenez);
+    G_UserInfo.ActivityManager.SceneID = sceneId;
+    G_UserInfo.ActivityManager.m_bossPos = goPosition;
+    if yIsNowGotoPos == 1 then
+        local player = G_UserInfo:GetCurPlayer();
+        if player ~= nil then
+            player:SetSeekTarget(sceneId, goPosition);
+        else
+            error("服务器发送的自动寻路, 客户端主角(AgentPlayer)不存在!");
+        end
+    else
+        G_UserInfo.ActivityManager.IsSeekEvent = true;
+    end
+    -- 执行寻路
+    -- G_UserInfo:GetCurPlayer():SetMovePathwithNoTarget(sceneId, goPosition);
+end
+
+-- //攻击者的相关信息向客户端发送数据
+function OnAttackPlayerInfo(protocolId, buffer)
+    --    local isFuBen = buffer:ReadByte();
+    --    if isFuBen == 1 then
+    --        local fuBenCount = buffer:ReadUShort();
+    --        -- 冷却时间
+    --        local lengQueCount = buffer:ReadUShort();
+    --        local tab = { };
+    --        table.insert(tab, 1, fuBenCount);
+    --        table.insert(tab, 2, lengQueCount);
+    --        PlayerFailFieldPanel.SetData(tab);
+    --        if G_SceneMng.isInGame then
+    --            createPanel(ENUMPANELID.ENUM_PANEL_PLAYERFAILFIELDPANEL);
+    --        else
+    --            G_SceneMng.needCreateDungeonPlayerRevive = true;
+    --        end
+    --    else
+    --        -- 死亡次数
+    --        local yuanBaoCount = buffer:ReadUShort();
+    --        -- 冷却时间
+    --        local lengQueCount = buffer:ReadUShort();
+    --        -- 攻击者类型-1为无效值
+    --        local attackType = buffer:ReadInt();
+    --        -- 元宝复活的次数
+    --        -- 冷却时间的次数
+    --        local size = buffer:ReadByte();
+    --        local attackName = buffer:ReadString(size);
+    --        local tab = { };
+    --        table.insert(tab, 1, yuanBaoCount);
+    --        table.insert(tab, 2, lengQueCount);
+    --        table.insert(tab, 3, attackName);
+    --        table.insert(tab, 4, attackType);
+    --        PlayerRevivePanel.SetData(tab);
+    --        if G_SceneMng.isInGame then
+    --            createPanel(ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL);
+    --        else
+    --            G_SceneMng.needCreatePlayerRevive = true;
+    --        end
+    --    end
+end
+
+-- //攻击者的相关信息向客户端发送数据(显示复活界面)
+function OnAttackPlayerInfoNew(protocolId, buffer)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FIGHTFAILPANEL) == 1  -- 失败界面
+        or IsOpenPanel(ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL) == 1 -- 胜得界面
+        or IsOpenPanel(ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL) == 1 then  --翻牌界面
+        return;
+    end
+    local data = { };
+    data.remainTimes = buffer:ReadInt();
+    -- 原地复活剩余次数
+    data.forceRebornTime = buffer:ReadInt();
+    -- 强制复活剩余时间(秒数)
+    data.revivePointCD = buffer:ReadInt();
+    -- 复活点复活CD(秒数)
+    data.backCityCD = buffer:ReadInt();
+    -- 回主城复活CD(秒数)
+    data.attackerType = buffer:ReadInt();
+    -- 攻击者类型
+    data.attackerName = buffer:ReadStringByByte();
+    -- 攻击者名字
+    G_SceneMng.needCreatePlayerRevive = true;
+    error("显示复活界面")
+    PlayerRevivePanel.Show(data);
+end
+
+-- 更新玩家复活数据
+function UpdatePlayerReviveData(protocolId, buffer)
+    -- error("通知玩家 UpdatePlayerReviveData 玩家复活数据");
+    -- local reviveData = ReviveDate.New();
+    -- reviveData.nRebornTimes = buffer:ReadInt();
+    -- -- //复活次数
+    -- reviveData.nRebornType = buffer:ReadInt();
+    -- -- //复活类型1 表示消耗元宝复活2 表示消耗冷却时间复活
+    -- G_UserInfo.GetReveiveManager:OnSetReviveDate(reviveData);
+    -- 关闭复活面板
+    PlayerRevivePanel.CloseThisPanel();
+    -- 关闭副本复活面板
+    -- PlayerFailFieldPanel.OnclosePanel();
+    G_SceneMng.needCreatePlayerRevive = false;
+end
+
+-- 进入位面的协议返回
+function OnPlaneData(protocolId, buffer)
+    local planesExcelID = buffer:ReadInt();
+    error("planesExcelID : " .. planesExcelID);
+    local time = buffer:ReadInt();
+    error("time : " .. time);
+    -- 位面excelID  你可能会根据这个ID显示不同场景等信息
+    local planeId = buffer:ReadInt();
+    G_UserInfo.RoleAttribute.PlaneID = planeId;
+    Main.SetPlaneMain(planesExcelID, time);
+end
+
+-- 服务器通知客户端GS线路信息
+function OnGetGsOnlineInfo(protocolId, buffer)
+    error("服务器通知客户端GS线路信息");
+    local version = buffer:ReadInt();
+    -- 当前GSID
+    local currentId = buffer:ReadInt();
+    local count = buffer:ReadInt();
+    -- 切线列表
+    local list = {};
+    local dict = {};
+    local states = {};
+    for i = 1, count do 
+        -- 状态
+        local gsid = buffer:ReadInt();
+        local gsState = buffer:ReadUShort();
+        states[gsid] = gsState;
+        if currentId > 0 then
+            -- GS信息
+            local item = {};
+            item.gsid = gsid;
+            item.playerCount = buffer:ReadInt();
+            item.gsName = string.gsub(buffer:ReadStringByByte(), "%s*$", "");
+            -- GS包含的场景ID
+            local sceneCount = buffer:ReadUShort();
+            item.scenes = {};
+            for i = 1, sceneCount do
+                local sceneId = buffer:ReadUShort();
+                item.scenes[sceneId] = true;
+            end
+            table.insert(list, item);
+            dict[item.gsid] = item;
+        end
+    end
+
+    -- 更新GS状态
+    gsLineInfo.states = states;
+    gsLineInfo.version = version;
+    if currentId > 0 then
+        gsLineInfo.currentGSID = currentId;
+        gsLineInfo.list = list;
+        gsLineInfo.dict = dict;
+    end
+    error("gs info :: " .. SerializeTable(gsLineInfo));
+    GameServerLinePanel.Refresh();
+end
+
+-- 切换GS时，错误提示
+function OnChangeGSError(protocolId, buffer)
+    local errorType = buffer:ReadInt();
+    if errorType == 0 then          -- NGS没有这个GSID
+    elseif errorType == 1 then      -- 手动切换GS时，目标GS没有那个场景ID
+    elseif errorType == 2 then      -- 手动切换GS时，同一个GS切换
+    elseif errorType == 3 then      -- 切线系统关闭
+    elseif errorType == 4 then      -- 这个场景不允许切换，检查cfg
+    end
+    error("切换GS失败, errorType:"..errorType);
+    ShowSystemFlowTips(5800);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求复活
+-- @param reviveType 复活类型
+function RequestRevive(reviveType)
+    error("请求复活::" .. reviveType);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ROLE_REBORN);
+    buffer:WriteByte(reviveType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求传送场景
+-- @param sceneId 目标场景ID
+-- @param showTransferBar 是否显示传送读条
+-- return true:已发送请求 false:条件不满足
+function RequestSceneTransfer(sceneId, showTransferBar)
+    local currentSceneId = G_SceneMng.SceneID;
+    if currentSceneId == sceneId then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SCENE_TRANSFER_AMID);
+        return false;
+    end
+    local level = G_UserInfo.RoleAttribute.Level;
+    local mapInfo = CCommonTool.GetMapdateInfo(sceneId);
+    if mapInfo == nil then return; end
+    if level < mapInfo.NeedLv then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SCENE_TRANSFER_LEVEL);
+        return false;
+    end
+    -- 组队跟随中, 不可以传送
+    if TeamManager.IsTeamFollowing() then
+        ShowSystemFlowTips(8052);
+        return false;
+    end
+    if showTransferBar == true then
+        local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+        local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+        CollectBar.BreakTaskSendBar();
+        CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, function() SendSceneTransfer(sceneId); end);
+        -- 打断自动寻路和任务追踪
+        G_MissionMng:StopTracMission();
+        -- 打断镖车跟随
+        EveryDayTaskManager.CheckIsCamionFollow();
+    else
+        SendSceneTransfer(sceneId);
+    end
+    return true;
+end
+
+-- 发送跳转场景协议(内部调用)
+function SendSceneTransfer(sceneId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.SMALL_MAP_TRANSMISSION);
+    buffer:WriteInt(-1);
+    buffer:WriteInt(sceneId);
+    G_NetWorkMng:SendMessage(buffer);
+    log("发送跳转场景协议(内部调用)::" .. sceneId);
+end
+
+-- 请求传送场景
+-- @param sceneId 目标场景ID
+-- @param showTransferBar 是否显示传送读条
+-- return true:已发送请求 false:条件不满足
+function BossLobbyRequestSceneTransfer(dungeonID, showTransferBar)
+--    local currentSceneId = G_SceneMng.SceneID;
+--    if currentSceneId == sceneId then
+--        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SCENE_TRANSFER_AMID);
+--        return false;
+--    end
+--    local level = G_UserInfo.RoleAttribute.Level;
+--    local mapInfo = CCommonTool.GetMapdateInfo(sceneId);
+--    if mapInfo == nil then return; end
+--    if level < mapInfo.NeedLv then
+--        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SCENE_TRANSFER_LEVEL);
+--        return false;
+--    end
+    -- 组队跟随中, 不可以传送
+    if TeamManager.IsTeamFollowing() then
+        ShowSystemFlowTips(8052);
+        return false;
+    end
+    if showTransferBar == true then
+        local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+        local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+        CollectBar.BreakTaskSendBar();
+        CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, function() BossLobbySendSceneTransfer(dungeonID); end);
+        -- 打断自动寻路和任务追踪
+        G_MissionMng:StopTracMission();
+        -- 打断镖车跟随
+        EveryDayTaskManager.CheckIsCamionFollow();
+    else
+        BossLobbySendSceneTransfer(dungeonID);
+    end
+    return true;
+end
+-- BossLobby发送跳转场景协议(内部调用)
+function BossLobbySendSceneTransfer(dungeonID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.SMALL_MAP_TRANSMISSION);
+    buffer:WriteInt(dungeonID);
+    buffer:WriteInt(-1);
+    G_NetWorkMng:SendMessage(buffer);
+    error("发送跳转场景协议(内部调用)::" .. dungeonID);
+end
+-- BossLobby发送跳转场景协议(内部调用)
+function BossLobbySendSceneTransferLeave(dungeonID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.SMALL_MAP_TRANSMISSION);
+    buffer:WriteInt(-1);
+    buffer:WriteInt(dungeonID);
+    G_NetWorkMng:SendMessage(buffer);
+    error("发送跳转场景协议(内部调用)::" .. dungeonID);
+end
+-- 请求任务传送
+-- @param taskId 任务ID
+--[[
+function RequestTaskTransfer(taskId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.MISSION_TRANSMISSION);
+    buffer:WriteInt(taskId);
+    buffer:WriteInt(-1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+]]
+
+-- 世界BOSS传送
+-- @param bossId 世界BOSS'id
+-- @param showTransferBar 是否显示传送读条
+function RequestWorldBossTransfer(bossId, showTransferBar)
+    local bossData = ActivityManager.GetWorldBoss(bossId);
+    if bossData == nil then return end
+    local npcInfo = CCommonTool.GetMapNpcInfo(bossData.info.MapnpcId);
+    if npcInfo == nil then
+        error(string_format("mapnpc表id:{0}不存在!", mapnpcId));
+        return;
+    end
+
+    -- 组队跟随中, 不可以传送
+    if TeamManager.IsTeamFollowing() then
+        ShowSystemFlowTips(8052);
+        return false;
+    end
+
+    local targetSceneId = npcInfo.SceneID;
+    local currentSceneId = G_SceneMng.SceneID;
+    if targetSceneId == currentSceneId then
+        SendWorldBossTransfer(bossId);
+        return;
+    end
+
+    if showTransferBar == true then
+        local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+        local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+        CollectBar.BreakTaskSendBar();
+        CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, function() SendWorldBossTransfer(bossId); end);
+        -- 打断自动寻路和任务追踪
+        G_MissionMng:StopTracMission();
+        -- 打断镖车跟随
+        EveryDayTaskManager.CheckIsCamionFollow();
+    else
+        SendWorldBossTransfer(bossId);
+    end
+end
+
+-- 发送世界BOSS传送协议(内部调用)
+function SendWorldBossTransfer(bossId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.WORLD_BOSS_TRANSMISSION);
+    buffer:WriteInt(bossId);
+    buffer:WriteInt(-1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 危险场景传送
+-- @param sceneId 危险场景ID
+-- @param activityId 对应的活动ID
+--[[
+function RequestDangerSceneTransfer(sceneId, activityId)
+    log(string_format("危险场景传送, sceneId:{1}, activityId:{2}, npcId:{0}", npcId, sceneId, activityId));
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.DANGEROUS_TRANSMISSION);
+    buffer:WriteInt(activityId);
+    buffer:WriteInt(sceneId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+]]
+
+-- 查找NPC传送
+-- @param mapnpcId mapnpcId
+-- @param showTransferBar 是否显示传送读条
+function RequestNpcTransfer(mapnpcId, showTransferBar)
+    if not JumpManager.CanNpcTransfer(mapnpcId) then
+        return;
+    end
+
+    if showTransferBar == true then
+        local targetSceneId = npcInfo.SceneID;
+        local currentSceneId = G_SceneMng.SceneID;
+        if targetSceneId ~= currentSceneId then
+            local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+            local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+            CollectBar.BreakTaskSendBar();
+            CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, function() SendNpcTransfer(mapnpcId); end);
+            -- 打断自动寻路和任务追踪
+            G_MissionMng:StopTracMission();
+            -- 打断镖车跟随
+            EveryDayTaskManager.CheckIsCamionFollow();
+        else
+            SendNpcTransfer(mapnpcId);
+        end
+    else
+        SendNpcTransfer(mapnpcId);
+    end
+end
+
+-- 发送NPC传送协议(内部调用)
+-- @param mapnpcId mapnpcId
+function SendNpcTransfer(mapnpcId)
+    local npcInfo = CCommonTool.GetMapNpcInfo(mapnpcId);
+    if npcInfo == nil then
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_TRANSMISSION);
+    buffer:WriteByte(ENUM_TRANSMISSION_TYPE.FIND_NPC_TRANSMISSION);
+    buffer:WriteInt(mapnpcId);
+    buffer:WriteInt(npcInfo.SceneID);
+    G_NetWorkMng:SendMessage(buffer);
+    log("发送NPC传送协议(内部调用)");
+end
+
+
+-- 客户端请求服务器GS线路信息
+function RequestGetGSOnlineInfo()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(E_CTON_CLIENT_ASK_GS_PLAYER_ONLINE_INFO );
+    buffer:WriteInt(gsLineInfo.version);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 客户端请求切线
+function RequestChangeGS(gsid)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_ASK_CHANGE_GS);
+    buffer:WriteInt(gsid);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------
+
+
+function ClearGSLineInfo()
+    gsLineInfo = {
+        version = -1,
+        currentGSID = -1,   -- 当前GSID
+        list = {},          -- GS切线列表
+        dict = {},          -- GS切线字典
+        states = {},        -- GS当前状态
+    };
+end

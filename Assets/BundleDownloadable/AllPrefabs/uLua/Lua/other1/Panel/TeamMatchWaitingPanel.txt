@@ -1,0 +1,110 @@
+﻿module('TeamMatchWaitingPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamMatchWaitingPanel';
+---------------------------------------label路径---------------------------------------
+-- 加注释
+local m_LabelTitlePath = "LabelTitle";
+-- 加注释
+local m_LabelContentPath = "LabelContent";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 加注释
+local m_ButtonBackPath = "ButtonBack";
+-- 加注释
+local m_ButtonCreatePath = "ButtonCreate";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+
+-- 队伍目标ID
+local m_GoalId = 0;
+-- 队伍目标难度
+local m_DiffIndex = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_MATCH_WAITING);
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonBackPath, OnButtonBackClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonCreatePath, OnButtonCreateClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetLabelTextByID(m_LabelTitlePath, 949, m_PanelObject);--提示
+    local info = CCommonTool.GetTeamRoomInfo(m_GoalId);
+    if info == nil then
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_MATCH_WAITING);
+        return;
+    end
+    SetLabelTextByID(m_LabelContentPath, info.PromptTxt, m_PanelObject);
+    SetLabelTextByID(m_ButtonBackPath .. "/Label", 2162, m_PanelObject);
+    SetLabelTextByID(m_ButtonCreatePath .. "/Label", 836,m_PanelObject);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 继续等待
+function OnButtonBackClick(gameObject)
+    OnCloseClick();
+end
+
+-- 创建队伍
+function OnButtonCreateClick(gameObject)
+    TeamProtocol.RequestCreateTeam(m_GoalId, m_DiffIndex);
+    TeamPanel.OpenThisPanelByTag(3);
+    OnCloseClick();
+end
+
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_MATCH_WAITING);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(goalId, diffIndex)
+    m_GoalId = goalId;
+    m_DiffIndex = diffIndex;
+    createPanel(ENUMPANELID.ENUM_PANEL_TEAM_MATCH_WAITING);
+end

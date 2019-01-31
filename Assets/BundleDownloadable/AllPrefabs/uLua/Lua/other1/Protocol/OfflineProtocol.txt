@@ -1,0 +1,76 @@
+﻿module("OfflineProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 回复客户端离线奖励的数据
+    network.Register(GMI_STOC_LGS_OFFLINE_AWARD, OnOfflineExpBack);
+    -- 帧听主角属性初始化完成事件
+    LuaEventDispatcher.AddEventListener("PlayerEvent.AttributeInited", OnPlayerAttributeInited);
+end
+
+local needShowpanel = false;
+-- 离线经验数据返回
+function OnOfflineExpBack(protocolId, buffer)
+    local m_offlineType = buffer:ReadInt();
+    error("m_offlineType:::::" .. m_offlineType);
+    if m_offlineType == ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ALL_DATA then
+        -- 开启界面等级限制
+        local levelLimited = CCommonTool.GetDefineInfo(EDefineContentID.OFFLINE_PANEL_LEVEL_LIMITED):GetIntContent();
+        -- 获取可领取条件（最少时间）
+        local pLevel = G_UserInfo.RoleAttribute.Level;
+        local offlineExpInfo = CCommonTool.GetOfflineExpInfoByIndex(pLevel);
+        local minTime = offlineExpInfo.MinTime;
+        -- 离线时间
+        local m_offlineTime = nil;
+        m_offlineTime = buffer:ReadInt();
+        G_RewardMng.OfflineTimeLeft = m_offlineTime;
+        error("离线时间离线时间:::" .. m_offlineTime);
+        OfflinePanel.OnResetOfflineData(m_offlineTime);
+        -- 离线时间大于10Min进入场景&&玩家等级至25级自动打开离线经验界面
+        needShowpanel = true;
+        if G_UserInfo.RoleAttribute.Level >= levelLimited then
+            if m_offlineTime >= minTime then
+                WelfareManager.SetWelfareMenuIndex(WelfareType.WT_Offline);
+                local buffer = ByteBuffer.New();
+                buffer:WriteInt(ENUMPANELID.ENUM_WELFARE_PANEL);
+                buffer:WriteUInt(0);
+                network.OnSocket(GMI_STOC_OPEN_PLAYER_PANEL, buffer);
+                needShowpanel = false;
+            end
+        end
+    else
+        m_offlineTime = buffer:ReadInt();
+
+        OfflinePanel.OnResetOfflineData(m_offlineTime);
+        -- 领取奖励结果返回
+        local m_offlineResult = buffer:ReadInt();
+        --error("m_offlineResultMessage.." .. m_offlineResult);
+        OfflinePanel.OnResetOfflineResult(m_offlineResult);
+    end
+    if G_SceneMng.isAlreadyInGame then
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_OFFLINE, OfflinePanel.IsShowRedHintOffline());
+    end
+end
+
+-- 帧听主角属性初始化完成事件
+function OnPlayerAttributeInited()
+    if needShowpanel then
+        -- 开启界面等级限制
+        local levelLimited = CCommonTool.GetDefineInfo(EDefineContentID.OFFLINE_PANEL_LEVEL_LIMITED):GetIntContent();
+        local pLevel = G_UserInfo.RoleAttribute.Level;
+        local offlineExpInfo = CCommonTool.GetOfflineExpInfoByIndex(pLevel);
+        local minTime = offlineExpInfo.MinTime;
+        if G_UserInfo.RoleAttribute.Level >= levelLimited then
+            if G_RewardMng.OfflineTimeLeft >= minTime then
+                WelfareManager.SetWelfareMenuIndex(WelfareType.WT_Offline);
+                local buffer = ByteBuffer.New();
+                buffer:WriteInt(ENUMPANELID.ENUM_WELFARE_PANEL);
+                buffer:WriteUInt(0);
+                network.OnSocket(GMI_STOC_OPEN_PLAYER_PANEL, buffer);
+                needShowpanel = false;
+            end
+        end
+    end
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

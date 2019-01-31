@@ -1,0 +1,235 @@
+﻿module("FriendsRecentPanel", package.seeall)
+
+-- 面板对象
+local m_panelObject = nil;
+-----------------------------------------------label路径--------------------------------------------
+local m_hateValuePath = "HateValue";
+-----------------------------------------------sprite路径--------------------------------------------
+
+-----------------------------------------------button路径--------------------------------------------
+
+local m_FriendlinessButtonPath = "InfoBox/Friendliness/Button";
+local m_FriendlinessMaskPath = "InfoBox/Friendliness/Info/Mask";
+local m_AddFriendButtonPath = "InfoBox/AddButton";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+local m_listViewStr = "ScrollView/Grid";
+--好友列表空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+--好友列表背景
+local m_BgListPath = "bg_List";
+--好友列表未选择时提示对象的路径
+local m_NonSelectBoxPath = "NonSelectBox";
+--聊天上面的信息面板
+local m_InfoBoxPath = "InfoBox";
+-- 友好度
+local m_FriendlinessPath = "Friendliness";
+--友好度信息面板
+local m_FriendlinessInfoPath = "InfoBox/Friendliness/Info";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+local m_listView = nil;
+
+selectId = 0;
+
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+function Start()
+    InitObjects();
+    InitOnClick();
+    FriendsChatPanel.HidePanel();
+    InitList();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitList();
+    end
+end
+
+function OnDisable()
+    FriendsChatPanel.HidePanel();
+    m_listView:RemoveAll();
+    selectId = 0;
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_listView = nil;
+    m_panelInitAlready = false;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    m_panelObject = child(m_panelObject, "RecentPanel").gameObject;
+    SetGameObjectState(m_InfoBoxPath, false, m_panelObject);
+    SetGameObjectState(m_FriendlinessInfoPath, false, m_panelObject);
+    m_listView = GetComponent(m_panelObject, m_listViewStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+function InitOnClick()
+    -- 查看友好度按钮
+    SetGameObjectEvent(m_FriendlinessButtonPath, OnFriendlinessClick, m_panelObject, nil);
+    -- 关闭友好度面板
+    SetGameObjectEvent(m_FriendlinessMaskPath, OnFriendlinessMaskClick, m_panelObject, nil);
+    -- 添加好友按钮
+    SetGameObjectEvent(m_AddFriendButtonPath, OnAddButtonClick, m_panelObject, nil);
+    
+end
+
+function InitList()
+    m_listView:RemoveAll();
+    local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_RECENT);
+    local lookAtIndex = -1;
+    local currentData = nil;
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+        if data.guid == selectId then
+            lookAtIndex = i - 1;
+            currentData = data;
+        end
+    end
+    SetGameObjectState(m_InfoBoxPath, false, m_panelObject);
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, m_panelObject);
+--    SetGameObjectState(m_BgListPath, #dataList == 0, m_panelObject);
+    SetGameObjectState(m_NonSelectBoxPath, lookAtIndex < 0, m_panelObject);
+    if lookAtIndex >= 0 then
+        FriendsData.ClearChatRedHint(currentData);
+        m_listView:LookAt(lookAtIndex, true);
+        ShowChatPanel(currentData)
+        FriendsData.ClearChatRedHint(currentData.guid);
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_RECENT,FriendsRecentPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND,FriendsListPanel.IsShowRedHint());
+        local unReadData = ChatManager.GetChannelRecords(CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+        for i,v in pairs(unReadData) do
+            if v.dwSpkGlobleID == currentData.guid then
+                table.remove(unReadData, i);
+            end 
+        end
+    else
+        selectId = 0;
+    end
+    
+end
+
+function ShowChatPanel(data, cell)
+    if not cell then cell = m_listView:GetCellByData(data) end
+    if cell then  SetGameObjectState("RedHint", false, cell.gameObject); end
+--    G_RedHintMng:StartTrigRedHint(CREDHINTENUM.FRIEND_RECENT);
+--    G_RedHintMng:StartTrigRedHint(CREDHINTENUM.FRIEND);
+    FriendsChatPanel.ShowPanel(data);
+    SetGameObjectState(m_NonSelectBoxPath, false, m_panelObject);
+    SetGameObjectState(m_InfoBoxPath, true, m_panelObject);
+    InitInfoBox(data);
+end
+
+function InitInfoBox(data)
+    local relation = FriendsData.GetRelation(data.guid);
+    local infoBoxPanel = child(m_panelObject, m_InfoBoxPath).gameObject;
+    SetGameObjectState(m_FriendlinessPath, relation == FriendsData.RELATION_FRIEND, infoBoxPanel);
+    SetGameObjectState(m_AddFriendButtonPath, relation == FriendsData.RELATION_STRANGER, m_panelObject);
+    SetGameObjectState(m_hateValuePath, relation == FriendsData.RELATION_ENEMY, infoBoxPanel);
+    
+    if relation == FriendsData.RELATION_FRIEND then
+        InitFriendlinessInfo(data);
+    elseif relation == FriendsData.RELATION_ENEMY then
+        SetLabelContent(m_hateValuePath, string_format(GetTextToId(8854), FriendsData.GetEnemyHateValue(data.guid)), infoBoxPanel);
+    elseif relation == FriendsData.RELATION_STRANGER then
+        
+    end
+end
+
+function InitFriendlinessInfo(data)
+    local friend = FriendsData.GetFriend(data.guid);
+    --这里用好友数据
+    if friend then data = friend end
+    local friendlinessPanel = child(m_panelObject, m_InfoBoxPath).gameObject;
+    friendlinessPanel = child(friendlinessPanel, m_FriendlinessPath).gameObject;
+    local infoPanel = child(friendlinessPanel, "Info").gameObject;
+    local info = FriendsData.GetFriendlinessInfo(data.friendliness or 0);
+    if info == nil then return end
+    local strValue = string_format(GetTextToId(8901), GetTextToId(info.NameId), data.friendliness);
+    SetLabelContent("FriendlinessLabel", strValue, friendlinessPanel);
+    strValue = string_format(GetTextToId(8900), data.name);
+    SetLabelContent("FriendlinessLabel", strValue, infoPanel);
+    local level = info.Id;
+    local maxLevel = CCommonTool.GetAllFriendlinessInfo().Count;
+    local levelGameObject = child(infoPanel, "Level").gameObject;
+    for i = 1, 10 do
+        SetGameObjectState("Star"..i, i <= level, levelGameObject);
+    end
+    if level < maxLevel then
+        local nextInfo = CCommonTool.GetFriendlinessInfo(level+1);
+        if nextInfo then 
+            strValue = string_format(GetTextToId(8899), nextInfo.NeedValue, data.dailyFriendliness, info.DayTop);
+        end
+    else
+        strValue = string_format(GetTextToId(8898), GetTextToId(8897), data.dailyFriendliness, info.DayTop);
+    end
+    strValue = string.gsub(strValue, "\\n", "\n");
+    SetLabelContent("Desc", strValue, infoPanel);
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject; 
+    local redHintVisible = FriendsData.HasUnreadRecord(data.guid);
+    SetGameObjectState("RedHint", redHintVisible, go);
+    FriendsPanel.SetFriendBaseInfo(go, data, true, false, true);
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    selectId = data.guid;
+    if go.name == "Hot_Head" then
+        ParameterToMessageTextBox.OpenOtherButtonListPanel(data.guid, data.name, data.level, data.profession, data.guildId, data.onlineState);
+    elseif go.name == "Hot_Menu" then
+        selectId = data.guid;
+        FriendsData.ClearChatRedHint(data.guid);
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_RECENT,FriendsRecentPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND,FriendsListPanel.IsShowRedHint());
+        ShowChatPanel(data, cell);
+        m_listView:SetSelect(cell.dataIndex, true);
+        local unReadData = ChatManager.GetChannelRecords(CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+        for i,v in pairs(unReadData) do
+            if v.dwSpkGlobleID == data.guid then
+                table.remove(unReadData, i);
+            end 
+        end
+    end
+end
+
+function OnFriendlinessClick()
+    SetGameObjectState(m_FriendlinessInfoPath, true, m_panelObject);
+end
+
+function OnFriendlinessMaskClick()
+    SetGameObjectState(m_FriendlinessInfoPath, false, m_panelObject);
+end
+
+function OnAddButtonClick()
+    local data = m_listView:GetData(m_listView.selectedIndex);
+    FriendsProtocol.RequestApply(data.guid);
+    ReportManager.RequestReportPanel(10328);
+end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+-- 显示最近页签红点
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_FRIEND) then
+        return false;
+    end
+    if FriendsData.HasNewChat() then return true end
+    return false;
+end

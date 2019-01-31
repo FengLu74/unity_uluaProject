@@ -1,0 +1,472 @@
+﻿module('FragmentExchangePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'FragmentExchangePanel';
+---------------------------------------label路径---------------------------------------
+-- 活动时间
+local m_activityTime = "Top/Content1/Label";
+-- 活动说明文本
+local m_activityTxt = "Top/Content2/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 说明文本按钮
+local m_explainButton = "Top/Title/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 上方背景图
+local m_topBg = "Top/Bg1";
+----------------------------------gameobject所在的路径---------------------------------
+-- grid对象所在的位置
+local m_rechargeGridObjStr = "Reward/ScrollView/Grid";
+-- item对象所在的位置
+local m_rechargeItemObjStr = "Reward/ScrollView/Item";
+----------------------------------通用的名称路径---------------------------------------
+-- 当前兑换次数/兑换次数
+local m_fraagmentTime = "ItemNum";
+-- 需要道具
+local needItem = "NeedItem/Item";
+-- 奖励Item
+local m_rewardItem = "Item";
+-- 一个道具的按钮组
+local m_rewardButtons = "Button";
+-- 充值按钮
+local m_rechargeButton = "Button/Button1";
+-- 已领取
+local m_rewardAccepted = "Button/Button_Accepted";
+-- 未领取
+local m_rewardAccept = "Button/Button_Accept";
+-- 道具是否充足
+local m_IsActiveStr = "/Sprite_Mask";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+-- 数据表
+local m_rewardTable = nil;
+-- 需要第一个道具的ID
+local m_item1Id = 0;
+-- 需要第二个道具的ID
+local m_item2Id = 0;
+-- 需要第一个道具的Num
+local m_item1Num = 0;
+-- 需要第二个道具的Num
+local m_item2Num = 0;
+-- 当前拥有道具1的数量
+local m_hasItem1Num = 0;
+-- 当前拥有道具2的数量
+local m_hasItem2Num = 0;
+-- 上次兑换的ID
+local m_lastExchangeId = nil;
+-- 是否可领取
+local isCan = false;
+-----------------------------------一些写死的规定--------------------------------------
+-- 一个道具的坐标
+local itemPos1 = Vector3.New(-630, 0, 0);
+-- 两个道具的坐标
+local itemPos2 = Vector3.New(-630, 0, 0);
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    ValidatePanel();
+    InitObjects();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        m_lastExchangeId = nil;
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_List = nil;
+    m_rewardTable = nil;
+    isCan = false;
+    m_lastExchangeId = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL);
+    m_List = GetComponent(m_PanelObject, m_rechargeGridObjStr, "UIListView");
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitRightInfo();
+    -- 初始化按钮信息
+    InitOnClick();
+    -- 添加数据
+    AddRechargeDate();
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 说明面板的点击事件
+    SetGameObjectEvent(m_explainButton, OnExplainPanelClick, m_PanelObject);
+end
+
+-- 信息初始化
+function InitRightInfo()
+    -- 设置活动时间
+    if FragmentExchangeManger.actEnd == false then
+        local startTime = G_TimerMng:FormatTime(FragmentExchangeManger.beginTime, "yyyy/MM/dd");
+        local endTime = G_TimerMng:FormatTime(FragmentExchangeManger.endTime, "yyyy/MM/dd H");
+        SetLabelContent(m_activityTime, startTime .. "-" .. endTime .. CCommonTool.GetTxtData(603).m_str, m_PanelObject);
+    end
+    -- 说明文本
+    if FragmentExchangeManger.txtId ~= nil then
+        SetGameObjectState(m_activityTxt, true, m_PanelObject);
+        SetLabelContent(m_activityTxt, FragmentExchangeManger.txtId, m_PanelObject);
+    else
+        SetGameObjectState(m_activityTxt, false, m_PanelObject);
+    end
+    -- 背景图
+    if FragmentExchangeManger.picterId > 0 then
+        SetSpriteByAtlasID(m_topBg, FragmentExchangeManger.picterId, m_PanelObject, true);
+    end
+end
+
+function AddRechargeDate()
+    m_List:RemoveAll();
+    m_rewardTable = { };
+
+    local m_allAcuAwardData = FragmentExchangeManger.rechargeTable;
+    if #m_allAcuAwardData > 0 then
+        for Index = 1, #m_allAcuAwardData do
+            table.insert(m_rewardTable, m_allAcuAwardData[Index]);
+        end
+    end
+    for i, data in ipairs(m_rewardTable) do
+        m_List:AddData(data);
+    end
+    local selectIndex = 0;
+    local m_allAcuAwardData = FragmentExchangeManger.rechargeTable;
+    local contentInfo = nil;
+    -- 道具显示那一页
+    if #m_allAcuAwardData > 0 then
+        for Index = 1, #m_allAcuAwardData do
+            local itemInfo = m_allAcuAwardData[Index];
+            if itemInfo ~= nil then
+                -- 需要的道具
+                local needItemList = { };
+                if itemInfo.ExchangeID > 0 and m_lastExchangeId ~= nil then
+                    for index = 1, #itemInfo.needItemTable do
+                        if itemInfo.ExchangeID == m_lastExchangeId then
+                            table.insert(needItemList, itemInfo.needItemTable[index]);
+                            m_List:LookAt(Index - 1, false);
+                            contentInfo = itemInfo;
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local path = nil;
+    local needItemPath = nil;
+    if data.AllNum > 0 then
+        SetGameObjectState(m_fraagmentTime, true, go);
+    else
+        SetGameObjectState(m_fraagmentTime, false, go);
+    end
+    -- 当前兑换次数/兑换次数
+    SetLabelContent(m_fraagmentTime, data.CurNum .. "/" .. data.AllNum, go);
+    -- 需要的道具
+    local needItemList = { };
+    if data.ExchangeID > 0 then
+        for index = 1, #data.needItemTable do
+            if data.ExchangeID == data.needItemTable[index].ID then
+                table.insert(needItemList, data.needItemTable[index]);
+            end
+        end
+    end
+    -- 是否可兑换
+    local isHave = false;
+    if #needItemList > 0 then
+        -- 获得奖励道具信息
+        local count = #data.needItemTable;
+        if count > 2 then
+            error("the rewards item num is more than 2,wrong!!!!!");
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                needItemPath = needItem .. i;
+                local itemInfo = data.needItemTable[i];
+                if itemInfo ~= nil then
+                    local m_itemExcelID = itemInfo.itemid;
+                    if m_itemExcelID > 0 then
+                        if i == 2 then
+                            SetGameObjectPos(needItem .. 1, itemPos2, go);
+                        else
+                            SetGameObjectPos(needItem .. 1, itemPos1, go);
+                        end
+                        SetGameObjectState(needItemPath, true, go);
+                        local hasItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_itemExcelID);
+                        -- 判断需要的道具书是否足够
+                        if hasItemNum < itemInfo.num then
+                            SetLabelColor(needItemPath .. "/Label_Num", "D83232", go);
+                            SetGameObjectState(needItemPath .. m_IsActiveStr, true, go);
+                            SetGameObjectEvent(needItemPath, function() GetWayPanel.Show(m_itemExcelID, ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL); end, go);
+                            isHave = true;
+                        else
+                            SetLabelColor(needItemPath .. "/Label_Num", "FFFFFF", go);
+                            SetGameObjectState(needItemPath .. m_IsActiveStr, false, go);
+                            SetItemToolTipsEvent(go, needItemPath, ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL, false, m_itemExcelID);
+                        end
+                        SetItemShowByExcelIDV04(go, needItemPath, m_itemExcelID, itemInfo.num, false, 11, ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL);
+                        SetSpriteByAtlasID(needItemPath .. "/Sprite_Icon", CCommonTool.GetImageIDByExcelID(m_itemExcelID), go, true);
+                        SetLabelContent(needItemPath .. "/Label_Num", hasItemNum .. "/" .. itemInfo.num, go, true);
+                    else
+                        SetGameObjectState(needItemPath, false, go);
+                    end
+                end
+            end
+        end
+    end
+
+    -- 奖励道具
+    local itemTabel = { };
+    -- 道具显示
+    if data.ExchangeID > 0 then
+        for index = 1, #data.contentTable do
+            if data.ExchangeID == data.contentTable[index].ID then
+                table.insert(itemTabel, data.contentTable[index]);
+            end
+        end
+    end
+    if #data.contentTable > 0 then
+        -- 获得奖励道具信息
+        local count = #data.contentTable;
+        if count > 4 then
+            error("the rewards item num is more than 5,wrong!!!!!");
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                path = m_rewardItem .. i;
+                local itemInfo = data.contentTable[i];
+                if itemInfo ~= nil then
+                    local m_itemExcelID = itemInfo.itemid;
+                    if m_itemExcelID > 0 then
+                        SetGameObjectState(path, true, go);
+                        SetItemShowByExcelIDV04(go, path, m_itemExcelID, itemInfo.num, false, 11, ENUMPANELID.ENUM_RECHARGE_PANEL);
+                        SetItemToolTipsEvent(go, path, ENUMPANELID.ENUM_RECHARGE_PANEL, false, m_itemExcelID);
+                    else
+                        SetGameObjectState(path, false, go);
+                    end
+                end
+            end
+        end
+
+        -- 设置兑换按钮的状态
+        if data.AllNum > 0 then
+            -- 按钮状态
+            if data.CurNum >= data.AllNum then
+                SetGameObjectState(m_rewardAccepted, true, go);
+                SetGameObjectState(m_rewardAccept, false, go);
+                SetGameObjectState(m_rechargeButton, false, go);
+                return;
+            end
+        end
+        if isHave == false then
+            SetGameObjectState(m_rewardAccepted, false, go);
+            SetGameObjectState(m_rewardAccept, true, go);
+            SetGameObjectState(m_rechargeButton, false, go);
+        else
+            SetGameObjectState(m_rewardAccepted, false, go);
+            SetGameObjectState(m_rewardAccept, false, go);
+            SetGameObjectState(m_rechargeButton, true, go);
+        end
+    end
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local count = #data.contentTable;
+    local itemTable = { };
+    local itemNum = 0;
+    -- 设置道具信息
+    for i = 1, count do
+        local itemInfo = data.contentTable[i];
+        local m_itemExcelID = itemInfo.itemid;
+        if m_itemExcelID > 0 then
+            if m_itemExcelID ~= G_ItemToolTipDefine.BINDMONEY and m_itemExcelID ~= G_ItemToolTipDefine.BINDDIAMOND and
+                m_itemExcelID ~= G_ItemToolTipDefine.NOTBINDMONEY and m_itemExcelID ~= G_ItemToolTipDefine.NOTBINDDIAMOND then
+                if itemInfo ~= nil then
+                    table.insert(itemTable, itemInfo);
+                end
+            end
+        end
+    end
+    if go.name == "Button" then
+        local num = cell.dataIndex + 1
+        if data.AllNum > 0 then
+            if data.CurNum >= data.AllNum then
+                return;
+            end
+        end
+        -- 需要的道具
+        local needItemList = { };
+        if data.ExchangeID > 0 then
+            for index = 1, #data.needItemTable do
+                if data.ExchangeID == data.needItemTable[index].ID then
+                    table.insert(needItemList, data.needItemTable[index]);
+                end
+            end
+        end
+        -- 是否可兑换
+        local isHave = false;
+        if #needItemList > 0 then
+            -- 获得奖励道具信息
+            local count = #data.needItemTable;
+            if count > 2 then
+                error("the rewards item num is more than 2,wrong!!!!!");
+            else
+                -- 设置道具信息
+                for i = 1, count do
+                    needItemPath = needItem .. i;
+                    local itemInfo = data.needItemTable[i];
+                    if itemInfo ~= nil then
+                        local m_itemExcelID = itemInfo.itemid;
+                        if m_itemExcelID > 0 then
+                            local m_hasItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_itemExcelID);
+                            if itemInfo.num > m_hasItemNum then
+                                isHave = true;
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        if isHave == false then
+            local testTable = { };
+            local itemCount = 0;
+            for k, v in pairs(itemTable) do
+                if v.itemid > 0 then
+                    if testTable[v.itemid] ~= nil then
+                        testTable[v.itemid] = testTable[v.itemid] + v.num;
+                    else
+                        testTable[v.itemid] = v.num;
+                        itemCount = itemCount + 1;
+                    end
+                end
+            end
+            local itemList = G_BagMng:GetCanPickUpListItem(testTable);
+            -- 判断背包格子数是否足够
+            if itemList.Count < itemCount then
+                error("背包已满，无法领取！！！");
+                ShowSystemFlowTips(103);
+            else
+                ExchangeItemProtocol.RequestItemList(data.ExchangeID);
+                m_lastExchangeId = data.ExchangeID;
+            end
+        end
+    end
+end
+
+    
+------------------------------------------事件方法------------------------------------
+-- 说明弹板
+function OnExplainPanelClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL, 7);
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+
+-- 检测界面是否需要开启
+function ValidatePanel()
+    local data =
+    {
+        PanelId = ENUMPANELID.ENUM_LEVEL_UP_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel", data);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function InitInfoOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL) == 1 and m_CreateSuccess then
+        InitShow();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_EXCHANGE, IsShowRedHint());
+end
+
+-- 红点显示 
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        return false;
+    end
+    local m_allAcuAwardData = FragmentExchangeManger.rechargeTable;
+    local contentInfo = nil;
+    if #m_allAcuAwardData > 0 then
+        for Index = 1, #m_allAcuAwardData do
+            local itemInfo = m_allAcuAwardData[Index];
+            if itemInfo ~= nil then
+                local needItemList = { };
+                if itemInfo.ExchangeID > 0 then
+                    for index = 1, #itemInfo.needItemTable do
+                        if itemInfo.ExchangeID == itemInfo.needItemTable[index].ID then
+                            table.insert(needItemList, itemInfo.needItemTable[index]);
+                            contentInfo = itemInfo;
+                        end
+                    end
+                end
+                local bIsCanExchange = true;
+                -- 兑换需要的道具
+                if #needItemList > 0 then
+                    for Index = 1, #needItemList do
+                        local itemInfo = itemInfo.needItemTable[Index];
+                        if itemInfo ~= nil then
+                            local itemExcelID = itemInfo.itemid;
+                            if itemExcelID == 0 then
+                                break;
+                            end
+                            local itemNum = itemInfo.num;
+                            -- 需要的道具数量与背包的道具数量作比较
+                            if G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemExcelID) < itemNum then
+                                bIsCanExchange = false;
+                                break;
+                            end
+                        end
+                    end
+                end
+                if bIsCanExchange then
+                    -- 判断兑换是否有兑换次数限制
+                    if contentInfo.AllNum > 0 then
+                        -- 兑换次数和总的兑换次数作比较
+                        if contentInfo.CurNum >= contentInfo.AllNum then
+                            return false;
+                        else
+                            return true;
+                        end
+                    else
+                        return true;
+                    end
+                else
+                    -- do nothing
+                end
+            end
+        end
+    end
+    return false;
+end

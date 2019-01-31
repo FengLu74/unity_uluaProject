@@ -1,0 +1,1480 @@
+﻿module("ToolTipsPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 道具名字位置
+local m_ItemNameStr = "/Label_Name";
+-- 道具类型位置
+local m_ItemTypeStr = "/Label_ItemType";
+-- 道具excelID位置
+local m_ItemExcelIDStr = "/Label_ExcelIDNum";
+-- 道具CRID位置
+local m_ItemCRIDStr = "/Label_LGIDNum";
+
+-- 道具等级所在的位置
+local m_ItemLevelStr = "/Label_Level";
+
+-- 信息内容描述文本位置
+local m_ItemContentDesStr = "/Label";
+
+-- 装备部位文本位置
+local m_EquipPartStr = "/Label_Part";
+-- 装备强化等级文本位置
+local m_EquipForceLevelStr = "/Label_ForceLevel";
+-- 装备精炼等级文本位置
+local m_EquipStarLvStr = "/Label_StarNum";
+-- 装备精炼等级加号文本位置
+local m_EquipStarAddStr = "/Label_StarNum/Label";
+-- 装备套装图标的位置
+local m_EquipSuitStr = "/Sprite_Suit";
+-- 装备职业所在的位置
+local m_EquipNeedProStr = "/Label_Pro";
+-- 装备当前战斗力
+local m_EquipCurFightValueStr = "/Label_FightValue";
+-- 装备增加战斗力
+local m_EquipAddFightValueStr = "/Label_AddValue";
+
+-- 基础属性名称
+local m_BaseAttrNameStr = "/Label_Name";
+-- 基础属性数值
+local m_BaseAttrValueStr = "/Label_Value";
+
+-- 强化增加的属性数值
+local m_AttrForceAddValueStr = "/Label_AddValue";
+
+-- 随机属性名称
+local m_RandAttrNameStr = "/Label_Name";
+-- 随机属性数值
+local m_RandAttrValueStr = "/Label_Value";
+
+-- 随机属性的介绍文本位置
+local m_RandAttrDesLabelStr = "/RandAttrs/Label_Content";
+-- 套装名称文本位置
+local m_SuitNameLabelStr = "/Label_SuitName"
+-- 套装数量文本位置
+local m_SuitNumLabelStr = "/Label_Num";
+-- 套装属性激活件数
+local m_SuitActiveNumStr = "/Label_SuitCount";
+-- 套装属性文本
+local m_SuitAttrNameStr = "/Label_Name";
+-- 套装属性数值
+local m_SuitAttrValueStr = "/Label_Value";
+-- 附魔等级
+local m_EnchantLevelStr = "/Label_Level";
+-- 宝石等级
+local m_GemHoleLevelStr = "/Label";
+
+-- 获取途径
+local m_GetWayLabelStr = "/Label";
+
+-- 宠物条目数值
+local m_PetAttrValueStr = "/Label_Value";
+
+-- 交易冷却时间
+local m_DealCoolDownTimeStr = "/Label_CoolDown";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮路径
+local m_closeButtonStr = "Close_Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 道具图标位置
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具品质位置
+local m_ItemQualityStr = "/Sprite_Apptitude";
+-- 道具品质2位置
+local m_ItemQulity2Str = "/Sprite_Apptitude2";
+-- 道具品质位置
+local m_ItemBGQualityStr = "/Sprite_ItemQuality";
+-- 道具品质光位置
+local m_ItemBGLightQualityStr = "/Sprite_Light";
+-- 装备品质所在的位置
+local m_EquipApptitudeStr = "/Sprite_Equip_Apptitude";
+-- 装备阶数所在的位置
+local m_EquipStepStr = "/lb_Equip_Apptitude";
+-- 装备上升下降的图片
+local m_EquipFightValueUpOrDownStr = "/Sprite_Add";
+
+-- 套装图标所在的位置
+local m_SuitIconStr = "/Icon";
+
+-- 附魔和宝石部位所在的位置
+local m_EquipEnchantAndGemPartIconStr = "/Icon_Part";
+-- 附魔孔图标
+local m_EnchantHoleIconStr = "/Sprite_Icon";
+-- 宝石孔图标
+local m_GemHoleIconStr = "/Sprite_Icon";
+
+-- 拖拽的对象
+local m_DragSpriteStr = "/Drag";
+
+-- 宠物技能图标
+local m_PetSkillIconStr = "/Icon";
+
+-- 获取途径的分割线
+local m_GetWayStripStr = "/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+-- 固定位置道具tips
+local m_StaticPos = "StaticPos";
+-- 动态位置道具tips
+local m_DynamicPos = "DynamicPos";
+
+-- 动态货币位置
+local m_DynamicCoin = "/Coin";
+-- 动态道具位置
+local m_DynamicItem = "/Item";
+-- 动态装备位置
+local m_DynamicEquip = "/Equip";
+
+-- 信息头部位置路径
+local m_HeadStr = "/Head";
+-- 动态信息内容位置路径
+local m_DynamicContentStr = "/Content";
+-- 静态信息内容面板位置路径
+local m_StaticContentPanelStr = "/ContentPanel";
+-- 静态信息内容位置路径
+local m_StaticContentStr = "/ContentPanel/Content";
+
+-- 头部道具位置
+local m_HeadItemStr = "/Item";
+-- 头部战斗力位置
+local m_HeadFightValueStr = "/FightValue";
+-- GM是否开启了
+local m_GmIsOnStr = "/IsGm";
+
+-- 信息内容所在位置
+local m_ContentTableStr = "/Content_Des";
+-- 获取途径分隔条的位置
+local m_ContentGetWayCutStr = "/Sprite_GetWay";
+-- 获取途径的位置
+local m_ContentGetWayStr = "/Content_GetWay";
+
+-- 动态装备基础属性位置
+local m_BaseAttrContentStr = "/Content_BaseAttrs";
+-- 动态装备随即属性的分隔条的位置
+local m_RandAttrCutStr = "/Sprite_RandAttrs";
+-- 动态装备随机属性的位置
+local m_RandAttrContentStr = "/Content_RandAttrs";
+-- 动态装备套装属性的分隔条的位置
+local m_SuitAttrCutStr = "/Sprite_SuitAttrs";
+-- 动态装备套装属性的位置
+local m_SuitAttrContentStr = "/Content_SuitAttrs";
+-- 动态附魔和宝石的位置
+local m_EnchantAndGemContentStr = "/Content_EnchantAndGem";
+-- 动态附魔属性的位置
+local m_EnchantContentStr = "/Content_Enchant";
+-- 动态宝石属性的位置
+local m_GemContentStr = "/Content_Gem";
+-- 静态装备获取途径的分隔条的位置
+local m_GetWayCutStr = "/Sprite_GetWays";
+-- 静态装备获取途径的位置
+local m_GetWayContentStr = "/Content_GetWays";
+-- 套装名称
+local m_SuitNameStr = "/SuitName";
+-- 套装图标table
+local m_SuitIconstableStr = "/SuitIcons/SuitIcons";
+-- 套装属性table
+local m_SuitAttrtableStr = "/SuitAttrs";
+
+-- 静态装备位置
+local m_StaticEquipStr = "/Equip";
+-- 静态道具位置
+local m_StaticItemStr = "/Item";
+-- 静态宠物位置
+local m_StaticPetStr = "/Pet";
+
+-- 静态装备装备的装备位置
+local m_EquipedStr = "/Equiped";
+-- 静态装备未装备的装备位置
+local m_NotEquipedStr = "/NotEquiped";
+
+-- 宠物是否变异
+local m_PetIsVariety = "/Variety";
+-- 宠物基础属性的位置
+local m_PetBaseAttrsStr = "/Content_BaseAttrs";
+-- 宠物基础第-1行
+local m_LineMinus1Str = "/Line-1";
+-- 宠物基础第0行
+local m_Line0Str = "/Line0";
+-- 宠物基础第1行
+local m_Line1Str = "/Line1";
+-- 宠物基础第2行
+local m_Line2Str = "/Line2";
+-- 宠物基础第2行
+local m_Line3Str = "/Line3";
+-- 宠物类型
+local m_PetTypeStr = "/Type";
+-- 宠物阶段
+local m_PetStateStr = "/State";
+-- 宠物亲密度
+local m_PetIntimateStr = "/Intimate";
+-- 宠物悟性
+local m_PetSavvyStr = "/Savvy";
+-- 宠物携带等级
+local m_PetOutLevelStr = "/Level";
+-- 宠物资质
+local m_PetQualityStr = "/Content_QualityAttrs/";
+-- 宠物技能
+local m_PetSkillStr = "/Content_SkillAttrs";
+-- 宠物天赋技能
+local m_PetAllSkillsStr = "/Skills/"
+-- 宠物后天技能
+local m_PetLearnStr = "/LearnSkills/"
+-- 宠物星级
+local m_PetStarStr = "/Stars";
+-- 单个星星
+local m_PetSingleStarStr = "/Star{0}/Sprite";
+----------------------------------通用的名称路径---------------------------------------
+-- 通用显示路径
+local m_ShowStr = "/Show";
+-- 通用背景1
+local m_BG1Str = "/BG1";
+-- 通用背景2
+local m_BG2Str = "/BG1/BG2";
+-- 通用背景3
+local m_BG3Str = "/BG1/BG3";
+
+-- 基础属性
+local m_BaseAttrStr = "/BaseAttr";
+-- 随机属性
+local m_RandAttrStr = "/RandAttr";
+-- 套装属性
+local m_SuitAttrStr = "/SuitAttr";
+-- 获取途径
+local m_GetWayStr = "/GetWay";
+
+-- 附魔孔
+local m_EnchantHoleStr = "/EnchantHoles/Hole";
+-- 宝石孔
+local m_GemHoleStr = "/GemHoles/Hole";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 当前哪个面板触发的tips面板
+local m_panelID = nil;
+-- 道具信息
+local m_itemAttr = nil;
+-- 道具ExcelID
+local m_excelID = nil;
+-- 是否已装备
+local m_isEquiped = false;
+-- 是否是其他玩家的装备
+local m_isOtherPlayerEquip = false;
+-- 其它玩家的装备列表
+local m_OtherPlayerEquipTable = nil;
+-- 是否显示获取途径
+local m_isShowGetWay = false;
+
+-- 界面内使用的临时itemAttribute类
+local tempItemAttr = nil;
+local tempPath = "";
+local tempShowPath = "";
+local tempHeadPath = "";
+local tempContentPath = "";
+-----------------------------------一些写死的规定--------------------------------------
+-- 6种品质的渐变颜色
+local ItemQualityColorTop =
+{
+    [1] = "68655DE6",
+    [2] = "466F39E6",
+    [3] = "343F78E6",
+    [4] = "5E317AE6",
+    [5] = "7E5A26E6",
+    [6] = "751313E6",
+}
+
+-- 6种品质的渐变颜色
+local ItemQualityColorBottom =
+{
+    [1] = "68655D00",
+    [2] = "466F3900",
+    [3] = "343F7800",
+    [4] = "5E317A00",
+    [5] = "7E5A2600",
+    [6] = "75131300",
+}
+
+-- 6种品质的点光颜色
+local ItemQualityLightColor = 
+{
+    [1] = "cdcecc",
+    [2] = "94df82",
+    [3] = "81d4ff",
+    [4] = "b681ff",
+    [5] = "ffe981",
+    [6] = "ff8181",
+}
+
+local ItemLevelColor =
+{
+    red = "FE2D2D",
+    white = "CBD0D9",
+}
+
+local BGAddPixels = 20;
+local AddOutlinePixels = 48;
+
+-- 套装装备显示次序对应装备枚举
+local m_EquipsMatchEnum =
+{
+    [1] = EquipType.ET_Arm,
+    [2] = EquipType.ET_Necklace,
+    [3] = EquipType.ET_Earing,
+    [4] = EquipType.ET_Ring,
+    [5] = EquipType.ET_Dress,
+    [6] = EquipType.ET_Helmet,
+    [7] = EquipType.ET_Cuirass,
+    [8] = EquipType.ET_Leg_Guard,
+    [9] = EquipType.ET_Pants,
+    [10] = EquipType.ET_Shoes,
+    [11] = EquipType.ET_Bracelet,
+    [12] = EquipType.ET_Juju,
+}
+
+-- 套装颜色
+local m_SuitAttrColor = { Active = "91E464", Deactive = "8D8D8D" };
+
+-- 固定位置显示位置
+local Equip_Pos =
+{
+    Left = { x = - 320, y = 435 };
+    Middle = { x = - 130, y = 435 };
+    Right = { x = 285, y = 435 };
+}
+
+-- 强化属性有无的label的x坐标
+local Equip_BaseAttr =
+{
+    hasForceValue = 103,
+    noForceValue = 258,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    G_PanelMng.ToolTipPanelID = 0;
+    m_OtherPlayerEquipTable = nil;
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+end
+
+function InitData()
+    tempItemAttr = ItemAttribute.New(0);
+end
+
+function InitShow()
+    if m_itemAttr == nil then
+        SetGameObjectState(m_StaticPos, false, m_panelObject);
+        SetGameObjectState(m_DynamicPos, true, m_panelObject);
+        InitDynamicShow();
+    else
+        SetGameObjectState(m_StaticPos, true, m_panelObject);
+        SetGameObjectState(m_DynamicPos, false, m_panelObject);
+        InitStaticShow();
+    end
+end
+
+function InitDynamicShow()
+    tempItemAttr.ExcelID = m_excelID;
+    local itemType = tempItemAttr:GetTagType();
+    local itemTagType = tempItemAttr:GetItemCategory();
+    if itemType == ITEMTAGTYPE.TT_Equip then
+        SetGameObjectState(m_DynamicPos .. m_DynamicCoin, false, m_panelObject);
+        SetGameObjectState(m_DynamicPos .. m_DynamicItem, false, m_panelObject);
+        SetGameObjectState(m_DynamicPos .. m_DynamicEquip, true, m_panelObject);
+        InitDynamicEquipInfo();
+    elseif itemTagType == ItemCategory.IC_Money or itemTagType == ItemCategory.IC_Diamond or itemTagType == ItemCategory.IC_CoinObligate then
+        SetGameObjectState(m_DynamicPos .. m_DynamicCoin, true, m_panelObject);
+        SetGameObjectState(m_DynamicPos .. m_DynamicItem, false, m_panelObject);
+        SetGameObjectState(m_DynamicPos .. m_DynamicEquip, false, m_panelObject);
+        InitDynamicCoinInfo();
+    else
+        SetGameObjectState(m_DynamicPos .. m_DynamicCoin, false, m_panelObject);
+        SetGameObjectState(m_DynamicPos .. m_DynamicItem, true, m_panelObject);
+        SetGameObjectState(m_DynamicPos .. m_DynamicEquip, false, m_panelObject);
+        InitDynamicItemInfo();
+    end
+end
+
+function InitDynamicEquipInfo()
+    tempPath = m_DynamicPos .. m_DynamicEquip .. m_ShowStr;
+    tempHeadPath = tempPath .. m_HeadStr;
+    tempContentPath = tempPath .. m_DynamicContentStr;
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_excelID);
+    local equipInfo = CCommonTool.GetEquipInfo(m_excelID);
+    SetSpriteByAtlasID(tempHeadPath .. m_HeadItemStr .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(m_excelID), m_panelObject, true);
+    SetSpriteApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_ItemQualityStr, itemQualityID, m_panelObject);
+    SetSpriteApptitude2V04(tempHeadPath .. m_HeadItemStr .. m_ItemQulity2Str, itemQualityID, m_panelObject)
+--    SetSpriteEquipApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_EquipApptitudeStr, itemQualityID, m_panelObject, true);
+    SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipApptitudeStr, false, m_panelObject);
+    SetLabelContent(tempHeadPath .. m_HeadItemStr .. m_EquipStepStr, GetTextToId(CCommonTool.GetEquipStep(m_excelID) + 2999), m_panelObject);
+    SetLabelColor(tempHeadPath .. m_HeadItemStr .. m_EquipStepStr, "91e464", m_panelObject);
+    SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipStarLvStr, false, m_panelObject);
+    SetLabelTextByID(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, CCommonTool.GetNameIDByExcelID(m_excelID), m_panelObject);
+    SetLabelPinZhi(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, itemQualityID, m_panelObject);
+    SetSpriteGradientColor(tempHeadPath .. m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_panelObject);
+    SetSpriteColor(tempHeadPath .. m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_panelObject);
+    SetLabelContent(tempHeadPath .. m_ItemLevelStr, "Lv." .. equipInfo.NeedLv, m_panelObject);
+    if G_UserInfo.RoleAttribute.Level < equipInfo.NeedLv then
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.white, m_panelObject);
+    end
+    SetLabelTextByID(tempHeadPath .. m_EquipPartStr, equipInfo.TypeTxtID, m_panelObject);
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, false, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemExcelIDStr, m_excelID, m_panelObject);
+
+    local baseAttrTable =
+    {
+        [1] = { attrID = equipInfo.Attr1, attrValue = equipInfo.Attr1Value },
+        [2] = { attrID = equipInfo.Attr2, attrValue = equipInfo.Attr2Value },
+        [3] = { attrID = equipInfo.Attr3, attrValue = equipInfo.Attr3Value }
+    };
+    local baseAttrPath = tempContentPath .. m_BaseAttrContentStr;
+    for Index = 1, 3 do
+        if baseAttrTable[Index].attrID > 0 then
+            SetLabelContent(baseAttrPath .. m_BaseAttrStr .. Index .. m_BaseAttrNameStr, CCommonTool.GetAttrNameByAttrID(baseAttrTable[Index].attrID), m_panelObject);
+            SetLabelContent(baseAttrPath .. m_BaseAttrStr .. Index .. m_BaseAttrValueStr, GetAttrValue(baseAttrTable[Index].attrID, baseAttrTable[Index].attrValue), m_panelObject);
+            SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. Index, true, m_panelObject);
+        else
+            SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. Index, false, m_panelObject);
+        end
+    end
+
+    local randAttrPath = tempContentPath .. m_RandAttrContentStr;
+    local randAttrTable = { [1] = equipInfo.Weight1, [2] = equipInfo.Weight2, [3] = equipInfo.Weight3, [4] = equipInfo.Weight4, [5] = equipInfo.Weight5 };
+    local mustHaveRandAttrNum = 0;
+    local mayHaveRandAttrMaxNum = 0;
+    for Index = 1, 5 do
+        if randAttrTable[Index] >= 10000 then
+            mustHaveRandAttrNum = mustHaveRandAttrNum + 1;
+            mayHaveRandAttrMaxNum = mayHaveRandAttrMaxNum + 1;
+        elseif randAttrTable[Index] > 0 then
+            mayHaveRandAttrMaxNum = mayHaveRandAttrMaxNum + 1;
+        end
+    end
+    if mayHaveRandAttrMaxNum == 0 then
+        SetGameObjectState(tempContentPath .. m_RandAttrCutStr, false, m_panelObject);
+        SetGameObjectState(randAttrPath, false, m_panelObject);
+    else
+        SetGameObjectState(tempContentPath .. m_RandAttrCutStr, true, m_panelObject);
+        SetGameObjectState(randAttrPath, true, m_panelObject);
+    end
+    if mustHaveRandAttrNum == mayHaveRandAttrMaxNum then
+        SetLabelContent(randAttrPath .. m_RandAttrDesLabelStr, string_format(CCommonTool.GetTxtData(1711).m_str, mustHaveRandAttrNum), m_panelObject);
+    else
+        SetLabelContent(randAttrPath .. m_RandAttrDesLabelStr, string_format(CCommonTool.GetTxtData(961).m_str, mustHaveRandAttrNum, mayHaveRandAttrMaxNum), m_panelObject);
+    end
+
+    local suitPath = tempContentPath .. m_SuitAttrContentStr;
+    local suitID = equipInfo.SuitID;
+    if suitID > 0 then
+        local suitInfo = CCommonTool.GetEqupipSuitInfoById(suitID);
+        SetGameObjectState(tempContentPath .. m_SuitAttrCutStr, true, m_panelObject);
+        SetGameObjectState(suitPath, true, m_panelObject);
+        local curSuitNum = 0;
+        local curEquipInfo;
+        local hasEquipInfo;
+        local isCurSuit;
+        -- 暂时写死
+        -- -- 暂时写死
+        -- 判断套装时，永远判断前十件装备，过滤后面新加的装备
+        for Index = 1, 10 do
+            hasEquipInfo = GetItemAttribute(m_EquipsMatchEnum[Index]);
+            if hasEquipInfo == nil then
+                isCurSuit = false;
+            else
+                curEquipInfo = hasEquipInfo:GetEquipInfo();
+                if curEquipInfo.SuitID == suitID then
+                    curSuitNum = curSuitNum + 1;
+                    isCurSuit = true;
+                else
+                    isCurSuit = false;
+                end
+            end
+            if isCurSuit then
+                SetEquipPosSpriteByEquipType(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, m_EquipsMatchEnum[Index], true, m_panelObject);
+            else
+                SetEquipPosSpriteByEquipType(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, m_EquipsMatchEnum[Index], false, m_panelObject);
+            end
+            if CCommonTool.GetValueInEquipSuitInfo(suitID, Index + 2) == 1 then
+                SetGameObjectState(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, true, m_panelObject);
+            else
+                SetGameObjectState(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, false, m_panelObject);
+            end
+        end
+        SetLabelTextByID(suitPath .. m_SuitNameStr .. m_SuitNameLabelStr, suitInfo.TextId, m_panelObject);
+        SetLabelContent(suitPath .. m_SuitNameStr .. m_SuitNumLabelStr, string_format("({0}/{1})", curSuitNum, suitInfo.AllNum), m_panelObject);
+
+        local needNum;
+        local attrID;
+        local attrValue;
+        local suitAttrPath;
+        for Index = 1, 5 do
+            needNum = CCommonTool.GetValueInEquipSuitInfo(suitID, Index * 3 + 10);
+            attrID = CCommonTool.GetValueInEquipSuitInfo(suitID, Index * 3 + 11);
+            attrValue = CCommonTool.GetValueInEquipSuitInfo(suitID, Index * 3 + 12);
+            suitAttrPath = suitPath .. m_SuitAttrtableStr .. m_SuitAttrStr .. Index;
+            if needNum > 0 then
+                SetGameObjectState(suitAttrPath, true, m_panelObject);
+                SetLabelContent(suitAttrPath .. m_SuitActiveNumStr, string_format(CCommonTool.GetTxtData(962).m_str, needNum), m_panelObject);
+                SetLabelContent(suitAttrPath .. m_SuitAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrID), m_panelObject);
+                SetLabelContent(suitAttrPath .. m_SuitAttrValueStr, GetAttrValue(attrID, attrValue), m_panelObject);
+                if needNum <= curSuitNum then
+                    SetLabelColor(suitAttrPath .. m_SuitActiveNumStr, m_SuitAttrColor.Active, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrNameStr, m_SuitAttrColor.Active, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrValueStr, m_SuitAttrColor.Active, m_panelObject);
+                else
+                    SetLabelColor(suitAttrPath .. m_SuitActiveNumStr, m_SuitAttrColor.Deactive, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrNameStr, m_SuitAttrColor.Deactive, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrValueStr, m_SuitAttrColor.Deactive, m_panelObject);
+                end
+            else
+                SetGameObjectState(suitAttrPath, false, m_panelObject);
+            end
+        end
+
+    else
+        SetGameObjectState(tempContentPath .. m_SuitAttrCutStr, false, m_panelObject);
+        SetGameObjectState(suitPath, false, m_panelObject);
+    end
+
+    RepositionUITableComp(baseAttrPath, m_panelObject);
+    RepositionUITableComp(randAttrPath, m_panelObject);
+    RepositionUITableComp(suitPath .. m_SuitIconstableStr, m_panelObject);
+    RepositionUITableComp(suitPath .. m_SuitAttrtableStr, m_panelObject);
+    RepositionUITableComp(suitPath, m_panelObject);
+    RepositionUITableComp(tempContentPath, m_panelObject);
+
+    local trans = child(m_panelObject, tempPath);
+    local height = CCommonTool.GetBoundsSize(trans).y;
+    SetSpriteHeight(m_DynamicPos .. m_DynamicEquip .. m_BG1Str, height + BGAddPixels, m_panelObject);
+    SetSpriteHeight(m_DynamicPos .. m_DynamicEquip .. m_BG2Str, height + BGAddPixels + AddOutlinePixels, m_panelObject);
+    SetSpriteHeight(m_DynamicPos .. m_DynamicEquip .. m_BG3Str, height + BGAddPixels + AddOutlinePixels, m_panelObject);
+
+    SetGameObjectPos(m_DynamicPos .. m_DynamicEquip, Vector3.New(0,(height + BGAddPixels) / 2, 0), m_panelObject);
+end
+
+function InitDynamicCoinInfo()
+    tempPath = m_DynamicPos .. m_DynamicCoin .. m_ShowStr;
+    tempHeadPath = tempPath .. m_HeadStr;
+    tempContentPath = tempPath .. m_DynamicContentStr;
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_excelID);
+    local itemInfo = CCommonTool.GetItemInfo(m_excelID);
+    SetSpriteByAtlasID(tempHeadPath .. m_HeadItemStr .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(m_excelID), m_panelObject, true);
+    SetSpriteApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_ItemQualityStr, itemQualityID, m_panelObject);
+    SetSpriteApptitude2V04(tempHeadPath .. m_HeadItemStr .. m_ItemQulity2Str, itemQualityID, m_panelObject)
+    SetLabelTextByID(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, CCommonTool.GetNameIDByExcelID(m_excelID), m_panelObject);
+    SetLabelPinZhi(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, itemQualityID, m_panelObject);
+    SetSpriteGradientColor(tempHeadPath .. m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_panelObject);
+    SetSpriteColor(tempHeadPath .. m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_panelObject);
+    SetLabelTextByID(tempHeadPath .. m_ItemTypeStr, itemInfo.TypeTxtID, m_panelObject);
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, false, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemExcelIDStr, m_excelID, m_panelObject);
+
+    SetLabelTextByID(tempContentPath .. m_ContentTableStr .. m_ItemContentDesStr, itemInfo.TextIntroductionID, m_panelObject);
+
+    local trans = child(m_panelObject, tempPath);
+    local height = CCommonTool.GetBoundsSize(trans).y;
+    SetSpriteHeight(m_DynamicPos .. m_DynamicCoin .. m_BG1Str, height + BGAddPixels, m_panelObject);
+    SetSpriteHeight(m_DynamicPos .. m_DynamicCoin .. m_BG2Str, height + BGAddPixels + AddOutlinePixels, m_panelObject);
+    SetSpriteHeight(m_DynamicPos .. m_DynamicCoin .. m_BG3Str, height + BGAddPixels + AddOutlinePixels, m_panelObject);
+
+    SetGameObjectPos(m_DynamicPos .. m_DynamicCoin, Vector3.New(0,(height + BGAddPixels) / 2, 0), m_panelObject);
+end
+
+function InitDynamicItemInfo()
+    tempPath = m_DynamicPos .. m_DynamicItem .. m_ShowStr;
+    tempHeadPath = tempPath .. m_HeadStr;
+    tempContentPath = tempPath .. m_DynamicContentStr;
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_excelID);
+    SetSpriteByAtlasID(tempHeadPath .. m_HeadItemStr .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(m_excelID), m_panelObject, true);
+    SetSpriteApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_ItemQualityStr, itemQualityID, m_panelObject);
+    SetSpriteApptitude2V04(tempHeadPath .. m_HeadItemStr .. m_ItemQulity2Str, itemQualityID, m_panelObject)
+    SetLabelTextByID(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, CCommonTool.GetNameIDByExcelID(m_excelID), m_panelObject);
+    SetLabelPinZhi(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, itemQualityID, m_panelObject);
+    SetSpriteGradientColor(tempHeadPath .. m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_panelObject);
+    SetSpriteColor(tempHeadPath .. m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_panelObject);
+    local needLevel = tempItemAttr:GetNeeedLv();
+    SetLabelContent(tempHeadPath .. m_ItemLevelStr, "Lv." .. needLevel, m_panelObject);
+    if G_UserInfo.RoleAttribute.Level < needLevel then
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.white, m_panelObject);
+    end
+    SetLabelTextByID(tempHeadPath .. m_ItemTypeStr, tempItemAttr:GetTypeTxtID(), m_panelObject);
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, false, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemExcelIDStr, m_excelID, m_panelObject);
+    SetLabelTextByID(tempContentPath .. m_ContentTableStr .. m_ItemContentDesStr, tempItemAttr:GetIntroID(), m_panelObject);
+    if m_isShowGetWay then
+        getwayInfo = CCommonTool.GetDropPointInfo(m_excelID);
+        if getwayInfo == nil then
+            SetGameObjectState(tempContentPath .. m_ContentGetWayCutStr,false,m_panelObject);
+            SetGameObjectState(tempContentPath .. m_ContentGetWayStr,false,m_panelObject);
+        else
+            SetGameObjectState(tempContentPath .. m_ContentGetWayCutStr,true,m_panelObject);
+            SetGameObjectState(tempContentPath .. m_ContentGetWayStr,true,m_panelObject);
+            local maxCount = getwayInfo.Count;
+            for i = 1, 3 do
+                local str = tempContentPath .. m_ContentGetWayStr .. m_GetWayStr .. i;
+                SetGameObjectState(str, i <= maxCount, m_panelObject);
+                local paramTable = { getwayInfo["OpenUIParam" .. i],getwayInfo["SystemId" .. i] }
+                local tempObj = child(m_panelObject, str).gameObject;
+                UIEventListener.Get(tempObj).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, paramTable);
+                if i <= maxCount then
+                    SetLabelWithUnderlineByID(str .. m_GetWayLabelStr, getwayInfo["Text" .. i], m_panelObject);
+                end
+            end
+        end
+    else
+        SetGameObjectState(tempContentPath .. m_ContentGetWayCutStr,false,m_panelObject);
+        SetGameObjectState(tempContentPath .. m_ContentGetWayStr,false,m_panelObject);
+    end
+    RepositionUITableComp(tempContentPath, m_panelObject);
+    local trans = child(m_panelObject, tempPath);
+    local height = CCommonTool.GetBoundsSize(trans).y;
+    SetSpriteHeight(m_DynamicPos .. m_DynamicItem .. m_BG1Str, height + BGAddPixels, m_panelObject);
+    SetSpriteHeight(m_DynamicPos .. m_DynamicItem .. m_BG2Str, height + BGAddPixels + AddOutlinePixels, m_panelObject);
+    SetSpriteHeight(m_DynamicPos .. m_DynamicItem .. m_BG3Str, height + BGAddPixels + AddOutlinePixels, m_panelObject);
+
+    SetGameObjectPos(m_DynamicPos .. m_DynamicItem, Vector3.New(0,(height + BGAddPixels) / 2, 0), m_panelObject);
+end
+
+function InitStaticShow()
+    local itemTagType = m_itemAttr:GetTagType();
+    local itemType = m_itemAttr:GetItemType();
+    if itemTagType == ITEMTAGTYPE.TT_Equip then
+        SetGameObjectState(m_StaticPos .. m_StaticEquipStr, true, m_panelObject);
+        SetGameObjectState(m_StaticPos .. m_StaticItemStr, false, m_panelObject);
+        SetGameObjectState(m_StaticPos .. m_StaticPetStr, false, m_panelObject);
+        local equipType = m_itemAttr:GetEquipType();
+        local equipItemAttribute = GetItemAttribute(equipType);
+        if m_isOtherPlayerEquip then
+            -- 查看其他玩家装备时不弹出玩家自身装备tips进行对比 2017年7月20日20:02:43 （程序 李丽金改）（策划 周川提）
+            -- if equipItemAttribute == nil then
+            SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_EquipedStr, false, m_panelObject);
+            SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr, true, m_panelObject);
+            InitStaticOtherPlayerEquipInfo(m_itemAttr, Equip_Pos.Middle);
+            --            else
+            --                SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_EquipedStr, true, m_panelObject);
+            --                SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr, true, m_panelObject);
+            --                InitStaticOtherPlayerNotEquipedEquipInfo(m_itemAttr, Equip_Pos.Right);
+            --                InitStaticMainPlayerEquipedEquipInfo(equipItemAttribute, Equip_Pos.Left);
+            --            end
+        else
+            if m_isEquiped then
+                SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_EquipedStr, true, m_panelObject);
+                SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr, false, m_panelObject);
+                InitStaticMainPlayerEquipedEquipInfo(equipItemAttribute, Equip_Pos.Middle);
+            else
+                if equipItemAttribute == nil then
+                    SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_EquipedStr, false, m_panelObject);
+                    SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr, true, m_panelObject);
+                    InitStaticMainPlayerNotEquipedEquipInfo(m_itemAttr, Equip_Pos.Middle);
+                else
+                    SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_EquipedStr, true, m_panelObject);
+                    SetGameObjectState(m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr, true, m_panelObject);
+                    InitStaticMainPlayerEquipedEquipInfo(equipItemAttribute, Equip_Pos.Left);
+                    InitStaticMainPlayerNotEquipedEquipInfo(m_itemAttr, Equip_Pos.Right);
+                end
+            end
+        end
+    elseif itemType == ITEMTYPE.IT_Pet then
+        SetGameObjectState(m_StaticPos .. m_StaticEquipStr, false, m_panelObject);
+        SetGameObjectState(m_StaticPos .. m_StaticItemStr, false, m_panelObject);
+        SetGameObjectState(m_StaticPos .. m_StaticPetStr, true, m_panelObject);
+        InitStaticPetInfo();
+    else
+        SetGameObjectState(m_StaticPos .. m_StaticEquipStr, false, m_panelObject);
+        SetGameObjectState(m_StaticPos .. m_StaticItemStr, true, m_panelObject);
+        SetGameObjectState(m_StaticPos .. m_StaticPetStr, false, m_panelObject);
+        InitStaticItemInfo();
+    end
+end
+
+function InitStaticOtherPlayerEquipInfo(itemAttr, pos)
+    tempShowPath = m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr;
+    InitStaticEquipShow(itemAttr, pos, tempShowPath, true, true);
+end
+
+function InitStaticOtherPlayerNotEquipedEquipInfo(itemAttr, pos)
+    tempShowPath = m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr;
+    InitStaticEquipShow(itemAttr, pos, tempShowPath, true, true);
+end
+
+function InitStaticMainPlayerEquipedEquipInfo(itemAttr, pos)
+    tempShowPath = m_StaticPos .. m_StaticEquipStr .. m_EquipedStr;
+    InitStaticEquipShow(itemAttr, pos, tempShowPath, true, false);
+end
+
+function InitStaticMainPlayerNotEquipedEquipInfo(itemAttr, pos)
+    tempShowPath = m_StaticPos .. m_StaticEquipStr .. m_NotEquipedStr;
+    InitStaticEquipShow(itemAttr, pos, tempShowPath, false, false);
+end
+
+function InitStaticEquipShow(itemAttr, pos, tempShowPath, isEquiped, isOtherPlayer)
+    tempPath = tempShowPath .. m_ShowStr;
+    tempHeadPath = tempPath .. m_HeadStr;
+    tempContentPath = tempPath .. m_StaticContentStr;
+    local stepNum = GetTextToId(CCommonTool.GetEquipStep(itemAttr.ExcelID) + 2999);
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(itemAttr.ExcelID);
+    local equipInfo = CCommonTool.GetEquipInfo(itemAttr.ExcelID);
+    local equipType = itemAttr:GetEquipType();
+    local equipIndex = -1;
+    for k, v in ipairs(m_EquipsMatchEnum) do
+        if v == equipType then
+            equipIndex = k - 1;
+            if v >= 12 then 
+                equipIndex = k + 1;
+            end
+            break;
+        end
+    end
+    if equipIndex < 0 or equipIndex >= #m_EquipsMatchEnum + 2 then
+        error("InitStaticMainPlayerNotEquipedEquipInfo::装备序号查找失败"..equipIndex.."#m_EquipsMatchEnum"..#m_EquipsMatchEnum);
+        return;
+    end
+    InitHeadAndBaseAttrInfo(itemAttr, equipIndex, tempHeadPath, tempContentPath, itemQualityID, equipInfo, isEquiped, isOtherPlayer, stepNum);
+    InitRandAttrInfo(itemAttr, tempContentPath, equipInfo);
+    InitSuitInfo(itemAttr, tempContentPath, equipInfo);
+    InitEnchantInfo(itemAttr, equipIndex, tempContentPath, isOtherPlayer);
+    InitGemInfo(itemAttr, equipIndex, tempContentPath, isOtherPlayer);
+    InitGetWayInfo(itemAttr, tempContentPath);
+
+    RepositionUITableComp(tempContentPath .. m_BaseAttrContentStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_RandAttrContentStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_SuitAttrContentStr .. m_SuitIconstableStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_SuitAttrContentStr .. m_SuitAttrtableStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_SuitAttrContentStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_EnchantAndGemContentStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_GetWayContentStr, m_panelObject);
+    RepositionUITableComp(tempContentPath, m_panelObject);
+
+    local trans = child(m_panelObject, tempContentPath);
+    local height = CCommonTool.GetBoundsSize(trans).y;
+    SetSpriteHeight(tempPath .. m_StaticContentPanelStr .. m_DragSpriteStr, height, m_panelObject);
+    RepositionUIScrollViewComp(tempPath .. m_StaticContentPanelStr, m_panelObject);
+
+    SetGameObjectPos(tempShowPath, Vector3.New(pos.x, pos.y, 0), m_panelObject);
+end
+
+function InitHeadAndBaseAttrInfo(itemAttr, equipIndex, tempHeadPath, tempContentPath, itemQualityID, equipInfo, isEquiped, isOtherPlayer, stepNum)
+--    local equipForceInfo = CCommonTool.GetEquipForceInfo(equipInfo.ItemID);
+    local curForceLevel = 0;
+    if equipIndex >= 10 then
+        equipIndex = equipIndex - 2;
+    end
+    if isOtherPlayer then
+        curForceLevel = EquipMng.OtherPlayerEquipForceData[m_EquipsMatchEnum[equipIndex + 1]];
+    else
+        curForceLevel = EquipMng.EquipForceData[m_EquipsMatchEnum[equipIndex + 1]];
+    end
+    SetSpriteByAtlasID(tempHeadPath .. m_HeadItemStr .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(itemAttr.ExcelID), m_panelObject, true);
+    SetSpriteApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_ItemQualityStr, itemQualityID, m_panelObject);
+    SetSpriteApptitude2V04(tempHeadPath .. m_HeadItemStr .. m_ItemQulity2Str, itemQualityID, m_panelObject)
+    if itemAttr:GetEquipInfo().SuitID > 0 then
+        SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipSuitStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipSuitStr, false, m_panelObject);
+    end
+    if itemAttr.StarItemLevel > 0 then
+        SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipStarLvStr, true, m_panelObject);
+        SetLabelContent(tempHeadPath .. m_HeadItemStr .. m_EquipStarLvStr, itemAttr.StarItemLevel, m_panelObject);
+        if itemAttr.StarItemLevel < 10 then
+            SetGameObjectPos(tempHeadPath .. m_HeadItemStr .. m_EquipStarAddStr, Vector3.New(-16, 1, 0), m_panelObject);
+            SetGameObjectPos(tempHeadPath .. m_HeadItemStr .. m_EquipSuitStr, Vector3.New(21, -48, 0), m_panelObject);
+        else
+            SetGameObjectPos(tempHeadPath .. m_HeadItemStr .. m_EquipStarAddStr, Vector3.New(-24, 1, 0), m_panelObject);
+            SetGameObjectPos(tempHeadPath .. m_HeadItemStr .. m_EquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+        end
+    else
+        SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipStarLvStr, false, m_panelObject);
+        SetGameObjectPos(tempHeadPath .. m_HeadItemStr .. m_EquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+    end
+--    SetSpriteEquipApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_EquipApptitudeStr, itemQualityID, m_panelObject, true);
+    SetGameObjectState(tempHeadPath .. m_HeadItemStr .. m_EquipApptitudeStr, false, m_panelObject);
+    SetLabelContent(tempHeadPath .. m_HeadItemStr .. m_EquipStepStr, stepNum, m_panelObject);
+    SetLabelColor(tempHeadPath .. m_HeadItemStr .. m_EquipStepStr, "91e464", m_panelObject);
+    SetLabelTextByID(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, CCommonTool.GetNameIDByExcelID(itemAttr.ExcelID), m_panelObject);
+    SetLabelPinZhi(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, itemQualityID, m_panelObject);
+    SetSpriteGradientColor(tempHeadPath .. m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_panelObject);
+    SetSpriteColor(tempHeadPath .. m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_panelObject);
+    if curForceLevel <= 0 then
+        SetGameObjectState(tempHeadPath .. m_EquipForceLevelStr, false, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_EquipForceLevelStr, true, m_panelObject);
+        SetLabelContent(tempHeadPath .. m_EquipForceLevelStr, "+" .. curForceLevel, m_panelObject);
+        SetLabelPinZhi(tempHeadPath .. m_EquipForceLevelStr, itemQualityID, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_ItemLevelStr, "Lv." .. equipInfo.NeedLv, m_panelObject);
+    if G_UserInfo.RoleAttribute.Level < equipInfo.NeedLv then
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.white, m_panelObject);
+    end
+    SetLabelTextByID(tempHeadPath .. m_EquipPartStr, equipInfo.TypeTxtID, m_panelObject);
+    if equipInfo.ProID == 255 or G_UserInfo.RoleAttribute.ProID == equipInfo.ProID then
+        SetGameObjectState(tempHeadPath .. m_EquipNeedProStr, false, m_panelObject);
+    else
+        SetLabelTextByID(tempHeadPath .. m_EquipNeedProStr, CCommonTool.GetRoleDateInfo(equipInfo.ProID).NameTxt, m_panelObject);
+        SetGameObjectState(tempHeadPath .. m_EquipNeedProStr, true, m_panelObject);
+    end
+    if G_UserInfo.RoleAttribute.ProID ~= equipInfo.ProID and equipInfo.ProID ~= 255 then
+        SetLabelColor(tempHeadPath .. m_EquipNeedProStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(tempHeadPath .. m_EquipNeedProStr, ItemLevelColor.white, m_panelObject);
+    end
+    local curFightValue = Equip_StarUp.CaculateStarUpFightValue(itemAttr, false, isOtherPlayer) + Equip_Force.CaculateEquipForceFightValue(itemAttr, false, isOtherPlayer);
+    SetLabelContent(tempHeadPath .. m_HeadFightValueStr .. m_EquipCurFightValueStr, curFightValue, m_panelObject);
+    if isEquiped then
+        SetGameObjectState(tempHeadPath .. m_HeadFightValueStr .. m_EquipFightValueUpOrDownStr, false, m_panelObject);
+        SetGameObjectState(tempHeadPath .. m_HeadFightValueStr .. m_EquipAddFightValueStr, false, m_panelObject);
+    else
+        local equipItemAttribute = GetItemAttribute(m_EquipsMatchEnum[equipIndex + 1]);
+        if equipItemAttribute == nil then
+            SetGameObjectState(tempHeadPath .. m_HeadFightValueStr .. m_EquipFightValueUpOrDownStr, false, m_panelObject);
+            SetGameObjectState(tempHeadPath .. m_HeadFightValueStr .. m_EquipAddFightValueStr, false, m_panelObject);
+        else
+            SetGameObjectState(tempHeadPath .. m_HeadFightValueStr .. m_EquipFightValueUpOrDownStr, true, m_panelObject);
+            SetGameObjectState(tempHeadPath .. m_HeadFightValueStr .. m_EquipAddFightValueStr, true, m_panelObject);
+            local curEquipedFightValue = Equip_StarUp.CaculateStarUpFightValue(equipItemAttribute, false) + Equip_Force.CaculateEquipForceFightValue(equipItemAttribute, false, false);
+            local addValue = curFightValue - curEquipedFightValue;
+            if addValue >= 0 then
+                SetSpriteByAtlasID(tempHeadPath .. m_HeadFightValueStr .. m_EquipFightValueUpOrDownStr, Equip_RandEff.ATTR_CHANGE_ICONID.HIGH, m_panelObject);
+                SetLabelColor(tempHeadPath .. m_HeadFightValueStr .. m_EquipAddFightValueStr, Equip_RandEff.ENUM_ATTR_LABEL_COLOR.HIGH, m_panelObject);
+            else
+                SetSpriteByAtlasID(tempHeadPath .. m_HeadFightValueStr .. m_EquipFightValueUpOrDownStr, Equip_RandEff.ATTR_CHANGE_ICONID.LOW, m_panelObject);
+                SetLabelColor(tempHeadPath .. m_HeadFightValueStr .. m_EquipAddFightValueStr, Equip_RandEff.ENUM_ATTR_LABEL_COLOR.LOW, m_panelObject);
+            end
+            SetLabelContent(tempHeadPath .. m_HeadFightValueStr .. m_EquipAddFightValueStr, math.abs(addValue), m_panelObject);
+        end
+    end
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, false, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemExcelIDStr, itemAttr.ExcelID, m_panelObject);
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemCRIDStr, itemAttr.CRID, m_panelObject);
+
+    --error("equipInfo.BaseAttrAddPercent"..equipInfo.BaseAttrAddPercent);
+	--error("itemAttr.StarItemLevel"..itemAttr.StarItemLevel);
+    local baseAttrPercent = EquipMng.GetStarUpAddPercent(equipInfo.BaseAttrAddPercent, itemAttr.StarItemLevel);
+	
+	--error("equipInfo.Attr1Value"..equipInfo.Attr1Value);
+    --error("baseAttrPercent"..baseAttrPercent);
+    --error("itemAttr.StarItemLevel"..itemAttr.StarItemLevel);
+    --error("equipInfo.Attr1Value"..equipInfo.Attr1Value);
+    local baseAttrTable = {};
+    if curForceLevel == 0 then 
+        baseAttrTable =
+        {
+            [1] = { attrID = equipInfo.Attr1, attrValue = equipInfo.Attr1Value *(1 + baseAttrPercent), addForceValue = 0 },
+            [2] = { attrID = equipInfo.Attr2, attrValue = equipInfo.Attr2Value *(1 + baseAttrPercent), addForceValue = 0 },
+            [3] = { attrID = equipInfo.Attr3, attrValue = equipInfo.Attr3Value *(1 + baseAttrPercent), addForceValue = 0 }
+        };
+    else
+	    local proID = G_UserInfo.RoleAttribute.ProID;
+        local index = proID * 1000 + curForceLevel;
+        local equipForceInfo = EquipforceAttrTable.Get(index);
+        local equipType = itemAttr:GetEquipType() + 1;
+        baseAttrTable =
+        {
+            [1] = { attrID = equipInfo.Attr1, attrValue = equipInfo.Attr1Value *(1 + baseAttrPercent), addForceValue = equipForceInfo["Attr"..equipType..1] },
+            [2] = { attrID = equipInfo.Attr2, attrValue = equipInfo.Attr2Value *(1 + baseAttrPercent), addForceValue = equipForceInfo["Attr"..equipType..2] },
+            [3] = { attrID = equipInfo.Attr3, attrValue = equipInfo.Attr3Value *(1 + baseAttrPercent), addForceValue = equipForceInfo["Attr"..equipType..3] }
+        };
+    end
+    --error("值："..baseAttrTable[1].attrValue);
+--	local baseAttrPercent = equipInfo.BaseAttrAddPercent / 10000;
+
+--    local baseAttrTable =
+--    {
+--        [1] = { attrID = equipInfo.Attr1, attrValue = equipInfo.Attr1Value *(1 + baseAttrPercent * itemAttr.StarItemLevel), addForceValue = curForceLevel * equipForceInfo.ForceValue_1 },
+--        [2] = { attrID = equipInfo.Attr2, attrValue = equipInfo.Attr2Value *(1 + baseAttrPercent * itemAttr.StarItemLevel), addForceValue = curForceLevel * equipForceInfo.ForceValue_2 },
+--        [3] = { attrID = equipInfo.Attr3, attrValue = equipInfo.Attr3Value *(1 + baseAttrPercent * itemAttr.StarItemLevel), addForceValue = curForceLevel * equipForceInfo.ForceValue_3 }
+--    };
+    local baseAttrPath = tempContentPath .. m_BaseAttrContentStr;
+    local deltaDealTime = m_itemAttr.SellChilling - G_TimerMng:GetCurrentSeconds();
+    if deltaDealTime <= 0 then
+        SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. 0,false,m_panelObject);
+    else
+        SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. 0,true,m_panelObject);
+        SetLabelContent(baseAttrPath .. m_BaseAttrStr .. 0 .. m_DealCoolDownTimeStr,GetCoolDownTime(deltaDealTime),m_panelObject);
+    end
+    for Index = 1, 3 do
+        if baseAttrTable[Index].attrID > 0 then
+            SetLabelContent(baseAttrPath .. m_BaseAttrStr .. Index .. m_BaseAttrNameStr, CCommonTool.GetAttrNameByAttrID(baseAttrTable[Index].attrID), m_panelObject);
+            SetLabelContent(baseAttrPath .. m_BaseAttrStr .. Index .. m_BaseAttrValueStr, GetAttrValue(baseAttrTable[Index].attrID, baseAttrTable[Index].attrValue), m_panelObject);
+            if baseAttrTable[Index].addForceValue <= 0 then
+                SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. Index .. m_AttrForceAddValueStr, false, m_panelObject);
+                SetGameObjectPos(baseAttrPath .. m_BaseAttrStr .. Index .. m_BaseAttrValueStr, Vector3.New(Equip_BaseAttr.noForceValue, 0, 0), m_panelObject);
+            else
+                SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. Index .. m_AttrForceAddValueStr, true, m_panelObject);
+                SetLabelContent(baseAttrPath .. m_BaseAttrStr .. Index .. m_AttrForceAddValueStr, "(+" .. baseAttrTable[Index].addForceValue .. ")", m_panelObject);
+                SetGameObjectPos(baseAttrPath .. m_BaseAttrStr .. Index .. m_BaseAttrValueStr, Vector3.New(Equip_BaseAttr.hasForceValue, 0, 0), m_panelObject);
+            end
+            SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. Index, true, m_panelObject);
+        else
+            SetGameObjectState(baseAttrPath .. m_BaseAttrStr .. Index, false, m_panelObject);
+        end
+    end
+end
+
+function InitRandAttrInfo(itemAttr, tempContentPath, equipInfo)
+    --local randEffAttrPercent = equipInfo.RandEffAddPercent / 10000;
+    local curRandPercent = EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemAttr.StarItemLevel) / 100;
+    local randAttrPath = tempContentPath .. m_RandAttrContentStr;
+    if Equip_StarUp.EquipIsHaveRandEff(itemAttr) then
+        SetGameObjectState(tempContentPath .. m_RandAttrCutStr, true, m_panelObject);
+        SetGameObjectState(randAttrPath, true, m_panelObject);
+        local itemEquipAttrList = itemAttr.AllEquipAttribute;
+        if itemEquipAttrList == nil then
+            error("InitStaticMainPlayerNotEquipedEquipInfo:::装备没有itemEquipAttrList")
+            return;
+        end
+        local equipRandomAttrClass = itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+        if equipRandomAttrClass == nil then
+            error("InitStaticMainPlayerNotEquipedEquipInfo:::装备没有equipRandomAttrClass")
+            return;
+        end
+        local allEquipRandomAttrs = equipRandomAttrClass.EquipRandomAttrs;
+        if allEquipRandomAttrs == nil then
+            error("InitStaticMainPlayerNotEquipedEquipInfo:::装备没有allEquipRandomAttrs")
+            return;
+        end
+        local attrID = 0;
+        local curValue = 0;
+        local ratio = 0;
+        local groupID = 0;
+        for Index = 1, allEquipRandomAttrs.Count do
+            if Index > 5 then
+                return;
+            end
+            local path = randAttrPath .. m_RandAttrStr .. Index;
+            if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 then
+                SetGameObjectState(path, true, m_panelObject);
+                attrID = allEquipRandomAttrs[Index - 1].EffectRandomAttrID;
+                groupID = allEquipRandomAttrs[Index - 1].EffectRandomGroupID;
+                ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                curValue = allEquipRandomAttrs[Index - 1].EffectRandomAttrValue *(1 + curRandPercent) / ratio;
+                local apptitude = Equip_StarUp.GetNameApptitude(groupID);
+                if apptitude == Equip_StarUp.ENUM_ATTR_APPTITUDE.NORMAL then
+                    SetLabelColor(path .. m_RandAttrNameStr, Equip_StarUp.ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                    SetLabelColor(path .. m_RandAttrValueStr, Equip_StarUp.ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                elseif apptitude == Equip_StarUp.ENUM_ATTR_APPTITUDE.GOOD then
+                    SetLabelColor(path .. m_RandAttrNameStr, Equip_StarUp.ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                    SetLabelColor(path .. m_RandAttrValueStr, Equip_StarUp.ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                elseif apptitude == Equip_StarUp.ENUM_ATTR_APPTITUDE.EPIC then
+                    SetLabelColor(path .. m_RandAttrNameStr, Equip_StarUp.ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                    SetLabelColor(path .. m_RandAttrValueStr, Equip_StarUp.ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                else
+                    error("附加效果组ID的百位不为1,2,3，说好的123呢，%>_<%" .. groupID);
+                end
+                SetLabelContent(path .. m_RandAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrID), m_panelObject);
+                SetLabelContent(path .. m_RandAttrValueStr, GetAttrValue(attrID, curValue), m_panelObject);
+            else
+                SetGameObjectState(path, false, m_panelObject);
+            end
+        end
+        for Index = allEquipRandomAttrs.Count + 1, 5 do
+            local path = randAttrPath .. m_RandAttrStr .. Index;
+            SetGameObjectState(path, false, m_panelObject);
+        end
+    else
+        SetGameObjectState(tempContentPath .. m_RandAttrCutStr, false, m_panelObject);
+        SetGameObjectState(randAttrPath, false, m_panelObject);
+    end
+end
+
+function InitSuitInfo(itemAttr, tempContentPath, equipInfo)
+    local suitPath = tempContentPath .. m_SuitAttrContentStr;
+    local suitID = equipInfo.SuitID;
+    if suitID > 0 then
+        local suitInfo = CCommonTool.GetEqupipSuitInfoById(suitID);
+        SetGameObjectState(tempContentPath .. m_SuitAttrCutStr, true, m_panelObject);
+        SetGameObjectState(suitPath, true, m_panelObject);
+        local curSuitNum = 0;
+        local curEquipInfo;
+        local hasEquipInfo;
+        local isCurSuit;
+        -- 暂时写死
+        -- 判断套装时，永远判断前十件装备，过滤后面新加的装备
+        for Index = 1, 10 do
+            hasEquipInfo = GetItemAttribute(m_EquipsMatchEnum[Index]);
+            if hasEquipInfo == nil then
+                isCurSuit = false;
+            else
+                curEquipInfo = hasEquipInfo:GetEquipInfo();
+                if curEquipInfo.SuitID == suitID then
+                    curSuitNum = curSuitNum + 1;
+                    isCurSuit = true;
+                else
+                    isCurSuit = false;
+                end
+            end
+            if isCurSuit then
+                SetEquipPosSpriteByEquipType(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, m_EquipsMatchEnum[Index], true, m_panelObject);
+            else
+                SetEquipPosSpriteByEquipType(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, m_EquipsMatchEnum[Index], false, m_panelObject);
+            end
+            if CCommonTool.GetValueInEquipSuitInfo(suitID, Index + 2) == 1 then
+                SetGameObjectState(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, true, m_panelObject);
+            else
+                SetGameObjectState(suitPath .. m_SuitIconstableStr .. m_SuitIconStr .. Index, false, m_panelObject);
+            end
+        end
+        SetLabelTextByID(suitPath .. m_SuitNameStr .. m_SuitNameLabelStr, suitInfo.TextId, m_panelObject);
+        SetLabelContent(suitPath .. m_SuitNameStr .. m_SuitNumLabelStr, string_format("({0}/{1})", curSuitNum, suitInfo.AllNum), m_panelObject);
+
+        local needNum;
+        local attrID;
+        local attrValue;
+        local ratio;
+        local suitAttrPath;
+        local itemEquipAttrList = itemAttr.AllEquipAttribute;
+        if itemEquipAttrList == nil then
+            error("InitStaticMainPlayerNotEquipedEquipInfo:::装备没有itemEquipAttrList")
+            return;
+        end
+        local equipSuitAttrClass = itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_TAOZHUANG];
+        if equipSuitAttrClass == nil then
+            error("InitStaticMainPlayerNotEquipedEquipInfo:::装备没有equipSuitAttrClass")
+            return;
+        end
+        local allEquipSuitAttrs = equipSuitAttrClass.EquipSuitAttrs;
+        if allEquipSuitAttrs == nil then
+            error("InitStaticMainPlayerNotEquipedEquipInfo:::装备没有allEquipSuitAttrs")
+            return;
+        end
+        for Index = 1, 5 do
+            needNum = CCommonTool.GetValueInEquipSuitInfo(suitID, Index * 3 + 10);
+            attrID = allEquipSuitAttrs[Index - 1].EquipSuitAttrID;
+            attrValue = allEquipSuitAttrs[Index - 1].EquipSuitAttrValue;
+            suitAttrPath = suitPath .. m_SuitAttrtableStr .. m_SuitAttrStr .. Index;
+            if needNum > 0 then
+                ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                attrValue = attrValue / ratio;
+                SetGameObjectState(suitAttrPath, true, m_panelObject);
+                SetLabelContent(suitAttrPath .. m_SuitActiveNumStr, string_format(CCommonTool.GetTxtData(962).m_str, needNum), m_panelObject);
+                SetLabelContent(suitAttrPath .. m_SuitAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrID), m_panelObject);
+                SetLabelContent(suitAttrPath .. m_SuitAttrValueStr, GetAttrValue(attrID, attrValue), m_panelObject);
+                if needNum <= curSuitNum then
+                    SetLabelColor(suitAttrPath .. m_SuitActiveNumStr, m_SuitAttrColor.Active, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrNameStr, m_SuitAttrColor.Active, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrValueStr, m_SuitAttrColor.Active, m_panelObject);
+                else
+                    SetLabelColor(suitAttrPath .. m_SuitActiveNumStr, m_SuitAttrColor.Deactive, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrNameStr, m_SuitAttrColor.Deactive, m_panelObject);
+                    SetLabelColor(suitAttrPath .. m_SuitAttrValueStr, m_SuitAttrColor.Deactive, m_panelObject);
+                end
+            else
+                SetGameObjectState(suitAttrPath, false, m_panelObject);
+            end
+        end
+
+    else
+        SetGameObjectState(tempContentPath .. m_SuitAttrCutStr, false, m_panelObject);
+        SetGameObjectState(suitPath, false, m_panelObject);
+    end
+end
+
+function InitEnchantInfo(itemAttr, equipIndex, tempContentPath, isOtherPlayer)
+    local enchantPath = tempContentPath .. m_EnchantAndGemContentStr .. m_EnchantContentStr;
+    local enchantData = nil;
+    local isHaveEnchantContent = false;
+    if isOtherPlayer then
+        enchantData = EquipMng.OtherPlayerEnchantData;
+    else
+        enchantData = EquipMng.EnchantData;
+    end
+    if enchantData == nil then
+        SetGameObjectState(enchantPath, isHaveEnchantContent, m_panelObject);
+        return;
+    end
+    if enchantData[equipIndex + 1] == nil then
+        SetGameObjectState(enchantPath, isHaveEnchantContent, m_panelObject);
+        return;
+    end
+    local singleEquipEnchantData = enchantData[equipIndex + 1].EnchantHolesDataTable;
+    local enchantLevel = enchantData[equipIndex + 1].EnchantLevel;
+    if equipIndex > 10 then
+        SetEquipPosSpriteByEquipType(enchantPath .. m_EquipEnchantAndGemPartIconStr, m_EquipsMatchEnum[equipIndex - 1], true, m_panelObject);
+    else
+        SetEquipPosSpriteByEquipType(enchantPath .. m_EquipEnchantAndGemPartIconStr, m_EquipsMatchEnum[equipIndex + 1], true, m_panelObject);
+    end
+    SetLabelContent(enchantPath .. m_EnchantLevelStr, "Lv." .. enchantLevel, m_panelObject);
+    for Index = 1, 3 do
+        if singleEquipEnchantData[Index] ~= nil then
+            if singleEquipEnchantData[Index] > 0 then
+                isHaveEnchantContent = true;
+                SetGameObjectState(enchantPath .. m_EnchantHoleStr .. Index .. m_EnchantHoleIconStr, true, m_panelObject);
+                SetEnchantSpriteByQuality(enchantPath .. m_EnchantHoleStr .. Index .. m_EnchantHoleIconStr, singleEquipEnchantData[Index], m_panelObject);
+            else
+                SetGameObjectState(enchantPath .. m_EnchantHoleStr .. Index .. m_EnchantHoleIconStr, false, m_panelObject);
+            end
+        else
+            error("singleEquipEnchantData中不存在key值为" .. Index);
+            return;
+        end
+    end
+    SetGameObjectState(enchantPath, isHaveEnchantContent, m_panelObject);
+end
+
+function InitGemInfo(itemAttr, equipIndex, tempContentPath, isOtherPlayer)
+    local gemPath = tempContentPath .. m_EnchantAndGemContentStr .. m_GemContentStr;
+    local singleEquipGemsData;
+    if isOtherPlayer then
+        singleEquipGemsData = EquipMng.OtherPlayerGemData[equipIndex + 1];
+    else
+        singleEquipGemsData = EquipMng.GemData[equipIndex + 1];
+    end
+    local singleGemData;
+    local gemItemInfo;
+    local isHaveGemContent = false;
+    if equipIndex > 10 then
+        SetEquipPosSpriteByEquipType(gemPath .. m_EquipEnchantAndGemPartIconStr, m_EquipsMatchEnum[equipIndex - 1], true, m_panelObject);
+    else
+        SetEquipPosSpriteByEquipType(gemPath .. m_EquipEnchantAndGemPartIconStr, m_EquipsMatchEnum[equipIndex + 1], true, m_panelObject);
+    end
+    if singleEquipGemsData == nil then
+        SetGameObjectState(gemPath, isHaveGemContent, m_panelObject);
+    end
+    for Index = 1, 5 do
+        if singleEquipGemsData[Index] ~= nil then
+            singleGemData = singleEquipGemsData[Index];
+            if singleGemData.ExcelID > 0 then
+                isHaveGemContent = true;
+                SetGameObjectState(gemPath .. m_GemHoleStr .. Index .. m_GemHoleIconStr, true, m_panelObject);
+                gemItemInfo = CCommonTool.GetItemInfo(singleGemData.ExcelID);
+                SetLabelContent(gemPath .. m_GemHoleStr .. Index .. m_GemHoleLevelStr, gemItemInfo.Level, m_panelObject);
+                SetSpriteByAtlasID(gemPath .. m_GemHoleStr .. Index .. m_GemHoleIconStr, CCommonTool.GetImageIDByExcelID(singleGemData.ExcelID), m_panelObject, true);
+            else
+                SetGameObjectState(gemPath .. m_GemHoleStr .. Index .. m_GemHoleIconStr, false, m_panelObject);
+                SetLabelContent(gemPath .. m_GemHoleStr .. Index .. m_GemHoleLevelStr, "0", m_panelObject);
+            end
+        else
+            SetGameObjectState(gemPath .. m_GemHoleStr .. Index .. m_GemHoleIconStr, false, m_panelObject);
+            SetLabelContent(gemPath .. m_GemHoleStr .. Index .. m_GemHoleLevelStr, "0", m_panelObject);
+        end
+    end
+    SetGameObjectState(gemPath, isHaveGemContent, m_panelObject);
+end
+
+function InitGetWayInfo(itemAttr, tempContentPath)
+    local getwayInfo = CCommonTool.GetDropPointInfo(itemAttr.ExcelID);
+    if not getwayInfo then
+        SetGameObjectState(tempContentPath .. m_GetWayContentStr, false, m_panelObject);
+        SetGameObjectState(tempContentPath .. m_EnchantAndGemContentStr .. m_GetWayStripStr, false, m_panelObject);
+    else
+        SetGameObjectState(tempContentPath .. m_GetWayContentStr, true, m_panelObject);
+        SetGameObjectState(tempContentPath .. m_EnchantAndGemContentStr .. m_GetWayStripStr, true, m_panelObject);
+        local maxCount = getwayInfo.Count;
+        for i = 1, 3 do
+            local str = tempContentPath .. m_GetWayContentStr .. m_GetWayStr .. i;
+            SetGameObjectState(str, i <= maxCount, m_panelObject);
+            local paramTable = { getwayInfo["OpenUIParam" .. i],getwayInfo["SystemId" .. i] }
+            local tempObj = child(m_panelObject, str).gameObject;
+            UIEventListener.Get(tempObj).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, paramTable);
+            if i <= maxCount then
+                SetLabelWithUnderlineByID(str .. m_GetWayLabelStr, getwayInfo["Text" .. i], m_panelObject);
+            end
+        end
+    end
+end
+
+function InitStaticItemInfo()
+    tempPath = m_StaticPos .. m_StaticItemStr .. m_ShowStr;
+    tempHeadPath = tempPath .. m_HeadStr;
+    tempContentPath = tempPath .. m_StaticContentStr;
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_excelID);
+    local itemInfo = CCommonTool.GetItemInfo(m_excelID);
+    SetSpriteByAtlasID(tempHeadPath .. m_HeadItemStr .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(m_excelID), m_panelObject, true);
+    SetSpriteApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_ItemQualityStr, itemQualityID, m_panelObject);
+    SetSpriteApptitude2V04(tempHeadPath .. m_HeadItemStr .. m_ItemQulity2Str, itemQualityID, m_panelObject)
+    SetLabelTextByID(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, CCommonTool.GetNameIDByExcelID(m_excelID), m_panelObject);
+    SetLabelPinZhi(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, itemQualityID, m_panelObject);
+    SetSpriteGradientColor(tempHeadPath .. m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_panelObject);
+    SetSpriteColor(tempHeadPath .. m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_panelObject);
+    SetLabelContent(tempHeadPath .. m_ItemLevelStr, "Lv." .. itemInfo.NeedLevel, m_panelObject);
+    if G_UserInfo.RoleAttribute.Level < itemInfo.NeedLevel then
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.white, m_panelObject);
+    end
+    SetLabelTextByID(tempHeadPath .. m_ItemTypeStr, itemInfo.TypeTxtID, m_panelObject);
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, false, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemExcelIDStr, m_excelID, m_panelObject);
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemCRIDStr, m_itemAttr.CRID, m_panelObject);
+
+    local deltaDealTime = m_itemAttr.SellChilling - G_TimerMng:GetCurrentSeconds();
+    if deltaDealTime <= 0 then
+        SetGameObjectState(tempContentPath .. m_ContentTableStr .. m_Line0Str,false,m_panelObject);
+    else
+        SetGameObjectState(tempContentPath .. m_ContentTableStr .. m_Line0Str,true,m_panelObject);
+        SetLabelContent(tempContentPath .. m_ContentTableStr .. m_Line0Str .. m_DealCoolDownTimeStr,GetCoolDownTime(deltaDealTime),m_panelObject);
+    end
+    SetLabelTextByID(tempContentPath .. m_ContentTableStr .. m_ItemContentDesStr, itemInfo.TextIntroductionID, m_panelObject);
+
+    local getwayInfo = CCommonTool.GetDropPointInfo(m_excelID);
+    if not getwayInfo then
+        SetGameObjectState(tempContentPath .. m_GetWayCutStr, false, m_panelObject);
+        SetGameObjectState(tempContentPath .. m_GetWayContentStr, false, m_panelObject);
+    else
+        SetGameObjectState(tempContentPath .. m_GetWayCutStr, true, m_panelObject);
+        SetGameObjectState(tempContentPath .. m_GetWayContentStr, true, m_panelObject);
+        local maxCount = getwayInfo.Count;
+        for i = 1, 3 do
+            local str = tempContentPath .. m_GetWayContentStr .. m_GetWayStr .. i;
+            SetGameObjectState(str, i <= maxCount, m_panelObject);
+            local paramTable = { getwayInfo["OpenUIParam" .. i],getwayInfo["SystemId" .. i] }
+            local tempObj = child(m_panelObject, str).gameObject;
+            UIEventListener.Get(tempObj).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, paramTable);
+            if i <= maxCount then
+                SetLabelWithUnderlineByID(str .. m_GetWayLabelStr, getwayInfo["Text" .. i], m_panelObject);
+            end
+        end
+    end
+    RepositionUITableComp(tempContentPath .. m_ContentTableStr, m_panelObject);
+    RepositionUITableComp(tempContentPath .. m_GetWayContentStr, m_panelObject);
+    RepositionUITableComp(tempContentPath, m_panelObject);
+
+    SetGameObjectPos(m_StaticPos .. m_StaticItemStr, Vector3.New(Equip_Pos.Middle.x, Equip_Pos.Middle.y, 0), m_panelObject);
+end
+
+function InitStaticPetInfo()
+    tempPath = m_StaticPos .. m_StaticPetStr .. m_ShowStr;
+    tempHeadPath = tempPath .. m_HeadStr;
+    tempContentPath = tempPath .. m_StaticContentStr;
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_excelID);
+    local petInfo = CCommonTool.GetPetMainInfo(m_excelID);
+    local petATT = m_itemAttr.AllPetAttribute;
+    SetSpriteByAtlasID(tempHeadPath .. m_HeadItemStr .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(m_excelID), m_panelObject, true);
+    SetSpriteApptitudeV04(tempHeadPath .. m_HeadItemStr .. m_ItemQualityStr, itemQualityID, m_panelObject);
+    SetSpriteApptitude2V04(tempHeadPath .. m_HeadItemStr .. m_ItemQulity2Str, itemQualityID, m_panelObject)
+    SetLabelTextByID(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, CCommonTool.GetNameIDByExcelID(m_excelID), m_panelObject);
+    if petInfo.IsVariety == 1 then
+        SetGameObjectState(tempHeadPath .. m_PetIsVariety,true,m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_PetIsVariety,false,m_panelObject);
+    end
+    SetLabelPinZhi(tempHeadPath .. m_HeadItemStr .. m_ItemNameStr, itemQualityID, m_panelObject);
+    SetSpriteGradientColor(tempHeadPath .. m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_panelObject);
+    SetSpriteColor(tempHeadPath .. m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_panelObject);
+    SetLabelContent(tempHeadPath .. m_ItemLevelStr, "Lv." .. petATT.PetLevel, m_panelObject);
+    if G_UserInfo.RoleAttribute.Level < petATT.PetLevel then
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(tempHeadPath .. m_ItemLevelStr, ItemLevelColor.white, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_HeadFightValueStr .. m_EquipCurFightValueStr, math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_itemAttr, 1) + 0.5), m_panelObject);
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, true, m_panelObject);
+    else
+        SetGameObjectState(tempHeadPath .. m_GmIsOnStr, false, m_panelObject);
+    end
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemExcelIDStr, m_excelID, m_panelObject);
+    SetLabelContent(tempHeadPath .. m_GmIsOnStr .. m_ItemCRIDStr, m_itemAttr.CRID, m_panelObject);
+
+    local baseAttrPath = tempContentPath .. m_PetBaseAttrsStr;
+    SetGameObjectState(baseAttrPath .. m_LineMinus1Str .. m_PetStarStr, false, m_panelObject);
+    for Index = 1,petATT.PetStar do
+        SetGameObjectState(baseAttrPath .. m_LineMinus1Str .. m_PetStarStr .. string_format(m_PetSingleStarStr,Index),true,m_panelObject);
+    end
+    for Index = petATT.PetStar + 1,10 do
+        SetGameObjectState(baseAttrPath .. m_LineMinus1Str .. m_PetStarStr .. string_format(m_PetSingleStarStr,Index),false,m_panelObject);
+    end
+    local deltaDealTime = m_itemAttr.SellChilling - G_TimerMng:GetCurrentSeconds();
+    if deltaDealTime <= 0 then
+        SetGameObjectState(baseAttrPath .. m_Line0Str,false,m_panelObject);
+    else
+        SetGameObjectState(baseAttrPath .. m_Line0Str,true,m_panelObject);
+        SetLabelContent(baseAttrPath .. m_Line0Str .. m_DealCoolDownTimeStr,GetCoolDownTime(deltaDealTime),m_panelObject);
+    end
+    SetLabelTextByID(baseAttrPath .. m_Line1Str .. m_PetTypeStr .. m_PetAttrValueStr, petInfo.FightTypeID, m_panelObject);
+    if petATT.PetState == 0 then
+        SetLabelTextByID(baseAttrPath .. m_Line1Str .. m_PetStateStr .. m_PetAttrValueStr, 1244, m_panelObject);
+    elseif petATT.PetState == 1 then
+        SetLabelTextByID(baseAttrPath .. m_Line1Str .. m_PetStateStr .. m_PetAttrValueStr, 1245, m_panelObject);
+    else
+        error("宠物阶段出错");
+        SetLabelTextByID(baseAttrPath .. m_Line1Str .. m_PetStateStr .. m_PetAttrValueStr, petATT.PetState, m_panelObject);
+    end
+    SetLabelContent(baseAttrPath .. m_Line2Str .. m_PetIntimateStr .. m_PetAttrValueStr, petATT.PetIntimateNum .. "/" .. petInfo.IntimateMaxNum, m_panelObject);
+    SetLabelContent(baseAttrPath .. m_Line2Str .. m_PetSavvyStr .. m_PetAttrValueStr, petATT.SavvyNum .. "/" .. PET_ENUM.PetMaxSavvyNum, m_panelObject);
+    SetLabelContent(baseAttrPath .. m_Line3Str .. m_PetOutLevelStr .. m_PetAttrValueStr, "Lv." .. petInfo.NeedLv, m_panelObject);
+    if G_UserInfo.RoleAttribute.Level < petInfo.NeedLv then
+        SetLabelColor(baseAttrPath .. m_Line3Str .. m_PetOutLevelStr .. m_PetAttrValueStr, ItemLevelColor.red, m_panelObject);
+    else
+        SetLabelColor(baseAttrPath .. m_Line3Str .. m_PetOutLevelStr .. m_PetAttrValueStr, ItemLevelColor.white, m_panelObject);
+    end
+
+    local qualityAttrPath = tempContentPath .. m_PetQualityStr;
+    local qualityInfo = petATT.PetQualityInfo;
+    local singleQualityInfo;
+    for Index = 1, PET_ENUM.PET_ALL_QUALITY_NUM do
+        singleQualityInfo = qualityInfo[Index - 1];
+        SetLabelContent(qualityAttrPath .. Index .. m_PetAttrValueStr,(singleQualityInfo.QualityMin + singleQualityInfo.QualityCur) .. "/" .. singleQualityInfo.QualityMax, m_panelObject);
+    end
+
+    local skillAttrPath = tempContentPath .. m_PetSkillStr;
+    local skillID;
+    for Index = 1, PET_ENUM.PET_ALL_SKILL_NUM do
+        skillID = petATT.PetAllSkillInfo[Index - 1].SkillID;
+        if skillID == 0 then
+            SetGameObjectState(skillAttrPath .. m_PetAllSkillsStr .. Index .. m_PetSkillIconStr, false, m_panelObject);
+        else
+            SetGameObjectState(skillAttrPath .. m_PetAllSkillsStr .. Index .. m_PetSkillIconStr, true, m_panelObject);
+            local skillMainInfo = CCommonTool.GetSkillMainData(skillID);
+            if skillMainInfo ~= nil then
+                local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                if skillDataInfo ~= nil then
+                    SetSpriteByAtlasID(skillAttrPath .. m_PetAllSkillsStr .. Index .. m_PetSkillIconStr, skillDataInfo.Icon, m_panelObject, true);
+                end
+            end
+        end
+    end
+
+    local getwayInfo = CCommonTool.GetDropPointInfo(m_excelID);
+    if not getwayInfo then
+        SetGameObjectState(tempContentPath .. m_GetWayCutStr, false, m_panelObject);
+        SetGameObjectState(tempContentPath .. m_GetWayContentStr, false, m_panelObject);
+    else
+        SetGameObjectState(tempContentPath .. m_GetWayCutStr, true, m_panelObject);
+        SetGameObjectState(tempContentPath .. m_GetWayContentStr, true, m_panelObject);
+        local maxCount = getwayInfo.Count;
+        for i = 1, 3 do
+            local str = tempContentPath .. m_GetWayContentStr .. m_GetWayStr .. i;
+            SetGameObjectState(str, i <= maxCount, m_panelObject);
+            local paramTable = { getwayInfo["OpenUIParam" .. i],getwayInfo["SystemId" .. i] }
+            local tempObj = child(m_panelObject, str).gameObject;
+            UIEventListener.Get(tempObj).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, paramTable);
+            if i <= maxCount then
+                SetLabelWithUnderlineByID(str .. m_GetWayLabelStr, getwayInfo["Text" .. i], m_panelObject);
+            end
+        end
+    end
+    RepositionUITableComp(baseAttrPath, m_panelObject);
+    RepositionUITableComp(tempContentPath, m_panelObject);
+    SetGameObjectState(baseAttrPath .. m_LineMinus1Str .. m_PetStarStr, true, m_panelObject);
+
+    local trans = child(m_panelObject, tempContentPath);
+    local height = CCommonTool.GetBoundsSize(trans).y;
+    SetSpriteHeight(tempPath .. m_StaticContentPanelStr .. m_DragSpriteStr, height, m_panelObject);
+    RepositionUIScrollViewComp(tempPath .. m_StaticContentPanelStr, m_panelObject);
+
+    SetGameObjectPos(m_StaticPos .. m_StaticPetStr, Vector3.New(Equip_Pos.Middle.x, Equip_Pos.Middle.y, 0), m_panelObject);
+end
+
+function GetCoolDownTime(time)
+    if time > 86400 then
+        return math.modf(time / 86400)..CCommonTool.GetTxtData(101005).m_str;
+    end
+    if time > 3600 then
+        return math.modf(time / 3600)..CCommonTool.GetTxtData(101006).m_str;
+    end
+    if time > 60 then
+        return math.modf(time / 60)..CCommonTool.GetTxtData(101007).m_str;
+    end
+    return time .. CCommonTool.GetTxtData(101008).m_str;
+end
+
+-- 获取装备数据
+function GetItemAttribute(equipType)
+    if m_isOtherPlayerEquip ~= true then
+        return G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    elseif m_OtherPlayerEquipTable ~= nil then
+        for _, v in ipairs(m_OtherPlayerEquipTable) do
+            if v:GetEquipType() == equipType then
+                return v;
+            end
+        end
+    end
+end
+
+-- 点击获取途径项
+function OnGetWayClick(go, paramTable)
+    if GetWayPanel.IsSystemUnlock(paramTable[2]) then
+        OpenUIByEnum.OpenByParam(paramTable[1]);
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_closeButtonStr, OnCloseClick, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    if m_panelID == ENUMPANELID.ENUM_PANEL_BAGPANEL then
+        if G_PanelMng:GetPanel(m_panelID) ~= nil then
+            BagPanel.OnItemInfoCloseClick();
+        end
+    end
+    if m_panelID == ENUMPANELID.ENUM_PANEL_ROLE then
+        if G_PanelMng:GetPanel(m_panelID) ~= nil then
+            RoleBeyond3DPanel.OnZheZhaoClick();
+        end
+    end
+    if m_panelID == ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL then
+        if G_PanelMng:GetPanel(m_panelID) ~= nil then
+            OtherPlayerRolePanel.OnZheZhaoClick();
+        end
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetData(paraTable)
+    m_panelID = paraTable.PanelID;
+    G_PanelMng.ToolTipPanelID = m_panelID;
+    m_isOtherPlayerEquip = paraTable.IsOtherPlayerEquip;
+    if m_isOtherPlayerEquip == true then
+        if paraTable.changeData == nil then
+            paraTable.changeData = true;
+            paraTable.equipTable = paraTable.ItemData.equipTable;
+            paraTable.ItemData = paraTable.ItemData.itemInfo;
+        end
+        m_OtherPlayerEquipTable = paraTable.equipTable;
+    end
+    if paraTable.IsRealItem then
+        m_itemAttr = paraTable.ItemData;
+        m_excelID = m_itemAttr.ExcelID;
+    else
+        m_itemAttr = nil;
+        m_excelID = paraTable.ItemData;
+    end
+    m_isEquiped = paraTable.IsEquiped;
+    m_isShowGetWay = paraTable.ShowGetWay == nil and false or true;
+end

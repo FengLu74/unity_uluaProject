@@ -1,0 +1,113 @@
+﻿module('DungeonCountDownPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'DungeonCountDownPanel';
+---------------------------------------label路径---------------------------------------
+-- 文本
+local m_labelTime = "Label_Time";
+-- 文本1
+local m_labeltext = "Label1";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 倒计时
+local m_Time = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+    G_TimerMng:RemoveTimeTask("CountDownEnd");
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("DungeonCountDown");
+    G_TimerMng:RemoveTimeTask("CountDownEnd");
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_Time > 0 then
+        AddTimerEvent("DungeonCountDown", m_Time, BanquetBonusCallBackOver, ETimeShowType.TypeNumberSeven, CloseCallBack);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function functionParameter(paraTable)
+    m_Time = paraTable[3];
+    if m_CreateSuccess then
+        -- 初始化界面所有信息
+        InitShow();
+    end
+end
+-- 每秒倒计时回调
+function CloseCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL) == 1 then
+        SetGameObjectState(m_labelTime, true, m_PanelObject);
+        SetGameObjectState(m_labeltext, false, m_PanelObject);
+        local obj = child(m_PanelObject, m_labelTime).gameObject;
+        local currentObject = GetComponent(m_PanelObject, m_labelTime, "TweenScale");
+        currentObject:ResetToBeginning();
+        currentObject:Play(true);
+        local currentLabel = GetComponent(m_PanelObject, m_labelTime, "TweenAlpha");
+        currentLabel:ResetToBeginning();
+        currentLabel:Play(true);
+        SetLabelContent(m_labelTime, timeTxt, m_PanelObject);
+    end
+end
+-- 倒计时结束回调
+function BanquetBonusCallBackOver()
+    SetGameObjectState(m_labelTime, false, m_PanelObject);
+    SetGameObjectState(m_labeltext, true, m_PanelObject);
+    local obj = child(m_PanelObject, m_labeltext).gameObject;
+    local currentObject = GetComponent(m_PanelObject, m_labeltext, "TweenScale");
+    currentObject:ResetToBeginning();
+    currentObject:Play(true);
+    local currentLabel = GetComponent(m_PanelObject, m_labeltext, "TweenAlpha");
+    currentLabel:ResetToBeginning();
+    currentLabel:Play(true);
+    AddTimerEvent("CountDownEnd", 2, CallBackOver, ETimeShowType.TypeNumberSeven, CallBack);
+    G_TimerMng:RemoveTimeTask("DungeonCountDown");
+end
+
+-- 每秒倒计时回调
+function CallBack(timeTxt)
+
+end
+
+-- 倒计时结束回调
+function CallBackOver()
+    closePanel(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL);
+end

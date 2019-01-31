@@ -1,0 +1,20 @@
+﻿module("WineBossManager", package.seeall)
+
+-- 得到当前公会等级的boss数据
+function getWineBossData(id)
+    local m_wineBossDataAll = CCommonTool.GetAllUnionWineBossInfo();
+--    local m_dataCur = m_wineBossDataAll[id - 1];
+    local m_dataCur = CCommonTool.GetUnionWineBossIndex(id);
+    local m_table;
+    for i = 1, 5 do
+        local tableTemp = { };
+        local BossId = "BossId"..i;
+        local WineCost = "WineCost"..i;
+        local RewardId = "RewardId"..i;
+        table.insert(tableTemp,1,m_dataCur.BossId);
+        table.insert(tableTemp,1,m_dataCur.WineCost);
+        table.insert(tableTemp,1,m_dataCur.RewardId);
+        table.insert(m_table,i,tableTemp);
+    end
+    return m_table;
+end

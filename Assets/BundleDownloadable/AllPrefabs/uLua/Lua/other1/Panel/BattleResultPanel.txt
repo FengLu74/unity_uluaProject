@@ -1,0 +1,234 @@
+﻿module("BattleResultPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 倒计时
+local m_LeaveCountDownStr = "Personal/Label_Over";
+
+-- 有变化的段位
+local m_ChangeCurRankLabel1Str = "Personal/Change/Label_CurRank";
+-- 有变化的段位
+local m_ChangeCurRankLabel2Str = "Personal/Change/CurRank/Label_Level";
+
+-- 当前积分
+local m_CurSeasonScoreStr = "Personal/Label_SeasonScore";
+
+-- 当前积分
+local m_NoChangeCurSeasonScoreStr = "Personal/NoChange/Label_SeasonScore";
+-- 当前加的积分
+local m_NoChangeAddSeasonScoreStr = "Personal/NoChange/Label_Add";
+-----------------------------------------按钮路径--------------------------------------
+-- 离开按钮
+local m_LeaveButtonStr = "Personal/Button_Leave";
+-----------------------------------------Sprite路径------------------------------------
+-- 有变化的段位
+local m_ChangeCurRankSpriteStr = "Personal/Change/CurRank/Sprite_Big";
+----------------------------------gameobject所在的路径---------------------------------
+-- 胜利标头
+local m_WinTittleStr = "Title_Win";
+-- 失败标头
+local m_LoseTittleStr = "Title_Lose";
+-- 平局标头
+local m_DrawTittleStr = "Title_Draw";
+
+-- 未变化
+local m_NoChangeStr = "Personal/NoChange";
+-- 有变化
+local m_ChangeStr = "Personal/Change";
+
+-- 进度
+local m_ProgressStr = "Personal/ScorePro";
+
+-- 当前排行
+local m_CurRankStr = "/CurRank";
+-- 下一排行
+local m_NextRankStr = "/NextRank";
+-- 段位图标
+local m_RankPicStr = "/Sprite_Big";
+-- 段位名称
+local m_RankLabelStr = "/Label_Level";
+
+-- 奖励位置
+local m_RewardStr = "Personal/Reward/ItemTable/";
+-- 图标
+local m_RewardItemIconStr = "/Icon";
+-- 奖励数量
+local m_RewardItemNumStr = "/Value";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 战斗结果数据
+local m_ResultData = {};
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitContent();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    closePanel(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL);
+    if m_panelInitAlready == true then
+        InitContent();
+    end
+    if m_ResultData.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_LOSE then
+        CCommonTool.SetPanelsGrayscaleMode(m_PanelObject);
+        CCommonTool.HandleGrayscale(true);
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("BattleResultClose");
+    CCommonTool.HandleGrayscale(false);
+    CCommonTool.RevertPanelsGrayscaleMode();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BATTLERESULTPANEL);
+end
+
+function InitContent()
+    local curRank = m_ResultData.CurRank;
+    local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+    local rankNum = BattleFieldManager.BattleFieldRankNum;
+    local rewardID = 0;
+    if m_ResultData.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_WIN then
+        SetGameObjectState(m_WinTittleStr,true,m_panelObject);
+        SetGameObjectState(m_LoseTittleStr,false,m_panelObject);
+        SetGameObjectState(m_DrawTittleStr,false,m_panelObject);
+        rewardID = battleFieldTableData[curRank].WinScore;
+    elseif m_ResultData.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_LOSE then
+        SetGameObjectState(m_WinTittleStr,false,m_panelObject);
+        SetGameObjectState(m_LoseTittleStr,true,m_panelObject);
+        SetGameObjectState(m_DrawTittleStr,false,m_panelObject);
+        rewardID = battleFieldTableData[curRank].LoseScore;
+    elseif m_ResultData.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_DRAW then
+        SetGameObjectState(m_WinTittleStr,false,m_panelObject);
+        SetGameObjectState(m_LoseTittleStr,false,m_panelObject);
+        SetGameObjectState(m_DrawTittleStr,true,m_panelObject);
+        rewardID = battleFieldTableData[curRank].DrawScore;
+    end
+    if m_ResultData.LastRank ~= m_ResultData.CurRank then
+        SetGameObjectState(m_NoChangeStr,false,m_panelObject);
+        SetGameObjectState(m_ChangeStr,true,m_panelObject);
+        SetSpriteByAtlasID(m_ChangeCurRankSpriteStr,battleFieldTableData[curRank].BigPicID,m_panelObject);
+        SetLabelTextByID(m_ChangeCurRankLabel1Str,battleFieldTableData[curRank].NameID,m_panelObject);
+        SetLabelTextByID(m_ChangeCurRankLabel2Str,battleFieldTableData[curRank].NameID,m_panelObject);
+        SetLabelGradientColor(BattleRewardPanel.RankLabelColor[curRank].Top,BattleRewardPanel.RankLabelColor[curRank].Bottom,m_ChangeCurRankLabel1Str,m_panelObject);
+        SetLabelGradientColor(BattleRewardPanel.RankLabelColor[curRank].Top,BattleRewardPanel.RankLabelColor[curRank].Bottom,m_ChangeCurRankLabel2Str,m_panelObject);
+    else
+        SetLabelContent(m_NoChangeCurSeasonScoreStr,BattleFieldManager.SeasonScore,m_panelObject);
+        SetLabelContent(m_NoChangeAddSeasonScoreStr,"(+"..m_ResultData.AddScore..")",m_panelObject);
+        SetGameObjectState(m_NoChangeStr,true,m_panelObject);
+        SetGameObjectState(m_ChangeStr,false,m_panelObject);
+        SetSpriteByAtlasID(m_NoChangeStr..m_CurRankStr..m_RankPicStr,battleFieldTableData[m_ResultData.LastRank].BigPicID,m_panelObject);
+        SetLabelTextByID(m_NoChangeStr..m_CurRankStr..m_RankLabelStr,battleFieldTableData[m_ResultData.LastRank].NameID,m_panelObject);
+        SetLabelGradientColor(BattleRewardPanel.RankLabelColor[m_ResultData.LastRank].Top,BattleRewardPanel.RankLabelColor[m_ResultData.LastRank].Bottom,m_NoChangeStr..m_CurRankStr..m_RankLabelStr,m_panelObject);
+        if curRank >= rankNum then
+            SetGameObjectState(m_NoChangeStr..m_NextRankStr,false,m_panelObject);
+            SetGameObjectPos(m_NoChangeStr..m_CurRankStr,Vector3.New(0,-54,0),m_panelObject);
+        else
+            SetGameObjectState(m_NoChangeStr..m_NextRankStr,true,m_panelObject);
+            SetGameObjectPos(m_NoChangeStr..m_CurRankStr,Vector3.New(-227,-54,0),m_panelObject);
+            SetSpriteByAtlasID(m_NoChangeStr..m_NextRankStr..m_RankPicStr,battleFieldTableData[curRank + 1].BigPicID,m_panelObject);
+            SetLabelTextByID(m_NoChangeStr..m_NextRankStr..m_RankLabelStr,battleFieldTableData[curRank + 1].NameID,m_panelObject);
+            SetLabelGradientColor(BattleRewardPanel.RankLabelColor[curRank + 1].Top,BattleRewardPanel.RankLabelColor[curRank + 1].Bottom,m_NoChangeStr..m_NextRankStr..m_RankLabelStr,m_panelObject);
+        end
+        
+    end
+    local seasonScore = BattleFieldManager.SeasonScore;
+    if curRank == rankNum then
+        SetLabelContent(m_CurSeasonScoreStr,seasonScore,m_panelObject);
+        SetSpriteFillAmount(m_ProgressStr,1,m_panelObject);
+    else
+        local pro = 1;
+        if curRank == 1 then
+            pro = (seasonScore - BattleFieldManager.BattleFieldInitScore)/(battleFieldTableData[curRank].Score + 1 - BattleFieldManager.BattleFieldInitScore);
+        else
+            pro = (seasonScore - battleFieldTableData[curRank - 1].Score)/(battleFieldTableData[curRank].Score - battleFieldTableData[curRank - 1].Score);
+        end
+        SetLabelContent(m_CurSeasonScoreStr,seasonScore.."/"..(battleFieldTableData[curRank].Score + 1),m_panelObject);
+        SetSpriteFillAmount(m_ProgressStr,pro,m_panelObject);
+    end
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+    if rewardInfo ~= nil then
+        SetGameObjectState(m_RewardStr,true,m_panelObject);
+        local list = rewardInfo:GetAllItem();
+        local count = list.count;
+        local itemData = nil;
+        local path = nil;
+        if count > 3 then
+            error("the rewards item num is more than 3,wrong!!!!!");
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                path = m_RewardStr .. i;
+                SetGameObjectState(path, true, m_panelObject);
+                itemData = list[i - 1];
+                if itemData.ItemDealType == 3 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+                elseif itemData.ItemDealType == 4 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+                if m_itemExcelID ~= nil then
+                    SetSpriteByAtlasID(path..m_RewardItemIconStr,CCommonTool.GetImageIDByExcelID(m_itemExcelID),m_panelObject,true);
+                    SetLabelContent(path..m_RewardItemNumStr,itemData.ItemNum,m_panelObject);
+                end
+            end
+            for i = count + 1, 3 do
+                path = m_RewardStr .. i;
+                SetGameObjectState(path, false, m_panelObject);
+            end
+        end
+    else
+        SetGameObjectState(m_RewardStr,false,m_panelObject);
+    end
+    RepositionUITableComp(m_RewardStr,m_panelObject);
+    SetLabelContent(m_LeaveCountDownStr,10,m_panelObject);
+    AddTimerEvent("BattleResultClose",10,BattleResultCloseCallBack,ETimeShowType.TypeNumberSeven,BattleResultCloseSecond)
+end
+
+function BattleResultCloseSecond(time)
+    SetLabelContent(m_LeaveCountDownStr,time,m_panelObject);
+end
+
+function BattleResultCloseCallBack()
+    closePanel(ENUMPANELID.ENUM_PANEL_BATTLERESULTPANEL);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_LeaveButtonStr,OnCloseClick,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_LEAVE_BATTLEFIELD);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetData(battleResultTable)
+    if G_GameMng:GetBackState() ~= 0 then
+        return;
+    end
+    if BattleFieldManager.IsInBattleFieldScene() then
+        m_ResultData = battleResultTable;
+        createPanel(ENUMPANELID.ENUM_PANEL_BATTLERESULTPANEL);
+    end
+end

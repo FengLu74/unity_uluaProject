@@ -1,0 +1,179 @@
+﻿module("OnLogin", package.seeall)
+----------------------------------gameobject所在的路径---------------------------------
+-- 账号object所在位置
+local m_AccountStr = "Input-ZhangHao";
+-- 密码object所在位置
+local m_PasswordStr = "Input-MiMa";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 登录按钮所在位置
+local m_LoginButtonStr = "Button-DengLu";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 用户名输入
+local m_AccountInput = nil;
+-- 用户密码输入
+local m_PasswardInput = nil;
+-- 面板是否创建完毕
+local m_CreateSuccess = false;
+
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess == true then
+        InitShow();
+    end
+    if CSDKManager.sdkName == "xiyou" then
+        CSDKManager.ShowSDKUI();
+    end
+end
+
+-- 销毁变量--
+function OnDestroy()
+    m_AccountInput = nil;
+    m_PasswardInput = nil;
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+
+-- 初始化object对象
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+    m_AccountInput = GetComponent(m_PanelObject, m_AccountStr, "UIInput");
+    m_PasswardInput = GetComponent(m_PanelObject, m_PasswordStr, "UIInput");
+    m_AccountInput.defaultText = CCommonTool.GetTxtData(25).m_str;
+    m_PasswardInput.defaultText = CCommonTool.GetTxtData(24).m_str;
+    -- 用户名
+    if PlayerPrefs.GetString(AccountName) ~= nil then
+        m_AccountInput.value = PlayerPrefs.GetString(AccountName);
+    else
+        m_AccountInput.value = "";
+        m_AccountInput.defaultText = CCommonTool.GetTxtData(25).m_str;
+    end
+
+    -- 密码
+    if PlayerPrefs.GetString(PassWord) ~= nil then
+        m_PasswardInput.value = PlayerPrefs.GetString(PassWord);
+    else
+        m_PasswardInput.value = "";
+        m_PasswardInput.defaultText = CCommonTool.GetTxtData(24).m_str;
+    end
+
+    local isSDKLogin = CSDKManager.useThirdLogin == true;
+    m_AccountInput.gameObject:SetActive(not isSDKLogin);
+    m_PasswardInput.gameObject:SetActive(not isSDKLogin);
+end
+
+-- 初始化事件
+function InitEvents()
+    SetGameObjectEvent(m_LoginButtonStr, OnLoginClick, m_PanelObject);
+end
+
+function InitShow()
+end
+
+-- 检测帐号密码是否合法
+function CheckAccountAndPassword()
+    local account = string.gsub(m_AccountInput.value, " ", "");
+    local password = m_PasswardInput.value;
+    m_AccountInput.value = account;
+    if account == "" or string.find(account, "[%W_]") ~= nil or string.len(account) < 3 or string.len(account) > 9 then
+        -- 用户名问题的判断
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_ACCOUNTNUMWRONG);
+        return false;
+    elseif password == "" or string.find(password, "[%W_]") ~= nil or string.len(password) < 3 or string.len(password) > 9 then
+        -- 用户密码问题的判断
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_PASSWORDWRONG);
+        return false;
+    end
+    return true;
+end
+
+-- SDK登录回调
+function OnSDKLogin(data)
+    error("SDK登录回调, result:" .. tostring(data.result));
+    GameReportManager.AddReportData(9161,true);
+    if data.result == true then
+        GameReportManager.AddReportData(9162,true);
+        if CSDKManager.sdkName == "xiyou" then
+            CSDKManager.ShowSDKUI();
+            CSDKManager.Call("getServerList", "", function(data)
+                 if data.result == true then
+                    error("************************************json.decode(data.data)********************************-->"..tostring(data.data));
+                    local data = json.decode(data.data);
+                    --if Platform == "ios" then
+                    --    data = data.data;
+                    --end
+                    LuaGameManager.ParseSDKServerList(data);
+                    OpenComeInGamePanel();
+                 else
+                    error("***********SDK获取服务器列表失败!!!!!");
+                 end
+            end);
+        else
+            OpenComeInGamePanel();
+        end
+    else
+        error("SDK登录失败" .. data.data:ToString());
+        -- 如果是西游SDK登录失败后, 继续调用SDK登录接口
+        if CSDKManager.sdkName == "xiyou" then
+            GameReportManager.AddReportData(9163,true);
+            CSDKManager.Login(OnSDKLogin);
+        end
+    end
+end
+
+function OpenComeInGamePanel()
+    GameReportManager.AddReportData(9164,true);
+    SaveValue();
+    createPanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+    closePanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+end
+
+function SaveValue()
+    local account = m_AccountInput.value;
+    local password = m_PasswardInput.value;
+    lua_LoginUser.account = account;
+    lua_LoginUser.password = password;
+    lua_LoginUser.selectZoneId = PlayerPrefs.GetInt(SelectZoneId);
+    -- 存储进入游戏账号
+    PlayerPrefs.SetString(AccountName, account);
+    -- 存储进入游戏密码	
+    PlayerPrefs.SetString(PassWord, password);
+end
+
+--------------------------------------按钮事件方法------------------------------------
+
+-- 登录事件
+function OnLoginClick()
+    --请求登陆sdk界面
+    GameReportManager.AddReportData(9160,true);
+    if CSDKManager.sdkName == "xiyou" then
+        CSDKManager.ShowSDKUI();
+    end
+    if CSDKManager.useThirdLogin == true then
+        --if CSDKManager.isLogined == true then
+        --    OpenComeInGamePanel();
+        --else
+            CSDKManager.Login(OnSDKLogin);
+        --end
+    elseif CheckAccountAndPassword() == true then
+        OpenComeInGamePanel();
+    end
+end
+
+-- 返回进入游戏界面，隐藏当前登陆界面
+function OnBackClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+    closePanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

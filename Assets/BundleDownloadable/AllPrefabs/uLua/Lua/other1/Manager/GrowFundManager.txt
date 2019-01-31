@@ -1,0 +1,69 @@
+﻿module("GrowFundManager", package.seeall)
+
+HasBoughtGrowFundOne = false;
+GrowFundOneCostMoney = 0;
+GetGrowFundOneState = {};
+
+HasBoughtGrowFundTwo = false;
+GrowFundTwoCostMoney = 0;
+GetGrowFundTwoState = {};
+
+function ClearData()
+    
+end
+
+function GrowFundOneShowRedHint()
+    if HasBoughtGrowFundOne then
+        local growFundOneTableData = CCommonTool.GetAllGrowFund1Info();
+        for Index = 1,growFundOneTableData.Count do
+            local data = growFundOneTableData[Index - 1];
+            if GetGrowFundOneState[data.Id] == nil and G_UserInfo.RoleAttribute.Level >= data.Level then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+function GrowFundTenLevelShowRedHint()
+    local info=CCommonTool.GetAllGrowFund1Info();
+    --���������ȼ�
+    local maxLv=info[info.Count-1].Level;
+    local flag=false;
+    if G_UserInfo.RoleAttribute.Level <=maxLv then
+        for index=1,info.Count do
+            if GetGrowFundOneState[index]==nil and G_UserInfo.RoleAttribute.Level > info[index-1].Level then
+                flag=true;   --��δ��ȡ��
+            end
+        end
+        if (HasBoughtGrowFundOne==true and flag==true) or HasBoughtGrowFundOne==false then
+            return true;
+        else
+            return false;
+        end
+    else
+        for index=1,info.Count do
+            if GrowFundManager.GetGrowFundTwoState[index]==nil and G_UserInfo.RoleAttribute.Level > info[index-1].Level then
+                flag=true;   
+            end
+        end
+        if (HasBoughtGrowFundTwo==true and flag==true) or HasBoughtGrowFundTwo==false then
+            return true;
+        else
+            return false;
+        end
+    end
+end
+
+function GrowFundTwoShowRedHint()
+    if HasBoughtGrowFundTwo then
+        local growFundTwoTableData = CCommonTool.GetAllGrowFund2Info();
+        for Index = 1,growFundTwoTableData.Count do
+            local data = growFundTwoTableData[Index - 1];
+            if GetGrowFundTwoState[data.Id] == nil and G_UserInfo.RoleAttribute.Level >= data.Level then
+                return true;
+            end
+        end
+    end
+    return false;
+end

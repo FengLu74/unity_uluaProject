@@ -1,0 +1,100 @@
+﻿module('GetNewEquipPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GetNewEquipPanel';
+---------------------------------------label路径---------------------------------------
+-- 装备名称
+local m_LbEquipNamePath = "lb_EquipName";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 装备图片
+local m_SpIconPath = "sp_Icon";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 要显示的装备
+local m_NeedShowEquipInfo = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_NeedShowEquipInfo = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GETNEWEQUIP);
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_NeedShowEquipInfo == nil then closePanel(ENUMPANELID.ENUM_PANEL_GETNEWEQUIP); end
+    local particleComp = GetComponent(m_PanelObject,"effect_ui_new_huodechengjiu", "ParticleSystem");
+    particleComp:Play();
+
+    SetItemShowByExcelIDV04(m_PanelObject, m_SpIconPath, m_NeedShowEquipInfo.ItemID, 1, true, 401, ENUMPANELID.ENUM_PANEL_GETNEWEQUIP);
+end
+
+-- 装备显示计时事件
+function AddShowTimeEvent()
+    local duration = CCommonTool.GetDefineInfo(3105):GetIntContent();
+    AddTimerEvent("GetNewEquipPanel", duration, TimeEventEnd);
+end
+
+function TimeEventEnd()
+    local particleComp = GetComponent(m_PanelObject,"effect_ui_new_huodechengjiu", "ParticleSystem");
+    if particleComp~=nil then
+        particleComp:Stop();
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_GETNEWEQUIP);
+    G_UserInfo:CallPlayAchieveFinishEffect();
+    
+end
+------------------------------------------事件方法------------------------------------
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function ShowNewEquip(itemInfo)
+    m_NeedShowEquipInfo = itemInfo;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GETNEWEQUIP) == 0 then 
+        createPanel(ENUMPANELID.ENUM_PANEL_GETNEWEQUIP);
+        AddShowTimeEvent();
+    else
+        OnEnable();
+        AddShowTimeEvent();
+    end
+end

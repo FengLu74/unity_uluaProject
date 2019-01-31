@@ -1,0 +1,338 @@
+﻿module("Main_Middle", package.seeall)
+-- 当前所在面板名字
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- 新功能关联面板系统名字
+local m_NewSystemPanelName = "Middle/DetailsPanel/Label_Title";
+-- 新功能关联面板系统说明
+local m_NewSystemPanelContent = "Middle/DetailsPanel/Label_Explain";
+
+-- 正在报名的活动
+local m_CurSignUpActiContent = "Middle/Label_SignUp";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭新功能面板按钮
+local m_btnCloseNewSysytmPanel = "Middle/DetailsPanel/CloseButton";
+-- 领取新功能面板开启奖励按钮
+local m_btnGetReward = "Middle/DetailsPanel/GetRewardButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 新功能关联面板图标
+local m_NewSystemPanelIcon = "Middle/DetailsPanel/Icon";
+-- 新功能关联面板背景
+local m_NewSystemPanelBg = "Middle/DetailsPanel/Sprite";
+-- 新功能图标
+local m_NewSystemIcon = "RightTop/NewSystemOpen/Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 新功能面板
+local m_NewSystemPanel = "Middle/DetailsPanel";
+-- 新功能奖励道具
+local m_NewSystemItem = "Middle/DetailsPanel/Item";
+
+-- 新功能可以领奖的文本
+----------------------------------通用的名称路径---------------------------------------
+--  可以领取奖励的路径
+local m_notGetReward = "/Dark";
+-- 不可以领取按钮的路径
+local m_canGetReward = "/Bright";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+
+local m_PanelData = nil;
+-- 当前显示预告系统id
+local m_curSystemId = 0;
+-- 当前显示预告系统等级
+local currentLevel = nil;
+
+-- 预告面板是否开启
+local m_IsForeShowPanelOpen = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitOnClick();
+    InitSignUpActiInfo();
+    InitNewSystemOpen();
+    InitTimeLimitedActivity();
+    ActivityProtocol.RequestActivitysLimitTime();
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitOnClick();
+        InitSignUpActiInfo();
+        InitNewSystemOpen();
+        InitTimeLimitedActivity();
+        ActivityProtocol.RequestActivitysLimitTime();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    G_TimerMng:RemoveTimeTask("CheckMessageBoxIsOpen");
+    G_TimerMng:RemoveTimeTask("ActivityWaitingShow");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    SetGameObjectState(m_NewSystemPanel, false, m_panelObject);
+    m_IsForeShowPanelOpen = false;
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_btnCloseNewSysytmPanel, OnCloseNewSystemPanelClick, m_panelObject);
+end
+-- 初始化新功能开启信息
+function InitNewSystemOpen()
+    local systemData = CCommonTool.GetAllSystemTrailerInfo();
+    local systemInfo = nil;
+    for index = 1, systemData.Count do
+        local dataInfo = systemData[index - 1];
+        if m_curSystemId == dataInfo.Id then
+            systemInfo = dataInfo;
+            currentLevel = dataInfo.sysytemLevel;
+            break;
+        end
+    end
+    if systemInfo ~= nil and currentLevel ~= nil then
+        if currentLevel > G_UserInfo.RoleAttribute.Level then
+            SetGameObjectState(m_btnGetReward .. m_canGetReward, false, m_panelObject);
+            SetGameObjectState(m_btnGetReward .. m_notGetReward, true, m_panelObject);
+        else
+            SetGameObjectState(m_btnGetReward .. m_canGetReward, true, m_panelObject);
+            SetGameObjectState(m_btnGetReward .. m_notGetReward, false, m_panelObject);
+        end
+        SetLabelTextByID(m_NewSystemPanelName, systemInfo.systemName, m_panelObject);
+        SetLabelTextByID(m_NewSystemPanelContent, systemInfo.systemText, m_panelObject);
+        -- 预告功能的图片
+        local systemObject = child(m_panelObject, m_NewSystemPanelIcon).gameObject;
+        local textureStr = systemInfo.relevancePicture;
+        G_UserInfo:SetNewSystemIcon(textureStr, systemObject);
+        local rewardInfo = CCommonTool.GetRewardInfoByIndex(systemInfo.rewardId);
+        if rewardInfo ~= nil then
+            local list = rewardInfo:GetAllItem();
+            local itemData = nil;
+            itemData = list[0];
+            if itemData.ItemDealType == 3 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+            elseif itemData.ItemDealType == 4 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            SetItemShowByExcelIDV04(m_panelObject, m_NewSystemItem, itemData.ExcelID, itemData.ItemNum, false, 11, ENUMPANELID.ENUM_PANEL_MAIN);
+            SetItemToolTipsEvent(m_panelObject, m_NewSystemItem, ENUMPANELID.ENUM_PANEL_MAIN, false, itemData.ExcelID);
+        else
+            error("systemInfo.rewardId is not exist");
+        end
+        SetGameObjectEvent(m_btnGetReward, OnGetRewardNewSystemClick, m_panelObject);
+    end
+end
+-- 初始化限时活动开启时的弹窗提示功能
+function InitTimeLimitedActivity()
+    local ActivityTable = CCommonTool.GeActivityListData(); -- 所有活动表数据
+    local TempTable = {};
+    local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+    local activityWaiting = _G.LogicData_TimeLimitedActivityData.WAITING;
+    if activityOpening == nil then _G.LogicData_TimeLimitedActivityData.OPENING = {} end
+    if activityWaiting == nil then _G.LogicData_TimeLimitedActivityData.WAITING = {} end
+    if ActivityTable then
+        if activityOpening and #activityOpening > 0 then  CheckMessageBoxIsOpenOver(); return end
+        local lv = G_UserInfo.RoleAttribute.Level;
+        for i = 1, ActivityTable.count do
+            local isAdd = true;
+            local data = ActivityTable[i-1];
+            if data.IsLimit == 1 and data.ShowRemind == 1 and lv >= data.ShowLevel and (lv < data.HideLevel or data.HideLevel == 0) then -- 是否为限时和需提醒活动
+                -- 如果是阵营活动 检查是否加入阵营
+                if data.Condition == 1 then 
+                    local campType = G_UserInfo.RoleAttribute.JoinCampType;
+                    if campType == 0 then isAdd = false; end
+                end
+                -- 如果是公会活动 检查是否加入公会
+                if data.Condition == 2 then 
+                    local isHasGuild = GuildManager.HasGuild();
+                    if isHasGuild == false then isAdd = false; end
+                end
+                -- 检查是否到开放等级
+                local actData = ActivityManager.GetActivity(data.Id);
+                if actData and actData.openLevel > lv then
+                    isAdd = false;
+                end
+                -- 检查限时活动时候还有剩余时间
+                if actData and actData.isServerLimit == true then
+                    if actData.remainLimitMinute <= 0 then 
+                        isAdd = false;
+                    end
+                else
+                     -- 检查当前活动是否还有活动次数
+                    if actData and actData.maxWeekTimes > 0 then 
+                        local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(actData.Id);
+                        if remainTimes <= 0 then 
+                            isAdd = false;
+                        end
+                    end
+                end
+                -- 检查是否已完成
+                if actData and actData.passed == true then
+                    isAdd = false;
+                end
+                if isAdd then 
+                    table.insert(TempTable,data.Id);
+                end
+            end
+        end
+        if #TempTable > 0 then 
+            for i,v in pairs(TempTable) do
+                local isOver = true;
+                -- 由于存在同一个活动当天多个时间段的情况，每次提示完增加下一个计时器时需要重新再检查一遍活动数据(针对同一时间段的活动等待规则制定)
+                -- 正在进行的任务
+                local activityRemove = _G.LogicData_TimeLimitedActivityData.ENDING;
+                if activityRemove and #activityRemove > 0 then
+                    local openTime = ActivityManager.GetCurrentActivityTime(v);
+                    for i,k in pairs(activityRemove) do
+                        if k.id == v and k.openTime == openTime then
+                            isOver = false;
+                        end
+                    end
+                end
+                if isOver then 
+                    local activityState = ActivityManager.GetActivityState(v);
+                    if activityState == ACTIVITY_STATE.OPENING then 
+                        local temp = {ID = v, isFixedTime = true};
+                        table.insert(_G.LogicData_TimeLimitedActivityData.OPENING, temp);
+                    -- 等待的任务
+                    elseif activityState == ACTIVITY_STATE.WAITING then                
+                        local openTime = ActivityManager.GetCurrentActivityTime(v);
+                        local time = ActivityManager.TimeToSeconds(openTime);
+                        local temp = {ID = v, openTime = time,};
+                        table.insert(_G.LogicData_TimeLimitedActivityData.WAITING, temp);
+                    end
+                end
+            end 
+            local data = _G.LogicData_TimeLimitedActivityData.WAITING;
+            if data and #data > 0 then 
+                table.sort(data, function(a,b) 
+                if a.openTime == b.openTime then
+                return a.openTime < b.openTime end
+                return a.openTime < b.openTime end);
+            end
+        end
+    end
+    CheckMessageBoxIsOpenOver();
+end
+-- 检测当前是否有3级弹窗，有的话等待弹窗消失再提示
+function CheckMessageBoxIsOpenOver()
+    local sceneType = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID).Category;
+    -- 只在公会和野外场景弹窗提示
+    if sceneType ~= EMapType.MAP_TYPE_YEWAI and sceneType ~= EMapType.MAP_TYPE_GUILD then
+        return;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX) == 1 then
+        AddTimerEvent("CheckMessageBoxIsOpen", 30, CheckMessageBoxIsOpenOver, ETimeShowType.TypeNumberFour, updateCallBack);
+    else
+        local isHaveTimer = G_TimerMng:GetTimeTask("ActivityWaitingShow");
+        if isHaveTimer then return end
+        local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+        if activityOpening and #activityOpening > 0 then
+            createPanel(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL);
+        else
+            local activityWaiting = _G.LogicData_TimeLimitedActivityData.WAITING;
+            if activityWaiting and #activityWaiting > 0 then
+                local data = activityWaiting[1];
+                local time = data.openTime - ActivityManager.GetSecondsSinceZeroTime();
+                AddTimerEvent("ActivityWaitingShow", time, ActivityWaitingShowOver);
+            end
+        end
+    end
+end
+
+function updateCallBack()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX) == 1 then return end
+
+    local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+    if activityOpening and #activityOpening > 0 then
+        G_TimerMng:RemoveTimeTask("CheckMessageBoxIsOpen");
+        createPanel(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL);
+    else
+        local activityWaiting = _G.LogicData_TimeLimitedActivityData.WAITING;
+        if activityWaiting and #activityWaiting > 0 then
+            local data = activityWaiting[1];
+            local time = data.openTime - ActivityManager.GetSecondsSinceZeroTime();
+            AddTimerEvent("ActivityWaitingShow", time, ActivityWaitingShowOver);
+        end
+    end
+end
+
+function ActivityWaitingShowOver()
+    G_TimerMng:RemoveTimeTask("ActivityWaitingShow");
+    InitTimeLimitedActivity();
+end
+
+-- 初始化界面显示报名信息
+function InitSignUpActiInfo()
+    if G_UserInfo.RoleAttribute.CurSignUpActivityID == 0 then
+        SetGameObjectState(m_CurSignUpActiContent,false,m_panelObject);
+    else
+        SetGameObjectState(m_CurSignUpActiContent,true,m_panelObject);
+        local actiName = "";
+        local actiInfo = CCommonTool.GetActivityListDataInfo(G_UserInfo.RoleAttribute.CurSignUpActivityID);
+        if actiInfo ~= nil then
+             local txtData = CCommonTool.GetTxtData(actiInfo.Name);
+             if txtData ~= nil then
+                actiName = txtData.m_str;
+             end
+        end
+        SetLabelContent(m_CurSignUpActiContent,string_format(CCommonTool.GetTxtData(102715).m_str,actiName),m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+
+-- 关闭新功能详细面板
+function OnCloseNewSystemPanelClick()
+    SetGameObjectState(m_NewSystemPanel, false, m_panelObject);
+    m_IsForeShowPanelOpen = false;
+end
+
+-- 领取新功能面板开启奖励
+function OnGetRewardNewSystemClick()
+    if currentLevel <= G_UserInfo.RoleAttribute.Level then
+        local buffer = ByteBuffer.New();
+        buffer:WriteShort(GMI_CTOS_LGS_ASK_SYSTEM_TRAILER);
+        buffer:WriteUInt(m_curSystemId);
+        G_NetWorkMng:SendMessage(buffer);
+        SetGameObjectState(m_NewSystemPanel, false, m_panelObject);
+        m_IsForeShowPanelOpen = false;
+    else
+        -- 不能领取奖励的提示
+        ShowSystemFlowTips(4405);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 更新功能预告系统
+function UpdateData(currentId)
+    m_curSystemId = currentId;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        SetGameObjectState(m_NewSystemPanel, true, m_panelObject);
+        m_IsForeShowPanelOpen = true;
+        InitNewSystemOpen();
+    end
+end
+
+function IsForeShowPanelOpen()
+    return m_IsForeShowPanelOpen;
+end
+
+function UpdateSignUpContent()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        InitSignUpActiInfo();
+    end
+end

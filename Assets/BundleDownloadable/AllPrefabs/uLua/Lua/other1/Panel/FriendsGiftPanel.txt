@@ -1,0 +1,152 @@
+﻿module("FriendsGiftPanel", package.seeall)
+
+-- 面板对象
+local m_panelObject = nil;
+-----------------------------------------------label路径--------------------------------------------
+
+local m_getTimesStr = "Bottom/GetTimes";
+local m_giveTimesStr = "Bottom/GiveTimes";
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+-----------------------------------------------button路径--------------------------------------------
+
+local m_AutoGetButtonPath = "Bottom/AutoGetButton";
+local m_GetButtonPath = "GetButton";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+local m_listViewStr = "ScrollView/Grid";
+--好友列表空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+--好友列表未选择时提示对象的路径
+local m_NonSelectBoxPath = "NonSelectBox";
+
+local m_headIconPath = "Hot_Head";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+local m_listView = nil;
+
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+function Start()
+    InitObjects();
+    InitOnClick();
+    FriendsChatPanel.HidePanel();
+    InitList();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitList();
+    end
+end
+
+function OnDisable()
+    m_listView:RemoveAll();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_listView = nil;
+    m_panelInitAlready = false;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    m_panelObject = child(m_panelObject, "GiftPanel").gameObject;
+    m_listView = GetComponent(m_panelObject, m_listViewStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_AutoGetButtonPath, OnAutoGetClick, m_panelObject, nil);
+end
+
+function InitList()
+    local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_GIFT);
+    for i,v in pairs(dataList) do
+        local seconds = v.expireTime - G_TimerMng:GetCurrentSeconds();
+        if seconds <= 0 then
+            FriendsData.DeleteGift(v.giftId);
+        end
+    end
+    m_listView:RemoveAll();
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+    end
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, m_panelObject);
+
+    local givedGiftCount = FriendsData.givedGiftCount;
+    local getGiftCount = FriendsData.getGiftCount;
+    local maxGiveTimes = FriendsData.MAX_COUNT_GIVE_GIFT;
+    local maxGetTimes = FriendsData.MAX_COUNT_GET_GIFT;
+    SetLabelContent(m_giveTimesStr, string_format(GetTextToId(8909), givedGiftCount, maxGiveTimes), m_panelObject);
+    SetLabelContent(m_getTimesStr, string_format(GetTextToId(8908), getGiftCount, maxGetTimes), m_panelObject);
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local friendData = FriendsData.GetFriend(data.guid);
+    if friendData == nil then error("没有该好友数据"); return; end
+    FriendsPanel.SetFriendBaseInfo(go, friendData, false, true);
+    local friendlinessInfo = FriendsData.GetFriendlinessInfo(friendData.friendliness);
+    --亲密度
+    SetLabelTextByID("FriendlinessName", friendlinessInfo.NameId, go);
+    --友好值
+    SetLabelContent("FriendlinessValue", string_format(GetTextToId(8907), friendData.friendliness), go); 
+    --到期时间
+    local seconds = data.expireTime - G_TimerMng:GetCurrentSeconds();
+    SetLabelContent("ExpireTime", string_format("{0}", GetTimeStringValue(seconds)), go);
+    --道具图标
+    local giftItemId = data.giftItemId;
+    SetSpriteApptitudeV04("Item/Sprite_Apptitude", CCommonTool.GetAptitudeIDByExcelID(giftItemId), go);
+    SetSpriteApptitude2V04("Item/Sprite_Apptitude2", CCommonTool.GetAptitudeIDByExcelID(giftItemId), go);
+    SetSpriteByAtlasID("Item/Sprite_Icon", CCommonTool.GetImageIDByExcelID(giftItemId), go, true);
+    SetItemIconEffect(go, "Item/Sprite_Icon", giftItemId, 21);
+    SetItemToolTipsEvent(go, "Item", ENUMPANELID.ENUM_PANEL_FRIENDSPANEL, false, giftItemId);
+end
+
+function GetTimeStringValue(seconds)
+    if seconds <= 0 then return GetTextToId(8902) end
+    if seconds >= 86400 then return string_format(GetTextToId(8906), math.floor(seconds / 86400));
+    elseif seconds >= 3600 then return string_format(GetTextToId(8905), math.floor(seconds / 3600));
+    elseif seconds >= 60 then return string_format(GetTextToId(8904), math.floor(seconds / 60));
+    else return string_format(GetTextToId(8903), seconds); end
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == m_GetButtonPath then
+        FriendsProtocol.RequestGetGift(data.giftId);
+    elseif go.name == m_headIconPath then
+        ParameterToMessageTextBox.OpenOtherButtonListPanel(data.guid, data.name, data.level, data.profession, data.guildId, data.onlineState);
+    end
+end
+
+-- 一键领取
+function OnAutoGetClick(go)
+    FriendsProtocol.RequestAutoGetGift();
+end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+
+-- 显示好友页签红点
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_FRIEND) then
+        return false;
+    end
+    if FriendsData.CanGetGift() then return true end
+    return false;
+end
+

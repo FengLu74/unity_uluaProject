@@ -1,0 +1,692 @@
+﻿module('GuildWarAssignmentPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildWarAssignmentPanel';
+---------------------------------------label路径---------------------------------------
+-- 报名人数
+local m_TeamMemberDataPath = "Sub_MemberAssignment/Sub_Top/lb_MemberData";
+-- 开战倒计时
+local m_TimeDataPath = "Sub_MemberAssignment/Sub_Top/lb_TimeData";
+-- 战力排序
+local m_BtnSortByAbilityPath = "Sub_MemberAssignment/Sub_SignUp/Sub_SortButton/btn_SortByAbility";
+-- 职业排序
+local m_BtnSortByProfessionPath = "Sub_MemberAssignment/Sub_SignUp/Sub_SortButton/btn_SortByProfession";
+-- 职位排序
+local m_BtnSortByPosition = "Sub_MemberAssignment/Sub_SignUp/Sub_SortButton/btn_SortByPosition";
+-- 报名人数
+local m_LbMemberDataPath = "Sub_MemberAssignment/Sub_SignUp/lb_MemberData";
+local m_LbMemberPath = "Sub_MemberAssignment/Sub_SignUp/lb_Member";
+
+
+-----------------------------------------按钮路径--------------------------------------
+-- 设置按钮路径
+local m_BtnSetPath = "Sub_MemberAssignment/Sub_SignUp/Sub_Button/btn_Set";
+-- 选择所有按钮
+--local m_BtnChooseAllPath = "Sub_MemberAssignment/Sub_SignUp/Sub_Button/btn_ChooseAll";
+-- 关闭分配按钮
+local m_BtnClosePath = "Sub_MemberAssignment/Sub_SignUp/Sub_Button/btn_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 关闭分配按钮
+local m_BtnBgPath = "Sub_MemberAssignment/Sub_SignUp/btn_Bg";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 队伍列表
+local m_TeamListPath = "Sub_MemberAssignment/Sub_MemberList/UIGrid";
+-- 人员列表
+local m_MemberListPath = "Sub_MemberAssignment/Sub_SignUp/Sub_MemberList/UIGrid";
+-- 战具分配列表
+local m_WeaponListPath = "Sub_MemberAssignment/Sub_WeaponList/Sub_MemberList/UIGrid";
+-- 战具页签路径
+local m_TglWeaponPath = "Sub_Tabs/tgl_Weapon";
+-- 队伍页签路径
+local m_TglWarTeamPath = "Sub_Tabs/tgl_WarTeam";
+-- 战具左侧页签路径
+local m_LeftWeaponTagPath = "Sub_WeaponAssignment/LeftTags/UITable";
+-- 队伍左侧页签路径
+local m_LeftTeamTagPath = "Sub_MemberAssignment/LeftTags/UITable";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 队伍列表
+local m_TeamList = nil;
+-- 人员列表
+local m_MemberList = nil;
+-- 战具分配列表
+local m_WeaponList = nil;
+-- 设置队长或队员标志: 0:设置队员，1：设置队长, 2: 设置战具分配
+local setFlag = nil;
+
+-- 在该队伍中的人员信息表
+local inTeam = {};
+local canDealInTeam = {};
+-- 不在该队伍中的人员信息表
+local notInTeam = {};
+local canDealNotInTeam = {};
+
+-- 当前选中的队伍
+local currentTeamID = nil;
+-- 当前选中的人员数
+local currentNum = nil;
+-- 选中的队长
+local currentCaptain = 0;
+-- 排序方式：0：战力， 1: 职业， 2: 职位
+local sortType = 0;
+-- 大的页签显示: 0: 战具 1：队伍（默认显示战具）
+local tagFlag = 1;
+-- 左侧小页签显示：从上到下，顺序排列（默认最小值1） 
+local leftTeamTag = 1;
+local leftWeaponTag = 1;
+-- 当前选中的战具
+local m_curChooseWeapon = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 六个队伍的信息
+m_TeamTable = {
+    [1] = { textID = 1367, teamPersonNum = 0, wang = "", },
+    [2] = { textID = 1381, teamPersonNum = 0, wang = "", }, 
+    [3] = { textID = 1382, teamPersonNum = 0, wang = "", }, 
+    [4] = { textID = 1383, teamPersonNum = 0, wang = "", }, 
+    [5] = { textID = 1384, teamPersonNum = 0, wang = "", },
+    [6] = { textID = 1385, teamPersonNum = 0, wang = "", },
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitDatas();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_TeamList = nil;
+	m_MemberList = nil;
+    m_WeaponList = nil;
+    setFlag = nil;
+    currentTeamID = nil;
+    currentNum = nil;
+    currentCaptain = 0;
+    sortType = 0;
+    tagFlag = 1;
+    leftWeaponTag = 1;
+    leftTeamTag = 1;
+    inTeam = {};
+    notInTeam = {};
+    canDealInTeam = {};
+    canDealNotInTeam = {};
+    m_curChooseWeapon = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+    m_TeamList = GetComponent(m_PanelObject, m_TeamListPath, "UIListView");
+    m_MemberList = GetComponent(m_PanelObject, m_MemberListPath, "UIListView");
+    m_WeaponList = GetComponent(m_PanelObject, m_WeaponListPath, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_TeamList:SetInitCallback(OnTeamListInit);
+    m_TeamList:SetClickCallback(OnTeamListClick);
+	SetGameObjectEvent(m_BtnBgPath, OnBtnBgClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnSortByAbilityPath, OnBtnSortByAbilityClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnSortByProfessionPath, OnBtnSortByProfessionClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnSortByPosition, OnBtnSortByPositionnClick, m_PanelObject);
+    m_MemberList:SetInitCallback(OnMemberListInit);
+    m_MemberList:SetClickCallback(OnMemberListClick);
+    m_WeaponList:SetInitCallback(OnWeaponListInit);
+    m_WeaponList:SetClickCallback(OnWeaponListClick);
+	SetGameObjectEvent(m_BtnSetPath, OnBtnSetClick, m_PanelObject);
+--	SetGameObjectEvent(m_BtnChooseAllPath, OnBtnChooseAllClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_TglWeaponPath, OnTglWeaponClick, m_PanelObject);
+    SetGameObjectEvent(m_TglWarTeamPath, OnTglWarTeamClick, m_PanelObject);
+    SetGameObjectEvent(m_LeftWeaponTagPath.."/Tag1", OnLeftWeaponTag1Click, m_PanelObject);
+    SetGameObjectEvent(m_LeftWeaponTagPath.."/Tag2", OnLeftWeaponTag2Click, m_PanelObject);
+    SetGameObjectEvent(m_LeftTeamTagPath.."/Tag1", OnLeftTeamTag1Click, m_PanelObject);
+    SetGameObjectEvent(m_LeftTeamTagPath.."/Tag2", OnLeftTeamTag2Click, m_PanelObject);
+end
+
+-- 初始化数据
+function InitDatas()
+--    GuildProtocol.RequestTeamInfo();
+end
+-- 初始化显示信息
+function InitShow()
+    SetTag();
+    SetLeftTag();
+    if tagFlag == 0 then 
+         GuildProtocol.RequestWeaponInfo();
+    elseif tagFlag == 1 then 
+        if leftTeamTag == 1 then 
+            GuildProtocol.RequestTeamInfo();
+        elseif leftTeamTag == 2 then 
+            GuildProtocol.RequestWeapon();
+        end
+    end
+end
+
+-- 显示人员列表
+function OnShowMemberList()
+    if GuildManager.guildAuctionInfo then
+        local teamInfo = GuildManager.guildAuctionInfo.teamInfo;
+        if teamInfo == nil then return end
+        SetGameObjectState("Sub_MemberAssignment/Sub_Top/lb_Member", true, m_PanelObject);
+        SetGameObjectState(m_TeamMemberDataPath, true, m_PanelObject);
+        SetLabelContent(m_TeamMemberDataPath, GuildManager.guildAuctionInfo.applyPersonNum.."/80", m_PanelObject);
+        m_TeamList:RemoveAll();
+        for i,v in pairs(teamInfo) do 
+            v.textID = m_TeamTable[i].textID;
+            m_TeamList:AddData(v);
+        end
+    end
+end
+-- 显示战具分配列表
+function OnShowWeaponList()
+    if GuildManager.guildAuctionInfo then
+        local weaponData = GuildManager.guildAuctionInfo.weaponData;
+        print("weaponData = ",SerializeTable(weaponData));
+        if weaponData == nil then return end
+        SetGameObjectState("Sub_MemberAssignment/Sub_Top/lb_Member", false, m_PanelObject);
+        SetGameObjectState(m_TeamMemberDataPath, false, m_PanelObject);
+        m_WeaponList:RemoveAll();
+        for i,v in pairs(weaponData) do 
+            m_WeaponList:AddData(v);
+        end
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 队伍列表显示
+function OnTeamListInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    SetLabelContent("lb_Num", index, go);
+    SetLabelContent("lb_Num/lb_Text",GetTextToId(data.textID), go);
+    SetLabelContent("lb_Captain", data.wang, go);
+    SetLabelContent("lb_Member", data.teamPersonNum, go);
+--    SetGameObjectState("btn_Captain", data.teamPersonNum > 0, go); -- 暂时隐藏队长设置
+end
+
+-- 队伍列表点击
+function OnTeamListClick(listView, cell, go)
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    if go.name == "btn_Member" then
+        setFlag = 0;
+        currentTeamID = index;
+        GuildProtocol.RequestSetMember(index);
+        SetGameObjectState("Sub_MemberAssignment/Sub_SignUp", true, m_PanelObject);
+--        SetGameObjectState(m_BtnChooseAllPath, true, m_PanelObject);
+        SetLabelContent(m_BtnSetPath.."/Label", GetTextToId(1377), m_PanelObject);
+        SetSortType();
+    elseif go.name == "btn_Captain" then
+        setFlag = 1;
+        currentTeamID = index;
+        GuildProtocol.RequestSetCaptain(index);
+        SetGameObjectState("Sub_MemberAssignment/Sub_SignUp", true, m_PanelObject);
+        SetLabelContent(m_BtnSetPath.."/Label", GetTextToId(1388), m_PanelObject);
+--        SetGameObjectState(m_BtnChooseAllPath, false, m_PanelObject);
+        SetSortType();
+    end
+end
+
+-- 关闭报名人员界面
+function OnBtnBgClick(gameObject)
+--    SetGameObjectState("Sub_MemberAssignment/Sub_SignUp", true, m_PanelObject);
+end
+
+-- 报名人员列表显示
+function OnMemberListInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    SetLabelContent("sp_Level/lb_Level", data.level, go);
+    SetLabelContent("lb_Name", data.name, go);
+    SetLabelContent("lb_FightValueData", data.fight, go);
+    
+    SetSpriteProfessionV04("sp_Profession", data.profession, go);
+    if setFlag == 0 then
+        SetGameObjectState("sp_SelectBg/sp_Select", data.isTeam == 1, go);
+        local currentObj = child(go, "sp_SelectBg/sp_Select").gameObject;
+        CCommonTool.SetGameObjectGrey(currentObj, data.isFull == 1);
+        SetGameObjectState("sp_Team", false, go);
+    elseif setFlag == 1 then
+        SetGameObjectState("sp_SelectBg/sp_Select", data.isCaptain == 1, go);
+        if data.isCaptain == 1 then
+            currentCaptain = 1;
+        else
+            currentCaptain = 0;
+        end
+        SetGameObjectState("sp_Team", false, go);
+    elseif setFlag == 2 then 
+        -- isTeam 属性用于显示是否被选中，isHaveWeapon属性才是定义是否真正用于战具
+        SetGameObjectState("sp_SelectBg/sp_Select", data.isTeam == 1, go);
+        SetGameObjectState("sp_Team", data.isHaveWeapon == 1, go);
+    end
+    SetGameObjectState("sp_Captain", data.isCaptain == 1, go);
+end
+
+-- 报名人员列表点击
+function OnMemberListClick(listView, cell, go)
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    local data = listView:GetData(cell.dataIndex);
+    if setFlag == 0 then
+        if go.name == "sp_SelectBg" then
+             if IsObjectActive(go, "sp_Select") then
+                SetGameObjectState("sp_Select", false, go);
+                currentNum = currentNum - 1;
+                for i,v in pairs(canDealInTeam) do
+                    if v.playerGID == data.playerGID then
+                        canDealInTeam[i].isTeam = 0;
+                        table.insert(canDealNotInTeam, canDealInTeam[i]);
+                        table.remove(canDealInTeam, i);
+                        break;
+                    end
+                end
+                -- 非满员时设置 正常状态
+                if setFlag == 0 then 
+                    if currentNum == 19 then
+                        for i,v in pairs(canDealInTeam) do 
+                            v.isFull = 0;
+                        end
+                        for i,v in pairs(canDealNotInTeam) do 
+                            v.isFull = 0;
+                        end
+                        -- 刷新列表
+                        RefreshTeamMember();
+                    end
+                end
+            else
+                if currentNum < 20 then
+                    SetGameObjectState("sp_Select", true, go);
+                    currentNum = currentNum + 1;
+                    for i,v in pairs(canDealNotInTeam) do
+                        if v.playerGID == data.playerGID then
+                            canDealNotInTeam[i].isTeam = 1;
+                            table.insert(canDealInTeam, canDealNotInTeam[i]);
+                            table.remove(canDealNotInTeam, i);
+                            break;
+                        end
+                    end
+                    -- 满员时设置 置灰状态
+                    if setFlag == 0 then 
+                        if currentNum == 20 then
+                            for i,v in pairs(canDealInTeam) do 
+                                v.isFull = 1;
+                            end
+                            for i,v in pairs(canDealNotInTeam) do 
+                                v.isFull = 0;
+                            end
+                            -- 刷新列表
+                            RefreshTeamMember();
+                        end
+                    end
+                else
+                    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_TEAM_FULL);
+                end
+            end
+        end
+    elseif setFlag == 1 then
+        if go.name == "sp_SelectBg" then
+             if IsObjectActive(go, "sp_Select") then
+                SetGameObjectState("sp_Select", false, go);
+                currentCaptain = 0;
+            else
+                if currentCaptain == 0 then
+                    SetGameObjectState("sp_Select", true, go);
+                    currentCaptain = 1;
+                else
+                    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_TEAM_ONE);
+                end
+            end
+        end
+    elseif setFlag == 2 then
+        if go.name == "sp_SelectBg" then
+             if IsObjectActive(go, "sp_Select") then
+                SetGameObjectState("sp_Select", false, go);
+--                currentCaptain = 0;
+                for i,v in pairs(canDealInTeam) do
+                    if v.playerGID == data.playerGID then
+                        canDealInTeam[i].isTeam = 0;
+                        table.insert(canDealNotInTeam, canDealInTeam[i]);
+                        table.remove(canDealInTeam, i);
+                        break;
+                    end
+                end
+            else
+                SetGameObjectState("sp_Select", true, go);
+                for i,v in pairs(canDealNotInTeam) do
+                    if v.playerGID == data.playerGID then
+                        canDealNotInTeam[i].isTeam = 1;
+                        table.insert(canDealInTeam, canDealNotInTeam[i]);
+                        table.remove(canDealNotInTeam, i);
+                        break;
+                    end
+                end
+            end
+        end
+    end 
+end
+
+-- 战具分配列表显示
+function OnWeaponListInit(listView, cell, data)
+    local go = cell.gameObject;
+    local weaponData = CCommonTool.GetActivityWarWeaponInfoIndex(data.weaponID);
+    SetLabelContent("lb_NUmberData", data.weaponOwnNum, go);
+    SetLabelContent("lb_OwnerData", data.weaponDriverName, go);
+    if weaponData then 
+        SetLabelTextByID("lb_Name", weaponData.NameID, go);
+        SetLabelTextByID("lb_Content", weaponData.TextID, go);
+        SetSpriteByAtlasID("sp_Icon", weaponData.IconID, go);
+    end
+end
+
+-- 战具分配列表点击
+function OnWeaponListClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    if go.name == "btn_Member" then
+        setFlag = 2;
+        GuildProtocol.RequestMemeberData(data.weaponID);
+        SetGameObjectState("Sub_MemberAssignment/Sub_SignUp", true, m_PanelObject);
+--        SetGameObjectState(m_BtnChooseAllPath, false, m_PanelObject);
+        m_curChooseWeapon = data.weaponID;
+    end
+end
+-- 设置队员按钮点击
+function OnBtnSetClick(gameObject)
+    if setFlag == 0 then
+        print("当前设置队员信息表 canDealInTeam = ", SerializeTable(canDealInTeam));
+        GuildProtocol.RequestSetTeamMember(canDealInTeam, currentTeamID);
+
+        -- 更新队伍列表信息
+        local teamInfo = GuildManager.guildAuctionInfo.teamInfo;
+        if teamInfo == nil then return end
+        teamInfo[currentTeamID].teamPersonNum = #canDealInTeam;
+        m_TeamList:RemoveAll();
+        for i,v in pairs(teamInfo) do 
+            v.textID = m_TeamTable[i].textID;
+            m_TeamList:AddData(v);
+        end
+    elseif setFlag == 1 then
+        GuildProtocol.RequestSetTeamCaptain(canDealInTeam, currentTeamID);
+    elseif setFlag == 2 then
+        GuildProtocol.RequestAssignmentWeapon(m_curChooseWeapon, canDealInTeam);
+    end
+    inTeam = Copy(canDealInTeam);
+    notInTeam = Copy(canDealNotInTeam);
+    SetGameObjectState("Sub_MemberAssignment/Sub_SignUp", false, m_PanelObject);
+end
+
+-- 全部选中
+function OnBtnChooseAllClick(gameObject)
+    
+end
+
+-- 关闭报名人员界面
+function OnBtnCloseClick(gameObject)
+    SetGameObjectState("Sub_MemberAssignment/Sub_SignUp", false, m_PanelObject);
+end
+
+-- 战具页签点击
+function OnTglWeaponClick(gameObject)
+    if tagFlag == 0 then return end
+    tagFlag = 0;
+    SetTag();
+    InitShow();
+end
+-- 队伍页签点击
+function OnTglWarTeamClick(gameObject)
+    if tagFlag == 1 then return end
+    tagFlag = 1;
+    SetTag();
+    InitShow();
+end
+-- 战具左侧页签1点击
+function OnLeftWeaponTag1Click(gameObject)
+    if leftWeaponTag == 1 then return end
+    leftWeaponTag = 1;
+    SetLeftTag();
+    GuildWarWeaponAssignmentPanel.RefreshShow(leftWeaponTag);
+end
+-- 战具左侧页签2点击
+function OnLeftWeaponTag2Click(gameObject)
+    if leftWeaponTag == 2 then return end
+    leftWeaponTag = 2;
+    SetLeftTag();
+    GuildWarWeaponAssignmentPanel.RefreshShow(leftWeaponTag);
+end
+-- 队伍左侧页签1点击
+function OnLeftTeamTag1Click(gameObject)
+    if leftTeamTag == 1 then return end
+    leftTeamTag = 1;
+    SetLeftTag();
+    GuildProtocol.RequestTeamInfo();
+end
+-- 队伍左侧页签2点击
+function OnLeftTeamTag2Click(gameObject)
+    if leftTeamTag == 2 then return end
+    leftTeamTag = 2;
+    SetLeftTag();
+    GuildProtocol.RequestWeapon();
+end
+
+-- 战力排序
+function OnBtnSortByAbilityClick(gameObject)    
+    error("do  战力排序");
+    if sortType == 0 then return end;
+    sortType = 0;
+    SetSortType();
+
+    SortByFight();
+    RefreshMemberList(canDealInTeam, canDealNotInTeam);
+end
+
+-- 职业排序
+function OnBtnSortByProfessionClick(gameObject)
+    error("do  职业排序");
+    if sortType == 1 then return end;
+    sortType = 1;
+    SetSortType();
+
+    SortByProfession();
+    RefreshMemberList(canDealInTeam, canDealNotInTeam);
+end
+
+-- 职位排序
+function OnBtnSortByPositionnClick(gameObject)
+    error("do  职位排序");
+    if sortType == 2 then return end;
+    sortType = 2;
+    SetSortType();
+
+    SortByRolePos();
+    RefreshMemberList(canDealInTeam, canDealNotInTeam);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 更新大页签
+function SetTag()
+    SetGameObjectState(m_TglWeaponPath .."/Active", tagFlag == 0, m_PanelObject);
+    SetGameObjectState("Sub_WeaponAssignment", tagFlag == 0, m_PanelObject);
+    SetGameObjectState(m_TglWarTeamPath .."/Active", tagFlag == 1, m_PanelObject);
+    SetGameObjectState("Sub_MemberAssignment", tagFlag == 1, m_PanelObject);
+end
+
+-- 更新左侧小页签
+function SetLeftTag()
+    if tagFlag == 0 then 
+        SetGameObjectState(m_LeftWeaponTagPath .."/Tag1/Active", leftWeaponTag == 1, m_PanelObject);
+        SetGameObjectState(m_LeftWeaponTagPath .."/Tag2/Active", leftWeaponTag == 2, m_PanelObject);
+    else
+        SetGameObjectState(m_LeftTeamTagPath .."/Tag1/Active", leftTeamTag == 1, m_PanelObject);
+        SetGameObjectState("Sub_MemberAssignment/Sub_MemberList", leftTeamTag == 1, m_PanelObject);
+        SetGameObjectState(m_LeftTeamTagPath .."/Tag2/Active", leftTeamTag == 2, m_PanelObject);
+        SetGameObjectState("Sub_MemberAssignment/Sub_WeaponList", leftTeamTag == 2, m_PanelObject);
+    end
+end
+
+-- 关闭界面
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+end
+-- 更新倒计时
+function RefreshTime(timeText)
+    SetLabelContent(m_TimeDataPath, timeText, m_PanelObject);
+end
+
+-- 更新报名人员列表信息
+function RefreshMemberList(dataIn, dataNot, num)
+    if dataIn == nil then return end
+    if dataNot == nil then return end
+    if setFlag == 2 then 
+        SetGameObjectState(m_LbMemberDataPath, false, m_PanelObject);
+        SetGameObjectState(m_LbMemberPath, false, m_PanelObject);
+    else
+        SetGameObjectState(m_LbMemberDataPath, true, m_PanelObject);
+        SetGameObjectState(m_LbMemberPath, true, m_PanelObject);
+    end
+    if num ~= nil then
+        SetLabelContent(m_LbMemberDataPath, num.."/20", m_PanelObject);
+    end
+
+    currentNum = #dataIn;
+    -- 设置当前队伍的选中队员是否满员用于显示选中状态，0：正常，1：置灰
+    if setFlag == 0 then
+        if currentNum == 20 then
+            for i,v in pairs(dataIn) do 
+                v.isFull = 1;
+            end
+        else
+            for i,v in pairs(dataIn) do 
+                v.isFull = 0;
+            end 
+        end
+        for i,v in pairs(dataNot) do 
+            v.isFull = 0;
+            local variable = type(v);
+        end 
+    end
+
+    canDealInTeam = dataIn;
+    canDealNotInTeam = dataNot;
+    inTeam = Copy(dataIn);
+    notInTeam = Copy(dataNot);
+
+    if sortType == 0 then
+        SortByFight();
+    elseif sortType == 1 then
+        SortByProfession();
+    elseif sortType == 2 then
+        SortByRolePos();
+    end
+
+    RefreshTeamMember();
+end
+
+-- 更新排序方式显示
+function SetSortType()
+    SetGameObjectState(m_BtnSortByAbilityPath.."/sp_Select", sortType == 0, m_PanelObject);
+    SetGameObjectState(m_BtnSortByProfessionPath.."/sp_Select", sortType == 1, m_PanelObject);
+    SetGameObjectState(m_BtnSortByPosition.."/sp_Select", sortType == 2, m_PanelObject);
+end
+
+-- 复制数据
+function Copy(tableOri)
+    if (type(tableOri) ~= "table") then
+        return nil;
+    end
+    local new_tab = {}
+    for i,v in pairs(tableOri) do
+        local vtyp = type(v);
+        if (vtyp == "table") then
+            new_tab[i] = Copy(v);
+        else
+            new_tab[i] = v;
+        end
+    end
+    return new_tab;
+end
+
+-- 战力排序
+function SortByFight()
+    table.sort(canDealInTeam, function(a,b) return a.fight > b.fight end);
+    table.sort(canDealNotInTeam, function(a,b) return a.fight > b.fight end);
+end
+
+-- 职业排序
+function SortByProfession()
+    print("canDealInTeam = ",SerializeTable(canDealInTeam));
+    print("canDealNotInTeam = ",SerializeTable(canDealNotInTeam));
+    table.sort(canDealInTeam, function(a,b) 
+        if a.profession == b.profession then
+            return a.fight > b.fight;
+        end
+        return a.profession < b.profession end);
+
+    table.sort(canDealNotInTeam, function(a,b)
+        if a.profession == b.profession then
+            return a.fight > b.fight;
+        end
+        return a.profession < b.profession end);
+end
+
+-- 职位排序
+function SortByRolePos()
+    print("canDealInTeam = ",SerializeTable(canDealInTeam));
+    print("canDealNotInTeam = ",SerializeTable(canDealNotInTeam));
+    table.sort(canDealInTeam, function(a,b)
+        if a.rolePost == b.rolePost then
+            return a.fight > b.fight;
+        end
+        return a.rolePost < b.rolePost end)
+
+    table.sort(canDealNotInTeam, function(a,b) 
+        if a.rolePost == b.rolePost then
+            return a.fight > b.fight;
+        end
+        return a.rolePost < b.rolePost end)
+end
+
+-- 刷新人物列表
+function RefreshTeamMember()
+    m_MemberList:RemoveAll();   
+    if setFlag == 0 then
+        for i,v in pairs(canDealInTeam) do 
+            m_MemberList:AddData(v);
+        end
+        for i,v in pairs(canDealNotInTeam) do 
+            m_MemberList:AddData(v);
+        end
+    elseif setFlag == 1 then
+        for i,v in pairs(canDealInTeam) do 
+            m_MemberList:AddData(v);
+        end
+    elseif setFlag == 2 then 
+        for i,v in pairs(canDealInTeam) do 
+            m_MemberList:AddData(v);
+        end
+        for i,v in pairs(canDealNotInTeam) do 
+            m_MemberList:AddData(v);
+        end
+    end
+end
+

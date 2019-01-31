@@ -1,0 +1,150 @@
+﻿module("MessageTextBoxPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 右侧按钮显示的按钮内容
+local m_RightButtonLabelStr = "Button-QueDing/Label";
+-- 左侧按钮显示的按钮内容
+local m_LeftButtonLabelStr = "Button-FanHui/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 标题文本所在的位置
+local m_titleLbel = "Label-Title";
+-- 内容文本所在的位置
+local m_titleLbe2 = "Label-Content";
+-- 左侧按钮位置
+local m_LeftButtonStr = "Button-FanHui";
+-- 右侧按钮位置
+local m_RightButtonStr = "Button-QueDing";
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+--当前面板的对象
+local m_strPanelObject=nil;
+--初始化失败默认情况
+local m_bCreateSuccess=nil;
+-- 提示文字
+local m_msgtitle1 = "";
+local m_msgtitle2 = "";
+-- 确定按钮文本
+local m_queDingStr = "";
+local m_fanHuiStr = "";
+-- 按钮显示数量
+local m_EventNum=nil;
+-- 确定方法回调
+local m_callBack = nil;
+-- 取消方法回调
+local m_cancelCallBack = nil;
+-- 关闭界面方法回调
+local m_closePanelCallBack = nil;
+-- 是否显示标题
+local m_ShowTittle = nil;
+-- 是否响应关闭按键
+local m_SetCloseEvent = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitObjects();
+    InitOnClick();
+    InitAllInfo();
+    m_bCreateSuccess=true;
+end
+--系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    
+end
+
+function OnDisable()
+    if m_closePanelCallBack ~= nil then
+        m_closePanelCallBack();
+    end
+end
+
+function OnDestroy()
+    m_strPanelObject = nil;
+    m_bCreateSuccess = false;
+end
+
+function functionParameter( paraTable )
+    m_msgtitle1 = paraTable[1];
+    m_msgtitle2 = paraTable[2];
+    m_callBack = paraTable[3];
+    m_queDingStr = paraTable[4];
+    m_cancelCallBack = paraTable[5];
+    m_fanHuiStr = paraTable[6];
+    m_ShowTittle = paraTable[7];
+    m_EventNum = paraTable[8];
+    m_closePanelCallBack = paraTable[9];
+    m_SetCloseEvent = paraTable[10];
+    if m_bCreateSuccess then
+       InitAllInfo();
+    end
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化界面内容
+ function InitAllInfo()
+    InitContent();
+end
+
+--初始化玩家自身信息
+function InitObjects()
+    --面板对象
+    m_strPanelObject =FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+ --初始化物品点击事件点击事件信息
+function InitOnClick( )
+    SetGameObjectEvent(m_LeftButtonStr,OnLeftButtonClick,m_strPanelObject,nil);
+    SetGameObjectEvent(m_RightButtonStr,OnRightButtonClick,m_strPanelObject,nil);
+end
+
+function InitContent()
+    SetLabelContent(m_titleLbel,m_msgtitle1,m_strPanelObject);
+    SetLabelContent(m_titleLbe2,m_msgtitle2,m_strPanelObject);
+    SetLabelContent(m_RightButtonLabelStr,m_queDingStr,m_strPanelObject);
+    SetLabelContent(m_LeftButtonLabelStr,m_fanHuiStr,m_strPanelObject);
+    if m_ShowTittle == nil or m_ShowTittle == false then
+        SetGameObjectState(m_titleLbel,false,m_strPanelObject);
+    elseif m_ShowTittle then
+        SetGameObjectState(m_titleLbel,true,m_strPanelObject);
+    end
+    if m_EventNum == nil or m_EventNum == 2 then
+        SetGameObjectPos(m_RightButtonStr,Vector3.New(221,-232,0),m_strPanelObject);
+        SetGameObjectState(m_LeftButtonStr,true,m_strPanelObject);
+    else
+        SetGameObjectPos(m_RightButtonStr,Vector3.New(0,-232,0),m_strPanelObject);
+        SetGameObjectState(m_LeftButtonStr,false,m_strPanelObject);
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 右边按钮
+function OnRightButtonClick()
+    if m_callBack ~= nil then
+        m_callBack();
+    else
+        error("callback func is nil");
+    end
+end
+
+-- 左边按钮
+function OnLeftButtonClick()
+    if m_cancelCallBack ~= nil then
+        m_cancelCallBack();
+    else
+        error("callback func is nil");
+    end
+end
+
+function OnCloseClick()
+    if m_SetCloseEvent then
+        closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 外部更新按钮文本(刷新按钮倒计时)
+function UpdateButtonText(cancelText, okText)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX) == 1 then
+        SetLabelContent(m_LeftButtonLabelStr,cancelText,m_strPanelObject);
+        SetLabelContent(m_RightButtonLabelStr,okText,m_strPanelObject);
+    end
+end

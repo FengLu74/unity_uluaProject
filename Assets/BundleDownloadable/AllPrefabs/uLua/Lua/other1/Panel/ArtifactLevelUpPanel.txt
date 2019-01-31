@@ -1,0 +1,400 @@
+﻿module("ArtifactLevelUpPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 不足条件文本
+local m_CannotOperateLabelStr = "Right/NotMaxLevel/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 进阶按钮
+local m_ButtonLevelUpStr = "Right/NotMaxLevel/Button_LevelUp";
+-----------------------------------------Sprite路径------------------------------------
+-- 当前神器图标
+local m_CurArtifactIconStr = "Right/CurArtifact/Sprite_Icon";
+-- 神器品质框1
+local m_CurArtifactQuality1Str  = "Right/CurArtifact/Sprite_Apptitude";
+-- 神器品质框2
+local m_CurArtifactQuality2Str  = "Right/CurArtifact/Sprite_Apptitude2";
+----------------------------------gameobject所在的路径---------------------------------
+-- 需要道具1
+local m_NeedItem1Str = "Right/NeedItem1";
+-- 需要道具2
+local m_NeedItem2Str = "Right/NeedItem2";
+
+-- 达到最大等级
+local m_LevelChangeMaxLevelStr = "Right/LevelChange/MaxLevel";
+-- 未达最大等级
+local m_LevelChangeNotMaxLevelStr = "Right/LevelChange/NotMaxLevel";
+
+-- 当前技能
+local m_CurSkillStr = "Right/Skill/CurSkill";
+-- 下一技能
+local m_NextSkillStr = "Right/Skill/NextSkill";
+
+-- 最大级
+local m_MaxLevelStr = "Right/MaxLevel";
+-- 未达最大级
+local m_NotMaxLevelStr = "Right/NotMaxLevel";
+
+-- 神器图片所在的位置
+local m_middleArtifactTextureStr = "TexturePanel/Artifact_Texture";
+-- 中间背景特效所在的位置
+local m_middleBGEffectStr = "Effect_BG";
+
+-- 成功特效所在的位置
+local m_SuccessEffectStr = "Right/Effects/Effect_Success";
+-- 失败特效所在的位置
+local m_FailEffectStr = "Right/Effects/Effect_Fail";
+-- 激活特效所在的位置
+local m_ActiveEffectStr = "Right/Effects/Effect_Active";
+----------------------------------通用的名称路径---------------------------------------
+-- 图标位置
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具数量
+local m_ItemValueStr = "/Label_Value";
+-- 当前神器等级
+local m_CurArtifactLevelStr = "/Label_CurLevel";
+-- 下一神器等级
+local m_NextArtifactLevelStr = "/Label_NextLevel";
+-- 购买加号
+local m_AddSpriteStr = "/Sprite_Add"; 
+
+-- 技能名称
+local m_SkillNameStr = "/Label_Name";
+-- 技能等级
+local m_SkillLevelStr = "/Label_Level";
+-- 技能描述
+local m_SkillDesStr = "/Label_Des";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 当前选中的神器ID
+local m_curArtifactID = 0;
+-- 是否够材料
+local m_isEnoughItem = false;
+-- 神器图片所在的位置
+local m_middleArtifactTextureComp = nil;
+-- 当前显示的神器加载的路径位置
+local m_middleArtifactLoadStr = "";
+-- 是否可强化
+local m_operateState = 0;
+-- 参数
+local m_operateParam = {};
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 中间背景特效updatecolor脚本所在位置
+local m_middleUpdateColorComp = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够的颜色
+local m_EnoughColor = "DDEEFF";
+-- 不够的颜色
+local m_NotEnoughColor = "D83232";
+
+-- 强化的状态
+local OPERATESTATE = 
+{
+    LACK_LEVEL = 0,
+    LACK_FRAGLEVEL = 1,
+    LACK_ITEM = 2,
+    CAN = 3,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    UnloadTexture();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL);
+    m_middleArtifactTextureComp = GetComponent(m_panelObject,m_middleArtifactTextureStr,"UITexture");
+    m_middleUpdateColorComp = GetComponent(m_panelObject,m_middleBGEffectStr,"CParticleUpdateColor");
+end
+
+function InitEvents()
+    
+end
+
+function InitData()
+    if m_isJumpPanelSave then
+        m_curArtifactID = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    end
+    child(m_panelObject,m_SuccessEffectStr).gameObject:SetActive(false);
+    child(m_panelObject,m_FailEffectStr).gameObject:SetActive(false);
+    child(m_panelObject,m_ActiveEffectStr).gameObject:SetActive(false);
+end
+
+function InitShow()
+    InitLeftContent();
+    InitRightContent();
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_ButtonLevelUpStr,OnLevelUpClick,m_panelObject);
+end
+
+function InitLeftContent()
+    UnloadTexture();
+    local artifactData = CCommonTool.GetArtifactInfo(m_curArtifactID);
+    m_middleArtifactLoadStr = artifactData.ArtifactUIStr..".png";
+    G_ResourceMng:LoadAssetByLua(m_middleArtifactLoadStr,UnityEngine.Texture.GetClassType(),"ArtifactLevelUpPanel.LoadArtifactPicFinish");
+    m_middleUpdateColorComp.m_CurrentIndex = artifactData.QualityID - 1;
+    m_middleUpdateColorComp.gameObject:SetActive(false);
+    m_middleUpdateColorComp.gameObject:SetActive(true);
+    SetUIEffect(m_panelObject, m_middleArtifactTextureStr, artifactData.EffectID, 20, nil, nil, ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL);
+end
+
+function InitRightContent()
+    local artifactData = CCommonTool.GetArtifactInfo(m_curArtifactID);
+    local artifactLevel = ArtifactManager.ArtifactData[m_curArtifactID];
+    if artifactData == nil then
+        return;
+    end
+    local artifactLevelUpData = nil;
+    if artifactLevel < artifactData.MaxLevel then
+        artifactLevelUpData = CCommonTool.GetArtifactLevelUpInfo(artifactLevel*10 + artifactData.QualityID);
+        if artifactLevelUpData == nil then
+            return;
+        end
+    end
+    SetSpriteByAtlasID(m_CurArtifactIconStr,artifactData.IconID,m_panelObject);
+    SetSpriteApptitudeV04(m_CurArtifactQuality1Str,artifactData.QualityID,m_panelObject);
+    SetSpriteApptitude2V04(m_CurArtifactQuality2Str,artifactData.QualityID,m_panelObject);
+    local needItem1ID,needItem1Num,curItem1Num,needItem2ID,needItem2Num,curItem2Num = 0,0,0,0,0,0;
+    if artifactLevelUpData ~= nil then
+        needItem1ID = artifactLevelUpData.Item1ID;
+        needItem1Num = math.ceil(artifactLevelUpData.Item1Num * artifactData.DifficultyLevel);
+        needItem2ID = artifactLevelUpData.Item2ID;
+        needItem2Num = math.ceil(artifactLevelUpData.Item2Num * artifactData.DifficultyLevel);
+    end
+    if needItem1ID > 0 and needItem1Num > 0 then
+        --SetItemToolTipsEvent(m_panelObject, m_NeedItem1Str, ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL, false, needItem1ID);
+        UIEventListener.Get(child(m_panelObject,m_NeedItem1Str).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, {needItem1ID});
+        curItem1Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItem1ID);
+        SetGameObjectState(m_NeedItem1Str,true,m_panelObject);
+        SetSpriteByAtlasID(m_NeedItem1Str..m_ItemIconStr,CCommonTool.GetImageIDByExcelID(needItem1ID),m_panelObject);
+        SetLabelContent(m_NeedItem1Str..m_ItemValueStr,curItem1Num.."/"..needItem1Num,m_panelObject);
+        SetLabelColor(m_NeedItem1Str..m_ItemValueStr,curItem1Num - needItem1Num >= 0 and m_EnoughColor or m_NotEnoughColor,m_panelObject);
+        if curItem1Num - needItem1Num >= 0 then
+            SetGameObjectState(m_NeedItem1Str..m_AddSpriteStr, false,m_panelObject);
+        else
+            SetGameObjectState(m_NeedItem1Str..m_AddSpriteStr, true,m_panelObject);
+        end
+    else
+        SetGameObjectState(m_NeedItem1Str,false,m_panelObject);
+    end
+    if needItem2ID > 0 and needItem2Num > 0 then
+        --SetItemToolTipsEvent(m_panelObject, m_NeedItem2Str, ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL, false, needItem2ID);
+        UIEventListener.Get(child(m_panelObject,m_NeedItem2Str).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, {needItem2ID});
+        curItem2Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItem2ID);
+        SetGameObjectState(m_NeedItem2Str,true,m_panelObject);
+        SetSpriteByAtlasID(m_NeedItem2Str..m_ItemIconStr,CCommonTool.GetImageIDByExcelID(needItem2ID),m_panelObject);
+        SetLabelContent(m_NeedItem2Str..m_ItemValueStr,curItem2Num.."/"..needItem2Num,m_panelObject);
+        SetLabelColor(m_NeedItem2Str..m_ItemValueStr,curItem2Num - needItem2Num >= 0 and m_EnoughColor or m_NotEnoughColor,m_panelObject);
+        if curItem2Num - needItem2Num >= 0 then
+            SetGameObjectState(m_NeedItem2Str..m_AddSpriteStr, false,m_panelObject);
+        else
+            SetGameObjectState(m_NeedItem2Str..m_AddSpriteStr, true,m_panelObject);
+        end
+    else
+        SetGameObjectState(m_NeedItem2Str,false,m_panelObject);
+    end
+    m_isEnoughItem = false;
+    if curItem1Num >= needItem1Num and curItem2Num >= needItem2Num then
+        m_isEnoughItem = true;
+    end
+    if artifactLevel >= artifactData.MaxLevel then
+        SetGameObjectState(m_LevelChangeMaxLevelStr,true,m_panelObject);
+        SetGameObjectState(m_LevelChangeNotMaxLevelStr,false,m_panelObject);
+        SetLabelContent(m_LevelChangeMaxLevelStr .. m_CurArtifactLevelStr,"+"..artifactLevel,m_panelObject);
+    else
+        SetGameObjectState(m_LevelChangeMaxLevelStr,false,m_panelObject);
+        SetGameObjectState(m_LevelChangeNotMaxLevelStr,true,m_panelObject);
+        SetLabelContent(m_LevelChangeNotMaxLevelStr .. m_CurArtifactLevelStr,"+"..artifactLevel,m_panelObject);
+        SetLabelContent(m_LevelChangeNotMaxLevelStr .. m_NextArtifactLevelStr,"+"..(artifactLevel + 1),m_panelObject);
+    end
+    SetLabelTextByID(m_CurSkillStr..m_SkillNameStr,artifactData.SkillNameID,m_panelObject);
+    SetLabelContent(m_CurSkillStr..m_SkillLevelStr,string_format(CCommonTool.GetTxtData(939).m_str,artifactLevel),m_panelObject);
+    local paramTable = {artifactLevel*artifactData.Attr1AddValue,artifactLevel*artifactData.Attr2AddValue,artifactLevel*artifactData.Attr3AddValue};
+    paramTable[1] = GetAttrIndexValue(artifactData.Attr1ID, paramTable[1]);
+    paramTable[2] = GetAttrIndexValue(artifactData.Attr2ID, paramTable[2]);
+    paramTable[3] = GetAttrIndexValue(artifactData.Attr3ID, paramTable[3]);
+    SetLabelContent(m_CurSkillStr..m_SkillDesStr,string_format(CCommonTool.GetTxtData(artifactData.SkillDesID).m_str,paramTable[1],paramTable[2],paramTable[3]),m_panelObject);
+    if artifactLevel >= artifactData.MaxLevel then
+        SetGameObjectState(m_NextSkillStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_NextSkillStr,true,m_panelObject);
+        local nextLevel = artifactLevel + 1;
+        SetLabelTextByID(m_NextSkillStr..m_SkillNameStr,artifactData.SkillNameID,m_panelObject);
+        SetLabelContent(m_NextSkillStr..m_SkillLevelStr,string_format(CCommonTool.GetTxtData(939).m_str,nextLevel),m_panelObject);
+        paramTable = {nextLevel*artifactData.Attr1AddValue,nextLevel*artifactData.Attr2AddValue,nextLevel*artifactData.Attr3AddValue};
+        paramTable[1] = GetAttrIndexValue(artifactData.Attr1ID, paramTable[1]);
+        paramTable[2] = GetAttrIndexValue(artifactData.Attr2ID, paramTable[2]);
+        paramTable[3] = GetAttrIndexValue(artifactData.Attr3ID, paramTable[3]);
+        SetLabelContent(m_NextSkillStr..m_SkillDesStr,string_format(CCommonTool.GetTxtData(artifactData.SkillDesID).m_str,paramTable[1],paramTable[2],paramTable[3]),m_panelObject);
+    end
+    m_operateState = OPERATESTATE.LACK_LEVEL;
+    m_operateParam = {};
+    if artifactLevel >= artifactData.MaxLevel then
+        SetGameObjectState(m_MaxLevelStr,true,m_panelObject);
+        SetGameObjectState(m_NotMaxLevelStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_MaxLevelStr,false,m_panelObject);
+        SetGameObjectState(m_NotMaxLevelStr,true,m_panelObject);
+        if artifactLevelUpData.NeedPlayerLevel > G_UserInfo.RoleAttribute.Level then
+            m_operateState = OPERATESTATE.LACK_LEVEL;
+            m_operateParam[1] = artifactLevelUpData.NeedPlayerLevel;
+        else
+            local fragNeedLevel = artifactLevelUpData.NeedFragmentLevel;
+            local allFragReachLevel = true;
+            local fragID = 0;
+            for Index = 1,6 do
+                fragID = CCommonTool.GetValueInArtifactInfo(m_curArtifactID,10 + Index);
+                if ArtifactManager.ArtifactFragmentData[fragID] == nil then
+                    allFragReachLevel = false;
+                    break;
+                else
+                    if ArtifactManager.ArtifactFragmentData[fragID] < fragNeedLevel then
+                        allFragReachLevel = false;
+                        break;
+                    end
+                end
+            end
+            if not allFragReachLevel then
+                m_operateState = OPERATESTATE.LACK_FRAGLEVEL;
+                m_operateParam[1] = fragNeedLevel;
+            else
+                if m_isEnoughItem then
+                    m_operateState = OPERATESTATE.CAN;
+                else
+                    m_operateState = OPERATESTATE.LACK_ITEM;
+                end
+            end
+        end
+    end
+    if m_operateState == OPERATESTATE.CAN then
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ButtonLevelUpStr).gameObject,false);
+        SetGameObjectState(m_CannotOperateLabelStr,false,m_panelObject);
+    else
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ButtonLevelUpStr).gameObject,true);
+        SetGameObjectState(m_CannotOperateLabelStr,true,m_panelObject);
+        if m_operateState == OPERATESTATE.LACK_LEVEL then
+            SetLabelContent(m_CannotOperateLabelStr,string_format(CCommonTool.GetTxtData(180155).m_str,m_operateParam[1]),m_panelObject);
+        elseif m_operateState == OPERATESTATE.LACK_FRAGLEVEL then
+            SetLabelContent(m_CannotOperateLabelStr,string_format(CCommonTool.GetTxtData(180156).m_str,m_operateParam[1]),m_panelObject);
+        else
+            SetGameObjectState(m_CannotOperateLabelStr,false,m_panelObject);
+        end
+    end
+end
+
+function UnloadTexture()
+--    if m_middleArtifactLoadStr ~= "" then
+--        G_ResourceMng:UnLoadAssetByLua(m_middleArtifactLoadStr,m_middleArtifactTextureComp.mainTexture);
+--        m_middleArtifactLoadStr = "";
+--    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL);
+end
+
+function OnLevelUpClick()
+    if m_operateState == OPERATESTATE.CAN then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ARTIFACT_OPERATE);
+        buffer:WriteByte(ARTIFACT_OPERATE_MSG.ARTIFACT_LEVELUP_ARTIFACT);
+        buffer:WriteInt(m_curArtifactID);
+        G_NetWorkMng:SendMessage(buffer);
+    else
+        if m_operateState == OPERATESTATE.LACK_LEVEL then
+            log("玩家等级不足");
+        elseif m_operateState == OPERATESTATE.LACK_FRAGLEVEL then
+            log("玩家碎片等级不足");
+        else
+            ShowSystemFlowTips(9086);
+        end
+    end
+end
+
+function OnGetWayClick(go,paramTable)
+    GetWayPanel.Show(paramTable[1], ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetData(artifactID)
+    m_curArtifactID = artifactID;
+end
+
+function LoadArtifactPicFinish(textureObj,strPath)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL) == 1 then
+        if m_middleArtifactLoadStr == strPath then
+            m_middleArtifactTextureComp.mainTexture = textureObj;
+            local artifactData = CCommonTool.GetArtifactInfo(m_curArtifactID);
+            m_middleArtifactTextureComp.width = artifactData.UIWidth;
+            m_middleArtifactTextureComp.height = artifactData.UIHeight;
+        else
+            G_ResourceMng:UnLoadAssetByLua(strPath,textureObj);
+        end
+    else
+        G_ResourceMng:UnLoadAssetByLua(strPath,textureObj);
+    end
+end
+
+function Refresh(isActive,bSuccess)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL) == 1 then
+        InitRightContent();
+        if isActive ~= nil then
+            if isActive then
+                child(m_panelObject,m_ActiveEffectStr).gameObject:SetActive(false);
+                child(m_panelObject,m_ActiveEffectStr).gameObject:SetActive(true);
+            end
+            if bSuccess ~= nil then
+                if bSuccess == 1 then
+                    child(m_panelObject,m_SuccessEffectStr).gameObject:SetActive(false);
+                    child(m_panelObject,m_SuccessEffectStr).gameObject:SetActive(true);
+                else
+                    child(m_panelObject,m_FailEffectStr).gameObject:SetActive(false);
+                    child(m_panelObject,m_FailEffectStr).gameObject:SetActive(true);
+                end
+            end
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_curArtifactID;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

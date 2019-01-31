@@ -1,0 +1,307 @@
+﻿module("RecommondUseItemPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+-- 显示的装备按钮的对象
+local m_UseButton = "BG/Button_Use";
+--关闭按钮
+local m_CloseButton = "BG/Button_Close";
+----------------------------------通用的名称路径---------------------------------------
+-- 下面显示的道具对象
+local m_ItemStr = "BG/Item";
+-- 道具精炼星数
+local m_itemStartNum = "/Label-StarNum/Label";
+local m_itemStartUp = "/Label-StarNum";
+-- 道具是否属于套装
+local m_itemsuit = "/Sprite_Suit";
+-----------------------------------引用的对象------------------------------------------
+-- 当前游戏对象创建成功
+local m_bCreateSuccess = false;
+-- 当前装备的信息
+local m_ItemInfo = nil;
+-- 当前面板的对象
+local m_strPanelObject = nil;
+-- 计时器事件定时关闭面板
+local ClosePanelTimerEvent = nil;
+-- 当前需要排队显示道具的队列
+local m_waitShowItemTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+--------------------------------BaseLua调用的同名方法----------------------------------
+-- 系统函数,对象创建成功后执行,面板中激活对象的方法必须放在这里面
+function Start()
+    InitObj();
+    InitOnClick();
+    InitAllInfo();
+    m_bCreateSuccess = true;
+end
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_bCreateSuccess then
+        InitAllInfo();
+    end
+end
+-- 隐藏时处理的逻辑
+function OnDisable()
+    m_waitShowItemTable = { };
+    G_TimerMng:RemoveTimeTask("RecommondUseItemPanelCloseEvent");
+end
+-- 面板删除逻辑
+function OnDestroy()
+    m_ItemInfo = nil;
+    m_waitShowItemTable = { };
+    m_strPanelObject = nil;
+    m_bCreateSuccess = false;
+end
+---------------------------------------本lua文件自调用方法---------------------------------------------
+-- 初始化对象
+function InitObj()
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_UseButton, OnButtonUseClick, m_strPanelObject, nil);
+    SetGameObjectEvent(m_CloseButton, OnButtonCloseClick, m_strPanelObject, nil);
+end
+
+-- 初始化所有数据信息
+function InitAllInfo()
+    m_ItemInfo = m_waitShowItemTable[1];
+    if m_ItemInfo == nil then
+        closePanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+        return;
+    end
+    if nil ~= m_ItemInfo then
+        if m_ItemInfo:GetItemType() == ITEMTYPE.IT_Equip then
+            local equipInfo = CCommonTool.GetEquipInfo(m_ItemInfo.ExcelID);
+            local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(m_ItemInfo:GetEquipType());
+            if nil ~= equipInfo then
+                if equipInfo.NeedLv <= G_UserInfo.RoleAttribute.Level then
+                    if equipInfo.ProID == 255 or equipInfo.ProID == G_UserInfo.RoleAttribute.ProID then
+                        local equipedFightValue = Equip_StarUp.CaculateStarUpFightValue(ItemInfo, false) + Equip_Force.CaculateEquipForceFightValue(ItemInfo, false);
+                        local notEquipedFightValue = Equip_StarUp.CaculateStarUpFightValue(m_ItemInfo, false) + Equip_Force.CaculateEquipForceFightValue(m_ItemInfo, false);
+                        if ItemInfo == nil or notEquipedFightValue > equipedFightValue then
+                            SetItemShowByExcelIDV04(m_strPanelObject, m_ItemStr, m_ItemInfo.ExcelID, 1, false, 201, ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+                        end
+                        -- 套装图标
+                        if equipInfo.SuitID > 0 then
+                            SetGameObjectState(m_ItemStr .. m_itemsuit, true, m_strPanelObject);
+                        else
+                            SetGameObjectState(m_ItemStr .. m_itemsuit, false, m_strPanelObject);
+                        end
+                        if m_ItemInfo.StarItemLevel > 0 then
+                            SetGameObjectState(m_ItemStr .. m_itemStartUp, true, m_strPanelObject);
+                            SetLabelContent(m_ItemStr .. m_itemStartNum, m_ItemInfo.StarItemLevel, m_strPanelObject);
+                            if m_ItemInfo.StarItemLevel < 10 then
+                                SetGameObjectPos(m_ItemStr .. m_itemStartUp, Vector3.New(42, -48, 0), m_strPanelObject);
+                                SetGameObjectPos(m_ItemStr .. m_itemsuit, Vector3.New(26, -48, 0), m_strPanelObject);
+                            else
+                                SetGameObjectPos(m_ItemStr .. m_itemStartUp, Vector3.New(30, -48, 0), m_strPanelObject);
+                                SetGameObjectPos(m_ItemStr .. m_itemsuit, Vector3.New(14, -48, 0), m_strPanelObject);
+                            end
+                        else
+                            SetGameObjectState(m_ItemStr .. m_itemStartUp, false, m_strPanelObject);
+                            SetGameObjectPos(m_ItemStr .. m_itemsuit, Vector3.New(50, -48, 0), m_strPanelObject);
+                        end
+                    end
+                end
+            end
+        elseif m_ItemInfo:GetItemType() == ITEMTYPE.IT_Prop then
+            SetItemShowByExcelIDV04(m_strPanelObject, m_ItemStr, m_ItemInfo.ExcelID, m_ItemInfo.ItemNum, false, 201, ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+            SetGameObjectState(m_ItemStr .. m_itemsuit, false, m_strPanelObject);
+            SetGameObjectState(m_ItemStr .. m_itemStartUp, false, m_strPanelObject);
+        end
+    end
+end
+
+-- 自动装备
+function AutomaticEquip()
+    if m_ItemInfo:GetItemType() ~= ITEMTYPE.IT_Equip then
+        m_ItemInfo = nil;
+        return;
+    end
+    if G_UserInfo.RoleAttribute.Level <= CCommonTool.GetDefineInfo(EDefineContentID.TYPE_AUTOMATICEQUIP_LEVEL):GetIntContent() then
+        if m_ItemInfo.PanelPos == ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_UPDATEUIITEMPOS);
+            buffer:WriteUShort(1);
+            buffer:WriteByte(1);
+            buffer:WriteByte(m_ItemInfo.PanelPos);
+            buffer:WriteByte(m_ItemInfo.PakID);
+            buffer:WriteByte(ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF);
+            buffer:WriteByte(m_ItemInfo:GetEquipType());
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    end
+    m_ItemInfo = nil;
+end
+
+-- 计时器事件定时关闭面板
+function TimeEventClosePanel()
+    m_waitShowItemTable = { };
+    closePanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+    AutomaticEquip();
+end
+
+-- 展示装备提示
+function ShowItem()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL) == 0 then
+        NewTimeEvent();
+        createPanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+    end
+end
+
+function NewTimeEvent()
+    AddTimerEvent("RecommondUseItemPanelCloseEvent", 30, TimeEventClosePanel);
+end
+--------------------------------------按钮事件方法-----------------------------------------------------
+-- 点击使用按钮的事件
+function OnButtonUseClick()
+    if m_ItemInfo:GetItemType() == ITEMTYPE.IT_Equip then
+        if m_ItemInfo.PanelPos == ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_UPDATEUIITEMPOS);
+            buffer:WriteUShort(1);
+            buffer:WriteByte(1);
+            buffer:WriteByte(m_ItemInfo.PanelPos);
+            buffer:WriteByte(m_ItemInfo.PakID);
+            buffer:WriteByte(ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF);
+            buffer:WriteByte(m_ItemInfo:GetEquipType());
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    elseif m_ItemInfo:GetItemType() == ITEMTYPE.IT_Prop then
+        local itemInfo = m_ItemInfo:GetItemInfo();
+        if itemInfo ~= nil then
+            local canBatchUse = false;
+            if itemInfo.BatchUse > 0 and m_ItemInfo.ItemNum > 1 then
+                canBatchUse = true;
+            end
+            if canBatchUse then
+                BatchUseItemPanel.SetData(m_ItemInfo);
+            else
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_USEUIITEM);
+                buffer:WriteUInt(G_UserInfo.RoleAttribute.CRID);
+                buffer:WriteByte(m_ItemInfo.PanelPos);
+                buffer:WriteByte(m_ItemInfo.PakID);
+                buffer:WriteByte(1);
+                G_NetWorkMng:SendMessage(buffer);
+            end
+        end
+    end
+    table.remove(m_waitShowItemTable, 1);
+    if #m_waitShowItemTable == 0 then
+        closePanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+        G_TimerMng:RemoveTimeTask("RecommondUseItemPanelCloseEvent");
+    else
+        NewTimeEvent();
+        InitAllInfo();
+    end
+end
+
+
+--点击关闭按钮事件
+function OnButtonCloseClick()
+ closePanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+ end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------------------------
+-- 外部调用检测获得装备是否比当前装备品阶更高
+function CheckItem(crid, excelID)
+    -- 判断玩家是否上线完毕,接收背包信息完毕,如果完毕依然受到消息查看此item是否比身上装备nb
+    local bagItemInfo = G_BagMng:GetGoodsItem(tonumber(crid));
+    if bagItemInfo == nil then
+        return;
+    end
+    if bagItemInfo:GetItemType() == ITEMTYPE.IT_Equip then
+        -- 获得玩家当前同部位的装备信息
+        local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(bagItemInfo:GetEquipType());
+        local equipInfo = CCommonTool.GetEquipInfo(bagItemInfo.ExcelID);
+        if equipInfo.NeedLv <= G_UserInfo.RoleAttribute.Level then
+            if equipInfo.ProID == 255 or equipInfo.ProID == G_UserInfo.RoleAttribute.ProID then
+                local equipedFightValue = Equip_StarUp.CaculateStarUpFightValue(ItemInfo, false) + Equip_Force.CaculateEquipForceFightValue(ItemInfo, false);
+                local notEquipedFightValue = Equip_StarUp.CaculateStarUpFightValue(bagItemInfo, false) + Equip_Force.CaculateEquipForceFightValue(bagItemInfo, false);
+                if ItemInfo == nil or notEquipedFightValue > equipedFightValue then
+                    local compareTableIndex = 0;
+                    for Index = 1, #m_waitShowItemTable do
+                        local compareItem = G_BagMng:GetGoodsItem(tonumber(m_waitShowItemTable[Index].CRID));
+                        if compareItem ~= nil then
+                            if bagItemInfo:GetItemType() == ITEMTYPE.IT_Equip then
+                                local compareEquipInfo = CCommonTool.GetEquipInfo(compareItem.ExcelID);
+                                if compareItem:GetEquipType() == bagItemInfo:GetEquipType() then
+                                    local compareFightValue = Equip_StarUp.CaculateStarUpFightValue(m_waitShowItemTable[Index], false) + Equip_Force.CaculateEquipForceFightValue(m_waitShowItemTable[Index], false);
+                                    if compareFightValue < notEquipedFightValue then
+                                        compareTableIndex = Index;
+                                        break;
+                                    else
+                                        return;
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    if compareTableIndex == 0 then
+                        table.insert(m_waitShowItemTable, bagItemInfo);
+                        ShowItem();
+--                        -- 获得新装备时播放特效                                             --20180922国服获得新装备时播放特效屏蔽
+--                        local equipInfo = CCommonTool.GetEquipInfo(bagItemInfo.ExcelID);
+--                        G_UserInfo:CallPlayGetNewEquipEffect(equipInfo);
+                    else
+                        m_waitShowItemTable[compareTableIndex] = bagItemInfo;
+                        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL) == 1 and compareTableIndex == 1 then
+                            InitAllInfo();
+                        end
+                    end
+                end
+            end
+        end
+    elseif bagItemInfo:GetItemType() == ITEMTYPE.IT_Prop then
+        local itemInfo = bagItemInfo:GetItemInfo();
+        if itemInfo ~= nil then
+            if itemInfo.ShowRecommondPanel == 1 then
+                for Index = 1, #m_waitShowItemTable do
+                    if m_waitShowItemTable[Index].CRID == crid then
+                        if Index == 1 then
+                            if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL) == 1 then
+                                InitAllInfo();
+                            end
+                        end
+                        return;
+                    end
+                end
+                table.insert(m_waitShowItemTable, bagItemInfo);
+                ShowItem();
+            end
+        end
+    end
+end
+
+-- 道具被移除掉了
+function RemoveItem(crid)
+    if #m_waitShowItemTable == 0 then
+        return;
+    else
+        local findIndex = 0;
+        for Index = 1,#m_waitShowItemTable do
+            if m_waitShowItemTable[Index].CRID == crid then
+                findIndex = Index;
+                break;
+            end
+        end
+        if findIndex ~= 0 then
+            table.remove(m_waitShowItemTable,findIndex);
+            if #m_waitShowItemTable == 0 then
+                closePanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL);
+            else
+                if findIndex == 1 then
+                    NewTimeEvent();
+                    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL) == 1 then
+                        InitAllInfo();
+                    end
+                end
+            end
+        end
+    end
+end

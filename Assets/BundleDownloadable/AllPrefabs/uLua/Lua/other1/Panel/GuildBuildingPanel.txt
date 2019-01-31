@@ -1,0 +1,441 @@
+﻿require "Panel/GuildEventsPanel";
+module("GuildBuildingPanel", package.seeall)
+
+-----------------------------------------------label路径--------------------------------------------
+-- 建筑描述
+local m_DescPath = "Middle/Desc";
+-- 升级效果
+local m_LevelEffectPath = "Middle/LevelEffect";
+-- 升级效果的当前值
+local m_CurrentValuePath = "Middle/CurrentValue";
+-- 升级效果的下级值
+local m_NextValuePath = "Middle/NextValue";
+
+-- 升级CD
+local m_CdTimePath = "Bottom/CdTime";
+-- 提示文本
+local m_HintPath = "Bottom/Hint";
+-----------------------------------------------sprite路径--------------------------------------------
+
+-- 升级效果的箭头
+local m_ArrowPath = "Middle/Arrow";
+
+-----------------------------------------------button路径--------------------------------------------
+
+-- 公会升级冷却中按钮路径
+local m_ButtonCooldownPath = "Bottom/Button_Cooldown";
+-- 公会升级按钮路径
+local m_ButtonUpPath = "Bottom/Button_Up";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+
+-- 激活的时候显示的内容
+local m_activeContentStr = "/Active";
+-- 未激活的时候显示的内容
+local m_deactiveContentStr = "/Deactive";
+-- 条件列表
+local m_ListPath = "Middle/ListPanel/Grid";
+-- 冷却进度条
+local m_PbarPath = "Bottom/pbar";
+-- 升级特效
+local m_LevelUpEffectPath = "Effect";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 条件列表
+local m_List = nil;
+-- 公会升级冷却中按钮
+local m_ButtonCooldown = nil;
+-- 公会升级按钮
+local m_ButtonUp = nil;
+-- 升级冷却进度条
+local m_Pbar = nil;
+-- 升级CD
+local m_CdTime = nil;
+-- 升级特效
+local m_LevelUpEffect = nil;
+
+local m_selectTagNum = 1;
+local m_lastSelectTagNum = 1;
+
+
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local m_toggleTable = nil;
+local m_TimerEventName = "GuildBuildingPanelTimer";
+local m_TimerEventName2 = "GuildBuildingRedTimer";
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+
+
+
+function Start()
+    InitToggleTable();
+    InitObjects();
+    InitOnClick();
+    InitTabLevelInfo();
+    InitPanelShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitPanelShow();
+        InitTabLevelInfo();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    if m_LevelUpEffect ~= nil then
+        m_LevelUpEffect:SetActive(false);
+    end
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_List = nil;
+    m_panelInitAlready = false;
+    m_ButtonCooldown = nil;
+	m_ButtonUp = nil;
+	m_Pbar = nil;
+    m_CdTime = nil;
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+    m_LevelUpEffect = nil;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitToggleTable()
+    m_toggleTable = {
+        [1] = { name = "Top/1Toggle_Guild", buildingType = -1, buildingTxtId = 1, initFunction = InitBuildingInfo}, 
+        [2] = { name = "Top/2Toggle_Affairs", buildingType = GUILD_BUILDING_TYPE.INTERIOR, buildingTxtId = 2, initFunction = InitBuildingInfo}, 
+        [3] = { name = "Top/3Toggle_Shop", buildingType = GUILD_BUILDING_TYPE.SHOP, buildingTxtId = 4, initFunction = InitBuildingInfo}, 
+        [4] = { name = "Top/4Toggle_Skill", buildingType = GUILD_BUILDING_TYPE.SKILL, buildingTxtId = 3, initFunction = InitBuildingInfo}, 
+        [5] = { name = "Top/5Toggle_Wood", buildingType = GUILD_BUILDING_TYPE.WOOD, buildingTxtId = 5, initFunction = InitBuildingInfo}, 
+        [6] = { name = "Top/6Toggle_WoodStorge", buildingType = GUILD_BUILDING_TYPE.WOOD_STORAGE, buildingTxtId = 6, initFunction = InitBuildingInfo}, 
+    };
+end
+
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_panelObject = child(m_panelObject, "GuildBuildingPanel").gameObject;
+    m_List = GetComponent(m_panelObject, m_ListPath, "UIListView");
+    m_ButtonCooldown = child(m_panelObject, m_ButtonCooldownPath).gameObject;
+    m_ButtonUp = child(m_panelObject, m_ButtonUpPath).gameObject;
+    m_Pbar = GetComponent(m_panelObject, m_PbarPath, "UIProgressBar");
+    m_CdTime = GetComponent(m_panelObject, m_CdTimePath, "UILabel");
+    m_LevelUpEffect = child(m_panelObject, m_LevelUpEffectPath).gameObject;
+    m_LevelUpEffect:SetActive(false);
+    CCommonTool.SetGameObjectGrey(m_ButtonCooldown, true);
+end
+
+-- 初始化事件信息
+function InitOnClick()
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent(m_toggleTable[Index].name, OnTabClick, m_panelObject);
+    end
+    m_List:SetInitCallback(OnListViewInit);
+    UIEventListener.Get(m_ButtonCooldown).onClick = LuaHelper.OnClick(OnButtonCooldownClick);
+    UIEventListener.Get(m_ButtonUp).onClick = LuaHelper.OnClick(OnButtonUpClick);
+end
+
+function SetButtonActiveState(index, actived)
+    SetGameObjectState(m_toggleTable[index].name .. m_activeContentStr, actived, m_panelObject);
+    SetGameObjectState(m_toggleTable[index].name .. m_deactiveContentStr, not actived, m_panelObject);
+end
+
+-- 初始化界面的显示
+function InitPanelShow()
+    for Index = 1, #m_toggleTable do
+        SetButtonActiveState(Index, Index == m_selectTagNum);
+    end
+
+    local initFunc = m_toggleTable[m_selectTagNum].initFunction;
+    if initFunc ~= nil then
+        initFunc(m_selectTagNum);
+    end
+
+    InitLevelUpCdInfo();
+end
+
+-- 升级CD
+function InitLevelUpCdInfo()
+    --m_CdTime
+    local guild = GuildManager.myGuild;
+    local endTime = guild.buildingEndTime;
+    local seconds = endTime - G_TimerMng:GetCurrentSeconds();
+
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    if seconds > 0 then
+        AddTimerEvent(m_TimerEventName, seconds, OnTimerEnd, nil, OnTimerUpdate);
+    end
+    RefreshCdInfo();
+end
+
+function OnTimerUpdate()
+    RefreshCdInfo();
+end
+
+-- 倒计时结束
+function OnTimerEnd()
+    RefreshCdInfo();
+    InitTabLevelInfo();
+end
+
+function RefreshCdInfo()
+    local guild = GuildManager.myGuild;
+    local endTime = guild.buildingEndTime;
+    local seconds = endTime - G_TimerMng:GetCurrentSeconds();
+    local hasPermission = GuildManager.HasPermission(E_GUILD_PERMISSION.UPGRADE_BUILDING);
+    m_ButtonUp:SetActive(hasPermission == true and seconds <= 0);
+    m_CdTime.gameObject:SetActive(hasPermission == true and seconds > 0);
+    m_Pbar.gameObject:SetActive(hasPermission == true and seconds > 0);
+    --m_ButtonCooldown:SetActive(seconds > 0);
+    m_ButtonCooldown:SetActive(false);
+
+    if seconds > 0 then
+        local h = math.floor(seconds / 3600);
+        local m = math.floor((seconds - h * 3600) / 60);
+        local s = seconds % 60;
+        if h > 0 then
+            m_CdTime.text = string_format(--[[升级时间是:{0}小时{1}分]]CCommonTool.GetTxtData(1123).m_str, h, m);
+        else
+            m_CdTime.text = string_format(--[[升级时间是:{0}分{1}秒]]CCommonTool.GetTxtData(1124).m_str, m, s);
+        end
+        m_Pbar.value = seconds / guild.buildingDurationTime;
+    end
+end
+
+function InitTabLevelInfo()
+    local guild = GuildManager.myGuild;
+    local maxLevel = guild.maxLevel;
+    local guildLevel = guild.level;
+    local now = G_TimerMng:GetCurrentSeconds();
+    for i = 1, 6 do
+        local tabData = m_toggleTable[i];
+        local path = tabData.name .. "/Label_Name";
+        local level = GuildManager.GetBuildingLevel(tabData.buildingType);
+        local nameId = CCommonTool.GetGuildBuildingTxtInfo(tabData.buildingTxtId).Name;
+        SetLabelContent(path, string_format("Lv.{0} {1}", level, CCommonTool.GetTxtData(nameId).m_str), m_panelObject);
+        local canUpgrade = GuildManager.CanUpgradeBuilding(tabData.buildingType);
+        SetGameObjectState(tabData.name .. "/Sprite_RedHint", canUpgrade, m_panelObject);
+    end
+end
+
+-- 木材仓库容量
+function GetWoodStorgeVolume()
+    local guild = GuildManager.myGuild;
+    local level = guild.guildWoodStorageLevel;
+    local info = GuildManager.GetBuildingInfo(GUILD_BUILDING_TYPE.WOOD_STORAGE, level);
+    return info.Num;
+end
+
+-- 建筑信息初始化
+function InitBuildingInfo(index)
+    local tabData = m_toggleTable[index];
+    local guild = GuildManager.myGuild;
+    local buildingLevel = GuildManager.GetBuildingLevel(tabData.buildingType);
+    local guildLevel = guild.level;
+    local buildingType = tabData.buildingType;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = buildingLevel < maxLevel;
+    local needWood = 0;
+    local needGuildMoney = 0;
+    local effectTextId = 0;
+    local needGuildLevel = 0;
+    local currentValue = 0;
+    local nextValue = 0;
+
+    if tabData.buildingType == -1 then
+        -- 公会主建筑
+        local info = CCommonTool.GetGuildInfoByIndex(buildingLevel);
+        if hasNextLevel then
+            needWood = CCommonTool.GetGuildInfoByIndex(buildingLevel).WoodNeed;
+            -- GuildManager.GetGuildMaintainMoney()
+            needGuildMoney = info.MoneyNeed;
+            nextValue = guildLevel + 1;
+        end
+        effectTextId = info.Instruction;
+        currentValue = guildLevel;
+
+    else
+        local info = GuildManager.GetBuildingInfo(buildingType, buildingLevel);
+        if hasNextLevel then
+            needGuildMoney = info.MoneyNeed;
+            needGuildLevel = info.LevelNeed;
+            needWood = info.WoodNeed;
+            local nextInfo = GuildManager.GetBuildingInfo(buildingType, buildingLevel+1);
+            if nextInfo ~= nil then
+                nextValue = nextInfo.Num;
+            end
+        end
+        effectTextId = info.Instruction;
+        currentValue = info.Num;
+    end
+    m_List:RemoveAll();
+    if needWood > 0 then
+        m_List:AddData({
+            text = string_format(--[[需要木材 {0}]]CCommonTool.GetTxtData(1125).m_str, needWood), 
+            isReach = guild.guildWoodCount >= needWood
+        });
+    end
+    if needGuildMoney > 0 then
+        m_List:AddData({
+            text = string_format(--[[需要公会资金 {0}]]CCommonTool.GetTxtData(1126).m_str, needGuildMoney), 
+            isReach = guild.money >= needGuildMoney
+        });
+    end
+    if needGuildLevel > 0 then
+        m_List:AddData({
+            text = string_format(--[[需要公会等级 {0}]]CCommonTool.GetTxtData(1127).m_str, needGuildLevel), 
+            isReach = guildLevel >= needGuildLevel
+        });
+    end
+    SetGameObjectState(m_HintPath, hasNextLevel and needWood > GetWoodStorgeVolume(), m_panelObject);
+    SetLabelTextByID(m_LevelEffectPath, effectTextId, m_panelObject);
+    SetLabelTextByID(m_DescPath, CCommonTool.GetGuildBuildingTxtInfo(tabData.buildingTxtId).Instruction, m_panelObject);
+    local hasEffectValue = currentValue ~= 0 and nextValue ~= 0;
+    SetGameObjectState(m_CurrentValuePath, hasEffectValue == true, m_panelObject);
+    SetGameObjectState(m_NextValuePath, hasEffectValue == true, m_panelObject);
+    SetGameObjectState(m_ArrowPath, hasEffectValue == true, m_panelObject);
+    -- 升级效果的当前值和下一级值
+    if hasEffectValue == true then
+        SetLabelContent(m_CurrentValuePath, currentValue, m_panelObject);
+        SetLabelContent(m_NextValuePath, nextValue, m_panelObject);
+    end
+    
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Label", data.text, go);
+    SetGameObjectState("Icon", data.isReach, go);
+end
+
+-- 升级冷却中按钮
+function OnButtonCooldownClick(gameObject)
+    ShowSystemFlowTips(4380);
+end
+
+-- 升级按钮
+function OnButtonUpClick(gameObject)
+    if not GuildManager.HasPermission(E_GUILD_PERMISSION.UPGRADE_BUILDING) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        return;
+    end
+
+    local index = m_selectTagNum;
+    local tabData = m_toggleTable[index];
+    local guild = GuildManager.myGuild;
+    local buildingLevel = GuildManager.GetBuildingLevel(tabData.buildingType);
+    local guildLevel = guild.level;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = buildingLevel < maxLevel;
+    local buildingType = tabData.buildingType;
+
+    if buildingType == -1 then
+        if hasNextLevel then
+            local info = CCommonTool.GetGuildInfoByIndex(buildingLevel);
+            if guild.money < info.MoneyNeed then
+                ShowSystemFlowTips(4020);
+            elseif guild.guildWoodCount < info.WoodNeed then
+                ShowSystemFlowTips(4021);
+            else
+                GuildProtocol.RequestGuildLevelUp();
+            end
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_HALL_MAX_LEVEL);
+        end
+    else
+        local info = GuildManager.GetBuildingInfo(buildingType, buildingLevel);
+        if buildingLevel < maxLevel then
+            if guildLevel < info.LevelNeed then
+                ShowSystemFlowTips(string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), 0);
+            elseif guild.money < info.MoneyNeed then
+                ShowSystemFlowTips(4020);
+            else
+                GuildProtocol.RequestBuildingLevelUp(buildingType);
+            end
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_STORE_MAX_LEVEL);
+        end
+    end
+
+    ReportManager.RequestReportPanel(10326);
+end
+
+--  点击事件处理
+function OnTabClick(e)
+    local currentName = e.name;
+    local selectTagNum = tonumber(string.sub(currentName, 1, 1));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        InitPanelShow();
+    end
+end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if GuildBeyond3DPanel.GetCurrentTagNum() == 3 then
+            InitTabLevelInfo();
+            InitPanelShow();
+        end
+    end
+end
+
+function OnGuildLevelUp(buildingType)
+    Refresh();
+    local guild = GuildManager.myGuild;
+    local endTime = guild.buildingEndTime;
+    local seconds = endTime - G_TimerMng:GetCurrentSeconds();
+    G_TimerMng:RemoveTimeTask(m_TimerEventName2);
+    if seconds > 0 then
+        AddTimerEvent(m_TimerEventName2, seconds, OnBuildingCdEnd);
+    end
+    -- 先刷一次红点
+    OnBuildingCdEnd();
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if GuildBeyond3DPanel.GetCurrentTagNum() == 3 then
+            for i, info in ipairs(m_toggleTable) do
+                if info.buildingType == buildingType then
+                    local path = info.name .. "/EffectPos";
+                    local posTrans = child(m_panelObject, path);
+                    if posTrans ~= nil then
+                        m_LevelUpEffect.transform.position = posTrans.position;
+                        m_LevelUpEffect:SetActive(false);
+                        m_LevelUpEffect:SetActive(true);
+                    end
+                end
+            end
+        end
+    end
+end
+
+function OnBuildingCdEnd()
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_BUILDING, GuildManager.HasUpgradableBuilding());
+    --RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {selectTagNum = m_selectTagNum, lastSelectTagNum = m_lastSelectTagNum};
+end
+
+function SetJumpCloseData(paramTable)
+    m_selectTagNum = paramTable.selectTagNum;
+    m_lastSelectTagNum = paramTable.lastSelectTagNum;
+end

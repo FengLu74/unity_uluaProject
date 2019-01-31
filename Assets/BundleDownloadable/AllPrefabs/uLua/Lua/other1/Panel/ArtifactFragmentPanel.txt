@@ -1,0 +1,477 @@
+﻿module("ArtifactFragmentPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 需求条件文本
+local m_CondiLabelStr = "Right/Label_Condi";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 激活按钮
+local m_ButtonActiveStr = "Right/Button_Active";
+-- 升级按钮
+local m_ButtonLevelUpStr = "Right/Button_LevelUp";
+
+-- 问号按钮
+local m_detailButtonStr = "Button_Detail";
+-----------------------------------------Sprite路径------------------------------------
+-- 黄色箭头
+local m_YellowArrowStr = "Right/Sprite_Change";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧UIListView组件所在的位置
+local m_leftUIListViewCompStr = "FragmentList/Grid";
+-- 当前碎片道具所在的位置
+local m_CurFragItemStr = "Right/CurFragment";
+-- 需求碎片
+local m_NeedFragmentItemStr = "Right/NeedFragmentItem";
+-- 需求道具
+local m_NeedItemStr = "Right/NeedItem";
+
+-- 达到最大等级
+local m_LevelChangeMaxLevelStr = "Right/LevelChange/MaxLevel";
+-- 未达最大等级
+local m_LevelChangeNotMaxLevelStr = "Right/LevelChange/NotMaxLevel";
+
+-- 属性整体
+local m_AllAttrStr = "Right/Attrs";
+-- 属性
+local m_AttrStr = "Right/Attrs/Attr";
+
+-- 最高等级
+local m_MaxLevelButtonStr = "Right/MaxLevel";
+
+-- 成功特效所在的位置
+local m_SuccessEffectStr = "Right/Effects/Effect_Success";
+-- 失败特效所在的位置
+local m_FailEffectStr = "Right/Effects/Effect_Fail";
+-- 激活特效所在的位置
+local m_ActiveEffectStr = "Right/Effects/Effect_Active";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具所在的位置
+local m_cloneItemStr = "Item";
+-- 当前碎片等级
+local m_cloneLevelStr = "Label_Level";
+
+-- 图标
+local m_IconStr = "/Sprite_Icon";
+-- 需求数量
+local m_NeedLabelStr = "/Label_Need";
+-- 当前碎片等级
+local m_CurFragLevelStr = "/Label_CurValue";
+-- 下一碎片等级
+local m_NextFragLevelStr = "/Label_NextValue";
+-- 购买加号
+local m_AddSpriteStr = "/Sprite_Add"; 
+
+-- 属性名称
+local m_AttrNameStr = "/Label_Name";
+-- 当前属性数值
+local m_AttrValueStr = "/Label_Cur";
+-- 解锁
+local m_AttrUnlockedStr = "/NotLock";
+-- 下一级数值
+local m_NextValueStr = "/Label_Next";
+-- 增长数值
+local m_AddValueStr = "/Label_Add";
+-- 未解锁
+local m_AttrLockedStr = "/Locked";
+-- {0}级解锁文本
+local m_AttrUnlockLabelStr = "/Label_Unlock";
+
+-- 红点位置
+local m_RedHintStr = "Sprite_RedHint";
+-----------------------------------引用的对象------------------------------------------
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 左侧UIListView组件
+local m_leftUIListViewComp = nil;
+-- 当前选中的神器ID
+local m_curArtifactID = 0;
+-- 当前左侧选中
+local m_leftSelect = 0;
+-- 左侧显示所有碎片的数据
+local m_leftShowAllFragData = {};
+-- 当前升级的数据
+local m_curLevelUpData = nil;
+
+-- 是否可激活
+local m_bIsCanActiveState = 0;
+-- 是否可升级
+local m_bIsCanLevelUpState = 0;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+
+local m_IsItem1Enough = true;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够的颜色
+local m_EnoughColor = "DDEEFF";
+-- 不够的颜色
+local m_NotEnoughColor = "D83232";
+
+-- 状态
+local ENUM_OPERATESTATE = 
+{
+    LACK_ITEM = 0,
+    LACK_LEVEL = 1,
+    CAN = 2,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnFragmentCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnFragmentCloneClick);
+end
+
+function InitData()
+    if m_isJumpPanelSave then
+        m_curArtifactID = m_JumpPanelParamsTable[1];
+        m_leftSelect = m_JumpPanelParamsTable[2];
+        m_isJumpPanelSave = false;
+    end
+    child(m_panelObject,m_SuccessEffectStr).gameObject:SetActive(false);
+    child(m_panelObject,m_FailEffectStr).gameObject:SetActive(false);
+    child(m_panelObject,m_ActiveEffectStr).gameObject:SetActive(false);
+end
+
+function InitShow()
+    InitLeftContent();
+    InitRightContent();
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_ButtonActiveStr,OnActiveClick,m_panelObject);
+    SetGameObjectEvent(m_ButtonLevelUpStr,OnLevelUpClick,m_panelObject);
+    SetGameObjectEvent(m_detailButtonStr,OnDetailClick,m_panelObject);
+end
+
+function InitLeftContent()
+    m_leftShowAllFragData = {};
+    m_leftUIListViewComp:RemoveAll();
+    local fragId = 0;
+    for Index = 1,6 do
+        fragId = CCommonTool.GetValueInArtifactInfo(m_curArtifactID,10 + Index)
+        table.insert(m_leftShowAllFragData,CCommonTool.GetArtifactFragmentInfo(fragId));
+        m_leftUIListViewComp:AddData(m_leftShowAllFragData[Index]);
+    end
+    m_leftUIListViewComp:SetSelect(m_leftSelect - 1,true);
+end
+
+function OnFragmentCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetItemShowByExcelIDV04(go,m_cloneItemStr,data.RelatedItemID,1,true);
+    if ArtifactManager.ArtifactFragmentData[data.FragmentID] == nil then
+        SetLabelContent(m_cloneLevelStr,"+0",go);
+    else
+        SetLabelContent(m_cloneLevelStr,"+"..ArtifactManager.ArtifactFragmentData[data.FragmentID],go);
+    end
+    SetGameObjectState(m_RedHintStr,ArtifactManager.IsFragCanOperate(data.FragmentID),go);
+end
+
+function InitRightContent()
+    local fragmentData = m_leftShowAllFragData[m_leftSelect];
+    local fragID = fragmentData.FragmentID;
+    local unlockLevel = fragmentData.UnlockLevel;
+    local fragLevel = 0;
+    if ArtifactManager.ArtifactFragmentData[fragID] ~= nil then
+        fragLevel = ArtifactManager.ArtifactFragmentData[fragID];
+    end
+    local fragmentItemID = m_leftShowAllFragData[m_leftSelect].RelatedItemID;
+    local fragmentBindItemID = 0;
+    local bindTableInfo = CCommonTool.GetTradableInfo(fragmentItemID);
+    if bindTableInfo == nil then
+        error("碎片没有对应的绑定的道具");
+    else
+        fragmentBindItemID = bindTableInfo.UntradableItemID;
+    end
+    SetItemShowByExcelIDV04(m_panelObject,m_CurFragItemStr,fragmentItemID,1,false);
+    SetSpriteByAtlasID(m_NeedFragmentItemStr..m_IconStr,CCommonTool.GetImageIDByExcelID(fragmentItemID),m_panelObject);
+    --SetItemToolTipsEvent(m_panelObject, m_NeedFragmentItemStr, ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL, false, fragmentItemID);
+    UIEventListener.Get(child(m_panelObject,m_NeedFragmentItemStr).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, {fragmentItemID});
+    local curFragItemHave = 0;
+    if fragmentBindItemID == 0 then
+        curFragItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentItemID);
+    else
+        curFragItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentItemID) + G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentBindItemID);
+    end
+    local needFragNum = 0;
+    local needItemID = 0;
+    local needItemNum = 0;
+    local curNeedItemHave = 0;
+    m_curLevelUpData = nil;
+    if fragLevel == 0 then
+        needFragNum = 1;
+    elseif fragLevel < fragmentData.MaxLevel then
+        m_curLevelUpData = CCommonTool.GetArtifactFragmentLevelUpInfo(fragLevel*10 + fragmentData.QualityID);
+        needItemID = m_curLevelUpData.Item1ID;
+        needFragNum = m_curLevelUpData.NeedFragmentsNum;
+        needItemNum = math.ceil(m_curLevelUpData.Item1Num * fragmentData.DifficultyRatio);
+    end
+    SetLabelContent(m_NeedFragmentItemStr..m_NeedLabelStr,curFragItemHave.."/"..needFragNum,m_panelObject);
+    SetLabelColor(m_NeedFragmentItemStr..m_NeedLabelStr,curFragItemHave - needFragNum >= 0 and m_EnoughColor or m_NotEnoughColor,m_panelObject);
+    if curFragItemHave - needFragNum >= 0 then
+        SetGameObjectState(m_NeedFragmentItemStr..m_AddSpriteStr, false,m_panelObject);
+    else
+        SetGameObjectState(m_NeedFragmentItemStr..m_AddSpriteStr, true,m_panelObject);
+    end
+    if needItemID <= 0 or needItemNum <= 0 then
+        SetGameObjectState(m_NeedItemStr,false,m_panelObject);
+    else
+        --SetItemToolTipsEvent(m_panelObject, m_NeedItemStr, ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL, false, needItemID);
+        UIEventListener.Get(child(m_panelObject,m_NeedItemStr).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnGetWayClick, {needItemID});
+        SetSpriteByAtlasID(m_NeedItemStr..m_IconStr,CCommonTool.GetImageIDByExcelID(needItemID),m_panelObject);
+        curNeedItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemID);
+        SetGameObjectState(m_NeedItemStr,true,m_panelObject);
+        SetLabelContent(m_NeedItemStr..m_NeedLabelStr,curNeedItemHave.."/"..needItemNum,m_panelObject);
+        SetLabelColor(m_NeedItemStr..m_NeedLabelStr,curNeedItemHave - needItemNum >= 0 and m_EnoughColor or m_NotEnoughColor,m_panelObject);
+        if curNeedItemHave - needItemNum >= 0 then
+            SetGameObjectState(m_NeedItemStr..m_AddSpriteStr, false,m_panelObject);
+        else
+            SetGameObjectState(m_NeedItemStr..m_AddSpriteStr, true,m_panelObject);
+        end
+    end
+    if fragLevel >= fragmentData.MaxLevel then
+        SetGameObjectState(m_NeedFragmentItemStr,false,m_panelObject);
+        SetGameObjectState(m_LevelChangeMaxLevelStr,true,m_panelObject);
+        SetGameObjectState(m_LevelChangeNotMaxLevelStr,false,m_panelObject);
+        SetLabelContent(m_LevelChangeMaxLevelStr..m_CurFragLevelStr,"+"..fragLevel,m_panelObject);
+        SetGameObjectState(m_YellowArrowStr,false,m_panelObject);
+        SetGameObjectPos(m_AllAttrStr,Vector3.New(85,0,0),m_panelObject);
+    else
+        SetGameObjectState(m_NeedFragmentItemStr,true,m_panelObject);
+        SetGameObjectState(m_LevelChangeMaxLevelStr,false,m_panelObject);
+        SetGameObjectState(m_LevelChangeNotMaxLevelStr,true,m_panelObject);
+        SetLabelContent(m_LevelChangeNotMaxLevelStr..m_CurFragLevelStr,"+"..fragLevel,m_panelObject);
+        SetLabelContent(m_LevelChangeNotMaxLevelStr..m_NextFragLevelStr,"+"..(fragLevel+1),m_panelObject);
+        SetGameObjectState(m_YellowArrowStr,true,m_panelObject);
+        SetGameObjectPos(m_AllAttrStr,Vector3.New(-179,0,0),m_panelObject);
+    end
+    local attrUnlockLevel = 0;
+    local attrID = 0;
+    local attrInitValue = 0;
+    local attrAddValue = 0;
+    for Index = 1,5 do
+        attrUnlockLevel = CCommonTool.GetValueInArtifactFragmentInfo(fragID,6+4*(Index - 1));
+        attrID = CCommonTool.GetValueInArtifactFragmentInfo(fragID,7+4*(Index - 1));
+        attrInitValue = CCommonTool.GetValueInArtifactFragmentInfo(fragID,8+4*(Index - 1));
+        attrAddValue = CCommonTool.GetValueInArtifactFragmentInfo(fragID,9+4*(Index - 1));
+        SetLabelTextByID(m_AttrStr..Index..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrID).TextID, m_panelObject);
+        if fragLevel == 0 then
+            SetLabelContent(m_AttrStr..Index..m_AttrValueStr, attrInitValue + attrUnlockLevel * attrAddValue, m_panelObject);
+        else
+            SetLabelContent(m_AttrStr..Index..m_AttrValueStr, attrInitValue + fragLevel * attrAddValue, m_panelObject);
+        end
+        if fragLevel >= fragmentData.MaxLevel then
+            SetGameObjectState(m_AttrStr..Index..m_AttrUnlockedStr,false,m_panelObject);
+            SetGameObjectState(m_AttrStr..Index..m_AttrLockedStr,false,m_panelObject);
+            SetLabelColor(m_AttrStr..Index..m_AttrNameStr,"F1F0E2",m_panelObject);
+            SetLabelColor(m_AttrStr..Index..m_AttrValueStr,"F1F0E2",m_panelObject);
+        else
+            if fragLevel >= attrUnlockLevel then
+                SetGameObjectState(m_AttrStr..Index..m_AttrUnlockedStr,true,m_panelObject);
+                SetGameObjectState(m_AttrStr..Index..m_AttrLockedStr,false,m_panelObject);
+                SetLabelContent(m_AttrStr..Index..m_AttrUnlockedStr..m_NextValueStr, attrInitValue + (fragLevel + 1) * attrAddValue, m_panelObject);
+                SetLabelContent(m_AttrStr..Index..m_AttrUnlockedStr..m_AddValueStr, attrAddValue, m_panelObject);
+                SetLabelColor(m_AttrStr..Index..m_AttrNameStr,"F1F0E2",m_panelObject);
+                SetLabelColor(m_AttrStr..Index..m_AttrValueStr,"F1F0E2",m_panelObject);
+            else
+                SetGameObjectState(m_AttrStr..Index..m_AttrUnlockedStr,false,m_panelObject);
+                SetGameObjectState(m_AttrStr..Index..m_AttrLockedStr,true,m_panelObject);
+                SetLabelContent(m_AttrStr..Index..m_AttrLockedStr..m_AttrUnlockLabelStr, string_format(CCommonTool.GetTxtData(180153).m_str,attrUnlockLevel), m_panelObject);
+                SetLabelColor(m_AttrStr..Index..m_AttrNameStr,"807F7E",m_panelObject);
+                SetLabelColor(m_AttrStr..Index..m_AttrValueStr,"807F7E",m_panelObject);
+                SetLabelContent(m_AttrStr..Index..m_AttrValueStr, attrInitValue + attrUnlockLevel * attrAddValue, m_panelObject);
+            end
+        end
+    end
+    m_bIsCanActiveState = ENUM_OPERATESTATE.LACK_ITEM;
+    m_bIsCanLevelUpState = ENUM_OPERATESTATE.LACK_ITEM;
+    if fragLevel == 0 then
+        SetGameObjectState(m_ButtonActiveStr,true,m_panelObject);
+        SetGameObjectState(m_ButtonLevelUpStr,false,m_panelObject);
+        SetGameObjectState(m_MaxLevelButtonStr,false,m_panelObject);
+        if G_UserInfo.RoleAttribute.Level >= unlockLevel then
+            if curFragItemHave >= needFragNum and curNeedItemHave >= needItemNum then
+                m_bIsCanActiveState = ENUM_OPERATESTATE.CAN;
+            else
+                m_bIsCanActiveState = ENUM_OPERATESTATE.LACK_ITEM;
+            end
+            SetGameObjectState(m_CondiLabelStr,false,m_panelObject);
+        else
+            SetGameObjectState(m_CondiLabelStr,true,m_panelObject);
+            m_bIsCanActiveState = ENUM_OPERATESTATE.LACK_LEVEL;
+            SetLabelContent(m_CondiLabelStr,string_format(CCommonTool.GetTxtData(180155).m_str,unlockLevel),m_panelObject);
+        end
+    elseif fragLevel >= fragmentData.MaxLevel then
+        SetGameObjectState(m_ButtonActiveStr,false,m_panelObject);
+        SetGameObjectState(m_ButtonLevelUpStr,false,m_panelObject);
+        SetGameObjectState(m_MaxLevelButtonStr,true,m_panelObject);
+        SetGameObjectState(m_CondiLabelStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_ButtonActiveStr,false,m_panelObject);
+        SetGameObjectState(m_ButtonLevelUpStr,true,m_panelObject);
+        SetGameObjectState(m_MaxLevelButtonStr,false,m_panelObject);
+        if m_curLevelUpData.NeedPlayerLevel <= G_UserInfo.RoleAttribute.Level then
+            if curFragItemHave >= needFragNum and curNeedItemHave >= needItemNum then
+                m_bIsCanLevelUpState = ENUM_OPERATESTATE.CAN;
+            else
+                m_bIsCanLevelUpState = ENUM_OPERATESTATE.LACK_ITEM;
+            end
+            m_IsItem1Enough = (curNeedItemHave >= needItemNum and true) or false;
+            SetGameObjectState(m_CondiLabelStr,false,m_panelObject);
+        else
+            SetGameObjectState(m_CondiLabelStr,true,m_panelObject);
+            m_bIsCanLevelUpState = ENUM_OPERATESTATE.LACK_LEVEL;
+            SetLabelContent(m_CondiLabelStr,string_format(CCommonTool.GetTxtData(180155).m_str,m_curLevelUpData.NeedPlayerLevel),m_panelObject);
+        end
+        
+    end
+    if m_bIsCanActiveState == ENUM_OPERATESTATE.CAN then
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ButtonActiveStr).gameObject,false);
+    else
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ButtonActiveStr).gameObject,true);
+    end
+    if m_bIsCanLevelUpState == ENUM_OPERATESTATE.CAN then
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ButtonLevelUpStr).gameObject,false);
+    else
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ButtonLevelUpStr).gameObject,true);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL);
+end
+
+function OnFragmentCloneClick(listView, cell, go)
+    local selectIndex = cell.dataIndex + 1;
+    if selectIndex == m_leftSelect then
+        return;
+    else
+        m_leftSelect = selectIndex;
+        InitRightContent();
+    end
+end
+
+function OnActiveClick()
+    if m_bIsCanActiveState == ENUM_OPERATESTATE.LACK_ITEM then
+        ShowSystemFlowTips(9080);
+    elseif m_bIsCanActiveState == ENUM_OPERATESTATE.LACK_LEVEL then
+        ShowSystemFlowTips(9081);
+    elseif m_bIsCanActiveState == ENUM_OPERATESTATE.CAN then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ARTIFACT_OPERATE);
+        buffer:WriteByte(ARTIFACT_OPERATE_MSG.ARTIFACT_ACTIVE_FRAGMENT);
+        buffer:WriteInt(m_leftShowAllFragData[m_leftSelect].FragmentID);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+
+function OnLevelUpClick()
+    if m_bIsCanLevelUpState == ENUM_OPERATESTATE.LACK_ITEM then
+		--缺少道具-引导到材料快捷购买
+		if m_curLevelUpData~=nil then
+			local excel_id = m_curLevelUpData.Item1ID;--m_leftShowAllFragData[m_leftSelect].FragmentID;
+			if m_IsItem1Enough==false and excel_id>0 and  CCommonTool.GetQuickToBuyByExcelID(excel_id)~=nil then            
+				MaterialExchangePanel.ShowPanel(excel_id,ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL);			
+				return;  
+			end
+		end
+		
+        ShowSystemFlowTips(9082);
+    elseif m_bIsCanLevelUpState == ENUM_OPERATESTATE.LACK_LEVEL then
+        ShowSystemFlowTips(9083);
+    elseif m_bIsCanLevelUpState == ENUM_OPERATESTATE.CAN then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ARTIFACT_OPERATE);
+        buffer:WriteByte(ARTIFACT_OPERATE_MSG.ARTIFACT_LEVELUP_FRAGMENT);
+        buffer:WriteInt(m_leftShowAllFragData[m_leftSelect].FragmentID);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+
+function OnDetailClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL, 1);
+end
+
+function OnGetWayClick(go,paramTable)
+    GetWayPanel.Show(paramTable[1], ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--道具发生改变刷新
+function RefreshMatChange()
+	if m_panelInitAlready then 
+		InitRightContent();
+	end
+end
+
+function SetData(artifactID,slotIndex)
+    m_curArtifactID = artifactID;
+    m_leftSelect = slotIndex;
+end
+
+function Refresh(isActive,bSuccess)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitRightContent();
+        if isActive ~= nil then
+            if isActive then
+                child(m_panelObject,m_ActiveEffectStr).gameObject:SetActive(false);
+                child(m_panelObject,m_ActiveEffectStr).gameObject:SetActive(true);
+            end
+            if bSuccess ~= nil then
+                if bSuccess == 1 then
+                    child(m_panelObject,m_SuccessEffectStr).gameObject:SetActive(false);
+                    child(m_panelObject,m_SuccessEffectStr).gameObject:SetActive(true);
+                else
+                    child(m_panelObject,m_FailEffectStr).gameObject:SetActive(false);
+                    child(m_panelObject,m_FailEffectStr).gameObject:SetActive(true);
+                end
+            end
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_curArtifactID;
+    jumpParamsTable[2] = m_leftSelect;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

@@ -1,0 +1,103 @@
+﻿--[[
+    field=ID, type=int, desc=主键ID
+    field=Type, type=byte, desc=化灵共鸣等级
+    field=NameID, type=int, desc=名称文本ID
+    field=Attr1, type=int, desc=属性种类1 
+    field=AttrValue1, type=int, desc=属性值1
+    field=Attr2, type=int, desc=属性种类2
+    field=AttrValue2, type=int, desc=属性值2
+    field=Attr3, type=int, desc=属性种类3
+    field=AttrValue3, type=int, desc=属性值3
+    field=Attr4, type=int, desc=属性种类4
+    field=AttrValue4, type=int, desc=属性值4
+]]
+module("ChemicalSpiritResonateTable", package.seeall)
+local list={
+    {ID=1,Type=5,NameID=74241,Attr1=11,AttrValue1=50,Attr2=21,AttrValue2=50,Attr3=31,AttrValue3=25,Attr4=41,AttrValue4=25},
+    {ID=2,Type=10,NameID=74242,Attr1=11,AttrValue1=100,Attr2=21,AttrValue2=100,Attr3=31,AttrValue3=50,Attr4=41,AttrValue4=50},
+    {ID=3,Type=15,NameID=74243,Attr1=11,AttrValue1=150,Attr2=21,AttrValue2=150,Attr3=31,AttrValue3=75,Attr4=41,AttrValue4=75},
+    {ID=4,Type=20,NameID=74244,Attr1=11,AttrValue1=200,Attr2=21,AttrValue2=200,Attr3=31,AttrValue3=100,Attr4=41,AttrValue4=100},
+    {ID=5,Type=25,NameID=74245,Attr1=11,AttrValue1=250,Attr2=21,AttrValue2=250,Attr3=31,AttrValue3=125,Attr4=41,AttrValue4=125},
+    {ID=6,Type=30,NameID=74246,Attr1=11,AttrValue1=300,Attr2=21,AttrValue2=300,Attr3=31,AttrValue3=150,Attr4=41,AttrValue4=150},
+    {ID=7,Type=35,NameID=74247,Attr1=11,AttrValue1=350,Attr2=21,AttrValue2=350,Attr3=31,AttrValue3=175,Attr4=41,AttrValue4=175},
+    {ID=8,Type=40,NameID=74248,Attr1=11,AttrValue1=400,Attr2=21,AttrValue2=400,Attr3=31,AttrValue3=200,Attr4=41,AttrValue4=200},
+    {ID=9,Type=45,NameID=74249,Attr1=11,AttrValue1=450,Attr2=21,AttrValue2=450,Attr3=31,AttrValue3=225,Attr4=41,AttrValue4=225},
+    {ID=10,Type=50,NameID=74250,Attr1=11,AttrValue1=500,Attr2=21,AttrValue2=500,Attr3=31,AttrValue3=250,Attr4=41,AttrValue4=250},
+    {ID=11,Type=55,NameID=56201,Attr1=11,AttrValue1=550,Attr2=21,AttrValue2=550,Attr3=31,AttrValue3=275,Attr4=41,AttrValue4=275},
+    {ID=12,Type=60,NameID=56202,Attr1=11,AttrValue1=600,Attr2=21,AttrValue2=600,Attr3=31,AttrValue3=300,Attr4=41,AttrValue4=300},
+    {ID=13,Type=65,NameID=56203,Attr1=11,AttrValue1=650,Attr2=21,AttrValue2=650,Attr3=31,AttrValue3=325,Attr4=41,AttrValue4=325},
+    {ID=14,Type=70,NameID=56204,Attr1=11,AttrValue1=700,Attr2=21,AttrValue2=700,Attr3=31,AttrValue3=350,Attr4=41,AttrValue4=350},
+    {ID=15,Type=75,NameID=56205,Attr1=11,AttrValue1=750,Attr2=21,AttrValue2=750,Attr3=31,AttrValue3=375,Attr4=41,AttrValue4=375},
+    {ID=16,Type=80,NameID=56206,Attr1=11,AttrValue1=800,Attr2=21,AttrValue2=800,Attr3=31,AttrValue3=400,Attr4=41,AttrValue4=400},
+    {ID=17,Type=85,NameID=56207,Attr1=11,AttrValue1=850,Attr2=21,AttrValue2=850,Attr3=31,AttrValue3=425,Attr4=41,AttrValue4=425},
+    {ID=18,Type=90,NameID=56208,Attr1=11,AttrValue1=900,Attr2=21,AttrValue2=900,Attr3=31,AttrValue3=450,Attr4=41,AttrValue4=450},
+    {ID=19,Type=95,NameID=56209,Attr1=11,AttrValue1=950,Attr2=21,AttrValue2=950,Attr3=31,AttrValue3=475,Attr4=41,AttrValue4=475},
+    {ID=20,Type=100,NameID=56210,Attr1=11,AttrValue1=1000,Attr2=21,AttrValue2=1000,Attr3=31,AttrValue3=500,Attr4=41,AttrValue4=500}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10],[11]=list[11],[12]=list[12],[13]=list[13],[14]=list[14],[15]=list[15],[16]=list[16],[17]=list[17],[18]=list[18],[19]=list[19],[20]=list[20]};
+
+count = 20;
+Count = 20;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

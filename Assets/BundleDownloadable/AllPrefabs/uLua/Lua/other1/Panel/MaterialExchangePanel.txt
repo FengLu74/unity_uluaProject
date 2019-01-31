@@ -1,0 +1,627 @@
+﻿module("MaterialExchangePanel", package.seeall)
+
+--材料兑换
+local m_materialExchange = "MaterialExchange/"
+-----------------------------------------按钮路径--------------------------------------
+-- 加按钮
+local m_AddButtonStr = "Middle_Btns/Add_Button";
+-- 减按钮
+local m_MinusButtonStr = "Middle_Btns/Minus_Button";
+-- 输入框
+local m_InputButtonStr = "Middle_Btns/Num_Button";
+-- 取消按钮
+local m_CancelButtonStr = "Bottom_Btns/Cancel_Button";
+-- 购买按钮
+local m_ExchangeButtonStr = "Bottom_Btns/Enter_Button";
+-- 使用银币按钮
+local m_UseNotBindMoneyButtonStr = "Top_MoneyType/UseNotBindMoney_Button2";
+-- 使用红钻按钮
+local m_UseNotBindDiamondButtonStr = "Top_MoneyType/UseNotBindDiamond_Button1";
+-- 使用蓝钻按钮
+local m_UseBindDiamondButtonStr = "Top_MoneyType/UseBindDiamond_Button3";
+-----------------------------------------Label文本按钮---------------------------------
+--  道具item路径
+local m_ItemGOStr =  "Item_Show/Item";
+-- 购买道具名称
+local m_ItemNameStr = "Item_Show/Item/Label_Name";
+--购买的道具的等级
+local m_ItemLvlStr =  "Item_Show/Label_Level";
+--购买道具的类型
+local m_ItemTypeStr = "Item_Show/Label_ItemType";
+--要购买的个数
+local m_ItemBuyNumStr = "Middle_Btns/Num_Button/Label_CurNum";
+--消耗xxx提示语：
+local m_CostLableStr = "Cost_num/Sprite_Icon/Label_Header";
+--消耗xxx个数
+local m_CostNamStr = "Cost_num/Label_Num";
+-- 红钻不足提示界面
+local m_RedLackPanelStr = "TipPanel";
+local m_MatExchangeStr = "MaterialExchange"
+-- 确定
+local m_Button_SureStr = "/Button-QueDing";
+-- 取消
+local m_Button_CancleStr = "/Button-FanHui";
+-----------------------------------------Sprite路径------------------------------------
+-- 各个途径下 打勾的图片
+local m_CheckMarkStr = "/Sprite_Select";
+-- 购买界面玩家消耗的货币图标路径
+local m_PlayerRemainMoneyIconStr = "Cost_num/Sprite_Icon";
+--购买的道具图标
+local m_ItemPictIconStr = "Item_Show/Item/Sprite_Icon";
+--uiTable组件路径
+local m_topUiTableStr = "Top_MoneyType";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否创建
+local m_bCreateSuccess = false;
+
+-- 默认使用银币兑换
+local m_UseMoneyType = nil;
+-- 输入框最大值
+local m_MaxNum = 999999;
+--输入框当前购买个数
+local m_ExchangeTimes = 1;
+--要展示的道具数据
+local m_ItemData = nil;
+--要展示的道具ExcelID
+local m_ItemExcelID = 1;
+--红钻，蓝钻数据
+local m_ShopItem = nil;
+--当前货币是否足够支付
+local m_IsEnoughBuy = false;
+--是否可用当前货币类型购买道具
+local m_MoneyTypeIsCanBuy = false;
+--银币或钻石
+local StoreType = 
+{
+    Coin,
+    Diamond,
+}
+--消费的数目
+local costNum=0;
+--uiTable组件
+local m_topUiTable = nil;
+--table
+local m_ButtonStrTable = {"Top_MoneyType/UseNotBindDiamond_Button1","Top_MoneyType/UseNotBindMoney_Button2","Top_MoneyType/UseBindDiamond_Button3"};
+-----------------------------------一些写死的规定--------------------------------------
+-- 够的颜色
+local m_EnoughColor = "FFFFFF";
+-- 不够的颜色
+local m_NotEnoughColor = "FF3D3D";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;    
+end
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end  
+    --error("[lua]-m_ItemExcelID:->"..m_ItemExcelID);
+end
+function OnDisable()
+    m_ItemData = nil;
+    m_ShopItem = nil;
+    m_UseMoneyType = nil;
+    m_IsEnoughBuy = false;
+    m_ExchangeTimes = 1;
+    m_MoneyTypeIsCanBuy = false;
+    m_ItemExcelID = -1;
+
+end
+function OnDestroy()
+    m_ShopItem = nil;
+    m_ItemData = nil;
+    m_UseMoneyType = nil;
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_MoneyTypeIsCanBuy = false;
+    m_ItemExcelID = -1;
+    m_topUiTable = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+--得到panel
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT);
+    m_topUiTable = GetComponent(m_panelObject, m_materialExchange..m_topUiTableStr, "UITable");
+end
+function InitShow()
+    SetGameObjectState(m_RedLackPanelStr,false,m_panelObject);
+    SetGameObjectState(m_MatExchangeStr,true,m_panelObject);
+    InitTopMoneyShow();
+    InitUseTypeShow();
+    InitItemShow();
+end
+--根据m_ItemExcelID得到货币展示类型
+function InitTopMoneyShow()
+    if m_ItemExcelID >0 and m_topUiTable~=nil then
+        for i=1,#m_ButtonStrTable do
+            SetGameObjectState(m_materialExchange ..m_ButtonStrTable[i],false,m_panelObject);
+        end
+        local payDatas = CCommonTool.GetQuickToAllItemById(m_ItemExcelID);
+        if payDatas.Count>0 then
+            for i=0, payDatas.Count-1 do
+                SetGameObjectState(m_materialExchange ..m_ButtonStrTable[payDatas[i].PayType],true,m_panelObject);
+            end
+            m_topUiTable.columns = payDatas.Count;
+            --重置UITable布局
+            m_topUiTable:Reposition();
+            if m_UseMoneyType==nil then
+                --优先选择满足购买的货币
+                local datasInfo  = GetEnoughPayType(payDatas);
+                if #datasInfo>0 then
+                    m_UseMoneyType = datasInfo[1];
+                else
+                    m_UseMoneyType = payDatas[0].PayType;  
+                end
+            end
+        end
+    end
+end
+--根据支付类型判定是否足够
+function GetEnoughPayType (datas)
+    local Payinfo = {};
+    for i=0,datas.Count-1 do
+        mCheckUnBindID(datas[i].PayType);
+        if mMoneyIsEnough(datas[i].PayType) ~=true then
+            table.insert(Payinfo,datas[i].PayType);
+        end
+    end
+    return Payinfo;
+end
+--根据类型判定cost是否足够
+function mMoneyIsEnough(type)
+    local cost = -1;
+    local shopItem = nil;
+    if type==QUICK_BUY_ITEM_COST_TYPE.USE_COIN then
+        cost = m_ItemData.BuyValue*m_ExchangeTimes;
+        return G_UserInfo.BindCoin<cost;
+    elseif type==QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND then
+        shopItem = StoreManager.GetShopItemByItemId(StoreManager.GetShopType(MainMenuType.MMT_Blue), m_ItemData.ExcelId);    
+        cost = shopItem.CurDot*m_ExchangeTimes;
+        return G_UserInfo.BindDiamond<cost;
+    elseif type==QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND then
+        shopItem = StoreManager.GetShopItemByItemId(StoreManager.GetShopType(MainMenuType.MMT_Red), m_ItemData.ExcelId);    
+        cost = shopItem.CurDot*m_ExchangeTimes;
+        return G_UserInfo.NotBindDiamond<cost;
+    end
+    return false;
+end
+
+
+--初始化item展示
+function InitItemShow()
+
+    if m_ItemExcelID >0 then
+        
+        SetItemShowByExcelIDV04(m_panelObject, m_materialExchange..m_ItemGOStr, m_ItemExcelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        local lvStr = CCommonTool.GetTxtData(9131);
+        SetLabelContent(m_materialExchange..m_ItemLvlStr,lvStr.m_str..CCommonTool.GetLevelByExcelID(m_ItemExcelID),m_panelObject);
+
+    else
+        error("[lua] :m_ItemExcelID<=0，可能传值出错！！！ ");
+    end
+
+end
+--设置使用货币显示状态
+function InitUseTypeShow()
+    if m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_COIN then
+        SetGameObjectState(m_materialExchange..m_UseNotBindMoneyButtonStr..m_CheckMarkStr, true, m_panelObject);
+        SetGameObjectState(m_materialExchange..m_UseNotBindDiamondButtonStr..m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(m_materialExchange..m_UseBindDiamondButtonStr..m_CheckMarkStr, false, m_panelObject);
+        SetSpriteByAtlasID(m_materialExchange..m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDMONEY).ImageSmallID,m_panelObject);
+        RefreshNumAndCost();
+
+    elseif m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND then
+        SetGameObjectState(m_materialExchange..m_UseNotBindMoneyButtonStr..m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(m_materialExchange..m_UseNotBindDiamondButtonStr..m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(m_materialExchange..m_UseBindDiamondButtonStr..m_CheckMarkStr, true, m_panelObject);
+        SetSpriteByAtlasID(m_materialExchange..m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDDIAMOND).ImageSmallID,m_panelObject); 
+        RefreshNumAndCost();
+        
+    elseif m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND then
+        SetGameObjectState(m_materialExchange..m_UseNotBindMoneyButtonStr..m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(m_materialExchange..m_UseNotBindDiamondButtonStr..m_CheckMarkStr, true, m_panelObject);
+        SetGameObjectState(m_materialExchange..m_UseBindDiamondButtonStr..m_CheckMarkStr, false, m_panelObject);
+        SetSpriteByAtlasID(m_materialExchange .. m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject); 
+        RefreshNumAndCost();
+    end     
+end
+--初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_materialExchange .. m_AddButtonStr, OnAddClick, m_panelObject);
+    SetGameObjectEvent(m_materialExchange .. m_MinusButtonStr, OnMinusClick, m_panelObject);
+    SetGameObjectEvent(m_materialExchange .. m_InputButtonStr, OnInputClick, m_panelObject);
+    SetGameObjectEvent(m_materialExchange .. m_CancelButtonStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_materialExchange .. m_ExchangeButtonStr, OnEnterClick, m_panelObject);
+
+    SetGameObjectEvent(m_materialExchange .. m_UseNotBindMoneyButtonStr, OnUseNotBindMoneyClick, m_panelObject);
+    SetGameObjectEvent(m_materialExchange .. m_UseNotBindDiamondButtonStr, OnUseNotBindDiamondClick, m_panelObject);
+    SetGameObjectEvent(m_materialExchange .. m_UseBindDiamondButtonStr, OnUseBindDiamondClick, m_panelObject);
+    
+    SetGameObjectEvent(m_RedLackPanelStr..m_Button_SureStr,OnTipSureClick,m_panelObject);
+    SetGameObjectEvent(m_RedLackPanelStr..m_Button_CancleStr,OnTipCancleClick,m_panelObject);
+
+end
+
+function OnTipSureClick()
+    --SetGameObjectState(m_MatExchangeStr,false,m_panelObject);
+    StorePanel.OpenPanelRecharge(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT)
+end
+function OnTipCancleClick()
+    SetGameObjectState(m_RedLackPanelStr,false,m_panelObject);
+    SetGameObjectState(m_MatExchangeStr,true,m_panelObject);
+end
+
+-- 测查是否为绑定id--转化为不绑定根据type
+function mCheckUnBindID(type)
+    m_ItemData = CCommonTool.GetQuickToBuyByExcelIDAndType(m_ItemExcelID,type);
+     if m_ItemData==nil then
+        local  datas = CCommonTool.GetTradableInfo(m_ItemExcelID);
+        if datas ~=nil then
+            local Bind_id  = datas.UntradableItemID;
+            m_ItemData = CCommonTool.GetQuickToBuyByExcelIDAndType(Bind_id,type);  
+            if m_ItemData~=nil then
+                m_ItemExcelID = Bind_id;
+            end
+        end
+        
+    end
+end
+
+--刷新购买个数文本和花费文本
+function RefreshNumAndCost()
+    SetLabelContent(m_materialExchange..m_ItemBuyNumStr,m_ExchangeTimes,m_panelObject)
+    costNum=0;
+    local color = m_EnoughColor;
+   if m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_COIN then
+    --花费银币：
+        SetLabelTextByID(m_materialExchange..m_CostLableStr,9128,m_panelObject);
+        mCheckUnBindID(QUICK_BUY_ITEM_COST_TYPE.USE_COIN);
+
+        if m_ItemData~=nil then        
+            m_MoneyTypeIsCanBuy = true;       
+        else
+            m_MoneyTypeIsCanBuy = false;  
+            ShowSystemFlowTips(9406);  
+        end
+        costNum = (m_MoneyTypeIsCanBuy and m_ItemData.BuyValue*m_ExchangeTimes) or 0 ;
+        if G_UserInfo.BindCoin<costNum then
+            m_IsEnoughBuy = false;
+            color = m_NotEnoughColor;
+        else
+            m_IsEnoughBuy = true;
+            color = m_EnoughColor;
+        end 
+    elseif m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND then
+        --花费蓝钻：
+        SetLabelTextByID(m_materialExchange..m_CostLableStr,9129,m_panelObject);
+        
+        mCheckUnBindID(QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND);
+       
+        if m_ItemData~=nil then     
+            local shop_item = StoreManager.GetShopItemByItemId(StoreManager.GetShopType(MainMenuType.MMT_Blue), m_ItemData.ExcelId);     
+            if shop_item~=nil then
+                m_ShopItem = shop_item;
+                --error("[lua]--->".." 蓝钻 shop_item.Version-->:"..shop_item.Version.."  shop_item.CurDot-->:"..shop_item.CurDot.."  shop_item.ExcelId-->"..shop_item.ExcelId);
+                m_MoneyTypeIsCanBuy = true; 
+            else 
+                m_MoneyTypeIsCanBuy = false;   
+                ShowSystemFlowTips(9407);
+            end  
+        else
+            m_MoneyTypeIsCanBuy = false; 
+            ShowSystemFlowTips(9407);   
+        end
+         costNum = (m_MoneyTypeIsCanBuy and m_ShopItem.CurDot*m_ExchangeTimes) or 0 ;
+         if G_UserInfo.BindDiamond<costNum then
+            m_IsEnoughBuy = false;
+            color = m_NotEnoughColor;
+        else
+            m_IsEnoughBuy = true;
+            color = m_EnoughColor;
+        end
+
+    elseif m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND then
+        --花费红钻：
+        SetLabelTextByID(m_materialExchange..m_CostLableStr,9130,m_panelObject);
+       
+        mCheckUnBindID(QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND);
+
+        if m_ItemData~=nil then       
+ 
+         local shop_item = StoreManager.GetShopItemByItemId(StoreManager.GetShopType(MainMenuType.MMT_Red), m_ItemData.ExcelId);     
+            if shop_item~=nil then
+                m_ShopItem = shop_item;
+                --error("[lua]--->".." 红钻 shop_item.Version-->:"..shop_item.Version.."  shop_item.CurDot-->:"..shop_item.CurDot.."  shop_item.ExcelId-->"..shop_item.ExcelId);
+                m_MoneyTypeIsCanBuy = true;   
+            else    
+                m_MoneyTypeIsCanBuy = false;
+                ShowSystemFlowTips(9408);
+            end 
+        else
+            m_MoneyTypeIsCanBuy = false;
+            ShowSystemFlowTips(9408);    
+        end
+        costNum = (m_MoneyTypeIsCanBuy and m_ShopItem.CurDot*m_ExchangeTimes) or 0 ;
+        if G_UserInfo.NotBindDiamond<costNum then
+            m_IsEnoughBuy = false;
+            color = m_NotEnoughColor;
+        else
+            m_IsEnoughBuy = true;
+            color = m_EnoughColor;
+        end    
+    end
+    if m_MoneyTypeIsCanBuy then
+
+        SetLabelContent(m_materialExchange..m_CostNamStr,costNum,m_panelObject);
+    else --无法购买则，花费xxx始终未0
+        SetLabelContent(m_materialExchange..m_CostNamStr,0,m_panelObject);
+    end
+    --SetLabelContent(m_materialExchange..m_CostNamStr,costNum,m_panelObject);
+    SetLabelColor(m_materialExchange..m_CostNamStr,color,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnAddClick()
+    if m_ExchangeTimes < m_MaxNum then
+        m_ExchangeTimes = m_ExchangeTimes + 1;
+        RefreshNumAndCost();
+    end
+end
+
+function OnMinusClick()
+    if m_ExchangeTimes > 1 then
+        m_ExchangeTimes = m_ExchangeTimes - 1;
+        RefreshNumAndCost();
+    end
+end
+
+function OnInputClick()
+    local data = 
+    {
+        X = 0;
+        Y = -535;
+        --Text = m_ExchangeTimes;
+    };
+    SmallKeyboardPanel.InputCallback = OnSmallKeyboardNumClick;
+    SmallKeyboardPanel.ConfirmCallback = OnSmallKeyboardConfirmClick;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+end
+
+--小键盘数字按下回调
+--@param data 数据信息
+function OnSmallKeyboardNumClick(data)
+    if data ~= nil then
+        m_ExchangeTimes = data.Num;
+        if m_ExchangeTimes < 1 then
+            m_ExchangeTimes = 1;
+        elseif m_ExchangeTimes > m_MaxNum then
+            m_ExchangeTimes = m_MaxNum;
+        end
+        RefreshNumAndCost();
+    end
+end
+
+--小键盘确定按钮回调
+function OnSmallKeyboardConfirmClick()
+    
+end
+
+function OnEnterClick()
+    if m_MoneyTypeIsCanBuy~=true then
+        
+        if m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_BIND_COIN  then
+
+                ShowSystemFlowTips(9406);
+
+        elseif m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND  then
+
+                ShowSystemFlowTips(9407);
+
+        elseif m_UseMoneyType == QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND  then
+
+                ShowSystemFlowTips(9408);
+        end
+
+        return;
+    end
+
+    if m_IsEnoughBuy then
+        if m_ItemData.PayType ==1 or m_ItemData.PayType==3 then      --钻石购买
+            if m_ShopItem~=nil then
+                local data = 
+                {
+                    ItemData = m_ShopItem;
+                    BuyNum = m_ExchangeTimes;
+                };
+                StoreProtocol.RequestBuyProp(data);
+            end
+        elseif m_ItemData.PayType ==2 then                          --银币购买
+            local datas = 
+            {
+               ShopId = 10;
+               TableId = m_ItemData.TableId;
+               ItemIndex = m_ItemData.ItemIndex;
+               ExcelId = m_ItemData.ExcelId;
+            };
+            OnCoinBuyItem(datas);
+        end
+    else
+        if m_ItemData.PayType ==1  then      --红钻石不够
+            SetGameObjectState(m_RedLackPanelStr,true,m_panelObject);
+            SetGameObjectState(m_MatExchangeStr,false,m_panelObject);          
+            --StorePanel.OpenPanelRecharge(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT);
+            return;
+        elseif m_ItemData.PayType ==2 then                          --银币不够
+            MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        elseif  m_ItemData.PayType==3 then      --蓝砖不够
+            if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND,costNum,ENUMPANELID.ENUM_PANEL_EQUIPPANEL) then
+                log("OnBuyButtonClick 红钻不足!!!!");
+            end
+        end
+    end
+
+    closePanel(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT);
+end
+
+--银币购买
+function OnCoinBuyItem(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHOP_BUYDEAL);
+    --error("[lua]..->".."shopInfo.ShopId:"..shopInfo.ShopId.."->:shopInfo.TabId-:"..shopInfo.TabId.."m_curSelectItemData.Id:"..m_curSelectItemData.Id.."--m_curSelectItemData.ItemId"..m_curSelectItemData.ItemId);
+    buffer:WriteInt(data.ShopId);
+    buffer:WriteInt(data.TableId);
+    buffer:WriteInt(data.ItemIndex);
+    buffer:WriteInt(data.ExcelId);
+    buffer:WriteInt(m_ExchangeTimes);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--关闭按钮
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT);
+end
+--使用银币按钮
+function OnUseNotBindMoneyClick()
+    if m_UseMoneyType ==QUICK_BUY_ITEM_COST_TYPE.USE_COIN then
+        return;
+    end
+    m_UseMoneyType = QUICK_BUY_ITEM_COST_TYPE.USE_COIN;
+    InitUseTypeShow();
+end
+--使用红钻
+function OnUseNotBindDiamondClick()
+    if m_UseMoneyType ==QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND then
+        return;
+    end
+    m_UseMoneyType = QUICK_BUY_ITEM_COST_TYPE.USE_RED_DIAMOND;
+    InitUseTypeShow();
+end
+--使用蓝钻
+function OnUseBindDiamondClick()
+    if m_UseMoneyType ==QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND then
+        return;
+    end
+    m_UseMoneyType = QUICK_BUY_ITEM_COST_TYPE.USE_BLUE_DIAMOND;
+    InitUseTypeShow();
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 打开材料快捷购买界面
+--
+function ShowPanel(excelID,causePanelID)
+    m_ItemExcelID = excelID;
+    --m_ItemData = matDatas;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT) == 1 then
+        InitShow();
+    else
+        if causePanelID == nil then
+            causePanelID = -1;
+        end
+        createPanel(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT,causePanelID);
+    end
+end
+
+
+-- 角色货币更改时刷新界面
+function OnPlayerMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_QUICKBUYMAT) == 1 then
+        if m_IsEnoughBuy ~= true then
+            --刷新显示是否足够
+            RefreshNumAndCost();
+        end
+    end
+end
+
+--道具数目发生改变时刷新caseID界面
+function RefreshNeedItem()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 then                                    --强化界面
+        Equip_Force.InitRight();
+    
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL) == 1 then                        --合成界面
+        CombinePanel.OnRefreshItem();
+    
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 then                                    --装备洗练界面
+        Equip_RandEff.OnStartAttrBack();
+    
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) ==1 then                                      --装备精炼 
+        Equip_StarUp.InitRight();
+    
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_RIDEPANEL)==1 then                                        --坐骑培养界面
+        RidePanel.OnBindMoneyChange();
+    
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL)==1 then                                       --技能学习界面
+        SkillLevelupPanel.OnBindMoneyChange();
+    
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL)==1 then                                        --技能-天赋重置界面
+        SkillTalentResetPanel.RefreshItemInfo();
+    
+    --生产制造
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIFESKILL)==1 then
+        LifeSkillPanel.RefreshRightMat();
+    
+    --技能学习
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIFESKILL)==1 then
+        LifeSkillPanel.RefreshRightLearnMat();
+    
+    -- 神器熔炼
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL)==1 then
+        ArtifactFragmentPanel.RefreshMatChange();
+    
+    --宠物捕捉
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN)==1 then
+        Main_MiddleBottom.InitPetCaptureShow();
+    
+    --宠物升级 
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL) == 1 then
+        PetLevelUpPanel.InitDynamicShow();
+    
+    --宠物升星
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL) == 1 then
+        PetStarUpPanel.InitShow();
+    
+    -- 宠物洗练
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL) == 1 then
+        PetQualityRefreshPanel.OnRefresh();
+    
+    -- 宠物技能学习
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL)==1 then
+        PetLearnSkillPanel.InitShow();
+    
+    -- 亲密度
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETINTIMATEPANEL)==1 then
+        PetIntimatePanel.InitDynamicShow();
+    
+    -- 悟性
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL)==1 then
+        PetSavvyPanel.InitDynamicShow();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = {};
+    
+    jumpParamsTable[1] = m_ItemData;
+    jumpParamsTable[2] = m_ShopItem;
+    jumpParamsTable[3] = m_UseMoneyType;
+    jumpParamsTable[4] = m_ExchangeTimes;
+    jumpParamsTable[5] = m_ItemExcelID;
+   
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_ItemData = paramTable[1];
+    m_ShopItem = paramTable[2];
+    m_UseMoneyType = paramTable[3];
+    m_ExchangeTimes = paramTable[4];
+    m_ItemExcelID = paramTable[5];
+    
+end

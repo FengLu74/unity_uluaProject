@@ -1,0 +1,16 @@
+﻿module("GMProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- gm面板更新
+    network.Register(GMI_STOC_CONSOLE_MSG, UIGMUpdate);
+end
+
+-- GM命令更新 获取GM信息
+function UIGMUpdate(protocolId, buffer)
+    UIGMPanel.OnUpdateList(buffer);
+end
+
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

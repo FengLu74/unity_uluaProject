@@ -1,0 +1,355 @@
+﻿module("BattlePanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 当前赛季积分数值
+local m_LeftCurSeasonScoreStr = "Content/Left/Label_Score";
+-- 当前玩家战斗力数值
+local m_LeftFightValueStr = "Content/Left/Label_FightValue";
+-- 当前玩家段位文本
+local m_RightTopRankNameStr = "Content/Right/Top/Label_Level";
+-- 玩家下个段位文本
+local m_RightTopNextRankNameStr = "Content/Right/Top/Label_Next";
+-- 当前赛季积分数值
+local m_RightTopCurSeasonScoreStr = "Content/Right/Top/Label_Score";
+-- 本赛季排名
+local m_CurRankLabelStr = "Content/Right/Top/Label_Rank";
+-- 本赛季胜率
+local m_CurSeasonWinRateStr = "Content/Right/Top/Label_WinRate";
+-- 总赛季胜负平场
+local m_AllSeasonStaticStr = "Content/Right/Top/Label_AllStatic";
+-- 下一段位描述
+local m_NextRankLabelStr = "Content/Right/Top/Label_RankDes";
+-- 本次活动剩余次数
+local m_ActivityLeftTimesStr = "Content/Right/Bottom/Button_Match/Label_Left";
+-- 本次活动时间
+local m_ActivityOpenTimeStr = "Content/Right/Bottom/Button_CannotMatch/Label_Time";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonStr = "Button_Close";
+-- 排行榜按钮
+local m_RankButtonStr = "Content/Right/Middle/Button_Rank";
+-- 每日奖励按钮
+local m_EveryDayRewardButtonStr = "Content/Right/Middle/Button_EveryDayReward";
+-- 积分商店按钮
+local m_ScoreShopButtonStr = "Content/Right/Bottom/Button_Shop";
+-- 战斗记录按钮
+local m_FightRecordButtonStr = "Content/Right/Bottom/Button_Record";
+-- 活动规则按钮
+local m_RuleButtonStr = "Content/Right/Bottom/Button_Rule";
+-- 匹配按钮
+local m_MatchButtonStr = "Content/Right/Bottom/Button_Match";
+-- 不可匹配按钮
+local m_CannotMatchButtonStr = "Content/Right/Bottom/Button_CannotMatch";
+-----------------------------------------Sprite路径------------------------------------
+-- 左侧段位小图标位置
+local m_LeftRankSpriteStr = "Content/Left/Sprite_Small";
+-- 右侧上方大图标位置
+local m_RightTopRankSpriteStr = "Content/Right/Top/Sprite_Big";
+-- 当前赛季积分进度
+local m_RightTopCurSeasonScoreProStr = "Content/Right/Top/ScorePro";
+----------------------------------gameobject所在的路径---------------------------------
+-- 战斗记录的路径
+local m_FightRecordStr = "Content/Right/Middle/";
+----------------------------------通用的名称路径---------------------------------------
+-- 玩家职业图片所在的路径
+local m_ProPic = "Pro/";
+-- 有记录的路径
+local m_fightRecordHasContent = "/Content";
+-- 获胜
+local m_WinStr = "/Content/State/Win";
+-- 失败
+local m_LoseStr = "/Content/State/Lose";
+-- 平局
+local m_DrawStr = "/Content/State/Draw";
+-- 有战斗信息
+local m_HasFightInfoStr = "/Content/HasMatch";
+-- 无战斗信息
+local m_NoFightInfoStr = "/Content/NoMatch";
+-- 加分
+local m_AddSeasonScore = "/Content/Label_AddSeasonScore";
+-- 对方阶位
+local m_OpponentRankStr = "/Content/HasMatch/Sprite_Rank";
+-- 对方分数
+local m_OpponentSeasonScoreStr = "/Content/HasMatch/Label_SeasonScore";
+-- 对方姓名
+local m_OpponentNameStr = "/Content/HasMatch/Label_Name";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 当前是从那个活动ID进来的
+local m_CurActivityID = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitContent();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitContent();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BATTLEPANEL);
+end
+
+function InitContent()
+    BattleFieldManager.RequestForRecord(0);
+    RankProtocol.RequestRank(RANK_TYPE.BATTLEFIELD,RANK_SECEND_TYPE.NONE);
+    InitPro();
+    InitLeftAndRightTopContent();
+    RefreshRecord();
+end
+
+function InitPro()
+    local proID = 1;
+    if G_UserInfo.RoleAttribute ~= nil then
+        proID = G_UserInfo.RoleAttribute.ProID;
+    end
+    for Index = 1,4 do
+        if Index == proID then
+            SetGameObjectState(m_ProPic..Index,true,m_panelObject);
+        else
+            SetGameObjectState(m_ProPic..Index,false,m_panelObject);
+        end
+    end
+end
+
+function InitLeftAndRightTopContent()
+    local seasonScore = BattleFieldManager.SeasonScore;
+    local rankNum = BattleFieldManager.BattleFieldRankNum;
+    local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+    local curRank = 1;
+    for Index = 1,rankNum do
+        if seasonScore <= battleFieldTableData[Index].Score then
+            curRank = Index;
+            break;
+        end
+    end
+    SetSpriteByAtlasID(m_LeftRankSpriteStr,battleFieldTableData[curRank].SmallPicID,m_panelObject);
+    SetLabelContent(m_LeftCurSeasonScoreStr,seasonScore,m_panelObject);
+    SetLabelContent(m_LeftFightValueStr,math.floor(G_UserInfo.RoleAttribute.BattlePower),m_panelObject);
+    SetSpriteByAtlasID(m_RightTopRankSpriteStr,battleFieldTableData[curRank].BigPicID,m_panelObject);
+    SetLabelTextByID(m_RightTopRankNameStr,battleFieldTableData[curRank].NameID,m_panelObject);
+    if curRank == rankNum then
+        SetLabelTextByID(m_NextRankLabelStr,54673,m_panelObject);
+        SetLabelTextByID(m_RightTopNextRankNameStr,battleFieldTableData[curRank].NameID,m_panelObject);
+        SetLabelContent(m_RightTopCurSeasonScoreStr,seasonScore,m_panelObject);
+        SetSpriteFillAmount(m_RightTopCurSeasonScoreProStr,1,m_panelObject);
+    else
+        SetLabelTextByID(m_NextRankLabelStr,54650,m_panelObject);
+        SetLabelTextByID(m_RightTopNextRankNameStr,battleFieldTableData[curRank + 1].NameID,m_panelObject);
+        local pro = 1;
+        if curRank == 1 then
+            pro = (seasonScore - BattleFieldManager.BattleFieldInitScore)/(battleFieldTableData[curRank].Score + 1 - BattleFieldManager.BattleFieldInitScore);
+        else
+            pro = (seasonScore - battleFieldTableData[curRank - 1].Score)/(battleFieldTableData[curRank].Score - battleFieldTableData[curRank - 1].Score);
+        end
+        SetLabelContent(m_RightTopCurSeasonScoreStr,seasonScore.."/"..(battleFieldTableData[curRank].Score + 1),m_panelObject);
+        SetSpriteFillAmount(m_RightTopCurSeasonScoreProStr,pro,m_panelObject);
+    end
+    local curSeasonAll = BattleFieldManager.SeasonWin+BattleFieldManager.SeasonFail+BattleFieldManager.SeasonDraw;
+    local winRate = 0;
+    if curSeasonAll == 0 then
+        winRate = "100%";
+    else
+         winRate = math.floor(BattleFieldManager.SeasonWin/(curSeasonAll) * 100) .. "%";
+    end
+    SetLabelContent(m_CurSeasonWinRateStr,winRate,m_panelObject);
+    SetLabelContent(m_AllSeasonStaticStr,string_format(CCommonTool.GetTxtData(54654).m_str,BattleFieldManager.AllSeasonWin,BattleFieldManager.AllSeasonDraw,BattleFieldManager.AllSeasonFail),m_panelObject);
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_CurActivityID);
+    SetLabelContent(m_ActivityLeftTimesStr,string_format(CCommonTool.GetTxtData(54662).m_str,remainTimes,maxTimes),m_panelObject);
+    if ActivityManager.GetActivityState(m_CurActivityID) == ACTIVITY_STATE.OPENING then
+        SetGameObjectState(m_MatchButtonStr,true,m_panelObject);
+        SetGameObjectState(m_CannotMatchButtonStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_MatchButtonStr,false,m_panelObject);
+        SetGameObjectState(m_CannotMatchButtonStr,true,m_panelObject);
+    end
+    SetLabelContent(m_ActivityOpenTimeStr,ActivityManager.GetOpenTime(m_CurActivityID, false, " "),m_panelObject);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CloseButtonStr,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_RankButtonStr,OnRankClick,m_panelObject);
+    SetGameObjectEvent(m_EveryDayRewardButtonStr,OnEveryDayRewardClick,m_panelObject);
+    SetGameObjectEvent(m_ScoreShopButtonStr,OnScoreShopClick,m_panelObject);
+    SetGameObjectEvent(m_FightRecordButtonStr,OnFightRecordClick,m_panelObject);
+    SetGameObjectEvent(m_RuleButtonStr,OnRuleClick,m_panelObject);
+    SetGameObjectEvent(m_MatchButtonStr,OnMatchClick,m_panelObject);
+end
+
+function RefreshRecord()
+    local fightRecordTable = BattleFieldManager.FightRecord;
+    local tempPath;
+    local fightRecord;
+    local rankNum = BattleFieldManager.BattleFieldRankNum;
+    local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+    for Index = 1,4 do
+        tempPath = m_FightRecordStr .. Index;
+        fightRecord = fightRecordTable[Index];
+        if fightRecord == nil then
+            SetGameObjectState(tempPath .. m_fightRecordHasContent,false,m_panelObject);
+        else
+            SetGameObjectState(tempPath .. m_fightRecordHasContent,true,m_panelObject);
+            if fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_WIN or fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_NOMATCH then
+                SetGameObjectState(tempPath .. m_WinStr,true,m_panelObject);
+                SetGameObjectState(tempPath .. m_LoseStr,false,m_panelObject);
+                SetGameObjectState(tempPath .. m_DrawStr,false,m_panelObject);
+                SetLabelGradientColor("CEFF6F","85CC3F",tempPath .. m_AddSeasonScore,m_panelObject)
+            elseif fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_LOSE then
+                SetGameObjectState(tempPath .. m_WinStr,false,m_panelObject);
+                SetGameObjectState(tempPath .. m_LoseStr,true,m_panelObject);
+                SetGameObjectState(tempPath .. m_DrawStr,false,m_panelObject);
+                SetLabelGradientColor("FFA56F","CC433F",tempPath .. m_AddSeasonScore,m_panelObject)
+            elseif fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_DRAW then
+                SetGameObjectState(tempPath .. m_WinStr,false,m_panelObject);
+                SetGameObjectState(tempPath .. m_LoseStr,false,m_panelObject);
+                SetGameObjectState(tempPath .. m_DrawStr,true,m_panelObject);
+                SetLabelGradientColor("FFFDDB","A19D85",tempPath .. m_AddSeasonScore,m_panelObject)
+            end
+            SetLabelContent(tempPath .. m_AddSeasonScore,"+"..fightRecord.AddSeasonScore,m_panelObject);
+            if fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_NOMATCH then
+                SetGameObjectState(tempPath .. m_NoFightInfoStr,true,m_panelObject);
+                SetGameObjectState(tempPath .. m_HasFightInfoStr,false,m_panelObject);
+            else
+                SetGameObjectState(tempPath .. m_NoFightInfoStr,false,m_panelObject);
+                SetGameObjectState(tempPath .. m_HasFightInfoStr,true,m_panelObject);
+                local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+                local curRank = 1;
+                for Index = 1,rankNum do
+                    if fightRecord.OpponentSeasonScore <= battleFieldTableData[Index].Score then
+                        curRank = Index;
+                        break;
+                    end
+                end
+                SetSpriteByAtlasID(tempPath .. m_OpponentRankStr,battleFieldTableData[curRank].SmallPicID,m_panelObject);
+                SetLabelContent(tempPath .. m_OpponentSeasonScoreStr,fightRecord.OpponentSeasonScore,m_panelObject);
+                SetLabelContent(tempPath .. m_OpponentNameStr,fightRecord.PlayerName,m_panelObject);
+            end
+        end
+    end
+    
+end
+
+function RefreshRank()
+    if BattleFieldManager.SeasonRank == 0 then
+        SetLabelContent(m_CurRankLabelStr,CCommonTool.GetTxtData(54674).m_str,m_panelObject);
+    else
+        SetLabelContent(m_CurRankLabelStr,string_format(CCommonTool.GetTxtData(1129).m_str,BattleFieldManager.SeasonRank),m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_BATTLEPANEL);
+end
+
+function OnRankClick()
+    RankPanel.OpenRankPanel(RANK_TYPE.BATTLEFIELD, 0);
+end
+
+function OnEveryDayRewardClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL,ENUMPANELID.ENUM_PANEL_BATTLEPANEL);
+end
+
+function OnScoreShopClick()
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.BattleShop);
+end
+
+function OnFightRecordClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_BATTLERECORDPANEL,ENUMPANELID.ENUM_PANEL_BATTLEPANEL);
+end
+
+function OnRuleClick()
+    --ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_NOTMADE);
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_BATTLEPANEL, 1);
+end
+
+function OnMatchClick()
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_CurActivityID);
+    if maxTimes > 0 then
+        if ActivityManager.IsLackTimes(m_CurActivityID) == 1 then
+            -- 增加活动次数
+            ActivityTimesItemPanel.Show(m_CurActivityID);
+            return;
+        elseif remainTimes <= 0 then
+            ShowSystemFlowTips(6021);
+            return;
+        end
+    end
+    local curMapType = G_SceneMng:GetCurMapType();
+    if curMapType ~= EMapType.MAP_TYPE_YEWAI and curMapType ~= EMapType.MAP_TYPE_CITY and curMapType ~= EMapType.MAP_TYPE_GUILD then
+        ShowSystemFlowTips(9001);
+        return;
+    end
+    -- 如果有队伍，并且是队长，并且在自动匹配，取消自动匹配
+    local teamData = TeamManager.teamData;
+    local isLeader = TeamManager.IsLeader();
+    if isLeader and teamData.autoMatchMember == true then
+        TeamProtocol.RequestCancelMatchMember(TeamManager.teamData.id);
+    end
+    -- 如果没有队伍，正在自动匹配，取消匹配
+    if TeamManager.HasTeam() == false and TeamManager.autoMatchTeam then
+        TeamProtocol.RequestCancelMatchTeam();
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_MATCH_BATTLEFIELD);
+    buffer:WriteInt(m_CurActivityID);
+    G_NetWorkMng:SendMessage(buffer);
+    BattleMatchPanel.SetData(BattleMatchPanel.Matching,nil,m_CurActivityID);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshFightRecord()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLEPANEL) == 1 then
+        RefreshRecord();
+    end
+end
+
+function OnRankRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLEPANEL) == 1 then
+        RefreshRank();
+    end
+end
+
+function RefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLEPANEL) == 1 then
+        InitLeftAndRightTopContent();
+        RefreshRecord();
+    end
+end
+
+function OpenPanel(activityID,causePanelId)
+    if BattleFieldManager.IsInBattleFieldScene() then
+        ShowSystemFlowTips(9000);
+        return;
+    end
+    m_CurActivityID = activityID;
+    createPanel(ENUMPANELID.ENUM_PANEL_BATTLEPANEL,causePanelId);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_CurActivityID;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_CurActivityID = paramTable[1];
+end

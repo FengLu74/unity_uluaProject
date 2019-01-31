@@ -1,0 +1,579 @@
+﻿
+module("SinhaengPanel", package.seeall)
+--加载子界面lua
+require "Panel/SinhaengPanelContent";
+require "Panel/SinhaengSkillPanel";
+require "Panel/SinhaengStarPanel";
+-- 当前所在面板名字-------------------------------------神行界面------------------------------------------------------
+local m_PanelName = "SinhaengPanel"; 
+---神行界面
+local m_SinhaengPanelStr = "SinhaengContentPanel";
+---技能界面
+local m_SkillPanelStr = "SinhaengSkillPanel"
+---星魂界面
+local m_StarPanelStr = "SinhaengStarPanel";
+--- 亮暗按钮路径
+local m_MenuItemPath = "LeftContent/Grid/MenuItem";
+------------------------ 神行和技能公共中部---------------------------------------------
+local m_publicMiddleStr = "PublicMiddle";
+--神行名称
+local m_godNameStr = "PublicMiddle/Top_Name";
+-- 神行第几阶
+local m_godStageStr = "PublicMiddle/Top_Name/Top_Lvl";
+--神行技能组
+local m_skillMidStr = "PublicMiddle/Skills/Item";
+-----------------------------------引用的对象---------------------------------------------------------------------
+-- 玩家身上的组件
+local m_PlayerChangeEquip = nil;
+local m_middles = nil;
+local m_SContentPanel = nil;
+local m_SSkillPanel = nil;
+local m_SStarPanel = nil;
+-- 上次选中的页签
+local m_lastSelectTagNum = 1;
+-- 当前选中的第几个标签
+local m_selectTagNum = 1;
+-- 页签最大数
+local PAGEMAX = 3;
+--技能组id
+local m_middleSkillTab = {};
+--当前显示第几阶
+local m_curShowStageLvl = -1;
+-- toggles组成的table内容
+local m_toggleTable =
+{
+    [1] = {  panelName = m_SinhaengPanelStr, isFirstOpen = true, luaFileName = SinhaengPanelContent },
+    [2] = {  panelName = m_SkillPanelStr, isFirstOpen = true, luaFileName = SinhaengSkillPanel },
+    [3] = {  panelName = m_StarPanelStr, isFirstOpen = true, luaFileName = SinhaengStarPanel },
+};
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+--
+local LeftTableType = 
+{
+    GOD = 1, 
+    SKILL = 2,
+    STAR = 3,
+}
+------------------------------------BaseLua调用的同名方法-----------------------------------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    Hide3DModel();
+    m_PlayerChangeEquip = nil;
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = 1;
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    m_curShowStageLvl = -1;
+    m_middleSkillTab = {};
+    m_SContentPanel:SetActive(false);
+    m_SStarPanel:SetActive(false);
+    m_SSkillPanel:SetActive(false);
+end
+function SwiftBtnToggle()
+    for index=1,PAGEMAX do
+        if m_selectTagNum == index then
+            SetGameObjectState(m_MenuItemPath..index.."/Toggle",true,m_panelObject);
+        else
+            SetGameObjectState(m_MenuItemPath..index.."/Toggle",false,m_panelObject);
+        end
+    end
+    if m_toggleTable[m_lastSelectTagNum] ~= nil then
+        m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    end
+    if m_toggleTable[m_selectTagNum] ~= nil then
+        --error("神行lua文件名称：："..m_toggleTable[m_selectTagNum].luaFileName);
+        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    end
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+    if m_selectTagNum == LeftTableType.GOD or m_selectTagNum == LeftTableType.SKILL then
+        m_middles:SetActive(true);
+        setPubMiddleContent();
+    else
+        m_middles:SetActive(false);
+        Hide3DModel();
+   end
+end
+function OnDestroy()
+    Hide3DModel();
+    m_PlayerChangeEquip = nil;
+    for index = 1, PAGEMAX do
+        if m_toggleTable[index].luaFileName ~= nil then
+            m_toggleTable[index].luaFileName.OnDestroy();
+            m_toggleTable[index].isFirstOpen = true;
+        end
+    end
+    m_curShowStageLvl = -1;
+    m_middles = nil;
+    m_SContentPanel = nil;
+    m_SSkillPanel = nil;
+    m_SStarPanel = nil;
+    -- 上次选中的页签
+    m_lastSelectTagNum = 1;
+    -- 当前选中的第几个标签
+    m_selectTagNum = 1;
+    -- 面板对象
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_middleSkillTab = {};
+end
+-- object
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_SINHAENGPANEL);--神行界面
+
+    m_SContentPanel = child(m_panelObject,m_SinhaengPanelStr).gameObject;
+    m_SSkillPanel = child(m_panelObject,m_SkillPanelStr).gameObject;
+    m_SStarPanel = child(m_panelObject,m_StarPanelStr).gameObject;
+
+    m_middles = child(m_panelObject,m_publicMiddleStr).gameObject;
+    m_SContentPanel:SetActive(false);
+    m_SStarPanel:SetActive(false);
+    m_SSkillPanel:SetActive(false);
+
+end
+-- 事件
+function InitEvents()  
+    -- 左侧页签事件
+    for index=1,PAGEMAX do
+        SetGameObjectEvent(m_MenuItemPath .. index , leftItemButtonClick, m_panelObject);
+    end
+    setItemClick();
+    --神行穿戴
+    SetGameObjectEvent(m_publicMiddleStr.."/ButtonEquip",OnClickEquip,m_panelObject);
+end
+--穿戴神行
+function OnClickEquip()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SINHAENG_OPER);
+    buffer:WriteByte(3);
+    buffer:WriteInt(m_curShowStageLvl);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+function leftItemButtonClick(e)
+    local Index = tonumber(string.sub(e.transform.name, 9, string.len(e.transform.name)));
+    --判定页签是否开启了
+    if checkLeftBtnOpen(Index) == false then
+        local need_lvl = SinhaengPanelManager.getMinState();
+        ShowSystemFlowTips(9778,nil,{need_lvl});
+        return;
+    end
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = Index;
+    -- 变换按钮亮暗
+    SwiftBtnToggle();
+end
+--判断技能页签是否能够开启
+function checkLeftBtnOpen(index)
+    if index == LeftTableType.STAR then
+        local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+        local need_lvl = SinhaengPanelManager.getMinState();
+        --error("现阶段：："..stage_lvl.." 要求：："..need_lvl);
+        if stage_lvl < need_lvl then
+            return false;
+        else
+            return true;
+        end
+    end
+    return true;
+end
+-- show
+function InitShow()
+    for i=1,PAGEMAX do
+        local canshow = false;
+        if i == LeftTableType.GOD then
+            canshow = SinhaengPanelContent.godsCanShowRed();
+        elseif i == LeftTableType.SKILL then
+            canshow = SinhaengSkillPanel.skillCanShowRed();
+        elseif i == LeftTableType.STAR then
+            if checkLeftBtnOpen(LeftTableType.STAR) == true then
+                canshow = SinhaengStarPanel.starCanShowRed();
+            else
+               canshow = false; 
+            end 
+        end
+        SetLeftTabRedShow(i,canshow);
+    end
+    SwiftBtnToggle();
+end
+-- 关闭按钮事件
+function OnCloseClick(e)
+    closePanel(ENUMPANELID.ENUM_SINHAENGPANEL);
+end
+-- 跳转界面获取数据
+function GetJumpCloseData()
+
+    local panelParams = {};
+    local tabIndex = m_selectTagNum;
+    if tabIndex == LeftTableType.GOD then
+        -- 神行
+        panelParams.godIndex = m_curShowStageLvl;
+        panelParams.data = SinhaengPanelContent.GetJumpCloseData();
+        panelParams.tabIndex = tabIndex;
+    elseif tabIndex == LeftTableType.SKILL then
+        -- 技能
+        panelParams.godIndex = m_curShowStageLvl;
+        panelParams.data = SinhaengSkillPanel.GetJumpCloseData();
+        panelParams.tabIndex = tabIndex;
+    elseif tabIndex == LeftTableType.STAR then
+        -- 星魂
+        panelParams.data = SkillConfigPanel.GetJumpCloseData();
+        panelParams.tabIndex = tabIndex;
+    end
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_JumpPanelParamsTable = paramTable;
+    if m_JumpPanelParamsTable == nil then
+        return;
+    end
+   m_selectTagNum = m_JumpPanelParamsTable.tabIndex;
+   if m_selectTagNum == LeftTableType.GOD then
+        -- 神行
+        m_curShowStageLvl = m_JumpPanelParamsTable.godIndex;
+        --panelParams.data = SkillLevelupPanel.SetJumpCloseData();
+    elseif m_selectTagNum == LeftTableType.SKILL then
+        -- 技能
+        m_curShowStageLvl = m_JumpPanelParamsTable.godIndex;
+        --error(m_JumpPanelParamsTable.data.skillIndex);
+        --panelParams.data = SkillTalentPanel.SetJumpCloseData();
+    elseif m_selectTagNum == LeftTableType.STAR then
+        -- 星魂
+        --panelParams.data = SkillConfigPanel.SetJumpCloseData();
+    end
+    SwiftBtnToggle();
+end
+---------------------------------------------------子界面公共调用方法----------------------------------------
+--更换神行模型
+function ChangeSinhaengModel(modeId)
+    if m_PlayerChangeEquip~=nil then
+        m_PlayerChangeEquip:SetUIFashion(6, modeId, true);
+    end
+end
+-- 缓存进阶动画模型
+function SaveAnimator(animator)
+    m_PlayerChangeEquip = animator.gameObject:GetComponent("CPlayerChangeEquip");
+end
+--加载玩家模型
+function SetPlayerModel(foot_id)
+    local buffer = ByteBuffer.New();  
+    buffer:WriteInt(ENUMPANELID.ENUM_SINHAENGPANEL);   
+    buffer:WriteInt(foot_id);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 隐藏或删除3d模型
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_SINHAENGPANEL);
+end
+----设置中部内容
+function setPubMiddleContent()
+    Hide3DModel();
+    local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+    if m_curShowStageLvl <=0 then
+        m_curShowStageLvl = stage_lvl;
+    end
+    --设置装备按钮
+    local cur_sinaId = SinhaengPanelManager.getCurSinhaengID();
+    --error("cur_sinaId:"..cur_sinaId.." m_curShowStageLvl::"..m_curShowStageLvl);
+    if m_curShowStageLvl <=  stage_lvl and m_curShowStageLvl~=cur_sinaId then
+        SetGameObjectState(m_publicMiddleStr.."/ButtonEquip",true,m_panelObject);
+    else
+        SetGameObjectState(m_publicMiddleStr.."/ButtonEquip",false,m_panelObject);
+    end
+    --设置名称，
+    local txtName = GetTextToId(SinhaengMainTable.Get(m_curShowStageLvl).Name);
+    SetLabelContent(m_godNameStr,txtName,m_panelObject);
+    --设置阶数
+    SetLabelContent(m_godStageStr,string_format(GetTextToId(9232),m_curShowStageLvl),m_panelObject);  
+    -- 設置模型
+    SetPlayerModel(getModelIdByIndex(m_curShowStageLvl));
+   -- ChangeSinhaengModel();
+    -- 设置技能图标，显隐
+    m_middleSkillTab = getPlayerSkillTab();    -- 玩家技能数据
+    for index=1,#m_middleSkillTab do
+        local skillMainInfo = CCommonTool.GetSkillMainData(SinhaengSkillTable.Get(m_middleSkillTab[index].skillIndex).SkillMain);
+        if skillMainInfo ~= nil then
+            local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+            if skillDataInfo ~= nil then
+                SetSpriteByAtlasID(m_skillMidStr..index.."/Sprite_Icon", SinhaengSkillTable.Get(m_middleSkillTab[index].skillIndex).IconID, m_panelObject);
+                local go = child(m_panelObject,m_skillMidStr..index).gameObject;
+               -- error("该技能id： "..JewelSkillTable.Get(skill_tables[index]).SkillId.." 子技能id ："..skillMainInfo.SonSkill0); 
+                if m_selectTagNum == LeftTableType.GOD then
+                    TipsManager.SkillTips(go, SinhaengSkillTable.Get(m_middleSkillTab[index].skillIndex).SkillMain, skillMainInfo.SonSkill0, SinhaengSkillTable.Get(m_middleSkillTab[index].skillIndex).Lv, true);
+                else
+                    local tipTool = GetComponent(m_panelObject,m_skillMidStr..index, "CUITooltip",false);
+                    if tipTool ~= nil then
+                        destroy(tipTool);
+                    end
+                    SetGameObjectEvent(m_skillMidStr..index,SetSkillItemOnClick,m_panelObject);
+                end      
+            end
+        end
+           
+        --设置技能图标箭头，文本
+        local state = getPlayerSkillState(stage_lvl,index);
+        if state ==1 then
+            SetGameObjectState(m_skillMidStr..index.."/Sprite_Up",false,m_panelObject);
+            SetGameObjectState(m_skillMidStr..index.."/Label_Max",false,m_panelObject);
+        elseif state == 2 then
+            SetGameObjectState(m_skillMidStr..index.."/Sprite_Up",true,m_panelObject);
+            SetGameObjectState(m_skillMidStr..index.."/Label_Max",false,m_panelObject);
+        elseif state == 3 then
+            SetGameObjectState(m_skillMidStr..index.."/Sprite_Up",false,m_panelObject);
+            SetGameObjectState(m_skillMidStr..index.."/Label_Max",true,m_panelObject);
+        end
+
+        if stage_lvl/2 >= index and m_middleSkillTab[index].lvl >0 then
+            --已经解锁
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_skillMidStr..index.."/Sprite_Icon").gameObject, false);
+        else
+            --未解锁
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_skillMidStr..index.."/Sprite_Icon").gameObject, true);
+        end
+    end
+    if m_selectTagNum == LeftTableType.SKILL then
+        local index = 1;
+        if SinhaengSkillPanel.setSkillIndex() >0 then
+            index = SinhaengSkillPanel.setSkillIndex();
+        end
+        if index <=0 then
+            if m_JumpPanelParamsTable.data ~= nil and m_JumpPanelParamsTable.data.skillIndex~=nil then
+                if m_JumpPanelParamsTable.data.skillIndex>=1 and m_JumpPanelParamsTable.data.skillIndex <= 6 then
+                    index = m_JumpPanelParamsTable.data.skillIndex;
+                end     
+            end
+        end
+        
+        local go = child(m_panelObject,m_skillMidStr..index).gameObject;
+        SetSkillItemOnClick(go);
+    else
+        SetSelectPositon(-1);
+    end
+end
+-- 根据当前 得到技能组
+function getPlayerSkillTab()
+    local playskill_tab = SinhaengPanelManager.getPlayerSkillData();
+    if #playskill_tab < 6 then
+        error("[神行] 技能组数据错误！！！");
+        return ;
+    end
+    local playerSkillTab = {};
+    for index=1,#playskill_tab do
+        playerSkillTab[index] = {};
+        if playskill_tab[index].id == 0 and playskill_tab[index].lvl == 0 then
+            playerSkillTab[index].skillIndex = playskill_tab[index].index*1000; 
+            playerSkillTab[index].lvl = playskill_tab[index].lvl;
+        else
+            local lvl = playskill_tab[index].lvl <=1 and 0 or playskill_tab[index].lvl-1 
+            playerSkillTab[index].skillIndex = playskill_tab[index].id+lvl;
+            playerSkillTab[index].lvl = playskill_tab[index].lvl;
+        end
+    end
+    return playerSkillTab;
+end
+-- 根据index 技能得到状态
+function getPlayerSkillState(stage_lvl,index)
+    local state = -1;                   -- 1 不可升级，未满级，2 可升级，3 满级
+    local playerSkillInfos = getPlayerSkillTab();
+    --[[for i=1,#playerSkillInfos do
+        error("playerSkillInfos[i].skillIndex::"..playerSkillInfos[i].skillIndex.."   lvl::"..playerSkillInfos[i].lvl);
+    end]]
+    local INDEX = playerSkillInfos[index].skillIndex;
+    if SinhaengSkillTable.Get(INDEX).Lv >=SinhaengSkillTable.Get(INDEX).MaxLv then  -- 滿級
+        state = 3;
+        return state;
+    end
+    if stage_lvl/2 < index then    ------------------------------ 改技能沒解鎖
+        state = 1;
+    else
+        local cost_id = SinhaengSkillTable.Get(INDEX).NeedId;
+        local cost_num  = -1;
+        if playerSkillInfos[index].lvl >0 then
+            cost_num = SinhaengSkillTable.Get(INDEX+1).NeedNum;
+        else
+            cost_num = SinhaengSkillTable.Get(INDEX).NeedNum;
+        end
+        
+        if GetBindAndNotNumById(cost_id) < cost_num then
+            state = 1;
+        else
+            state = 2;
+        end
+    end
+    return state;
+end
+
+function SetSelectPositon(index)
+    for i=1,6 do
+        SetGameObjectState(m_skillMidStr..i.."/Sprite_Select",index==i,m_panelObject);
+    end
+end
+--- 左右选框点击事件,被动技能点击事件
+function setItemClick()
+    for i=0,1 do
+        SetGameObjectEvent(m_publicMiddleStr.."/jew_"..i,onBtnCLick1,m_panelObject);
+    end
+end
+--左右选框点击事件
+function onBtnCLick1(e)
+    local Index = tonumber(string.sub(e.transform.name, 5, string.len(e.transform.name)));
+    if Index == 1 then
+        if m_curShowStageLvl <=1 then
+            return;
+        end
+        m_curShowStageLvl = m_curShowStageLvl-1;
+        if m_curShowStageLvl <=1 then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,true);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,false);
+        end
+        if m_curShowStageLvl < SinhaengMainTable.Count then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..0).gameObject,false);
+        end
+    elseif Index == 0 then
+        if m_curShowStageLvl >= SinhaengMainTable.Count then
+            return;
+        end
+        m_curShowStageLvl = m_curShowStageLvl+1;
+        if m_curShowStageLvl >=SinhaengMainTable.Count then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,true);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,false);
+        end
+        if m_curShowStageLvl >1 then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..1).gameObject,false);
+        end
+    end
+    -- 重新顯示中部內容
+    setPubMiddleContent();
+end
+--被动技能点击事件
+function SetSkillItemOnClick(e)
+    if  m_selectTagNum ~= LeftTableType.SKILL then
+        return;
+    end
+    local Index = tonumber(string.sub(e.transform.name, 5, string.len(e.transform.name)));
+    if #m_middleSkillTab <=0 or m_middleSkillTab[Index].skillIndex <=0 then
+        return;
+    end
+    SetSelectPositon(Index);
+    --刷新技能右侧界面
+    SinhaengSkillPanel.setSkillIndex(Index);
+end
+
+-----------------------------------------------------------外部事件---------------------------------------------
+function SetLeftTabRedShow(index,canshow)
+    SetGameObjectState(m_MenuItemPath..index.."/Sprite_RedHint",canshow,m_panelObject);
+end
+--神行界面是否可以显示小红点
+function sinhaengCanShowRed()
+     -- 是否开启
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_Sinah) == false then
+        return false;
+    end
+    local stage_lvl,star_lvl,exp = SinhaengPanelManager.getPlayerGodData();    
+    if stage_lvl == nil or star_lvl ==nil or exp == nil then
+        return false;
+    end
+    if SinhaengPanelContent.godsCanShowRed() == true then
+        return true;
+    elseif SinhaengSkillPanel.skillCanShowRed() == true then
+        return true;
+    elseif (checkLeftBtnOpen(LeftTableType.STAR) == true) and (SinhaengStarPanel.starCanShowRed() == true)  then
+        return true
+    end
+    return false;
+end
+-- 刷新神行界面
+function RefreshSinhaengPanel(change,god_change)
+    -- 是否开启
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_Sinah) == false then
+        return false;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_SINHAENGPANEL) == 1 then 
+        local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+        if m_selectTagNum == LeftTableType.GOD then
+            SinhaengPanelContent.Show();
+            if change ~=nil and change ==true then
+                local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+                m_curShowStageLvl = stage_lvl;
+            end
+            if god_change ~= nil and god_change == true then
+                local midel_id = getModelIdByIndex(SinhaengPanelManager.getCurSinhaengID());
+                local cur_ID = SinhaengPanelManager.getCurSinhaengID();
+                --ChangeSinhaengModel(midel_id);
+                setPubMiddleContent();
+                -- 3d模型炫耀
+                local resName = "";
+                if SinhaengMainTable.Get(cur_ID) ~=nil and SinhaengMainTable.Get(cur_ID).Name~=nil then
+                    resName = GetTextToId(SinhaengMainTable.Get(cur_ID).Name); 
+                end               
+                ShowOffPanel.ShowGetModel(midel_id,resName);
+            end
+        elseif m_selectTagNum == LeftTableType.SKILL then
+            SinhaengSkillPanel.InitShow();
+            
+            if god_change ~= nil and god_change == true then
+                --ChangeSinhaengModel();
+                setPubMiddleContent();
+            end
+        elseif m_selectTagNum == LeftTableType.STAR then
+            local midel_id = getModelIdByIndex(SinhaengPanelManager.getCurSinhaengID());
+            SinhaengStarPanel.InitShow(midel_id);
+        end
+
+    end
+end
+-------------------------------------------C#调用--------------------------------------
+function getModelIdByIndex(index)
+    local model_id = 0
+    if index <= SinhaengMainTable.Count and index >0 then
+        --模型id
+        model_id = SinhaengMainTable.Get(index).ModelID;
+    end
+    return model_id;
+end
+-- 根据坐骑id得到神行坐标
+function getSinhaengPosById(mount_id)
+    if mount_id <=0 then
+        return;
+    end
+
+    local find = ComponentTranTable.Filter(function (item)
+        if type(item) == "table" then
+            if item.Type == 1 and item.Ids == mount_id then
+                return true;
+            end
+        end
+        return false;
+    end);
+    local returnTable = nil;
+    if find ~=nil and #find>0 then
+        find = find[1];
+        return find.Posx,find.Posy,find.Posz,find.Rosx,find.Rosy,find.Rosz;
+    else  -- 默认值
+        return 0,0,0,0,0,0;      
+    end
+end

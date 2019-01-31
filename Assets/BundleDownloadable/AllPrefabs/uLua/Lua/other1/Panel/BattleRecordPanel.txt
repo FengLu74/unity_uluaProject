@@ -1,0 +1,161 @@
+﻿module("BattleRecordPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 离开按钮
+local m_CloseButtonStr = "Button_Close";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- UIListView组件所在的位置
+local m_UIListViewCompStr = "RecordPanel/Grid";
+----------------------------------通用的名称路径---------------------------------------
+-- 获胜
+local m_WinStr = "State/Win";
+-- 失败
+local m_LoseStr = "State/Lose";
+-- 平局
+local m_DrawStr = "State/Draw";
+-- 有战斗信息
+local m_HasFightInfoStr = "HasMatch";
+-- 无战斗信息
+local m_NoFightInfoStr = "NoMatch";
+-- 加分
+local m_AddSeasonScore = "Label_AddSeasonScore";
+-- 对方阶位
+local m_OpponentRankStr = "HasMatch/Sprite_Rank";
+-- 对方分数
+local m_OpponentSeasonScoreStr = "HasMatch/Label_SeasonScore";
+-- 对方姓名
+local m_OpponentNameStr = "HasMatch/Label_Name";
+-- 对方战斗力
+local m_OpponentFightValueStr = "HasMatch/Label_FightValue";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+local m_UIListViewComp = nil;
+-- 当前最下面的是第几个
+local m_BottomIndex = 1;
+-----------------------------------一些写死的规定--------------------------------------
+-- 最大显示数量
+local Max_ShowCount = 50;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitEvent();
+    InitData();
+    InitContent();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    BattleFieldManager.RequestForRecord(0);
+    if m_panelInitAlready == true then
+        InitData();
+        InitContent();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_BottomIndex = 1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BATTLERECORDPANEL);
+    m_UIListViewComp = GetComponent(m_panelObject, m_UIListViewCompStr, "UIListView");
+end
+
+function InitEvent()
+    m_UIListViewComp:SetInitCallback(OnCloneInit);
+    m_UIListViewComp:SetDownScrollCallback(OnListViewDownScroll);
+end
+
+function InitData()
+    m_BottomIndex = 1;
+    m_UIListViewComp:RemoveAll();
+end
+
+function InitContent()
+    local fightRecordTable = BattleFieldManager.FightRecord;
+    for Index = m_BottomIndex, #fightRecordTable do
+        m_UIListViewComp:AddData(fightRecordTable[Index]);
+    end
+    m_BottomIndex = #fightRecordTable;
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CloseButtonStr,OnCloseClick,m_panelObject);
+end
+
+function OnCloneInit(listView, cell, data)
+    local fightRecord = data;
+    local go = cell.gameObject;
+    local rankNum = BattleFieldManager.BattleFieldRankNum;
+    local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+    if fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_WIN or fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_NOMATCH then
+        SetGameObjectState(m_WinStr,true,go);
+        SetGameObjectState(m_LoseStr,false,go);
+        SetGameObjectState(m_DrawStr,false,go);
+        SetLabelGradientColor("CEFF6F","85CC3F",m_AddSeasonScore,go)
+    elseif fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_LOSE then
+        SetGameObjectState(m_WinStr,false,go);
+        SetGameObjectState(m_LoseStr,true,go);
+        SetGameObjectState(m_DrawStr,false,go);
+        SetLabelGradientColor("FFA56F","CC433F",m_AddSeasonScore,go)
+    elseif fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_DRAW then
+        SetGameObjectState(m_WinStr,false,go);
+        SetGameObjectState(m_LoseStr,false,go);
+        SetGameObjectState(m_DrawStr,true,go);
+        SetLabelGradientColor("FFFDDB","A19D85",m_AddSeasonScore,go)
+    end
+    SetLabelContent(m_AddSeasonScore,"+"..fightRecord.AddSeasonScore,go);
+    if fightRecord.Result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_NOMATCH then
+        SetGameObjectState(m_NoFightInfoStr,true,go);
+        SetGameObjectState(m_HasFightInfoStr,false,go);
+    else
+        SetGameObjectState(m_NoFightInfoStr,false,go);
+        SetGameObjectState(m_HasFightInfoStr,true,go);
+        local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+        local curRank = 1;
+        for Index = 1,rankNum do
+            if fightRecord.OpponentSeasonScore <= battleFieldTableData[Index].Score then
+                curRank = Index;
+                break;
+            end
+        end
+        SetSpriteByAtlasID(m_OpponentRankStr,battleFieldTableData[curRank].SmallPicID,go);
+        SetLabelContent(m_OpponentSeasonScoreStr,fightRecord.OpponentSeasonScore,go);
+        SetLabelContent(m_OpponentNameStr,fightRecord.PlayerName,go);
+    end
+    SetLabelContent(m_OpponentFightValueStr,CCommonTool.GetTxtData(1066).m_str..fightRecord.FightValue,go);
+end
+
+function OnListViewDownScroll(listView)
+    local fightRecordTable = BattleFieldManager.FightRecord;
+    if #fightRecordTable >= Max_ShowCount then
+        return;
+    end
+    BattleFieldManager.RequestForRecord(#fightRecordTable);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_BATTLERECORDPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshFightRecord()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLERECORDPANEL) == 1 then
+        InitContent();
+    end
+end

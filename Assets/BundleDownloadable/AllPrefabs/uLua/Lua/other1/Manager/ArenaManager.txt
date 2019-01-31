@@ -1,0 +1,33 @@
+﻿module("ArenaManager", package.seeall)
+
+-----------------------------------���õĶ���------------------------------------------
+-- ���߾������ID
+activityId = 1901;
+
+-- �����б�
+oppList = nil;
+
+-- ��ǰ����
+myRank = 0;
+
+-- ս����¼
+records = nil;
+
+-----------------------------------�ڲ����÷���------------------------------------------
+
+-- ���¶�������
+function SetOppList(list)
+    oppList = list;
+end
+
+-- ������������
+function ClearOppList()
+    oppList = nil;
+end
+
+function ClearData()
+    ArenaProtocol.recordVersion = -1;
+    oppList = nil;
+    myRank = 0;
+    records = nil;
+end

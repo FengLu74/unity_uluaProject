@@ -1,0 +1,87 @@
+﻿--[[
+    field=Id, type=int, desc=主键ID，对应星魂属性类型
+    field=ItemId, type=int, desc=图标id
+    field=RoleId, type=int, desc=1,共有，2物攻类，3魔攻类
+    field=Value, type=int, desc=权重值谁大谁在前
+    field=IntenItem1ID, type=int, desc=解锁消耗道具id1
+    field=IntenItem1Num, type=int, desc=解锁消耗道具id1数量
+    field=IntenItem2ID, type=int, desc=解锁消耗道具id2
+    field=IntenItem2Num, type=int, desc=解锁消耗道具id2数量
+]]
+module("DavidsAttrTable", package.seeall)
+local list={
+    {Id=141,ItemId=7007,RoleId=1,Value=100,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0},
+    {Id=51,ItemId=7001,RoleId=1,Value=99,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0},
+    {Id=91,ItemId=7010,RoleId=1,Value=99,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0},
+    {Id=71,ItemId=7005,RoleId=1,Value=98,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0},
+    {Id=61,ItemId=7006,RoleId=1,Value=97,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0},
+    {Id=31,ItemId=7008,RoleId=1,Value=96,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0},
+    {Id=41,ItemId=7003,RoleId=1,Value=95,IntenItem1ID=21341,IntenItem1Num=40,IntenItem2ID=0,IntenItem2Num=0}
+};
+local map = {[141]=list[1],[51]=list[2],[91]=list[3],[71]=list[4],[61]=list[5],[31]=list[6],[41]=list[7]};
+
+count = 7;
+Count = 7;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

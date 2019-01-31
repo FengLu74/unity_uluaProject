@@ -1,0 +1,228 @@
+﻿module("ArtifactManager", package.seeall)
+
+-- 玩家神器碎片数据
+ArtifactFragmentData = {};
+-- 玩家神器数据
+ArtifactData = {};
+-- 神器表数据
+ArtifactTableData = {};
+-- 读表
+function InitArtifactTableData()
+    local artifactTableList = CCommonTool.GetAllArtifactInfo();
+    ArtifactTableData = {};
+    for Index = 1,artifactTableList.Count do
+        ArtifactTableData[artifactTableList[Index - 1].Id] = artifactTableList[Index - 1];
+    end
+end
+
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_ARTIFACT) then
+        return false;
+    end
+    for k,v in pairs(ArtifactTableData) do
+        if IsArtifactCanOperate(k) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 神器是否可激活
+function IsArtifactCanOperate_Active(artifactID)
+    local artifactTableData = CCommonTool.GetArtifactInfo(artifactID);
+    if artifactTableData == nil then
+        return false;
+    end
+    if G_UserInfo.RoleAttribute.Level < artifactTableData.UnlockLevel then
+        return false;
+    end
+    if ArtifactData[artifactID] == nil then
+        local allFragsTable = {artifactTableData.Fragment1ID,artifactTableData.Fragment2ID,artifactTableData.Fragment3ID,
+        artifactTableData.Fragment4ID,artifactTableData.Fragment5ID,artifactTableData.Fragment6ID};
+        for Index = 1,#allFragsTable do
+            if ArtifactFragmentData[allFragsTable[Index]] == nil then
+                return false;
+            end
+        end
+        return true;
+    end
+    return false;
+end
+
+-- 神器是否可升级
+function IsArtifactCanOperate_LevelUp(artifactID)
+    local artifactTableData = CCommonTool.GetArtifactInfo(artifactID);
+    if artifactTableData == nil then
+        return false;
+    end
+    if ArtifactData[artifactID] ~= nil then
+        local artifactLevel = ArtifactData[artifactID];
+        if artifactLevel >= artifactTableData.MaxLevel then
+            return false;
+        end
+        local curLevelUpData = CCommonTool.GetArtifactLevelUpInfo(artifactLevel * 10 + artifactTableData.QualityID);
+        if curLevelUpData == nil then
+            return false;
+        end
+        if curLevelUpData.NeedPlayerLevel > G_UserInfo.RoleAttribute.Level then
+            return false;
+        end
+        local allFragsTable = {artifactTableData.Fragment1ID,artifactTableData.Fragment2ID,artifactTableData.Fragment3ID,
+        artifactTableData.Fragment4ID,artifactTableData.Fragment5ID,artifactTableData.Fragment6ID};
+        local fragNeedLevel = curLevelUpData.NeedFragmentLevel;
+        local allFragReachLevel = true;
+        local fragID = 0;
+        for Index = 1,#allFragsTable do
+            fragID = allFragsTable[Index];
+            if ArtifactFragmentData[fragID] == nil then
+                return false;
+            else
+                if ArtifactFragmentData[fragID] < fragNeedLevel then
+                    return false;
+                end
+            end
+        end
+        local needItem1ID,needItem1Num,curItem1Num,needItem2ID,needItem2Num,curItem2Num = 0,0,0,0,0,0;
+        needItem1ID = curLevelUpData.Item1ID;
+        needItem1Num = math.ceil(curLevelUpData.Item1Num * artifactTableData.DifficultyLevel);
+        needItem2ID = curLevelUpData.Item2ID;
+        needItem2Num = math.ceil(curLevelUpData.Item2Num * artifactTableData.DifficultyLevel);
+        if needItem1ID > 0 and needItem1Num > 0 then
+            curItem1Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItem1ID);
+            if curItem1Num < needItem1Num then
+                return false;
+            end
+        end
+        if needItem2ID > 0 and needItem2Num > 0 then
+            curItem2Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItem2ID);
+            if curItem2Num < needItem2Num then
+                return false;
+            end
+        end
+        return true;
+    end
+    return false;
+end
+
+-- 神器是否可操作
+function IsArtifactCanOperate(artifactID)
+    if IsArtifactCanOperate_Active(artifactID) then
+        return true;
+    end
+    if IsArtifactCanOperate_LevelUp(artifactID) then
+        return true;
+    end
+    local artifactTableData = CCommonTool.GetArtifactInfo(artifactID);
+    if artifactTableData == nil then
+        return false;
+    end
+    local allFragsTable = {artifactTableData.Fragment1ID,artifactTableData.Fragment2ID,artifactTableData.Fragment3ID,
+        artifactTableData.Fragment4ID,artifactTableData.Fragment5ID,artifactTableData.Fragment6ID};
+    for Index = 1,#allFragsTable do
+        if IsFragCanOperate(allFragsTable[Index]) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 神器碎片是否可激活
+function IsFragCanOperate_Active(fragID)
+    local fragData = CCommonTool.GetArtifactFragmentInfo(fragID);
+    if fragData == nil then
+        return false;
+    end
+    if ArtifactFragmentData[fragID] == nil then
+        if G_UserInfo.RoleAttribute.Level >= fragData.UnlockLevel then
+            local fragmentItemID = fragData.RelatedItemID;
+            local fragmentBindItemID = 0;
+            local bindTableInfo = CCommonTool.GetTradableInfo(fragmentItemID);
+            if bindTableInfo == nil then
+                error("碎片没有对应的绑定的道具");
+            else
+                fragmentBindItemID = bindTableInfo.UntradableItemID;
+            end
+            local curFragItemHave = 0;
+            if fragmentBindItemID == 0 then
+                curFragItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentItemID);
+            else
+                curFragItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentItemID) + G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentBindItemID);
+            end
+            if curFragItemHave >= 1 then
+                return true;
+            else
+                return false;
+            end
+        else
+            return false;
+        end
+    end
+    return false;
+end
+
+-- 神器碎片是否可升级
+function IsFragCanOperate_LevelUp(fragID)
+    local fragData = CCommonTool.GetArtifactFragmentInfo(fragID);
+    if fragData == nil then
+        return false;
+    end
+    if ArtifactFragmentData[fragID] ~= nil then
+        local curFragLevel = ArtifactFragmentData[fragID];
+        if curFragLevel >= fragData.MaxLevel then
+            return false;
+        else
+            local curLevelUpData = CCommonTool.GetArtifactFragmentLevelUpInfo(curFragLevel*10 + fragData.QualityID);
+            if curLevelUpData == nil then
+                return false;
+            end
+            if curLevelUpData.NeedPlayerLevel > G_UserInfo.RoleAttribute.Level then
+                return false;
+            else
+                local fragmentItemID = fragData.RelatedItemID;
+                local fragmentBindItemID = 0;
+                local bindTableInfo = CCommonTool.GetTradableInfo(fragmentItemID);
+                if bindTableInfo == nil then
+                    error("碎片没有对应的绑定的道具");
+                else
+                    fragmentBindItemID = bindTableInfo.UntradableItemID;
+                end
+                local curFragItemHave = 0;
+                if fragmentBindItemID == 0 then
+                    curFragItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentItemID);
+                else
+                    curFragItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentItemID) + G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, fragmentBindItemID);
+                end
+                local needFragNum = 0;
+                local needItemID = 0;
+                local needItemNum = 0;
+                local curNeedItemHave = 0;
+                needItemID = curLevelUpData.Item1ID;
+                needFragNum = curLevelUpData.NeedFragmentsNum;
+                needItemNum = math.ceil(curLevelUpData.Item1Num * fragData.DifficultyRatio);
+                if needItemID > 0 and needItemNum > 0 then
+                    curNeedItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemID);
+                end
+                if curFragItemHave >= needFragNum and curNeedItemHave >= needItemNum then
+                    return true;
+                else
+                    return false;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 神器碎片是否可操作
+function IsFragCanOperate(fragID)
+    if IsFragCanOperate_Active(fragID) then
+        return true;
+    end
+    if IsFragCanOperate_LevelUp(fragID) then
+        return true;
+    end
+    return false;
+end

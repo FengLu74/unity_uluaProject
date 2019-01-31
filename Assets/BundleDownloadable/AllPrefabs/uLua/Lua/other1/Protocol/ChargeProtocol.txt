@@ -1,0 +1,389 @@
+﻿module("ChargeProtocol", package.seeall)
+
+-- 未完成的订单列表
+uncompletedProductIds = {};
+
+-- 是否已读取未完成订单列表
+isReadUncompletedList = false;
+
+-- cn获取订单ID队列
+orderCallback = {};
+
+lastOrderInfo = nil;
+-- 商品数据
+GoodsInfo = nil;
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 充值返回
+    network.Register(E_NTOC_DEPOSIT_TRANSACTIONID_RETURN, OnChargeReturn);
+    -- 服务器通知客户端订单ID
+    network.Register(GMI_STOC_GET_CN_ORDERNO, OnGetCNOrderId);
+
+end
+
+--充值返回
+function OnChargeReturn(protocolId, buffer)
+    error("[lua]收到server 返回的充值結果！！！！！！！！！！！！！！！！！！！！！！！");
+    local code = buffer:ReadInt();
+    local result = buffer:ReadInt();
+    local storeId = buffer:ReadInt();
+    local productId = buffer:ReadStringByByte();
+    error("[lua]充值結果數據：：：：code-->"..code.." result-->"..result.." storeId-->"..storeId.." productId-->"..productId);
+    -- result value 
+    -- >0:表示充值成功
+    -- -1001:充值单号验证网页无响应
+    -- -1002:单号验证失败
+    -- -1003:此单已经使用,无法再次使用
+    -- -1004:不存在请求订单验证的用户ID
+    if result > 0 or result ~= -1001 then
+        if RemoveUncompletedProductId(productId) == true then
+            CheckUncompletedProduct();
+        end
+
+        if result > 0 and lastOrderInfo ~= nil then
+            CSDKManager.Call("RequestSubmZFFinish", string_format([[{"orderno":{0}, "money":{1}}]], lastOrderInfo.orderId, lastOrderInfo.price), function() end);
+            lastOrderInfo = nil;
+        end
+        error("OnTtPurchase_XYOnTtPurchase_XY1");
+        if CSDKManager.IsXiYouAndTouTiao == true then
+            error("OnTtPurchase_XYOnTtPurchase_XY12");
+            if result>0 then
+                OnTtReport(storeId,true);
+            else
+                OnTtReport(storeId,false);
+            end
+        end
+    end
+    error(string_format("充值返回: code={0}, result={1}, productId={2}", code, result, productId));
+end
+--充值结果上报
+function OnTtReport(productId,state)
+    -- 商品类型
+    local shopType = 1;
+    -- 商品名称
+    local shopName = 1;
+    -- 商品id
+    local shopId = 1;
+    -- 商品数量
+    local shopNum = 1;
+    -- 商品支付方式
+    local shopPayType = 1;
+    -- 货币类型
+    local mongyType = 1;
+    -- 是否成功
+    local isSuccess = state;
+    -- 本次支付额真实金额
+    local trueMoney = 1;
+
+    if GetGoodsInfosById(productId) == nil then
+        shopType = "";
+        shopName = "";
+        shopId = productId;
+        shopNum = 1;
+        shopPayType = "";
+        mongyType = "RMB";
+        trueMoney = 1;
+    else
+        local datas = GetGoodsInfosById(productId) ;
+        shopType = datas.productName;
+        shopName = datas.productName;
+        shopId = productId;
+        shopNum = datas.buyNum;
+        shopPayType = "";
+        mongyType = "RMB";
+        trueMoney = datas.price;
+    end
+    error("OnTtPurchase_XYOnTtPurchase_XY123");
+    CSDKManager.onTtPurchase_XY(tostring(shopType),tostring(shopName),tostring(shopId),tonumber(shopNum), tostring(shopPayType),tostring(mongyType), isSuccess,tonumber(trueMoney) );
+end
+-- 记录要购买的商品数据
+function RecordGoodsById(data)
+    if GoodsInfo ==nil then
+        GoodsInfo = {};
+    end
+    local product_Id = data.productId;
+    local hasExit = false;
+    for i=1,#GoodsInfo do
+        if product_Id == GoodsInfo[i].productId then
+            hasExit = true;
+            break;
+        end
+    end
+    if hasExit == false then
+
+        local newData = {};
+        newData.productId = data.productId;     -- 商品id
+        newData.productName = data.productName; -- 商品名称
+        newData.productDesc = data.productDesc; -- 商品描述
+        newData.price = data.price ; -- 价格
+        newData.buyNum = data.buyNum ; -- 购买数量 rmb
+        --newData.diamond = GetZsByStoreManager(data.productId);    -- 红砖数量；
+
+        table.insert(GoodsInfo,newData);
+    end
+end
+function GetZsByStoreManager(product_Id)
+    local storeDatas = StoreManager.RechargeDatas;
+    if storeDatas == nil then
+        return 10;
+    end
+    for i=1,#storeDatas do
+        if storeDatas[i].Id == product_Id then
+            return storeDatas[i].GetDiamond;
+        end
+    end
+    return 10;
+end
+--根据商品id得到商品数据
+function GetGoodsInfosById(product_Id)
+    if GoodsInfo == nil then
+        return nil;
+    end
+    for i=1,#GoodsInfo do
+        if GoodsInfo[i].productId == product_Id then
+            return GoodsInfo[i];
+        end
+    end
+    return nil;
+end
+
+-- 服务器通知客户端订单ID, 如果返回结果成功, 直接请求SDK进行充值操作
+function OnGetCNOrderId(protocolId, buffer)
+    if CSDKManager.sdkName == "xiyou" then
+        local productId = tostring(buffer:ReadInt());
+        local result = buffer:ReadInt();--游戏服务器结果
+        local resultCode = buffer:ReadInt();--SDK服务器结果
+        local productName = buffer:ReadStringByByte();--商品名称
+        local productDesc = buffer:ReadStringByByte();--商品描述
+        local orderId = buffer:ReadStringByByte();--订单ID
+        local price = buffer:ReadInt();--商品价格
+        -- result等于1 code等于200表示获取订单ID成功
+        if result == 1 and resultCode == 200 then
+            local data = {};
+            data.fixedPay = true; -- 定额支付(固定商品)
+            data.ratio = 1; --兑换比例
+            data.orderId = orderId; -- 订单ID
+            data.productId = productId; -- 商品ID
+            data.productName = productName; -- 商品名称
+            data.productDesc = productDesc; -- 商品描述
+            data.coinNum = G_UserInfo.NotBindDiamond; -- 剩余货币
+            data.coinName = "红钻"; -- 货币名称
+            data.price = price; -- 价格
+            data.buyNum = 1; -- 购买数量 
+            data.serverId = _G.currentServer.serverId; -- 服务器ID
+            data.serverName = _G.currentServer.serverName; -- 服务器名称
+            data.roleId = G_UserInfo.GlobalDBID; -- 角色ID
+            data.roleName = G_UserInfo.RoleAttribute.Name; -- 角色名称
+            data.roleLevel = G_UserInfo.RoleAttribute.Level; -- 角色等级
+            data.vip = 0; -- VIP等级
+            data.partyName = GuildManager.myGuild and GuildManager.myGuild.name or "无"; -- 公会名称
+            data.extension = "null"; -- 扩展信息
+
+            RecordGoodsById(data);
+
+            error("发送到SDK的充值信息::" .. SerializeTable(data));
+            local jsonValue = json.encode(data);
+            local callback = orderCallback[tostring(productId)];
+            if callback ~= nil then
+                CSDKManager.RequestPayment(jsonValue, callback);
+            else
+                CSDKManager.RequestPayment(jsonValue, function(data) end);
+            end
+            orderCallback[tostring(productId)] = nil;
+            lastOrderInfo = {orderno=orderId, price=price};
+            CSDKManager.Call("RequestSubmZFStart", string_format([[{"orderno":{0}, "money":{1}}]], orderId, price), function() end);
+        else
+            error(string_format("Get Order Id Error!!! result={0}, code={1}", result, code));
+        end
+    elseif CSDKManager.sdkName == "twsdk" then
+        local loginParams = CSDKManager.GetGameLoginParams();
+        local productId = buffer:ReadInt();
+        local result = buffer:ReadInt();
+        -- 1正确
+        if result == 1 then
+            local productName = buffer:ReadStringByByte();
+            local productDesc = buffer:ReadStringByByte();
+            local orderNo = buffer:ReadStringByByte();
+            local money = buffer:ReadInt();
+            local appStoreProductId = buffer:ReadStringByByte();
+
+            local jsonTable = {};
+            jsonTable.serverId = _G.currentServer.serverId;
+            jsonTable.gameId = tostring(TW_GAME_ID);
+            jsonTable.userId = loginParams[0];
+            jsonTable.productId = appStoreProductId;
+
+            local gameUserId = STOCTables.LoginReturn.m_dwUserID;
+            jsonTable.gameCustomInfo = orderNo .. "|" .. tostring(gameUserId) .. "|" .. tostring(G_UserInfo.GlobalDBID) .. "|" .. tostring(_G.currentServer.bigZoneId);
+
+            -- SDK是美元单位
+            jsonTable.chargeMoney = tostring(money / 100);
+            jsonTable.amount = "1";
+            jsonTable.diamondAmount = 100;
+            jsonTable.sdkProductName = productName;
+            jsonTable.sdkProductDes = productDesc;
+            jsonTable.ext = "";
+
+            local jsonValue = json.encode(jsonTable);
+            CSDKManager.RequestPayment(jsonValue, function(data) end);
+        else
+            local errMsg = CCommonTool.GetTxtData(9083).m_str;
+            errMsg = errMsg .. " code:" .. tostring(result);
+            ShowSystemFlowTips(errMsg, 1);
+        end
+    end
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 充值成功同步到游戏服务器+钻石
+-- @param string transactionId SDK返回的充值唯一ID, 游戏服务器向渠道服务器验证
+function RequestAsycPayment(transactionId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(E_CTON_USER_SEND_KOREA_TRANSACTIONID);
+    buffer:WriteUInt(G_UserInfo.GlobalDBID);
+    buffer:WriteInt(-1);
+    buffer:WriteInt(-1);
+    buffer:WriteInt(-1);
+    buffer:WriteStringByByte(transactionId);
+    buffer:WriteInt(_G.currentServer.serverId);
+    buffer:WriteInt(0);
+    buffer:WriteInt(G_UserInfo.RoleAttribute.Level);
+    G_NetWorkMng:SendMessage(buffer);
+    AddUncompletedProductId(transactionId);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------
+
+------------------------------------------------------- 补单处理 -------------------------------------------------------
+
+-- 检测上次充值成功后game server是否正确返回
+-- 如果没有收到充值返回协议, 上线后再次发送充值验证请求
+function CheckUncompletedProduct()
+    if not isReadUncompletedList then
+        isReadUncompletedList = true;
+        ReadAllUncompletedProductIds();
+    end
+    if #uncompletedProductIds > 0 then
+        -- 请求补单
+        error("请求补单::"..tostring(uncompletedProductIds[1]));
+        RequestAsycPayment(uncompletedProductIds[1]);
+    end
+end
+
+function GetPrefName()
+    return string_format("order:{0}:", G_UserInfo.GlobalDBID);
+end
+
+-- 读取所有未完成的订单ID列表
+function ReadAllUncompletedProductIds()
+    uncompletedProductIds = {};
+    local prefName = GetPrefName();
+    for i = 1, 10 do
+        local key = prefName .. i;
+        local id = PlayerPrefs.GetString(key, "");
+        if id ~= "" then
+            table.insert(uncompletedProductIds, id);
+        end
+    end
+end
+
+-- 添加未完成的订单ID
+function AddUncompletedProductId(productId)
+    for _, id in ipairs(uncompletedProductIds) do
+        if id == productId then
+            return;
+        end
+    end
+    table.insert(uncompletedProductIds, productId);
+    local prefName = GetPrefName();
+    local count = #uncompletedProductIds;
+    for i = 1, 10 do
+        local key = prefName .. i;
+        if i <= count then
+            PlayerPrefs.SetString(key, uncompletedProductIds[i]);
+        else
+            PlayerPrefs.SetString(key, "");
+        end
+    end
+end
+
+-- 删除未完成的订单ID
+function RemoveUncompletedProductId(productId)
+    local find = false;
+    for i, id in ipairs(uncompletedProductIds) do
+        if id == productId then
+            table.remove(uncompletedProductIds, i);
+            find = true;
+            break;
+        end
+    end
+    if find == true then
+        local prefName = GetPrefName();
+        local count = #uncompletedProductIds;
+        for i = 1, 10 do
+            local key = prefName .. i;
+            if i <= count then
+                PlayerPrefs.SetString(key, uncompletedProductIds[i]);
+            else
+                PlayerPrefs.SetString(key, "");
+            end
+        end
+    end
+    return find;
+end
+
+function ClearData()
+    isReadUncompletedList = false;
+    uncompletedProductIds = {};
+    orderCallback = {};
+end
+
+
+-- CN客户端请求订单ID
+function RequestGetCNOrderId(productId, callback)
+    orderCallback[tostring(productId)] = callback;
+    local flag = CSDKManager.GetString("getCurrFlag", "");
+    local channelId = CSDKManager.GetInt("getCurrChannel", "");
+    local masterId = CSDKManager.GetInt("getMasterId", "");
+    local deviceId = CSDKManager.GetString("getDeviceId", "");
+    error(string_format("Get Order Id :: flag:{0} channelId:{1} masterId:{2} deviceId:{3}",
+        flag, tostring(channelId), tostring(masterId), tostring(deviceId)));
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GETORDERID);
+    buffer:WriteInt(STOCTables.LoginReturn.m_dwSDKUserID);-- SDK登陆用的UserID
+    buffer:WriteInt(productId); -- 商品ID
+    buffer:WriteInt(_G.currentServer.serverId); -- 服务器ID
+    if Platform == "android" then
+        buffer:WriteInt(0); -- 平台 0:Android 1:iOS
+    elseif Platform == "ios" then
+        buffer:WriteInt(1); -- 平台 0:Android 1:iOS
+    else
+        buffer:WriteInt(2); -- 平台 0:Android 1:iOS
+    end
+    buffer:WriteStringByByte(_G.currentServer.serverName); -- 服务器名称
+    buffer:WriteStringByByte(flag); -- sdk客户端getcurflag获得
+    buffer:WriteInt(masterId); -- 渠道ID
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- TW客户端请求订单ID
+function RequestGetTWOrderId(productId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GETORDERID);
+    buffer:WriteInt(productId);
+    local loginParams = CSDKManager.GetGameLoginParams();
+    buffer:WriteStringByByte(loginParams[0]);   --SDK UserID
+    buffer:WriteStringByByte(loginParams[2]);   --SDK LoginType google/facebook/random
+    if Platform == "android" then
+        buffer:WriteInt(0); -- 平台 0:Android 1:iOS
+    elseif Platform == "ios" then
+        buffer:WriteInt(1); -- 平台 0:Android 1:iOS
+    else
+        buffer:WriteInt(2); -- 平台 0:Android 1:iOS
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end

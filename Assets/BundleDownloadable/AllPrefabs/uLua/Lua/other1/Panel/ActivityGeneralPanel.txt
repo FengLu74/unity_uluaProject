@@ -1,0 +1,390 @@
+﻿module('ActivityGeneralPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityGeneralPanel';
+---------------------------------------label路径---------------------------------------
+-- 活动名称
+local m_NamePath = "Content/Name";
+-- 活动描述 
+local m_DescPath = "Content/Desc";
+-- 活动等级
+local m_LevelPath = "Content/Level";
+-- 可挑战次数
+local m_LablelFbtimesPath = "Content/Label_Fbtimes";
+local m_FbtimesPath = "Content/Fbtimes";
+-- 加号按钮路径
+local m_FbAddBtnStr = "Content/AddBtn";
+-- 收益
+local m_LablelIncomePath = "Content/Label_Income";
+local m_IncomePath = "Content/Income";
+-- 参与方式
+local m_JoinTypePath = "Content/JoinType";
+-- 活动时间
+local m_OpenTimePath = "Content/OpenTime";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 前往活动按钮
+local m_JumpButtonPath = "Content/ButtonGrid/JumpButton";
+-- 组队按钮
+local m_TeamButtonPath = "Content/ButtonGrid/TeamButton";
+-- 关闭按钮
+local m_CloseButtonPath = "Content/CloseButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 底图
+local m_IconPath = "Content/Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 奖励1
+local m_Item1Path = "Content/Items/Item1";
+-- 奖励2
+local m_Item2Path = "Content/Items/Item2";
+-- 奖励3
+local m_Item3Path = "Content/Items/Item3";
+-- 奖励4
+local m_Item4Path = "Content/Items/Item4";
+-- 奖励5
+local m_Item5Path = "Content/Items/Item5";
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 奖励Grid
+local m_ItemsPath = "Content/Items";
+-- 按钮Grid
+local m_ButtonGridPath = "Content/ButtonGrid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 活动等级
+local m_Level = nil;
+-- 可挑战次数
+local m_Fbtimes = nil;
+-- 收益
+local m_Income = nil;
+-- 活动时间
+local m_OpenTime = nil;
+-- 活动时间
+local m_OpenTime = nil;
+-- 奖励GRID
+local m_Items = nil;
+-- 奖励1
+local m_Item1 = nil;
+-- 奖励2
+local m_Item2 = nil;
+-- 奖励3
+local m_Item3 = nil;
+-- 奖励4
+local m_Item4 = nil;
+-- 奖励5
+local m_Item5 = nil;
+-- 按钮Grid
+local m_ButtonGrid = nil;
+
+local m_Id = 0;
+local m_Info = nil;
+local m_ItemObjects = nil;
+local m_ItemPaths = nil;
+
+local m_CausePanelId = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_Level = nil;
+	m_Fbtimes = nil;
+	m_Income = nil;
+    m_OpenTime = nil;
+    m_Items = nil;
+    m_Item1 = nil;
+    m_Item2 = nil;
+    m_Item3 = nil;
+    m_Item4 = nil;
+    m_Item5 = nil;
+    m_ButtonGrid = nil;
+    m_ItemObjects = nil;
+    m_ItemPaths = nil;
+    m_Id = 0;
+    m_Info = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+    m_Level = GetComponent(m_PanelObject, m_LevelPath, "UILabel")
+	m_Fbtimes = GetComponent(m_PanelObject, m_FbtimesPath, "UILabel")
+	m_Income = GetComponent(m_PanelObject, m_IncomePath, "UILabel")
+    m_OpenTime = GetComponent(m_PanelObject, m_OpenTimePath, "UILabel")
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid")
+    m_Item1 = child(m_PanelObject, m_Item1Path).gameObject;
+    m_Item2 = child(m_PanelObject, m_Item2Path).gameObject;
+    m_Item3 = child(m_PanelObject, m_Item3Path).gameObject;
+    m_Item4 = child(m_PanelObject, m_Item4Path).gameObject;
+    m_Item5 = child(m_PanelObject, m_Item5Path).gameObject;
+    m_ButtonGrid = GetComponent(m_PanelObject, m_ButtonGridPath, "UIGrid")
+
+    m_ItemObjects = { m_Item1, m_Item2, m_Item3, m_Item4, m_Item5 };
+    m_ItemPaths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_JumpButtonPath, OnJumpButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_TeamButtonPath, OnTeamButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+    -- 加号按钮事件
+    SetGameObjectEvent(m_FbAddBtnStr,OnAddBtnTimesClick,m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_Info = CCommonTool.GetActivityGeneralInfo(m_Id);
+    if m_Info == nil then
+        return;
+    end
+    SetLabelTextByID(m_NamePath, m_Info.Name, m_PanelObject);
+    SetLabelTextByID(m_DescPath, m_Info.Desc, m_PanelObject);
+    m_Level.text = string_format(
+    --[[ {0}级 ]]
+    CCommonTool.GetTxtData(8056).m_str, m_Info.Level);
+    SetLabelTextByID(m_JoinTypePath, m_Info.JoinType, m_PanelObject);
+    m_OpenTime.text = ActivityManager.GetCurrentOpenTime(m_Info.ActivityId);
+    SetSpriteByAtlasID(m_IconPath, m_Info.Icon, m_PanelObject);
+	--经验银币本去掉组队按钮
+	if m_Info.ActivityId==101 or m_Info.ActivityId ==102 then 
+		SetGameObjectState(m_TeamButtonPath, false, m_PanelObject);
+		SetGameObjectState(m_FbtimesPath, true, m_PanelObject);
+		SetGameObjectState(m_IncomePath, true, m_PanelObject);
+		SetGameObjectState(m_LablelFbtimesPath, true, m_PanelObject);
+		SetGameObjectState(m_LablelIncomePath, true, m_PanelObject);
+
+        SetGameObjectState("Content/LevelBuy", true, m_PanelObject);
+        SetGameObjectState(m_FbAddBtnStr, true, m_PanelObject);
+
+		local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_Info.ActivityId);
+		m_Fbtimes.text = maxTimes-usedTimes; 
+		local roleLevel = G_UserInfo.RoleAttribute.Level;
+		local income = 0;
+		if m_Info.ActivityId == 101 then 
+			income = (7000000 + roleLevel * 200000)/10000 .. "万";
+		else 
+			income = (10000 + roleLevel * 6000)/10000 .. "万";
+		end 
+		m_Income.text = income;	
+		
+		m_ButtonGrid:Reposition();
+		local rewardId = m_Info.RewardId;
+		-- 获得奖励展示表道具信息
+		local list = CCommonTool.GetRewardShowItemIds(rewardId);
+		SetItemShowByExcelIDV04(m_PanelObject, m_ItemPaths[1], list[0], 1, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+		SetItemToolTipsEvent(m_ItemObjects[1], "", ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL, false, list[0]);
+		SetGameObjectPos(m_ItemPaths[1], Vector3.New(-172, -1, 0), m_PanelObject);
+		SetGameObjectState(m_ItemPaths[1], true, m_PanelObject);
+		local count = list.count;
+		for i, path in ipairs(m_ItemPaths) do
+			if i <= count then
+				
+			else
+				SetGameObjectState(path, false, m_PanelObject);
+		    end
+		end
+	else
+		SetGameObjectState(m_TeamButtonPath, m_Info.IsTeam == 1, m_PanelObject);
+		SetGameObjectState(m_FbtimesPath, false, m_PanelObject);
+		SetGameObjectState(m_IncomePath, false, m_PanelObject);
+		SetGameObjectState(m_LablelFbtimesPath, false, m_PanelObject);
+		SetGameObjectState(m_LablelIncomePath, false, m_PanelObject);
+		
+        SetGameObjectState("Content/LevelBuy", false, m_PanelObject);
+        SetGameObjectState(m_FbAddBtnStr, false, m_PanelObject);
+
+		m_ButtonGrid:Reposition();
+
+		local rewardId = m_Info.RewardId;
+		-- 获得奖励展示表道具信息
+		local list = CCommonTool.GetRewardShowItemIds(rewardId);
+		local count = list.count;
+		for i, path in ipairs(m_ItemPaths) do
+			if i <= count then
+				local excelId = list[i - 1];
+				SetItemShowByExcelIDV04(m_PanelObject, path, excelId, 1, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+				SetItemToolTipsEvent(m_ItemObjects[i], "", ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL, false, excelId);
+				SetGameObjectState(path, true, m_PanelObject);
+			else
+				SetGameObjectState(path, false, m_PanelObject);
+			end
+		end
+	end
+
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 加号增加次数按钮
+function OnAddBtnTimesClick()
+    local curTimes = 0;
+    if m_Fbtimes ~=nil then
+        curTimes = tonumber(m_Fbtimes.text);
+    else
+
+        return;
+    end
+    if curTimes > 0 then
+        error("有次数暂时不能购买！！！");
+        --ShowSystemFlowTips();
+        --次数足够
+    else
+        --[[local tempTable = { };
+        local titleText = "";
+        table.insert(tempTable, 1, GetTextToId(949));
+        table.insert(tempTable, 2, titleText);
+        table.insert(tempTable, 3, OnConfirmBuyClick);
+        table.insert(tempTable, 4, GetTextToId(375));
+        table.insert(tempTable, 5, OnCancelBuyClick);
+        table.insert(tempTable, 6, GetTextToId(407));
+        table.insert(tempTable, 7, true);
+        table.insert(tempTable, 10, true);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+        ]]
+        if m_Info ~= nil then
+            
+            ActivityTimesItemPanel.Show(m_Info.ActivityId);
+
+        end
+         
+    end
+end
+--[[
+function OnConfirmBuyClick()
+
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local curHaveNum = GetCurHavebyBuyType(m_PropItemData.ShopType);
+    if curHaveNum >= m_NeedCostNum then
+        local data = 
+        {
+            ItemData = m_PropItemData;
+            BuyNum = m_BuyNum;
+        };
+        StoreProtocol.RequestBuyProp(data);
+    else
+        if m_PropItemData.ShopType == 0 then        --红钻不足
+            ShowSystemFlowTips(3631);
+        elseif m_PropItemData.ShopType == 1 then    --蓝钻不足
+            --需要添加蓝钻兑换界面
+            local num = m_NeedCostNum;
+            if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND,num,ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL, OnExchangeMoneyCallBack) then
+                log("OnBuyButtonClick 红钻不足!!!!");
+                return;
+            end
+        end
+    end
+
+end
+function OnCancelBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+]]
+-- 前往活动按钮点击事件
+function OnJumpButtonClick(gameObject)
+    if m_Info == nil then
+        return;
+    end
+    local panelId = m_CausePanelId;
+    ActivityManager.JumpTo(m_Info.JumpType, m_Info.JumpValue, nil, function(jumpType, success) 
+        if success == true  then
+            if panelId ~= nil and panelId > 0 then
+                closePanel(panelId,ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+            else
+                closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+            end
+        end
+    end );
+    --[[
+    if ActivityManager.CanJump(m_Info.ActivityId) == true then
+        local jumpType = m_Info.JumpType;
+        local jumpParam = m_Info.JumpValue;   --string
+        if ActivityManager.JumpTo(jumpType, jumpParam) == true then
+            if m_CausePanelId ~= nil and m_CausePanelId > 0 then
+                closePanel(m_CausePanelId,ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+            end
+        end
+    end
+    ]]
+end
+
+-- 组队按钮点击事件
+function OnTeamButtonClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+    -- createPanel(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    if m_Info == nil then
+        return;
+    end
+    if ActivityManager.CanJump(m_Info.ActivityId) == true then
+        TeamPanel.OpenByActivityId(m_Info.ActivityId);
+    end
+end
+
+-- 关闭按钮点击事件
+function OnCloseButtonClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+end
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 显示活动通用面板
+-- @param id Activity_General表id
+function Show(id, causePanelId)
+    m_Id = id;
+    error("causePanelId" .. tostring(causePanelId));
+    m_CausePanelId = causePanelId;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL) == 1 then
+        InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL, causePanelId);
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = { };
+    panelParams.id = m_Id;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    m_Id = paramTable.id;
+end

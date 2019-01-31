@@ -1,0 +1,912 @@
+﻿-- 内置
+ConnectZLS = 100;	-- 连接ZLS服务器
+ConnectNGS = 101;    -- 连接NGS服务器
+Exception = 102;	-- 网络异常
+ConnectZLSException = 103;	-- 连接ZLS异常   
+ConnectNGSException = 104;	-- 连接NGS异常
+CesMessageString = 12000;   -- 测试发送消息使用
+
+-- 实际开发使用协议
+E_CTOS_PING = 0;
+E_CTOS_QUERYINFO = 1;   -- 客户端向服务器请求数据
+E_CTOS_FINISH = 2;   -- 客户端告诉服务器已经完成
+E_STOC_ZLSINFO = 10;  -- 服务器的战区列表信息 压缩格式
+E_STOC_GAMEVERSIONLIST = 13;-- 发送游戏版本列表
+E_STOC_UNCOMPRESS_ZLSINFO = 14;-- 服务器的战区列表信息，非压缩格式
+E_CTON_LOGIN = 4001;-- 客户端登录
+E_CTON_LOGOUT = 4002; -- 客户端登出ngs
+E_CTON_ENTER_GAME = 4004;-- 进入游戏场景
+E_CTON_CREATEROLE = 4007;-- 创建角色
+E_CTON_DELETEROLE = 4008;-- 删除角色
+E_NTOC_LOGIN_RETURN = 5001;-- 客户端登录返回
+E_NTOC_ENTER_GAME_RETURN = 5004; -- 进入游戏场景返回
+E_NTOC_LISTCHARACTER_RETURN = 5006;-- 列角色返回
+E_NTOC_CREATEROLE_RETURN = 5007;-- 创建角色返回
+E_NTOC_DELETEROLE_RETURN = 5008;-- 删除角色返回
+E_NTOC_LISTROLE_OK = 5009;-- 列角色完成
+E_NTOC_KICK_USER_RETURN = 5012;
+E_NTOC_ENTER_GAMESERVER_RETURNEX = 5126; -- 客户端进入游戏的返回，NGS2.0返回GS的对外的IP和端口等，供其连接GS
+E_NTOC_LEAVE_GAME_RETURN = 5005;    -- 退出登录返回
+E_CTON_LISTCHARACTER = 4006;    -- 请求切换角色
+E_CTON_USER_SEND_KOREA_TRANSACTIONID = 4219;-- 请求充值(客户端向服务器发送第三方SDK返回的订单ID)
+E_NTOC_WAIT_ENTER_GAME = 5015; -- 服务器通知客户端更新排队人数
+E_CTON_EXIT_INQUEUE = 4009; -- 客户端通知服务器退出排队
+E_NTOC_ERROR_MESSAGE = 5132; -- 提示客户端信息
+E_NTOC_DEPOSIT_TRANSACTIONID_RETURN = 5131; -- 充值返回
+E_CTON_CLIENT_ASK_GS_PLAYER_ONLINE_INFO = 4220; -- 客户端请求服务器GS线路信息
+E_NTOC_CLIENT_ASK_GS_PLAYER_ONLINE_INFO_RETURN = 5133; -- 服务器通知客户端GS线路信息
+GMI_CTOS_LGS_PLAYER_ASK_CHANGE_GS = 11989; -- 客户端请求切线
+E_NTOC_NGS_CHANGE_GS_ERROR = 5134; -- 切换GS时，错误提示
+
+
+GMI_CTOS_LGS_ITEMUPDATE = 11061;-- 精炼
+
+-- 提升侠客的等级
+-- aParam[1] :	int nPetID		//侠客的ID
+-- aParam[2] :  int nItemID		//消耗道具ID
+-- aParam[3] :  int nItemNum	//消耗道具数量
+-- szBuf : NULL
+GMI_CTOS_LGS_USE_ITEM_ADD_PET_EXP = 11282;
+
+GMI_STOC_ITEMUPDATE_YJ_RETURN = 22071; -- 强化十次返回
+GMI_STOC_ITEMUPDATE_RETURN = 22072;-- 强化返回
+GMI_CTOS_LGS_CLIENT_COMPOUND = 11791;-- 单次合成
+GMI_STOC_ITEMCOMPOUND_NEW_RETURN = 22424;-- 合成返回
+-- 一键道具合成
+GMI_CTOS_LGS_CLIENT_COMPOUND_ALL_AT_ONCE = 11833;
+GMI_STOC_CONSOLE_MSG = 22023;-- UIGMPanel需要显示到控制台的消息
+
+GMI_STOC_PET_ALL_INFO = 22422;-- 玩家登陆成功向客户端发送所有的侠客信息
+
+-- GMI_STOC_PET_ATTRIBUTE_INFO = 22425;--侠客属性更新
+
+GMI_CTOS_LGS_UPDATEUIITEMPOS = 11004;           -- 面板道具交换位置
+GMI_CTOS_LGS_DISCARDUIITEM = 11006;             -- 删除面板道具
+GMI_CTOS_LGS_USEUIITEM = 11005;
+GMI_CTOS_LGS_SELECTINQUIRY = 11010;
+GMI_CTOS_LGS_NPC_TRADEACTION = 11011;           -- 要服务器处理一个玩家与NPC交易操作（玩家卖或买入物品时发送）
+GMI_CTOS_LGS_INQUIRYEND = 11014;                -- 对话结束
+GMI_CTOS_LGS_FUBEN_ENTEY_INFO = 11140;          -- 进入副本协议
+GMI_CTOS_LGS_FUBEN_BOSS_ENTEY_INFO = 11796;		-- boos进入副本协议
+GMI_CTOS_LGS_GET_DUNGEONG_CHEST = 11793;		-- 领取剧情宝箱协议 
+GMI_CTOS_LGS_GET_BOSS_DUNGEONG_CHEST = 11798;	-- 领取boos通关奖励
+GMI_CTOS_LGS_SWEEP_DUNGEONG = 11794;			-- 扫荡副本
+
+-- GMI_CTOS_LGS_BUY_BOSS_TEAM_ENTER_TIMES		= 11885;   --购买BOSS副本进入次数
+GMI_STOC_LGS_BOSS_TEAM_ENTER_TIMES_CHANGE = 22590;   -- 更新Boss副本进入次数信息
+GMI_STOC_LGS_BOSS_TEAM_BUY_TIMES_CHANGE = 22591;   -- 更新Boss副本购买次数信息
+GMI_CTOS_LGS_TEAM_MEMBER_ASK_LEADER_ENTER_FB = 11886;  -- 队伍队员请求队长进入副本
+
+GMI_STOC_LGS_CLIENT_NOTIFY = 22592;   -- 通用错误提示
+
+-- GMI_CTOS_LGS_FRIEND_UPDATE_DATA = 11821         -- 刷新好友信息
+-- GMI_CTOS_LGS_FRIEND_BUYNAME = 11822             -- 按名字查找好友
+-- GMI_CTOS_LGS_FRIEND_APPLY = 11823               -- 添加好友
+-- GMI_CTOS_LGS_FRIEND_RETURN = 11824              -- 同意拒绝添加好友
+-- GMI_CTOS_LGS_FRIEND_DELETE = 11825              -- 删除好友
+-- GMI_CTOS_LGS_FRIEND_BLACK = 11827            -- 加入黑名单
+-- GMI_CTOS_LGS_FRIEND_REQUEST_VOUCHLIST = 11828   -- 请求推荐好友
+-- GMI_STOC_FRIEND_SYNCH_DATA_TOCLIENT = 22613     -- 角色好友信息登录时同步客户端
+-- GMI_STOC_FRIEND_VOUCHLIST_RETURN = 22621        -- 推荐好友回复
+-- GMI_STOC_FRIEND_DELETE_DO = 21044               -- 删除好友回复
+-- GMI_STOC_FRIEND_BUYNAME_DO = 22615              -- 按照姓名查找好友回复
+-- GMI_STOC_FRIEND_APPLY_DO = 22616                -- 请求添加好友回复
+-- GMI_STOC_FRIEND_ONLINE_DO = 22619               -- 好友上下线更新数据回复
+-- GMI_STOC_FRIEND_UPDATE_DO = 22620               -- 好友数据更新同步客户端
+-- GMI_STOC_FRIEND_REQUEST_DATA_RETURN = 22614     -- 角色好友信息更新回复
+
+
+
+GMI_CTOS_FT_UPDATE_QUERYDATA = 11878            -- 请求好友界面最近列表数据
+GMI_CTOS_FT_ABOUT_FRIENDINFO = 11879            -- 请求好友界面好友相关操作协议
+GMI_CTOS_FT_ABOUT_ENEMYINFO = 11880             -- 请求好友界面仇人相关操作协议
+GMI_CTOS_FT_ABOUT_BLACKLISTINFO = 11881         -- 请求好友界面黑名单相关操作协议
+GMI_CTOS_FT_GET_PLAYERINFO_BUYNAME = 11882      -- 请求根据名字查找好友
+GMI_CTOS_FT_CHANGEOATH_INFO = 11883             -- 保存复仇宣言内容
+GMI_CTOS_LGS_SPECIAL_PANEL_COMPLETE = 11884     -- 客户端发送给服务器特殊任务面板达成消息
+GMI_CTOS_SEND_FRIEND_GIFTS = 11895              -- 客户端赠送好友礼物
+GMI_CTOS_CLIENT_ASK_ALL_FRIEND_GIFTS_INFO = 11896      -- 客户端请求所有的礼物信息
+GMI_CTOS_GET_FRIEND_GIFTS = 11897               -- 客户端领取好友礼物消息
+GMI_CTOS_GETALL_FRIEND_GIFTS = 11898            -- 客户端请求一键领取
+
+GMI_STOC_FT_SEND_PLAYERDATAFS_TOCLIENT = 22645  -- 返回好友角色列表数据
+GMI_STOC_FT_SEND_ENEMYLIST_TOCLIENT = 22647     -- 返回仇人记录列表
+GMI_STOC_FT_SEND_APPLYER_TO_BEAPPLY = 22646     -- 收到申请自己为好友的协议
+GMI_STOC_FT_SEND_REPLY_DELETE_RESULT = 22649    -- 删除好友
+GMI_STOC_FT_SEND_REPLY_APPLY_RESULT = 22648     -- 请求添加好友回复
+GMI_STOC_FT_SEND_ALLLIST_TOCLIENT = 22651       -- 服务器推送列表数据(好友/黑名单/仇人)
+GMI_STOC_FT_SEND_ADDENEMY_TOCLIENT = 22652;     -- 添加仇人同步到客户端
+GMI_STOC_FT_SEND_QUERY_BUYNAME_RESULT = 22650;   -- 查找好友返回
+GMI_STOC_FT_SEND_REVENGE_OATH = 22653;          -- 服务器保存的复仇宣言文本
+GMI_STOC_FRIEND_OPERATE_RESULT_RETURN = 22707;  -- 好友相关：反馈好友相关的操作结果（针对仇人和黑名单）
+GMI_STOC_FT_SEND_REPLY_ENEMYINFO_RESULT = 22739;-- 仇人实时刷新返回
+
+GMI_STOC_LGS_SENDFRIENDGIFTS = 22603            -- 回复客户端赠送礼物消息
+GMI_STOC_LGS_FRIEND_SEND_GIFTS_TOME = 22604     -- 回复客户端服务器添加礼物给好友
+GMI_STOC_SERVER_SEND_ALL_FRIEND_GIFTS_INFO = 22605   -- 服务器发送所有的礼物信息
+GMI_STOC_LGS_GET_FRIEND_GIFTS = 22606           -- 服务器回复领取礼物
+GMI_STOC_FRIEND_LEAVEWORDS_DATA = 22724         -- 服务器推送 好友系统：离线留言数据
+GMI_STOC_INFORMFRIEND_GAMELINE_STATE = 22728   -- 服务器推送 好友系统：实时同步好友上下线状态：1,上线， 2,下线
+
+GMI_STOC_DUNGEON_SUCCESS_INFO = 22560;			-- 下发章节副本通关信息
+GMI_STOC_DUNGEON_FAILURE_INFO = 22562;			-- 副本挑战失败
+GMI_STOC_DUN_REACH_GOALS = 22559;				-- 章节副本达成目标
+GMI_STOC_SWEEP_TIMES_BOSS_DUNG_INFO = 22566;    -- 扫荡多次胜利信息
+GMI_STOC_SINGLE_DUNGEON_INFO = 22561;			-- 同步单个章节副本信息
+GMI_STOC_SINGLE_BOSS_DUNG_INFO = 22564;		    -- 同步单个Boss副本信息
+GMI_STOC_CHAPTER_CHEST_REWARD_INFO = 22565;		-- 同步剧情副本星星的状态
+GMI_STOC_ALL_DUN_CHAPTER_INFO = 22558;          -- 同步所有副本章节信息
+GMI_STOC_ALL_DUN_BOSS_INFO = 22563;             -- 同步所有Boss副本信息
+GMI_STOC_FB_DAMAGE_SHOW = 22725;                -- 同步副本伤害统计显示
+GMI_CTOS_LGS_ASK_FB_DAMAGE_SHOW = 11946;        -- 客户端请求副本伤害统计
+
+GMI_STOC_THEW_CHANGE = 22567;                   -- 同步体力值
+GMI_CTOS_LGS_VEHICLE_INFO = 11830             -- 请求神翼飞行
+GMI_CTOS_LGS_CONTINIUE_DUNGEON = 11797;				-- 继续副本
+GMI_STOC_PET_Skill_INFO = 22426 -- 侠客技能向客户端发送数据
+GMI_CTOS_LGS_PET_SKILL_UPGRADE = 11286-- 侠客技能升级
+GMI_CTOS_LGS_ACCEPT_MISSION = 11160;
+GMI_CTOS_LGS_COMPLETE_MISSION = 11161;-- 任务完成
+GMI_CTOS_LGS_COMPLETE_EVERY_DAY_QUEST = 11855;-- 领取每日必做奖励
+GMI_CTOS_LGS_COMPLETE_MISSION_EX = 11076;-- 完成任务带参数检测
+GMI_CTOS_LGS_DEL_TASK = 11077; -- 删除任务
+GMI_CTOS_LGS_ADDSKILLSTEP = 11008;-- 技能升级C TO S
+GMI_CTOS_LGS_SKILL_UPDATE_ONCE = 11949;    -- 请求技能全部升级
+GMI_STOC_LGS_SKILL_UPDATE_ONCE = 22730;     -- 技能全部升级服务器返回
+GMI_STOC_LEVEL_UP_TIME = 22811;     -- 角色升级时间同步
+
+
+
+GMI_CTOS_LGS_BUY_THEW = 11279;-- 购买体力
+GMI_CTOS_LGS_LEVELUP_QUALITY = 11789;-- 修为升级C To S
+GMI_CTOS_LGS_CLIENT_ADD_HP = 11790;-- 客户端测试加血
+GMI_CTOS_UPDATE_SHORTCUT = 11050;-- 修改技能栏快捷图标
+GMI_CTOS_QUERY_SHORTCUT = 11053;-- 请求得到快捷栏
+-- GMI_CTOS_LGS_ACHIEVEMENT_REWARD = 11799;  -- 领取成就奖励
+GMI_CTOS_LGS_EVERYDAY_TASK_REWARD = 11801;-- 领取每日任务奖励
+GMI_CTOS_GS_ENTERROOM_RETURN = 16003;
+GMI_CTOS_LGS_CHAT = 11032;-- 发送聊天信息
+GMI_CTOS_LGS_SEND_DRAGPNSOULDATA_TO_CLIENT = 11806;-- 新龙魂：玩家登录发送龙魂属性
+GMI_CTOS_LGS_DRAGONSOULNEW_LEVELUP = 11807;	-- 新龙魂：玩家龙魂升级(包含侠客)
+GMI_STOC_ENTERROOM = 21002;
+GMI_STOC_UPDATE_OBJ = 21005;-- 用来更新对象的属性，更新的是NUPL_的协议内容
+-- GMI_STOC_FRIEND_RETURN = 22622;-- 神翼飞行返回
+GMI_STOC_SETSKILLSTEP = 22002;-- 技能解锁与技能升级 S TO C
+GMI_STOC_ADDUIITEM = 22044;-- 添加物品信息
+GMI_STOC_UPDATEUIITEMPOS = 22045;-- 物品在面板之间移动消息
+GMI_STOC_REMOVEUIITEM = 22046;-- 删除道具信息
+GMI_STOC_UPDATEITEMCONTAIN = 22049;-- 更改物品数量
+GMI_STOC_UPDATEUIITEM = 22431;-- 更新物品信息
+GMI_STOC_UPDATE_SKILL_LIST = 22055;-- 刷新客户端技能信息
+GMI_STOC_QUALITY_LV_INFO = 22416;-- 通知客户端修为升级信息
+GMI_STOC_CULTIVATE_PENGYANG_RETURN = 22826; -- 返回修为培养
+GMI_STOC_BUY_THEW_RETURN = 22557;-- 购买体力值返回信息
+GMI_STOC_UPDATE_SHORTCUT = 22052;-- 刷新快捷栏图标
+GMI_STOC_CHAT = 22025;-- 聊天消息
+GMI_STOC_CLIENT_CFG = 22266; -- 设置自动吃药的血量百分比
+GMI_CTOS_LGS_READ_OR_SAVE_CLIENT_CFG = 11180; -- 设置自动吃药的血量百分比
+
+-- 进入游戏方式，从哪儿进入游戏
+ENTERROOM_FROM_LOCAL_ROOM = 0;                            -- 从本地服务器切换场景来到
+ENTERROOM_FROM_OUTSIDE_GAME = 1;                          -- 首次进入游戏世界
+ENTERROOM_FROM_REMOTE_SERVER = 2;                         -- 从远端服务器切换场景来到
+ENTERROOM_FROM_SPIRIT_TRAVEL = 3;                         -- 神游加载场景
+ENTERROOM_FROM_RESURRECT_LOCAL_ROOM = 4;                  -- 复活进入此场景(功能应该和ENTERROOM_FROM_LOCAL_ROOM相同)
+GMI_CTOS_LGS_FUBEN_LEAVE_INFO = 11179;                   -- 离开副本协议；
+E_CTON_ACTIVE_GMRIGHT = 4010;                           -- 激活GM
+GMI_CTOS_WIZARD_CMD_INVALID = 15001;                    -- gm命令错误
+GMI_CTOS_WIZARD_CMD_RIGHTS = 15023;                     -- 提升GM权限
+GMI_STOC_PET_CULTIVATE_UPGRADE_INFO = 22420;            -- 通知客户端提升侠客修为等级的信息
+GMI_STOC_MAIL_INFO = 22241;                             -- 服务器发送邮件信息
+GMI_CTOS_LGS_MAIL = 11163;                              -- 客户端请求邮件信息
+GMI_CTOS_LGS_PET_CULTIVATE_LEVEL_UPGRADE = 11281;       -- 提升侠客的修为等级，客户端发给服务器
+GMI_CTOS_LGS_CULTIVATE_PENGYANG = 11993;                -- 请求修为培养
+GMI_CTOS_LGS_PET_PUT_ON_EQUIP = 11287;                  -- 侠客穿装备
+GMI_CTOS_LGS_PET_EQUIP_UPGRADE = 11288;                 -- 侠客装备升级
+GMI_STOC_SETMONEY = 22001;                              -- 设置玩家当前非绑定金钱数
+GMI_STOC_SET_BINDMONEY = 22255;                         -- 更新玩家钱数
+GMI_STOC_LOTTERY_DRAW_LOGIN_UPDATE_INFO = 22430;        -- 藏宝图系统玩家登陆或者玩家零点更新向客户端发送数据
+GMI_CTOS_LGS_LOTTERY_DRAW = 11289;						-- 抽奖
+GMI_STOC_LOTTERY_DRAW_INFO = 22429;						-- 藏宝图系统向客户端发送数据
+GMI_STOC_ITEM_ROLLMSG = 22061; 							-- 系统统一提示内容；
+GMI_STOC_CLOSE_RETURN = 22067;                          -- 服务器踢人
+GMI_STOC_ATTACK_FIGHT_ABILITY = 22359;                  -- 服务器发送给客户端更新玩家角色战斗力消息
+GMI_CTOS_LGS_ROLE_REBORN = 11290;						-- 主角复活
+-- GMI_STOC_REBORN_LOGIN_UPDATE_INFO = 22435;			    --主角复活系统登陆或者零点更新向客户端发送数据
+GMI_STOC_REBORN_INFO = 22436;							-- 主角复活系统向客户端发送数据
+GMI_STOC_RECEIVECOMMAND = 21007;						-- 主角被杀死了播放一个动作弹出面板
+GMI_STOC_OPEN_PLAYER_PANEL = 22099;						-- 服务器通知客户端打开某个界面
+GMI_STOC_CLOSE_PLAYER_PANEL = 22276;                    -- 服务器通知客户端关闭某个界面 
+GMI_STOC_ATTACK_INFO = 22437;							-- 攻击者的相关信息向客户端发送数据
+GMI_STOC_ATTACK_INFO_NEW = 22703;                       -- 向客户端发送复活面板信息
+GMI_STOC_CHANGE_GOLD_RESERVE = 22217;					-- 元宝相关
+GMI_STOC_SINGLE_ITEM_UPDAYE = 22438;					-- 单个装备精炼消息（这个被废弃掉了,liuyang）
+-- GMI_STOC_ACHIEVEMENT_UPDAYE = 22439;                    -- 成就系统信息
+-- GMI_STOC_PET_ACHIEVEMENT_REWARD = 22440;                -- 领取成就奖励结果
+GMI_STOC_SHOW_ROOKIE_GUIDE = 22315;					    -- 服务器通知引导开始，发送引导ID  WORD
+GMI_CTOS_LGS_ROOKIE_GUIDE_FINISH = 11209;				-- 客户端通知引导结束，发送引导ID WORD
+GMI_CTOS_LGS_BEGIN_GUIDE_FROMCLIENT = 11800;			-- 客户端触发引导	WORD
+GMI_STOC_ROOKIEGUIDE_FINISH_AFFIRM = 22441;		        -- 服务器验证成功，发送完成消息
+
+GMI_STOC_EVERYDAY_TASK_UPDAYE = 22442;                  -- 每日任务
+GMI_STOC_EVERYDAY_TASK_REWARD = 22443;                  -- 每日任务领取奖励的通知
+GMI_STOC_UPDATE_DAILY_EVENT_INFO = 22639;               -- 每日必做更新
+
+GMI_CTOS_LGS_GUIDE_SERVER_CAN_PASS_AFFIRM = 11800;		-- 客户端向服务器请求，某一个引导ID的服务器验证ID是否满足条件
+GMI_CTOS_LGS_LOOK_UP_ATTRIBUTE = 11802;				-- 查看玩家属性值
+GMI_STOC_LOOK_UP_ATTRIBUTE = 22444;			-- 查看属性通知
+GMI_STOC_CHAPTER_THREE_DIALOEG = 22570;					-- 剧情副本三星通知客服端剧情对话
+GMI_STOC_DUNGEON_LEFT_MONSTER_NUM = 22571;              -- 副本怪物打掉的数量显示
+-- GMI_STOC_CHANGEPRO_DELETE_OBJ = 21017;					-- 转职删除obj
+GMI_CTOS_GS_CLIENT_CHANGE_PRO_DELETE_OBJ_READY = 16039;	-- 客户端删除主角成功通知服务器
+GMI_CTOS_LGS_CHANGE_PRO = 11804;						-- 发送易容消息
+GMI_STOC_SENDBAGINIT_OK = 22433;		        		-- 切场景发送背包初始化数据OK
+GMI_STOC_CHANGE_PET_EXP = 22445;				-- 修改侠客经验
+GMI_STOC_PET_ATTRIBUTE_INFO = 22425;				-- 侠客属性向客户端发送数据
+GMI_CTOS_LGS_CROSS_SCENE_PATH_FIND_CHANGE_ROOM = 11162; -- 跨场景寻路到达传送点时，请求传送
+GMI_STOC_DUNGEON_CARD_AFFIRM = 22572;                   -- 翻牌确认
+GMI_STOC_SCENE_STORY_DATA = 22575;			-- 场景剧情：参数：WORD：剧情
+GMI_STOC_PLAYER_SEND_MSG_OK = 22576;    			-- 告诉客户端角色上线所有数据发送完成
+GMI_STOC_SEND_DRAGPNSOULDATA_TO_CLIENT = 22573;		-- 新龙魂：玩家登录发送龙魂属性
+GMI_STOC_DRAGONSOULNEW_LEVELUP = 22574;					-- 新龙魂：玩家龙魂升级(包含侠客)
+GMI_CTOS_LGS_WINGINFO = 11064;							-- 翅膀化灵消息
+GMI_STOC_WINGINFO_BACK = 22609;							-- 翅膀化灵消息返回
+GMI_STOC_WING_HUANHUA_FAIL = 22612;                -- 翅膀幻化失败的信息
+GMI_CTOS_LGS_UES_MISSION_ITEM = 11813;                 -- 区域道具使用
+GMI_CTOS_LGS_CLINET_END_APPEARANCE = 11829;   			-- 客户端请求结束变身
+GMI_STOC_PLAYER_CLEAR_BAG = 22577;                  -- 清理所有的面板上的信息（背包，身上装备）
+GMI_CTOS_LGS_EQUIP_STAR_LV = 11831;					-- // 装备升星 // aParam[1]: 装备LGID
+GMI_STOC_LGS_EQUIP_STAR_LV_RESULT = 22578;		-- // 装备升星结果 
+GMI_CTOS_LGS_PKTYPE_CHANGE = 11049;					-- 申请要求换的PK类型
+GMI_CTOS_LGS_SKILL_CHANGE_ADD_TYPE = 11836;           -- 申请激活符文
+GMI_STOC_LGS_SKILL_ADDTYPE_SUCC = 22579;             -- 符文激活结果
+GMI_STOC_ENCHANT_UPDATE_INFO = 22626;                   -- 更新附魔信息(上线，等级升级)
+GMI_STOC_ENCHANT_OPEN_HOLE = 22627;                     -- 附魔开孔消息返回
+GMI_STOC_ENCHANT_ENCHANT_RETURN = 22628;                -- 附魔孔位附魔消息返回
+GMI_STOC_ENCHANT_GETEXP_RETURN = 22629;                 -- 附魔部位养成消息返回
+GMI_CTOS_LGS_ENCHANT_OPENHOLE = 11839;                  -- 客户端请求附魔开孔
+GMI_CTOS_LGS_ENCHANT_ENCHANT = 11840;                   -- 客户端请求附魔
+GMI_CTOS_LGS_ENCHANT_GETEXP = 11841;                    -- 客户端请求附魔养成
+-- GMI_STOC_RETURN_MAGIC_HOLE_INFO = 22633;            -- 附魔开孔返回
+GMI_STOC_RETURN_RECOMMEND_CAMP = 22624;           -- 阵营开启
+GMI_CTOS_LGS_ADD_CHANGEUNIT = 11219;              -- 请求加入阵营
+GMI_CTOS_LGS_GET_RECOMMEND_CAMP = 11834;          -- 请求推荐阵营
+GMI_CTOS_LGS_APPLY_CAMPDATA = 11835;              -- 请求阵营数据
+GMI_STOC_RETURN_CAMPDATA = 22625;                 -- 请求阵营数据回复
+GMI_CTOS_LGS_UNION = 11225;                       -- 请求阵营捐献     
+GMI_CTOS_LGS_APPLY_GODOFFICER_OPERATE = 11986;    -- 领取阵营俸禄时需要兑换
+GMI_STOC_APPLY_JOIN_CAMP = 22623;                 -- 申请加入阵营返回
+GMI_STOC_UNION_OPERATE_RESULT = 22801;            -- 请求阵营捐献返回
+GMI_STOC_UNION_JX_OPERATE_RESULT = 22802;         -- 请求领取俸禄返回
+GMI_CTOS_LGS_APPLY_GODOFFICER_DATA = 11837;-- 提升神位 【废弃】
+GMI_STOC_RETURN_GODOFFICER_DATA = 22630;-- 提升神位回复
+GMI_CTOS_LGS_APPLY_BAGENLARGE = 11838;            -- 购买背包的消息
+GMI_STOC_RETURN_BAGCELL_RESULT = 22632;           -- 条件满足开启背包格处理
+
+GMI_STOC_SKILL_TALENT_DATA = 22580;         -- 上线服务端发送的天赋数据
+GMI_CTOS_LGS_TALENT_SKILL_LEVELUP = 11843;  -- 客户端请求天赋数据修改
+GMI_STOC_SKILL_TALENT_LEVELUP = 22581;      -- 服务端返回天赋修改数据
+GMI_CTOS_LGS_RESETTALENT = 11844;           -- 重置天赋
+GMI_STOC_LGS_RESETTALENT = 22582;           -- 重置天赋返回
+GMI_STOC_LIUPAI_ONLINE_UPDATE = 22681;      -- 上线同步流派数据
+GMI_STOC_SKILL_SHORTCUTBAR_DATA = 22685;    -- 技能快捷栏的技能
+GMI_STOC_SKILL_SHORTCUTBAR_UNLOCK = 22686;  -- 技能栏解锁数据
+GMI_STOC_LIUPAI_SWITCHOVER = 22683;         -- 流派切换成功
+GMI_STOC_LIUPAI_PROMOTE_LEVEL = 22682;      -- 升级天赋返回
+GMI_STOC_RESETTALENT_SUCCESS = 22684;       -- 重置成功返回
+GMI_STOC_LIUPAI_SKILL_POS = 22721;          -- 技能栏改变时发送装备技能的位置
+GMI_CTOS_LGS_LIYPAI_SWITCHOVER = 11922;     -- 切换天赋
+GMI_CTOS_LGS_LIUPAI_PROMOTE_LEVEL = 11920;  -- 天赋升级
+GMI_CTOS_LGS_LIUPAI_RESET_TALENT = 11921;   -- 重置天赋
+GMI_CTOS_LGS_LIUPAI_CHANGE_SKILL_SHORTCUTBAR = 11923;   -- 装备技能到技能栏 
+
+GMI_STOC_EXPLOITUPDATESYNCHROCLIENT = 22643;-- 更新功勋值
+GMI_STOC_UPDATE_ACTIVE_INFO = 22634;-- 更新活跃值以及活跃领奖信息
+GMI_CTOS_LGS_DAILY_TASK_AWARD = 11847; -- 领取每日任务活跃奖励
+GMI_CTOS_LGS_REQUEST_SIGNINREWARD = 11851; -- 客户端请求领取签到奖励
+GMI_STOC_RETURN_SIGNIN_DATA = 22635;    -- 回复客户端请求签到记录的数据
+GMI_CTOS_LGS_REQUEST_SIGNINREWARD_OL = 11852;  -- 客户端请求领取在线奖励
+GMI_STOC_RETURN_SIGNIN_DATA_OL = 22636;    -- 服务器发给客户端在线奖励数据
+GMI_CTOS_LGS_REQUEST_SIGNINREWARD_LV = 11853;  -- 客户端请求领取等级奖励
+GMI_STOC_RETURN_SIGNIN_DATA_LV = 22637;    -- 服务器发送给客户端等级奖励数据
+GMI_STOC_GS_STOP = 22638; -- 服务器几秒后关闭通知
+GMI_CTOS_LGS_FINISH_ENTERGAME = 11058;-- 扩展参数指定场景ID,以便接收到时作校验
+GMI_CTOS_LGS_OFFLINE_AWARD = 11212;-- 离线奖励信息
+GMI_STOC_LGS_OFFLINE_AWARD = 22321;-- 领取离线奖励
+GMI_CTOS_LGS_ENTER_ACTIVITY_ROOM = 11859; -- 参加活动
+GMI_CTOS_GET_ACTIVITYRANDNUM_TO_SERVER = 11856;-- 向服务器请求刷怪随机数(金币和经验活动)
+GMI_STOC_SEND_ACTIVITYRANDNUM_TO_CLIENT = 22448;-- 服务器发送刷怪随机数(金币和经验活动)
+GMI_CTOS_LGS_BEGIN_ACTIVITY_CREATE_MONSTER = 11857;-- 活动创建怪物请求(金币和经验活动)
+GMI_CTOS_ACTIVITY_GOTOPOS = 11899;  -- 活动传送
+
+GMI_CTOS_LGS_PANELSTATE = 11007;-- // 通知服务器面板的状态（商铺用来通知服务器打开面板统一接口）
+GMI_CTOS_LGS_BUY_GOODS_FROM_SYS = 11092;-- //购买道具消息
+GMI_STOC_LGS_SEND_GET_ITEM_MSG = 22313;-- 发送的ID类型(0-LGID/1-ExcelID), 道具LGID/ExcelID, 道具数量
+GMI_CTOS_LGS_GUILD_OP_MSG = 11131;-- 客户端请求公会信息数据
+GMI_STOC_GUILD_OP_MSG = 22195;-- 服务器返回公会信息数据
+GMI_STOC_CORPS_INCREASEMONEY = 22705;-- 公会资金
+GMI_STOC_SYNC_CORPSWINE_EXP = 22720;-- 返回客户端公会饮酒经验
+GMI_CTOS_LGS_REQUEST_OPEN_WINEGODATY = 11942;-- 请求参与公会酒神活动
+GMI_CTOS_LGS_CHANGE_NAME = 11254;-- 消息协议
+GMI_CTOS_LGS_ITEM_TRANSPORT = 11152;-- 脱离卡死
+GMI_CTOS_LGS_CLOSE = 11002;-- 切换账号
+GMI_STOC_PUBLIC_MESSAGE = 22077;-- 跑马灯消息
+CMI_CTOS_LGS_RESOLVE_ITEM_ID_LIST = 11861;-- 向服务器发送分解装备
+GMI_STOC_SEND_RESOLVE_RETURN_TO_CLIENT = 22449;-- 服务器返回装备分解信息
+GMI_CTOS_LGS_END_GUIDE = 11863;-- //新手引导结束一段引导
+GMI_CTOS_LGS_GOTOWORLDBOSS = 11862;              -- //世界BOSS传送
+GMI_CTOS_LGS_BOSS_REFRESH_MSG = 11231;          -- 新手游为传送危险场景
+GMI_CTOS_LGS_EVMISSION_DO_REQUEST = 11866;      -- 日常任务刷星向服务器发送消息
+CMI_STOC_LGS_TIME_END_ACTIVITY = 22585;         -- 发送活动(副本)倒计时
+GMI_STOC_LGS_GOTO_WORLD_BOSS_POS = 22586;       -- //接收传送完毕后的目标地点坐标
+GMI_CTOS_LGS_REQUEST_BUYTHEW = 11867;           -- 发送购买体力消息
+GMI_STOC_SYNCHRO_THEWTIME_TOCLIENT = 22641;     -- 服务器返回回复体力剩余时间
+GMI_STOC_RETURN_BUYTHEW_ISSUCCESS = 22642;    -- 服务器返回购买体力信息
+GMI_CTOS_GET_OTHERPLAYER_STATE = 11041;	-- 发送查看其他玩家详细信息面板
+GMI_STOC_GET_OTHERPLAYER_STATE = 22028;	-- 服务器发送玩家的协议详细信息
+
+GMI_CTOS_LGS_REQUEST_JOINACTIVITY = 11874;        -- //体力大餐参加活动申请
+GMI_STOC_HONORVALUE_SYNCHROCLIENT = 22644;      -- 更新骑士荣誉
+GMO_CTOS_LGS_TEXT_BY_CLIENT = 11842;            -- //客户端测试按钮消息
+GMI_CTOS_LGS_AOTAIACTIVITY_SWEEP_MSG = 11875;    -- 奥泰副本(炼神台)客户端请求扫荡
+GMI_STOC_SELECT_LIANSHENTAIUI = 22265;          -- 服务器奥泰副本胜利信息
+
+GMI_STOC_LGS_SEND_BALL_ACTIVITY_DATA = 29053;   -- 上线发送宝珠副本数据
+GMI_STOC_LGS_SEND_PET_ACTIVITY_DATA = 29055;    -- 上线发送宠物副本数据
+GMI_STOC_LGS_SEND_MOUNT_ACTIVITY_DATA = 29056;  -- 上线发送坐骑副本数据
+
+GMI_CTOS_LGS_BALL_ACTIVITY_MSG = 12019;         -- 宝珠副本客户端请求
+GMI_CTOS_LGS_PET_ACTIVITY_MSG = 12026;          -- 宠物副本客户端请求
+GMI_CTOS_LGS_MOUNT_ACTIVITY_MSG = 12027;        -- 坐骑副本客户端请求
+
+GMI_STOC_LGS_SEND_SHO_ACTIVITY_DATA	= 29054;    -- 上线发送神将副本数据
+GMI_CTOS_LGS_SHO_ACTIVITY_MSG	= 12020;        -- 神将副本客户端请求
+GMI_STOC_BALL_SWEEP_DATA_RETURN = 22865;        -- 返回宝珠副本扫荡
+GMI_STOC_PET_SWEEP_DATA_RETURN = 22884;        -- 返回宠物副本扫荡
+GMI_STOC_MOUNT_SWEEP_DATA_RETURN = 22885;        -- 返回坐骑副本扫荡
+
+GMI_STOC_SHO_SWEEP_DATA_RETURN = 22866;         -- 返回神将副本扫荡
+
+GMI_STOC_LGS_SEND_AOTAIACTIVITY_DATA = 22587;    --上线发送奥泰副本数据
+GMI_STOC_LGS_OPEN_ADD_THEW_PANEL = 22588;-- ,//通知客户端打开补充体力面板
+GMI_CTOS_LGS_SORT_TRIM_PANEL = 11089; -- 请求整理背包
+GMI_STOC_PANEL_SORT_DATA = 22240; -- 服务器返回背包整理结果
+GMI_CTOS_LGS_REQ_RANK_DATA = 11207;-- 客户端请求排行榜数据
+GMI_CTOS_LGS_GET_RANKING_SELF = 11941;-- 客户端请求自己的排行榜排名
+GMI_STOC_RANK_SELF_GOALRANKING = 22719; -- 服务器返回自己的排行榜排名 
+GMI_CTOS_LGS_REQ_UPDATE_RANK = 11208;-- 客户端请求手工刷新排行榜
+GMI_STOC_RANK_DATA_ACK = 22316;-- 回复排行榜数据
+GMI_STOC_NPC_TRADEACTION = 22008;-- 通知客户端NPC商店的数据
+GMI_STOC_NPC_TRADERESULT = 22009;-- npc商店返回购买道具消息
+GMI_STOC_SHOPRECORD_ZEROREFRESH = 22655;-- 24点刷新npc商店的信息
+
+
+
+GMI_CTOS_ACTIVEMOUNT = 11888; -- 激活坐騎
+GMI_CTOS_FOSTERMOUNT = 11889; -- 培养坐骑1次
+GMI_CTOS_FOSTERMOUNTTENTIMES = 11890; -- 培养坐骑10次
+GMI_CTOS_MOUNTLEVELUP = 11891; -- 坐骑升级
+GMI_CTOS_SETRIDEPANELMOUNTID = 11892; -- 设置当前骑乘坐骑ID
+
+GMI_STOC_RIDEPANELDATAINIT = 22594; -- 玩家上线，服务器通知客户端坐骑面板信息
+GMI_STOC_ACTIVEMOUNT_RETURN = 22595; -- 激活坐骑返回消息
+GMI_STOC_FOSTERMOUNT_RETURN = 22596; -- 坐骑培养1次返回消息
+GMI_STOC_FOSTERMOUNTTENTIMES_RETURN = 22597; -- 坐骑培养10次返回消息
+GMI_STOC_MOUNTLEVELUP_RETURN = 22598; -- 坐骑升级的返回消息
+GMI_STOC_SETRIDEPANELMOUNTID_RETURN = 22599; -- 设置坐骑ID的返回消息
+
+GMI_STOC_COMMONRANK_DATA_ACK = 22601; -- 回复排行榜概括数据
+
+GMI_CTOS_STARTDRINKWINE = 11893;-- 通知服务器开始饮酒
+GMI_STOC_LEFTDRINKWINETIMES = 22602;-- 通知客户端剩余饮酒次数
+GMI_CTOS_JOINDRINKWINE = 11894;-- 通知服务器参加饮酒活动
+
+GMI_CTOS_UPDATE_CLIENT_PLAYER_ACTION = 11887;   -- 系统设置面板信息 好友、组队、公会
+GMI_STOC_UPDATE_CLIENT_PLAYER_ACTION = 22593;   -- 系统设置面板信息 好友、组队、公会
+
+GMI_CTOS_GET_ACHIEVE_DATAS = 11900;        -- 请求领取成就奖励
+GMI_CTOS_GET_ACHIEVE_REWARDS = 11902;       -- 请求领取宝箱奖励
+GMI_STOC_LGS_PLAYER_ACHIEVEDATA = 22607;    -- Server回复Client请求角色成就数据
+GMI_STOC_LGS_UPDATE_ACHIEVEDATA = 22608;    -- Server同步Client成就数据的刷新
+GMI_STOC_LGS_UPDATE_ACHIEVEREWARDS = 22656;    -- Server同步Client领取宝箱奖励
+
+GMI_STOC_GETCOIN_BUYTIMESINIT = 22660;      -- 通知玩家的当前炼金的购买次数
+GMI_STOC_GETCOIN_BUYRESULT = 22661;         -- 服务器回复客户端购买金币的结果
+GMI_CTOS_LGS_GETCOIN_BUYCOIN = 11903;       -- 客户端通知服务器购买金币（炼金系统）
+GMI_CTOS_LGS_LOTTERY_LAST_RESULT = 11904;   -- 向服务器请求十连抽翻牌领取状态
+GMI_CTOS_LGS_LOTTERY_SINGLE_GET_AWARD = 11905;     -- 向服务器请求单个道具领取信息
+GMI_STOC_LOTTERY_LAST_INFO = 22622;        -- 服务器返回十连抽所有道具领取状态
+GMI_STOC_LOTTERY_SINGLE_INFO = 22663;     -- 服务器返回十连抽单个道具领取状态
+GMI_CTOS_LGS_LOTTERY_ALL_GET_AWARD = 11906; -- 领取全部的奖励
+
+GMI_CTOS_LGS_LOADING_CLOSE = 11191;         -- 客户端通知服务器完成某事件的读条
+GMI_STOC_SCRIPT_LOADING = 22281;            -- 服务器通知客户端开始某事件的读条
+
+GMI_CTOS_START_EQUIPRANDEFF = 11917;        -- 洗练
+GMI_CTOS_SAVE_EQUIPRANDEFF = 11918;         -- 保存洗练临时属性
+GMI_STOC_START_EQUIPRANDEFF = 22677;        -- 服务器回复洗练
+GMI_STOC_SAVE_EQUIPRANDEFF = 22678;         -- 服务器回复保存洗练临时属性
+
+GMI_STOC_ALL_GUILD_SKILL_INFO = 22679;      -- 发送所有公会技能信息
+GMI_STOC_SINGLE_GUILD_SKILL_INFO = 22680;   -- 发送单个公会技能信息
+GMI_CTOS_GUILD_SKILL_LEVEL_UP = 11919;      -- 客户端请求公会技能升级
+
+
+GMI_STOC_AUCTIONSYS_PLAYER_LOADDATA = 22666;            -- 角色上线发送税率、热销道具、出售道具到客户端
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_GOODSLIST = 11913;      -- 打开界面的时候向服务器请求最新上架的50个实时数据
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_SEARCHITEM = 11907;     -- 角色请求搜索目标道具
+GMI_STOC_AUCTIONSYS_SEARCH_RESULT = 22667;              -- 搜索道具时，Server回复搜索结果  
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_BUYITEM = 11908;        -- 角色请求购买目标道具
+GMI_STOC_AUCTIONSYS_BUY_RESULT = 22668;                 -- Client购买道具时，Server回复购买结果
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_EDITPRICE = 11909;      -- 角色请求当前道具最低价列表	
+GMI_STOC_AUCTIONSYS_PROMPT_CURMARKET = 22669;           -- 返回当前道具最低价列表
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_PUTAWAY = 11910;        -- 角色请求道具 上架
+GMI_STOC_AUCTIONSYS_PUTAWAY_RESULT = 22672;             -- 回复道具上架结果 
+GMI_STOC_AUCTIONSYS_UPDATE_ADDITEM = 22670;             -- 刷新角色出售列表：添加道具
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_SOLDOUT = 11911;        -- 角色请求道具 下架				 
+GMI_STOC_AUCTIONSYS_SOLDOUT_RESULT = 22673;             -- 回复道具下架结果
+GMI_STOC_AUCTIONSYS_UPDATE_DELITEM = 22671;             -- 刷新角色出售列表：删除道具
+GMI_CTOS_LGS_AUCTIONSYS_REQUEST_ITEMINFO = 11912;       -- 角色请求单位道具的详细信息
+GMI_STOC_AUCTIONSYS_SEARCH_ITEMINFO = 22674;            -- 回复查询单位道具的详细信息
+GMI_STOC_AUCTIONSYS_UPDATE_SELLLIST = 22675;           -- 更新拍卖行出售列表
+
+GMI_STOC_AUCTIONSYS_UPDATE_UPDATEITEM = 22676;         -- 刷新角色出售列表：更新道具
+
+GMI_STOC_SYSTEMOPEN_UPDATE = 22664;                     -- 服务器通知客户端系统解锁
+
+GMI_STOC_EQUIPFORCE_INIT = 22687;                       -- 服务器通知客户端装备强化信息
+GMI_STOC_EQUIPFORCE_RETURN = 22688;                     -- 装备强化一次消息返回
+GMI_CTOS_LGS_EQUIPFORCEONCE = 11924;                    -- 装备强化一次
+GMI_STOC_ACTIVITY_OPEN_TIME_INFO_ALL = 22446;           -- 服务器推送活动所有信息
+GMI_STOC_ACTIVITY_RESETACTIVITY_NUM = 22447;            -- 重置活动次数
+GMI_STOC_ERASE_ACTIVITY_COUNT = 29031;                  -- 通知哪个活动次数不足(队长发起进入活动, 自己的次数不足时)
+GMI_STOC_ERASE_ACTIVITY_COUNT_SUCC = 29032;             -- 通知客户端增加活动次数或时间成功
+GMI_CTOS_LGS_ERASE_ACTIVITY_COUNT=12031;                -- 客户端请求添加活动次数
+
+GMI_STOC_SEND_PET_ISLAND_TIME = 22727;                  -- 发送宠物岛剩余时间
+GMI_CTOS_LGS_ASK_PET_ISLAND_TIME = 11948;               -- 请求宠物岛倒计时
+GMI_CTOS_ASK_LIMIT_TIME_ACTIVITY_DATA = 11968;          -- 客户端请求限时活动时间
+
+GMI_STOC_LGS_WORLDBOSS = 22583;                         -- 发送世界Boss信息
+CMI_STOC_LGS_WORLD_BOSSSTATE_CHANGE = 22584;            -- 世界BOSS状态改变
+GMI_STOC_WORLDBOSS_HP_INFO = 22689;                     -- 世界Boss血量消息
+GMI_STOC_SEND_LIMITTIMEACTIVITY_INFO = 22770;           -- 服务器返回限时活动信息
+
+GMI_STOC_ITEM_STONE_POS_INFO = 22610;                   -- 服务器通知前端符石当前位置上的石头信息[10个]
+GMI_STOC_ITEM_STONE_POS_CHANGE = 22611;				    -- 服务器通知前端符石的变化情况[一个位置]
+GMI_CTOS_LGS_ITEM_STONE_SET = 11809;				    -- 符石镶嵌
+GMI_CTOS_LGS_ITEM_STONE_HOLE_OPEN = 11814;				-- 符石打孔
+GMI_CTOS_LGS_ITEM_STONE_UNSET = 11815;		            -- 符石卸下
+GMI_CTOS_LGS_ITEM_STONE_REPLACE = 11810;				-- 符石替换(废弃)
+GMI_CTOS_LGS_ITEM_STONE_LEVEL_UP = 11811;				-- 符石升级[指定单个](废弃)
+GMI_CTOS_LGS_ITEM_STONE_LEVEL_UP_ALL = 11812;			-- 符石升级[一键升级](废弃)
+
+
+GMI_CTOS_LGS_FADCLOTH_DATA_REQUEST = 11925;             -- 角色请求时装相关数据
+GMI_STOC_FADCLOTHES_SYNCDATA_TOCLIENT = 22690;          -- 时装系统：角色上线时同步数据给客户端
+
+GMI_CTOS_LGS_FADCLOTH_OPERATE_REQUEST = 11926;          -- 角色请求时装相关请求操作
+GMI_STOC_FADCLOTHES_RETURN_OPRESULT = 22691;            -- 时装系统：回复客户端请求时装相关操作
+
+
+GMI_CTOS_LGS_ASKTEAM = 11027;           -- 组队
+GMI_CTOS_LGS_ASKTEAM_RETURN = 11028;    -- 组队的结果
+GMI_CTOS_LGS_LEAVE_TEAM = 11030;        -- 离队
+GMI_CTOS_LGS_DISMISS_TEAM = 11031;      -- 从队伍中踢出
+GMI_CTOS_LGS_HANDOVER_CAPTAIN = 11156;  -- 移交队长
+CMI_CTOS_LGS_TEAM_DUNGEON_LIST = 11869; -- 组队副本列表
+CMI_CTOS_LGS_TEAM_ENTER_INTO = 11870;    -- 组队进入
+CMI_CTOS_LGS_SET_TEAM_GOAL_ID = 11871;  -- 队伍目标
+GMI_CTOS_LGS_NEARBY_TEAM_ID_LIST = 11873;		-- 附近队伍
+GMI_CTOS_LGS_PLAYER_CHANGE_SELF_MATCHING_GOALID = 11932; -- 设置匹配队伍的目标
+GMI_CTOS_LGS_PLAYER_SET_TEAM_MATCHING_STATE = 11931;    -- 客户端请求玩家修改自动匹配队伍
+GMI_CTOS_LGS_TEAM_SET_MATCHING_STATE = 11933;        -- 设置自动匹配队伍的状态
+GMI_CTOS_LGS_CHANGE_TEAM_MATCHING_PRO = 11929;        -- 客户端修改组队匹配职业
+GMI_CTOS_LGS_TEAM_MEMBER_CHANGE_ALREADY = 11934;        -- 客户端请求开启组队准备状态
+GMI_CTOS_LGS_REFUSE_ALL_JOIN = 11945;   -- 客户端请求拒绝所有邀请
+GMI_CTOS_TEAM_LEADER_ASK_MEMBER_FOLLOW = 11952;     --  队长请求召集队员跟随
+GMI_CTOS_LGS_SET_TEAM_FOLLOW_LEADER_STATE = 11951;  -- 队员请求设置组队跟随状态
+GMI_CTOS_TEAM_MEMBER_TRANSMIT_TO_LEADER_SCENE = 11953;    -- 队员跟随队长传送
+
+GMI_STOC_ASKTEAM = 22024;                               -- 组队申请或邀请操作接口
+GMI_STOC_ASKTEAM_RETURN = 22031;                        -- 组队结果
+GMI_STOC_TEAM_DISSMISS = 22033;                         -- 队伍被解散了
+GMI_STOC_TEAM_CHANGE = 22083;                           -- 告诉所有队员有人加入队伍
+GMI_STOC_TEAM_SELF_LEAVE = 22084;                       -- 通知玩家自己已经离开队伍
+GMI_STOC_PLAYER_TEAM_INFO = 22030;                      -- 向客户端刷新队伍信息
+CMI_STOC_LGS_CHANGE_TEAM_GOAL_ID = 22550;           -- 发送队伍信息改变消息(队伍目标)
+CMI_STOC_SEND_TEAM_DUNGEON_LIST_START = 22551;          -- 返回组队大厅队伍列表开始
+CMI_STOC_SEND_TEAM_DUNGEON_LIST = 22552;                -- 返回组队大厅队伍列表数据 
+CMI_STOC_SEND_TEAM_DUNGEON_LIST_END = 22553;            -- 返回组队大厅队伍列表结束
+CMI_STOC_SEND_NEARBY_TEAM_LIST_START = 22554;           -- 返回附近队伍列表开始
+CMI_STOC_SEND_NEARBY_TEAM_LIST_END = 22555;             -- 返回附近队伍列表结束
+GMI_STOC_SEND_NEARBY_TEAM_LIST = 22556;                 -- 发送附近队伍列表
+GMI_STOC_TEAM_MEMBER_POS = 22113;                       -- 向客户端发队友位置
+GMI_STOC_UPDATA_TEAMLEVEL = 22178;                      -- 升级的时候把等级更新给队友
+GMI_STOC_TEAM_MEMBER_UPDATE = 22285;                    -- 更新队员属性
+GMI_STOC_PLAYER_SET_TEAM_MATCHING_GOAL = 22700         -- 服务器回复设置匹配队伍的目标
+GMI_STOC_TEAM_SET_MATCHING_STATE = 22701;            -- 修改我的队伍匹配状态回复
+GMI_STOC_PLAYER_SET_TEAM_MATCHING_STATE = 22699;        -- 玩家设置组队匹配状态
+GMI_STOC_CHANGE_TEAM_MATCHING_PRO = 22702;            -- 服务器返回修改组队匹配职业
+GMI_STOC_CHANGE_TEAM_MEMBER_ALREADY_STATE = 22704;    -- 向客户端发送队员准备状态修改
+GMI_STOC_REFUSE_ALL_JOIN = 22723;   -- 队长拒绝所有申请消息
+-- GMI_STOC_GET_TEAM_BASE_INFO_RETURN = 22139;             -- 查看队伍基本信息
+-- GMI_STOC_LGS_TEAM_WHITHER = 22140;                      --更新队友目的地位置在雷达上的闪烁
+GMI_STOC_OPEN_IS_TEAM_FOLLOW_LEADER_PANEL = 22735;  -- 通知客户端打开组队跟随确定界面
+GMI_STOC_LGS_SET_TEAM_FOLLOW_LEADER_STATE = 22736;  -- 回复队员设置组队跟随状态
+GMI_STOC_TEAM_LEADER_ASK_MEMBER_FOLLOW = 22737;    -- 通知队员弹框确认是否跟随
+GMI_STOC_TEAM_MEMBER_TRANSMIT_TO_LEADER_SCENE = 22738;    -- 队员跟随队长传送
+
+
+GMI_STOC_EMPIREBOUNTY_REFRESHSTAR_RETURN = 22692;       -- 回复帝国悬赏刷新星级
+GMI_STOC_EMPIREBOUNTY_ACCEPT_RETURN = 22693;            -- 回复接收帝国悬赏任务返回
+
+GMI_CTOS_LGS_EMPIREBOUNTY_ACCEPTTASK = 11864;           -- 请求领取帝国悬赏活动任务
+GMI_CTOS_LGS_EMPIREBOUNTY_REFRESHSTAR = 11865;          -- 请求刷新帝国悬赏活动任务星级
+
+
+GMI_CTOS_LGS_GET_WJLYCHALLENGE_RANK = 11142;            -- 根据自己的层数请求无尽天梯的时间挑战排行
+GMI_STOC_ACTIVITY_TT_CHALLENGE_TIME = 22694;            -- 无尽天梯时间挑战排行
+
+GMI_STOC_LIFESKILL_ONLINE_SYNDATA = 22695;              -- 同步生活技能的数据信息
+GMI_STOC_LIFESKILL_LEVELUP = 22696;                     -- 生活技能激活升级反馈
+GMI_STOC_LIFESKILL_PRODUCT = 22697;                     -- 生活技能生产制造
+GMI_CTOS_LGS_LIFESKILL_LEVELUP = 11927;                 -- 生活技能激活/升级/突破
+GMI_CTOS_LGS_LIFESKILL_PRODUCT = 11928;                 -- 生活技能生产制造
+
+GMI_CTOS_LGS_MONEY_EXCHANGE = 11930;                    -- 客户端请求货币兑换
+GMI_STOC_MONEY_EXCHANGE_RESULT = 22698;                 -- 服务器回复客户端货币兑换的结果
+
+GMI_CTOS_LGS_SHOP_OPENFRAME = 11015;                    -- 通知服务器商店界面是打开还是关闭
+GMI_CTOS_LGS_SHOP_RECORD = 11016;                       -- 请求商店购买记录
+GMI_CTOS_LGS_SHOP_BUYDEAL = 11017;                      -- 商店请求购买商品
+GMI_STOC_RETURN_GETRECORD_REQUEST = 22708;              -- 商店服务器返回所有购买记录
+GMI_STOC_SHOP_RETURN_BUYGOODS_REQUEST = 22709;          -- 商店服务器返回当前购买记录
+GMI_STOC_SHOPRECORD_ZEROREFRESH = 22655;                -- 商店零点刷新消息
+
+GMI_CTOS_LGS_PLAYER_TRANSMISSION = 11935;               -- 客户端请求传送
+
+GMI_STOC_MAGICFORGE_DATA_INIT = 22711;                  -- 魔法熔炉功能初始化
+GMI_STOC_MAGICFORGE_NEED_ITEMS = 22712;                 -- 魔法熔炉发送随机出的6个道具
+GMI_STOC_MAGICFORGE_REWARD_AND_SHOW_ITEMS = 22713;      -- 魔法熔炉发送显示用道具和奖励道具和累计次数
+GMI_STOC_MAGICFORGE_RESET_RETURN = 22714;               -- 魔法熔炉发送重置后的数据
+GMI_STOC_MAGICFORGE_RESETTIMES_RETURN = 22715;          -- 魔法熔炉跨周重置数据
+
+GMI_CTOS_LGS_MAGICFORGE_START = 11937;                      -- 客户端请求魔法熔炉开始祭祀
+GMI_CTOS_LGS_MAGICFORGE_STARTTWEEN = 11938;                 -- 客户端请求魔法熔炉开始播放转动
+GMI_CTOS_LGS_MAGICFORGE_GETREWARD = 11939;                  -- 客户端请求魔法熔炉领奖
+GMI_CTOS_LGS_MAGICFORGE_RESET = 11940;                      -- 客户端请求魔法熔炉重置
+
+GMI_STOC_PLANES_LEFT_TIME = 22710;                      -- 发送位面刷新时间协议
+GMI_CTOS_LGS_REQUEST_LEAVE_PLANES = 11936;              -- 请求离开位面
+
+GMI_CTOS_LGS_PET_OPERATE = 11943;                       -- 客户端发送宠物相关操作
+GMI_STOC_PET_OPERATE_RETURN = 22722;                    -- 服务器返回宠物操作
+
+GMI_CTOS_LGS_RESOLVE_SQ_ID_LIST = 11868;                -- 客户端发送神器碎片分解
+
+GMI_CTOS_LGS_USE_CDKEY = 11243;                 -- CDK消息协议
+
+GMI_CTOS_LGS_ASK_SYSTEM_TRAILER = 11947;       -- 客户端请求领取系统预告奖励
+GMI_STOC_SEND_CLIENT_SYS_TRAILERID = 22726;    -- //服务器发送系统预告ID
+
+GMI_STOC_PRAISE_NAME_OPERATE = 22324;   -- 称号修改操作
+GMI_STOC_PRAISE_NAME_DATA = 22323;  -- 称号信息
+GMI_CTOS_LGS_REQ_PRAISE_NAME_EQUIP = 11214; -- 装备称号
+
+GMI_STOC_GAME_SHOP_PRICE = 22146;       -- 服务器发送的商城消息
+GMI_STOC_GAME_SHOP_BUY_SUCC = 22729;    -- 通知客户端商场道具购买成功
+GMI_CTOS_LGS_GETSHOPPAGE = 11227;       -- 玩家获取商城不同页面的道具信息
+GMI_STOC_MEMBERCARD_INIT = 22757;       -- 玩家上线通知客户端月卡周卡数据
+GMI_STOC_MEMBERCARD_REFRESH = 22758;    -- 通知客户端刷新月卡周卡数据
+GMI_STOC_MEMBERCARD_OVERDAY = 22759;    -- 通知客户端月卡周卡跨天了
+GMI_CTOS_REQUEST_MEMBERCARD_REWARD_RETURN = 22760;-- 客户端请求领取月卡周卡每日奖励返回
+GMI_STOC_SEND_DEPOSIT_TRANSACTIONID_RETURN = 22761;-- 客户端发送订单ID返回
+GMI_STOC_GETDIAMOND_PRODUCT_INIT = 22762;   -- 玩家上线发送购买直冲钻石产品的数据
+GMI_STOC_GETDIAMOND_PRODUCT_REFRESH = 22763;-- 更新购买直冲钻石产品的数据
+GMI_CTOS_REQUEST_MEMBERCARD_REWARD = 11963;-- 请求领取月卡周卡每天奖励
+
+GMI_STOC_HUNT_MAGIC_INFORM_CLIENT_SHOW_PANLE = 22731;     -- 猎魔活动，服务器请求弹出messagebox用于询问玩家下一步操作
+GMI_STOC_HUNT_MAGIC_NO_TEAM_INFORM_CLIENT = 22785;	  -- 猎魔大师添加组队弹版
+GMI_STOC_TEAM_HUNT_MAGIC_LEAVE_FB_AOTO_FIND_ROAD = 22734; -- 猎魔活动，出副本，自动寻路
+GMI_CTOS_LGS_HUNT_MAGIC_IS_CONTINUE = 11950;              -- 请求继续猎魔活动
+GMI_CTOS_REQUEST_ENTER_TEAM_FB_SCENE = 11957;             -- 新队员入队，请求进入到队伍所在的副本场景
+GMI_STOC_HUNT_MAGIC_NO_TEAM_INFORM_CLIENT = 22785;        -- 猎魔大师活动，没有队伍时通知前端弹版
+
+GMI_STOC_PERSONAL_PROTECT_NPC_ONLINE_UPDATE = 22743; -- 上线同步公会押镖相关数据
+GMI_STOC_PERSONAL_PROTECT_NPC_OPEN_UI = 22740; -- 公会押镖,通知打开面板
+GMI_CTOS_REQUEST_REFRES_CAMION_QUALITY = 11954; -- 请求刷新镖车品质
+GMI_STOC_PERSONAL_PROTECT_NPC_REFRES_BACK = 22741; -- 刷新镖车品质返回
+GMI_CTOS_REQUEST_REFRES_TRANSPORT_CAMION = 11955; -- 请求开始运镖
+GMI_STOC_PERSONAL_PROTECT_NPC_START_BACK = 22742; -- 开始运镖返回
+GMI_STOC_PERSONAL_PROTECT_NPC_OPEN_TASK_PANEL = 22744;  -- 通知前端打开特殊任务面板（押镖任务面板）
+GMI_CTOS_REQUEST_GET_AWARD = 11956; -- 领取押镖奖励
+GMI_STOC_SEND_CAMION_LOCATION = 22765; -- 镖车位置及所在场景
+GMI_CTOS_REQUEST_FOLLOW_CAMION = 11965; -- 请求跟随镖车
+GMI_STOC_SEND_CAMION_STATE = 22786; -- 请求跟随镖车返回
+GMI_STOC_CAMION_FOLLOW_LOADING_CHANGE_ROOM = 22793; -- 通知客户端传送读条，传送到镖车附近
+GMI_CTOS_CAMION_FOLLOW_CHANGE_ROOM = 11976; -- 镖车跟随传送读条结束之后 发送传送消息
+
+GMI_STOC_BATTLEFILED_CANCELMATCH = 22745;   -- 竞技场通知客户端时间到取消匹配
+GMI_STOC_BATTLEFIELD_PREPARETIME = 22746;   -- 竞技场通知客户端还有多少时间战斗开始
+GMI_STOC_BATTLEFIELD_DAILYRESET = 22747;    -- 竞技场通知客户端跨天重置领取数据
+GMI_STOC_BATTLEFIELD_INITDATA = 22748;      -- 玩家上线通知客户端竞技场数据
+GMI_STOC_BATTLEFIELD_END = 22749;           -- 竞技场通知玩家结束
+GMI_STOC_BATTLEFIELD_MATCHPLAYER = 22750;   -- 竞技场通知玩家匹配到玩家
+GMI_STOC_BATTLEFIELD_RECORDINFO = 22751;    -- 竞技场通知玩家战斗记录
+GMI_STOC_BATTLEFIELD_GETEVERYDAYREWARD_RETURN = 22752; -- 竞技场通知玩家每日奖励领取完毕
+GMI_STOC_BATTLEFIELD_OVERSEASON_RETURN = 22753; -- 竞技场通知玩家跨赛季
+GMI_STOC_BATTLEFIELD_MONEYCHANGE = 22754;   -- 竞技场通知玩家竞技货币的更改
+
+GMI_CTOS_REQUEST_MATCH_BATTLEFIELD = 11958; -- 请求匹配竞技场
+GMI_CTOS_REQUEST_CANCELMATCH_BATTLEFIELD = 11959; -- 请求取消匹配竞技场
+GMI_CTOS_REQUEST_BATTLEFIELD_RECORD = 11960; -- 请求竞技场战斗数据
+GMI_CTOS_REQUEST_BATTLEFIELD_GETEVERYDAYREWARD = 11961; -- 请求领取竞技场每日奖励
+GMI_CTOS_REQUEST_LEAVE_BATTLEFIELD = 11962; -- 离开竞技场
+
+GMI_STOC_NOTIFY_CLIENT_OPEN_ACTIVITY = 22755; -- 开启活动通知客户端
+
+GMI_STOC_REQUEST_RANK_PET_INFO_RETURN = 22756; -- 排行榜请求宠物数据返回宠物序列化信息
+
+
+GMI_STOC_TAKE_GOLD_AWARD_MSG = 22380; -- 提取元宝奖励消息
+GMI_CTOS_TAKE_GOLD_AWARD_MSG = 11256; -- 提取元宝奖励消息
+
+GMI_STOC_SEND_WELFARESYS_OPEN_INFO = 22764;         -- 服务器向客户端发送福利界面开启关闭信息
+GMI_STOC_SEND_THIRTYDAY_SIGNIN_ITEM_INFO = 22766;   -- 服务器向客户端发送30天签到道具数据信息
+GMI_STOC_SEND_THIRTYDAY_SIGNIN_INFO = 22767;        -- 服务器向客户端发送30天签到数据信息	
+GMI_CTOS_ASK_WELFARE_INFO = 11964;                  -- 客户端打开福利面板请求数据
+GMI_CTOS_ASK_THIRTYDAY_SIGNIN = 11966;              -- 客户端签到
+GMI_STOC_SEND_THIRTYDAY_SIGNIN_SUCCESS = 22768;     -- 服务器向客户端发送30天签到某种类型签到成功
+
+GMI_STOC_SEND_CLIENT_DIRECT_PURCHASE_SHOP_GOODS_INFO = 22771;-- 服务器通知客户端直购信息
+GMI_STOC_NOTIFY_CLIENT_BUY_DIRECT_PURCHASE_SHOP_GOODS = 22772;-- 服务器通知客户端可以购买直购物品
+GMI_STOC_SEND_CLIENT_DIRECT_PURCHASE_SHOP_LIMITTIM_GOODS_PLAYER_BUY_INFO = 22773;-- 服务器通知客户端玩家直购限购信息
+GMI_CTOS_ASK_DIRECT_PURCHASE_SHOP_INFO = 11969;-- 客户端请求直购商城数据
+GMI_CTOS_ASK_BUY_DIRECT_PURCHASE_SHOP_GOODS = 11970;-- 客户端请求直购购买
+
+
+GMI_STOC_SEND_CLIENT_DEPOSIT_ACUAWARD_INIT = 22774;-- 服务器通知客户端累积充值奖励领取数据
+GMI_STOC_SEND_CLIENT_DEPOSIT_ACUMONEY = 22775;-- 服务器通知客户端累积充值数据改变
+GMI_STOC_REQUEST_GET_DEPOSIT_ACUAWARD_RETURN = 22776;-- 服务器通知客户端累积充值领取返回
+
+GMI_CTOS_REQUEST_GET_DEPOSIT_ACUAWARD = 11971;-- 客户端请求获取累积充值的奖励
+
+GMI_STOC_SEND_CLIENT_DEPOSIT_ACUAWARD_TIME_INIT = 22777;-- 服务器通知客户端限时累积充值奖励领取数据
+GMI_STOC_SEND_CLIENT_DEPOSIT_ACUAWARD_TIME_DEPOSITEXP = 22778;-- 服务器通知客户端限时累积充值数据改变
+GMI_STOC_REQUEST_GET_DEPOSIT_ACUAWARD_TIME_RETURN = 22779;-- 服务器通知客户端限时累积充值领取返回
+GMI_STOC_REQUEST_GET_DEPOSIT_ACUAWARD_TIME_END = 22780;-- 服务器通知客户端限时累积充值领取活动结束返回
+
+GMI_CTOS_REQUEST_GET_DEPOSIT_ACUAWARD_TIME = 11972;-- 客户端请求获取限时累积充值的奖励
+
+GMI_CTOS_REQUEST_GETORDERID = 11982;-- CN客户端请求订单ID
+GMI_STOC_GET_CN_ORDERNO = 22805;-- 服务器通知客户端订单ID
+
+GMI_STOC_SEND_CLIENT_EXCHANGE_ITEM_TIME_INIT = 22781; -- 服务器通知客户端限时兑换道具数据
+GMI_STOC_REQUEST_GET_EXCHANGE_ITEM_TIME_RETURN = 22782; -- 服务器通知客户端限时兑换道具领取返回
+GMI_STOC_REQUEST_GET_EXCHANGE_ITEM_TIME_END = 22783;-- 服务器通知客户端限时兑换道具领取活动结束返回
+
+GMI_CTOS_REQUEST_GET_EXCHANGE_ITEM_TIME = 11973;-- 客户端请求获取限时兑换的奖励
+
+
+GMI_CTOS_REQUEST_GET_GROWFUND_REWARD_RETURN = 22787;-- 服务器通知客户端领取成长基金奖励返回
+GMI_STOC_REQUEST_BUY_GROWFUND_RETURN = 22788;-- 服务器通知客户端购买成长基金奖励返回
+GMI_STOC_GROWFUND_INITDATA = 22789;-- 服务器通知客户端成长基金初始化数据
+
+GMI_CTOS_REQUEST_TO_BUY_GROWFUND = 11974;-- 客户端请求购买成长基金
+GMI_CTOS_REQUEST_GET_GROWFUND_REWARD = 11975;-- 客户端请求领取成长基金的奖励
+
+GMI_STOC_SEND_SHOPMENU_OPEN_INFO = 22792;-- 服务器向客户端发送商城菜单显示信息
+
+GMI_CTOS_LGS_GET_HONOURINFO_RECORD = 11977; -- 客户端请求骑士荣誉信息
+GMI_STOC_REPLY_HONOUR_INFO_TOCLIENT = 22794; -- 服务器向客户端发送骑士荣誉信息
+
+GMI_CTOS_LGS_ARTIFACT_OPERATE = 11978; -- 客户端请求神器相关操作
+GMI_STOC_ARTIFACT_OPERATE_RETURN = 22790; -- 服务器通知客户端神器操作返回
+GMI_STOC_ARTIFACT_INIT_DATA = 22791; -- 服务器通知客户端神器初始化数据
+
+-- 边境战场相关
+GMI_CTOS_LGS_GET_CAMP_BORDER_DATA = 11979; -- 请求获取阵营边境数据
+GMI_CTOS_LGS_COMPETE_CAMP_BORDER_TASK = 11980; -- 提交完成的阵营边境任务
+GMI_CTOS_LGS_ENTER_CAMP_BORDER_ROOM = 11981; -- 请求进入边境战场
+GMI_CTOS_LGS_LINGQU_ITEM_BOX = 11985; -- 请求领取阵营边境宝箱 
+GMI_STOC_UPDATE_CAMP_BORDER_DATA = 22795; -- 阵营边境数据返回
+GMI_STOC_CAMPBORDER_CHANGE_UPDATE = 22796; -- 单个任务计数改变
+GMI_STOC_CAMP_ITEM_BOX_STATE_CHANGE = 22803; -- 通知客户端宝箱领取状态
+GMI_CTOS_LGS_GET_CAMP_REWARD_DATA = 11987; -- 客户端请求边境任务奖励数据
+GMI_STOC_CAMP_REWARD_DATA = 22804; -- 通知客户端奖励数据 
+
+GMI_STOC_CAMP_SEAL_INIT_DATA = 22797;-- 服务器通知客户端阵营符印初始化数据
+GMI_STOC_CAMP_SEAL_OPERATE_RETURN = 22798;-- 服务器通知客户端阵营符印操作返回
+GMI_CTOS_LGS_CAMPSEAL_OPERATE = 11983;-- 客户端请求阵营符印的相关操作
+
+GMI_STOC_RESOURCES_BACK_DATA = 22799;--服务器向客户端发送资源找回数据信息
+GMI_CTOS_RESOURCES_BACK_GET_INFO = 11984;--领取资源找回
+GMI_STOC_GET_RESOURCES_BACK_SUCCEED = 22800;--服务器向客户端发送资源找回领取结果
+GMI_STOC_UPDATE_EAT_CHICKEN_ACTIVITY_ROOM_INFO	= 22806;--服务器发送吃鸡场景相关的信息
+GMI_STOC_SEND_EAT_CHICKEN_ACTIVITY_MAIN_UI_INFO	= 22807;--玩家进入吃鸡场景时，服务器发送的主界面玩家相关信息
+GMI_STOC_SEND_EAT_CHICKEN_ACTIVITY_ALL_PLAYER_INFO	= 22808;-- 发送所有玩家的数据信息
+GMI_STOC_SEND_EAT_CHICKEN_RESULT					= 22809;-- 发送吃鸡结果
+GMI_STOC_NOTIFY_CLIENT_REGISTER_ACTIVITY_ID			= 22810;-- 发送注册的活动ID
+GMI_CTOS_LGS_ASK_EAT_CHICKEN_SCENE_ALL_PLAYER_INFO	= 11988;-- 客户端请求吃鸡所有玩家数据
+GMI_CTOS_LGS_SKILL_SWITCH_ACTIVE_STATE = 11084;-- 吃鸡技能等级情况
+
+GMI_STOC_ACOUNT_IS_GET = 22812;          --推送账号可以领取下载奖励
+GMI_CTOS_LGS_PLAYER_ACOUNT_GET = 11990;   --请求领取账号下载奖励
+GMI_STOC_ACOUNTGET_RETURN = 22813;      --返回领取下载奖励
+
+GMI_STOC_VIP_SWITCH = 22814; -- VIP系统开关，1：VIP系统开放0：VIP系统关闭 1：VIP特权系统开放0：VIP特权系统关闭
+GMI_STOC_VIP_LEVEL_CFG_BEGIN = 22815; --VIP系统等级配置开始
+GMI_STOC_VIP_LEVEL_CFG = 22816; --VIP系统等级配置
+GMI_STOC_VIP_LEVEL_CFG_END = 22817; --VIP系统等级配置结束
+GMI_STOC_VIP_ATTR = 22821; --VIP属性
+GMI_STOC_LGS_VIP_SHOES_SUCC	= 22827;--VIP小飞鞋消息返回
+GMI_CTOS_LGS_VIP_TAKE_PRIZE	= 11991;-- 客户端请求领取VIP奖励 是否是每日奖励1为是0为否
+GMI_CTOS_CHANGE_ROOM_BY_VIP_FLY_SHOES = 11992; --VIP小飞鞋传送
+GMI_CTOS_LGS_BUY_VIP_CARD = 12021; -- 客户端请求购买特权卡 特权卡类型(1,2,3)对应VIPCard表主键
+GMI_STOC_VIP_CARD_INFO = 22864;--VIP卡时间
+GMI_STOC_VIPCARD_PASS_TIME = 22867; -- VIP卡过期通知客户端
+GMI_STOC_LGS_SET_VIP_RESOLVE = 22868; -- 玩家设置回收装备品质返回
+GMI_CTOS_LGS_SET_VIP_RESOLVE = 12022; -- 玩家设置回收装备品质
+GMI_STOC_LGS_SET_AUCTIONSELL_TAX = 22869; -- 拍卖税率，跟上架个数
+
+GMI_STOC_HUNTMAGIC_MONEYCHANGE = 22832; --猎魔印记通知玩家货币的更改
+GMI_STOC_GOD_MONEYCHANGE = 22833; --女神之泪通知玩家货币的更改
+
+GMI_CTOS_LGS_REQ_LIMIT_RANK_DATA = 11301; --客户端请求限时排行榜数据
+GMI_STOC_LIMITRANK_DATA_ACK	= 22613; --返回限时排行榜数据
+GMI_CTOS_LGS_GET_LIMIT_RANKING_SELF = 11302; --请求获取限时排行榜自己的排名以及值和其他附带信息
+GMI_STOC_LIMIT_RANK_FIGHT_RISE = 29026; -- 战斗力提升榜
+GMI_STOC_LIMIT_RANK_PETFIGHTABILITY = 29027; -- 宠物战斗力榜
+GMI_STOC_LIMIT_RANK_GANG_XIGUAN = 29028; -- 公会战斗力榜
+GMI_STOC_LIMIT_RANK_CORPS_ADDMONEY = 29029; -- 公会捐献榜
+GMI_STOC_LIMIT_RANK_UNION_SD = 29030; -- 阵营杀敌榜
+GMI_STOC_LIMIT_RANK_OPENINFO = 29025; -- 通知限时排行是否开启 
+
+GMI_STOC_SEND_OFFLINEARENA_LIST = 22834;    -- 通知客户端离线竞技场匹配列表
+GMI_CTOS_LGS_ASK_OFFLINEARENA_MATCH_OPPONENT = 11994;   -- 离线竞技场->请求匹配对手
+GMI_CTOS_LGS_ASK_OFFLINEARENA_FIGHTING_OPPONENT = 11995;    -- 离线竞技场->请求和某个对手对战
+GMI_CTOS_LGS_GET_OFFLINEARENA_FIGHTING_LOG = 11996;    -- 获取离线竞技场战报信息
+GMI_STOC_GET_OFFLINEARENA_FIGHTING_LOG_RETURN = 22835;    -- 通知客户端离线竞技场战报
+GMI_STOC_GET_OFFLINEARENA_FIGHT_RESULT = 22836;     -- 通知客户端离线竞技场结果
+
+GMI_STOC_SEND_ACTIVITY_MSG = 22837; -- 通知客户端打开活动消息界面
+
+GMI_STOC_SEND_CLIENT_DEPOSIT_GOLD = 29033; -- 服务器通知客户端每日充值奖励领取数据
+GMI_CTOS_REQUEST_GET_DEPOSIT_GOLD_AWARD	= 11997; -- 客户端请求领取每日充值奖励
+GMI_STOC_REQUEST_GET_DEPOSIT_GOLD_AWARD_RETURN = 29044; -- 服务器通知领取每日充值奖励返回
+GMI_STOC_SEND_CLIENT_DEPOSIT_GOLD_CHANGE = 22844; -- 服务器通知客户端每日充值数据改变
+
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_STRENGTHEN = 29034; -- 服务器通知客户端限时强化奖励领取数据
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_FEFINE = 29035; -- 服务器通知客户端限时精炼奖励领取数据
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_UNDERSTAND = 29036; -- 服务器通知客户端限时提升宠物悟性奖励领取数据
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_SUCCINCT = 29037; -- 服务器通知客户端限时宠物洗练奖励领取数据
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_MOUNT_ADVANCE = 29038; -- 服务器通知客户端限时坐骑进阶奖励领取数据
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_ACCDAYRECHARGE = 29039; -- 服务器通知客户端限时累日充值奖励领取数据
+
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_STRENGTHEN_CHANGE = 22838; -- 服务器通知客户端限时强化数据改变
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_FEFINE_CHANGE  = 22839; -- 服务器通知客户端限时精炼奖励数据改变
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_UNDERSTAND_CHANGE = 22840; -- 服务器通知客户端限时提升宠物悟性奖励数据改变
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_SUCCINCT_CHANGE = 22841; -- 服务器通知客户端限时宠物洗练奖励数据改变
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_MOUNT_ADVANCE_CHANGE = 22842; -- 服务器通知客户端限时坐骑进阶奖励领取数据改变
+GMI_STOC_SEND_CLIENT_LIMIT_TIME_ACCDAYRECHARGE_CHANGE = 22843; -- 服务器通知客户端限时累日充值奖励领取数据改变
+
+GMI_CTOS_REQUEST_GET_STRENGTHEN_AWARD = 11998; -- 客户端请求获取限时强化领取
+GMI_CTOS_REQUEST_GET_FEFINE_AWARD = 11999; -- 客户端请求获取限时精炼领取
+GMI_CTOS_REQUEST_GET_PET_UNDERSTAND_AWARD = 12000; -- 客户端请求获取限时提升宠物悟性领取
+GMI_CTOS_REQUEST_GET_PET_SUCCINCT_AWARD = 12001; -- 客户端请求获取限时宠物洗练领取
+GMI_CTOS_REQUEST_GET_PET_MOUNT_ADVANCE_AWARD = 12002; -- 客户端请求获取限时坐骑进阶领取
+GMI_CTOS_REQUEST_GET_ACCDAYRECHARGE_AWARD = 12003; -- 客户端请求获取限时累日充值领取
+
+GMI_STOC_REQUEST_GET_STRENGTHEN_AWARD_RETURN = 29045; -- 服务器通知客户端限时强化领取返回
+GMI_STOC_REQUEST_GET_FEFINE_AWARD_RETURN = 29046; -- 服务器通知客户端限时精炼领取返回
+GMI_STOC_REQUEST_GET_PET_UNDERSTAND_AWARD_RETURN = 29047; -- 服务器通知客户端限时提升宠物悟性领取返回
+GMI_STOC_REQUEST_GET_PET_SUCCINCT_AWARD_RETURN = 29048; -- 服务器通知客户端限时宠物洗练领取返回
+GMI_STOC_REQUEST_GET_PET_MOUNT_ADVANCE_AWARD_RETURN = 29049; -- 服务器通知客户端限时坐骑进阶领取返回
+GMI_STOC_REQUEST_GET_ACCDAYRECHARGE_AWARD_RETURN = 29050; -- 服务器通知客户端限时累日充值领取返回
+
+GMI_STOC_QUERY_ITEM_INFO_RETURN = 22219; -- 通知客户端聊天要显示的物品信息
+GMI_CTOS_LGS_QUERY_ITEM_INFO = 11148; -- 客户端请求聊天要显示的物品信息
+--- 神翼界面相关--start------
+--GMI_CTOS_LGS_WING_LEVELUP = 12005;                                    --请求翅膀进阶        --cn没有进阶
+--GMI_STOC_SEND_CLIENT_WING_JINJIE  = 22846;                            ---//请求翅膀进阶     --cn没有进阶
+GMI_STOC_WING_DATA = 29051;                 -- 客户端上线，服务器通知角色神翼数据
+GMI_CTOS_LGS_WING_PENGYANG	= 12004;                -- 请求翅膀培养  BYTE type 1培养，2进阶(暂时)
+GMI_STOC_SEND_CLIENT_WING_PEIYANG = 22845;          -- 服务器返回客户端翅膀培养
+GMI_CTOS_LGS_WING_SKILL_LEVELUP	= 12029;            -- 客户端请求翅膀技能升级
+GMI_STOC_SEND_CLIENT_WING_SKILL_LEVELUP	= 22887;	-- 服务器通知客户端技能升级返回
+
+GMI_CTOS_LGS_WING_CHEMICALSPIRIT_PENGYANG = 12006;  -- 請求化靈培養 
+GMI_STOC_SEND_WING_CHEMICALSPIRIT_PENGYANG = 22847; -- 化靈培養返回數據
+
+--GMI_CTOS_LGS_FADCLOTH_OPERATE_REQUEST = 11926;          -- 角色请求时装相关请求操作                     --翅膀装备属于时装请求
+--GMI_STOC_FADCLOTHES_RETURN_OPRESULT = 22691;            -- 时装系统：回复客户端请求时装相关操作
+
+GMI_STOC_ACTIVITY_TILI_INFO = 22848; -- 多个时间段的活动完成情况
+
+GMI_STOC_REFREH_TEAM_INFO = 22849; -- 通知客户端刷新组队界面
+
+GMI_STOC_QUERY_ITEM_INFO_RETURN = 22219; -- 通知客户端聊天要显示的物品信息
+GMI_CTOS_LGS_QUERY_ITEM_INFO = 11148; -- 客户端请求聊天要显示的物品信息
+GMI_STOC_SEND_LOGIC_PING_MSG_TO_CLIENT	= 22850;-- 服务器发送检查客户端逻辑ping
+GMI_CTOS_LGS_LOGIC_PING_RETURN			= 12007;--客户端回复逻辑Ping消息
+---神翼界面相关--end----------
+---神将界面相关--start----------
+GMI_STOC_SHO_DATA	= 29052;        --- 客服端上线 ，服务器推送神将数据
+
+GMI_CTOS_LGS_SHO_JIHUO = 12028; 	---  请求神将激活
+
+GMI_STOC_SEND_CLIENT_SHO_JIHUO= 22886;--// 服务器通知客户端神将激活返回
+
+GMI_CTOS_LGS_SHO_PEIYANG = 12008;		--// 请求神将培养
+
+GMI_STOC_SEND_CLIENT_SHO_PEIYANG = 22851; --- // 服务器通知客户端神将培养返回
+
+GMI_CTOS_LGS_SHO_JINJIE  =  12009;      --//请求神将突破
+
+GMI_STOC_SEND_CLIENT_SHO_JINJIE  = 22852;   --// 服务器通知客户端神将激活返回
+
+GMI_CTOS_LGS_SHO_USE = 12010;        -- 请求使用神将
+
+GMI_STOC_SEND_CLIENT_SHO_USE = 22853;		--服务器通知客户端神将使用返回
+---神将界面相关--end------------
+--- 神将变身主界面相关start---------
+GMI_STOC_SEND_CLIENT_SHO_COOLDWON = 22854;   -- 发送神将大招的冷却时间
+
+GMI_CTOS_LGS_SHO_Appearance = 12011;      --//请求神将变身
+
+GMI_STOC_SEND_CLIENT_SHO_APPEARANCE_RETURN = 22855;  -- //返回变身
+--- 神将变身主界面相关end---------
+
+GMI_CTOS_ASK_LIMITIME_LOTTERY_ITEM_INFO	= 12012; -- 客户端请求限时抽奖界面信息
+GMI_STOC_SEND_LIMITIME_LOTTERY_ITEM_INFO = 22856; -- 服务器回复客户端限时抽奖道具信息 
+GMI_CTOS_ASK_LIMITIME_LOTTERY = 12013; -- 客户端请求限时抽奖
+GMI_STOC_SEND_LIMITIME_LOTTERY_RESULT = 22857; -- 服务器回复客户端限时抽奖结果（用于道具显示）
+GMI_CTOS_ASK_LIMITIME_LOTTERY_RECORD = 12014; -- 客户端请求抽奖记录
+GMI_STOC_SEND_LIMITIME_LOTTERY_RECORD_INFO = 22858; -- 服务器回复客户端限时抽奖记录信息
+GMI_CTOS_ASK_LIMITIME_LOTTERY_AWARD	= 12015; -- 客户端请求获奖
+---------------------宝珠系统--start-----------------------
+GMI_CTOS_LGS_ORB_UPGRADE_STARS	= 12016;	                -- 宝珠淬炼(升星)
+
+GMI_CTOS_LGS_ORB_UPGRADE_STAGE	= 12017;	                -- 宝珠升阶（提升等阶）
+
+GMI_CTOS_LGS_ORB_UPGRADE_SKILL	= 12018;				     -- 宝珠升级附加技能
+
+GMI_STOC_ORB_DATA = 22859;									 --  玩家上线 服务器下发宝珠数据
+
+GMI_STOC_ORB_UPGRADE_STARS_RETURN = 22860;					-- 宝珠淬炼返回(升星)
+
+GMI_STOC_ORB_UPGRADE_STAGE_RETURN = 22861;					--宝珠升阶返回（提升等阶）
+
+GMI_STOC_ORB_UPGRADE_SKILL_RETURN = 22862;			        -- 宝珠升级附加技能返回
+
+---------------------宝珠系统--end-------------------------
+GMI_STOC_LGS_ACTIVITY_LEVEL_GET	= 22870;                     --// 通知客户端等级不够下一层
+
+
+GMI_STOC_LGS_SEND_CLIENT_SHOW_SYS = 22871;                  -- 客户端显示开关
+---------------------------神行协议 start----------------------
+
+GMI_STOC_SINHAENG_DATA	= 22873;                             --玩家上线，服务器通知客户端神行信息
+GMI_CTOS_LGS_SINHAENG_OPER = 12024;							 -- 请求神行操作 BYTE type 1培养，2进阶(暂时)，3穿戴
+GMI_STOC_SEND_CLIENT_SINHAENG_PEIYANG	= 22874;			 --服务器通知客户端神行培养返回
+GMI_STOC_SEND_CLIENT_SINHAENG_USE	= 22876;				 --  服务器通知客户端神行穿戴返回
+GMI_STOC_SEND_CLIENT_SKILL_LEVELUP	= 22877;                 -- 服务器通知客户端神行技能升级返回
+GMI_STOC_SEND_CLIENT_DAVIDS_PEIYANG	= 22878;				---- 服务器通知客户端星魂培养返回
+
+---------------------------神行协议 end------------------------
+---------------------------阵法协议 starts------------------------
+GMI_STOC_MATRIX_DATA = 22879;								--//玩家上线，服务器通知客户端阵法信息
+
+GMI_CTOS_LGS_MATRIX_OPER = 12025;                           -- BYTE type 1培养，2穿戴 ,3技能升级,4符文激活,5符文培养   (请求阵法操作 )
+
+GMI_STOC_SEND_CLIENT_MATRIX_PEIYANG  = 22880;              -- //服务器通知客户端阵法培养返回
+
+GMI_STOC_SEND_CLIENT_MATRIX_USE	= 22881;                     --- // 服务器通知客户端阵法穿戴返回
+
+GMI_STOC_SEND_CLIENT_MATRIX_SKILL_LEVELUP	= 22882;        --// 服务器通知客户端阵法技能升级返回
+
+GMI_STOC_SEND_CLIENT_RUNES_PEIYANG	= 22883;                 -- // 服务器通知客户端符文培养返回
+
+E_NTOC_NGS_REGIST_USERID	= 5135;		-- // xiyou 渠道注册返回
+---------------------------阵法协议 end------------------------

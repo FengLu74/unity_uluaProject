@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:background="@null"
+            android:layout_marginTop="@dimen/xy_common_margin_10dip"
+            >
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:src="@drawable/xy_ic_logo" />
+
+            <ImageButton
+                android:id="@+id/xy_btn_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:src="@drawable/xy_btn_close"
+                android:visibility="gone" />
+
+
+        </RelativeLayout>
+
+
+
+        <ScrollView
+            android:id="@+id/xy_agreement_body_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="10dp"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingTop="7dp">
+
+                <EditText
+                    android:id="@+id/xy_login_phone"
+                    style="@style/xy.edit.text.account"
+                    android:layout_width="match_parent"
+                    android:drawableLeft="@drawable/xy_ic_user"
+                    android:drawablePadding="4dp"
+                    android:textCursorDrawable="@null" />
+
+                <RelativeLayout
+                    android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_height_40dip">
+                    <EditText
+                        android:id="@+id/xy_login_pwd"
+                        style="@style/xy.edit.text.password"
+                        android:layout_width="match_parent"
+                        android:drawableLeft="@drawable/xy_ic_pwd"
+                        android:drawablePadding="4dp"
+                        android:textCursorDrawable="@null" />
+                    <CheckBox
+                        android:id="@+id/xy_login_pwd_show_checkbox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+
+                        android:button="@drawable/xy_checkbox_eye"
+                        android:background="@null"
+                        />
+                </RelativeLayout>
+                <TextView
+                    android:id="@+id/xy_account_login_forgetpwd"
+                    style="@style/xy.label.normal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="right|center_vertical"
+                    android:layout_marginTop="@dimen/xy_common_margin_5dip"
+                    android:text="@string/xy_login_forget_pwd" />
+                <Button
+                    android:id="@+id/xy_account_login_login"
+                    style="@style/xy.button.positive"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                    android:layout_marginTop="@dimen/xy_common_margin_5dip"
+                    android:layout_marginBottom="@dimen/xy_common_margin_5dip"
+                    android:text="@string/xy_login_login" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/xy_common_margin_5dip"
+                    android:orientation="horizontal">
+                    <Button
+                        android:id="@+id/xy_account_login_sign"
+                        style="@style/xy.button.primary"
+                        android:layout_width="match_parent"
+                        android:layout_weight="1"
+                        android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                        android:text="@string/xy_sign_sign" />
+
+                    <TextView
+                        android:id="@+id/xy_account_login_btn_split"
+                        android:layout_width="@dimen/xy_common_margin_10dip"
+                        android:layout_height="match_parent" />
+
+                    <Button
+                        android:id="@+id/xy_account_login_guest"
+                        style="@style/xy.button.negative"
+                        android:layout_width="match_parent"
+                        android:layout_weight="1"
+                        android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                        android:text="@string/xy_sign_guest_login" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

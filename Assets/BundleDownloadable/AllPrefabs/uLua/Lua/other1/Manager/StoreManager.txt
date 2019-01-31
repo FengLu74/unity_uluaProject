@@ -1,0 +1,565 @@
+﻿module("StoreManager", package.seeall)
+--商城主菜单数据
+StoreMainMenuDatas = 
+{
+    [1] = { Type = MainMenuType.MMT_GiftBag1 , TextId = 1710 , EventHook = "enter-package-store"};--超值礼包
+    [2] = { Type = MainMenuType.MMT_GiftBag2 , TextId = 2177 , EventHook = "enter-red-package"};--钻石礼包
+    [3] = { Type = MainMenuType.MMT_Red , TextId = 1535 , EventHook = "enter-reddiamond-store"};--红钻商城
+    [4] = { Type = MainMenuType.MMT_Blue , TextId = 1536 , EventHook = "enter-bluediamond-store"};--蓝钻商城
+    [5] = { Type = MainMenuType.MMT_WeekCard , TextId = 2346 , EventHook = "enter-premium-store" };--周卡
+    [6] = { Type = MainMenuType.MMT_MemberCard , TextId = 1537 , EventHook = "enter-premium-store" };--月卡
+    [7] = { Type = MainMenuType.MMT_Recharge , TextId = 1538 , EventHook = "enter-diamond-store"};--充值
+};
+
+--超值礼包监听
+GiftBagEventHook1s = 
+{
+    [1] = "cash-package-recommend";--推荐 ;
+    [2] = "cash-package-equipment";--装备 ;
+    [3] = "cash-package-item";--材料 ;
+    [4] = "cash-package-pet";--宠物 ;
+    [5] = "cash-package-vehicle";--坐骑 ;
+    [6] = "cash-package-special";--特殊 ;
+}
+
+--钻石礼包监听
+GiftBagEventHook2s = 
+{
+    [1] = "red-package-recommend";--推荐 ;
+    [2] = "red-package-equipment";--装备 ;
+    [3] = "red-package-item";--材料 ;
+    [4] = "red-package-pet";--宠物 ;
+    [5] = "red-package-vehicle";--坐骑 ;
+    [6] = "red-package-special";--特殊 ;
+}
+
+--商城主菜单显示状态相关
+MainMenuOpenStates = {};
+--商城道具数据（红钻商城和蓝钻商城）
+ShopAllDatas = {};
+--商城商店菜单数据（红钻商城和蓝钻商城）
+ShopAllMenuDatas = {};
+
+--月卡数据
+MemberCardDatas = {};
+--月卡按钮文本
+MemberCardTexts = {};
+--周卡数据
+WeekCardDatas = {};
+--充值卡的天数
+CardDayData = {};
+--充值数据信息
+RechargeDatas = {};
+
+--（目前礼包包括超值礼包和钻石礼包）
+--礼包更新时间
+GiftBagUpdateTimes = {};
+--礼包数据存储
+GiftBagAllDatas = {};
+--礼包菜单数据信息
+GiftBagMenuAllDatas = {};
+-- 礼包限购数据
+GiftBagLimitDatas = {};
+--服务器获取的所有礼包数据
+WholeDatas={};
+flag=false;
+
+--加载文字
+function LoadTexts()
+    MemberCardTexts = 
+    {
+        [1] = GetTextToId(2027);--"购买";
+        [2] = GetTextToId(2028);--"续费";
+        [3] = GetTextToId(2029);--"领取";
+        [4] = GetTextToId(2030);--"已领取";
+    };
+    CardDayData = 
+    {
+        [0] = 7;
+        [1] = 30;
+    };
+end
+
+--刷新商店数据信息（红钻商城和蓝钻商城）
+--@param shopType 商店类型
+--@param datas 商店道具数据
+function RefreshShopDatas(shopType,datas)
+
+    SetShopAllDatas(shopType,datas);
+        
+    StorePanel.RefreshItemListData();
+    StorePanel.RefreshMainMenu();
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.STORE_CHARGE, IsShowMonthMemberCardRedHint());
+end
+
+--设置商店数据信息（红钻商城和蓝钻商城）
+--@param shopType 商店类型
+--@param datas 商店道具数据
+function SetShopAllDatas(shopType,datas)
+    local menuDatas = {};
+    local shopDatas = {};
+    for key, data in pairs(datas) do
+        local itemType = data.ItemType;
+        local itemTypeTextId = data.ItemTypeTextId;
+        local menuData = 
+        {
+            Type = itemType;
+            TextId = itemTypeTextId;
+        }
+        table.insert(menuDatas,menuData);
+        local itemDatas = data.ItemDatas;
+        shopDatas[itemType] = itemDatas;
+    end
+    ShopAllMenuDatas[shopType] = menuDatas;
+    ShopAllDatas[shopType] = shopDatas;
+end
+
+--通过菜单类型获取商店类型
+--@param shopType 商店类型
+function GetShopType(menuType)
+    if menuType == MainMenuType.MMT_Red then
+        return 0;
+    elseif menuType == MainMenuType.MMT_Blue then
+        return 1;
+    end
+    return -1;
+end
+
+--设置主菜单显示状态
+function SetMainMenuOpenStates(datas)
+    MainMenuOpenStates = datas;
+end
+
+--获取主菜单信息
+function GetMainMenuDatas()
+    local datas = {};
+    local length = GetTableLength(StoreMainMenuDatas);
+    for index = 1 , length do
+        local mainMenuData = StoreMainMenuDatas[index];
+        local mainMenuType = mainMenuData.Type;
+        local mainMenuState = MainMenuOpenStates[mainMenuType];
+        local isOpen = (mainMenuState == nil or mainMenuState == 1);
+        if isOpen == true then
+            table.insert(datas,mainMenuData);
+        end
+    end
+    return datas;
+end
+
+--通过商店类型获取对应子菜单数据信息
+--@param shopType 商店类型
+function GetShopMenuDatas(shopType)
+    local datas = {};
+    local menuDatas = ShopAllMenuDatas[shopType];
+    if menuDatas ~= nil then
+        for key , menuData in pairs(menuDatas) do
+            table.insert(datas,menuData);
+        end
+        table.sort(datas,function(t1, t2) return t1.Type < t2.Type; end);
+    end
+    return datas;
+end
+
+--获取商店数据信息（红钻商城和蓝钻商城）
+--@param shopType 商店类型
+function GetShopDatas(shopType,itemType)
+    local datas = {};
+    local shopDatas = ShopAllDatas[shopType];
+    if shopDatas ~= nil then
+        local itemDatas = shopDatas[itemType];
+        if itemDatas ~= nil then
+            local isHot = itemType == 0;
+            for key, itemData in pairs(itemDatas) do
+                --[[
+                local result = true;
+                if itemData.IsLimit == true then
+                    local currentSecond = G_TimerMng:GetCurrentSeconds();
+                    if itemData.BeginTime < itemData.EndTime then
+                        if itemData.BeginTime <= currentSecond then
+                            local time = math.floor(itemData.EndTime - currentSecond);
+                            result = time > 0;
+                        else
+                            result = false;
+                        end
+                    else
+                        result = false;
+                    end
+                end
+                ]]
+                local result = IsLimitValid(itemData);
+                if result == true then
+                    if isHot == true then
+                        if itemData.IsHot == true then
+                            table.insert(datas,itemData);
+                        end
+                    else
+                        if itemData.ItemType == itemType then
+                            table.insert(datas,itemData);
+                        end
+                    end
+                end
+            end
+            if isHot == true then
+                table.sort(datas,function(t1, t2) return t1.HotPagePos < t2.HotPagePos; end);
+            else
+                table.sort(datas,function(t1, t2) return t1.Pos < t2.Pos; end);
+            end
+        end
+    end
+    return datas;
+end
+
+function IsLimitValid(itemData)
+    local result = true;
+    if itemData.IsLimit == true then
+        local currentSecond = G_TimerMng:GetCurrentSeconds();
+        if itemData.BeginTime < itemData.EndTime then
+            if itemData.BeginTime <= currentSecond then
+                local time = math.floor(itemData.EndTime - currentSecond);
+                result = time > 0;
+            else
+                result = false;
+            end
+        else
+            result = false;
+        end
+    end
+    return result;
+end
+
+--获取是否开启周卡权限
+function GetHaveWeekMemberCard()
+    local memberCardData = MemberCardDatas[0];
+    if memberCardData ~= nil then
+        return memberCardData.IsBuy;
+    end
+    return false;
+end
+
+
+-- 获取月卡服务器数据信息
+function GetMonthMemberCardDatas()
+    local monthMemberCardDatas = {};
+    local monthCards = CCommonTool.GetMonthCards();
+    local count = monthCards.Count;
+    for index = 1 , count do
+        local memberCardData = MemberCardDatas[index - 1];
+        if memberCardData ~= nil then
+            local data = 
+            {
+                Index = index;
+                CardType = memberCardData.CardType;
+                Id = memberCardData.Id;
+                IsBuy = memberCardData.IsBuy;
+                IsBought = memberCardData.IsBought;
+                IsPick = memberCardData.IsPick;
+                OldKRWMoney = memberCardData.OldKRWMoney;
+                OldUSDMoney = memberCardData.OldUSDMoney;
+                KRWMoney = memberCardData.KRWMoney;
+                USDMoney = memberCardData.USDMoney;
+                Day = memberCardData.Day;
+                MonthCard = monthCards[index - 1];
+            }
+            monthMemberCardDatas[index] = data;
+        end
+    end
+    return monthMemberCardDatas;
+end
+
+--跨天时刷新月卡数据
+function RefreshMonthMemberCardDatas()
+    local count = GetTableLength(MemberCardDatas);
+    for index = 1 , count do
+        local cardType = index - 1;
+        local memberCardData = MemberCardDatas[cardType];
+        if memberCardData ~= nil then
+            if memberCardData.IsBuy == true then
+                local day = memberCardData.Day - 1;
+                if day > 0 then
+                    memberCardData.Day = day;
+                    memberCardData.IsPick = false;
+                else
+                    memberCardData.IsBuy = false;
+                    memberCardData.Day = CardDayData[cardType];
+                    memberCardData.IsBought = true;
+                    memberCardData.IsPick = false;
+                end
+            end
+            MemberCardDatas[cardType] = memberCardData;
+        end
+    end
+end
+
+-- 是否显示月卡领取红点
+function IsShowMonthMemberCardRedHint()
+    local count = GetTableLength(MemberCardDatas);
+    for index = 1 , count do
+        local cardType = index - 1;
+        local memberCardData = MemberCardDatas[cardType];
+        if memberCardData ~= nil then
+            if memberCardData.IsBuy == true then
+                if memberCardData.IsPick == false then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+-- 是否显示限时礼包领取红点
+function IsShowGiftBagRedHint()
+    return true;
+end
+-- 是否显示月卡/周卡红点
+-- cardType 0:周卡 1:月卡
+function IsShowCardRedHint(cardType)
+    local memberCardData = MemberCardDatas[cardType];
+    if memberCardData ~= nil then
+        if memberCardData.IsBuy == true then
+            if memberCardData.IsPick == false then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+--获取月卡购买状态
+function GetMonthBuyButtonState(data)
+    -- 是否有周卡
+    local isBuy = data.IsBuy;
+	-- 是否有过购买
+    local isBought = data.IsBought;
+	-- 今日是否领取过周卡每日奖励
+    local isPick = data.IsPick;
+    --是否购买
+    if isBuy == false then
+        --是否购买过
+        if isBought == false then
+            return 1;--购买
+        else
+            return 2;--续费
+        end
+    else
+        --是否领取
+        if isPick == false then
+            return 3;--领取
+        else
+            return 4;--已领取
+        end
+    end
+    return 1;--购买
+end
+
+-- 获取充值服务器数据信息
+function GetRechargeDatas()
+    local datas = {};
+    for key, var in pairs(RechargeDatas) do
+        local currentSecond = G_TimerMng:GetCurrentSeconds();
+        local isShowBlue = true;
+        if var.BeginTime < var.EndTime then
+            if var.BeginTime <= currentSecond then
+                local time = math.floor(var.EndTime - currentSecond);
+                isShowBlue = time > 0;
+            else
+                isShowBlue = false;
+            end
+        else
+            isShowBlue = false;
+        end
+        local data = 
+        {
+            Index = var.Index;
+            DiamondType = var.DiamondType;
+            Id = var.Id;
+            OldKRWMoney = var.OldKRWMoney;
+            OldUSDMoney = var.OldUSDMoney;
+            KRWMoney = var.KRWMoney;
+            USDMoney = var.USDMoney;
+            GetDiamond = var.GetDiamond;
+            FirstGetDiamond = var.FirstGetDiamond;
+            NotFirstGetDiamond = var.NotFirstGetDiamond;
+            IsHotSale = var.IsHotSale;
+            HasBoughtProduct = var.HasBoughtProduct;
+            BeginTime = var.BeginTime;
+            EndTime = var.EndTime;
+            FirstBindGoldNum = var.FirstBindGoldNum;
+            BindGoldNum = var.BindGoldNum;
+            ShowBlue = (isShowBlue == true and var.BindGoldNum > 0 ) ;
+        }
+        table.insert(datas,data);
+    end
+    return datas;
+end
+
+--设置礼包数据信息（超值礼包和钻石礼包）
+--@param giftBagType 礼包类型
+--@param datas 礼包数据
+--@param updateTime 版本更新时间
+function SetGiftBagAllDatas(giftBagType,datas,updateTime)
+    local giftBagMenuDatas = {};
+    local giftBagDatas = {};
+    local giftBagHotItemDatas = {};
+    for key, data in pairs(datas) do
+        local itemType = data.ItemType;
+        local itemTypeTextId = data.ItemTypeTextId;
+        local giftBagMenuData = 
+        {
+            Type = itemType;
+            TextId = itemTypeTextId;
+        }
+        table.insert(giftBagMenuDatas,giftBagMenuData);
+        local itemDatas = data.ItemDatas;
+        giftBagDatas[itemType] = itemDatas;
+        for key1, itemData in pairs(itemDatas) do
+            local isHot = itemData.IsHot;
+            if isHot == true then
+                table.insert(giftBagHotItemDatas,itemData);
+            end
+        end
+        giftBagDatas[0] = giftBagHotItemDatas;
+    end
+    local length = GetTableLength(giftBagHotItemDatas);
+    if length > 0 then
+        local giftBagMenuData = 
+        {
+            Type = 0;
+            TextId = 2200;
+        }
+        table.insert(giftBagMenuDatas,1,giftBagMenuData);
+    end
+    GiftBagMenuAllDatas[giftBagType] = giftBagMenuDatas;
+    GiftBagAllDatas[giftBagType] = giftBagDatas;
+    GiftBagUpdateTimes[giftBagType] = updateTime;
+end
+
+--刷新礼包数据信息（超值礼包和钻石礼包）
+--@param giftBagType 礼包类型
+--@param datas 礼包数据
+--@param updateTime 版本更新时间
+function RefreshGiftBagDatas(giftBagType,datas,updateTime)
+    SetGiftBagAllDatas(giftBagType,datas,updateTime);
+    StorePanel.RefreshGiftBagList(giftBagType);
+end
+
+--刷新礼包商城限购数据（超值礼包和钻石礼包）
+--@param isAll 是否是所有数据
+--@param datas 限购数据信息
+function RefreshGiftBagLimitDatas(isAll,datas)
+    SetGiftBagAllLimitDatas(isAll,datas);
+    StorePanel.RefreshGiftBagList();
+end
+
+--通过礼包类型获取版本更新时间
+--@param giftBagType 礼包类型
+function GetGiftBagUpdateTime(giftBagType)
+    local updateTime = GiftBagUpdateTimes[giftBagType];
+    if updateTime == nil then
+        updateTime = 0;
+    end
+    return updateTime;
+end
+
+--获取礼包菜单数据
+--@param giftBagType 礼包类型
+function GetGiftBagMenuDatas(giftBagType)
+    local datas = {};
+    local giftBagMenuDatas = GiftBagMenuAllDatas[giftBagType];
+    if giftBagMenuDatas ~= nil then
+        for key , giftBagMenuData in pairs(giftBagMenuDatas) do
+            table.insert(datas,giftBagMenuData);
+        end
+        table.sort(datas,function(t1, t2) return t1.Type < t2.Type; end);
+    end
+    return datas;
+end
+
+--通过礼包类型获取该类型的礼包数据信息
+--@param giftBagType 礼包类型
+--@param itemType 物品类型
+function GetGiftBagDatas(giftBagType,itemType)
+    local datas = {};
+    local giftBagDatas = GiftBagAllDatas[giftBagType];
+    if giftBagDatas ~= nil then
+        local itemDatas = giftBagDatas[itemType];
+        if itemDatas ~= nil then
+            local notBuyDatas = {};
+            for key, itemData in pairs(itemDatas) do
+                local id = itemData.Id;
+                local limitNum = itemData.LimitNum;
+                if limitNum > 0 then
+                    local curBuyNum = limitNum;
+                    local buyNum = GiftBagLimitDatas[id];
+                    if buyNum == nil then
+                        buyNum = 0;
+                    end
+                    curBuyNum = limitNum - buyNum;
+                    if curBuyNum <= 0 then
+                        table.insert(notBuyDatas,itemData);
+                    else
+                        table.insert(datas,itemData);
+                    end
+                else
+                    table.insert(datas,itemData);
+                end
+            end
+            table.sort(datas,function(t1, t2) return t1.Pos < t2.Pos; end);
+            for key, var in pairs(notBuyDatas) do
+                table.insert(datas,var);
+            end
+        end
+    end
+    return datas;
+end
+
+
+--设置礼包限购数据信息（超值礼包和钻石礼包）
+--@param isAll 是否是所有数据
+--@param datas 限购数据信息
+function SetGiftBagAllLimitDatas(isAll,datas)
+    if isAll == 1 then
+        GiftBagLimitDatas ={};
+    end
+    for key, data in pairs(datas) do
+        local id = data.Id;
+        local num = data.Num;
+        GiftBagLimitDatas[id] = num;
+    end
+end
+
+
+
+--通过礼包类型和物品类型获取EventHook
+--@param giftBagType 礼包类型
+--@param itemType 物品类型
+function GetGiftBagEventHook(giftBagType,itemType)
+    local eventHook = "";
+    if giftBagType == 0 then
+        eventHook =  GiftBagEventHook1s[itemType];
+    elseif giftBagType == 1 then
+        eventHook =  GiftBagEventHook2s[itemType];
+    end
+    return eventHook;
+end
+
+-- 通过道具ID获取商品信息
+-- @param shopType 商城类型
+-- @param itemId 道具ID
+function GetShopItemByItemId(shopType, itemId)
+    local shopDatas = ShopAllDatas[shopType];
+    if shopDatas ~= nil then
+        for itemType, itemDatas in pairs(shopDatas) do
+            local isHot = itemType == 0;
+            for key, itemData in pairs(itemDatas) do
+                local result = IsLimitValid(itemData);
+                if result == true then
+                    if itemData.ExcelId == itemId then
+                        return itemData;
+                    end
+                end
+            end
+        end
+    end
+    return nil;
+end

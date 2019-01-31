@@ -1,0 +1,319 @@
+﻿module('RechargePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'RechargePanel';
+---------------------------------------label路径---------------------------------------
+-- 活动时间
+local activityTime = "Top/Content1/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 说明按钮
+local m_explainButton = "Top/Button";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- grid对象所在的位置
+local m_rechargeGridObjStr = "Reward/ScrollView/Grid";
+-- item对象所在的位置
+local m_rechargeItemObjStr = "Reward/ScrollView/Item";
+----------------------------------通用的名称路径---------------------------------------
+-- 进度条
+local m_ProgressBarPath = "Coin/ProBar";
+-- 进度条文本
+local m_LabelProgressPath = "Coin/Label";
+-- 充值钱数
+local m_rechargeCoinNum = "Coin/Num";
+-- 奖励Item
+local m_rewardItem = "Item";
+-- 一个道具的按钮组
+local m_rewardButtons = "Button";
+-- 充值按钮
+local m_rechargeButton = "Button/Button1";
+-- 已领取
+local m_rewardAccepted = "Button/Button_Accepted";
+-- 未领取
+local m_rewardAccept = "Button/Button_Accept";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 进度条
+local m_ProgressBar = nil;
+-- 进度条文本
+local m_LabelProgress = nil;
+-- 列表
+local m_List = nil;
+-- 数据表
+local m_rewardTable = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    ValidatePanel();
+    InitObjects();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_ProgressBar = nil;
+    m_LabelProgress = nil;
+    m_List = nil;
+    m_rewardTable = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_RECHARGE_PANEL);
+    m_List = GetComponent(m_PanelObject, m_rechargeGridObjStr, "UIListView");
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitRightInfo();
+    -- 初始化按钮信息
+    InitOnClick();
+    AddRechargeDate();
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 说明面板的点击事件
+    SetGameObjectEvent(m_explainButton, OnExplainPanelClick, m_PanelObject);
+end
+
+-- 信息初始化
+function InitRightInfo()
+    -- 设置活动时间
+    if RechargeManger.actEnd == false then
+        local startTime = G_TimerMng:FormatTime(RechargeManger.beginTime, "yyyy/MM/dd");
+        local endTime = G_TimerMng:FormatTime(RechargeManger.endTime, "yyyy/MM/dd H");
+        SetLabelContent(activityTime, startTime .. "-" .. endTime .. CCommonTool.GetTxtData(603).m_str, m_PanelObject);
+    end
+    SetGameObjectState(m_explainButton, false, m_PanelObject);
+end
+
+function AddRechargeDate()
+    m_List:RemoveAll();
+    m_rewardTable = { };
+
+    local m_allAcuAwardData = RechargeManger.rechargeTable;
+    if #m_allAcuAwardData > 0 then
+        for Index = 1, #m_allAcuAwardData do
+            table.insert(m_rewardTable, m_allAcuAwardData[Index]);
+        end
+    end
+    for i, data in ipairs(m_rewardTable) do
+        m_List:AddData(data);
+    end
+    local selectIndex = 0;
+    local m_allAcuAwardData = RechargeManger.rechargeTable;
+    if #m_allAcuAwardData > 0 then
+        for Index = 1, #m_allAcuAwardData do
+            local num = Index - 1;
+            local isReward = bit:IsEnumFlagOpen(RechargeManger.rewardState, bit:_lshift(1, num))
+            local rechargeInfo = m_allAcuAwardData[Index];
+            if rechargeInfo ~= nil then
+                if isReward == false then
+                    selectIndex = Index - 1;
+                    break;
+                end
+            end
+        end
+    end
+    m_List:LookAt(selectIndex, false);
+end
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    m_ProgressBar = GetComponent(go, m_ProgressBarPath, "UIProgressBar");
+    -- 充值数
+    SetLabelContent(m_rechargeCoinNum, data.AccumulateNum, go);
+    SetLabelContent(m_LabelProgressPath, RechargeManger.allGetExp .. "/" .. data.AccumulateNum, go);
+    -- 奖励道具
+    local itemTabel = { };
+    -- 道具显示
+    if data.AcuAwardID > 0 then
+        for index = 1, #data.contentTable do
+            if data.AcuAwardID == data.contentTable[index].ID then
+                table.insert(itemTabel, data.contentTable[index]);
+            end
+        end
+    end
+    m_ProgressBar.value = RechargeManger.allGetExp / data.AccumulateNum;
+    if #data.contentTable > 0 then
+        -- 获得奖励道具信息
+        local count = #data.contentTable;
+        
+        --count = count - 1;
+        if count > 4 then
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                path = m_rewardItem .. i;
+                SetGameObjectState(path, true, go);
+                local rechargeInfo = data.contentTable[i];
+                local m_itemExcelID = rechargeInfo.itemid;
+                m_itemExcelID= CCommonTool.GetProfessionItemId(m_itemExcelID)
+                if m_itemExcelID ~= nil then
+                    SetItemShowByExcelIDV04(go, path, m_itemExcelID, rechargeInfo.num, false, 11, ENUMPANELID.ENUM_RECHARGE_PANEL);
+                    SetItemToolTipsEvent(go, path, ENUMPANELID.ENUM_RECHARGE_PANEL, false, m_itemExcelID);
+                end
+            end
+            for i = count + 1, 4 do
+                path = m_rewardItem .. i;
+                SetGameObjectState(path, false, go);
+            end
+        end
+        if RechargeManger.rewardState ~= nil then
+            local isReward = bit:IsEnumFlagOpen(RechargeManger.rewardState, bit:_lshift(1, cell.dataIndex))
+            -- 按钮状态
+            if isReward == true then
+                SetGameObjectState(m_rewardAccepted, true, go);
+                SetGameObjectState(m_rewardAccept, false, go);
+                SetGameObjectState(m_rechargeButton, false, go);
+            elseif isReward == false then
+                if RechargeManger.allGetExp >= data.AccumulateNum then
+                    SetGameObjectState(m_rewardButtons, true, go);
+                    SetGameObjectState(m_rewardAccepted, false, go);
+                    SetGameObjectState(m_rewardAccept, true, go);
+                    SetGameObjectState(m_rechargeButton, false, go);
+                else
+                    SetGameObjectState(m_rewardAccepted, false, go);
+                    SetGameObjectState(m_rewardAccept, false, go);
+                    SetGameObjectState(m_rechargeButton, true, go);
+                end
+            end
+        else
+            SetGameObjectState(m_rewardAccepted, false, go);
+            SetGameObjectState(m_rewardAccept, false, go);
+            SetGameObjectState(m_rechargeButton, true, go);
+        end
+    end
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local allGetExp = RechargeManger.allGetExp;
+    local isReward = bit:IsEnumFlagOpen(RechargeManger.rewardState, bit:_lshift(1, cell.dataIndex))
+    local count = #data.contentTable;
+    local itemTable = { };
+    local itemNum = 0;
+    -- 设置道具信息
+    for i = 1, count do
+        local rechargeInfo = data.contentTable[i];
+        local m_itemExcelID = rechargeInfo.itemid;
+        if m_itemExcelID ~= nil then
+            if m_itemExcelID == G_ItemToolTipDefine.BINDMONEY or m_itemExcelID == G_ItemToolTipDefine.BINDDIAMOND or
+                m_itemExcelID == G_ItemToolTipDefine.NOTBINDMONEY or m_itemExcelID == G_ItemToolTipDefine.BINDMONEY or
+                m_itemExcelID == G_ItemToolTipDefine.NOTBINDDIAMOND then
+
+            else
+                if rechargeInfo ~= nil then
+                    table.insert(itemTable, rechargeInfo);
+                end
+            end
+        end
+    end
+    if go.name == "Button" then
+        local num = cell.dataIndex + 1
+        if isReward == false then
+            if data.AccumulateNum <= allGetExp then
+                local testTable = { };
+                local itemCount = 0;
+                for k, v in pairs(itemTable) do
+                    if v.itemid > 0 then
+                        testTable[v.itemid] = v.num;
+                        itemCount = itemCount + 1;
+                    end
+                end
+                local itemList = G_BagMng:GetCanPickUpListItem(testTable);
+                error("#testTable="..#testTable.."***itemList.Count="..itemList.Count.."***itemCount="..itemCount);
+                
+--                if itemList.Count < itemCount then
+--                    ShowSystemFlowTips(103);
+--                else
+                DepositRewardTimeProtocol.RequestGetDepositAcuRewardTime(data.AcuAwardID);
+                --end
+            else
+                StorePanel.OpenPanelRecharge();
+            end
+        else
+            error("cannot get");
+        end
+    end
+end
+
+    
+------------------------------------------事件方法------------------------------------
+
+-- 说明弹板
+function OnExplainPanelClick()
+    -- SystemExplainPanel.SetData(ENUMPANELID.ENUM_RECHARGE_PANEL, 1);
+    --    local buffer = ByteBuffer.New();
+    --    buffer:WriteUShort(E_CTON_USER_SEND_KOREA_TRANSACTIONID);
+    --    buffer:WriteUInt(G_UserInfo.GlobalDBID);
+    --    buffer:WriteInt(-1);
+    --    buffer:WriteInt(-1);
+    --    buffer:WriteInt(-1);
+    --    buffer:WriteStringByByte("FD26-1E0C-998B-07AE748");
+    --    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+
+-- 检测界面是否需要开启
+function ValidatePanel()
+    local data =
+    {
+        PanelId = ENUMPANELID.ENUM_LEVEL_UP_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel", data);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function InitInfoOut()
+    if m_CreateSuccess then
+        InitShow();
+        IsShowRedHint();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_RECHARGE, IsShowRedHint());
+end
+
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    local m_allAcuAwardData = RechargeManger.rechargeTable;
+    if #m_allAcuAwardData > 0 then
+        for Index = 1, #m_allAcuAwardData do
+            local rechargeInfo = m_allAcuAwardData[Index];
+            if rechargeInfo ~= nil then
+                local num = Index - 1;
+                local isReward = bit:IsEnumFlagOpen(RechargeManger.rewardState, bit:_lshift(1, num))
+                if isReward == false and RechargeManger.allGetExp >= rechargeInfo.AccumulateNum then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end

@@ -1,0 +1,63 @@
+﻿module("ResourcesBackManager", package.seeall)
+
+--��Դ�һ�������Ϣ
+ResourcesBackDatas = {};
+
+--���س�ʼ������
+function LoadData()
+
+end
+
+--������Դ�һ�������Ϣ
+function SetResourcesBackDatas(datas)
+    ResourcesBackDatas = datas;
+    ResourcesBackPanel.RefreshResourcesBackPanel();
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_RESOURCES_BACK,IsShowRedHint());
+end
+
+--��ȡ��Դ�һ�������Ϣ
+function GetResourcesBackDatas()
+    table.sort(ResourcesBackDatas,
+        function(t1, t2) 
+            if t1.Num > 0 and t2.Num > 0 then
+                return t1.State < t2.State; 
+            end
+            return t1.Num > t2.Num; 
+        end);
+    return ResourcesBackDatas;
+end
+
+--��ȡ��Դ�һ����ݳ���
+function GetResourcesBackDataCount()
+    local count = 0;
+    if ResourcesBackDatas ~= nil then
+        count = GetTableLength(ResourcesBackDatas);
+    end
+    return  count;
+end
+
+--ˢ����Դ�һ�������Ϣ
+function RefreshResourcesBackDatas(data)
+    for key, resourcesBackData in pairs(ResourcesBackDatas) do
+        if resourcesBackData.Id == data.Id then
+            resourcesBackData.State = data.State;
+            resourcesBackData.Num = 0;
+        end
+    end
+    ResourcesBackPanel.RefreshResourcesBackPanel();
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_RESOURCES_BACK,IsShowRedHint());
+end
+
+--�Ƿ���ʾ����
+function IsShowRedHint()
+    for key, resourcesBackData in pairs(ResourcesBackDatas) do
+        if resourcesBackData.State == 0 and resourcesBackData.Num > 0 then
+            return true;
+        end
+    end
+    return false;
+end
+
+function Clear()
+   ResourcesBackDatas = {};
+end

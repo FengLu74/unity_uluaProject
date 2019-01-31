@@ -1,0 +1,568 @@
+﻿module("CampSealPanel", package.seeall)
+-- 面板名称
+local m_panelName = "CampSealPanel";
+---------------------------------------label路径---------------------------------------
+-- 当前符文孔激活数量
+local m_CurSealOpenNumStr = "Right/NotSelected/Active/Label_Cur";
+-- 下一符文孔激活文本
+local m_NextSealOpenLabelStr = "Right/NotSelected/NextActive/Label_Next";
+-----------------------------------------按钮路径--------------------------------------
+-- 合成按钮
+local m_CombineButtonStr = "Right/Selected/Combine_Button";
+-- 获取按钮
+local m_GetButtonStr = "Right/Selected/Get_Button";
+
+-- 重置按钮
+local m_ResetButtonStr = "ResetButton";
+-- 解释说明按钮
+local m_explainButton = "Button";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 选中对象
+local m_SelectedObjStr = "Seals/Sprite_Select";
+
+-- 右侧选中
+local m_RightSelectedStr = "Right/Selected";
+-- 右侧未选中
+local m_RightNotSelectedStr = "Right/NotSelected";
+
+-- 属性
+local m_AttrStr = "Right/NotSelected/Attrs/Attribute";
+
+-- 下一孔激活
+local m_NextActiveStr = "Right/NotSelected/NextActive";
+
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewCompStr = "Right/Selected/ItemPanel/Grid";
+----------------------------------通用的名称路径---------------------------------------
+-- 符印所在的位置
+local m_SealObjStr = "Seals/Seal";
+-- 锁定状态
+local m_LockStateStr = "/Lock";
+-- 解锁状态
+local m_UnlockStateStr = "/UnLock";
+-- 无法激活
+local m_CannotActiveStr = "/CannotActive";
+-- 锁头
+local m_StoneStr = "/Sprite_Stone";
+-- 解锁文本
+local m_CannotActiveLabelStr = "/Label";
+-- 可以激活
+local m_CanActiveStr = "/CanActive";
+-- 激活消耗table
+local m_ActiveCostUITableStr = "/UITable";
+-- 激活消耗
+local m_ActiveCostLabelStr = "/Label_Cost";
+-- 激活的特效
+local m_ActiveEffectStr = "/Effect_canActive";
+-- 空孔
+local m_EmptyStr = "/Empty";
+-- 空孔属性图标
+local m_EmptyIconStr = "/Sprite_Icon";
+-- 有符文孔
+local m_NotEmptyStr = "/NotEmpty";
+-- 符文孔属性图标
+local m_NotEmptyIconStr = "/Sprite_Icon";
+-- 符文孔属性品质图标
+local m_NotEmptyQualityIconStr = "/Sprite_Quality";
+
+-- 属性名称
+local m_AttrNameStr = "/Label";
+-- 属性数值
+local m_AttrValueStr = "/Label_Num";
+
+-- 道具所在位置
+local m_RightItemStr = "Item";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+-- 按钮文本
+local m_ButtonLabelStr = "Set_Button/Label";
+-- 镶嵌背景
+local m_SetBgStr = "Set_Button/SetButton";
+-- 获取背景
+local m_GetBgStr = "Set_Button/GetButton";
+-- 右侧道具属性文本所在的位置
+local m_RightItemAttrValueLabelStr = "Label_AttrValue";
+-- 加号
+local m_ItemAddStr = "Item/Sprite_Mask";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 当前选中
+local m_CurSelect = 0;
+-- 当前所有符文的状态
+local m_AllSealsState = { };
+-- 当前选中的obj的transform
+local m_SelectTrans = nil;
+-- 当前所有属性
+local m_AllAttrTable = { };
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewComp = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 属性排序
+local m_AttrEnumTable =
+{
+    [1] = 141,
+    -- 生命
+    [2] = 11,
+    -- 外攻
+    [3] = 21,
+    -- 内攻
+    [4] = 31,
+    -- 外防
+    [5] = 41,
+    -- 内防
+    [6] = 51,
+    -- 暴击
+    [7] = 91,
+    -- 韧性
+    [8] = 71,
+    -- 命中
+    [9] = 61,-- 闪避
+}
+
+-- 图标
+local m_AttrIconEnumTable =
+{
+    [141] = { HasAttr = 11008, NoAttr = 11018 },
+    -- 生命
+    [11] = { HasAttr = 11010, NoAttr = 11020 },
+    -- 外攻
+    [21] = { HasAttr = 11003, NoAttr = 11013 },
+    -- 内攻
+    [31] = { HasAttr = 11009, NoAttr = 11019 },
+    -- 外防
+    [41] = { HasAttr = 11004, NoAttr = 11014 },
+    -- 内防
+    [51] = { HasAttr = 11001, NoAttr = 11011 },
+    -- 暴击
+    [91] = { HasAttr = 11006, NoAttr = 11016 },
+    -- 韧性
+    [71] = { HasAttr = 11005, NoAttr = 11015 },
+    -- 命中
+    [61] = { HasAttr = 11007, NoAttr = 11017 },-- 闪避
+}
+
+-- 品质
+local m_AttrQualityIconTable =
+{
+    [2] = 11021,
+    -- 绿
+    [3] = 11022,
+    -- 蓝
+    [4] = 11023,
+    -- 紫
+    [5] = 11024,-- 橙
+}
+
+-- 符文孔位状态
+local ENUM_SEAL_STATE =
+{
+    CAN_ACTIVE = 1,
+    -- 可激活
+    EMPTY_SLOT = 2,
+    -- 空孔
+    NOTEMPTY_SLOT = 3,
+    -- 非空孔
+    CANNOT_ACTIVE_LACKRANK = 4,
+    -- 军衔不足
+    CANNOT_ACTIVE_LACKLEVEL = 5,-- 等级不足
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    m_panelObject = child(m_panelObject, m_panelName).gameObject;
+    m_SelectTrans = child(m_panelObject, m_SelectedObjStr);
+    m_RightItemListViewComp = GetComponent(m_panelObject, m_RightItemListViewCompStr, "UIListView");
+end
+
+function InitEvents()
+    m_RightItemListViewComp:SetInitCallback(OnNeedItemCloneInit);
+    m_RightItemListViewComp:SetClickCallback(OnNeedItemClick);
+end
+
+function InitData()
+    m_CurSelect = 0;
+end
+
+function InitShow()
+    InitSealContent();
+    InitSealSelect();
+    InitRightContent();
+end
+
+function InitOnClick()
+    for Index = 1, CampSealManager.m_MaxSlotNum do
+        UIEventListener.Get(child(m_panelObject, m_SealObjStr .. Index).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnSlotClick, { Index });
+    end
+    SetGameObjectEvent(m_CombineButtonStr, OnCombineClick, m_panelObject);
+    SetGameObjectEvent(m_GetButtonStr, OnGetClick, m_panelObject);
+    SetGameObjectEvent(m_ResetButtonStr, OnResetClick, m_panelObject);
+    -- 解释说明按钮
+    SetGameObjectEvent(m_explainButton, OnExplainPanelClick, m_panelObject);
+end
+
+function InitSealContent()
+    local campSealData;
+    m_AllSealsState = { };
+    m_AllAttrTable = { };
+    local nextOpenIndex = -1;
+    for Index = 1, CampSealManager.m_MaxSlotNum do
+        m_AllSealsState[Index] = { };
+        campSealData = CCommonTool.GetCampSealInfo(Index);
+        if campSealData == nil then
+            return;
+        end
+        if CampSealManager.CampSealData[Index] == nil then
+            SetGameObjectState(m_SealObjStr .. Index .. m_LockStateStr, true, m_panelObject);
+            SetGameObjectState(m_SealObjStr .. Index .. m_UnlockStateStr, false, m_panelObject);
+            if CampManager.GetMilitaryRank() >= campSealData.NeedCreditLevel and G_UserInfo.RoleAttribute.Level >= campSealData.NeedPlayerLevel then
+                SetGameObjectState(m_SealObjStr .. Index .. m_LockStateStr .. m_CannotActiveStr, false, m_panelObject);
+                SetGameObjectState(m_SealObjStr .. Index .. m_LockStateStr .. m_CanActiveStr, true, m_panelObject);
+                SetLabelContent(m_SealObjStr .. Index .. m_LockStateStr .. m_CanActiveStr .. m_ActiveCostUITableStr .. m_ActiveCostLabelStr, campSealData.ActiveCost, m_panelObject);
+                RepositionUITableComp(m_SealObjStr .. Index .. m_LockStateStr .. m_CanActiveStr .. m_ActiveCostUITableStr, m_panelObject);
+                m_AllSealsState[Index].State = ENUM_SEAL_STATE.CAN_ACTIVE;
+                m_AllSealsState[Index].Param = { campSealData.ActiveCost };
+            else
+                SetGameObjectState(m_SealObjStr .. Index .. m_LockStateStr .. m_CannotActiveStr, true, m_panelObject);
+                SetGameObjectState(m_SealObjStr .. Index .. m_LockStateStr .. m_CanActiveStr, false, m_panelObject);
+                SetLabelTextByID(m_SealObjStr .. Index .. m_LockStateStr .. m_CannotActiveStr .. m_CannotActiveLabelStr, campSealData.ActiveTxtID, m_panelObject);
+                if CampManager.GetMilitaryRank() < campSealData.NeedCreditLevel then
+                    m_AllSealsState[Index].State = ENUM_SEAL_STATE.CANNOT_ACTIVE_LACKRANK;
+                else
+                    m_AllSealsState[Index].State = ENUM_SEAL_STATE.CANNOT_ACTIVE_LACKLEVEL;
+                end
+                m_AllSealsState[Index].Param = { campSealData.NeedCreditLevel, campSealData.NeedPlayerLevel };
+                if nextOpenIndex == -1 then
+                    nextOpenIndex = Index;
+                    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_SealObjStr .. Index .. m_LockStateStr .. m_CannotActiveStr .. m_CannotActiveLabelStr).gameObject, false);
+                else
+                    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_SealObjStr .. Index .. m_LockStateStr .. m_CannotActiveStr .. m_CannotActiveLabelStr).gameObject, true);
+                end
+            end
+        else
+            SetGameObjectState(m_SealObjStr .. Index .. m_LockStateStr, false, m_panelObject);
+            SetGameObjectState(m_SealObjStr .. Index .. m_UnlockStateStr, true, m_panelObject);
+            if CampSealManager.CampSealData[Index] == 0 then
+                SetGameObjectState(m_SealObjStr .. Index .. m_UnlockStateStr .. m_EmptyStr, true, m_panelObject);
+                SetGameObjectState(m_SealObjStr .. Index .. m_UnlockStateStr .. m_NotEmptyStr, false, m_panelObject);
+                local emptyItemId = CCommonTool.GetValueInCampSealInfo(Index, 5 + 2 *(G_UserInfo.RoleAttribute.ProID - 1));
+                if emptyItemId == nil then
+                    return;
+                end
+                local itemData = CCommonTool.GetItemInfo(emptyItemId);
+                if m_AttrIconEnumTable[itemData.Attr1] ~= nil then
+                    SetSpriteByAtlasID(m_SealObjStr .. Index .. m_UnlockStateStr .. m_EmptyStr .. m_EmptyIconStr, m_AttrIconEnumTable[itemData.Attr1].NoAttr, m_panelObject);
+                end
+                m_AllSealsState[Index].State = ENUM_SEAL_STATE.EMPTY_SLOT;
+                m_AllSealsState[Index].Param = { };
+            else
+                SetGameObjectState(m_SealObjStr .. Index .. m_UnlockStateStr .. m_EmptyStr, false, m_panelObject);
+                SetGameObjectState(m_SealObjStr .. Index .. m_UnlockStateStr .. m_NotEmptyStr, true, m_panelObject);
+                local notEmptyItemID = CampSealManager.CampSealData[Index];
+                local itemData = CCommonTool.GetItemInfo(notEmptyItemID);
+                if m_AttrIconEnumTable[itemData.Attr1] ~= nil then
+                    SetSpriteByAtlasID(m_SealObjStr .. Index .. m_UnlockStateStr .. m_NotEmptyStr .. m_NotEmptyIconStr, m_AttrIconEnumTable[itemData.Attr1].HasAttr, m_panelObject);
+                end
+                if m_AttrQualityIconTable[itemData.AptitudeID] ~= nil then
+                    SetSpriteByAtlasID(m_SealObjStr .. Index .. m_UnlockStateStr .. m_NotEmptyStr .. m_NotEmptyQualityIconStr, m_AttrQualityIconTable[itemData.AptitudeID], m_panelObject);
+                end
+                if m_AllAttrTable[itemData.Attr1] == nil then
+                    m_AllAttrTable[itemData.Attr1] = 0;
+                end
+                m_AllAttrTable[itemData.Attr1] = m_AllAttrTable[itemData.Attr1] + itemData.Attr1Value;
+                if m_AllAttrTable[itemData.Attr2] == nil then
+                    m_AllAttrTable[itemData.Attr2] = 0;
+                end
+                m_AllAttrTable[itemData.Attr2] = m_AllAttrTable[itemData.Attr2] + itemData.Attr2Value;
+                if m_AllAttrTable[itemData.Attr3] == nil then
+                    m_AllAttrTable[itemData.Attr3] = 0;
+                end
+                m_AllAttrTable[itemData.Attr3] = m_AllAttrTable[itemData.Attr3] + itemData.Attr3Value;
+                m_AllSealsState[Index].State = ENUM_SEAL_STATE.NOTEMPTY_SLOT;
+                m_AllSealsState[Index].Param = { };
+            end
+        end
+    end
+end
+
+function InitSealSelect()
+    if m_CurSelect == 0 then
+        SetGameObjectState(m_SelectedObjStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_SelectedObjStr, true, m_panelObject);
+        m_SelectTrans.localPosition = child(m_panelObject, m_SealObjStr .. m_CurSelect).localPosition;
+    end
+end
+
+function InitRightContent()
+    if m_CurSelect == 0 then
+        SetGameObjectState(m_RightSelectedStr, false, m_panelObject);
+        SetGameObjectState(m_RightNotSelectedStr, true, m_panelObject);
+        for Index = 1, #m_AttrEnumTable do
+            SetLabelTextByID(m_AttrStr .. Index .. m_AttrNameStr, CCommonTool.GetAttrIndexInfo(m_AttrEnumTable[Index]).TextID, m_panelObject);
+            SetLabelContent(m_AttrStr .. Index .. m_AttrValueStr, m_AllAttrTable[m_AttrEnumTable[Index]] == nil and 0 or m_AllAttrTable[m_AttrEnumTable[Index]], m_panelObject);
+        end
+        local curOpenNums = 0;
+        local nextOpenIndex = -1;
+        for Index = 1, CampSealManager.m_MaxSlotNum do
+            if m_AllSealsState[Index].State == ENUM_SEAL_STATE.EMPTY_SLOT or m_AllSealsState[Index].State == ENUM_SEAL_STATE.NOTEMPTY_SLOT then
+                curOpenNums = curOpenNums + 1;
+            end
+            if (m_AllSealsState[Index].State == ENUM_SEAL_STATE.CANNOT_ACTIVE_LACKRANK or m_AllSealsState[Index].State == ENUM_SEAL_STATE.CANNOT_ACTIVE_LACKLEVEL) and nextOpenIndex == -1 then
+                nextOpenIndex = Index;
+            end
+        end
+        SetLabelContent(m_CurSealOpenNumStr, curOpenNums .. "/" .. CampSealManager.m_MaxSlotNum, m_panelObject);
+        if nextOpenIndex == -1 then
+            SetGameObjectState(m_NextActiveStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_NextActiveStr, true, m_panelObject);
+            local campSealData = CCommonTool.GetCampSealInfo(nextOpenIndex);
+            SetLabelTextByID(m_NextSealOpenLabelStr, campSealData.ActiveTxtID, m_panelObject);
+        end
+    else
+        SetGameObjectState(m_RightSelectedStr, true, m_panelObject);
+        SetGameObjectState(m_RightNotSelectedStr, false, m_panelObject);
+        local startItemID = CCommonTool.GetValueInCampSealInfo(m_CurSelect, 5 + 2 *(G_UserInfo.RoleAttribute.ProID - 1));
+        local endItemID = CCommonTool.GetValueInCampSealInfo(m_CurSelect, 6 + 2 *(G_UserInfo.RoleAttribute.ProID - 1));
+        if startItemID > endItemID then
+            local tempID = startItemID;
+            startItemID = endItemID;
+            endItemID = tempID;
+        end
+        m_RightItemListViewComp:RemoveAll();
+        for Index = startItemID, endItemID do
+            m_RightItemListViewComp:AddData(Index);
+        end
+    end
+end
+
+function ActiveSlotSelect(slotIndex, cost)
+    local DoAction = function(isOk)
+        if isOk then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_CAMPSEAL_OPERATE);
+            buffer:WriteByte(CAMPSEAL_OPERATE_MSG.CAMPSEAL_ACTIVE);
+            buffer:WriteInt(slotIndex);
+            G_NetWorkMng:SendMessage(buffer);
+        else
+            ParameterToMessageTextBox.OnCloseClick();
+        end
+    end
+    ParameterToMessageTextBox.ShowConfirm(nil, string_format(CCommonTool.GetTxtData(152004).m_str, cost), DoAction, true);
+end
+
+-- 右侧道具初始化
+function OnNeedItemCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local NotBindExcelID = data;
+    local BindExcelID = 0;
+    local bindTableInfo = CCommonTool.GetTradableInfo(NotBindExcelID);
+    if bindTableInfo == nil then
+        error("符文没有对应的绑定道具" .. NotBindExcelID);
+    else
+        BindExcelID = bindTableInfo.UntradableItemID;
+    end
+    local curItemHave = 0;
+    if BindExcelID == 0 then
+        curItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, NotBindExcelID);
+    else
+        curItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, NotBindExcelID) + G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, BindExcelID);
+    end
+    SetItemShowByExcelIDV04(go, m_RightItemStr, NotBindExcelID, curItemHave, true);
+    if curItemHave == 0 then
+        SetGameObjectState(m_RightItemStr .. m_ItemNumStr, false, go);
+        SetGameObjectState(m_GetBgStr, true, go);
+        SetGameObjectState(m_SetBgStr, false, go);
+        SetGameObjectState(m_ItemAddStr, true, go);
+    else
+        SetGameObjectState(m_RightItemStr .. m_ItemNumStr, true, go);
+        SetGameObjectState(m_GetBgStr, false, go);
+        SetGameObjectState(m_SetBgStr, true, go);
+        SetGameObjectState(m_ItemAddStr, false, go);
+    end
+    local itemInfo = CCommonTool.GetItemInfo(NotBindExcelID);
+    local attrNameValue = "";
+    if itemInfo ~= nil then
+        attrNameValue = CCommonTool.GetAttrNameByAttrID(itemInfo.Attr1);
+        attrNameValue = attrNameValue .. " +" .. itemInfo.Attr1Value;
+        SetLabelContent(m_RightItemAttrValueLabelStr, attrNameValue, go);
+    end
+    if CampSealManager.CampSealData[m_CurSelect] == 0 then
+        if curItemHave == 0 then
+            SetLabelTextByID(m_ButtonLabelStr, 923, go);
+            -- 获取
+        else
+            SetLabelTextByID(m_ButtonLabelStr, 169, go);
+            -- 镶嵌
+        end
+    else
+        curExcelID = CampSealManager.CampSealData[m_CurSelect];
+        if curExcelID == NotBindExcelID or curExcelID == BindExcelID then
+            SetLabelTextByID(m_ButtonLabelStr, 156, go);
+            -- 卸下
+        else
+            if curItemHave == 0 then
+                SetLabelTextByID(m_ButtonLabelStr, 923, go);
+                -- 获取
+            else
+                SetLabelTextByID(m_ButtonLabelStr, 718, go);
+                -- 替换
+            end
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- function OnCloseClick()
+--    closePanel(ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+-- end
+
+function OnSlotClick(go, paramTable)
+    local slotIndex = paramTable[1];
+    if slotIndex == m_CurSelect then
+        return;
+    end
+    if m_AllSealsState[slotIndex].State == ENUM_SEAL_STATE.CAN_ACTIVE then
+        local cost = m_AllSealsState[slotIndex].Param[1];
+        if G_UserInfo.RoleAttribute.N64Exploits < cost then
+            -- error("当前功勋不足,无法激活");
+            -- ShowSystemFlowTips(9093);
+            ShowSystemFlowTips(9207);
+            return;
+        else
+            ActiveSlotSelect(slotIndex, cost);
+        end
+    elseif m_AllSealsState[slotIndex].State == ENUM_SEAL_STATE.EMPTY_SLOT or m_AllSealsState[slotIndex].State == ENUM_SEAL_STATE.NOTEMPTY_SLOT then
+        m_CurSelect = slotIndex;
+        InitSealSelect();
+        InitRightContent();
+    elseif m_AllSealsState[slotIndex].State == ENUM_SEAL_STATE.CANNOT_ACTIVE_LACKRANK then
+        ShowSystemFlowTips(9209);
+    elseif m_AllSealsState[slotIndex].State == ENUM_SEAL_STATE.CANNOT_ACTIVE_LACKLEVEL then
+        ShowSystemFlowTips(9208,nil,{m_AllSealsState[slotIndex].Param[2]});
+    end
+end
+
+-- 点击道具
+function OnNeedItemClick(listView, cell, go)
+    local NotBindExcelID = listView:GetData(cell.dataIndex);
+    if go.name == "Item" then
+        -- GetWayPanel.Show(NotBindExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+        OpenPropToolTips(NotBindExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL, true);
+        return;
+    end
+    local BindExcelID = 0;
+    local bindTableInfo = CCommonTool.GetTradableInfo(NotBindExcelID);
+    if bindTableInfo == nil then
+        error("符文没有对应的绑定道具" .. NotBindExcelID);
+    else
+        BindExcelID = bindTableInfo.UntradableItemID;
+    end
+    local curItemHave = 0;
+    local curBindItemHave = 0;
+    if BindExcelID == 0 then
+        curItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, NotBindExcelID);
+    else
+        curBindItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, BindExcelID);
+        curItemHave = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, NotBindExcelID) + curBindItemHave;
+    end
+    if CampSealManager.CampSealData[m_CurSelect] == 0 then
+        if curItemHave == 0 then
+            -- GetWayPanel.Show(NotBindExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+            OpenPropToolTips(NotBindExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL, true);
+        else
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_CAMPSEAL_OPERATE);
+            buffer:WriteByte(CAMPSEAL_OPERATE_MSG.CAMPSEAL_SEAL_ON);
+            buffer:WriteInt(m_CurSelect);
+            if curBindItemHave > 0 then
+                buffer:WriteInt(BindExcelID);
+            else
+                buffer:WriteInt(NotBindExcelID);
+            end
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    else
+        curExcelID = CampSealManager.CampSealData[m_CurSelect];
+        if curExcelID == NotBindExcelID or curExcelID == BindExcelID then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_CAMPSEAL_OPERATE);
+            buffer:WriteByte(CAMPSEAL_OPERATE_MSG.CAMPSEAL_SEAL_DOWN);
+            buffer:WriteInt(m_CurSelect);
+            G_NetWorkMng:SendMessage(buffer);
+        else
+            if curItemHave == 0 then
+                -- GetWayPanel.Show(NotBindExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+                OpenPropToolTips(NotBindExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL, true);
+            else
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_CAMPSEAL_OPERATE);
+                buffer:WriteByte(CAMPSEAL_OPERATE_MSG.CAMPSEAL_SEAL_CHANGE);
+                buffer:WriteInt(m_CurSelect);
+                if curBindItemHave > 0 then
+                    buffer:WriteInt(BindExcelID);
+                else
+                    buffer:WriteInt(NotBindExcelID);
+                end
+                G_NetWorkMng:SendMessage(buffer);
+            end
+        end
+    end
+end
+
+function OnCombineClick()
+    ResolveAndCombinePanel.OpenThisPanelByTag(2);
+end
+
+function OnGetClick()
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.CampShop, 4);
+end
+
+function OnResetClick()
+    if m_CurSelect == 0 then
+        return;
+    else
+        m_CurSelect = 0;
+        InitSealSelect();
+        InitRightContent();
+    end
+end
+
+-- 说明弹板
+function OnExplainPanelClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_CAMPPANEL, 3);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CAMPPANEL) == 1 then
+        InitShow();
+    end
+end

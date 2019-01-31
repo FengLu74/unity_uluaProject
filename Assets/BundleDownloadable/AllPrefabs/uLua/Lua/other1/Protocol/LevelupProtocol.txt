@@ -1,0 +1,22 @@
+﻿module("LevelupProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 服务器发送给客户端等级奖励数据
+    network.Register(GMI_STOC_RETURN_SIGNIN_DATA_LV, OnRewardLvBack);
+end
+
+-- 服务器发送给客户端等级奖励数据
+function OnRewardLvBack(protocolId, buffer)
+    --error("OnRewardLvBack protocolId : "..protocolId);
+    G_RewardMng.RewardLvGetState = buffer:ReadInt();
+    --error("G_RewardMng.RewardLvGetState::::" .. G_RewardMng.RewardLvGetState);
+    if IsOpenPanel(ENUMPANELID.ENUM_LEVEL_UP_PANEL) == 1 then
+        LevelupPanel.InitInfoOut();
+    end
+    if G_SceneMng.isAlreadyInGame then
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_LEVEL, LevelupPanel.IsShowRedHintLevelUp());
+    end
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

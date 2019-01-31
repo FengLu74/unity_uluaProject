@@ -1,0 +1,132 @@
+﻿module("SystemFlowTipPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+-- tip对象的路径
+local m_TipStr = "Clone/Tip";
+-- tip的parent对象路径
+local m_TipParentStr = "Clone"
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 面板是否创建成功
+local m_bCreateSuccess = false;
+-- 面板对象
+local m_strPanelObject = nil;
+-- tip对象
+local m_TipObject = nil;
+-- tip的parent对象
+local m_TipParentObject = nil;
+-- 驻留时间
+local m_DelayTime = 0.8;
+-- 消失时间
+local m_GoneTime = 0.8;
+-- 消失位置
+local m_GonePos = Vector3.New(0,200,0);
+-- 生成下一条间隔时间
+local m_ShowNextTipTime = 0.1;
+-- 最大条目
+local m_MaxTip = 10;
+-- 所有将要显示的队列信息
+local m_TipTable = { };
+-- tipobj的队列信息
+local m_TipObjTable = { };
+-- 是否正在显示
+local notShowing = true;
+-----------------------------Baselua调用的同名方法----------------------------
+-- start方法
+function Start()
+    -- 初始化object
+    InitObjects();
+    notShowing = false;
+    ShowTipContent(m_TipTable[#m_TipTable]);
+    -- 创建成功
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_TipObjTable = { };
+    m_TipTable = { };
+    notShowing = true;
+    m_bCreateSuccess = false;
+end
+-------------------------本lua自己调用的方法---------------------------------------
+-- 初始化object
+function InitObjects()
+    -- 面板对象
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SYSTEMFLOWTIP);
+    -- clone的对象
+    m_TipObject = child(m_strPanelObject, m_TipStr).gameObject;
+    -- clone的母对象
+    m_TipParentObject = child(m_strPanelObject, m_TipParentStr).gameObject;
+end
+-- 展示tip内容
+function ShowTipContent(tempTable)
+    -- 将当前所有的上移80像素
+    for index = 1,#m_TipObjTable do
+        local pos = m_TipObjTable[index].transform.localPosition;
+        m_TipObjTable[index].transform.localPosition = Vector3.New(pos.x,pos.y+80,pos.z);
+    end
+    
+    local labelContent = tempTable[1];
+    local tipParent = newobject(m_TipParentObject);
+    tipParent.transform.parent = m_strPanelObject.transform;
+    tipParent.name = "Clone"..#m_TipObjTable;
+    tipParent.transform.localScale = Vector3.one;
+    -- body 将alpha的值置回来
+    SetGameObjectState("Tip", true, tipParent);
+    local tip = child(tipParent, "Tip").gameObject;
+    SetLabelContent("BG/Label", labelContent, tip);
+    -- 加入内部 移动动画，加入渐变动画
+    CTweenPositionEx.NewBegin(tip, m_GoneTime, m_GonePos, Vector3.zero, m_DelayTime, false);
+    CCommonTool.TweenAlphaNewBegin(tip, m_GoneTime, 0, 1, m_DelayTime);
+    -- 开始播放后x(s)检测内容
+    G_TimerMng:CallLuaFuncAfterTime(m_strPanelObject,"CallBackAfterTime",m_ShowNextTipTime);
+    CCommonTool.TweenPositionOnFinishEvent(tip,TweenPositionOver,1);
+    table.remove(m_TipTable,#m_TipTable);
+    table.insert(m_TipObjTable,1,tipParent);
+end
+
+-- tip消失后的回调
+function TweenPositionOver()
+    destroy(m_TipObjTable[#m_TipObjTable]);
+    table.remove(m_TipObjTable,#m_TipObjTable);
+end
+
+-- 创建下一个的时间回调
+function CallBackAfterTime()
+    if m_bCreateSuccess == false then
+        return;
+    end
+    -- 检测是否还有要播放的，如果有的话，就继续播放
+    if #m_TipTable == 0 then
+        notShowing = true;
+    else
+        ShowTipContent(m_TipTable[#m_TipTable]);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function AddQueue(tempTable)
+    if #m_TipTable == m_MaxTip then
+        return;
+    end
+    table.insert(m_TipTable, 1, tempTable);
+    if m_bCreateSuccess == false then
+        createPanel(ENUMPANELID.ENUM_PANEL_SYSTEMFLOWTIP);
+        return;
+    end
+    if notShowing then
+        notShowing = false;
+        ShowTipContent(m_TipTable[#m_TipTable]);
+    end
+end
+

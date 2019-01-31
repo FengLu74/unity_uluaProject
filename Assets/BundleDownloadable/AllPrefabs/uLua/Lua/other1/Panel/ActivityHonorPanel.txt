@@ -1,0 +1,163 @@
+﻿module('ActivityHonorPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityHonorPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 荣誉商店按钮
+local n_honorShopButton = "HonorShopButton";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-- 加注释
+local m_UIGridPath = "ListPanel/UIGrid";
+
+-- 类型图片
+local m_typeSprite = "sp_Icon";
+-- 类型标题
+local m_typeTitle = "lb_Name";
+-- 类型内容
+local m_typeContent = "lb_Desc";
+-- 获得荣誉经验数
+local m_expNum = "lb_Exp";
+-- 荣誉勋章数
+local m_medalNum = "lb_Medal";
+-- 荣誉勋章图标
+local m_medalSprite = "lb_Medal/sp_Medal";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_listView = nil;
+
+--  荣誉Table
+local m_honorTable = { };
+local m_listTable = { };
+-- 荣誉表数据
+local m_honorData = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_listView = nil;
+    m_honorTable = { };
+    m_listTable = { }
+    m_honorData = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_listView = GetComponent(m_PanelObject, m_UIGridPath, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_listView:SetInitCallback(OnUIGridViewInit);
+    m_listView:SetClickCallback(OnUIGridViewClick);
+
+    -- 荣誉商店按钮
+    SetGameObjectEvent(n_honorShopButton, OnHonorShopButton, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_listView:RemoveAll();
+    m_honorTable = { };
+    m_listTable = { };
+    m_listTable = ActivityManager.activityHonor or { };
+
+    m_honorData = CCommonTool.GetHonorShowInfo();
+    for num = 1, m_honorData.Count do
+        local info = m_honorData[num - 1];
+        if info ~= nil then
+            table.insert(m_honorTable, info);
+        end
+    end
+
+    for i, data in ipairs(m_honorTable) do
+        m_listView:AddData(data);
+    end
+
+end
+
+-- 信息显示
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject
+    local HonorInfo = nil;
+    -- 经验数
+    SetLabelContent(m_expNum, "0", go);
+    -- 勋章数
+    SetLabelContent(m_medalNum, "0", go);
+    if m_listTable ~= nil then
+        for index = 1, #m_listTable do
+            local info = m_listTable[index];
+            if info ~= nil then
+                if info.keyID == data.Id then
+                    HonorInfo = info;
+                    break;
+                end
+            end
+        end
+        if HonorInfo ~= nil then
+            -- 经验数
+            SetLabelContent(m_expNum, HonorInfo.ExpNum, go);
+            -- 勋章数
+            SetLabelContent(m_medalNum, HonorInfo.MedalNum, go);
+        end
+    end
+    -- 图片
+    SetSpriteByAtlasID(m_typeSprite, data.PictureId, go);
+    -- 标题
+    SetLabelTextByID(m_typeTitle, data.Title, go);
+    -- 内容
+    SetLabelTextByID(m_typeContent, data.TXT, go);
+    -- 勋章图片
+    local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.HONORITEM);
+    if itemInfo ~= nil then
+        SetSpriteByAtlasID(m_medalSprite, itemInfo.ImageSmallID, go);
+    end
+end
+
+-- 点击效果
+function OnUIGridViewClick(listView, cell, go)
+
+end
+------------------------------------------事件方法------------------------------------
+
+-- 荣誉商店按钮
+function OnHonorShopButton()
+    -- ShowSystemFlowTips(106);
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.HonorShop);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function Refresh()
+    if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+        InitShow();
+    end
+end

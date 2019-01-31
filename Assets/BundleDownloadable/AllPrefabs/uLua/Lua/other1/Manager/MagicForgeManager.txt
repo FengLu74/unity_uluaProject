@@ -1,0 +1,21 @@
+﻿module("MagicForgeManager", package.seeall)
+
+-- 魔法熔炉当前所在的状态
+MagicForgeState = ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_START;
+-- 这周已经重置的次数
+ResetDailyTimes = 0;
+-- 当前累积的次数
+CalculateTimes = 0;
+-- 收集的道具
+CollectItems = {};
+-- 奖励和显示的道具
+RewardAndShowItems = {};
+
+-- 清空数据
+function ClearData()
+    MagicForgeState = ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_START;
+    ResetDailyTimes = 0;
+    CalculateTimes = 0;
+    CollectItems = {};
+    RewardAndShowItems = {};
+end

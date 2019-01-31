@@ -1,0 +1,228 @@
+﻿module("FriendsAddPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+--刷新按钮Label路径
+local m_RefreshButtonLabelPath = "Bottom/RefreshButton/Label";
+--刷新时间Label路径
+local m_TimeLabelPath = "Bottom/RefreshButton/SecondLabel";
+-----------------------------------------按钮路径--------------------------------------
+--关闭按钮路径
+local m_CloseButtonPath = "Top/CloseButton";
+--刷新按钮路径
+local m_RefreshButtonPath = "Bottom/RefreshButton";
+--搜索按钮路径
+local m_SearchButtonPath = "Bottom/SearchButton";
+-----------------------------------------Sprite路径------------------------------------
+--刷新按钮背景路径
+local m_RefreshButtonBgPath = "Bottom/RefreshButton";
+----------------------------------gameobject所在的路径---------------------------------
+local m_listViewPath = "ScrollView/Grid";
+--输入框路径
+local m_inputFieldPath = "Bottom/InputField"
+--空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+local inited = false;
+local timerEvent =  "Friends_Add_Refresh";
+--刷新间隔
+local totalTime = 6;
+--剩余刷新时间
+local remainTime = 0;
+local remainSearchTime = 0;
+
+local gameObject = nil;
+local timeLabel = nil;
+local btnSprite = nil;
+local m_listView = nil;
+local btnSearch = nil;
+-- 面板是否开启
+m_FriendsPanelIsOpen = false;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+function Show(go)
+    gameObject = go;
+    m_FriendsPanelIsOpen = true;
+    gameObject:SetActive(m_FriendsPanelIsOpen);
+    if not inited then
+        Init();
+    end
+    InitList();
+    InitRefreshTime();
+
+    if remainTime == 0 then
+        FriendsProtocol.RequestListData(FriendsData.LIST_TYPE_RECOMMEND);
+    end
+end
+
+function OnDestroy()
+    --移除刷新倒计时事件
+    G_TimerMng:RemoveTimeTask(timerEvent);
+    G_TimerMng:RemoveTimeTask("SearchFriend");
+    gameObject = nil;
+    timeLabel = nil;
+    btnSprite = nil;
+    btnSearch = nil;
+    m_listView = nil;
+    inited = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitList()
+    m_listView:RemoveAll();
+    local dataList = FriendsData.recommendList;
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+    end
+    --空列表提示
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, gameObject);
+end
+
+function Init()
+    inited = true;
+    btnSprite = GetComponent(gameObject, m_RefreshButtonBgPath, "UISprite");
+    btnSearch = GetComponent(gameObject, m_SearchButtonPath, "UISprite");
+    timeLabel = child(gameObject, m_TimeLabelPath).gameObject:GetComponent("UILabel");
+    refreshLabel = child(gameObject, m_RefreshButtonLabelPath).gameObject:GetComponent("UILabel");
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, gameObject, nil); --关闭
+    SetGameObjectEvent(m_RefreshButtonPath, OnRefreshClick, gameObject, nil);  --刷新
+    SetGameObjectEvent(m_SearchButtonPath, OnSearchClick, gameObject, nil);    --查找
+    if CCommonTool.GetDefineInfo(3007) then 
+        totalTime = CCommonTool.GetDefineInfo(3007):GetIntContent();
+    end
+    m_listView = GetComponent(gameObject, m_listViewPath, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    FriendsPanel.SetFriendBaseInfo(go, data, false, true);
+    SetLabelContent("Level", data.level, go); 
+--    --联盟图标
+--    if data.unionId > 0 then
+--        if CCommonTool.GetDefineInfo(data.unionId) ~= nil then
+--            local iconId = CCommonTool.GetDefineInfo(data.unionId):GetIntContent();
+--            SetGameObjectState("UnionIcon", true, go);
+--            SetSpriteByAtlasID("UnionIcon", iconId, go, true);
+--        end
+--    else
+--        SetGameObjectState("UnionIcon", false, go);
+--    end
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "AddButton" then
+        local result = FriendsProtocol.RequestApply(data.guid);
+        if result then
+            FriendsData.DeleteIfExist(FriendsData.recommendList, data.guid);
+            InitList();
+        end
+    end
+end
+
+function InitRefreshTime()
+    --移除刷新倒计时事件
+    G_TimerMng:RemoveTimeTask(timerEvent);
+    --refreshLabel.gameObject:SetActive(remainTime <= 0);
+    timeLabel.gameObject:SetActive(remainTime > 0);
+    if remainTime > 0 then
+        CCommonTool.SetGameObjectGrey(btnSprite.gameObject, true);
+        timeLabel.text = tostring(remainTime);
+        AddTimerEvent(timerEvent, remainTime, OnRefreshTimeOver, ETimeShowType.TypeNumberThree, OnRefreshTime);
+    else
+        CCommonTool.SetGameObjectGrey(btnSprite.gameObject, false);
+    end
+end
+
+-- 刷新推荐好友倒计时回调
+function OnRefreshTime(timeTxt)
+    if inited then
+        timeLabel.text = tostring(remainTime);
+    end
+    remainTime = remainTime - 1;
+end
+
+-- 刷新推荐好友倒计时结束
+function OnRefreshTimeOver()
+    remainTime = 0;
+    InitRefreshTime();
+end
+
+--------------------------------------按钮事件方法------------------------------------
+--关闭
+function OnCloseClick(go)
+    Hide();
+end
+
+--点击刷新
+function OnRefreshClick(go)
+    if remainTime == 0 then
+        local dataList = FriendsData.recommendList;
+        if dataList and #dataList > 0 then
+            FriendsProtocol.RequestRecommend(dataList[#dataList].guid);
+        else
+            FriendsProtocol.RequestRecommend(0);
+        end
+        remainTime = totalTime;
+        InitRefreshTime();
+    end
+end
+
+--查找
+function OnSearchClick(go)
+    if remainSearchTime == 0 then
+        remainSearchTime = totalTime;
+        if remainSearchTime > 0 then
+            local inputField = child(gameObject, m_inputFieldPath).gameObject:GetComponent("UIInput");
+            local value = inputField.value;
+            if string.len(value) > 0 then
+                FriendsProtocol.RequestSearch(value, 1);
+                m_listView:RemoveAll();
+            else
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_FRIENDADD_NOT_NAME);
+            end
+            AddTimerEvent("SearchFriend", totalTime, OnSearchFriendOver);
+            CCommonTool.SetGameObjectGrey(btnSearch.gameObject, true);
+        end
+    end
+end
+
+-- 查找好友倒计时结束
+function OnSearchFriendOver()
+    remainSearchTime = 0;
+    if inited and gameObject ~= nil and gameObject.activeInHierarchy then
+        CCommonTool.SetGameObjectGrey(btnSearch.gameObject, false);
+    end
+end
+
+-- 刷新查找好友倒计时回调
+function OnRefreshSearchTime(timeTxt)
+    remainSearchTime = remainSearchTime - 1;
+end
+
+function Hide()
+    if gameObject ~= nil then
+        m_FriendsPanelIsOpen = false;
+        gameObject:SetActive(m_FriendsPanelIsOpen);
+    end
+    G_TimerMng:RemoveTimeTask(timerEvent);
+end
+
+--刷新
+function Refresh()
+    if inited and gameObject ~= nil and gameObject.activeInHierarchy then
+        InitList();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 搜索好友时，刷新列表
+function RefreshList(dataList)
+    if inited and gameObject ~= nil and gameObject.activeInHierarchy then
+        if dataList == nil then return end
+        SetGameObjectState(m_BlankListHintPath, false, gameObject);
+        m_listView:RemoveAll();
+        m_listView:AddData(dataList);
+    end
+end

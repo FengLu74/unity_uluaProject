@@ -1,0 +1,91 @@
+﻿
+module("JewelPanelProtocol", package.seeall)
+
+-------------------------------------------------------处理宝珠接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --角色上线接受宝珠数据
+    network.Register(GMI_STOC_ORB_DATA, OnJeweInit);
+    --宝珠淬炼
+    network.Register(GMI_STOC_ORB_UPGRADE_STARS_RETURN, OnJeweFoster);
+    --宝珠升阶
+    network.Register(GMI_STOC_ORB_UPGRADE_STAGE_RETURN, OnJeweLvlUp);
+    -- 宝珠升级附加技能
+    network.Register(GMI_STOC_ORB_UPGRADE_SKILL_RETURN, OnSkillLvlUp);
+end
+-- 角色上线宝珠数据
+function OnJeweInit(protocolId, buffer)
+	--table 初始化
+	JewelPanelManager.ConstructData();
+	--宝珠星级
+	local star_lvl = buffer:ReadByte();
+	--宝珠阶数
+	local stage_lvl = buffer:ReadShort();
+	--当前宝珠经验
+	local jewe_exp = buffer:ReadInt();
+	--error("[宝珠]当前宝珠的阶数："..stage_lvl.." 宝珠星级:"..star_lvl.." 宝珠经验："..jewe_exp);
+	JewelPanelManager.SetJeweInfos(star_lvl,stage_lvl,jewe_exp);
+	--附加技能的数据
+	local skillCount = buffer:ReadByte();
+	--error("[宝珠]激活的附加技能长度为："..skillCount);
+	for index=1,skillCount do
+		local skill_id = buffer:ReadByte();
+		local skill_lvl = buffer:ReadShort();
+		--error("[宝珠]激活的附加技能序号id："..skill_id.." 对应的等级："..skill_lvl);
+		JewelPanelManager.SetJeweSkillInfos(skill_id,skill_lvl);
+	end
+	local skillCount = #JewelPanelManager.LogicData_JewePlayerInfo.SkillInfos;
+	if skillCount <4 then
+		for index= skillCount,3 do
+			JewelPanelManager.SetJeweSkillInfos(index,0);
+		end
+	end
+	for kk=1,#JewelPanelManager.LogicData_JewePlayerInfo.SkillInfos do
+		--error("skill_id:"..JewelPanelManager.LogicData_JewePlayerInfo.SkillInfos[kk].SkillId.."   skill_lvl::"..JewelPanelManager.LogicData_JewePlayerInfo.SkillInfos[kk].SkillLvl)
+	end
+end
+---------------------------------------淬炼界面 start----------------------------------
+-- 宝珠淬炼
+function OnJeweFoster( protocolId, buffer)
+	--error("protocolIdprotocolIdprotocolIdprotocolId:"..protocolId)
+	local result = buffer:ReadInt();
+	if result >0 then
+		--error("OnJeweFoster error--> result::"..result);
+		return ;
+	end
+	local star_lvl = buffer:ReadInt();
+	local jewe_exp = buffer:ReadInt();
+	--error("[宝珠] 淬炼返回 星级："..star_lvl.." 经验： "..jewe_exp);
+	JewelPanelManager.UpdateJeweInfo(star_lvl,nil,jewe_exp);
+end
+-- 宝珠进阶（升一阶）
+function OnJeweLvlUp(protocolId, buffer)
+	local result = buffer:ReadInt();
+	if result >0 then
+		--error("OnJeweLvlUp error--> result::"..result);
+		return ;
+	end
+	local stage_lvl = buffer:ReadInt();
+	local star_lvl = buffer:ReadInt();
+	local jewe_exp = buffer:ReadInt();
+	--error("[宝珠] 进阶（升一阶）返回 星级："..star_lvl.." 经验： "..jewe_exp.."  阶数："..stage_lvl);
+	JewelPanelManager.UpdateJeweInfo(star_lvl,stage_lvl,jewe_exp);
+end
+
+---------------------------------------淬炼界面 end----------------------------------
+--[[function OnStudySkill(protocolId, buffer)
+	-- body
+end]]
+----------------------------------------技能界面 start---------------------------------
+function OnSkillLvlUp(protocolId, buffer)
+	local result = buffer:ReadInt();
+	if result >0 then
+		error("OnSkillLvlUp error--> result::"..result);
+		return ;
+	end
+	local skill_id = buffer:ReadInt();
+	local skill_lvl = buffer:ReadInt();
+	--error("[宝珠] 技能（升一级）返回技能序号 ："..skill_id.." 技能等级 "..skill_lvl);
+	JewelPanelManager.UpdateJeweSkillInfo(skill_id,skill_lvl);
+end
+----------------------------------------技能界面 end---------------------------------

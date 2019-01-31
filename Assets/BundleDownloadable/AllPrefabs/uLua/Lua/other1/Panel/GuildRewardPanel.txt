@@ -1,0 +1,253 @@
+﻿module('GuildRewardPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildRewardPanel';
+---------------------------------------label路径---------------------------------------
+-- 昨日贡献
+local m_YesterdayContributionPath = "Content/YesterdayContribution";
+-- 奖励等级
+local m_ActiveNamePath = "Active/Name";
+local m_DeactiveNamePath = "Deactive/Name";
+-- 所需贡献值
+local m_ActiveValuePath = "Active/Value";
+local m_DeactiveValuePath = "Deactive/Value";
+
+-- 公会资金说明
+local m_LabelDescPath = "Content/Label_Desc";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 未选中
+local m_DeactivePath = "Deactive";
+-- 选中
+local m_ActivePath = "Active";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 俸禄1
+local m_Reward1Path = "Content/Rewards/Reward1";
+-- 俸禄2
+local m_Reward2Path = "Content/Rewards/Reward2";
+-- 俸禄3
+local m_Reward3Path = "Content/Rewards/Reward3";
+-- 领取按钮
+local m_ButtonGetPath = "Content/Button_Get";
+-- 已领取按钮
+local m_ButtonGotPath = "Content/Button_Got";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 昨日贡献值
+local m_YesterdayContribution = nil;
+-- 俸禄1
+local m_Reward1 = nil;
+-- 俸禄2
+local m_Reward2 = nil;
+-- 俸禄3
+local m_Reward3 = nil;
+-- 领取按钮
+local m_ButtonGet = nil;
+-- 已领取按钮
+local m_ButtonGot = nil;
+-- 公会资金说明文本框
+local m_LabelDesc = nil;
+
+local m_RewardObjects = nil;
+local m_ItemPaths = nil;
+local m_RewardLevel = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_YesterdayContribution = nil;
+    m_Reward1 = nil;
+    m_Reward2 = nil;
+    m_Reward3 = nil;
+    m_ButtonGet = nil;
+    m_ButtonGot = nil;
+    m_LabelDesc = nil;
+    m_RewardObjects = nil;
+    m_ItemPaths = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_REWARD);
+    m_YesterdayContribution = GetComponent(m_PanelObject, m_YesterdayContributionPath, "UILabel");
+    m_Reward1 = child(m_PanelObject, m_Reward1Path).gameObject;
+    m_Reward2 = child(m_PanelObject, m_Reward2Path).gameObject;
+    m_Reward3 = child(m_PanelObject, m_Reward3Path).gameObject;
+    m_ButtonGet = child(m_PanelObject, m_ButtonGetPath).gameObject;
+    m_ButtonGot = child(m_PanelObject, m_ButtonGotPath).gameObject;
+    m_LabelDesc = GetComponent(m_PanelObject, m_LabelDescPath, "UILabel");
+
+    CCommonTool.SetGameObjectGrey(m_ButtonGot, true);
+    m_RewardObjects = { m_Reward1, m_Reward2, m_Reward3 };
+    m_ItemPaths = { "Items/Item1", "Items/Item2", "Items/Item3", "Items/Item4" };
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+    SetGameObjectEvent(m_ButtonClosePath, OnCloseClick, m_PanelObject);
+    UIEventListener.Get(m_ButtonGet).onClick = LuaHelper.OnClick(OnButtonGetClick);
+    UIEventListener.Get(m_ButtonGot).onClick = LuaHelper.OnClick(OnButtonGotClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local guildLevel = GuildManager.myGuild.level;
+    local data = GuildManager.GetSelfInfo();
+    local value = data.yesterdayContribution;
+    local curRewardObject = nil;
+    local curConValue = 0;
+
+    m_RewardLevel = 0;
+    --[[ 昨日公会贡献: {0} ]]
+    m_YesterdayContribution.text = string_format(CCommonTool.GetTxtData(1187).m_str, value);
+    if GuildManager.myGuild.money <= GuildManager.GetGuildMoneyWarnValue() then
+        m_LabelDesc.gameObject:SetActive(true);
+        -- [[ 当前公会资金低于警戒值{0}，无法领取 ]]
+        m_LabelDesc.text = string_format(CCommonTool.GetTxtData(2305).m_str, GuildManager.GetGuildMoneyWarnValue());
+    else
+        m_LabelDesc.gameObject:SetActive(false);
+    end
+    for i = 1, 3 do
+        local go = m_RewardObjects[i];
+        local nameTextId = 0;
+        if i == 1 then
+            nameTextId = 1188;--[[ 一级俸禄奖励 ]]
+        elseif i == 2 then
+            nameTextId = 1189;--[[ 二级俸禄奖励 ]]
+        elseif i == 3 then
+            nameTextId = 1190;--[[ 三级俸禄奖励 ]]
+        end
+        if nameTextId > 0 then
+            SetLabelContent(m_ActiveNamePath, CCommonTool.GetTxtData(nameTextId).m_str, go);
+            SetLabelContent(m_DeactiveNamePath, CCommonTool.GetTxtData(nameTextId).m_str, go);
+        end
+        local needValue = GuildManager.GetGuildWelfareValue(i);
+        --[[ 昨日获得公会贡献达到 {0} ]]
+        SetLabelContent(m_ActiveValuePath, string_format(CCommonTool.GetTxtData(1191).m_str, needValue), go);
+        SetLabelContent(m_DeactiveValuePath, string_format(CCommonTool.GetTxtData(1191).m_str, needValue), go);
+
+        local info = CCommonTool.GetGuildRewardInfo(guildLevel);
+        local rewardId = info["Reward" .. i];
+        InitRewards(rewardId, go);
+        SetGameObjectState(m_ActivePath, false, go);
+        SetGameObjectState(m_DeactivePath, true, go);
+        if value >= needValue then
+            if curConValue == 0 or curConValue < needValue then
+                curConValue = needValue;
+                curRewardObject = go;
+                m_RewardLevel = i;
+            end
+        end
+    end
+    if curRewardObject ~= nil then
+        SetGameObjectState(m_ActivePath, true, curRewardObject);
+        SetGameObjectState(m_DeactivePath, false, curRewardObject);
+    end
+    local gotReward = G_UserInfo.RoleAttribute.IsGetGuildWelfare
+    m_ButtonGet:SetActive(not gotReward);
+    m_ButtonGot:SetActive(gotReward);
+end
+
+function InitRewards(rewardId, go)
+    local rewards = CCommonTool.GetRewardInfoByIndex(rewardId);
+    if rewards == nil then
+        error("奖励配置列表不存在")
+        return;
+    end
+    -- 获得奖励道具信息
+    local list = rewards:GetAllItem();
+    local count = list.Count;
+    for i, path in ipairs(m_ItemPaths) do
+        if i <= count then
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            SetItemShowByExcelIDV04(go, path, excelId, itemData.ItemNum, false, 21, ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+            SetItemToolTipsEvent(child(go, path).gameObject, "", ENUMPANELID.ENUM_PANEL_GUILD_MANAGER, false, excelId);
+            SetGameObjectState(path, true, go);
+        else
+            SetGameObjectState(path, false, go);
+        end
+    end
+    -- m_Items:Reposition();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩按钮点击事件
+function OnMaskClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_REWARD);
+end
+
+-- 关闭按钮
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_REWARD);
+end
+
+-- 领取按钮
+function OnButtonGetClick(gameObject)
+    local data = GuildManager.GetSelfInfo();
+    if data.yesterdayContribution > 0 then
+        GuildProtocol.RequestGetGuildWelfare();
+    else
+        ShowSystemFlowTips(4387);
+    end
+end
+
+-- 已领取按钮
+function OnButtonGotClick(gameObject)
+    ShowSystemFlowTips(4386);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_REWARD) == 1 then
+        if m_PanelObject.activeInHierarchy == true then
+            InitShow();
+        end
+    end
+end

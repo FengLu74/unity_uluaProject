@@ -1,0 +1,1128 @@
+﻿module("RankPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 标题名次
+local m_labelTitleRank = "Right/TopTitle/LabelRank";
+-- 标题名字
+local m_labelTitleName = "Right/TopTitle/LabelName";
+-- 标题等级
+local m_labelTitleLevel = "Right/TopTitle/LabelLevel";
+-- 标题职业
+local m_labelTitleProfession = "Right/TopTitle/LabelProfession";
+-- 标题1
+local m_labelTitleGuild = "Right/TopTitle/LabelGuild";
+-- 标题2
+local m_labelTitleAchieve = "Right/TopTitle/LabelAchieve";
+
+-- 排行榜类型选中状态
+local m_labelCurType = "Sprite_Cur/Label_RankName";
+-- 排行榜类型未选中状态
+local m_labelNotCurType = "Sprite_NotCur/Label_RankName";
+
+-- 更新时间
+local m_UpdateTime = "Right/Label_time";
+-- 自己排行榜的排榜标题
+local m_myRankTitle = "Right/MyRank/Label_Title";
+-- 排名文本
+local m_rankTitle = "Right/MyRank/Label";
+-----------------------------------------Sprite路径------------------------------------
+-- 排行榜前三名图片
+local m_SpriteRank = "Sprite_Rank";
+-- 排行榜前三名数字图片
+local m_SpriteNumRank = "Sprite_Rank/Sprite";
+-- 联盟图片
+local m_SpriteCamp = "Sprite_Camp";
+-- 部落图片
+local m_SpriteTribe = "Sprite_Tribe";
+-----------------------------------------按钮路径--------------------------------------
+-- 查看按钮路径
+local m_lookupButton = "Right/ButtonList/Content/Grid/Button_LookUp";
+-- 私聊按钮路径
+local m_privatelyChatButton = "Right/ButtonList/Content/Grid/Button_PrivateChat";
+-- 添加好友按钮路径
+local m_addFriendButton = "Right/ButtonList/Content/Grid/Button_AddFriend";
+-- 邀请组队按钮路径
+local m_inviteTeamButton = "Right/ButtonList/Content/Grid/Button_InviteTeam";
+-- 公会邀请按钮路径
+local m_guilInviteButton = "Right/ButtonList/Content/Grid/Button_GuildInvite";
+-- 加入黑名单按钮路径
+local m_blackButton = "Right/ButtonList/Content/Grid/Button_Black";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧grid对象所在的位置
+local m_leftGridObjStr = "Left/Left_ScrollView/Grid";
+-- 左侧item对象所在的位置
+local m_leftItemObjStr = "Left/Left_ScrollView/Item";
+-- 左侧UIPanel对象所在的位置
+local m_leftUIPanelCompStr = "Left/Left_ScrollView";
+-- 左侧选中图片
+local m_leftSelectObjStr = "Left/Left_ScrollView/Sprite_Select";
+-- 右侧grid对象所在的位置
+local m_rightGridObjStr = "Right/Right_ScrollView/Grid";
+-- 右侧item对象所在的位置
+local m_rightItemObjStr = "Right/Right_ScrollView/Item";
+-- 右侧UIPanel对象所在的位置
+local m_rightUIPanelCompStr = "Right/Right_ScrollView";
+-- 右侧选中框
+local m_rightSelectStr = "Sprite_Select";
+-- 右侧标签按钮
+-- 右侧标签grid对象所在的位置
+local m_rightTogGridObjStr = "Right/RightTop/Toggle_ScrollView/Grid";
+-- 右侧标签item对象所在的位置
+local m_rightTogItemObjStr = "Right/RightTop/Toggle_ScrollView/Clone";
+-- 右侧标签UIPanel对象所在的位置
+local m_rightTogUIPanelStr = "Right/RightTop/Toggle_ScrollView";
+
+-- 遮罩
+local m_buttonItemInfoClose = "ZheZhao";
+local m_buttonClose = "Right/ButtonList/ZheZhao";
+-- 按钮列表
+local m_buttonList = "Right/ButtonList";
+-- 第一名
+local m_rankFirst = "Right/RightTop/Rank/Rank1";
+-- 第二名
+local m_rankSecond = "Right/RightTop/Rank/Rank2";
+-- 第三名
+local m_rankThird = "Right/RightTop/Rank/Rank3";
+local m_rankTop = "Right/RightTop/Rank/Rank";
+-- 公会旗帜
+local m_guildFlag = "/Sprite_Flag";
+-- 公会旗帜名字
+local m_guildFlagName = "/Sprite_Flag/Label";
+-- 头像
+local m_playerIcon = "/Icon";
+----------------------------------通用的名称路径---------------------------------------
+-- 当前排行榜选中状态
+local m_curMilitaryRankStr = "/Sprite_Cur";
+-- 排行榜未选中状态
+local m_notCurMilitaryRankStr = "/Sprite_NotCur";
+-- 自己的排名情况
+local m_myRankStr = "Right/MyRank/";
+local m_item = "/Item";
+-- 玩家名次
+local m_labelRank = "Label_Rank";
+-- 玩家名字
+local m_labelName = "Label_Name";
+-- 玩家等级
+local m_labelLevel = "Label_Level";
+-- 宠物星级图标
+local m_labelPetStartNum = "Label_Level/Sprite";
+-- 玩家职业
+local m_labelProfession = "Label_Profession";
+-- 玩家标题1
+local m_labelGuild = "Label_Guild";
+-- 玩家标题2
+local m_labelAchieve = "Label_Achieve"
+
+-- 前三名
+-- 头像
+local m_rankIcon = "/Icon";
+-- 等级
+local m_rankLevel = "/Level";
+-- 名字
+local m_rankName = "/Name";
+-- 成就
+local m_rankAchieve = "/Achieve";
+
+-- 右侧标签选中状态
+local m_rankActive = "Active/Label";
+-- 右侧标签未选中状态
+local m_rankDeactive = "Deactive/Label";
+-- 右侧标签内容
+local m_toggleContent = "Label";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 当前游戏对象创建成功
+local m_bCreateSuccess = false;
+-- 左侧选择的是第几个
+local m_leftSelectNum = 1;
+-- 左侧UIPanel组件
+local m_leftUIPanelComp = nil;
+-- 右侧选择的是第几个
+local m_rightSelectNum = 0;
+-- 右侧UIPanel组件
+local m_rightUIPanelComp = nil;
+-- 右侧标签UIPanel组件
+local m_rightTogUIPanelComp = nil;
+-- 排行榜的表数据
+local m_rankTableInfo = nil;
+-- 总人数
+local m_allNum = 0;
+-- 排行榜类型数 
+local m_rankTypeNum = nil;
+-- 自己的排名
+local m_myRank = nil;
+-- 排行榜数据
+local m_rankData = nil;
+-- 存储筛选后的排行榜类型表
+local m_rankTable = { };
+-- 按钮列表
+local m_buttonListObj = nil;
+-- 左侧排行榜列表
+local m_leftListView = nil;
+-- 右侧排行榜列表
+local m_rightListView = nil;
+-- 右侧排行榜标签列表
+local m_rightTogListView = nil;
+-- 右侧排行榜选择
+local m_rightSelect = nil;
+-- 右侧排行榜数据为空的信息
+local m_rightRankTable = nil;
+-- 左侧排行榜类型
+local m_showType = nil;
+-- x选择类型
+local m_selectRankType = 0;
+-- 右侧标签表
+local m_toggleTable = { };
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 按钮列表是否打开
+local m_buttonListIsOpen = false;
+-- 右侧选中的页签
+local m_rightTopSelect = 0;
+-- 选择角色的GlobalID
+local m_selsectGlobalID = 0;
+-- 选择角色的Name1
+local m_selsectName1 = 0;
+-- 选择角色的Name2
+local m_selsectName2 = 0;
+-- 选择角色的Value
+local m_selsectValue = 0;
+
+local m_LastServerRankType = -1;
+local m_LastServerSecondType = -1;
+local m_LastServerPlayerIndex = 0;
+
+
+------------------------------------写死的规定------------------------------
+local m_overValue = 1000000;
+local m_oneWan = 10000;
+-- 第一，第二，第三名对应的图片
+local m_RankAtls = {
+    [1] = { atlsName = "PanelAloneTwoAtlasV04", spriteName = "UI_PHB_DiBan_101" },
+    [2] = { atlsName = "PanelAloneTwoAtlasV04", spriteName = "UI_PHB_DiBan_102" },
+    [3] = { atlsName = "PanelAloneTwoAtlasV04", spriteName = "UI_PHB_DiBan_103" },
+}
+-- 第一，第二，第三名对应数字的图片
+local m_RankNumAtls = {
+    [1] = { atlsName = "PanelAloneTwoAtlasV04", spriteName = "UI_PHB_WB_001" },
+    [2] = { atlsName = "PanelAloneTwoAtlasV04", spriteName = "UI_PHB_WB_002" },
+    [3] = { atlsName = "PanelAloneTwoAtlasV04", spriteName = "UI_PHB_WB_003" },
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitTableData()
+    -- 初始化对象
+    InitObjects();
+    -- 初始化所有信息
+    InitAllInfo();
+    -- 请求数据
+    AskForRankInfo();
+    -- 界面创建成功
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitAllInfo();
+        AskForRankInfo();
+    end
+end
+
+function OnDisable()
+    RankManger.ClearRankData();
+    m_rightTopSelect = 0;
+    m_LastServerRankType = -1;
+    m_LastServerSecondType = -1;
+    m_LastServerPlayerIndex = 0;
+end
+
+function OnDestroy()
+    m_rankTable = { };
+    m_bCreateSuccess = false;
+    m_panelObject = nil;
+    m_leftListView = nil;
+    m_rightListView = nil;
+    m_rightSelect = nil;
+    m_rightRankTable = nil;
+    m_showType = nil;
+    m_leftSelectNum = 1;
+    m_rightSelectNum = 0;
+    m_rightTopSelect = 0;
+    m_selsectGlobalID = 0;
+    m_selsectValue = 0;
+    m_selsectName1 = 0;
+    m_selsectName2 = 0;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 读取排行榜表数据
+function InitTableData()
+    m_rankTableInfo = CCommonTool.GetRankDataInfos();
+end
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_RANKPANEL);
+    -- 左侧组件
+    m_leftUIPanelComp = GetComponent(m_panelObject, m_leftUIPanelCompStr, "UIPanel");
+    m_leftListView = GetComponent(m_panelObject, m_leftGridObjStr, "UIListView");
+    m_leftListView:SetInitCallback(OnLeftListViewInit);
+    m_leftListView:SetClickCallback(OnLeftListViewSelected);
+
+    -- 右侧组件
+    m_rightUIPanelComp = GetComponent(m_panelObject, m_rightUIPanelCompStr, "UIPanel");
+    m_rightListView = GetComponent(m_panelObject, m_rightGridObjStr, "UIListView");
+    m_rightListView:SetInitCallback(OnRightListViewInit);
+    m_rightListView:SetClickCallback(OnRightListViewSelected);
+    m_rightListView:SetDownScrollCallback(OnListViewDownScroll);
+    m_buttonListObj = child(m_panelObject, m_buttonList).gameObject;
+    -- 右侧标签组件
+    m_rightTogUIPanelComp = GetComponent(m_panelObject, m_rightTogUIPanelStr, "UIPanel");
+    m_rightTogListView = GetComponent(m_panelObject, m_rightTogGridObjStr, "UIListView");
+    m_rightTogListView:SetInitCallback(OnRightTogListViewInit);
+    m_rightTogListView:SetClickCallback(OnRightTogListViewSelected);
+end
+
+-- 初始化的所有数据信息
+function InitAllInfo()
+    -- 左侧排行榜数据
+    InitLeftRankList();
+    -- 右侧排行榜标签数据
+    InitRightRankToggleList();
+    -- 初始化数据
+    InitData();
+    -- 初始化左侧信息
+    InitLeftInfo();
+    -- 初始化点击事件
+    InitOnClick();
+end
+
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftSelectNum = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    end
+    -- 清空右侧排行榜数据
+    m_rightListView:RemoveAll();
+end
+
+-- 初始化左侧排行榜数据
+function InitLeftRankList()
+    m_rankTable = { };
+    m_rightRankTable = nil;
+    m_leftListView:RemoveAll();
+    local count = 0;
+    if #LogicData_RankTable < 0 then
+        error("Rank table length is 0");
+        return;
+    end
+    for Index = 1, #LogicData_RankTable do
+        if m_rankTableInfo ~= nil then
+            m_rankTableInfo = LogicData_RankTable[Index];
+        end
+        if m_rankTableInfo.RankShowType ~= nil then
+            if m_rankTableInfo.RankShowType == 1 and m_rankTableInfo.RankName > 0 then
+                if G_UserInfo.RoleAttribute.Level >= m_rankTableInfo.RankShowValue then
+                    table.insert(m_rankTable, m_rankTableInfo);
+                end
+            elseif m_rankTableInfo.RankShowType == 2 and m_rankTableInfo.RankName > 0 then
+                if G_UserInfo.RoleAttribute.JoinCampType == 0 then
+                else
+                    if G_UserInfo.RoleAttribute.JoinCampType == m_rankTableInfo.RankShowValue then
+                        table.insert(m_rankTable, m_rankTableInfo);
+                    elseif G_UserInfo.RoleAttribute.JoinCampType == m_rankTableInfo.RankShowValue then
+                        table.insert(m_rankTable, m_rankTableInfo);
+                    end
+                    table.insert(m_rankTable, m_rankTableInfo);
+                end
+            elseif m_rankTableInfo.RankName > 0 then
+                table.insert(m_rankTable, m_rankTableInfo);
+            end
+        end
+        if m_rankTableInfo.RankName > 0 then
+            count = count + 1;
+        end
+    end
+    for i, data in ipairs(m_rankTable) do
+        m_leftListView:AddData(data);
+    end
+    for Index = 1, #m_rankTable do
+        if m_rankTable[Index].RankId == m_showType then
+            m_leftSelectNum = Index;
+            m_leftListView:LookAt(Index - 1, true);
+            break;
+        else
+            m_leftSelectNum = 1;
+            m_leftListView:LookAt(0, true);
+        end
+    end
+    m_showType = nil;
+end
+
+function OnLeftListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    local m_UICurLabel = GetComponent(go, m_labelCurType, "UILabel");
+    local m_UINotCurLabel = GetComponent(go, m_labelNotCurType, "UILabel");
+    -- 左侧排行榜名字
+    if data.RankName > 0 then
+        SetLabelTextByID(m_labelCurType, data.RankName, go);
+        SetLabelTextByID(m_labelNotCurType, data.RankName, go);
+    end
+
+end
+
+function OnLeftListViewSelected(listView, cell, data)
+    m_rightTopSelect = 0;
+    RankManger.players = { };
+    local data = listView:GetData(cell.dataIndex);
+    SetGameObjectState(m_buttonItemInfoClose, false, m_panelObject);
+    local num = cell.dataIndex + 1;
+    if m_leftSelectNum ~= num then
+        m_leftSelectNum = num;
+        InitLeftInfo();
+        InitRightRankToggleList();
+        -- 请求排行榜数据
+        RankProtocol.RequestRankList(m_rankTable[m_leftSelectNum].RankId, m_rankTable[m_leftSelectNum].RankType, 0, 1, 0);
+        RankManger.ClearRankData();
+        -- 清空右侧排行榜数据
+        m_rightListView:RemoveAll();
+    end
+    m_selectRankType = m_rankTable[m_leftSelectNum].RankType;
+    m_rightRankTable = nil;
+end
+
+
+-- 初始化右侧排行榜标签数据
+function InitRightRankToggleList()
+    m_toggleTable = { };
+    m_rightTogListView:RemoveAll();
+    if #LogicData_RankTable <= 0 then
+        error("Rank table length is 0");
+        return;
+    end
+    for Index = 1, #LogicData_RankTable do
+        if m_rankTableInfo ~= nil then
+            local m_rankTableInfo = LogicData_RankTable[Index];
+            if m_rankTableInfo.RankId ~= nil then
+                if m_rankTableInfo.RankId == m_rankTable[m_leftSelectNum].RankId then
+                    table.insert(m_toggleTable, m_rankTableInfo);
+                end
+            end
+        end
+    end
+
+    for i, data in ipairs(m_toggleTable) do
+        m_rightTogListView:AddData(data);
+    end
+    m_rightTogListView:LookAt(m_rightTopSelect, true);
+end
+
+function OnRightTogListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    -- 右侧标题名字
+    SetLabelTextByID(m_rankActive, data.RankTypeName, go);
+    SetLabelTextByID(m_rankDeactive, data.RankTypeName, go);
+end
+
+function OnRightTogListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    m_rightTopSelect = cell.dataIndex;
+    m_rightRankTable = nil;
+    RankManger.players = { };
+    if data.RankId ~= nil and data.RankType ~= nil then
+        RankProtocol.RequestRankList(data.RankId, data.RankType, 0, 1, 0);
+        m_selectRankType = data.RankType;
+    end
+    InitLeftInfo();
+    RankManger.ClearRankData();
+end
+
+-- 初始化数据
+function InitRightRankList()
+    local rankTable = RankManger.players or { };
+    local startIndex = m_LastServerPlayerIndex + 1;
+    if startIndex <= 4 then
+        m_rightListView:RemoveAll();
+        startIndex = 4;
+    end
+    if m_rightRankTable ~= nil and m_rightRankTable.rankType == RankManger.rankFirstType then
+        local isNewInfo = false;
+        if RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+            for index = 4, #rankTable do
+                for num = 1, #m_rightRankTable do
+                    if m_rightRankTable[num].Rank == rankTable[index].Rank then
+                        isNewInfo = true;
+                    end
+                end
+                if isNewInfo == false then
+                    table.insert(m_rightRankTable, rankTable[index]);
+                    m_rightListView:AddData(rankTable[index], "second");
+                else
+                    isNewInfo = false;
+                end
+            end
+        else
+            for index = 4, #rankTable do
+                for num = 1, #m_rightRankTable do
+                    if RankManger.rankFirstType == RANK_TYPE.PETRANK then
+                        if m_rightRankTable[num].Value3 == rankTable[index].Value3 then
+                            isNewInfo = true;
+                        end
+                    else
+                        if m_rightRankTable[num].Rank == rankTable[index].Rank then
+                            isNewInfo = true;
+                        end
+                    end
+                end
+                if isNewInfo == false then
+                    table.insert(m_rightRankTable, rankTable[index]);
+                    m_rightListView:AddData(rankTable[index], "first");
+                else
+                    isNewInfo = false;
+                end
+            end
+        end
+    else
+        m_rightRankTable = {};
+        m_rightRankTable.rankType = RankManger.rankFirstType;
+        for i = 4, #rankTable do
+            table.insert(m_rightRankTable, rankTable[i]);
+            if i >= startIndex then
+                if RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+                    m_rightListView:AddData(rankTable[i], "second");
+                else
+                    m_rightListView:AddData(rankTable[i], "first");
+                end
+            end
+        end
+    end
+end
+
+-- 右侧排行列表初始化
+function OnRightListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    local Index = cell.dataIndex + 4;
+    local AchieveValue = 0;
+    m_buttonListIsOpen = false;
+    SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+    SetGameObjectState(m_SpriteCamp, false, go);
+    SetGameObjectState(m_SpriteTribe, false, go);
+    SetGameObjectState(m_SpriteRank, false, go);
+    SetGameObjectState(m_labelPetStartNum, false, go);
+    -- 排名
+    SetLabelContent(m_labelRank, Index, go);
+    if RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        -- 宠物类型
+        local petMainInfo = CCommonTool.GetPetMainInfo(data.Value);
+        if petMainInfo ~= nil then
+            SetLabelTextByID(m_labelName, petMainInfo.NameTextID, go);
+        else
+            SetLabelContent(m_labelName, " ", go);
+            error("petMainInfo is null");
+        end
+    else
+        -- 名字
+        SetLabelContent(m_labelName, data.Name1, go);
+    end
+
+    if RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+        SetLabelContent(m_labelProfession, " ", go);
+        -- 等级
+        SetLabelContent(m_labelLevel, data.Value1, go)
+        -- 公会
+        if data.Name2 == "" then
+            SetLabelContent(m_labelGuild, CCommonTool.GetTxtData(8126).m_str, go);
+        else
+            SetLabelContent(m_labelGuild, data.Name2, go);
+        end
+        -- 阵营
+        if data.Value2 == JOINCAMPENUM.UNION then
+            SetGameObjectState(m_SpriteCamp, true, go);
+            SetGameObjectState(m_SpriteTribe, false, go);
+        elseif data.Value2 == JOINCAMPENUM.TRIBE then
+            SetGameObjectState(m_SpriteCamp, false, go);
+            SetGameObjectState(m_SpriteTribe, true, go);
+        else
+            SetGameObjectState(m_SpriteCamp, false, go);
+            SetGameObjectState(m_SpriteTribe, false, go);
+            SetLabelContent(m_labelGuild, CCommonTool.GetTxtData(8126).m_str, go);
+        end
+        if tonumber(data.Value3) >= m_overValue then
+            AchieveValue = math.floor(tonumber(data.Value3) / m_oneWan);
+            SetLabelContent(m_labelAchieve, AchieveValue .. CCommonTool.GetTxtData(8968).m_str, go);
+        else
+            SetLabelContent(m_labelAchieve, tonumber(data.Value3), go);
+        end
+    elseif RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        -- 星级
+        SetLabelContent(m_labelLevel, data.Value1, go);
+        SetGameObjectState(m_labelPetStartNum, true, go);
+        -- 等级
+        SetLabelContent(m_labelProfession, data.Name2, go)
+    else
+        -- 等级
+        SetLabelContent(m_labelLevel, data.Value, go)
+        if data.Value1 == PROFESSION_ID.ASSASSIN then
+            -- 刺客职业名字
+            SetLabelContent(m_labelProfession, CCommonTool.GetTxtData(13).m_str, go);
+        elseif data.Value1 == PROFESSION_ID.FEILIBA then
+            -- 法师职业名字
+            SetLabelContent(m_labelProfession, CCommonTool.GetTxtData(12).m_str, go);
+        elseif data.Value1 == PROFESSION_ID.LOLI then
+            -- 萝莉职业名字
+            SetLabelContent(m_labelProfession, CCommonTool.GetTxtData(14).m_str, go);
+        elseif data.Value1 == PROFESSION_ID.WARDRAGONWHITE then
+            -- 战士职业名字
+            SetLabelContent(m_labelProfession, CCommonTool.GetTxtData(11).m_str, go);
+        else
+            error(string_format("职业ID:{0}错误!!", data.Value1));
+        end
+    end
+
+    -- 排行榜排行内容1
+    if RankManger.rankFirstType == RANK_TYPE.FIGHTVALUE or RankManger.rankFirstType == RANK_TYPE.LEVEL then
+        -- 公会
+        if data.Name2 == "" then
+            SetLabelContent(m_labelGuild, CCommonTool.GetTxtData(8126).m_str, go);
+        else
+            SetLabelContent(m_labelGuild, data.Name2, go);
+        end
+        if data.Value2 >= m_overValue then
+            AchieveValue = math.floor(data.Value2 / m_oneWan);
+            SetLabelContent(m_labelAchieve, AchieveValue .. CCommonTool.GetTxtData(8968).m_str, go);
+        else
+            SetLabelContent(m_labelAchieve, data.Value2, go);
+        end
+
+    elseif RankManger.rankFirstType == RANK_TYPE.CMAP_FEATS or RankManger.rankFirstType == RANK_TYPE.CAMP_WEEKLYFEATS or RankManger.rankFirstType == RANK_TYPE.CAMP_ENEMYNUM then
+        SetLabelContent(m_labelGuild, " ", go);
+        -- 阵营
+        if data.Value2 == JOINCAMPENUM.UNION then
+            SetGameObjectState(m_SpriteCamp, true, go);
+            SetGameObjectState(m_SpriteTribe, false, go);
+        elseif data.Value2 == JOINCAMPENUM.TRIBE then
+            SetGameObjectState(m_SpriteCamp, false, go);
+            SetGameObjectState(m_SpriteTribe, true, go);
+        else
+            SetGameObjectState(m_SpriteCamp, false, go);
+            SetGameObjectState(m_SpriteTribe, false, go);
+            SetLabelContent(m_labelGuild, CCommonTool.GetTxtData(8126).m_str, go);
+        end
+        if tonumber(data.Value3) >= m_overValue then
+            AchieveValue = math.floor(tonumber(data.Value3) / m_oneWan);
+            SetLabelContent(m_labelAchieve, AchieveValue .. CCommonTool.GetTxtData(8968).m_str, go);
+        else
+            SetLabelContent(m_labelAchieve, tonumber(data.Value3), go);
+        end
+    elseif RankManger.rankFirstType == RANK_TYPE.ACTIVITYSTAIR then
+        -- 关卡数
+        SetLabelContent(m_labelGuild, data.Value2, go);
+        SetLabelContent(m_labelAchieve, string_format(CCommonTool.GetTxtData(861).m_str, tonumber(data.Value3)), go);
+    elseif RankManger.rankFirstType == RANK_TYPE.BATTLEFIELD then
+        SetLabelContent(m_labelGuild, data.Value2, go);
+        SetLabelContent(m_labelAchieve, tonumber(data.Value3), go);
+    elseif RankManger.rankFirstType == RANK_TYPE.ARENA then
+        if data.Name2 == "" then
+            SetLabelContent(m_labelGuild, CCommonTool.GetTxtData(8126).m_str, go);
+        else
+            SetLabelContent(m_labelGuild, data.Name2, go);
+        end
+        SetLabelContent(m_labelAchieve, tonumber(data.Value2), go);
+    elseif RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        -- 宠物战力
+        SetLabelContent(m_labelGuild, data.Value2, go);
+        -- 主人名字
+        SetLabelContent(m_labelAchieve, data.Name1, go);
+    end
+end
+
+function OnRightListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local num = cell.dataIndex + 4;
+    if m_rightSelectNum ~= num then
+        m_rightSelectNum = num;
+    end
+    if RankManger.myRank == num and RankManger.rankFirstType ~= RANK_TYPE.PETRANK then
+        m_buttonListIsOpen = false;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        m_buttonListIsOpen = false;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+        -- 1宠物唯一ID, 2主人全局ID
+        PetManager.RequestPetRankInfo(data.Value3, data.Rank)
+    elseif RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+        m_buttonListIsOpen = false;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+    else
+        m_buttonListIsOpen = true;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+        listView:SetSelect(cell.dataIndex, true);
+        m_selsectGlobalID = data.Rank;
+        m_selsectValue = data.Value;
+        m_selsectName1 = data.Name1;
+        m_selsectName2 = data.Name2;
+    end
+    -- local pos = m_rightUIPanelComp.transform.parent:InverseTransformPoint(cell.transform.position);
+    -- m_buttonListObj.transform.localPosition = pos + Vector3.New(550, 314, 0);
+end
+
+-- 滑动到最后请求下一页数据
+function OnListViewDownScroll(listView)
+    if m_rightRankTable ~= nil then
+        local receivedCount = #m_rightRankTable;
+        -- 总的排行榜个数 + 1（请求下一个的第一个数据）
+        local count = receivedCount + 3;
+        if RankManger.rankAllNum > count then
+            local lastRankdId = m_rightRankTable[receivedCount].Rank;
+            RankProtocol.RequestRankList(m_rankTable[m_leftSelectNum].RankId, m_selectRankType, lastRankdId, count, RankManger.rankVersion);
+        end
+    end
+end
+-- 初始化左侧信息
+function InitLeftInfo()
+    SetGameObjectState(m_buttonItemInfoClose, true, m_panelObject);
+    SetGameObjectState(m_buttonItemInfoClose, true, m_panelObject); m_labelCurType = "Sprite_Cur/Label_RankName";
+    if #m_rankTable <= 0 then
+        error("m_rankTable is null");
+        return;
+    end
+    -- 排行榜标头
+    for Index = 1, #m_rankTable do
+        if Index == m_leftSelectNum then
+            SetLabelTextByID(m_labelTitleRank, m_rankTable[m_leftSelectNum].Header1, m_panelObject)
+            SetLabelTextByID(m_labelTitleName, m_rankTable[m_leftSelectNum].Header2, m_panelObject);
+            SetLabelTextByID(m_labelTitleLevel, m_rankTable[m_leftSelectNum].Header3, m_panelObject);
+            SetLabelTextByID(m_labelTitleProfession, m_rankTable[m_leftSelectNum].Header4, m_panelObject);
+            SetLabelTextByID(m_labelTitleGuild, m_rankTable[m_leftSelectNum].Header5, m_panelObject)
+            SetLabelTextByID(m_labelTitleAchieve, m_rankTable[m_leftSelectNum].Header6, m_panelObject);
+            SetLabelTextByID(m_UpdateTime, m_rankTable[m_leftSelectNum].UpdateTxt, m_panelObject);
+        end
+    end
+    -- 前三名信息
+    for Index = 1, 3 do
+        SetLabelContent(m_rankTop .. Index .. m_rankName, " ", m_panelObject);
+        SetGameObjectState(m_rankTop .. Index .. m_rankLevel, false, m_panelObject);
+        SetGameObjectState(m_rankTop .. Index .. m_rankIcon, false, m_panelObject);
+        SetLabelContent(m_rankTop .. Index .. m_rankAchieve, " ", m_panelObject);
+        SetGameObjectState(m_rankTop .. Index .. m_guildFlag, false, m_panelObject);
+        SetGameObjectPos(m_rankTop .. Index .. m_rankAchieve, Vector3.New(0, -72, 0), m_panelObject);
+    end
+    SetLabelContent(m_myRankStr .. m_labelAchieve, "0", m_panelObject);
+    SetLabelContent(m_myRankStr .. m_labelRank, "--", m_panelObject);
+    -- 排行榜文本类型
+    SetLabelContent(m_myRankTitle, CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":", m_panelObject);
+    if RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        SetLabelContent(m_rankTitle, CCommonTool.GetTxtData(2026).m_str, m_panelObject);
+    else
+        SetLabelContent(m_rankTitle, CCommonTool.GetTxtData(194).m_str, m_panelObject);
+    end
+end
+
+-- 初始化右侧信息
+function InitRightInfo()
+    m_allNum = RankManger.rankAllNum;
+    m_rankData = RankManger.players or { };
+    local title = " "
+    local count = 0;
+    for Index = 1, 3 do
+        SetLabelContent(m_rankTop .. Index .. m_rankName, " ", m_panelObject);
+        SetGameObjectState(m_rankTop .. Index .. m_rankLevel, false, m_panelObject);
+        SetGameObjectState(m_rankTop .. Index .. m_rankIcon, false, m_panelObject);
+        SetLabelContent(m_rankTop .. Index .. m_rankAchieve, " ", m_panelObject);
+        SetGameObjectState(m_rankTop .. Index .. m_guildFlag, false, m_panelObject);
+        SetGameObjectPos(m_rankTop .. Index .. m_rankAchieve, Vector3.New(0, -72, 0), m_panelObject);
+    end
+    m_myRank = RankManger.myRank;
+    SetLabelContent(m_myRankStr .. m_labelAchieve, "0", m_panelObject);
+    SetLabelContent(m_myRankStr .. m_labelRank, "--", m_panelObject);
+    -- 排行榜文本类型
+    SetLabelContent(m_myRankTitle, CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":", m_panelObject);
+    if RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        SetLabelContent(m_rankTitle, CCommonTool.GetTxtData(2026).m_str .. ":", m_panelObject);
+    else
+        SetLabelContent(m_rankTitle, CCommonTool.GetTxtData(194).m_str, m_panelObject);
+    end
+    if #m_rankData <= 0 then
+        return;
+    end
+    if #m_rankData > 3 then
+        count = 3;
+    else
+        count = #m_rankData;
+    end
+    -- 前三名信息
+    for Index = 1, count do
+        -- 公会排行榜
+        if RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+            -- 名字
+            SetLabelContent(m_rankTop .. Index .. m_rankName, "Lv." .. m_rankData[Index].Value1 .. "  " .. m_rankData[Index].Name1, m_panelObject);
+            -- 公会旗帜
+            SetGameObjectState(m_rankTop .. Index .. m_guildFlag, true, m_panelObject);
+            local guildInfo = CCommonTool.GetGuildInfoByIndex(m_rankData[Index].Value1);
+            if guildInfo ~= nil then
+                SetSpriteByAtlasID(m_rankTop .. Index .. m_guildFlag, guildInfo.FlagIconBig, m_panelObject, true);
+            end
+            local flagName = GuildManager.GetGuildFlagName(m_rankData[Index].Rank);
+            if flagName == nil then
+                SetLabelContent(m_rankTop .. Index .. m_guildFlagName, " ", m_panelObject);
+            else
+                SetLabelContent(m_rankTop .. Index .. m_guildFlagName, flagName, m_panelObject);
+            end
+            -- 宠物排行榜
+        elseif RankManger.rankFirstType == RANK_TYPE.PETRANK then
+            -- 宠物类型
+            local petMainInfo = CCommonTool.GetPetMainInfo(m_rankData[Index].Value);
+            if petMainInfo ~= nil then
+                -- 名字
+                SetLabelContent(m_rankTop .. Index .. m_rankName, m_rankData[Index].Name1, m_panelObject);
+            else
+                SetLabelContent(m_rankTop .. Index .. m_rankName, " ", m_panelObject);
+                error("petMainInfo is null");
+            end
+            -- 等级
+            SetGameObjectState(m_rankTop .. Index .. m_rankLevel, true, m_panelObject);
+            SetLabelContent(m_rankTop .. Index .. m_rankLevel, m_rankData[Index].Name2, m_panelObject);
+            -- 宠物头像
+            SetGameObjectState(m_rankTop .. Index .. m_rankIcon, true, m_panelObject);
+            if m_rankData[Index].Value > 0 then
+                SetSpriteByAtlasID(m_rankTop .. Index .. m_rankIcon, CCommonTool.GetImageIDByExcelID(m_rankData[Index].Value), m_panelObject, true);
+            end
+        else
+            -- 名字
+            SetLabelContent(m_rankTop .. Index .. m_rankName, m_rankData[Index].Name1, m_panelObject);
+            -- 等级
+            SetGameObjectState(m_rankTop .. Index .. m_rankLevel, true, m_panelObject);
+            SetLabelContent(m_rankTop .. Index .. m_rankLevel, m_rankData[Index].Value, m_panelObject);
+            -- 职业头像
+            SetGameObjectState(m_rankTop .. Index .. m_rankIcon, true, m_panelObject);
+            SetSpriteByAtlasID(m_rankTop .. Index .. m_rankIcon, CCommonTool.GetRoleDateInfo(m_rankData[Index].Value1).HeadRes, m_panelObject, true);
+        end
+        -- 排行榜排名内容
+        if RankManger.rankFirstType == RANK_TYPE.FIGHTVALUE then
+            title = CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":";
+            if m_rankData[Index].Value2 >= m_overValue then
+                local AchieveValue = math.floor(m_rankData[Index].Value2 / m_oneWan);
+                SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. AchieveValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+            else
+                SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. m_rankData[Index].Value2, m_panelObject);
+            end
+        elseif RankManger.rankFirstType == RANK_TYPE.ACTIVITYSTAIR or RankManger.rankFirstType == RANK_TYPE.BATTLEFIELD then
+            title = CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":";
+            SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. m_rankData[Index].Value2, m_panelObject);
+        elseif RankManger.rankFirstType == RANK_TYPE.ACTIVITYSTAIR or RankManger.rankFirstType == RANK_TYPE.ARENA then
+            title = CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":";
+            SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. m_rankData[Index].Value2, m_panelObject);
+        elseif RankManger.rankFirstType == RANK_TYPE.LEVEL then
+            title = CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":";
+            SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. m_rankData[Index].Value, m_panelObject);
+        elseif RankManger.rankFirstType == RANK_TYPE.PETRANK then
+            title = CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":";
+            if m_rankData[Index].Value2 >= m_overValue then
+                local AchieveValue = math.floor(m_rankData[Index].Value2 / m_oneWan);
+                SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. AchieveValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+            else
+                SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. m_rankData[Index].Value2, m_panelObject);
+            end
+        else
+            title = CCommonTool.GetTxtData(m_rankTable[m_leftSelectNum].HeaderTitle).m_str .. ":";
+            if tonumber(m_rankData[Index].Value3) >= m_overValue then
+                local AchieveValue = math.floor(tonumber(m_rankData[Index].Value3) / m_oneWan);
+                SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. AchieveValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+            else
+                SetLabelContent(m_rankTop .. Index .. m_rankAchieve, title .. tonumber(m_rankData[Index].Value3), m_panelObject);
+            end
+        end
+        SetGameObjectEvent(m_rankTop .. Index, showButtonsList, m_panelObject);
+    end
+    -- 自己的排名
+    m_myRank = RankManger.myRank;
+    SetLabelContent(m_myRankStr .. m_labelRank, " ", m_panelObject);
+    if m_myRank > m_allNum or m_myRank == 0 then
+        SetLabelContent(m_myRankStr .. m_labelRank, "--", m_panelObject);
+    else
+        if m_myRank == 1 then
+            SetSpriteContent(m_myRankStr .. m_SpriteRank, m_RankAtls[1].atlsName, m_RankAtls[1].spriteName, m_panelObject, true);
+            SetSpriteContent(m_myRankStr .. m_SpriteNumRank, m_RankNumAtls[1].atlsName, m_RankNumAtls[1].spriteName, m_panelObject, true);
+            SetLabelContent(m_myRankStr .. m_labelRank, "1", m_panelObject);
+        elseif m_myRank == 2 then
+            SetSpriteContent(m_myRankStr .. m_SpriteRank, m_RankAtls[2].atlsName, m_RankAtls[2].spriteName, m_panelObject, true);
+            SetSpriteContent(m_myRankStr .. m_SpriteNumRank, m_RankNumAtls[2].atlsName, m_RankNumAtls[2].spriteName, m_panelObject, true);
+            SetLabelContent(m_myRankStr .. m_labelRank, "2", m_panelObject);
+        elseif m_myRank == 3 then
+            SetSpriteContent(m_myRankStr .. m_SpriteRank, m_RankAtls[3].atlsName, m_RankAtls[3].spriteName, m_panelObject, true);
+            SetSpriteContent(m_myRankStr .. m_SpriteNumRank, m_RankNumAtls[3].atlsName, m_RankNumAtls[3].spriteName, m_panelObject, true);
+            SetLabelContent(m_myRankStr .. m_labelRank, "3", m_panelObject);
+        else
+            SetLabelContent(m_myRankStr .. m_labelRank, m_myRank, m_panelObject);
+            SetGameObjectState(m_myRankStr .. m_SpriteRank, false, m_panelObject);
+        end
+    end
+    if RankManger.rankFirstType == RANK_TYPE.FIGHTVALUE then
+        -- 角色战力
+        if G_UserInfo.RoleAttribute.BattlePower >= m_overValue then
+            local FightValue = math.floor(G_UserInfo.RoleAttribute.BattlePower / m_oneWan);
+            SetLabelContent(m_myRankStr .. m_labelAchieve, FightValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+        else
+            SetLabelContent(m_myRankStr .. m_labelAchieve, math.floor(G_UserInfo.RoleAttribute.BattlePower), m_panelObject);
+        end
+    elseif RankManger.rankFirstType == RANK_TYPE.LEVEL then
+        -- 等级
+        SetLabelContent(m_myRankStr .. m_labelAchieve, G_UserInfo.RoleAttribute.Level, m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+        if G_UserInfo.RoleAttribute.GuildId > 0 then
+            -- 公会总战力
+            if GuildManager.myGuild.totalFightPower >= m_overValue then
+                local GuildFightValue = math.floor(GuildManager.myGuild.totalFightPower / m_oneWan);
+                SetLabelContent(m_myRankStr .. m_labelAchieve, GuildFightValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+            else
+                SetLabelContent(m_myRankStr .. m_labelAchieve, GuildManager.myGuild.totalFightPower, m_panelObject);
+            end
+        end
+    elseif RankManger.rankFirstType == RANK_TYPE.CMAP_FEATS then
+        -- 总功勋
+        if G_UserInfo.RoleAttribute.N64AllExploits >= m_overValue then
+            local AllExploitsValue = math.floor(G_UserInfo.RoleAttribute.N64AllExploits / m_oneWan);
+            SetLabelContent(m_myRankStr .. m_labelAchieve, AllExploitsValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+        else
+            SetLabelContent(m_myRankStr .. m_labelAchieve, G_UserInfo.RoleAttribute.N64AllExploits, m_panelObject);
+        end
+    elseif RankManger.rankFirstType == RANK_TYPE.CAMP_WEEKLYFEATS then
+        -- 本周功勋
+        SetLabelContent(m_myRankStr .. m_labelAchieve, G_UserInfo.RoleAttribute.WeekExploit, m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.CAMP_ENEMYNUM then
+        -- 本周杀敌人数
+        SetLabelContent(m_myRankStr .. m_labelAchieve, G_UserInfo.RoleAttribute.WeekKillNum, m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.ACTIVITYSTAIR then
+        if ActivityManager.GetStairActivityLayer(EACTIVITYID.ACTIVITY_STAIR) > 0 then
+            SetLabelContent(m_myRankStr .. m_labelAchieve, ActivityManager.GetStairActivityLayer(EACTIVITYID.ACTIVITY_STAIR) - 1, m_panelObject);
+        else
+            SetLabelContent(m_myRankStr .. m_labelAchieve, 0, m_panelObject);
+        end
+
+    elseif RankManger.rankFirstType == RANK_TYPE.BATTLEFIELD then
+        -- 竞技场积分
+        SetLabelContent(m_myRankStr .. m_labelAchieve, BattleFieldManager.SeasonScore, m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.ARENA then
+        SetLabelContent(m_myRankStr .. m_labelAchieve, math.floor(G_UserInfo.RoleAttribute.BattlePower), m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        -- 宠物战力榜
+        -- 显示宠物战力
+        SetLabelContent(m_myRankStr .. m_labelAchieve, PetManager.GetMaxPetFightAbility(), m_panelObject);
+    end
+end
+
+-- 初始化击事件点击事件信息
+function InitOnClick()
+    m_rankData = RankManger.players;
+    SetGameObjectEvent(m_buttonItemInfoClose, OnItemInfoCloseClick, m_panelObject);
+    SetGameObjectEvent(m_buttonClose, OnClosePanel, m_panelObject);
+    -- 查看
+    SetGameObjectEvent(m_lookupButton, OnLookUpClick, m_panelObject);
+    -- 私聊
+    SetGameObjectEvent(m_privatelyChatButton, OnPrivateChatClick, m_panelObject);
+    -- 添加好友
+    SetGameObjectEvent(m_addFriendButton, OnAddFriendClick, m_panelObject);
+    -- 组队邀请
+    SetGameObjectEvent(m_inviteTeamButton, OnInviteTeamClick, m_panelObject);
+    -- 公会邀请
+    SetGameObjectEvent(m_guilInviteButton, OnGuildInviteClick, m_panelObject);
+    -- 加入黑名单
+    SetGameObjectEvent(m_blackButton, OnBlacklick, m_panelObject);
+end
+
+-- 请求排行榜数据
+function AskForRankInfo()
+    RankProtocol.RequestRankList(m_rankTable[m_leftSelectNum].RankId, m_rightTopSelect, 0, 1, 0);
+end
+--------------------------------------按钮事件方法------------------------------------
+
+-- 关闭其他角色信息界面
+function OnItemInfoCloseClick()
+    SetGameObjectState(m_buttonItemInfoClose, true, m_panelObject);
+    m_rightListView:Deselect(m_rightListView.selectedIndex, true);
+    m_buttonListIsOpen = false;
+    SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+end
+
+-- 查看列表
+function showButtonsList(e)
+    local num = tonumber(string.sub(e.name, 5));
+    if RankManger.rankFirstType == RANK_TYPE.PETRANK then
+        m_buttonListIsOpen = false;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+        -- 1宠物唯一ID, 2主人全局ID
+        PetManager.RequestPetRankInfo(m_rankData[num].Value3, m_rankData[num].Rank)
+    elseif RankManger.myRank == num or #m_rankData < num then
+        m_buttonListIsOpen = false;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+    elseif RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+        m_buttonListIsOpen = false;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+    else
+        m_buttonListIsOpen = true;
+        SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+    end
+
+    if m_rightSelectNum ~= num then
+        m_rightSelectNum = num;
+    end
+    m_selsectGlobalID = m_rankData[num].Rank;
+    m_selsectValue = m_rankData[num].Value;
+    m_selsectName1 = m_rankData[num].Name1;
+    m_selsectName2 = m_rankData[num].Name2;
+end
+
+-- 查看
+function OnLookUpClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_OTHERPLAYER_STATE);
+    if RankManger.rankFirstType == RANK_TYPE.CMAP_FEATS then
+        buffer:WriteInt(m_selsectValue);
+    else
+        buffer:WriteInt(m_selsectGlobalID);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    OnClosePanel();
+end
+-- 私聊
+function OnPrivateChatClick()
+    if RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+        FriendsProtocol.RequestSearch(m_selsectName2, 3);
+    else
+        FriendsProtocol.RequestSearch(m_selsectName1, 3);
+    end
+    OnClosePanel();
+end
+
+-- 添加好友
+function OnAddFriendClick()
+    if RankManger.rankFirstType == RANK_TYPE.CMAP_FEATS then
+        FriendsProtocol.RequestApply(m_selsectValue);
+    else
+        FriendsProtocol.RequestApply(m_selsectGlobalID);
+    end
+
+    OnClosePanel();
+end
+
+-- 组队邀请
+function OnInviteTeamClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM);
+    if G_UserInfo.RoleAttribute.TeamID == 0 then
+        buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_APPLY);
+    else
+        buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_INVITE);
+    end
+    buffer:WriteUInt(-1);
+    if RankManger.rankFirstType == RANK_TYPE.CMAP_FEATS then
+        buffer:WriteInt(m_selsectValue);
+    else
+        buffer:WriteInt(m_selsectGlobalID);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    OnClosePanel();
+end
+
+-- 公会邀请
+function OnGuildInviteClick()
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.INVITE_JOIN_IN) then
+        if RankManger.rankFirstType == RANK_TYPE.CMAP_FEATS then
+            GuildProtocol.RequestInviteJoin(m_selsectValue);
+        else
+            GuildProtocol.RequestInviteJoin(m_selsectGlobalID);
+        end
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+    OnClosePanel();
+end
+
+-- 加入黑名单
+function OnBlacklick()
+    if RankManger.rankFirstType == RANK_TYPE.GUILDRANK then
+        FriendsProtocol.RequestSearch(m_selsectName2, 2);
+    else
+        FriendsProtocol.RequestSearch(m_selsectName1, 2);
+    end
+    OnClosePanel();
+end
+
+-- 关闭面板
+function OnClosePanel()
+    m_rightListView:Deselect(m_rightListView.selectedIndex, true);
+    m_buttonListIsOpen = false;
+    SetGameObjectState(m_buttonList, m_buttonListIsOpen, m_panelObject);
+end
+
+-- 关闭界面按钮事件
+function OnCloseClick()
+    m_rightTopSelect = 0;
+    if m_buttonListIsOpen then
+        OnClosePanel();
+        return;
+    end
+    -- 关闭当前界面
+    closePanel(ENUMPANELID.ENUM_PANEL_RANKPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 处理Rank表
+function DealTableData()
+    local rankTableInfo = CCommonTool.GetRankDataInfos();
+    for Index = 1, rankTableInfo.Count do
+        table.insert(LogicData_RankTable, rankTableInfo[Index - 1]);
+    end
+end
+
+
+
+function RankDataReturn(players, version, rankType, secondType, playerNum, myRank)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RANKPANEL) == 1 then
+        local changeType = true;
+        if m_LastServerRankType == rankType and m_LastServerSecondType == secondType then
+            changeType = false;
+        end
+        m_LastServerRankType = rankType;
+        m_LastServerSecondType = secondType;
+        m_LastServerPlayerIndex = 1;
+        if changeType == true then
+            RankManger.players = players;
+        else
+            if not RankManger.players then
+                RankManger.players = {};
+            end
+            m_LastServerPlayerIndex = #RankManger.players;
+            for _, v in ipairs(players) do
+                table.insert(RankManger.players, v);
+            end
+        end
+        InitRightRankList();
+        InitRightInfo();
+    end
+end
+
+-- 打开所对应的排行榜
+function OpenRankPanel(showType, rankType)
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RANK) then
+        ShowSystemFlowTips(11);
+        return false;
+    end
+    m_showType = showType;
+    if rankType ~= nil then m_rightTopSelect = rankType; end
+    m_rightRankTable = nil;
+    createPanel(ENUMPANELID.ENUM_PANEL_RANKPANEL);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_leftSelectNum };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

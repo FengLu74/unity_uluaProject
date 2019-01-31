@@ -1,0 +1,352 @@
+﻿module("TaskBeyond3DPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 任务文本路径
+local TextLabelDir = "BackGround/Content/Text";
+-- 奖励经验路径
+local ExpLabelDir = "BackGround/Content/Exp/Label-Exp";
+-- 奖励经验图片路径
+local ExpSpriteDir = "BackGround/Content/Exp/Sprite-DaoJuTuBiao";
+-- 奖励经验品质路径
+local ExpPinZhiDir = "BackGround/Content/Exp/Sprite-PinZhiYanSe";
+-- 奖励经验品质底板路径
+local ExpApptitudeDir = "BackGround/Content/Exp/Sprite_Apptitude2";
+-- 奖励金钱的路径
+local MoneyLabelDir = "BackGround/Content/Money/Label-Money";
+-- 奖励金币图片路径
+local MoneySpriteDir = "BackGround/Content/Money/Sprite-DaoJuTuBiao";
+-- 奖励金币品质路径
+local MoneyPinZhiDir = "BackGround/Content/Money/Sprite-PinZhiYanSe";
+-- 奖励金币品质底板路径
+local MoneyApptitudeDir = "BackGround/Content/Money/Sprite_Apptitude2";
+-- npc名字路径
+local NpcNameDir = "BackGround/Content/Name";
+-- 按钮名字
+local m_ButtonNameDir = "BackGround/Content/Button-Accept/text";
+-- 倒计时路径
+local m_CDLabelDir = "BackGround/Content/Button-Accept/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 接受按钮路径
+local ButtonDir = "BackGround/Content/Button-Accept";
+-- 关闭按钮路径
+local CloseButtonDir = "BackGround/Content/Button-Close";
+-- 经验item路径
+local m_expClickDir = "BackGround/Content/Exp";
+-- 金币item路径
+local m_moneyClickDir = "BackGround/Content/Money";
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-- 奖励道具的路径
+local RewardItemDir = "BackGround/Content/Items/Item";
+-- 奖励道具
+local m_itemsStr = "BackGround/Content/Items";
+-- 单个道具的对象
+local m_itemAlone = "Item";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelGameObject = nil;
+-- 当前面板显示npccrid
+local m_nNpcCrId = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前面板按钮
+local m_Button = { button = nil, missionid = 0, missionstate = 0 };
+-- 押镖任务银币奖励
+local escortMoneyNum = nil;
+local guildMoney = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 任务状态
+local MISSION_STATE_CAN_ACCEPT = 2;
+local MISSION_STATE_GOING = 3;
+local MISSION_STATE_COMPLETE = 4;
+local MISSION_STATE_OVER = -1;
+-- 音效ID
+local m_musicID = 0
+-- 记录正在播放的音效id
+local m_OldMusicId = 0;
+-- 猎魔任务ID
+local HuntIDTable = { [1] = 700003, [2] = 700004, [3] = 700005, [4] = 700006 };
+------------------------------------BaseLua调用的同名方法------------------------------
+
+local m_AutoClickTime = 5;
+local m_CountdownTime = 5;
+
+-- 面板启动
+function Start()
+    -- 初始化object
+    InitObjects();
+    -- 更新面板信息
+    UpdataTaskInfo();
+    -- 设置按钮响应事件
+    InitOnClick();
+    m_panelInitAlready = true;
+     local info = CCommonTool.GetDefineInfo(2304);
+    if info ~= nil then
+       m_AutoClickTime = info:GetIntContent();
+    end
+    StartTimer(); 
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        -- 更新面板信息
+        UpdataTaskInfo();
+        StartTimer();
+    end
+end
+
+-- 隐藏时处理的逻辑
+function OnDisable()
+    StopNpcMusic();
+    StopTimer();
+end
+
+-- 销毁变量--
+function OnDestroy()
+    m_Button = { button = nil, missionid = 0, missionstate = 0 };
+    m_panelInitAlready = false;
+    escortMoneyNum = nil;
+    guildMoney = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object
+function InitObjects()
+    -- 查找面板
+    m_panelGameObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL);
+end
+
+-- 更新任务面板
+function UpdataTaskInfo()
+    -- 初始化任务奖励道具列表和金钱和经验图标位置
+    InitTaskRewardInfo();
+    -- 按钮名称初始化
+    if m_Button.missionstate == MISSION_STATE_COMPLETE then
+        SetLabelTextByID(m_ButtonNameDir, 318, m_panelGameObject);
+        local Txt = G_MissionMng:GetMissionCompleteTxt(m_Button.missionid);
+        SetLabelContent(TextLabelDir, Txt, m_panelGameObject);
+    else
+        SetLabelTextByID(m_ButtonNameDir, 8006, m_panelGameObject);
+        local Txt = G_MissionMng:GetMissionAcceptTxt(m_Button.missionid);
+        SetLabelContent(TextLabelDir, Txt, m_panelGameObject);
+    end
+    -- 设置npc的名字
+    local npcname = G_MissionMng:GetNpcNameById(m_nNpcCrId);
+    SetLabelTextByID(NpcNameDir, npcname, m_panelGameObject);
+    -- 加载npc模型
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL);
+    buffer:WriteInt(m_nNpcCrId);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 任务计时器
+function StartTimer()
+    m_CountdownTime = m_AutoClickTime;
+    AddTimerEvent("CD_5Seconds", m_AutoClickTime, OnButtonClick, ETimeShowType.TypeNumberOne, RefreshPerFourSeconds);
+end
+
+function StopTimer()
+    G_TimerMng:RemoveTimeTask("CD_5Seconds");
+end
+
+function RefreshPerFourSeconds()
+    SetLabelContent(m_CDLabelDir,m_CountdownTime,m_panelGameObject);
+    m_CountdownTime = m_CountdownTime - 1;
+    if m_CountdownTime ==-1 then
+       OnButtonClick(e);  
+    end
+end
+
+-- 初始化任务奖励道具列表和金钱和经验图标位置
+function InitTaskRewardInfo()
+    -- 任务奖励道具设置
+    for i = 1, 5 do
+        local nExcelId = G_MissionMng:GetRewardItemId(m_Button.missionid, i);
+        if nExcelId > 0 then
+            local itemPath = RewardItemDir .. tostring(i);
+            SetGameObjectState(itemPath, true, m_panelGameObject);
+            local nItemNum = G_MissionMng:GetRewardItemNum(m_Button.missionid, i);
+            SetItemShowByExcelIDV04(m_panelGameObject, itemPath, nExcelId, nItemNum, false, 3, ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL);
+            SetItemToolTipsEvent(m_panelGameObject, itemPath, ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL, false, nExcelId);
+        else
+            local RewardItemObjectDir = RewardItemDir .. tostring(i);
+            SetGameObjectState(RewardItemObjectDir, false, m_panelGameObject);
+        end
+    end
+    -- 任务经验和金钱图片和品质设置
+    local nExpIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpID):GetIntContent();
+    SetSpriteByAtlasID(ExpSpriteDir, nExpIconIndex, m_panelGameObject, true);
+    local nExpPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpAptitudeID):GetIntContent();
+    SetSpriteApptitudeV04(ExpPinZhiDir, nExpPinZhiIndex, m_panelGameObject);
+    SetSpriteApptitude2V04(ExpApptitudeDir, nExpPinZhiIndex, m_panelGameObject);
+    SetItemToolTipsEvent(m_panelGameObject, m_expClickDir, ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL, false, G_ItemToolTipDefine.EXP);
+
+    local nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+    SetSpriteByAtlasID(MoneySpriteDir, nMoneyIconIndex, m_panelGameObject, true);
+    local nMoneyPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeYinBiAptitudeID):GetIntContent();
+    SetSpriteApptitudeV04(MoneyPinZhiDir, nMoneyPinZhiIndex, m_panelGameObject);
+    SetSpriteApptitude2V04(MoneyApptitudeDir, nMoneyPinZhiIndex, m_panelGameObject);
+    SetItemToolTipsEvent(m_panelGameObject, m_moneyClickDir, ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+    -- 任务经验和钱文本设置
+    local nExp = G_MissionMng:GetMissionExpById(m_Button.missionid);
+    local nMoney = G_MissionMng:GetMissionMoneyById(m_Button.missionid);
+    local count = 0;
+    if nExp > 0 then
+        SetGameObjectState(m_expClickDir, true, m_panelGameObject);
+        count = count + 1;
+    else
+        SetGameObjectState(m_expClickDir, false, m_panelGameObject);
+    end
+    if nMoney > 0 then
+        SetGameObjectState(m_moneyClickDir, true, m_panelGameObject);
+        count = count + 1;
+    else
+        SetGameObjectState(m_moneyClickDir, false, m_panelGameObject);
+    end
+    local posX =(count - 2) * 128;
+    SetGameObjectPos(m_itemsStr, Vector3.New(posX, 0, 0), m_panelGameObject);
+    SetLabelContent(ExpLabelDir, nExp, m_panelGameObject);
+    SetLabelContent(MoneyLabelDir, nMoney, m_panelGameObject);
+
+    -- 公会押镖任务的奖励要客户端自己计算，需做单独处理
+    -- 押镖表数据
+    local m_EscortData = CCommonTool.GetAllUnionConvoyInfo();
+    if m_EscortData == nil then return end
+    for i = 1, m_EscortData.count do
+        if m_EscortData[i - 1].MissionID == m_Button.missionid then
+            if escortMoneyNum and guildMoney then
+                SetLabelContent(MoneyLabelDir, escortMoneyNum, m_panelGameObject);
+                local itemPath = RewardItemDir .. tostring(1) .. "/Label_Num";
+                SetLabelContent(itemPath, guildMoney, m_panelGameObject);
+            end
+            break;
+        end
+    end
+end
+
+-- 设置按钮响应事件
+function InitOnClick()
+    SetGameObjectEvent(CloseButtonDir, OnCloseClick, m_panelGameObject);
+    SetGameObjectEvent(ButtonDir, OnButtonClick, m_panelGameObject);
+end
+
+-- 关闭任务面板
+function CloseTaskPanel()
+    StopNpcMusic();
+    closePanel(ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 任务按钮点击事件
+function OnButtonClick(e)
+    -- 发送按钮事件给服务器
+    local buffer = ByteBuffer.New();
+    if m_Button.missionstate == MISSION_STATE_CAN_ACCEPT then
+        -- 接受任务
+        buffer:WriteShort(GMI_CTOS_LGS_ACCEPT_MISSION);
+    elseif m_Button.missionstate == MISSION_STATE_COMPLETE then
+        -- 完成任务
+        -- 公会押镖任务的结算要客户端做单独处理
+        -- 押镖表数据
+        local m_EscortData = CCommonTool.GetAllUnionConvoyInfo();
+        if m_EscortData then
+            for i = 1, m_EscortData.count do
+                if m_EscortData[i - 1].MissionID == m_Button.missionid then
+                    buffer:WriteShort(GMI_CTOS_REQUEST_GET_AWARD);
+                    break;
+                end
+            end
+        end
+        buffer:WriteShort(GMI_CTOS_LGS_COMPLETE_MISSION);
+        local nExp = G_MissionMng:GetMissionExpById(m_Button.missionid);
+    end
+
+    buffer:WriteUInt(m_Button.missionid);
+
+    G_NetWorkMng:SendMessage(buffer);
+    -- 发送对话结束消息给服务器
+    local buffert = ByteBuffer.New();
+    buffert:WriteShort(GMI_CTOS_LGS_INQUIRYEND);
+    G_NetWorkMng:SendMessage(buffert);
+    CloseTaskPanel();
+    m_CountdownTime = m_AutoClickTime;
+end
+
+-- 关闭按钮事件
+function OnCloseClick(e)
+    -- 发送对话结束消息给服务器
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_INQUIRYEND);
+    G_NetWorkMng:SendMessage(buffer);
+    CloseTaskPanel();
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 初始化任务信息
+function InitTaskInfo(missionid, npcCrid)
+    -- 设置当前npccrid
+    m_nNpcCrId = npcCrid;
+    -- 设置当前按钮任务id
+    m_Button.missionid = missionid;
+    -- 设置当前按钮任务状态
+    m_Button.missionstate = G_MissionMng:GetMissionStateById(missionid);
+    -- 创建面板
+    createPanel(ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL);
+    local missInfo = CCommonTool.GetMissionInfoData(missionid);
+    if missInfo ~= nil then
+        if MISSION_STATE_COMPLETE == m_Button.missionstate then
+            if Constants.RegionalId == 1 then
+                -- CN
+                m_musicID = missInfo.NpcCnCompleteSound;
+            elseif Constants.RegionalId == 2 then
+                -- 韩文
+                m_musicID = missInfo.NpcKrCompleteSound;
+            elseif Constants.RegionalId == 3 then
+                -- TW
+                m_musicID = missInfo.NpcTwCompleteSound;
+            end
+        else
+            if Constants.RegionalId == 1 then
+                -- CN
+                m_musicID = missInfo.NpcCnPublishSound;
+            elseif Constants.RegionalId == 2 then
+                -- 韩文
+                m_musicID = missInfo.NpcKrPublishSound;
+            elseif Constants.RegionalId == 3 then
+                -- TW
+                m_musicID = missInfo.NpcTwPublishSound;
+            end
+        end
+        OnPlayNpcMusic(m_musicID);
+    else
+        error("this mission does not exist:::" + missionid);
+    end
+end
+
+function OnPlayNpcMusic(m_npcMusicID)
+    if m_npcMusicID > 0 then
+        StopNpcMusic();
+        m_OldMusicId = m_npcMusicID;
+        G_MusicMng:OnLoadPlayNpcMusic(m_nNpcCrId, m_npcMusicID);
+    end
+end
+
+function StopNpcMusic()
+    if m_OldMusicId > 0 then
+        G_MusicMng:StopMusicToId(m_OldMusicId);
+        m_OldMusicId = 0;
+    end
+end
+
+-- 押镖任务结算
+function OpenTaskPanel(missionid, npcCrid, moneyNum, corpsMoeny)
+    escortMoneyNum = moneyNum;
+    guildMoney = corpsMoeny;
+    InitTaskInfo(missionid, npcCrid);
+end
+
+-- 判断是否为猎魔任务
+function IsHuntTask(id)
+    for i, v in pairs(HuntIDTable) do
+        if v == id then
+            return true;
+        end
+    end
+    return false;
+end

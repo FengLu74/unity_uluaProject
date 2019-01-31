@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="500dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/xyw_pay_reslut_bg"
+    android:padding="20dp">
+
+    <ImageView
+        android:id="@+id/xyw_pay_reslut_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/xyw_success_icon" />
+
+    <TextView
+        android:id="@+id/xyw_pay_reslut_statu_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/xyw_pay_reslut_iv"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:text="交易成功"
+        android:textColor="#666666"
+        android:textSize="25sp" />
+
+    <TextView
+        android:id="@+id/xyw_pay_reslut_msg_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/xyw_pay_reslut_statu_tv"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:text="您已经成功支付，请返回游戏查收"
+        android:textColor="#999999" />
+
+    <Button
+        android:id="@+id/xy_pay_reslut_bt"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@+id/xyw_pay_reslut_msg_tv"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        style="@style/xy.button.positive"
+        android:text="返回游戏"
+        android:textSize="20sp" />
+</RelativeLayout>

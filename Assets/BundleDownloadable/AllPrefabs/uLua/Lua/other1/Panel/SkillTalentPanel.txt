@@ -1,0 +1,871 @@
+﻿module('SkillTalentPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'SkillTalentPanel';
+---------------------------------------label路径---------------------------------------
+-- 天赋名称
+local m_TalentNamePath = "TalentInfo/TalentName";
+-- 天赋类型
+local m_TalentEffectTypePath = "TalentInfo/TalentEffectType";
+-- 天赋描述
+local m_TalentDescPath = "TalentInfo/TalentDesc";
+-- 天赋等级
+local m_TalentLevelPath = "TalentInfo/TalentLevel";
+-- 天赋信息面板中的流派剩余点数
+local m_PointLabelPath = "TalentInfo/PointLabel";
+-- 升级按钮文字
+local m_UpButtonLabelPath = "TalentInfo/UpButton/UpButtonLabel";
+-- 升级天赋所需点数
+local m_CostPointPath = "TalentInfo/CostPoint";
+-- 流派名称
+local m_GenreNamePath = "BaseGenreInfo/GenreName";
+-- 流派描述
+local m_GenreDescPath = "BaseGenreInfo/GenreDesc";
+-- 流派描述2
+local m_GenreDesc2Path = "GenreInfo/GenreDesc2";
+-- 流派效果描述
+local m_GenreEffectDescPath = "GenreInfo/GenreEffectDesc";
+-- 流派点数
+local m_TotalPointPath = "GenreInfo/TotalPoint";
+-- 流派提示
+local m_GenreHintPath = "GenreInfo/Label_Hint";
+-- 激活流派按钮Label
+local m_ActiveButtonLabelPath = "GenreInfo/ActiveButton/ActiveButtonLabel";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 升级天赋按钮
+local m_UpButtonPath = "TalentInfo/UpButton";
+-- 已达最高等级
+local m_MaxButtonPath = "TalentInfo/MaxButton";
+-- 天赋升级面板关闭按钮
+local m_TalentBackButtonPath = "TalentInfo/TalentBackButton";
+-- 激活流派按钮
+local m_ActiveButtonPath = "GenreInfo/ActiveButton";
+-- 重置流派按钮
+local m_ResetButtonPath = "GenreInfo/ResetButton";
+
+-----------------------------------------Sprite路径------------------------------------
+
+-- 流派图标
+local m_GenreIconPath = "BaseGenreInfo/GenreIcon";
+-- 升级按钮红点
+local m_SpriteRedHintPath = "TalentInfo/UpButton/Sprite_RedHint";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 天赋信息面板
+local m_TalentInfoPath = "TalentInfo";
+-- 主动技能天赋图标
+local m_SpriteInitiativePath = "TalentInfo/Talent/Sprite_Initiative";
+-- 被动技能天赋图标
+local m_SpritePassivePath = "TalentInfo/Talent/Sprite_Passive";
+-- 天赋图标
+local m_TalentIconPath = "TalentInfo/Talent/TalentIcon";
+-- 天赋升级条件
+local m_LockInfoPath = "TalentInfo/LockInfo";
+-- 流派信息面板
+local m_GenreInfoPath = "GenreInfo";
+-- 流派标签对象
+local m_TabBarPath = "TabBar";
+-- 流派标签1
+local m_Tab1Path = "TabBar/Tab1";
+-- 流派标签2
+local m_Tab2Path = "TabBar/Tab2";
+-- 流派标签3
+local m_Tab3Path = "TabBar/Tab3";
+-- 天赋列表Panel
+local m_ListPanelPath = "ListPanel";
+-- 升级特效
+local m_EffectPath = "Effect";
+-- 激活流派特效
+local m_GenreEffectPath = "GenreEffect";
+-- 切换流派读条面板
+local m_LoadingPanelPath = "LoadingPanel";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 天赋列表
+local m_ListPath = "ListPanel/List";
+-- 重置面板
+local m_ResetPanelPath = "ResetPanel";
+-- 切换流派进度条
+local m_LoadingBarPath = "LoadingPanel/LoadingBar";
+-- Timer组件
+local m_TimerPath = "LoadingPanel/Timer";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 天赋信息面板
+local m_TalentInfo = nil;
+-- 天赋名称
+--local m_TalentName = nil;
+-- 主动技能天赋图标
+local m_SpriteInitiative = nil;
+-- 被动技能天赋图标
+local m_SpritePassive = nil;
+-- 天赋效果类型
+local m_TalentEffectType = nil;
+-- 天赋描述
+local m_TalentDesc = nil;
+-- 天赋等级
+local m_TalentLevel = nil;
+-- 天赋升级条件
+local m_LockInfo = nil;
+-- 天赋信息面板中的流派剩余点数
+local m_PointLabel = nil;
+-- 升级天赋按钮
+local m_UpButton = nil;
+-- 升级按钮文字
+local m_UpButtonLabel = nil;
+-- 升级天赋消耗点数
+local m_CostPoint = nil;
+-- 流派信息面板
+local m_GenreInfo = nil;
+-- 流派点数
+local m_TotalPoint = nil;
+-- 激活流派按钮
+local m_ActiveButton = nil;
+-- 重置流派按钮
+local m_ResetButton = nil;
+-- 流派标签页对象
+local m_TabBar = nil;
+-- 流派标签1
+local m_Tab1 = nil;
+-- 流派标签2
+local m_Tab2 = nil;
+-- 流派标签3
+local m_Tab3 = nil;
+-- 列表面板
+local m_ListPanel = nil;
+-- 天赋列表
+local m_List = nil;
+-- 重置面板
+local m_ResetPanel = nil;
+-- 升级特效
+local m_Effect = nil;
+-- 激活流派特效
+local m_GenreEffect = nil;
+-- 切换流派读条面板
+local m_LoadingPanel = nil;
+-- 切换流派进度条
+local m_LoadingBar = nil;
+-- Timer组件
+local m_Timer = nil;
+
+-- 当前流派ID
+local m_GenreId = 0;
+-- 当前天赋ID
+local m_TalentId = 0;
+
+-- 天赋信息面板是否打开
+m_TalentInfoPanelIsOpen = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    SkillTalentResetPanel.Start();
+    InitEvents();
+    SetDefaultId();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+    SkillTalentResetPanel.OnEnable();
+end
+
+function OnDisable()
+    m_TalentId = 0;
+    m_GenreId = 0;
+    SkillTalentResetPanel.OnDisable();
+    if m_Effect ~= nil then
+        m_Effect:SetActive(false);
+    end
+    if m_GenreEffect ~= nil then
+        m_GenreEffect:SetActive(false);
+    end
+    StopTimer();
+end
+
+function OnDestroy()
+    SkillTalentResetPanel.OnDestroy();
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_TalentInfo = nil;
+	m_SpriteInitiative = nil;
+	m_SpritePassive = nil;
+	m_TalentEffectType = nil;
+	m_TalentDesc = nil;
+	m_TalentLevel = nil;
+    m_LockInfo = nil;
+	m_PointLabel = nil;
+	m_UpButton = nil;
+	m_CostPoint = nil;
+	m_GenreInfo = nil;
+	m_TotalPoint = nil;
+	m_ActiveButton = nil;
+	m_ResetButton = nil;
+	m_TabBar = nil;
+	m_Tab1 = nil;
+	m_Tab2 = nil;
+	m_Tab3 = nil;
+	m_ListPanel = nil;
+	m_List = nil;
+    m_ResetPanel = nil;
+    m_Effect = nil;
+    m_GenreEffect = nil;
+    m_LoadingPanel = nil;
+	m_LoadingBar = nil;
+	m_Timer = nil;
+
+    m_GenreId = 0;
+    m_TalentId = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_TalentInfo = child(m_PanelObject, m_TalentInfoPath).gameObject;
+    m_SpriteInitiative = child(m_PanelObject, m_SpriteInitiativePath).gameObject;
+    m_SpritePassive = child(m_PanelObject, m_SpritePassivePath).gameObject;
+    m_TalentEffectType = GetComponent(m_PanelObject, m_TalentEffectTypePath, "UILabel")
+    m_TalentDesc = GetComponent(m_PanelObject, m_TalentDescPath, "UILabel")
+    m_TalentLevel = GetComponent(m_PanelObject, m_TalentLevelPath, "UILabel")
+    m_LockInfo = child(m_PanelObject, m_LockInfoPath).gameObject;
+    m_PointLabel = GetComponent(m_PanelObject, m_PointLabelPath, "UILabel")
+    m_UpButton = child(m_PanelObject, m_UpButtonPath).gameObject;
+    m_MaxButton = child(m_PanelObject, m_MaxButtonPath).gameObject;
+    m_UpButtonLabel = GetComponent(m_PanelObject, m_UpButtonLabelPath, "UILabel")
+    m_CostPoint = GetComponent(m_PanelObject, m_CostPointPath, "UILabel")
+    m_GenreInfo = child(m_PanelObject, m_GenreInfoPath).gameObject;
+    m_TotalPoint = GetComponent(m_PanelObject, m_TotalPointPath, "UILabel")
+    m_ActiveButton = child(m_PanelObject, m_ActiveButtonPath).gameObject;
+    m_ResetButton = child(m_PanelObject, m_ResetButtonPath).gameObject;
+    m_TabBar = child(m_PanelObject, m_TabBarPath).gameObject;
+    m_Tab1 = child(m_PanelObject, m_Tab1Path).gameObject;
+    m_Tab2 = child(m_PanelObject, m_Tab2Path).gameObject;
+    m_Tab3 = child(m_PanelObject, m_Tab3Path).gameObject;
+    m_ListPanel = child(m_PanelObject, m_ListPanelPath).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView")
+    m_ResetPanel = child(m_PanelObject, m_ResetPanelPath).gameObject;
+    m_Effect = child(m_PanelObject, m_EffectPath).gameObject;
+    m_GenreEffect = child(m_PanelObject, m_GenreEffectPath).gameObject;
+    m_LoadingPanel = child(m_PanelObject, m_LoadingPanelPath).gameObject;
+    m_LoadingBar = GetComponent(m_PanelObject, m_LoadingBarPath, "UIProgressBar");
+    m_Timer = GetComponent(m_PanelObject, m_TimerPath, "Timer");
+    --[[
+    if CSDKManager.sdkName == "xiyou" then
+        m_Tab3:SetActive(false);
+        SetGameObjectState("Decoration/TabBarBg/Line", false, m_PanelObject);
+    end
+    ]]
+    m_ResetPanel:SetActive(false);
+    CCommonTool.SetGameObjectGrey(m_MaxButton, true);
+    m_LoadingPanel:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_TalentBackButtonPath, OnTalentBackButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_GenreIconPath, OnGenreIconClick, m_PanelObject);
+    UIEventListener.Get(m_UpButton).onClick = LuaHelper.OnClick(OnUpButtonClick);
+    UIEventListener.Get(m_MaxButton).onClick = LuaHelper.OnClick(OnMaxButtonClick);
+    UIEventListener.Get(m_ActiveButton).onClick = LuaHelper.OnClick(OnActiveButtonClick);
+    UIEventListener.Get(m_ResetButton).onClick = LuaHelper.OnClick(OnResetButtonClick);
+    UIEventListener.Get(m_Tab1).onClick = LuaHelper.OnClick(OnTab1Click);
+    UIEventListener.Get(m_Tab2).onClick = LuaHelper.OnClick(OnTab2Click);
+    UIEventListener.Get(m_Tab3).onClick = LuaHelper.OnClick(OnTab3Click);
+
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetDefaultId();
+    InitTabBar();
+    InitBaseGenreInfo();
+    InitGenreInfo();
+    InitTalentInfo();
+    InitList();
+end
+
+function SetDefaultId()
+    if m_GenreId > 0 then
+        return;
+    end
+    if panelParams ~= nil then
+        local params = panelParams;
+        panelParams = nil;
+        for _, genre in ipairs(SkillManager.genreIds) do
+            if genre.id == params.genreId then
+                m_GenreId = params.genreId;
+                m_TalentId = params.talentId;
+                return;
+            end
+        end
+    end
+
+    local playerGenreData = SkillManager.GetPlayerGenreData();
+    if playerGenreData.currentGenreId > 0 then
+        m_GenreId = playerGenreData.currentGenreId;
+    else
+        m_GenreId = SkillManager.genreIds[1].id;
+    end
+end
+
+-- 流派标签页
+function InitTabBar()
+    local currentGenreId = SkillManager.playerGenreData.currentGenreId;
+    for i = 1, 2 do
+        local go = i == 1 and m_Tab1 or m_Tab2;
+        local genreId = SkillManager.genreIds[i].id;
+        local info = CCommonTool.GetTalentTypeByID(genreId);
+        SetLabelTextByID("Name", info.TypeName, go);
+        SetGameObjectState("Select", genreId == m_GenreId, go);
+        SetGameObjectState("Equiped", genreId == currentGenreId, go);
+        SetSpriteByAtlasID("Equiped/Sprite_Background", info.TalentIcon, go, true);
+        local hasUpgradableTalent = SkillManager.HasUpgradableTalentByGenreId(genreId);
+        SetGameObjectState("Sprite_RedHint", hasUpgradableTalent, go);
+        if hasUpgradableTalent then
+            local unusedPoint, usedPoint, totalPoint = SkillManager.GetGenrePointInfo(genreId);
+            SetLabelContent("Sprite_RedHint/Num", unusedPoint > 99 and "99" or unusedPoint, go);
+            SetGameObjectState("Sprite_RedHint/More", unusedPoint > 99, go);
+        end
+    end
+end
+
+-- 初始化流派基本信息
+function InitBaseGenreInfo()
+    local info = CCommonTool.GetTalentTypeByID(m_GenreId);
+    SetLabelTextByID(m_GenreNamePath, info.TypeName, m_PanelObject);
+    SetLabelTextByID(m_GenreDescPath, info.TypeDescribe, m_PanelObject);
+    SetSpriteByAtlasID(m_GenreIconPath, info.TypePicture, m_PanelObject, true);
+end
+
+-- 初始化流派信息
+function InitGenreInfo()
+    if m_TalentId > 0 then
+        m_GenreInfo:SetActive(false);
+        return;
+    end
+    m_GenreInfo:SetActive(true);
+    local info = CCommonTool.GetTalentTypeByID(m_GenreId);
+    SetLabelTextByID(m_GenreEffectDescPath, info.UsetypeDescribe, m_PanelObject);
+
+    local currentGenreId = SkillManager.playerGenreData.currentGenreId;
+    local isCurrentGenre = currentGenreId == m_GenreId;
+    -- 激活天赋/切换天赋/已激活
+    if currentGenreId == 0 then
+        SetLabelContent(m_ActiveButtonLabelPath, --[[激活天赋]]CCommonTool.GetTxtData(850).m_str, m_PanelObject);
+    elseif not isCurrentGenre then
+        SetLabelContent(m_ActiveButtonLabelPath, --[[切换天赋]]CCommonTool.GetTxtData(1224).m_str, m_PanelObject);
+    else
+        SetLabelContent(m_ActiveButtonLabelPath, --[[已激活]]CCommonTool.GetTxtData(846).m_str, m_PanelObject);
+    end
+    CCommonTool.SetGameObjectGrey(m_ActiveButton, isCurrentGenre);
+
+    local maxCultivate = G_UserInfo.RoleAttribute.MaxCultivate;
+    local cultivate = G_UserInfo.RoleAttribute.CultivateLv;
+
+    local text1 = CCommonTool.GetTxtData(7100).m_str;
+    local text2 = "";
+    if cultivate < maxCultivate then
+        text2 = CCommonTool.GetTxtData(7101+cultivate-1).m_str;
+    end
+    SetLabelContent(m_GenreDesc2Path, string_format("{0}\n{1}", text1, text2), m_PanelObject);
+    local unusedPoint, usedPoint, totalPoint = SkillManager.GetGenrePointInfo(m_GenreId);
+    m_TotalPoint.text = string_format("{0}/{1}",unusedPoint, totalPoint);
+
+    local needLevel = CCommonTool.GetTalentTypeByID(m_GenreId).NendLevel;
+    if needLevel > G_UserInfo.RoleAttribute.Level then
+        SetLabelContent(m_GenreHintPath, string_format(CCommonTool.GetTxtData(102330).m_str, needLevel), m_PanelObject);
+    else
+        SetLabelContent(m_GenreHintPath, CCommonTool.GetTxtData(849).m_str, m_PanelObject);
+    end
+end
+
+-- 初始化天赋信息
+function InitTalentInfo()
+    if m_TalentId == 0 then
+        m_TalentInfoPanelIsOpen = false;
+        m_TalentInfo:SetActive(m_TalentInfoPanelIsOpen);
+        return;
+    end
+    m_TalentInfoPanelIsOpen = true;
+    m_TalentInfo:SetActive(m_TalentInfoPanelIsOpen);
+
+    local data = SkillManager.talentDict[m_TalentId];
+    local info = data.info;
+    local playerData = SkillManager.playerGenreData[m_GenreId].talents[m_TalentId];
+    local unusedPoint, usedPoint, totalPoint = SkillManager.GetGenrePointInfo(m_GenreId);
+
+    SetLabelTextByID(m_TalentNamePath, info.TalentName, m_PanelObject);
+    if info.TalentSkilltype == 1 then
+        -- 主动技能
+        SetLabelTextByID(m_TalentEffectTypePath, 852, m_PanelObject);
+    elseif info.TalentSkilltype == 2 then
+        -- 被动技能
+        SetLabelContent(m_TalentEffectTypePath, --[[强化技能]]CCommonTool.GetTxtData(1253).m_str, m_PanelObject);
+    elseif info.TalentSkilltype == 3 then
+        -- 属性
+        SetLabelTextByID(m_TalentEffectTypePath, 853, m_PanelObject);
+    else
+        m_TalentEffectType.text = "";
+    end
+    SetSpriteByAtlasID(m_TalentIconPath, info.TalentPicture, m_PanelObject);
+    m_SpriteInitiative:SetActive(info.TalentSkilltype == 1);
+    m_SpritePassive:SetActive(info.TalentSkilltype ~= 1);
+    SetLabelTextByID(m_TalentDescPath, info.TalentDescribe, m_PanelObject);
+    SetGameObjectState(m_SpriteRedHintPath, false, m_PanelObject);
+    m_PointLabel.text = unusedPoint;--string_format(CCommonTool.GetTxtData(857).m_str, unusedPoint);
+    local maxLevel = info.TalentLevelMax;
+    local level = playerData == nil and 0 or playerData.level;
+    m_TalentLevel.text = string_format("{0}/{1}", level, maxLevel);--CCommonTool.GetTxtData(851).m_str
+    if level < maxLevel then
+        local isLock = SkillManager.IsLockedTalent(m_TalentId);
+        if isLock then
+            m_UpButton:SetActive(false);
+            m_LockInfo:SetActive(true);
+            m_CostPoint.gameObject:SetActive(false);
+            m_PointLabel.gameObject:SetActive(false);
+            InitTalentLockInfo(m_TalentId);
+        else
+            m_UpButtonLabel.text = CCommonTool.GetTxtData(level == 0 and 854 or 855).m_str;
+            local levelInfoId = data.id * 100 + level + 1;
+            local levelInfo = CCommonTool.GetTalentLevelByID(levelInfoId);
+            if levelInfo ~= nil then
+                local color = unusedPoint < levelInfo.CostNum and "FF0000" or "FFFCA2";
+                m_CostPoint.text = levelInfo.CostNum;--string_format(CCommonTool.GetTxtData(856).m_str, levelInfo.CostNum, color);
+            else
+                error(string_format("talent_level表, ID:{0}不存在!", levelInfoId));
+            end
+            m_UpButton:SetActive(true);
+            m_LockInfo:SetActive(false);
+            m_CostPoint.gameObject:SetActive(true);
+            m_PointLabel.gameObject:SetActive(true);
+        end
+        m_MaxButton:SetActive(false);
+    else
+        m_UpButton:SetActive(false);
+        m_MaxButton:SetActive(true);
+        m_LockInfo:SetActive(false);
+        m_CostPoint.gameObject:SetActive(false);
+        m_PointLabel.gameObject:SetActive(false);
+    end
+end
+
+function InitTalentLockInfo(talentId)
+    local roleAttr = G_UserInfo.RoleAttribute;
+    local data = SkillManager.talentDict[talentId];
+    local info = data.info;
+    -- 所需等级
+    local needLevel = info.NendLevel;
+    -- 所需进阶等级
+    local needCultivateLevel = info.NendAttribute;
+    -- 所需投入的天赋点数
+    local needCostPoint = info.TalentTypeNum;
+    -- 所需前置天赋索引
+    local prevTalentIndex = info.NendTalent1;
+    -- 所需前置天赋等级
+    local prevTalentLevel = info.Talent1Level;
+
+    local conditions = {};
+    table.insert(conditions, {
+        text = string_format(--[[需要角色等级达到{0}级]]CCommonTool.GetTxtData(1254).m_str, needLevel), 
+        isAchieved = roleAttr.Level >= needLevel
+    });
+
+    if needCultivateLevel > 0 then
+        table.insert(conditions, {
+            text = string_format(--[[需要角色进阶到{0}]]CCommonTool.GetTxtData(1255).m_str, CCommonTool.GetTxtData(61250+needCultivateLevel-1).m_str), 
+            isAchieved = needCultivateLevel < roleAttr.CultivateLv
+        });
+    end
+
+    if needCostPoint > 0 then
+        local playerGenre = SkillManager.playerGenreData[data.genreId];
+        table.insert(conditions, {
+            text = string_format(--[[需要当前天赋投入总数达到{0}点]]CCommonTool.GetTxtData(1256).m_str, needCostPoint), 
+            isAchieved = needCostPoint < playerGenre.point
+        });
+    end
+
+    if prevTalentIndex >= 0 then
+        local playerGenre = SkillManager.playerGenreData[data.genreId];
+        local talents = SkillManager.genreTalentIds[data.genreId];
+        local isAchieved = true;
+        local prevTalentName = nil;
+        for _, t in ipairs(talents) do
+            if t.index == prevTalentIndex then
+                prevTalentName = CCommonTool.GetTxtData(t.info.TalentName).m_str;
+                if playerGenre.talents[t.id] == nil or prevTalentLevel > playerGenre.talents[t.id].level then
+                    isAchieved = false;
+                end
+                break;
+            end
+        end
+        if prevTalentName ~= nil then
+            table.insert(conditions, {
+                text = string_format(--[[需要{0}天赋升至{1}级]]CCommonTool.GetTxtData(1257).m_str, prevTalentName, prevTalentLevel), 
+                isAchieved = isAchieved
+            });
+        end
+    end
+    for i = 1, 4 do
+        local path = "Label"..i;
+        local con = conditions[i];
+        if con ~= nil then
+            SetGameObjectState(path, true, m_LockInfo);
+            SetLabelContent(path, con.text, m_LockInfo);
+            SetLabelColor(path, con.isAchieved and "91E464" or "FB3031", m_LockInfo);
+        else
+            SetGameObjectState(path, false, m_LockInfo);
+        end
+
+    end
+end
+
+-- 初始化列表数据
+function InitList()
+    m_List:RemoveAll();
+    local items = SkillManager.GetUIListTalents(m_GenreId);
+    for _, item in ipairs(items) do
+        m_List:AddData(item);
+    end
+end
+
+-- 刷新列表
+function RefreshList()
+    m_List:Refresh();
+end
+
+-- 流派改变时处理
+function HandleGenreChange(index)
+    local genreId = SkillManager.genreIds[index].id
+    if genreId ~= m_GenreId then
+        m_GenreId = genreId;
+        --InitList();
+    end
+    m_TalentId = 0;
+    InitShow();
+end
+
+-- 获取升级特效位置
+function GetTalentEffectPos(talentId)
+    local dataCount = m_List.dataCount;
+    for i = 0, dataCount-1 do
+        local data = m_List:GetData(i);
+        local places = data.places;
+        for j, place in ipairs(places) do
+            local talent = place.talent;
+            if talent ~= nil and talent.id == talentId then
+                local cell = m_List:GetCell(i);
+                if cell ~= nil then
+                    return child(cell.gameObject, "Item"..j.."/Talent/EffectPos");
+                end 
+            end
+        end
+    end
+    return nil;
+end
+
+-- 激活流派特效位置
+function GetGenreEffectPos(genreIndex)
+    if genreIndex == 1 then
+        return child(m_Tab1, "EffectPos");
+    elseif genreIndex == 2 then
+        return child(m_Tab2, "EffectPos");
+    end
+    return nil;
+end
+
+function StopTimer()
+    if m_Timer ~= nil then
+        m_Timer:StopAllTimer();
+    end
+end
+
+-- 取消选中天赋
+function CancelSelectTalent()
+    m_TalentId = 0;
+    InitGenreInfo();
+    InitTalentInfo();
+    RefreshList();
+end
+
+-- 选中天赋
+function SelectTalent(talentId)
+    m_TalentId = talentId;
+    InitGenreInfo();
+    InitTalentInfo();
+    RefreshList();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 天赋列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local needLevel = data.needLevel;
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    if userLevel < needLevel then
+        SetLabelContent("UnLockLevel", string_format("[FF0000]{0}[-]", needLevel), go);
+    else
+        SetLabelContent("UnLockLevel", needLevel, go);
+    end
+    local places = data.places;
+    for i, place in ipairs(places) do
+        local itemGo = child(go, "Item"..i).gameObject;
+        local talent = place.talent;
+        if talent ~= nil then
+            SetGameObjectState("Blank", false, itemGo);
+            SetGameObjectState("Talent", true, itemGo);
+            local talentGo = child(itemGo, "Talent").gameObject;
+            local playerGenreData = SkillManager.GetPlayerGenreData();
+            local playerTalent = playerGenreData[m_GenreId].talents[talent.id];
+            local locked = SkillManager.IsLockedTalent(talent.id);
+            local level = (playerTalent == nil and 0 or playerTalent.level);
+            local maxLevel = talent.info.TalentLevelMax;
+            SetLabelContent("Level", string_format("{0}/{1}", level, maxLevel), talentGo);
+            SetSpriteByAtlasID("Icon", talent.info.TalentPicture, talentGo);
+            --SetGameObjectState("Sprite_RedHint", SkillManager.CanUpgradeTalent(talent.id), talentGo);
+            SetGameObjectState("Sprite_RedHint", false, talentGo);
+            if talent.info.TalentSkilltype == 1 then
+                local skillId = talent.info.Value;
+                local skillData = SkillManager.GetPlayerSkill(skillId);
+                if skillData ~= nil then
+                    --TipsManager.SkillTips(itemGo, skillId, skillData.subId, skillData.level);
+                else
+                    error(string_format("天赋{0}的主动技能ID不存在", talent.id));
+                end
+            else
+                --TipsManager.TalentTips(itemGo, talent.id);
+            end
+            SetGameObjectState("Select", talent.id == m_TalentId, talentGo);
+            SetGameObjectState("Sprite_Initiative", talent.info.TalentSkilltype == 1, talentGo);
+            SetGameObjectState("Sprite_Passive", talent.info.TalentSkilltype ~= 1, talentGo);
+            SetGameObjectState("Inactive", false, talentGo);
+            CCommonTool.SetGameObjectGrey(talentGo, locked);
+        else
+            SetGameObjectState("Blank", true, itemGo);
+            SetGameObjectState("Talent", false, itemGo);
+        end
+    end
+end
+
+-- 天赋列表点击事件
+function OnListViewClick(listView, cell, go)
+    local placeNum = tonumber(string.match(go.name, "Item(%d)"))
+    if not placeNum then
+        if m_TalentId > 0 then
+            --m_TalentId = 0;
+            --InitShow();
+            CancelSelectTalent();
+        end
+        return;
+    end
+    local data = listView:GetData(cell.dataIndex);
+    local talent = data.places[placeNum].talent;
+    if talent == nil then
+        if m_TalentId > 0 then
+            --m_TalentId = 0;
+            --InitShow();
+            CancelSelectTalent();
+        end
+        return;
+    end
+    --m_TalentId = talent.id;
+    --InitShow();
+    SelectTalent(talent.id);
+end
+
+-- 天赋升级面板返回按钮
+function OnTalentBackButtonClick(gameObject)
+    --m_TalentId = 0;
+    --InitShow();
+    CancelSelectTalent();
+end
+
+-- 升级天赋按钮点击事件
+function OnUpButtonClick(gameObject)
+    local locked, lockType,  value, txtId = SkillManager.IsLockedTalent(m_TalentId);
+    if locked then
+        local txtInfo = CCommonTool.GetTxtData(txtId);
+        if txtInfo ~= nil then
+            ShowSystemFlowTips(txtInfo.m_str, 1, {value});
+        else
+            error(string_format("升级天赋条件不足, 提示文本ID:{0}不存在", txtId));
+        end
+        return;
+    end
+
+    local playerData = SkillManager.playerGenreData[m_GenreId].talents[m_TalentId];
+    local unusedPoint, usedPoint, totalPoint = SkillManager.GetGenrePointInfo(m_GenreId);
+    local data = SkillManager.talentDict[m_TalentId];
+    local level = playerData == nil and 0 or playerData.level;
+    local maxLevel = data.info.TalentLevelMax;
+    if level < maxLevel then
+        local levelInfoId = m_TalentId * 100 + level + 1;
+        local levelInfo = CCommonTool.GetTalentLevelByID(levelInfoId);
+        if levelInfo ~= nil then
+            if unusedPoint < levelInfo.CostNum then
+                -- 升级天赋时, 天赋点不足提示
+                ShowSystemFlowTips(2651, nil, {levelInfo.CostNum});
+                return;
+            end
+        end
+    end
+    
+    local genreData = SkillManager.GetPlayerGenreData();
+    local genreIndex = genreData[m_GenreId].index;
+    SkillProtocol.RequestTalentLevelUp(genreIndex, m_GenreId, data.index, m_TalentId);
+end
+
+-- 最大等级按钮点击提示
+function OnMaxButtonClick(gameObject)
+    ShowSystemFlowTips(2661);
+end
+
+-- 激活流派按钮点击事件
+function OnActiveButtonClick(gameObject)
+    local currentGenreId = SkillManager.playerGenreData.currentGenreId;
+    if m_GenreId == currentGenreId then
+        return;
+    end
+    local needLevel = CCommonTool.GetTalentTypeByID(m_GenreId).NendLevel;
+    if needLevel > G_UserInfo.RoleAttribute.Level then
+        ShowSystemFlowTips(2649, nil, {needLevel});
+        return;
+    end
+    if G_UserInfo.RoleAttribute:GetAttackState() then
+        ShowSystemFlowTips(318);
+        return;
+    end
+    if G_UserInfo:HasCoolingDownSkill() then
+        ShowSystemFlowTips(319);
+        return;
+    end
+
+    StopTimer();
+    m_LoadingBar.value = 0;
+    if currentGenreId == 0 then
+        SetLabelContent("Label", --[[激活中]]CCommonTool.GetTxtData(1258).m_str, m_LoadingBar.gameObject);
+    else
+        SetLabelContent("Label", --[[切换中]]CCommonTool.GetTxtData(1259).m_str, m_LoadingBar.gameObject);
+    end
+    m_LoadingPanel:SetActive(true);
+    m_Timer:AddTimer(0.04, 50, UpdateLoadingBar);
+    m_Timer:AddTimer(2, 0, OnTimerOver);
+    ReportManager.RequestReportPanel(10304);
+end
+
+function UpdateLoadingBar()
+    m_LoadingBar.value = m_LoadingBar.value + 0.02;
+    if G_UserInfo.RoleAttribute:GetAttackState() then
+        error(string_format("战斗状态切换天赋被打断"));
+        ShowSystemFlowTips(5412);
+        StopTimer();
+        m_LoadingPanel:SetActive(false);
+    end
+end
+
+function OnTimerOver()
+    local genreData = SkillManager.GetPlayerGenreData()[m_GenreId];
+    local genreIndex = genreData.index;
+    SkillProtocol.RequestChangeGenre(genreIndex, m_GenreId);
+    m_LoadingPanel:SetActive(false);
+end
+
+-- 重置流派按钮事件
+function OnResetButtonClick(gameObject)
+    -- 1.如果投入点数==0则不需要重置
+    -- 2.弹窗显示重置消耗(复制以前的)
+    local unusedPoint, usedPoint, totalPoint = SkillManager.GetGenrePointInfo(m_GenreId);
+    if usedPoint == 0 then
+        ShowSystemFlowTips(2663);
+        return;
+    end
+    SkillTalentResetPanel.Show(m_GenreId);
+    ReportManager.RequestReportPanel(10303);
+end
+
+-- 流派标签1点击事件
+function OnTab1Click(gameObject)
+    HandleGenreChange(1);
+end
+
+-- 流派标签2点击事件
+function OnTab2Click(gameObject)
+    HandleGenreChange(2);
+end
+
+-- 流派标签3点击事件
+function OnTab3Click(gameObject)
+    ShowSystemFlowTips(320);
+end
+
+-- 流派图标点击事件
+function OnGenreIconClick(gameObject)
+    -- 取消天赋选中
+    if m_TalentId > 0 then
+        --m_TalentId = 0;
+        --InitShow();
+        CancelSelectTalent();
+    end
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if m_CreateSuccess then
+        --InitShow();
+        InitGenreInfo();
+        InitTalentInfo();
+        InitTabBar();
+        RefreshList();
+    end
+end
+
+-- 天赋升级回调
+-- @param number talentId 天赋ID
+-- @param number level 天赋等级
+function OnTalentLevelUp(talentId, level)
+    if m_CreateSuccess then
+        local effectPos = GetTalentEffectPos(talentId);
+        if effectPos ~= nil then
+            m_Effect.transform.position = effectPos.position;
+            m_Effect:SetActive(false);
+            m_Effect:SetActive(true);
+        end
+    end
+end
+
+-- 流派切换
+function OnGenreChanged(genreIndex)
+    if m_CreateSuccess then
+        local effectPos = GetGenreEffectPos(genreIndex+1);
+        if effectPos ~= nil then
+            m_GenreEffect.transform.position = effectPos.position;
+            m_GenreEffect:SetActive(false);
+            m_GenreEffect:SetActive(true);
+        end 
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {genreId = m_GenreId, talentId=m_TalentId};
+end
+
+function SetJumpCloseData(paramTable)
+    panelParams = paramTable;
+end

@@ -1,0 +1,213 @@
+﻿module('EatChickenMapPanel', package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 文本标题
+local m_ExplainTitle = "Rules/Label_Title";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClose = "Button_Close";
+-----------------------------------------Sprite路径------------------------------------
+-- 吃鸡小地图
+local m_EatChickenMapTextureCompStr = "Panel/Texture_Map";
+-- 吃鸡小地图anchor位置
+local m_EatChickenAnchorStr = "Panel/Anchor";
+-- 吃鸡当前圈
+local m_EatChickenCurCircleStr = "/Circle_Cur";
+-- 吃鸡下一圈
+local m_EatChickenNextCircleStr = "/Circle_Next";
+
+-- 吃鸡箭头
+local m_EatChickenArrowStr = "Panel/Anchor/Sprite_Self";
+----------------------------------gameobject所在的路径---------------------------------
+-- 玩法说明内容
+local m_ExplainItemPath = "Rules/ListPanel/Content/Zone";
+-- 拖拽对象
+local m_dragStr = "Rules/ListPanel/Drag";
+----------------------------------通用的名称路径---------------------------------------
+-- 内容
+local m_labelContent = "/Label_Content";
+-- 标题
+local m_labelTitle = "/Label_Title";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+
+-- 吃鸡小地图
+local m_EatChickenMapTextureComp = nil;
+-- 更新吃鸡地图玩家所在位置计时器
+local m_EatChickenPosTimer = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEatChickenMap();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_EatChickenMapTextureComp = nil;
+    if m_EatChickenPosTimer ~= nil then
+        Timer.Instance:StopTimer(m_EatChickenPosTimer);
+        m_EatChickenPosTimer = nil;
+    end
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitEatChickenMap()
+    if EatChickenManager.IsInEatChickenScene() then
+        local currentSceneMapInfo = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID);
+        G_ResourceMng:LoadAssetByLua(currentSceneMapInfo.RadarmapStr..".png", UnityEngine.Texture.GetClassType(), "EatChickenMapPanel.LoadEatChickenMapOver");
+        SetGameObjectPos(m_EatChickenAnchorStr,Vector3.New(EatChickenManager.PanelMapData.xOffset,EatChickenManager.PanelMapData.yOffset,0),m_PanelObject);
+        m_EatChickenPosTimer = Timer.Instance:AddTimer(0.2, -1, UpdatePlayerPos);
+    end
+end
+
+function UpdatePlayerPos()
+    local selfAgent = G_UserInfo:GetCurPlayer();
+    if selfAgent ~= nil and m_CreateSuccess then
+        local pos = selfAgent.GameObject.transform.localPosition;
+        local rot = selfAgent.GameObject.transform.eulerAngles;
+        SetGameObjectPos(m_EatChickenArrowStr,Vector3.New(pos.x*EatChickenManager.PanelMapData.scale,pos.z*EatChickenManager.PanelMapData.scale,0),m_PanelObject);
+        SetGameObjectRot(m_EatChickenArrowStr,Vector3.New(0,0,-rot.y),m_PanelObject);
+    end
+end
+
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EATCHICKENMAPPANEL);
+    m_EatChickenMapTextureComp = GetComponent(m_PanelObject,m_EatChickenMapTextureCompStr,"UITexture");
+end
+
+-- 初始化对象事件
+function InitEvents()
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitEatChickenContent();
+    RulesExplain(ENUMPANELID.ENUM_PANEL_EATCHICKENMAPPANEL,1);
+end
+
+function InitEatChickenContent()
+    -- 设置地图圈情况
+    local scale = EatChickenManager.PanelMapData.scale;
+    if EatChickenManager.bShowCurCircle then
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,true,m_PanelObject);
+        SetGameObjectPos(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,Vector3.New(EatChickenManager.fCurSecurityPosX*scale,EatChickenManager.fCurSecurityPosZ*scale,0),m_PanelObject);
+        SetGameObjectScale(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,Vector3.New(EatChickenManager.fCurSecurityRadius*scale/150,EatChickenManager.fCurSecurityRadius*scale/150,0),m_PanelObject);
+    else
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,false,m_PanelObject);
+    end
+    if EatChickenManager.bShowNextCircle then
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,true,m_PanelObject);
+        SetGameObjectPos(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,Vector3.New(EatChickenManager.fNextSecurityPosX*scale,EatChickenManager.fNextSecurityPosZ*scale,0),m_PanelObject);
+        SetGameObjectScale(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,Vector3.New(EatChickenManager.fNextSecurityRadius*scale/150,EatChickenManager.fNextSecurityRadius*scale/150,0),m_PanelObject);
+    else
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,false,m_PanelObject);
+    end
+end
+
+-- 雪地大作战玩法介绍
+function RulesExplain(m_panelId, m_tabId)
+    local allExplainInfo = CCommonTool.GetAllExplainInfo();
+    local explainInfo = nil;
+    local count = allExplainInfo.Count;
+    for index = 1, 10 do
+        SetGameObjectState(m_ExplainItemPath .. index, false, m_PanelObject);
+    end
+    if allExplainInfo ~= nil then
+        for index = 1, count do
+            if allExplainInfo[index - 1].PanelId == m_panelId and allExplainInfo[index - 1].TabId == m_tabId then
+                explainInfo = CCommonTool.GetAllExplainInfoByIndex(index);
+                break;
+            end
+        end
+        if explainInfo ~= nil then
+            SetLabelTextByID(m_ExplainTitle, explainInfo.MainTitle, m_PanelObject);
+            -- 内容组1
+            SystemExplainInfo(explainInfo.Title1, explainInfo.Content1, 1);
+            -- 内容组2
+            SystemExplainInfo(explainInfo.Title2, explainInfo.Content2, 2);
+            -- 内容组3
+            SystemExplainInfo(explainInfo.Title3, explainInfo.Content3, 3);
+            -- 内容组4
+            SystemExplainInfo(explainInfo.Title4, explainInfo.Content4, 4);
+            -- 内容组5
+            SystemExplainInfo(explainInfo.Title5, explainInfo.Content5, 5);
+            -- 内容组6
+            SystemExplainInfo(explainInfo.Title6, explainInfo.Content6, 6);
+            -- 内容组7
+            SystemExplainInfo(explainInfo.Title7, explainInfo.Content7, 7);
+            -- 内容组8
+            SystemExplainInfo(explainInfo.Title8, explainInfo.Content8, 8);
+            -- 内容组9
+            SystemExplainInfo(explainInfo.Title9, explainInfo.Content9, 9);
+            -- 内容组10
+            SystemExplainInfo(explainInfo.Title10, explainInfo.Content10, 10);
+        end
+    end
+end
+
+-- 单个对象的处理
+function SystemExplainInfo(title, content, index)
+    local height = 0;
+    local length = 0;
+    local count = index;
+    if title > 0 then
+        SetGameObjectState(m_ExplainItemPath .. index, true, m_PanelObject);
+        for index = 1, count do
+            local Index = index - 1;
+            length = length + GetComponent(m_PanelObject, m_ExplainItemPath .. index .. m_labelContent, "UILabel").height + 80;
+            if Index > 0 then
+                height = height + GetComponent(m_PanelObject, m_ExplainItemPath .. Index .. m_labelContent, "UILabel").height + 80;
+            end
+        end
+        -- 设置对象高度
+        SetGameObjectPos(m_ExplainItemPath .. index, Vector3.New(0, - height, 0), m_PanelObject);
+        SetLabelTextByID(m_ExplainItemPath .. index .. m_labelContent, content, m_PanelObject);
+        SetLabelTextByID(m_ExplainItemPath .. index .. m_labelTitle, title, m_PanelObject);
+        -- 设置拖拽的长度
+        SetSpriteHeight(m_dragStr, length, m_PanelObject);
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonClose,OnCloseClick,m_PanelObject);
+end
+------------------------------------------事件方法------------------------------------
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_EATCHICKENMAPPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function UpdatePanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EATCHICKENMAPPANEL) == 1 then
+        InitEatChickenContent();
+    end
+end
+
+function LoadEatChickenMapOver(textureObj, strPath)
+    if m_EatChickenMapTextureComp ~= nil then
+        m_EatChickenMapTextureComp.mainTexture = textureObj;
+    else
+        G_ResourceMng:UnLoadAssetByLua(strPath, textureObj);
+    end
+end

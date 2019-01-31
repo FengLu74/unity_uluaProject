@@ -1,0 +1,231 @@
+﻿--[[
+    field=AttrID, type=int, desc=属性
+    field=RepateNum, type=int, desc=可重复个数
+]]
+module("InheritAttrCanReaptTableTable", package.seeall)
+local list={
+    {AttrID=11,RepateNum=5},
+    {AttrID=12,RepateNum=5},
+    {AttrID=13,RepateNum=5},
+    {AttrID=14,RepateNum=5},
+    {AttrID=21,RepateNum=5},
+    {AttrID=22,RepateNum=5},
+    {AttrID=23,RepateNum=5},
+    {AttrID=24,RepateNum=5},
+    {AttrID=31,RepateNum=5},
+    {AttrID=32,RepateNum=5},
+    {AttrID=33,RepateNum=5},
+    {AttrID=34,RepateNum=5},
+    {AttrID=41,RepateNum=5},
+    {AttrID=42,RepateNum=5},
+    {AttrID=43,RepateNum=5},
+    {AttrID=44,RepateNum=5},
+    {AttrID=51,RepateNum=5},
+    {AttrID=52,RepateNum=5},
+    {AttrID=53,RepateNum=5},
+    {AttrID=54,RepateNum=5},
+    {AttrID=61,RepateNum=1},
+    {AttrID=62,RepateNum=1},
+    {AttrID=63,RepateNum=1},
+    {AttrID=64,RepateNum=1},
+    {AttrID=71,RepateNum=5},
+    {AttrID=72,RepateNum=5},
+    {AttrID=73,RepateNum=5},
+    {AttrID=74,RepateNum=5},
+    {AttrID=81,RepateNum=5},
+    {AttrID=82,RepateNum=5},
+    {AttrID=83,RepateNum=5},
+    {AttrID=84,RepateNum=5},
+    {AttrID=91,RepateNum=5},
+    {AttrID=92,RepateNum=5},
+    {AttrID=93,RepateNum=5},
+    {AttrID=94,RepateNum=5},
+    {AttrID=101,RepateNum=1},
+    {AttrID=102,RepateNum=1},
+    {AttrID=103,RepateNum=1},
+    {AttrID=104,RepateNum=1},
+    {AttrID=111,RepateNum=5},
+    {AttrID=112,RepateNum=5},
+    {AttrID=113,RepateNum=5},
+    {AttrID=114,RepateNum=5},
+    {AttrID=121,RepateNum=5},
+    {AttrID=122,RepateNum=5},
+    {AttrID=123,RepateNum=5},
+    {AttrID=124,RepateNum=5},
+    {AttrID=131,RepateNum=5},
+    {AttrID=132,RepateNum=5},
+    {AttrID=133,RepateNum=5},
+    {AttrID=134,RepateNum=5},
+    {AttrID=141,RepateNum=5},
+    {AttrID=142,RepateNum=5},
+    {AttrID=143,RepateNum=5},
+    {AttrID=144,RepateNum=5},
+    {AttrID=151,RepateNum=5},
+    {AttrID=152,RepateNum=5},
+    {AttrID=161,RepateNum=5},
+    {AttrID=162,RepateNum=5},
+    {AttrID=171,RepateNum=5},
+    {AttrID=172,RepateNum=5},
+    {AttrID=181,RepateNum=5},
+    {AttrID=182,RepateNum=5},
+    {AttrID=191,RepateNum=5},
+    {AttrID=192,RepateNum=5},
+    {AttrID=201,RepateNum=5},
+    {AttrID=202,RepateNum=5},
+    {AttrID=203,RepateNum=5},
+    {AttrID=204,RepateNum=5},
+    {AttrID=205,RepateNum=5},
+    {AttrID=206,RepateNum=5},
+    {AttrID=207,RepateNum=5},
+    {AttrID=208,RepateNum=5},
+    {AttrID=209,RepateNum=5},
+    {AttrID=210,RepateNum=5},
+    {AttrID=211,RepateNum=5},
+    {AttrID=220,RepateNum=5},
+    {AttrID=221,RepateNum=5},
+    {AttrID=222,RepateNum=5},
+    {AttrID=223,RepateNum=5},
+    {AttrID=224,RepateNum=5},
+    {AttrID=225,RepateNum=5},
+    {AttrID=226,RepateNum=1},
+    {AttrID=227,RepateNum=1},
+    {AttrID=228,RepateNum=1},
+    {AttrID=229,RepateNum=1},
+    {AttrID=230,RepateNum=5},
+    {AttrID=231,RepateNum=5},
+    {AttrID=232,RepateNum=5},
+    {AttrID=233,RepateNum=5},
+    {AttrID=234,RepateNum=5},
+    {AttrID=235,RepateNum=5},
+    {AttrID=236,RepateNum=5},
+    {AttrID=237,RepateNum=5},
+    {AttrID=238,RepateNum=5},
+    {AttrID=239,RepateNum=5},
+    {AttrID=240,RepateNum=5},
+    {AttrID=241,RepateNum=5},
+    {AttrID=242,RepateNum=5},
+    {AttrID=243,RepateNum=5},
+    {AttrID=244,RepateNum=5},
+    {AttrID=245,RepateNum=5},
+    {AttrID=246,RepateNum=5},
+    {AttrID=247,RepateNum=5},
+    {AttrID=248,RepateNum=5},
+    {AttrID=249,RepateNum=5},
+    {AttrID=250,RepateNum=5},
+    {AttrID=251,RepateNum=5},
+    {AttrID=252,RepateNum=5},
+    {AttrID=253,RepateNum=5},
+    {AttrID=254,RepateNum=5},
+    {AttrID=255,RepateNum=5},
+    {AttrID=256,RepateNum=5},
+    {AttrID=257,RepateNum=5},
+    {AttrID=258,RepateNum=5},
+    {AttrID=259,RepateNum=5},
+    {AttrID=260,RepateNum=5},
+    {AttrID=261,RepateNum=5},
+    {AttrID=262,RepateNum=5},
+    {AttrID=263,RepateNum=5},
+    {AttrID=264,RepateNum=5},
+    {AttrID=265,RepateNum=5},
+    {AttrID=300,RepateNum=5},
+    {AttrID=301,RepateNum=5},
+    {AttrID=302,RepateNum=5},
+    {AttrID=303,RepateNum=5},
+    {AttrID=305,RepateNum=5},
+    {AttrID=306,RepateNum=5},
+    {AttrID=307,RepateNum=5},
+    {AttrID=309,RepateNum=5},
+    {AttrID=311,RepateNum=5},
+    {AttrID=312,RepateNum=5},
+    {AttrID=319,RepateNum=5},
+    {AttrID=320,RepateNum=5},
+    {AttrID=324,RepateNum=5},
+    {AttrID=331,RepateNum=5},
+    {AttrID=332,RepateNum=5},
+    {AttrID=344,RepateNum=5},
+    {AttrID=347,RepateNum=5},
+    {AttrID=348,RepateNum=5},
+    {AttrID=350,RepateNum=5},
+    {AttrID=352,RepateNum=5},
+    {AttrID=354,RepateNum=5},
+    {AttrID=355,RepateNum=5},
+    {AttrID=356,RepateNum=5},
+    {AttrID=357,RepateNum=5},
+    {AttrID=358,RepateNum=5},
+    {AttrID=360,RepateNum=5},
+    {AttrID=370,RepateNum=5},
+    {AttrID=430,RepateNum=5},
+    {AttrID=432,RepateNum=5},
+    {AttrID=434,RepateNum=5},
+    {AttrID=436,RepateNum=5},
+    {AttrID=438,RepateNum=5},
+    {AttrID=440,RepateNum=5},
+    {AttrID=400,RepateNum=5}
+};
+local map = {[11]=list[1],[12]=list[2],[13]=list[3],[14]=list[4],[21]=list[5],[22]=list[6],[23]=list[7],[24]=list[8],[31]=list[9],[32]=list[10],[33]=list[11],[34]=list[12],[41]=list[13],[42]=list[14],[43]=list[15],[44]=list[16],[51]=list[17],[52]=list[18],[53]=list[19],[54]=list[20],[61]=list[21],[62]=list[22],[63]=list[23],[64]=list[24],[71]=list[25],[72]=list[26],[73]=list[27],[74]=list[28],[81]=list[29],[82]=list[30],[83]=list[31],[84]=list[32],[91]=list[33],[92]=list[34],[93]=list[35],[94]=list[36],[101]=list[37],[102]=list[38],[103]=list[39],[104]=list[40],[111]=list[41],[112]=list[42],[113]=list[43],[114]=list[44],[121]=list[45],[122]=list[46],[123]=list[47],[124]=list[48],[131]=list[49],[132]=list[50],[133]=list[51],[134]=list[52],[141]=list[53],[142]=list[54],[143]=list[55],[144]=list[56],[151]=list[57],[152]=list[58],[161]=list[59],[162]=list[60],[171]=list[61],[172]=list[62],[181]=list[63],[182]=list[64],[191]=list[65],[192]=list[66],[201]=list[67],[202]=list[68],[203]=list[69],[204]=list[70],[205]=list[71],[206]=list[72],[207]=list[73],[208]=list[74],[209]=list[75],[210]=list[76],[211]=list[77],[220]=list[78],[221]=list[79],[222]=list[80],[223]=list[81],[224]=list[82],[225]=list[83],[226]=list[84],[227]=list[85],[228]=list[86],[229]=list[87],[230]=list[88],[231]=list[89],[232]=list[90],[233]=list[91],[234]=list[92],[235]=list[93],[236]=list[94],[237]=list[95],[238]=list[96],[239]=list[97],[240]=list[98],[241]=list[99],[242]=list[100],[243]=list[101],[244]=list[102],[245]=list[103],[246]=list[104],[247]=list[105],[248]=list[106],[249]=list[107],[250]=list[108],[251]=list[109],[252]=list[110],[253]=list[111],[254]=list[112],[255]=list[113],[256]=list[114],[257]=list[115],[258]=list[116],[259]=list[117],[260]=list[118],[261]=list[119],[262]=list[120],[263]=list[121],[264]=list[122],[265]=list[123],[300]=list[124],[301]=list[125],[302]=list[126],[303]=list[127],[305]=list[128],[306]=list[129],[307]=list[130],[309]=list[131],[311]=list[132],[312]=list[133],[319]=list[134],[320]=list[135],[324]=list[136],[331]=list[137],[332]=list[138],[344]=list[139],[347]=list[140],[348]=list[141],[350]=list[142],[352]=list[143],[354]=list[144],[355]=list[145],[356]=list[146],[357]=list[147],[358]=list[148],[360]=list[149],[370]=list[150],[430]=list[151],[432]=list[152],[434]=list[153],[436]=list[154],[438]=list[155],[440]=list[156],[400]=list[157]};
+
+count = 157;
+Count = 157;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

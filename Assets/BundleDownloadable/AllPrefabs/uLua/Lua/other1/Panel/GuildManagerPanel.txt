@@ -1,0 +1,205 @@
+﻿require "Panel.GuildAnnouncePanel";
+require "Panel.GuildSalaryPanel";
+module('GuildManagerPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildManagerPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 公会宣言标签
+local m_1ToggleAnnouncePath = "Top/1Toggle_Announce";
+-- 公会福利标签
+local m_2ToggleSalaryPath = "Top/2Toggle_Salary";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 公会宣言面板
+local m_GuildAnnouncePanelPath = "Content/GuildAnnouncePanel";
+-- 公会福利面板
+local m_GuildSalaryPanelPath = "Content/GuildSalaryPanel";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 公会宣言面板
+local m_GuildAnnouncePanel = nil;
+-- 公会福利面板
+local m_GuildSalaryPanel = nil;
+
+-- 选中的标签
+local m_SelectTagNum = 1;
+-- 上一次选择标签
+local m_LastSelectTagNum = 1;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- toggles组成的table内容
+local m_ToggleTable = {
+    [1] = { name = m_1ToggleAnnouncePath, panelName = m_GuildAnnouncePanelPath, isFirstOpen = true, luaFileName = GuildAnnouncePanel },
+    [2] = { name = m_2ToggleSalaryPath, panelName = m_GuildSalaryPanelPath, isFirstOpen = true, luaFileName = GuildSalaryPanel },
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_LastSelectTagNum = m_SelectTagNum;
+    m_SelectTagNum = 1;
+    m_ToggleTable[m_SelectTagNum].luaFileName.OnDisable();
+end
+
+function OnDestroy()
+    for Index = 1, #m_ToggleTable do
+        if m_ToggleTable[Index].luaFileName ~= nil then
+            m_ToggleTable[Index].luaFileName.OnDestroy();
+            m_ToggleTable[Index].isFirstOpen = true;
+        end
+    end
+    m_SelectTagNum = 1;
+    m_LastSelectTagNum = 1;
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_GuildAnnouncePanel = nil;
+	m_GuildSalaryPanel = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+    m_GuildAnnouncePanel = child(m_PanelObject, m_GuildAnnouncePanelPath).gameObject;
+    m_GuildSalaryPanel = child(m_PanelObject, m_GuildSalaryPanelPath).gameObject;
+    m_GuildAnnouncePanel:SetActive(false);
+    m_GuildSalaryPanel:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonClosePath, OnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_1ToggleAnnouncePath, On1ToggleAnnounceClick, m_PanelObject);
+	SetGameObjectEvent(m_2ToggleSalaryPath, On2ToggleSalaryClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    OpenPanelByTag();
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    SetGameObjectState(m_ToggleTable[m_LastSelectTagNum].name .. "/Active", false, m_PanelObject);
+    SetGameObjectState(m_ToggleTable[m_LastSelectTagNum].name .. "/Deactive", true, m_PanelObject);
+    SetGameObjectState(m_ToggleTable[m_LastSelectTagNum].panelName, false, m_PanelObject);
+    m_ToggleTable[m_LastSelectTagNum].luaFileName.OnDisable();
+    
+    SetGameObjectState(m_ToggleTable[m_SelectTagNum].name .. "/Active", true, m_PanelObject);
+    SetGameObjectState(m_ToggleTable[m_SelectTagNum].name .. "/Deactive", false, m_PanelObject);
+    SetGameObjectState(m_ToggleTable[m_SelectTagNum].panelName, true, m_PanelObject);
+    m_ToggleTable[m_SelectTagNum].luaFileName.OnEnable();
+    if m_ToggleTable[m_SelectTagNum].isFirstOpen == true then
+        m_ToggleTable[m_SelectTagNum].isFirstOpen = false;
+        m_ToggleTable[m_SelectTagNum].luaFileName.Start();
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+end
+
+-- 关闭按钮点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+end
+
+-- 公会宣言标签点击事件
+function On1ToggleAnnounceClick(gameObject)
+    OnTabClick(1);
+end
+
+-- 公会福利标签点击事件
+function On2ToggleSalaryClick(gameObject)
+    OnTabClick(2);
+end
+
+function OnTabClick(index)
+    if m_SelectTagNum ~= index then
+        m_LastSelectTagNum = m_SelectTagNum;
+        m_SelectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index, causePanelId)
+    if m_panelInitAlready == false then
+        m_SelectTagNum = index;
+        m_LastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL, causePanelId);
+        if m_SelectTagNum ~= index then
+            m_LastSelectTagNum = m_SelectTagNum;
+            m_SelectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    local tabIndex = m_SelectTagNum;
+    panelParams.tabIndex = tabIndex;
+    if tabIndex == 1 then
+        -- 公会宣言
+        panelParams.data = GuildAnnouncePanel.GetJumpCloseData();
+    elseif tabIndex == 2 then
+        -- 福利管理
+        panelParams.data = GuildSalaryPanel.GetJumpCloseData();
+    end
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    local tabIndex = panelParams.tabIndex;
+    if tabIndex == 1 then
+        -- 公会宣言
+        GuildAnnouncePanel.SetJumpCloseData(panelParams.data);
+    elseif tabIndex == 2 then
+        -- 福利管理
+        GuildSalaryPanel.SetJumpCloseData(panelParams.data);
+    end
+    OpenThisPanelByTag(panelParams.tabIndex);
+end

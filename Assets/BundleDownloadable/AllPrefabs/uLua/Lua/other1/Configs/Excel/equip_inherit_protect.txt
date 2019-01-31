@@ -1,0 +1,87 @@
+﻿--[[
+    field=MainLevelID, type=int, desc=消耗装备品质
+    field=CostLevelID0, type=int, desc=消耗装备1级
+    field=CostLevelID1, type=int, desc=消耗装备10级
+    field=CostLevelID2, type=int, desc=消耗装备20级
+    field=CostLevelID3, type=int, desc=消耗装备30级
+    field=CostLevelID4, type=int, desc=消耗装备40级
+    field=CostLevelID5, type=int, desc=消耗装备50级
+    field=CostLevelID6, type=int, desc=消耗装备60级
+    field=CostLevelID7, type=int, desc=消耗装备70级
+    field=CostLevelID8, type=int, desc=消耗装备80级
+    field=CostLevelID9, type=int, desc=消耗装备90级
+    field=CostLevelID10, type=int, desc=消耗装备100级
+]]
+module("EquipInheritProtectTable", package.seeall)
+local list={
+    {MainLevelID=4,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=1,CostLevelID6=2,CostLevelID7=3,CostLevelID8=4,CostLevelID9=5,CostLevelID10=6},
+    {MainLevelID=5,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=2,CostLevelID6=4,CostLevelID7=6,CostLevelID8=8,CostLevelID9=10,CostLevelID10=12},
+    {MainLevelID=6,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=4,CostLevelID6=8,CostLevelID7=12,CostLevelID8=16,CostLevelID9=20,CostLevelID10=24}
+};
+local map = {[4]=list[1],[5]=list[2],[6]=list[3]};
+
+count = 3;
+Count = 3;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

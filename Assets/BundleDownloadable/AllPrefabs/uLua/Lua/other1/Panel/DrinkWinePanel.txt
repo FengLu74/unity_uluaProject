@@ -1,0 +1,296 @@
+﻿module("DrinkWinePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 进度条的文本
+local m_progressTipLabelStr = "LoadBar/Label";
+-- 确认面板是否饮酒名字的文本
+local m_confirmPanelDirnkStr = "ChooseWine/ConfirmPanel/Label-Content";
+-- 确认面板是否饮用的文本
+local m_confirmDirnkContentStr = "ChooseWine/ConfirmPanel/Label1";
+--  提示文本
+local m_tishiContentStr = "ChooseWine/BG/Label1";
+-----------------------------------------按钮路径--------------------------------------
+-- 继续喝酒的按钮
+local m_continueButton = "ContinueButton"
+-- 确定饮用的按钮
+local m_confirmButton = "ChooseWine/ConfirmPanel/Button_Confirm";
+-- 取消饮用的按钮
+local m_cancelButton = "ChooseWine/ConfirmPanel/Button_Cancel";
+-- 关闭面板的按钮路径
+local m_closeButton = "ChooseWine/CloseButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 读条喝的酒的品质
+-- local m_curDrinkAppSpriteStr = "LoadBar/Item/Sprite_Apptitude";
+-- 读条喝的酒的图标
+local m_curDrinkIconStr = "LoadBar/Item/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 设置饮酒的界面
+local m_SetDrinkPanel = "ChooseWine";
+-- 读条的界面
+local m_LoadingBarPanel = "LoadBar";
+-- 继续喝酒的界面
+local m_continueDrinkPanel = "ContinueButton";
+-- 确认面板所在的路径
+local m_confirmPanel = "ChooseWine/ConfirmPanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 设置饮酒ID的4个道具的通用按钮路径
+local m_ItemClickStr = "ChooseWine/Items/Item";
+-- 图标所在的位置
+local m_ItemIconStr = "/Sprite_Icon";
+-- 品质所在的位置
+local m_ItemApptitudeStr = "/Sprite_Apptitude";
+-- 品质底板所在的位置
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具拥有的数量所在的位置
+local m_ItemNumStr = "/Label";
+-- 道具获取方式
+local m_ItemGetWay = "/Label_Buy";
+-- 道具不足遮罩
+local m_ItemMask = "/Sprite_Mask";
+-- 饮酒的经验加成
+local m_ItemExp = "/Label_Exp";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前进度条的对象
+local m_progressBarComp = nil;
+-- 当前开始读条的时间
+local m_CurTime = 0;
+-- 当前点击的是第几个道具
+local m_CurSelectNum = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化点击事件
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitAllInfo();
+    end
+end
+
+function Update()
+    if _G.LogicData_CurDrinkPanelState == 3 then
+        local nValue =(Time.time - m_CurTime) / G_DrinkCDTime;
+        m_progressBarComp.value = nValue;
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelInitAlready = false;
+    m_panelObject = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL);
+    m_progressBarComp = GetComponent(m_panelObject, m_LoadingBarPanel, "UIProgressBar");
+end
+
+function InitAllInfo()
+    InitShowData();
+    InitShow();
+end
+
+function InitOnClick()
+    --    for Index = 1,4 do
+    --        SetItemToolTipsEvent(m_panelObject, m_ItemClickStr..Index, ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL, false, G_DrinkWineItems[Index]);
+    --    end
+    SetGameObjectEvent(m_continueButton, OnContinueClick, m_panelObject);
+    SetGameObjectEvent(m_confirmButton, OnConfirmClick, m_panelObject);
+    SetGameObjectEvent(m_cancelButton, OnCancelClick, m_panelObject);
+    SetGameObjectEvent(m_closeButton, OnCloseClick, m_panelObject);
+end
+
+function InitShowData()
+    for Index = 1, 4 do
+        SetSpriteApptitudeV04(m_ItemClickStr .. Index .. m_ItemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(G_DrinkWineItems[Index]), m_panelObject);
+        SetSpriteApptitude2V04(m_ItemClickStr .. Index .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(G_DrinkWineItems[Index]), m_panelObject);
+        SetSpriteByAtlasID(m_ItemClickStr .. Index .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(G_DrinkWineItems[Index]), m_panelObject, true);
+        local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, G_DrinkWineItems[Index]);
+        SetLabelContent(m_ItemClickStr .. Index .. m_ItemNumStr, num, m_panelObject);
+        local content = CCommonTool.GetDefineInfo(G_DrinkWineEXP[Index]):GetIntContent();
+        SetLabelContent(m_ItemClickStr .. Index .. m_ItemExp, "EXP x" .. content .. "%", m_panelObject);
+        if num == 0 then
+            SetGameObjectState(m_ItemClickStr .. Index .. m_ItemGetWay, true, m_panelObject);
+            SetGameObjectState(m_ItemClickStr .. Index .. m_ItemMask, true, m_panelObject);
+            SetGameObjectEvent(m_ItemClickStr .. Index .. m_ItemGetWay, OnItemGetWayClick, m_panelObject);
+            SetLabelContent(m_ItemClickStr .. Index .. m_ItemNumStr, "", m_panelObject);
+        else
+            SetGameObjectState(m_ItemClickStr .. Index .. m_ItemGetWay, false, m_panelObject);
+            SetGameObjectState(m_ItemClickStr .. Index .. m_ItemMask, false, m_panelObject);
+            SetGameObjectEvent(m_ItemClickStr .. Index, OnItemClick, m_panelObject);
+        end
+    end
+    -- 设置继续饮酒的图标Icon
+    if _G.LogicData_CurDrinkItemId ~= 0 then
+        SetSpriteByAtlasID(m_continueButton .. m_ItemIconStr, CCommonTool.GetImageIDByExcelID(_G.LogicData_CurDrinkItemId), m_panelObject, true);
+    end
+    if _G.LogicData_CurDrinkPanelState == 3 then
+        local nValue =(Time.time - m_CurTime) / G_DrinkCDTime;
+        m_progressBarComp.value = nValue;
+        SetLabelContent(m_progressTipLabelStr, _G.LogicData_CurLeftDrinkTimes, m_panelObject);
+    end
+    local addEXPTxt = CCommonTool.GetDefineInfo(EDefineContentID.TYPE_DRINKWINE_GUILDLEVELUPADDEXP):GetIntContent();
+    SetLabelContent(m_tishiContentStr, string_format(CCommonTool.GetTxtData(226).m_str, addEXPTxt .. "%"), m_panelObject);
+end
+
+function InitShow()
+    if _G.LogicData_CurDrinkPanelState == 1 then
+        SetGameObjectState(m_SetDrinkPanel, true, m_panelObject);
+        SetGameObjectState(m_LoadingBarPanel, false, m_panelObject);
+        SetGameObjectState(m_continueDrinkPanel, false, m_panelObject);
+        SetGameObjectState(m_confirmPanel, false, m_panelObject);
+    elseif _G.LogicData_CurDrinkPanelState == 2 then
+        SetGameObjectState(m_SetDrinkPanel, false, m_panelObject);
+        SetGameObjectState(m_LoadingBarPanel, false, m_panelObject);
+        SetGameObjectState(m_continueDrinkPanel, true, m_panelObject);
+        SetGameObjectState(m_confirmPanel, false, m_panelObject);
+    elseif _G.LogicData_CurDrinkPanelState == 3 then
+        SetGameObjectState(m_SetDrinkPanel, false, m_panelObject);
+        SetGameObjectState(m_LoadingBarPanel, true, m_panelObject);
+        SetGameObjectState(m_continueDrinkPanel, false, m_panelObject);
+        SetSpriteByAtlasID(m_curDrinkIconStr, CCommonTool.GetImageIDByExcelID(LogicData_CurDrinkItemId), m_panelObject, true);
+        SetGameObjectState(m_confirmPanel, false, m_panelObject);
+    else
+        SetGameObjectState(m_SetDrinkPanel, false, m_panelObject);
+        SetGameObjectState(m_LoadingBarPanel, false, m_panelObject);
+        SetGameObjectState(m_continueDrinkPanel, false, m_panelObject);
+        SetGameObjectState(m_confirmPanel, false, m_panelObject);
+    end
+end
+
+function InitConfirmPanel()
+    local nameId = CCommonTool.GetNameIDByExcelID(G_DrinkWineItems[m_CurSelectNum]);
+    local nameStr = CCommonTool.GetTxtData(nameId).m_str;
+    local pinZhiNum = CCommonTool.GetAptitudeIDByExcelID(G_DrinkWineItems[m_CurSelectNum]);
+    local colorStr = GetColorStrByPinZhi(pinZhiNum);
+    if _G.LogicData_CurDrinkPartyState > 0 then
+        local contentTxt = CCommonTool.GetDefineInfo(EDefineContentID.TYPE_DRINKWIN_EXTRAADDEXP):GetIntContent();
+        SetLabelContent(m_confirmDirnkContentStr, string_format(CCommonTool.GetTxtData(1232).m_str, contentTxt .. "%"), m_panelObject);
+        SetLabelContent(m_confirmPanelDirnkStr, string_format(CCommonTool.GetTxtData(8936).m_str, colorStr, nameStr), m_panelObject);
+    else
+        SetLabelContent(m_confirmDirnkContentStr, CCommonTool.GetTxtData(1231).m_str, m_panelObject);
+        SetLabelContent(m_confirmPanelDirnkStr, string_format(CCommonTool.GetTxtData(8936).m_str, colorStr, nameStr), m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnItemClick(e)
+    local num = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    if num <= #G_DrinkWineItems then
+        if (G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, G_DrinkWineItems[num]) > 0) then
+            m_CurSelectNum = num;
+            InitConfirmPanel();
+            SetGameObjectState(m_confirmPanel, true, m_panelObject);
+        end
+    else
+        error("客户端配置喝酒道具出错");
+    end
+end
+
+function OnItemGetWayClick(e)
+    local selectTag = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    GetWayPanel.Show(G_DrinkWineItems[selectTag], ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL);
+end
+
+function OnContinueClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_STARTDRINKWINE);
+    buffer:WriteUInt(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnConfirmClick()
+    if (G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, G_DrinkWineItems[m_CurSelectNum]) > 0) then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_STARTDRINKWINE);
+        buffer:WriteUInt(G_DrinkWineItems[m_CurSelectNum]);
+        G_NetWorkMng:SendMessage(buffer);
+        _G.LogicData_CurDrinkItemId = G_DrinkWineItems[m_CurSelectNum];
+    end
+    SetGameObjectState(m_confirmPanel, false, m_panelObject);
+end
+
+function OnCancelClick()
+    SetGameObjectState(m_confirmPanel, false, m_panelObject);
+end
+
+function OnCloseClick()
+    CloseDrinkWinePanel();
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 服务器通知打开喝酒界面
+function SetData(excelID)
+    _G.LogicData_IsDrinkWinePanelOpen = true;
+    _G.LogicData_CurDrinkItemId = excelID;
+    if excelID <= 0 then
+        -- 这里是让打开设置界面
+        _G.LogicData_CurDrinkPanelState = 1;
+    else
+        -- 打开继续饮酒的ID
+        _G.LogicData_CurDrinkPanelState = 2;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL) == 1 then
+        InitAllInfo();
+    else
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+            createPanel(ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL);
+        else
+            if G_SceneMng.isInGame then
+                if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) == nil then
+                    createPanel(ENUMPANELID.ENUM_PANEL_MAIN);
+                end
+            end
+        end
+    end
+end
+
+function IsNeedCreate()
+    if _G.LogicData_IsDrinkWinePanelOpen then
+        createPanel(ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL);
+    end
+end
+
+function IsNeedClose()
+    if _G.LogicData_IsDrinkWinePanelOpen then
+        closePanel(ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL);
+    end
+end
+
+function CloseDrinkWinePanel()
+    _G.LogicData_IsDrinkWinePanelOpen = false;
+    closePanel(ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL);
+end
+
+function RefreshLeftTimes(times)
+    _G.LogicData_CurLeftDrinkTimes = times;
+    if m_panelInitAlready then
+        if _G.LogicData_CurDrinkPanelState ~= 3 then
+            _G.LogicData_CurDrinkPanelState = 3;
+            InitShow();
+        end
+        if times == 0 then
+            _G.LogicData_CurDrinkPanelState = 0;
+            SetGameObjectState(m_LoadingBarPanel, false, m_panelObject);
+        end
+        m_CurTime = Time.time;
+        SetLabelContent(m_progressTipLabelStr, times, m_panelObject);
+    end
+end
+
+-- 公会宴会的状态
+function OnSetGulidPartyState(partyState)
+    _G.LogicData_CurDrinkPartyState = partyState;
+end

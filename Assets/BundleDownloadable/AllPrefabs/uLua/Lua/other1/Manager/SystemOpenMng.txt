@@ -1,0 +1,138 @@
+﻿module("SystemOpenMng", package.seeall)
+
+-- 所有系统当前解锁的状态
+local m_SystemOpenInfoList = nil;
+
+-- 清空数据
+function ClearData()
+    m_SystemOpenInfoList = nil;
+end
+
+-- 处理服务器消息
+function DealServerMsg(buffer)
+    local listByte = buffer:ReadInt64ToList();
+    
+    local msgType = buffer:ReadInt();
+    error("111msgType"..msgType);
+    if msgType == SYSOPEN_SEND_TO_CLIENT_TYPE.PLAYER_ONLINE  then
+        m_SystemOpenInfoList = listByte;
+        InitAllSysState();
+    elseif msgType == SYSOPEN_SEND_TO_CLIENT_TYPE.LEVEL_UP or msgType == SYSOPEN_SEND_TO_CLIENT_TYPE.FINISHED_TASK or msgType == SYSOPEN_SEND_TO_CLIENT_TYPE.GM_OPERATION then
+        if m_SystemOpenInfoList == nil then
+            error("服务器没有发送系统解锁的初始化，就发送了要解锁系统的信息");
+            return;
+        end
+        local m_BeforeSystemOpenInfoList = m_SystemOpenInfoList;
+        m_SystemOpenInfoList = listByte;
+        for Index = 1, m_BeforeSystemOpenInfoList.Count do
+            if m_BeforeSystemOpenInfoList[Index - 1] ~= m_SystemOpenInfoList[Index - 1] then
+                ActionAfterSysOpenOrClose(Index - 1, m_SystemOpenInfoList[Index - 1]);
+            end
+        end
+    else
+        error("GMI_STOC_SYSTEMOPEN_UPDATE消息接收出错，不存在的消息类型" .. msgType);
+    end
+end
+
+-- 系统是否解锁
+function IsSystemUnlock(sysEnum)
+    if sysEnum >= CSYSTEMENUM.COUNT then
+        error("系统解锁IsSystemUnlock,超过枚举最大数" .. sysEnum);
+        return false;
+    end
+    if m_SystemOpenInfoList == nil then
+        return false;
+    else
+        if m_SystemOpenInfoList[sysEnum] == 1 then
+            return true;
+        else
+            return false;
+        end
+    end
+end
+
+-- 初始化所有系统状态
+function InitAllSysState()
+    -- 刷新主界面右上按钮
+    Main_MiddleTop.InitButtonGroupsShowOut();
+    -- 刷新主界面下方按钮
+    Main_Interface.InitButtonsShowOut();
+    -- 刷新装备界面左侧按钮
+    EquipPanel.InitSystemOpenOut();
+end
+
+-- 系统解锁后执行的事件
+function ActionAfterSysOpenOrClose(sysEnum, curState)
+    if sysEnum == CSYSTEMENUM.SYSTEM_RIDE then
+        Main_MiddleBottom.InitRideButtonShow();
+        -- 刷新主界面下方按钮
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPFORCE then
+        EquipPanel.InitSystemOpenOut();
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPSTARUP then
+        EquipPanel.InitSystemOpenOut();
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPENCHANT then
+        EquipPanel.InitSystemOpenOut();
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPSTONE then
+        EquipPanel.InitSystemOpenOut();
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPRANDEFF then
+        EquipPanel.InitSystemOpenOut();
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPINHERIT then
+        EquipPanel.InitSystemOpenOut();
+        Main_Interface.InitButtonsShowOut();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_PET then
+        Main_LeftTop.InitPetInfoOut();
+        -- 刷新主界面下方按钮
+        Main_Interface.InitButtonsShowOut();
+    else
+        -- 刷新主界面右上按钮
+        Main_MiddleTop.InitButtonGroupsShowOut();
+        -- 刷新主界面下方按钮
+        Main_Interface.InitButtonsShowOut();
+    end
+    RedHintMng.RedHintCheckBySystemUnlock(sysEnum);
+    -- 延时2秒播放特效
+    AddTimerEvent("SystemOpenTimer"..sysEnum, 2, PlaySystemOpenEffect, nil, nil, sysEnum);
+end
+
+-- 播放系统开启特效
+function PlaySystemOpenEffect(sysEnum)
+    local info = CCommonTool.GetSystemOpenInfo(sysEnum);
+    if info ~= nil then 
+        if info.IsPlayEffect == 1 then
+            G_UserInfo:CallPlaySystemOpenUIEffect(sysEnum);
+--            --强制引导时, 中止任务自动追踪
+--            local missionManager = G_UserInfo.MissionManager;
+--            if missionManager.IsMissionTrace then
+--                missionManager.IsMissionTrace = false;
+--                G_UserInfo:GetCurPlayer().AgentOrderMng:CreateOrderStop();
+--            end
+--            -- 取消自动战斗
+--            if G_UserInfo:GetCurPlayer().AttackManager.IsAutoFight == true then
+--                G_UserInfo.AutoAttackManager:AutoFightNO();
+--            end
+        elseif info.GuideStepId > 0 then
+            OnSystemOpenEffectFinish(sysEnum);
+        end
+    end
+end
+
+function IsRideSystemUnlock()
+    return IsSystemUnlock(CSYSTEMENUM.SYSTEM_RIDE);
+end
+
+-- 功能开启特效播放完成回调(CEffectsManager.cs)
+function OnSystemOpenEffectFinish(systemId)
+    local info = CCommonTool.GetSystemOpenInfo(systemId);
+    if info == nil then return end
+    local guideStepId = info.GuideStepId;
+    if guideStepId > 0 then
+        NewPlayerGuideManager.OnSetGuideID(guideStepId);
+        error(string_format("新功能开启, id:{0}, 引导ID:{1}", systemId, guideStepId));
+    end
+end

@@ -1,0 +1,138 @@
+﻿--[[
+    field=Id, type=int, desc=主键ID，对应化灵属性
+    field=IntenMaxExp, type=int, desc=淬炼星总经验
+    field=IntenPerExp, type=int, desc=淬炼每次经验
+    field=TypeAttr1, type=int, desc=基础属性数值
+    field=ValueAttr1, type=int, desc=每星提升属性
+    field=StarLevel, type=int, desc=最高星级
+    field=IntenItem1ID, type=int, desc=淬炼消耗道具id1
+    field=IntenItem1Num, type=int, desc=淬炼消耗道具id1数量
+    field=IntenItem2ID, type=int, desc=淬炼消耗道具id2
+    field=IntenItem2Num, type=int, desc=淬炼消耗道具id2数量
+    field=IntenMoneyNeed, type=int, desc=淬炼消耗银币
+]]
+module("WingSpiritPeiyangTable", package.seeall)
+local list={
+    {Id=141000,IntenMaxExp=0,IntenPerExp=0,TypeAttr1=2000,ValueAttr1=0,StarLevel=0,IntenItem1ID=0,IntenItem1Num=0,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141001,IntenMaxExp=1200,IntenPerExp=400,TypeAttr1=0,ValueAttr1=2000,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=15,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141002,IntenMaxExp=2400,IntenPerExp=800,TypeAttr1=0,ValueAttr1=4000,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=20,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141003,IntenMaxExp=3600,IntenPerExp=1200,TypeAttr1=0,ValueAttr1=5600,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=30,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141004,IntenMaxExp=4800,IntenPerExp=1600,TypeAttr1=0,ValueAttr1=7200,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=35,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141005,IntenMaxExp=8000,IntenPerExp=2000,TypeAttr1=0,ValueAttr1=8800,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=45,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141006,IntenMaxExp=9600,IntenPerExp=2400,TypeAttr1=0,ValueAttr1=9600,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=55,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141007,IntenMaxExp=16800,IntenPerExp=2800,TypeAttr1=0,ValueAttr1=10400,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=65,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141008,IntenMaxExp=25600,IntenPerExp=3200,TypeAttr1=0,ValueAttr1=11200,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=75,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141009,IntenMaxExp=36000,IntenPerExp=3600,TypeAttr1=0,ValueAttr1=11600.0000000001,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=80,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=141010,IntenMaxExp=60000,IntenPerExp=4000,TypeAttr1=0,ValueAttr1=12000,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=85,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51000,IntenMaxExp=0,IntenPerExp=0,TypeAttr1=20,ValueAttr1=0,StarLevel=0,IntenItem1ID=0,IntenItem1Num=0,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51001,IntenMaxExp=1200,IntenPerExp=400,TypeAttr1=0,ValueAttr1=20,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=15,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51002,IntenMaxExp=2400,IntenPerExp=800,TypeAttr1=0,ValueAttr1=40,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=20,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51003,IntenMaxExp=3600,IntenPerExp=1200,TypeAttr1=0,ValueAttr1=56,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=30,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51004,IntenMaxExp=4800,IntenPerExp=1600,TypeAttr1=0,ValueAttr1=72,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=35,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51005,IntenMaxExp=8000,IntenPerExp=2000,TypeAttr1=0,ValueAttr1=87.9999999999999,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=45,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51006,IntenMaxExp=9600,IntenPerExp=2400,TypeAttr1=0,ValueAttr1=96,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=55,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51007,IntenMaxExp=16800,IntenPerExp=2800,TypeAttr1=0,ValueAttr1=104,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=65,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51008,IntenMaxExp=25600,IntenPerExp=3200,TypeAttr1=0,ValueAttr1=112,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=75,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51009,IntenMaxExp=36000,IntenPerExp=3600,TypeAttr1=0,ValueAttr1=116,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=80,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=51010,IntenMaxExp=60000,IntenPerExp=4000,TypeAttr1=0,ValueAttr1=120,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=85,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91000,IntenMaxExp=0,IntenPerExp=0,TypeAttr1=20,ValueAttr1=0,StarLevel=0,IntenItem1ID=0,IntenItem1Num=0,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91001,IntenMaxExp=1200,IntenPerExp=400,TypeAttr1=0,ValueAttr1=20,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=15,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91002,IntenMaxExp=2400,IntenPerExp=800,TypeAttr1=0,ValueAttr1=40,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=20,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91003,IntenMaxExp=3600,IntenPerExp=1200,TypeAttr1=0,ValueAttr1=56,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=30,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91004,IntenMaxExp=4800,IntenPerExp=1600,TypeAttr1=0,ValueAttr1=72,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=35,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91005,IntenMaxExp=8000,IntenPerExp=2000,TypeAttr1=0,ValueAttr1=87.9999999999999,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=45,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91006,IntenMaxExp=9600,IntenPerExp=2400,TypeAttr1=0,ValueAttr1=96,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=55,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91007,IntenMaxExp=16800,IntenPerExp=2800,TypeAttr1=0,ValueAttr1=104,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=65,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91008,IntenMaxExp=25600,IntenPerExp=3200,TypeAttr1=0,ValueAttr1=112,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=75,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91009,IntenMaxExp=36000,IntenPerExp=3600,TypeAttr1=0,ValueAttr1=116,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=80,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=91010,IntenMaxExp=60000,IntenPerExp=4000,TypeAttr1=0,ValueAttr1=120,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=85,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31000,IntenMaxExp=0,IntenPerExp=0,TypeAttr1=40,ValueAttr1=0,StarLevel=0,IntenItem1ID=0,IntenItem1Num=0,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31001,IntenMaxExp=1200,IntenPerExp=400,TypeAttr1=0,ValueAttr1=40,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=15,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31002,IntenMaxExp=2400,IntenPerExp=800,TypeAttr1=0,ValueAttr1=80,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=20,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31003,IntenMaxExp=3600,IntenPerExp=1200,TypeAttr1=0,ValueAttr1=112,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=30,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31004,IntenMaxExp=4800,IntenPerExp=1600,TypeAttr1=0,ValueAttr1=144,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=35,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31005,IntenMaxExp=8000,IntenPerExp=2000,TypeAttr1=0,ValueAttr1=176,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=45,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31006,IntenMaxExp=9600,IntenPerExp=2400,TypeAttr1=0,ValueAttr1=192,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=55,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31007,IntenMaxExp=16800,IntenPerExp=2800,TypeAttr1=0,ValueAttr1=208,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=65,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31008,IntenMaxExp=25600,IntenPerExp=3200,TypeAttr1=0,ValueAttr1=224,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=75,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31009,IntenMaxExp=36000,IntenPerExp=3600,TypeAttr1=0,ValueAttr1=232,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=80,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=31010,IntenMaxExp=60000,IntenPerExp=4000,TypeAttr1=0,ValueAttr1=240,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=85,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41000,IntenMaxExp=0,IntenPerExp=0,TypeAttr1=40,ValueAttr1=0,StarLevel=0,IntenItem1ID=0,IntenItem1Num=0,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41001,IntenMaxExp=1200,IntenPerExp=400,TypeAttr1=0,ValueAttr1=40,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=15,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41002,IntenMaxExp=2400,IntenPerExp=800,TypeAttr1=0,ValueAttr1=80,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=20,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41003,IntenMaxExp=3600,IntenPerExp=1200,TypeAttr1=0,ValueAttr1=112,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=30,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41004,IntenMaxExp=4800,IntenPerExp=1600,TypeAttr1=0,ValueAttr1=144,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=35,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41005,IntenMaxExp=8000,IntenPerExp=2000,TypeAttr1=0,ValueAttr1=176,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=45,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41006,IntenMaxExp=9600,IntenPerExp=2400,TypeAttr1=0,ValueAttr1=192,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=55,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41007,IntenMaxExp=16800,IntenPerExp=2800,TypeAttr1=0,ValueAttr1=208,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=65,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41008,IntenMaxExp=25600,IntenPerExp=3200,TypeAttr1=0,ValueAttr1=224,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=75,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41009,IntenMaxExp=36000,IntenPerExp=3600,TypeAttr1=0,ValueAttr1=232,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=80,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0},
+    {Id=41010,IntenMaxExp=60000,IntenPerExp=4000,TypeAttr1=0,ValueAttr1=240,StarLevel=5,IntenItem1ID=21318,IntenItem1Num=85,IntenItem2ID=0,IntenItem2Num=0,IntenMoneyNeed=0}
+};
+local map = {[141000]=list[1],[141001]=list[2],[141002]=list[3],[141003]=list[4],[141004]=list[5],[141005]=list[6],[141006]=list[7],[141007]=list[8],[141008]=list[9],[141009]=list[10],[141010]=list[11],[51000]=list[12],[51001]=list[13],[51002]=list[14],[51003]=list[15],[51004]=list[16],[51005]=list[17],[51006]=list[18],[51007]=list[19],[51008]=list[20],[51009]=list[21],[51010]=list[22],[91000]=list[23],[91001]=list[24],[91002]=list[25],[91003]=list[26],[91004]=list[27],[91005]=list[28],[91006]=list[29],[91007]=list[30],[91008]=list[31],[91009]=list[32],[91010]=list[33],[31000]=list[34],[31001]=list[35],[31002]=list[36],[31003]=list[37],[31004]=list[38],[31005]=list[39],[31006]=list[40],[31007]=list[41],[31008]=list[42],[31009]=list[43],[31010]=list[44],[41000]=list[45],[41001]=list[46],[41002]=list[47],[41003]=list[48],[41004]=list[49],[41005]=list[50],[41006]=list[51],[41007]=list[52],[41008]=list[53],[41009]=list[54],[41010]=list[55]};
+
+count = 55;
+Count = 55;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

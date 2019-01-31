@@ -1,0 +1,203 @@
+﻿module("ChatProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 聊天消息
+    network.Register(GMI_STOC_CHAT, OnChat);
+end
+
+-- 接收聊天消息
+function OnChat(protocolId, buffer)
+    error("接收聊天消息");
+    -- 频道ID
+    local m_wChannelID = buffer:ReadByte();
+    -- 错误ID
+    local m_wErrorType = buffer:ReadUShort();
+    -- 发言人的职业
+    local m_dwSpkPortraitID = buffer:ReadInt();
+    -- 发言人的GlobleID
+    local m_dwSpkGlobleID = buffer:ReadInt();
+    -- 发言人VIP等级
+    local m_wSpkVipLevel = buffer:ReadByte();
+    -- 发言人的战斗力
+    local m_dwFight = 0;
+    -- 发言人的联盟
+    local m_yUnionID = 0;
+    
+    if m_wChannelID == CHAT_CHANNEL_ID.CHAT_ALONE_ID then
+        m_dwFight = buffer:ReadUInt();
+        m_yUnionID = buffer:ReadByte();
+    end
+
+    -- 广播类型(0:默认 1:组队频道广播 2:公会频道广播, 处理队伍中的喊话功能 3:匹配队伍喊话广播)
+    local broadcastType = buffer:ReadByte();
+    -- 发言人等级
+    local m_dwLevel = buffer:ReadUInt();
+
+    --m_wRankType排行类型
+    -- E_RANKTYPE_PERSON_POWER		= 1,		// 个人战力排行榜 
+	-- E_RANKTYPE_PERSON_LEVEL		= 2,		// 个人等级排行榜 	
+	-- E_RANKTYPE_GANG_XIGUAN		= 30,		// 公会战力排行榜
+    local m_wRankType = buffer:ReadShort();
+    --m_wRankType=30;
+    local m_wRank = buffer:ReadShort();
+    --m_wRank=2;
+
+
+    -- 发言人名字
+    local m_wSpkNameLength = buffer:ReadUShort();
+    local m_wSpkName = buffer:ReadString(m_wSpkNameLength);
+    
+
+    -- 接收人GlobleID
+    local m_dwLsnGlobleID = buffer:ReadInt();
+    -- 接收人名字
+    local m_wLsnNameLength = buffer:ReadUShort();
+
+    local m_wLsnName = buffer:ReadString(m_wLsnNameLength);
+    
+    -- 聊天内容
+    local m_wcsChatLength = buffer:ReadUShort();
+    local m_wcsChat = buffer:ReadString(m_wcsChatLength);
+    local m_dwCDtime = buffer:ReadUInt();
+    local msgType = 0;
+    local m_voiceSecend = 0;
+    local m_urlPath = "";
+    -- 展示物品相关
+    local showItemNum = 0;
+    local itemServiceID = 0;
+    if buffer.Length - buffer.Postion > 0 then
+        msgType = buffer:ReadByte();
+        -- 1语音 0文本
+        if msgType == 1 then
+            if string.sub(m_wcsChat, 1, 1) ~= "\n" then
+                m_wcsChat = "\n" .. m_wcsChat;
+            end
+            local m_urlPathLength = buffer:ReadUShort();
+            m_urlPath = buffer:ReadString(m_urlPathLength);
+            m_voiceSecend = buffer:ReadInt();
+        end
+        showItemNum = buffer:ReadUShort(); -- 展示的物品数量(目前只支持一个)
+        if showItemNum > 0 then 
+            msgType = 10; -- 展示物品消息类型
+--            for i = 1, itemNum do
+            itemServiceID = buffer:ReadInt64ToString();
+        end
+        --error(string_format("msgType:{0}, url:{1}, millseconds:{2}", msgType, m_urlPath, m_voiceSecend));
+    end
+
+    if broadcastType == 1 or broadcastType == 2 then
+        if m_dwSpkGlobleID ~= G_UserInfo.GlobalDBID and TeamManager.HasTeam() then
+            error("有队伍, 过滤组队广播聊天信息");
+            return;
+        end
+    elseif broadcastType == 3 then
+        -- 显示给没有队伍的玩家，和对应目标的队长
+        if TeamManager.HasTeam() then
+            if not TeamManager.IsLeader() then
+                return;
+            end
+            local teamData = TeamManager.teamData;
+            if teamData ~= nil then
+                local globalId, goalId, diffIndex, time = string.match(m_wcsChat, "<3>(%d+)_(%d+)_(%d+)_(%d+)</3>]");
+                if teamData.goalId ~= tonumber(goalId) or teamData.diffIndex ~= tonumber(diffIndex) then
+                    return;
+                end
+            end
+        end
+    end
+
+    local m_liaoTianSingleData = {
+        wChannelID = m_wChannelID,
+        channelId = m_wChannelID,
+        dwSpkPortraitID = m_dwSpkPortraitID,
+        dwSpkGlobleID = m_dwSpkGlobleID,
+        dwLevel = m_dwLevel, 
+        wSpkVipLevel = m_wSpkVipLevel,
+        wSpkName = m_wSpkName,
+        dwLsnGlobleID = m_dwLsnGlobleID,
+        wLsnName = m_wLsnName,
+        wcsChat = m_wcsChat,
+        msgType = msgType,
+        voiceSecend = m_voiceSecend,
+        fileLength = m_voiceSecend,
+        urlPath = m_urlPath,
+        fileId = m_urlPath,
+        isRead = false,
+        broadcastType = broadcastType,
+        showItemNum = showItemNum,
+        itemServiceID = itemServiceID,
+
+        wRankType=m_wRankType,   
+        wRank=m_wRank,           
+    };
+    
+    --私聊
+    if m_wChannelID == CHAT_CHANNEL_ID.CHAT_ALONE_ID then
+        if FriendsData.GetRelation(m_dwSpkGlobleID) == FriendsData.RELATION_BLACK then
+            return;
+        end
+        if m_dwSpkGlobleID ~= G_UserInfo.GlobalDBID then
+            local friendsRecords = ChatManager.GetChannelRecords(CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+            table.insert(friendsRecords,#friendsRecords+1,m_liaoTianSingleData);
+        end
+        --发言人信息
+        local data = {
+            guid = m_dwSpkGlobleID, 
+            profession = m_dwSpkPortraitID, 
+            headIcon = CCommonTool.GetRoleDateInfo(m_dwSpkPortraitID).HeadRes,
+            level = m_dwLevel, 
+            fightPower = m_dwFight, 
+            vipLevel = m_wSpkVipLevel, 
+            unionId = m_yUnionID,
+            name = m_wSpkName, 
+            onlineState = 1
+        }
+        local msgData = {msg=m_wcsChat, msgType=0};
+        -- 语音消息
+        if msgType == 1 and m_voiceSecend > 0 then
+            msgData.url = m_urlPath;
+            msgData.fileId = m_urlPath;
+            msgData.seconds = m_voiceSecend;
+            msgData.fileLength = m_voiceSecend;
+            msgData.msgType = 1;
+        end
+
+        if m_dwSpkGlobleID ~= G_UserInfo.GlobalDBID then
+            FriendsData.AddRecent(data);
+            FriendsData.AddChatRecord(data.guid, data.guid, msgData);
+            FriendsPanel.OnReceiveChatMessage(data.guid);
+        else
+            FriendsData.AddChatRecord(m_dwLsnGlobleID, m_dwSpkGlobleID, msgData);
+            FriendsPanel.OnReceiveChatMessage(m_dwLsnGlobleID);
+        end
+        FriendsPanel.RefreshRedHint();
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+            Main_MiddleBottom.ShowLiaoTianData(m_wChannelID, m_liaoTianSingleData);
+        end
+    else
+        -- 自己的消息标记已读
+        if m_dwSpkGlobleID == G_UserInfo.GlobalDBID then
+            m_liaoTianSingleData.isRead = true;
+        end
+        -- 广播类型(0:默认 1:组队频道广播 2:公会频道广播, 处理队伍中的喊话功能)
+        if broadcastType == 1 then
+            m_wChannelID = CHAT_CHANNEL_ID.CHAT_JOIN_ID;
+        elseif broadcastType == 2 then
+            m_wChannelID = CHAT_CHANNEL_ID.CHAT_GUILD_ID;
+        elseif broadcastType == 3 then
+            m_wChannelID = CHAT_CHANNEL_ID.CHAT_JOIN_ID;
+        end
+        m_liaoTianSingleData.wChannelID = m_wChannelID;
+        m_liaoTianSingleData.channelId = m_wChannelID;
+        -- 添加到聊天table数据中
+        ChatManager.AddChatRecord(m_wChannelID, m_liaoTianSingleData);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then
+            ChatPanel.OnRecieveMessage(m_wChannelID, m_liaoTianSingleData);
+        end
+        Main_MiddleBottom.ShowLiaoTianData(m_wChannelID, m_liaoTianSingleData);
+    end
+end
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------

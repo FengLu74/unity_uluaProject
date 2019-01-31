@@ -1,0 +1,943 @@
+﻿module("Equip_Force", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前装备强化等级（未满级）
+local m_curEquipLevelNotMaxStr = "ForcePanel/Middle/Top/LevelChange/NotMaxLevel/CurLevel/Label_Level";
+-- 当前装备强化等级（满级）
+local m_curEquipLevelMaxStr = "ForcePanel/Middle/Top/LevelChange/MaxLevel/CurLevel/Label_Level";
+
+-- 下一级装备强化等级（未满级）
+local m_nextEquipLevelNotMaxStr = "ForcePanel/Middle/Top/LevelChange/NotMaxLevel/ForceLevel/Label_Level";
+
+-- 当前强化装备的成功率文本
+local m_curForceSuccessLabelStr = "ForcePanel/Middle/Bottom/HasItem/NotMaxLevel/Probability/Label_Intro";
+
+-- 中间上部装备星级所在的位置
+local m_MiddleTopEquipStarLabelStr = "ForcePanel/Middle/Top/Item/HasItem/Label_StarNum";
+-----------------------------------------按钮路径--------------------------------------
+-- 强化按钮所在的位置
+local m_ForceButtonStr = "ForcePanel/Middle/Bottom/HasItem/NotMaxLevel/Force_Button";
+--一键强化按钮所在的位置
+local OneKeyForce_Button = "ForcePanel/Middle/Bottom/HasItem/NotMaxLevel/OneKeyForce_Button";
+-- 系统说明按钮
+local m_SystemExlpainStr = "ForcePanel/Middle/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 中间上部装备部位图标信息
+local m_MiddleTopEquipPosIconStr = "ForcePanel/Middle/Top/Item/NoItem/Sprite_Pos";
+
+-- 中间上部装备图标信息
+local m_MiddleTopEquipIconStr = "ForcePanel/Middle/Top/Item/HasItem/Sprite_Icon";
+-- 中间上部品质图标信息
+local m_MiddleTopEquipApptitudeStr = "ForcePanel/Middle/Top/Item/HasItem/Sprite_Apptitude";
+-- 中间上部装备图标信息
+local m_MiddleTopEquipApptitude2Str = "ForcePanel/Middle/Top/Item/HasItem/Sprite_Equip_Apptitude";
+local m_MiddleTopEquipStep2Str = "ForcePanel/Middle/Top/Item/HasItem/lb_Equip_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopEquipApptitude3Str = "ForcePanel/Middle/Top/Item/HasItem/Sprite_Apptitude2";
+-- 中间上部装备套装信息
+local m_MiddleTopEquipSuitStr = "ForcePanel/Middle/Top/Item/HasItem/Sprite_Suit";
+
+-- 中间下部有道具的信息
+local m_MiddleBottomHasItemContentStr = "ForcePanel/Middle/Bottom/HasItem";
+-- 中间下部没有道具的信息
+local m_MiddleBottomNoItemContentStr = "ForcePanel/Middle/Bottom/NoItem";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧装备的listView组件所在的位置
+local m_leftEquipListViewCompStr = "ForcePanel/Left/ItemPanel/Grid";
+-- 中间装备的信息
+local m_MiddleContentStr = "ForcePanel/Middle";
+
+-- 中间上部有装备的显示
+local m_MiddleTopHasEquipContentStr = "ForcePanel/Middle/Top/Item/HasItem";
+-- 中间上部没有装备的显示
+local m_MiddleTopNoEquipContentStr = "ForcePanel/Middle/Top/Item/NoItem";
+
+-- 强化等级变化显示(未满)
+local m_MiddleTopForceLevelChangeNotMaxStr = "ForcePanel/Middle/Top/LevelChange/NotMaxLevel";
+-- 强化等级变化显示（满）
+local m_MiddleTopForceLevelChangeMaxStr = "ForcePanel/Middle/Top/LevelChange/MaxLevel";
+
+-- 中间下部最大等级的显示
+local m_MiddleBottomMaxLevelContentStr = "ForcePanel/Middle/Bottom/HasItem/MaxLevel";
+-- 中间下部未达最大等级的显示
+local m_MiddleBottomNotMaxLevelContentStr = "ForcePanel/Middle/Bottom/HasItem/NotMaxLevel";
+
+-- 右侧所在位置
+local m_RightContentStr = "ForcePanel/Right";
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewCompStr = "ForcePanel/Right/ItemPanel/Grid";
+
+-- 装备强化成功的特效
+local m_EquipSuccessEffStr = "ForcePanel/Middle/Top/Effect_Success";
+-- 装备强化失败的特效
+local m_EquipFailEffStr = "ForcePanel/Middle/Top/Effect_Fail";
+-- 装备强化进行中的特效
+local m_EquipCycleEffStr = "ForcePanel/Middle/Top/Effect_Cycle";
+-- 装备强化点击的特效
+local m_EquipClickEffStr = "ForcePanel/Middle/Top/Effect_Click";
+
+-- 装备强化成功率UItable组件
+local m_curForceSuccessUITableCompStr = "ForcePanel/Middle/Bottom/HasItem/NotMaxLevel/Probability";
+----------------------------------通用的名称路径---------------------------------------
+-- 左侧装备下有装备的路径
+local m_hasEquipStr = "HasItem";
+-- 左侧装备下没有装备的路径
+local m_noEquipStr = "NoItem";
+-- 装备部位图片的路径
+local m_noEquipPosSpriteStr = "NoItem/Sprite_Pos";
+-- 装备名称文本的路径
+local m_EquipNameLabelStr = "Label_Name";
+-- 装备强化等级文本的路径
+local m_EquipForceLevelLabelStr = "Label_Level";
+-- 装备可强化红点的提示
+local m_EquipForceRedHintStr = "Sprite_RedHint";
+
+-- 装备图标
+local m_EquipIconSpriteStr = "HasItem/Sprite_Icon";
+-- 装备品质图标
+local m_EquipApptitudeSpriteStr = "HasItem/Sprite_Apptitude";
+-- 装备品质图标2
+local m_EquipAppTitude2SpriteStr = "HasItem/Sprite_Apptitude2";
+-- 装备品质图标
+local m_EquipApptitudeSprite2Str = "HasItem/Sprite_Equip_Apptitude";
+local m_EquipApptitudeStep2Str = "HasItem/lb_Equip_Apptitude";
+-- 装备星级所在的位置
+local m_EquipStarLabelStr = "HasItem/Label_StarNum";
+local m_EquipStarAddStr = "HasItem/Label_StarNum/Label";
+-- 套装
+local m_EquipSuitStr = "HasItem/Sprite_Suit";
+
+-- 当前战斗力数值
+local m_CurFightValueStr = "/Attrs/FightValue/Label_CurValue";
+-- 强化后战斗力数值
+local m_ForceFightValueStr = "/Attrs/FightValue/Label_ForceValue";
+-- 强化后增加的战斗力数值
+local m_ForceAddFightValueStr = "/Attrs/FightValue/Label_ForceAddValue";
+
+-- 属性所在位置
+local m_AttrStr = "/Attrs/Attr";
+-- 属性名称
+local m_AttrNameStr = "/Label_Name";
+-- 属性数值
+local m_AttrValueStr = "/Label_CurValue";
+-- 属性强化后数值
+local m_ForceAttrValueStr = "/Label_ForceValue";
+-- 属性增加的数值
+local m_ForceAddAttrValueStr = "/Label_ForceAddValue";
+
+-- 强化消耗道具所在的位置
+local m_ForceNeedItemStr = "Item";
+-- 强化消耗数量所在的位置
+local m_ForceNeedNumStr = "Label_Need";
+-- 强化消耗获取按钮的文本所在的位置
+local m_ForceNeedBuyLabelStr = "Buy_Button/Label";
+-- 精炼等级加号的位置
+local m_StarUpLevelAdd = "/Label";
+-- 道具加号的位置
+local m_ItemAddStr = "/Sprite_Mask";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 左侧装备的listView组件
+local m_leftEquipListViewComp = nil;
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewComp = nil;
+-- 左侧装备选择的是第几个
+local m_leftEquipSelect = -1;
+-- 当前装备如果要强化的话是否材料充足
+local m_curEquipCanForceItemEnough = true;
+-- 当前装备如果要强化的话是否银币充足
+local m_curEquipCanForceCoinEnough = 0;
+
+-- 装备强化成功的特效
+local m_EquipSuccessEff = nil;
+-- 装备强化失败的特效
+local m_EquipFailEff = nil;
+-- 装备强化进行中的特效
+local m_EquipCycleEff = nil;
+-- 装备强化点击的特效
+local m_EquipClickEff = nil;
+
+-- 装备强化成功率UItable组件
+local m_curForceSuccessUITableComp = nil;
+
+-- 当前需要选中的强化的道具
+local m_SelectedItem = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+-- 够强化的颜色
+local m_CanForceColor = "[DDEEFF]";
+-- 不够强化的颜色
+local m_CannotForceColor = "[D83232]";
+-- 左侧装备显示次序对应装备枚举
+local m_EquipsMatchEnum =
+{
+    [1] = EquipType.ET_Arm,
+    [2] = EquipType.ET_Necklace,
+    [3] = EquipType.ET_Earing,
+    [4] = EquipType.ET_Ring,
+    [5] = EquipType.ET_Dress,
+    [6] = EquipType.ET_Helmet,
+    [7] = EquipType.ET_Cuirass,
+    [8] = EquipType.ET_Leg_Guard,
+    [9] = EquipType.ET_Pants,
+    [10] = EquipType.ET_Shoes,
+    [11] = EquipType.ET_Bracelet,
+    [12] = EquipType.ET_Juju,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitEffectsShow();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitData();
+        InitEffectsShow();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_leftEquipListViewComp = nil;
+    m_RightItemListViewComp = nil;
+    m_leftEquipSelect = -1;
+    m_curEquipCanForceItemEnough = true;
+    m_curEquipCanForceCoinEnough = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftEquipSelect = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    else
+        m_leftEquipSelect = 0;
+    end
+end
+
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    m_leftEquipListViewComp = GetComponent(m_panelObject, m_leftEquipListViewCompStr, "UIListView");
+    m_RightItemListViewComp = GetComponent(m_panelObject, m_RightItemListViewCompStr, "UIListView");
+    m_EquipSuccessEff = child(m_panelObject, m_EquipSuccessEffStr).gameObject;
+    m_EquipFailEff = child(m_panelObject, m_EquipFailEffStr).gameObject;
+    m_EquipCycleEff = child(m_panelObject, m_EquipCycleEffStr).gameObject;
+    m_EquipClickEff = child(m_panelObject, m_EquipClickEffStr).gameObject;
+    m_curForceSuccessUITableComp = GetComponent(m_panelObject, m_curForceSuccessUITableCompStr, "UITable");
+
+end
+
+-- 初始化事件
+function InitEvents()
+    m_leftEquipListViewComp:SetInitCallback(OnEquipCloneInit);
+    m_leftEquipListViewComp:SetClickCallback(OnEquipCloneClick);
+    m_RightItemListViewComp:SetInitCallback(OnNeedItemCloneInit);
+    m_RightItemListViewComp:SetClickCallback(OnNeedItemClick);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_ForceButtonStr, OnForceClick, m_panelObject);
+    SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_panelObject);
+    SetGameObjectEvent(OneKeyForce_Button, OnOneKeyForceClick, m_panelObject);
+end
+
+function InitEffectsShow()
+    m_EquipSuccessEff:SetActive(false);
+    m_EquipFailEff:SetActive(not EquipMng.CanClickEquipForceButton);
+    m_EquipFailEff:SetActive(not EquipMng.CanClickOneEquipForceButton);
+    m_EquipCycleEff:SetActive(false);
+    m_EquipClickEff:SetActive(false);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitLeft();
+    InitMiddle();
+    InitRight();
+end
+
+-- 初始化左侧的显示
+function InitLeft()
+    m_leftEquipListViewComp:RemoveAll();
+    if m_leftEquipSelect >= #m_EquipsMatchEnum then
+        m_leftEquipSelect = 0;
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    for k, v in ipairs(m_EquipsMatchEnum) do
+        if myLv < NewEquipOpenLv and k > 10 then  
+            error("装备未到开启等级");
+        else
+            m_leftEquipListViewComp:AddData(v);
+            if m_SelectedItem and G_BagMng:GetEquipUse():GetEquipByEquipType(v) == m_SelectedItem then
+                m_leftEquipSelect = k - 1;
+                m_SelectedItem = nil;
+            end
+        end
+    end
+    m_leftEquipListViewComp:LookAt(m_leftEquipSelect, true);
+end
+
+-- 左侧装备信息初始化
+function OnEquipCloneInit(listView, cell, data)
+    local equipType = data;
+    local go = cell.gameObject;
+    if EquipMng.EquipForceData[equipType] ~= nil then
+        SetLabelContent(m_EquipForceLevelLabelStr, "+" .. EquipMng.EquipForceData[equipType], go);
+    else
+        error("装备强化系统:::强化等级不存在::::" .. equipType);
+    end
+    local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    if itemAttr == nil then
+        SetGameObjectState(m_hasEquipStr, false, go);
+        SetGameObjectState(m_noEquipStr, true, go);
+        SetEquipPosSpriteByEquipType(m_noEquipPosSpriteStr, equipType, true, go);
+        local posName = "";
+        local posTxtInfo = CCommonTool.GetTxtData(10028 + equipType);
+        if equipType > 11 then 
+            posTxtInfo = CCommonTool.GetTxtData(10153 + equipType - 11);
+        end
+        if posTxtInfo ~= nil then
+            posName = posTxtInfo.m_str;
+        else
+            error("装备强化系统:::" ..(10028 + equipType) .. "文本不存在");
+        end
+        local posNameInfo = CCommonTool.GetTxtData(862);
+        if posNameInfo ~= nil then
+            posName = posName .. posNameInfo.m_str;
+        else
+            error("装备强化系统:::|栏位|文本不存在");
+        end
+        SetLabelContent(m_EquipNameLabelStr, posName, go);
+        SetLabelPinZhi(m_EquipNameLabelStr, 1, go);
+    else
+        SetGameObjectState(m_hasEquipStr, true, go);
+        SetGameObjectState(m_noEquipStr, false, go);
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_EquipIconSpriteStr, CCommonTool.GetImageIDByExcelID(excelID), go, true);
+        SetSpriteApptitudeV04(m_EquipApptitudeSpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetSpriteApptitude2V04(m_EquipAppTitude2SpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+--        SetSpriteEquipApptitudeV04(m_EquipApptitudeSprite2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetGameObjectState(m_EquipApptitudeSprite2Str, false, go);
+        SetLabelContent(m_EquipApptitudeStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), go);
+        SetLabelColor(m_EquipApptitudeStep2Str, "91e464", go);
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_EquipSuitStr, true, go);
+        else
+            SetGameObjectState(m_EquipSuitStr, false, go);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_EquipStarLabelStr, false, go);
+            SetGameObjectPos(m_EquipSuitStr, Vector3.New(-85, -48, 0), go);
+        else
+            SetGameObjectState(m_EquipStarLabelStr, true, go);
+            SetLabelContent(m_EquipStarLabelStr, itemAttr.StarItemLevel, go);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_EquipStarAddStr, Vector3.New(-14, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-109, -48, 0), go);
+            else
+                SetGameObjectPos(m_EquipStarAddStr, Vector3.New(-25, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-120, -48, 0), go);
+            end
+        end
+        SetItemIconEffect(go, m_EquipIconSpriteStr, excelID, 11);
+        SetLabelTextByID(m_EquipNameLabelStr, CCommonTool.GetNameIDByExcelID(excelID), go);
+        SetLabelPinZhi(m_EquipNameLabelStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+    end
+    SetGameObjectState(m_EquipForceRedHintStr, IsCanEquipForce(equipType), go);
+end
+
+-- 初始化中间的显示
+function InitMiddle()
+    if m_EquipsMatchEnum[m_leftEquipSelect + 1] ~= nil then
+        SetGameObjectState(m_MiddleContentStr, true, m_panelObject);
+        local equipType = m_EquipsMatchEnum[m_leftEquipSelect + 1];
+        local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+        InitMiddleTopContent(equipType, itemAttr);
+        InitMiddleBottomContent(equipType, itemAttr);
+    else
+        error("m_EquipsMatchEnum的table中不存在:::" ..(m_leftEquipSelect + 1));
+        SetGameObjectState(m_MiddleContentStr, false, m_panelObject);
+    end
+end
+
+-- 初始化中间上方的内容
+function InitMiddleTopContent(equipType, itemAttr)
+    if itemAttr == nil then
+        SetGameObjectState(m_MiddleTopHasEquipContentStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleTopNoEquipContentStr, true, m_panelObject);
+        SetEquipPosSpriteByEquipType(m_MiddleTopEquipPosIconStr, equipType, true, m_panelObject);
+    else
+        SetGameObjectState(m_MiddleTopHasEquipContentStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleTopNoEquipContentStr, false, m_panelObject);
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_MiddleTopEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+        SetSpriteApptitudeV04(m_MiddleTopEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--        SetSpriteEquipApptitudeV04(m_MiddleTopEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetGameObjectState(m_MiddleTopEquipApptitude2Str, false, m_panelObject);
+        SetLabelContent(m_MiddleTopEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+        SetLabelColor(m_MiddleTopEquipStep2Str, "91e464", m_panelObject);
+        SetSpriteApptitude2V04(m_MiddleTopEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_MiddleTopEquipSuitStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_MiddleTopEquipSuitStr, false, m_panelObject);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_MiddleTopEquipStarLabelStr, false, m_panelObject);
+            SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+        else
+            SetGameObjectState(m_MiddleTopEquipStarLabelStr, true, m_panelObject);
+            SetLabelContent(m_MiddleTopEquipStarLabelStr, itemAttr.StarItemLevel, m_panelObject);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_MiddleTopEquipStarLabelStr .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+            else
+                SetGameObjectPos(m_MiddleTopEquipStarLabelStr .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+            end
+        end
+    end
+    if EquipMng.EquipForceData[equipType] ~= nil then
+        local curLevel = EquipMng.EquipForceData[equipType];
+        if curLevel >= G_EquipMaxForceLevel then
+            SetGameObjectState(m_MiddleTopForceLevelChangeNotMaxStr, false, m_panelObject);
+            SetGameObjectState(m_MiddleTopForceLevelChangeMaxStr, true, m_panelObject);
+            SetLabelContent(m_curEquipLevelMaxStr, "+" .. curLevel, m_panelObject);
+        else
+            SetGameObjectState(m_MiddleTopForceLevelChangeNotMaxStr, true, m_panelObject);
+            SetGameObjectState(m_MiddleTopForceLevelChangeMaxStr, false, m_panelObject);
+            SetLabelContent(m_curEquipLevelNotMaxStr, "+" .. curLevel, m_panelObject);
+            SetLabelContent(m_nextEquipLevelNotMaxStr, "+" ..(curLevel + 1), m_panelObject);
+        end
+    else
+        error("装备强化系统::InitMiddle:EquipForceData中不存在::::" .. equipType);
+    end
+end
+
+-- 初始化中间下方的内容
+function InitMiddleBottomContent(equipType, itemAttr)
+    if itemAttr == nil then
+        SetGameObjectState(m_MiddleBottomHasItemContentStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleBottomNoItemContentStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_MiddleBottomHasItemContentStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleBottomNoItemContentStr, false, m_panelObject);
+        if EquipMng.EquipForceData[equipType] ~= nil then
+            local curLevel = EquipMng.EquipForceData[equipType];
+            if curLevel >= G_EquipMaxForceLevel then
+                SetGameObjectState(m_MiddleBottomNotMaxLevelContentStr, false, m_panelObject);
+                SetGameObjectState(m_MiddleBottomMaxLevelContentStr, true, m_panelObject);
+            else
+                SetGameObjectState(m_MiddleBottomNotMaxLevelContentStr, true, m_panelObject);
+                SetGameObjectState(m_MiddleBottomMaxLevelContentStr, false, m_panelObject);
+            end
+            local equipInfo = itemAttr:GetEquipInfo();
+--            local equipForceInfo = CCommonTool.GetEquipForceInfo(equipInfo.ItemID);
+            if equipInfo ~= nil then
+                local path = "";
+                if curLevel >= G_EquipMaxForceLevel then
+                    path = m_MiddleBottomMaxLevelContentStr;
+                else
+                    path = m_MiddleBottomNotMaxLevelContentStr;
+                end
+                local curFightValueTable = { };
+                local forceFightValueTable = { };
+                for Index = 1, 3 do
+                    local attrIndex, attrForceValue = GetForceValue(Index, equipInfo, curLevel, equipType);
+                    if attrIndex > 0 then
+                        SetGameObjectState(path .. m_AttrStr .. Index, true, m_panelObject);
+                        SetLabelContent(path .. m_AttrStr .. Index .. m_AttrNameStr, CCommonTool.GetAttrNameByAttrID(attrIndex), m_panelObject);
+                        local curValue = attrForceValue;
+                        AddFightValueTable(curFightValueTable, attrIndex, curValue);
+                        local nextAttrIndex, nextValue = GetForceValue(Index, equipInfo, curLevel + 1, equipType);
+                        AddFightValueTable(forceFightValueTable, attrIndex, nextValue);
+                        local addValue = nextValue - curValue;
+                        local attrInfo = CCommonTool.GetAttrIndexInfo(equipInfo.Attr1);
+                        if attrInfo.Ratio < 1 then
+                            local valuePercent = attrInfo.Ratio * curValue;
+                            local nextValuePercent = attrInfo.Ratio * nextValue;
+                            local addValuePercent = attrInfo.Ratio * addValue;
+                            curValue = string.format("%1d", valuePercent * 100) .. "%";
+                            nextValue = string.format("%1d", nextValuePercent * 100) .. "%";
+                            addValue = string.format("%1d", addValuePercent * 100) .. "%";
+                        end
+                        SetLabelContent(path .. m_AttrStr .. Index .. m_AttrValueStr, curValue, m_panelObject);
+                        if curLevel < G_EquipMaxForceLevel then
+                            SetLabelContent(path .. m_AttrStr .. Index .. m_ForceAttrValueStr, nextValue, m_panelObject);
+                            SetLabelContent(path .. m_AttrStr .. Index .. m_ForceAddAttrValueStr, addValue, m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(path .. m_AttrStr .. Index, false, m_panelObject);
+                    end
+                end
+                local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(curFightValueTable) + 0.5);
+                local forceFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(forceFightValueTable) + 0.5);
+                SetLabelContent(path .. m_CurFightValueStr, curFightValue, m_panelObject);
+                if curLevel < G_EquipMaxForceLevel then
+                    SetLabelContent(path .. m_ForceFightValueStr, forceFightValue, m_panelObject);
+                    SetLabelContent(path .. m_ForceAddFightValueStr,(forceFightValue - curFightValue), m_panelObject);
+                end
+
+                local equipForceNeedInfo = CCommonTool.GetEquipForceNeed(curLevel);
+                if equipForceNeedInfo ~= nil then
+                    if EquipMng.EquipForceTimesData[equipType] ~= nil then
+                        local curTimes = EquipMng.EquipForceTimesData[equipType];
+                        if curTimes >= equipForceNeedInfo.MaxNum then
+                            SetLabelTextByID(m_curForceSuccessLabelStr, 50500, m_panelObject);
+                        else
+                            SetLabelTextByID(m_curForceSuccessLabelStr, equipForceNeedInfo.Txt, m_panelObject);
+                        end
+                        m_curForceSuccessUITableComp:Reposition();
+                    else
+                        error("装备强化系统::InitMiddle:EquipForceTimesData中不存在::::" .. equipType);
+                    end
+                else
+                    error("强化数据需求表不存在,当前等级" .. curLevel);
+                end
+            else
+                error("没有此道具的装备表信息" .. itemAttr.ExcelID);
+            end
+        else
+            error("装备强化系统::InitMiddle:EquipForceData中不存在::::" .. equipType);
+        end
+    end
+end
+
+-- 计算装备强化属性的战斗力
+function CaculateEquipForceFightValue(itemAttr, isNextLevel, isOtherPlayer)
+    if itemAttr == nil then
+        return 0;
+    end
+    local curLevel = 0;
+    if isOtherPlayer then
+        curLevel = EquipMng.OtherPlayerEquipForceData[itemAttr:GetEquipType()];
+    else
+        curLevel = EquipMng.EquipForceData[itemAttr:GetEquipType()];
+    end
+    if curLevel == nil then
+        error("装备类型有问题" .. itemAttr:GetEquipType())
+        return 0;
+    end
+    local equipInfo = itemAttr:GetEquipInfo();
+    if equipInfo == nil then
+        return 0;
+    end
+--    local equipForceInfo = CCommonTool.GetEquipForceInfo(equipInfo.ItemID);
+--    if equipForceInfo == nil then
+--        return 0;
+--    end
+    local fightTable = { };
+    local attrIndex;
+    local attrForceValue;
+    local curValue;
+    for Index = 1, 3 do
+        attrIndex, attrForceValue = GetForceValue(Index, equipInfo, curLevel, itemAttr:GetEquipType());
+--        curValue = curLevel * attrForceValue;
+        if attrIndex > 0 then
+            if isNextLevel then
+                AddFightValueTable(fightTable, attrIndex, attrForceValue + 1);
+            else
+                AddFightValueTable(fightTable, attrIndex, attrForceValue);
+            end
+        end
+    end
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, isOtherPlayer) + 0.5);
+    return curFightValue;
+end
+
+-- 得到装备的强化信息
+function GetForceValue(attrOrder, equipInfo, curLevel, equipType)
+    local attrIndex = 0;
+    local attrForceValue = 0;
+    local equipType = equipType + 1;
+    local proID = G_UserInfo.RoleAttribute.ProID;
+    local index = proID * 1000 + curLevel;
+    local equipForceInfo = EquipforceAttrTable.Get(index);
+    if attrOrder == 1 then
+        attrIndex = equipInfo.Attr1;
+    elseif attrOrder == 2 then
+        attrIndex = equipInfo.Attr2;
+    elseif attrOrder == 3 then
+        attrIndex = equipInfo.Attr3;
+    end
+    if curLevel > 0 then 
+        attrForceValue = equipForceInfo["Attr"..equipType..attrOrder];
+    end
+    return attrIndex, attrForceValue;
+end
+
+-- 对战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end
+
+-- 初始化右侧的消耗显示
+function InitRight()
+    if m_EquipsMatchEnum[m_leftEquipSelect + 1] ~= nil then
+        SetGameObjectState(m_RightContentStr, true, m_panelObject);
+        local equipType = m_EquipsMatchEnum[m_leftEquipSelect + 1];
+        local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+        if EquipMng.EquipForceData[equipType] ~= nil then
+            local curLevel = EquipMng.EquipForceData[equipType];
+            local equipForceNeedInfo = CCommonTool.GetEquipForceNeed(curLevel);
+            local needItemTable = GetNeedItems(equipForceNeedInfo);
+            m_curEquipCanForceItemEnough = true;
+            m_curEquipCanForceCoinEnough = 0;
+            m_RightItemListViewComp:RemoveAll();
+            for k, v in ipairs(needItemTable) do
+                m_RightItemListViewComp:AddData(v);
+            end
+            m_RightItemListViewComp:LookAt(-1, false);
+        end
+    else
+        error("m_EquipsMatchEnum的table中不存在:::" ..(m_leftEquipSelect + 1));
+        SetGameObjectState(m_RightContentStr, false, m_panelObject);
+    end
+end
+
+-- 得到装备需要强化需要的道具的table
+function GetNeedItems(equipForceNeedInfo)
+    local resultTable = { };
+    if equipForceNeedInfo == nil then
+        return resultTable;
+    end
+    if equipForceNeedInfo.MoneyCount > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+        itemTable.ItemNum = equipForceNeedInfo.MoneyCount;
+        table.insert(resultTable, itemTable);
+    end
+    if equipForceNeedInfo.Item1ID > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipForceNeedInfo.Item1ID;
+        itemTable.ItemNum = equipForceNeedInfo.Item1Num;
+        table.insert(resultTable, itemTable);
+    end
+    if equipForceNeedInfo.Item2ID > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipForceNeedInfo.Item2ID;
+        itemTable.ItemNum = equipForceNeedInfo.Item2Num;
+        table.insert(resultTable, itemTable);
+    end
+    if equipForceNeedInfo.Item3ID > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipForceNeedInfo.Item3ID;
+        itemTable.ItemNum = equipForceNeedInfo.Item3Num;
+        table.insert(resultTable, itemTable);
+    end
+    return resultTable;
+end
+
+-- 右侧道具初始化
+function OnNeedItemCloneInit(listView, cell, data)
+    local itemTable = data;
+    local go = cell.gameObject;
+    SetItemShowByExcelIDV04(go, m_ForceNeedItemStr, itemTable.ExcelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    if itemTable.ExcelID == G_ItemToolTipDefine.BINDMONEY then
+        SetLabelTextByID(m_ForceNeedBuyLabelStr, 923, go);
+        if itemTable.ItemNum <= G_UserInfo.BindCoin then
+            SetLabelContent(m_ForceNeedNumStr, m_CanForceColor .. itemTable.ItemNum, go);
+        else
+            m_curEquipCanForceCoinEnough = itemTable.ItemNum;
+            SetLabelContent(m_ForceNeedNumStr, m_CannotForceColor .. itemTable.ItemNum, go);
+        end
+        SetGameObjectState(m_ForceNeedItemStr..m_ItemAddStr, false, go);
+    else
+        SetLabelTextByID(m_ForceNeedBuyLabelStr, 923, go);
+        local bagNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable.ExcelID);
+        if itemTable.ItemNum <= bagNum then
+            SetLabelContent(m_ForceNeedNumStr, m_CanForceColor .. bagNum .. "/" .. itemTable.ItemNum, go);
+            SetGameObjectState(m_ForceNeedItemStr..m_ItemAddStr, false, go);
+        else
+            m_curEquipCanForceItemEnough = false;
+            SetLabelContent(m_ForceNeedNumStr, m_CannotForceColor .. bagNum .. "[-]/" .. m_CanForceColor .. itemTable.ItemNum, go);
+            SetGameObjectState(m_ForceNeedItemStr..m_ItemAddStr, true, go);
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击装备
+function OnEquipCloneClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local equipType = data;
+    if equipType == m_EquipsMatchEnum[m_leftEquipSelect + 1] then
+        return;
+    else
+        m_leftEquipSelect = cell.dataIndex;
+        InitMiddle();
+        InitRight();
+    end
+end
+
+-- 点击道具
+function OnNeedItemClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local itemTable = data;
+    if itemTable.ExcelID == G_ItemToolTipDefine.BINDMONEY then
+        MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    else
+        GetWayPanel.Show(itemTable.ExcelID, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    end
+end
+-- 点击一键强化按钮
+function OnOneKeyForceClick()
+    if not EquipMng.CanClickOneEquipForceButton then
+        log("正在等待服务器强化返回的消息，无法继续点击")
+        ShowSystemFlowTips(6380);
+        return;
+    end
+    local equipType = m_EquipsMatchEnum[m_leftEquipSelect + 1];
+    if OnClickJudge(equipType)~=nil then
+        --do none
+    else
+        return;
+    end
+    if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_curEquipCanForceCoinEnough), ENUMPANELID.ENUM_PANEL_EQUIPPANEL, OnOneKeyExchangeMoneyCallBack) then
+        log("银币不足，无法强化");
+        -- ShowSystemFlowTips(6490);
+        return;
+    end
+    EquipMng.CanClickOneEquipForceButton = false;
+    ClickSend(true,equipType);
+end
+-- 点击强化按钮
+function OnForceClick()
+    if not EquipMng.CanClickEquipForceButton then
+        log("正在等待服务器强化返回的消息，无法继续点击")
+        ShowSystemFlowTips(6380);
+        return;
+    end
+    local equipType = m_EquipsMatchEnum[m_leftEquipSelect + 1];
+    if OnClickJudge(equipType)~=nil then
+        --do none
+    else
+        return;
+    end
+    if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_curEquipCanForceCoinEnough), ENUMPANELID.ENUM_PANEL_EQUIPPANEL, OnExchangeMoneyCallBack) then
+        log("银币不足，无法强化");
+        -- ShowSystemFlowTips(6490);
+        return;
+    end
+    EquipMng.CanClickEquipForceButton = false;
+    ClickSend(false,equipType);
+end
+-- 点击判断
+function OnClickJudge(equipType)
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPFORCE) then
+        log("装备强化系统还没解锁");
+        ShowSystemFlowTips(6390);
+        return;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        log("主角不存在无法操作");
+        ShowSystemFlowTips(6400);
+        return;
+    end
+    if not G_UserInfo:GetCurPlayer().IsAlive then
+        log("主角死亡无法操作");
+        ShowSystemFlowTips(6410);
+        return;
+    end
+    if m_EquipsMatchEnum[m_leftEquipSelect + 1] == nil then
+        log("m_EquipsMatchEnum的table中不存在:::" ..(m_leftEquipSelect + 1));
+        ShowSystemFlowTips(6420);
+        return;
+    end
+    if not m_curEquipCanForceItemEnough then
+        log("材料不足，无法强化");
+        ShowSystemFlowTips(6430);
+        return;
+    end
+
+    if EquipMng.EquipForceData[equipType] == nil then
+        log("EquipMng.EquipForceData不存在装备类型为equipType数据:::" .. equipType);
+        ShowSystemFlowTips(6440);
+        return;
+    end
+    if EquipMng.EquipForceData[equipType] >= G_EquipMaxForceLevel then
+        log("已达最高等级无法强化");
+        ShowSystemFlowTips(6450);
+        return;
+    end
+    if EquipMng.EquipForceData[equipType] >= G_UserInfo.RoleAttribute.Level then
+        log("已达角色最高等级无法强化");
+        ShowSystemFlowTips(6460);
+        return;
+    end
+    return true;
+end
+
+function ClickSend(OneKeyClick,equipType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EQUIPFORCEONCE);
+    buffer:WriteInt(equipType);
+    if OneKeyClick then
+        buffer:WriteByte(1);     
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    m_EquipCycleEff:SetActive(true);
+    m_EquipClickEff:SetActive(true);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    EquipMng.CanClickEquipForceButton = false;
+    SocketSendForMoney();
+end
+
+-- 一键强化兑换钱币完成回调
+function OnOneKeyExchangeMoneyCallBack()
+    EquipMng.CanClickOneEquipForceButton = false;
+    SocketSendForMoney();
+end
+
+function SocketSendForMoney()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EQUIPFORCEONCE);
+    buffer:WriteInt(m_EquipsMatchEnum[m_leftEquipSelect + 1]);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 系统说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_EQUIPPANEL, 1);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SuccessRefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        G_MusicMng:OnLoadMusic(4012);
+        m_EquipCycleEff:SetActive(false);
+        m_EquipClickEff:SetActive(false);
+        m_EquipSuccessEff:SetActive(false);
+        m_EquipSuccessEff:SetActive(true);
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        InitRight();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+end
+
+function FailRefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        G_MusicMng:OnLoadMusic(4013);
+        m_EquipCycleEff:SetActive(false);
+        m_EquipClickEff:SetActive(false);
+        m_EquipFailEff:SetActive(false);
+        m_EquipFailEff:SetActive(true);
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        InitRight();
+    end
+end
+
+function ErrorHandle()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_EquipCycleEff:SetActive(false);
+        m_EquipClickEff:SetActive(false);
+        InitShow();
+    end
+end
+
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        m_RightItemListViewComp:Refresh();
+    end
+end
+
+-- 打开强化界面并选中道具
+function SelectItem(itemAttr)
+    m_SelectedItem = itemAttr;
+    EquipPanel.OpenThisPanelByTag(1);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_leftEquipSelect };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+function IsShowRedHintEquipForce()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPFORCE) then
+        return false;
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    local num = #m_EquipsMatchEnum;
+    if myLv < NewEquipOpenLv then
+        num = num - 2;
+    end
+    for Index = 1, num do
+        if IsCanEquipForce(m_EquipsMatchEnum[Index]) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可以进行强化操作
+function IsCanEquipForce(equipType)
+    local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    if itemAttr == nil then
+        return false;
+    end
+    if EquipMng.EquipForceData[equipType] >= G_EquipMaxForceLevel then
+        return false;
+    end
+    if EquipMng.EquipForceData[equipType] >= G_UserInfo.RoleAttribute.Level then
+        return false;
+    end
+    if EquipMng.EquipForceData[equipType] ~= nil then
+        local curLevel = EquipMng.EquipForceData[equipType];
+        local equipForceNeedInfo = CCommonTool.GetEquipForceNeed(curLevel);
+        local needItemTable = GetNeedItems(equipForceNeedInfo);
+        if #needItemTable > 0 then
+            for Index = 1, #needItemTable do
+                if needItemTable[Index].ExcelID == G_ItemToolTipDefine.BINDMONEY then
+                    if G_UserInfo.BindCoin < needItemTable[Index].ItemNum then
+                        return false;
+                    end
+                else
+                    local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemTable[Index].ExcelID);
+                    if hasNum < needItemTable[Index].ItemNum then
+                        return false;
+                    end
+                end
+            end
+        end
+    end
+    return true;
+end

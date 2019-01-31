@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--后缀带有land的为横屏的尺寸 -->
+
+    <dimen name="xy_common_border_padding">30dp</dimen>
+    <dimen name="xy_common_border_padding_land">68dp</dimen>
+    <dimen name="xy_common_edittext_height">45dp</dimen>
+    <dimen name="xy_common_edittext_width">300dp</dimen>
+    <dimen name="xy_common_edittext_clear_size">32dp</dimen>
+    <dimen name="xy_common_xlarge_btn_height">45dp</dimen>
+    <dimen name="xy_common_large_btn_height">40dp</dimen>
+    <dimen name="xy_common_small_btn_height">32dp</dimen>
+    <dimen name="xy_common_title_height">48dp</dimen>
+    <dimen name="xy_common_info_edittext_height">42dp</dimen>
+
+    <!--pay activity-->
+    <dimen name="xy_pay_fm_count_size">36sp</dimen>
+
+
+    <dimen name="xy_common_margin_5dip">5dip</dimen>
+    <dimen name="xy_common_margin_10dip">10dip</dimen>
+    <dimen name="xy_common_margin_15dip">15dip</dimen>
+    <dimen name="xy_common_margin_20dip">20dip</dimen>
+
+    <dimen name="xy_common_width_15dip">15dip</dimen>
+
+
+    <dimen name="xy_font_size_huge">20sp</dimen>
+    <dimen name="xy_font_size_large">18sp</dimen>
+    <dimen name="xy_font_size_middle">16sp</dimen>
+    <dimen name="xy_font_size_normal">14sp</dimen>
+    <dimen name="xy_font_size_small">12sp</dimen>
+
+    <dimen name="xy_common_height_40dip">40dip</dimen>
+    <dimen name="xy_input_height_big">45dip</dimen>
+
+</resources>

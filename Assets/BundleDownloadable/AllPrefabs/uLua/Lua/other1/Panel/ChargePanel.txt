@@ -1,0 +1,110 @@
+﻿module('ChargePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ChargePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 加注释
+local m_Button1Path = "Button1";
+-- 加注释
+local m_Button2Path = "Button2";
+-- 加注释
+local m_Button3Path = "Button3";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CHARGE);
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_Button1Path, OnButton1Click, m_PanelObject);
+	SetGameObjectEvent(m_Button2Path, OnButton2Click, m_PanelObject);
+	SetGameObjectEvent(m_Button3Path, OnButton3Click, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 加注释
+function OnButton1Click(gameObject)
+    CSDKManager.RequestPayment("99999001", OnChargeCallback);
+end
+
+-- 加注释
+function OnButton2Click(gameObject)
+    CSDKManager.RequestPayment("99999002", OnChargeCallback);
+end
+
+-- 加注释
+function OnButton3Click(gameObject)
+    CSDKManager.RequestPayment("99999003", OnChargeCallback);
+end
+
+-- 充值回调
+function OnChargeCallback(data)
+    error("充值回调: result:"..tostring(data.result));
+    if data.result == true then
+        local params = data.data;
+        if params ~= null and params.Length > 0 then
+            local transactionId = params[0];
+            ChargeProtocol.RequestAsycPayment(transactionId);
+        else
+            ShowSystemFlowTips(--[[充值成功:, SDK返回数据为null]]CCommonTool.GetTxtData(1350).m_str, true);
+        end
+    else
+        ShowSystemFlowTips(--[[充值失败!]]CCommonTool.GetTxtData(1351).m_str, true);
+    end
+end
+
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_CHARGE);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

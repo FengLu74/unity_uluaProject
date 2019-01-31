@@ -1,0 +1,1757 @@
+﻿_error = error;
+--[[
+-- 错误日志--
+function error(str)
+    Util.LogError(tostring(str) .. "\n" .. debug.traceback());
+end
+-- info日志--
+function log(str)
+    Util.Log(str);
+end
+
+-- 警告日志--
+function warn(str)
+    Util.LogWarning(str);
+end
+
+-- 查找对象--
+function find(str)
+    local obj = GameObject.Find(str);
+    if obj == nil then
+        error("does not find gameObject which path is::::" .. str);
+    end
+    return obj;
+end
+
+-- 通过tag查找对象--
+function FindPanelObjWithPanelID(panelID)
+    return G_PanelMng:GetPanel(panelID);
+end
+
+-- 销毁一个对象--
+function destroy(obj)
+    GameObject.DestroyImmediate(obj);
+end
+
+-- 加载一个对象--
+function newobject(prefab)
+    return GameObject.Instantiate(prefab);
+end
+-- 读表
+function getTableData()
+    local DataTable = require "Configs.DataTable.Init";
+    DataTable.Init();
+    -- LuaGameManager.DealTableData();转移到C#中确保表分帧处理完成再处理.
+end
+-- 创建或显示面板(已经存在就显示面板否则创建面板)--
+function createPanel(panelID, causePanelID)
+    if causePanelID == nil then
+        causePanelID = -1;
+    end
+    G_PanelMng:CreatePanel(panelID, true, { }, causePanelID);
+    -- NewPlayerGuideManager.ProcessGuideOnCreatePanel(panelID);
+end
+
+-- [Comment]
+-- 创建面板
+function createPanelExx(panelID, tempTable, causePanelID)
+    if causePanelID == nil then
+        causePanelID = -1;
+    end
+    G_PanelMng:CreatePanel(panelID, true, tempTable, causePanelID);
+    -- NewPlayerGuideManager.ProcessGuideOnCreatePanel(panelID);
+end
+
+-- [Comment]
+-- 隐藏面板--
+function closePanel(panelID, causePanelID)
+    if G_PanelMng ~= nil then
+        if causePanelID == nil then
+            causePanelID = -1;
+        end
+        G_PanelMng:DisablePanel(panelID, causePanelID, true);
+    end
+end
+
+-- [Comment]
+-- 判定当前面板是否打开1为打开状态,0为关闭状态
+function IsOpenPanel(panelID)
+    return G_PanelMng:IsOpenPanel(panelID);
+end
+
+-- [Comment]
+-- 判定当前游戏对象是否打开1为打开状态,0为关闭状态 game为父对象，str为子对象
+function IsObjectActive(game, str)
+    return child(game, str).gameObject.activeSelf;
+end
+
+-- [Comment]
+-- 查找子控件--
+function child(game, str)
+    if nil == game then
+        error(str .. " parent object is null");
+    else
+        local temp = game.transform:Find(str);
+        if nil == temp then
+            error("does not find transform::" .. str);
+        else
+            return temp;
+        end
+    end
+    -- 暂时注释, 会影响新手引导判断
+    -- 会影响游戏中的逻辑判断, 判断空对象时, 结果不为空
+    -- return GameObject.New(str);
+    return nil;
+end 
+
+
+-- [Comment]
+-- 查找某个控件的组件参数parentObject为当前对象的父对象，参数childNodeName为组件路径，参数typeName为组件类型
+function GetComponent(parentObject, childNodeName, typeName)
+    if nil == parentObject then
+        error("GetComponent .childNodeName == " .. childNodeName);
+        return nil;
+    end
+    if child(parentObject, childNodeName).gameObject ~= nil then
+        local componentObject = child(parentObject, childNodeName).gameObject:GetComponent(typeName);
+        if componentObject ~= nil then
+            return componentObject;
+        else
+            error("does not find component::" .. typeName .. " in " .. childNodeName);
+            return nil;
+        end
+    else
+        error("does not find object::" .. childNodeName);
+        return nil;
+    end
+end
+
+-- [Comment]
+-- 获取Input输入框的值第一个参数为label路径,第二个参数为当前对象的父对象，返回值为Input输入的值
+function GetInputContent(strInputName, ParentObject)
+    local objectInput = child(ParentObject, strInputName).gameObject;
+    if nil == objectInput then
+        error("does not find Input object :::" .. strInputName);
+        return nil;
+    else
+        local InputContent = objectInput:GetComponent("UIInput");
+
+        if nil == InputContent then
+            error("does not find Input Component:::" .. strInputName);
+            return nil;
+        else
+            return InputContent.value;
+        end
+    end
+end
+
+-- [Comment]
+-- 设置Input输入框的值第一个参数为label路径,第二个参数为input设置的内容,第三个参数为当前对象的父对象，返回值为Input输入的值
+function SetInputContent(strInputName, strConent, ParentObject)
+    local objectInput = child(ParentObject, strInputName).gameObject;
+    if nil == objectInput then
+        error("does not find Input object :::" .. strInputName);
+        return nil;
+    else
+        local InputContent = objectInput:GetComponent("UIInput");
+
+        if nil == InputContent then
+            error("does not find Input Component:::" .. strInputName);
+            return nil;
+        else
+            InputContent.value = strConent;
+        end
+    end
+end
+
+-- [Comment]
+-- 设置Label内容第一个参数为label路径,第二个参数为 label设置的内容,第三个参数为当前对象的父对象
+function SetLabelContent(strLabelName, strConent, ParentObject)
+    local objectYuanbao = child(ParentObject, strLabelName).gameObject;
+    if nil == objectYuanbao then
+        error("does not find Label object :::" .. strLabelName);
+    else
+        local LabelContent = objectYuanbao:GetComponent("UILabel");
+        if nil == LabelContent then
+            error("does not find Label Component:::" .. strLabelName);
+        else
+            if strConent == nil then
+                error("label 设置文本内容为null" .. strLabelName);
+            else
+                LabelContent.text = strConent;
+            end
+        end
+    end
+end
+
+-- [Comment]
+-- 设置Label内容第一个参数为label路径,第二个参数为文本ID,第三个参数为当前对象的父对象
+function SetLabelTextByID(strLabelName, strTextID, ParentObject)
+    local txtInfo = CCommonTool.GetTxtData(strTextID);
+    if nil == txtInfo then
+        error("当前文本ID不存在::" .. strTextID);
+        SetLabelContent(strLabelName, "文本表不存在" .. strTextID, ParentObject);
+    else
+        SetLabelContent(strLabelName, txtInfo.m_str, ParentObject);
+    end
+end
+
+-- [Comment]
+-- 设置Label内容第一个参数为label路径,第二个参数为文本ID,第三个参数为当前对象的父对象
+function SetLabelWithUnderlineByID(strLabelName, strTextID, ParentObject)
+
+    local txtInfo = CCommonTool.GetTxtData(strTextID);
+    if nil == txtInfo then
+        error("当前文本ID不存在::" .. strTextID);
+    else
+        SetLabelContent(strLabelName, "[u]" .. txtInfo.m_str .. "[-]", ParentObject);
+    end
+end
+
+-- 通过ID获取文本
+function GetTextToId(id)
+    local txtInfo = CCommonTool.GetTxtData(id);
+    if nil == txtInfo then
+        error("当前文本ID不存在::" .. id);
+        return "";
+    else
+        return txtInfo.m_str;
+    end
+end
+
+-- lua 字符串分割函数
+-------------------------------------------------------
+-- 参数:待分割的字符串,分割字符
+-- 返回:子串表.(含有空串)  
+function string_split(str, split_char)
+    local sub_str_tab = { };
+
+    while (true) do
+        local pos = string.find(str, split_char);
+        if (not pos) then
+            local size_t = table.getn(sub_str_tab)
+            table.insert(sub_str_tab, size_t + 1, str);
+            break;
+        end
+
+        local sub_str = string.sub(str, 1, pos - 1);
+        local size_t = table.getn(sub_str_tab)
+        table.insert(sub_str_tab, size_t + 1, sub_str);
+        local t = string.len(str);
+        str = string.sub(str, pos + 1, t);
+    end
+    return sub_str_tab;
+end
+
+-- 获取字符串长度
+function strlen(value)
+    if not value then return 0 end
+    return System.String.New(value).Length;
+end
+
+-- [Comment]
+-- 字符串格式化(C#string.Format类似功能)
+-- 例: string_format("a{0}b{1}c{0}", 10, 20); ==> a10b20c10
+--     string_format("a{0}b{1}c{0}", {10,20}); ==> a10b20c10
+function string_format(s, ...)
+    local count = select('#', ...);
+    local t = nil;
+    if count == 1 and type(select(1, ...)) == "table" then
+        t = ...;
+    else
+        t = { ...}
+    end
+    s = string.gsub(s, "{(%d+)}", function(i)
+        i = tonumber(i) + 1;
+        return tostring(t[i]) or "";
+    end )
+    return s;
+end
+
+-- 字符串格式化
+-- 例: string_format("a{name}b{1}c{2}", {name="n", [1]=100, [2]=200}); ==> an100c200
+function string_format2(s, t)
+    s = string.gsub(s, "{(%w+)}", function(key)
+        return t[key] or "";
+    end );
+    return s;
+end
+
+function lang(s)
+    return s;
+end
+
+local FormatTable = nil;
+FormatTable = function(t, level)
+    if level == nil then
+        level = 0
+    end
+    local space = "    ";
+    local tab = "";
+    for i = 1, level do
+        tab = tab .. space;
+    end
+
+    if not(type(t) == "table") then
+        return ""
+    end
+
+    local stringTable = { }
+    table.insert(stringTable, "{")
+    table.insert(stringTable, "\n");
+    local hasKey = false;
+    for k, v in pairs(t) do
+        hasKey = true;
+        local keyType = type(k);
+        table.insert(stringTable, tab);
+        table.insert(stringTable, space);
+        if keyType == "number" or keyType == "boolean" then
+
+            table.insert(stringTable, "[" .. tostring(k) .. "] = ");
+        else
+            table.insert(stringTable, "[\"" .. k .. "\"] = ");
+        end
+
+        local valueType = type(v);
+        if valueType == "table" then
+            table.insert(stringTable, FormatTable(v, level + 1));
+        elseif valueType == "number" or valueType == "boolean" then
+            table.insert(stringTable, tostring(v));
+        elseif valueType == "string" then
+            if string.find(v, "\"") then
+                table.insert(stringTable, "[=[" .. v .. "]=]");
+            else
+                table.insert(stringTable, "\"" .. v .. "\"");
+            end
+        else
+            table.insert(stringTable, "\"" .. tostring(v) .. "\"");
+        end
+        table.insert(stringTable, ",\n");
+    end
+    if hasKey then table.remove(stringTable, #stringTable); end
+    table.insert(stringTable, "\n");
+    table.insert(stringTable, tab);
+    table.insert(stringTable, "}");
+    return table.concat(stringTable, "");
+end
+
+-- [Comment]
+-- 序列化table table to string
+function SerializeTable(t)
+    return FormatTable(t, 0);
+end
+
+-- [Comment]
+-- 设置UISprite内容第一个参数为路径,第二个参数为 UISprite设置的图集名字,第三个参数为图集中元素,第四个参数为当前对象的父对象
+function SetSpriteContent(strUISpriteName, strAtlasName, strSpriteName, ParentObject, isPixelPerfect)
+
+    -- error(strUISpriteName..":::::"..strAtlasName.."::::"..strSpriteName);
+    local objectUISprite = child(ParentObject, strUISpriteName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strUISpriteName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+
+            error("does not find Sprite Component:::" .. strUISpriteName);
+        else
+            local atlas = G_AtlasMng:GetAssetAltas(strAtlasName);
+            if nil ~= atlas then
+                objectUISpriteContent.atlas = atlas;
+                objectUISpriteContent.spriteName = strSpriteName;
+                if isPixelPerfect == nil or isPixelPerfect == false then
+                    objectUISpriteContent:MakePixelPerfect();
+                end
+            else
+                error(strAtlasName .. "Atlas does not exist" .. ":::strUISpriteName::::" .. strUISpriteName);
+            end
+        end
+    end
+end
+
+-- [Comment]
+-- 设置UISprite内容第一个参数为路径,第二参数为图集表ID,第三个参数为当前对象的父对象
+function SetSpriteByAtlasID(strUISpriteName, iAtlasID, ParentObject, isPixelPerfect)
+    local AtlasInfo = CCommonTool.GetAltasInfo(iAtlasID);
+    if nil == AtlasInfo then
+        error("does not find atlas info ,Atlas id is ::" .. iAtlasID);
+    else
+
+        SetSpriteContent(strUISpriteName, AtlasInfo.AltaStr, AtlasInfo.PicStr, ParentObject, isPixelPerfect);
+    end
+end
+
+-- [Comment]
+--- 设置游戏对象状态 第一个参数为对象路径,第二参数为状态,true 为显示 ,false 为隐藏,第三个参数为当前对象的父对象
+function SetGameObjectState(strObjectName, bState, ParentObject)
+    local currentObj = child(ParentObject, strObjectName);
+    if nil ~= currentObj then
+        local objectUISprite = currentObj.gameObject;
+        if nil == objectUISprite then
+            error("does not find Sprite object :::" .. strObjectName);
+        else
+            objectUISprite:SetActive(bState);
+        end
+    else
+        error("does not find Sprite object :::" .. strObjectName);
+    end
+end
+
+-- [Comment]
+--- 设置游戏对象的相对坐标位置
+function SetGameObjectPos(strObjectName, vctor3, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        objectUISprite.transform.localPosition = vctor3;
+    end
+end
+
+--- 设置游戏对象的缩放
+function SetGameObjectScale(strObjectName, vctor3, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        objectUISprite.transform.localScale = vctor3;
+    end
+end
+
+-- [Comment]
+--- 设置游戏对象的rotation坐标位置
+function SetGameObjectRot(strObjectName, vctor3, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        objectUISprite.transform.localEulerAngles = vctor3;
+    end
+end
+
+-- [Comment]
+--- 设置游戏对象状态 第一个参数为对象路径,第二参数为状态,true 为显示 ,false 为隐藏,第三个参数为当前对象的父对象
+function SetCUIButtonEnabled(strObjectName, bState, ParentObject)
+    local objectUIButton = child(ParentObject, strObjectName).gameObject;
+    local cuiButton = objectUIButton:GetComponent("CUIButtonEx");
+    if cuiButton == nil then
+        error("does not find UIToggle object :::" .. strObjectName);
+    else
+        cuiButton.isEnabled = bState;
+    end
+end
+
+-- [Comment]
+-- 设置游戏对象的事件信息 第一参数 游戏对象的路径,第二参数为事件委托信息,第三参数为父对象,第四个参数是消息类型
+function SetGameObjectEvent(strObjectName, Envent, ParentObject, bttonDelegate)
+    local go = child(ParentObject, strObjectName);
+    if go == nil then
+        error("does not find Sprite object :::" .. strObjectName);
+        return;
+    end
+    local objectUISprite = go.gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        SetButtonObjEvent(objectUISprite, Envent, bttonDelegate);
+    end
+end
+
+-- [Comment]
+-- 针对GameObject设置按钮响应事件第一参数 按钮对象,第二参数为事件委托信息,第三个参数是消息类型
+function SetButtonObjEvent(Obj, envent, buttonDelegate)
+    if buttonDelegate == nil then
+        buttonDelegate = Button_Delegate.onClick;
+    end
+    if buttonDelegate == Button_Delegate.onClick then
+        UIEventListener.Get(Obj).onClick = LuaHelper.OnClick(envent);
+    end
+    if buttonDelegate == Button_Delegate.onPress then
+        UIEventListener.Get(Obj).onPress = LuaHelper.OnPress(envent);
+    end
+    if buttonDelegate == Button_Delegate.onDragEnd then
+        UIEventListener.Get(Obj).onDragEnd = LuaHelper.OnDragEnd(envent);
+    end
+    if buttonDelegate == Button_Delegate.onDragStart then
+        UIEventListener.Get(Obj).onDragStart = LuaHelper.OnDragStart(envent);
+    end
+end
+
+-- [Comment]
+-- 设置游戏对象状态 第一个参数为对象路径,第二参数为设置对象颜色,第三个参数为当前对象的父对象
+function SetSpriteColor(strObjectName, strColor, ParentObject)
+
+
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            if strColor == nil then
+                error("strColor is nil");
+            else
+                objectUISpriteContent.color = NGUIText.ParseColor24(strColor, 0);
+            end
+        end
+    end
+end
+
+-- [Comment]
+-- 设置游戏对象颜色 第一个参数为对象路径,第二参数为设置对象颜色,第三个参数为当前对象的父对象
+function SetSpriteColor32(strObjectName, strColor, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            objectUISpriteContent.color = NGUIText.ParseColor32(strColor, 0);
+        end
+    end
+end
+
+-- [Comment]
+-- 设置游戏对象渐变色 第一个参数为对象路径,第二参数为设置对象上颜色,第三个参数为设置对象下颜色,第四个参数为当前对象的父对象
+function SetSpriteGradientColor(strObjectName, topColor, bottomColor, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            if topColor ~= nil and bottomColor ~= nil then
+                objectUISpriteContent.gradientTop = NGUIText.ParseColor32(topColor, 0);
+                objectUISpriteContent.gradientBottom = NGUIText.ParseColor32(bottomColor, 0);
+            else
+                error("Gradient color has nil value");
+            end
+        end
+    end
+end
+
+-- [Comment]
+-- 设置UISprite组件高 第一个参数为对象路径,第二参数为设置高度,第三个参数为当前对象的父对象
+function SetSpriteHeight(strObjectName, height, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            objectUISpriteContent.height = height;
+        end
+    end
+end
+-- [Comment]
+-- 设置UISprite组件宽 第一个参数为对象路径,第二参数为设置宽度,第三个参数为当前对象的父对象
+function SetSpriteWidth(strObjectName, width, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            objectUISpriteContent.width = width;
+        end
+    end
+end
+
+-- [Comment]
+-- 设置游戏对象状态 第一个参数为对象路径,第二参数为设置对象颜色,第三个参数为当前对象的父对象
+function SetLabelColor(strObjectName, strColor, ParentObject)
+    local objectUILabel = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUILabel then
+        error("does not find Label object :::" .. strObjectName);
+    else
+        local objectUILabelContent = objectUILabel:GetComponent("UILabel");
+
+        if nil == objectUILabelContent then
+            error("does not find Label Component:::" .. strObjectName);
+        else
+            objectUILabelContent.color = NGUIText.ParseColor24(strColor, 0);
+        end
+    end
+
+end
+
+function SetLabelGradientColor(topColor, bottomColor, strObjectName, ParentObject)
+    local label = GetComponent(ParentObject, strObjectName, "UILabel");
+    if label == nil then
+        error("does not find Label Component:::" .. strObjectName);
+        return;
+    end
+    label.gradientTop = NGUIText.ParseColor24(topColor, 0);
+    label.gradientBottom = NGUIText.ParseColor24(bottomColor, 0);
+    label.applyGradient = true;
+end
+
+
+-- [Comment]
+--- 设置sprite的5种品质颜色的色值 第一个参数为对象路径，第二个参数为品质等级，第三个参数为当前对象的父对象,品质为1~5
+function SetSpriteApptitudeV04(strObjectName, PinZhi, ParentObject)
+
+    if PinZhi == 1 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_001", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 2 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_002", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 3 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_003", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 4 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_004", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 5 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_005", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 6 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_006", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    else
+        error("品质数值不为1~6" .. strObjectName);
+    end
+end
+
+-- [Comment]
+--- 设置sprite的5种品质颜色的色值 第一个参数为对象路径，第二个参数为品质等级，第三个参数为当前对象的父对象,品质为1~5
+function SetSpriteEquipApptitudeV04(strObjectName, PinZhi, ParentObject)
+
+    if PinZhi == 1 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_101", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 2 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_102", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 3 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_103", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 4 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_104", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 5 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_105", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 6 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_106", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    else
+        error("品质数值不为1~6" .. strObjectName);
+    end
+end
+
+-- [Comment]
+--- 设置sprite的5种品质颜色的色值 第一个参数为对象路径，第二个参数为品质等级，第三个参数为当前对象的父对象,品质为1~5
+function SetSpriteApptitude2V04(strObjectName, PinZhi, ParentObject)
+
+    if PinZhi == 1 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_201", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 2 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_202", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 3 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_203", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 4 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_204", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 5 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_205", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    elseif PinZhi == 6 then
+        SetSpriteContent(strObjectName, "ItemAtlasV04", "UI_DJ_PinZhi_206", ParentObject, true);
+        SetSpriteColor(strObjectName, "FFFFFF", ParentObject);
+    else
+        error("品质数值不为1~6" .. strObjectName);
+    end
+end
+
+-- [Comment]
+-- 设置装备部位的图标
+-- @param1 "strObjectName" 在obj下的路径
+-- @param2 "equipType" 装备类型
+-- @param3 "isBright" 是亮的还是暗的
+-- @param4 "parentObject" obj对象
+-- return nil
+function SetEquipPosSpriteByEquipType(strObjectName, equipType, isBright, parentObject)
+    if equipType == EquipType.ET_Arm then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1021, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1031, parentObject);
+        end
+    elseif equipType == EquipType.ET_Helmet then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1022, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1032, parentObject);
+        end
+    elseif equipType == EquipType.ET_Cuirass then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1023, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1033, parentObject);
+        end
+    elseif equipType == EquipType.ET_Leg_Guard then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1024, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1034, parentObject);
+        end
+    elseif equipType == EquipType.ET_Pants then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1025, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1035, parentObject);
+        end
+    elseif equipType == EquipType.ET_Shoes then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1026, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1036, parentObject);
+        end
+    elseif equipType == EquipType.ET_Necklace then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1027, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1037, parentObject);
+        end
+    elseif equipType == EquipType.ET_Ring then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1028, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1038, parentObject);
+        end
+    elseif equipType == EquipType.ET_Earing then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1029, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1039, parentObject);
+        end
+    elseif equipType == EquipType.ET_Dress then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1030, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1040, parentObject);
+        end
+    elseif equipType == EquipType.ET_Bracelet then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1041, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1043, parentObject);
+        end
+    elseif equipType == EquipType.ET_Juju then
+        if isBright then
+            SetSpriteByAtlasID(strObjectName, 1042, parentObject);
+        else
+            SetSpriteByAtlasID(strObjectName, 1044, parentObject);
+        end
+    else
+        error("SetEquipPosSpriteByEquipType,不存在的装备部位枚举::::" .. equipType);
+    end
+end
+
+-- [Comment]
+-- 设置装备部位的图标
+-- @param1 "strObjectName" 在obj下的路径
+-- @param2 "excelID" 要显示的道具的excelID
+-- @param3 "isBright" 是亮的还是暗的
+-- @param4 "parentObject" obj对象
+-- return nil
+function SetEquipPosSpriteByExcelID(strObjectName, excelID, isBright, parentObject)
+    local equipType = ItemAttribute.GetEquipType(excelID);
+    SetEquipPosSpriteByEquipType(strObjectName, equipType, isBright, parentObject);
+end
+
+-- [Comment]
+--- 设置Label的5种品质颜色的色值 第一个参数为对象路径，第二个参数为品质等级，第三个参数为当前对象的父对象,品质为1~6
+function SetLabelPinZhi(strObjectName, PinZhi, ParentObject)
+
+    if PinZhi == 1 then
+        SetLabelColor(strObjectName, "fffcee", ParentObject);
+    elseif PinZhi == 2 then
+        SetLabelColor(strObjectName, "91e464", ParentObject);
+    elseif PinZhi == 3 then
+        SetLabelColor(strObjectName, "3bbdee", ParentObject);
+    elseif PinZhi == 4 then
+        SetLabelColor(strObjectName, "d719ff", ParentObject);
+    elseif PinZhi == 5 then
+        SetLabelColor(strObjectName, "fffd37", ParentObject);
+    elseif PinZhi == 6 then
+        SetLabelColor(strObjectName, "f63333", ParentObject);
+    else
+        error("品质数值不为1~6" .. strObjectName);
+    end
+end
+
+-- [Comment]
+-- 通过品质得到颜色的color文本
+function GetColorStrByPinZhi(PinZhi)
+    if PinZhi == 1 then
+        return "[fffcee]";
+    elseif PinZhi == 2 then
+        return "[91e464]";
+    elseif PinZhi == 3 then
+        return "[3bbdee]";
+    elseif PinZhi == 4 then
+        return "[d719ff]";
+    elseif PinZhi == 5 then
+        return "[fffd37]";
+    elseif PinZhi == 6 then
+        return "[f63333]";
+    else
+        return "";
+    end
+end
+
+-- [Comment]
+--- 设置游戏对象状态 第一个参数为对象路径,第二参数为设置值,第三个参数为当前对象的父对象
+function SetSpriteFillAmount(strObjectName, value, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UIProgressBar");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            objectUISpriteContent.value = value;
+        end
+    end
+end
+
+function SetSpriteFillAmountTwo(strObjectName, value, ParentObject)
+    local objectUISprite = child(ParentObject, strObjectName).gameObject;
+    if nil == objectUISprite then
+        error("does not find Sprite object :::" .. strObjectName);
+    else
+        local objectUISpriteContent = objectUISprite:GetComponent("UISprite");
+
+        if nil == objectUISpriteContent then
+            error("does not find Sprite Component:::" .. strObjectName);
+        else
+            objectUISpriteContent.fillAmount = value;
+        end
+    end
+end
+
+
+-- [Comment]
+--- 设置角色的的职业图片 第一个参数为对象路径，第二个角色Id，第三个参数为当前对象的父对象
+function SetSpriteProfessionV04(strObjectName, proID, ParentObject)
+
+    if proID == PROFESSION_ID.ASSASSIN then
+        SetSpriteContent(strObjectName, "PanelAloneOneAtlasV04", "UI_CJ_ZY_003", ParentObject, true);
+    elseif proID == PROFESSION_ID.FEILIBA then
+        SetSpriteContent(strObjectName, "PanelAloneOneAtlasV04", "UI_CJ_ZY_002", ParentObject, true);
+    elseif proID == PROFESSION_ID.WARDRAGONWHITE then
+        SetSpriteContent(strObjectName, "PanelAloneOneAtlasV04", "UI_CJ_ZY_001", ParentObject, true);
+    elseif proID == PROFESSION_ID.LOLI then
+        SetSpriteContent(strObjectName, "PanelAloneOneAtlasV04", "UI_CJ_ZY_004", ParentObject, true);
+    else
+        error("职业ID不存在" .. strObjectName);
+    end
+end
+
+-- [Comment]
+-- 获取没有序列化table的长度
+function GetTableLength(tableList)
+    local count = 0;
+    for k, v in pairs(tableList) do
+        count = count + 1;
+    end
+    return count;
+end
+
+-- 设置进去的label颜色
+function OnSetMoneyLabelColor(strPath, moneyCount, moneyType, ParentObject)
+    local labelColor = "FFFDCE";
+    if moneyType == MONEY_TYPE.YINBI_TYPE then
+        if moneyCount <= G_UserInfo.BindCoin then
+            labelColor = "FFFDCE";
+        else
+            labelColor = "FD0B0B";
+        end
+    elseif moneyType == MONEY_TYPE.YUANBAO_TYPE then
+        if moneyCount <= G_UserInfo.NotBindDiamond then
+            labelColor = "FFFDCE";
+        else
+            labelColor = "FD0B0B";
+        end
+    end
+    SetLabelColor(strPath, labelColor, ParentObject);
+end
+
+-- 设置按钮显示是灰还是亮
+function OnSetButtonColor(strPath, moneyCount, moneyType, ParentObject)
+    if moneyType == MONEY_TYPE.YINBI_TYPE then
+        if moneyCount <= G_UserInfo.BindCoin then
+            SetGameObjectState(strPath .. "/On", true, ParentObject);
+            SetGameObjectState(strPath .. "/Off", false, ParentObject);
+        else
+            SetGameObjectState(strPath .. "/On", false, ParentObject);
+            SetGameObjectState(strPath .. "/Off", true, ParentObject);
+        end
+    elseif moneyType == MONEY_TYPE.YUANBAO_TYPE then
+        if moneyCount <= G_UserInfo.NotBindDiamond then
+            SetGameObjectState(strPath .. "/On", true, ParentObject);
+            SetGameObjectState(strPath .. "/Off", false, ParentObject);
+        else
+            SetGameObjectState(strPath .. "/On", false, ParentObject);
+            SetGameObjectState(strPath .. "/Off", true, ParentObject);
+        end
+    end
+end
+
+--  判断金钱是否充足 通过金币类型 判断元宝或者金币是否充足
+function OnIsMoneyAmple(moneyCount, moneyType)
+    if moneyType == MONEY_TYPE.YINBI_TYPE then
+        if G_UserInfo.BindCoin >= moneyCount then
+            return true;
+        end
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_COST_BIND_MONEY_SHORTAGE);
+    elseif moneyType == MONEY_TYPE.YUANBAO_TYPE then
+        if G_UserInfo.NotBindDiamond >= moneyCount then
+            return true;
+        end
+        -- 提示元宝不足
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_COST_GOLD_SHORTAGE);
+    end
+    return false
+end
+
+-- 系统悬浮提示c#调用，1个参数情况
+function CSharpCallShowSysFlowTips(eventID, para1)
+    local tempTable = { };
+    tempTable[1] = para1;
+    ShowSystemFlowTips(eventID, nil, tempTable);
+end
+
+-- [Comment]
+-- 系统悬浮提示创建,第一个参数为事件ID,是否使用事件ID,如果不使用0就说明前面传的参数为文本,第三个参数对txt表中的{index}类型进行替换字符串的集合，使用是第二个参数要设为nil
+function ShowSystemFlowTips(eventID, IsUserEvent, strTable)
+    log("ShowSystemFlowTips::" .. eventID);
+    local tempTable = { };
+    local changeStr = nil;
+    if IsUserEvent == nil then
+        local info = CCommonTool.GetSystemFlowTipsInfo(eventID);
+        if nil == info then
+            error("does not find SystemFlowTips info ,SystemFlowTips id is ::" .. eventID);
+            return;
+        else
+            changeStr = CCommonTool.GetTxtData(info.TextID).m_str;
+            -- error("colorStr:::" .. colorStr);
+            if strTable ~= nil then
+                for Index = 1, #strTable do
+                    changeStr = string.gsub(changeStr, "{" ..(Index - 1) .. "}", strTable[Index]);
+                end
+            end
+            if info.TextColor ~= nil then
+                local colorStr = info.TextColor;
+                changeStr = colorStr .. changeStr;
+            else
+                changeStr = changeStr;
+            end
+            tempTable[2] = info.DelayTime;
+            tempTable[3] = info.GoneDuration;
+        end
+    else
+        changeStr = eventID;
+        tempTable[2] = 2;
+        tempTable[3] = 1;
+    end
+    tempTable[1] = changeStr;
+    SystemFlowTipPanel.AddQueue(tempTable);
+end
+
+-- [Comment]
+-- 通过excelID设置物品显示,第一个参数为母对象,第二个参数为item的子路径,第三个参数为excelid,第四个参数为数量,第五个参数为名字状态, 第六个参数为特效Order起始值, 第七个参数为物品所在面板ID
+function SetItemShowByExcelIDV04(ParentObject, strPath, excelID, num, nameState, iconEffectOrder, panelId)
+    local iconStr = strPath .. "/Sprite_Icon";
+    local apptitudeStr = strPath .. "/Sprite_Apptitude";
+    local apptitudeStr_Equip = strPath .. "/Sprite_Equip_Apptitude";
+    local numStr = strPath .. "/Label_Num";
+    local nameStr = strPath .. "/Label_Name";
+    local apptitudeStr2 = strPath .. "/Sprite_Apptitude2";
+    local stepStr = strPath .. "/lb_Equip_Apptitude";
+    if ParentObject == nil then
+        error("SetItemShowByExcelIDV04中ParentObject是nil");
+        return;
+    end
+    local currentObj = ParentObject.transform:Find(apptitudeStr2);
+    if excelID == nil or excelID == 0 then
+        SetGameObjectState(iconStr, false, ParentObject);
+        SetGameObjectState(apptitudeStr, false, ParentObject);
+        SetGameObjectState(apptitudeStr_Equip, false, ParentObject);
+        SetGameObjectState(numStr, false, ParentObject);
+        SetGameObjectState(nameStr, false, ParentObject);
+        if currentObj ~= nil then
+            SetGameObjectState(apptitudeStr2, false, ParentObject);
+        end
+        return;
+    end
+    -- 设置数量
+    if num == nil then
+        num = 1;
+    end
+    SetLabelContent(numStr, num, ParentObject);
+    if num == 1 then
+        SetGameObjectState(numStr, false, ParentObject);
+    else
+        SetGameObjectState(numStr, true, ParentObject);
+    end
+    -- 设置名称
+    if nameState == nil then
+        nameState = false;
+    end
+    SetGameObjectState(nameStr, nameState, ParentObject);
+    if nameState == true then
+        SetLabelTextByID(nameStr, CCommonTool.GetNameIDByExcelID(excelID), ParentObject);
+        SetLabelPinZhi(nameStr, CCommonTool.GetAptitudeIDByExcelID(excelID), ParentObject);
+    end
+    -- 设置品质
+    if currentObj ~= nil and excelID ~= nil and excelID > 0 then
+        SetSpriteApptitude2V04(apptitudeStr2, CCommonTool.GetAptitudeIDByExcelID(excelID), ParentObject);
+        SetGameObjectState(apptitudeStr2, true, ParentObject);
+    end
+    SetSpriteApptitudeV04(apptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), ParentObject);
+    SetGameObjectState(apptitudeStr, true, ParentObject);
+    local tagType = CCommonTool.GetTagTypeByExcelID(excelID);
+    if tagType == ITEMTAGTYPE.TT_Equip then
+        SetGameObjectState(apptitudeStr_Equip, false, ParentObject);
+        SetGameObjectState(stepStr, true, ParentObject);
+        SetLabelContent(stepStr, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), ParentObject);
+        SetLabelColor(stepStr, "91e464", ParentObject);
+--        SetSpriteEquipApptitudeV04(apptitudeStr_Equip, CCommonTool.GetAptitudeIDByExcelID(excelID), ParentObject);
+    else
+         local temp = ParentObject.transform:Find(stepStr);
+        if nil ~= temp then
+            SetGameObjectState(stepStr, false, ParentObject);
+        end
+        SetGameObjectState(apptitudeStr_Equip, false, ParentObject);
+    end
+    -- 设置图标
+    SetGameObjectState(iconStr, true, ParentObject);
+    SetSpriteByAtlasID(iconStr, CCommonTool.GetImageIDByExcelID(excelID), ParentObject, true);
+    -- 设置图标特效
+    if iconEffectOrder ~= nil then
+        SetItemIconEffect(ParentObject, iconStr, excelID, iconEffectOrder, panelId);
+    end
+end
+
+-- [Comment]
+-- 道具图标特效
+function SetItemIconEffect(ParentObject, strPath, excelID, startOrder, panelId)
+    local effectID = CCommonTool.GetUIEffectIDByExcelID(excelID);
+    local iconObj = child(ParentObject, strPath);
+    SetUIEffect(ParentObject, strPath, effectID, startOrder, nil, nil, panelId);
+end
+
+-- [Comment]
+-- 添加UI特效
+-- @param ParentObject
+-- @param strPath
+-- @param effectID
+-- @param createCallback 特效创建完成回调(回调传入的参数(go, callbackParam, particleId)
+-- @param callbackParam 回调函数调用时, 原样传回的参数(回调函数调用的第二个参数)
+function SetUIEffect(ParentObject, strPath, effectID, startOrder, createCallback, callbackParam, panelId)
+    panelId = panelId == nil and 0 or panelId;
+    local obj = child(ParentObject, strPath);
+    local parentName = "EffectParent";
+    local effectParent = obj:Find(parentName);
+    if effectParent ~= nil then
+        -- 回收特效
+        if effectParent.childCount > 0 then
+            G_SceneMng.ParticleMng:StopParticleByObject(effectParent:GetChild(0).gameObject);
+        end
+    end
+
+    -- 清除特效
+    if effectID == 0 then
+        return;
+    end
+
+    local effectInfo = CCommonTool.GetEffectInfo(effectID);
+    local effectName = effectInfo.EffectName;
+    if effectParent == nil then
+        effectParent = GameObject.New(parentName).transform;
+        effectParent.parent = obj;
+        effectParent.localPosition = Vector3.zero;
+        effectParent.localScale = Vector3.one;
+    end
+    startOrder = startOrder or 0;
+    if createCallback == nil then
+        local callback = function(pObj, iKey)
+            RemoveLastUIEffect(pObj);
+        end
+        CCommonTool.CreateUIEffect(effectParent, effectID, startOrder, callback, panelId);
+    else
+        local callback = function(pObj, iKey)
+            RemoveLastUIEffect(pObj);
+            createCallback(callbackParam);
+        end
+        CCommonTool.CreateUIEffect(effectParent, effectID, startOrder, callback, panelId);
+    end
+end
+
+-- 删除上次加载的特效, 处理特效未加载完成时, 再次加载出现特效叠加问题
+function RemoveLastUIEffect(pObj)
+    local parent = pObj.transform.parent;
+    local childCount = parent.childCount;
+    if childCount > 1 then
+        for i = childCount - 1, 0, -1 do
+            local t = parent:GetChild(i);
+            if t ~= pObj.transform then
+                G_SceneMng.ParticleMng:StopParticleByObject(t.gameObject);
+            end
+        end
+    end
+end
+
+-- 通过传进来的秒数计算时--分--秒
+function CaculateTime(timeSeconds)
+    if timeSeconds >= 0 then
+        local hourTime, temp1 = math.modf(timeSeconds / 3600);
+        local reminderSec1 = math.fmod(timeSeconds, 3600);
+        local minTime, temp2 = math.modf(reminderSec1 / 60);
+        local secTime = math.fmod(reminderSec1, 60);
+        -- error(hourTime .. ":" .. minTime .. ":" .. secTime);
+        local strTime = nil;
+        if hourTime > 0 then
+            if hourTime < 10 then
+                hourTime = "0" .. hourTime;
+            end
+            if minTime < 10 then
+                minTime = "0" .. minTime;
+            end
+            if secTime < 10 then
+                secTime = "0" .. secTime;
+            end
+            strTime = hourTime .. ":" .. minTime .. ":" .. secTime;
+        elseif minTime > 0 then
+            if minTime < 10 then
+                minTime = "0" .. minTime;
+            end
+            if secTime < 10 then
+                strTime = minTime .. ":0" .. secTime;
+            else
+                strTime = minTime .. ":" .. secTime;
+            end
+        elseif secTime > 0 then
+            if secTime < 10 then
+                secTime = "0" .. secTime;
+            end
+            strTime = "00:" .. secTime;
+        end
+        return strTime;
+    else
+        error("传递的时间小于0");
+    end
+end
+
+-- 设置progressbar组件的value值
+function SetProgressBarValue(componentObject, progressBarValue)
+    if nil ~= componentObject then
+        componentObject.enabled = false;
+        componentObject.value = progressBarValue;
+        componentObject.enabled = true;
+    else
+        error("progressbarObject is null");
+    end
+end
+
+-- 设置特效位置
+function SetEffectPosByDir(ParentObject, EffectDir, PosX, PoxY)
+    local effectobj = child(ParentObject, EffectDir).gameObject;
+    if nil == effectobj then
+        error("does not find Effect object :::" .. effectname);
+    else
+        effectobj.transform.localPosition = Vector3.New(PosX, PoxY, 0);
+    end
+end
+
+-- [Comment]
+-- 添加计时事件(1.事件名称 2.时间 3.事件结束后回调 4.显示的方式ETimeShowType 5.每秒回调 6.结束回调参数 7.更新回调参数 8.事件的面板ID 9.设置美妙更新回调方式 10.时间的设置方式)
+function AddTimerEvent(timerEventName, timeValue, callBackOverFunc, showType, updateCallBackFunc, overParameter, updateParameter, panelID, updateParaEnum, timeSetEnum)
+    G_TimerMng:RemoveTimeTask(timerEventName);
+    if timeValue > 0 then
+        local timeInfo = CTimeBaseInfo.New();
+        timeInfo.EventName = timerEventName;
+        if showType ~= nil then
+            timeInfo.ShowType = showType;
+        else
+            timeInfo.ShowType = 1;
+        end
+        if timeSetEnum == 2 then
+            timeInfo:SetOverTimeByTicks(timeValue);
+        else
+            timeInfo:SetOverTimeBySecond(timeValue);
+        end
+        if updateCallBackFunc ~= nil then
+            if updateParaEnum == 2 then
+                timeInfo:SetUpdateTwoEvent(updateCallBackFunc);
+            else
+                timeInfo:SetUpdateEvent(updateCallBackFunc);
+            end
+        end
+        if callBackOverFunc ~= nil then
+            timeInfo:SetOverEvent(callBackOverFunc);
+        end
+        if overParameter ~= nil then
+            timeInfo.OverParameter = overParameter;
+        end
+        if updateParameter ~= nil then
+            timeInfo.HandleUpdateParameter = updateParameter;
+        end
+        if panelID ~= nil then
+            timeInfo.PanelID = panelID;
+        end
+        G_TimerMng:AddTimeTask(timeInfo);
+    else
+        error("添加计时事件,时间参数失败" .. timerEventName);
+    end
+end
+
+-- 通过奖励表配置的道具类型获取道具ID
+function GetItemId(m_ItemType, m_ItemId)
+    if m_ItemType == 1 then
+        return m_ItemId;
+    elseif m_ItemType == 3 then
+        return 10000;
+    elseif m_ItemType == 4 then
+        return G_ItemToolTipDefine.NOTBINDDIAMOND;
+    else
+        return nil;
+    end
+end
+
+-- 获取通过attrIndex表配置的参数获取增加角色的属性值,加法直接返回值，乘法计算百分比
+-- 计算百分比时浮点数取小数点后两位，整数取整
+function GetAttrIndexValue(attrIndex, attrValue)
+    local m_attrIndexData = CCommonTool.GetAttrIndexInfo(attrIndex);
+    local m_attrValue = 0;
+    if m_attrIndexData == nil then
+        error("attrIndex配置错误:" .. attrIndex);
+    else
+        m_attrValue = attrValue * m_attrIndexData.Ratio;
+        if m_attrIndexData.Ratio >= 1 then
+            local m_formatNum = string.format("%0.2f", m_attrValue);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum;
+            else
+                m_attrValue = string.format("%1d", m_attrValue);
+            end
+        end
+        if m_attrIndexData.Ratio < 1 then
+            local m_formatNum = string.format("%0.2f", m_attrValue * 100);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum .. "%";
+            else
+                m_attrValue = string.format("%1d", m_attrValue * 100) .. "%";
+            end
+        end
+    end
+    return m_attrValue;
+end
+
+-- 创建新功能开启界面
+function CreateNewFuncSystemPanel(moduleInfo)
+    local tab = { };
+    -- 图片ID
+    table.insert(tab, 1, moduleInfo.UnlockPicID);
+    -- 文本ID
+    table.insert(tab, 2, moduleInfo.TxtPic);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_FUNCTIONOPENTIPSPANEL, tab);
+end
+
+-- 根据品质得到附魔名称前缀
+function GetEnchantPrefixName(apptitude)
+    local index = nil;
+    if apptitude == 1 then
+        index = EDefineContentID.EnchantWhitePrefix;
+    elseif apptitude == 2 then
+        index = EDefineContentID.EnchantGreenPrefix;
+    elseif apptitude == 3 then
+        index = EDefineContentID.EnchantBluePrefix;
+    elseif apptitude == 4 then
+        index = EDefineContentID.EnchantPurplePrefix;
+    elseif apptitude == 5 then
+        index = EDefineContentID.EnchantOrangePrefix;
+    end
+    if index == nil then
+        error("GetEnchantPrefixName 's apptitude is wrong which is::" .. apptitude);
+        return "";
+    end
+    return CCommonTool.GetTxtData(CCommonTool.GetDefineInfo(index):GetIntContent()).m_str;
+end
+
+-- 道具获得提示
+-- @param isAdd 是否添加1为添加0为消耗
+-- @param mIteypType 1.金币2.银币3.红钻4.蓝钻5.体力6.功勋值 7.道具（道具+装备） 8.骑士荣誉
+-- @param mItemNum 为道具的数量
+--  @param mItemId   道具id
+function GetTispInfoByItemType(isAdd, mIteypType, mItemNum, mItemId)
+    local txtInfo = nil;
+    local infoStr = nil;
+    local str = "";
+    if 1 == isAdd then
+        -- 获得提示
+        -- txtInfo = CCommonTool.GetTxtData(12415).m_str;
+    else
+        -- 消耗提示
+    end
+    if mIteypType == 1 then
+        txtInfo = GetTextToId(102140);
+        -- "获得 {0} 金币";
+    elseif mIteypType == 2 then
+        txtInfo = GetTextToId(102141);
+        -- "获得 {0} 银币";
+    elseif mIteypType == 3 then
+        txtInfo = GetTextToId(102142);
+        -- "获得 {0} 红钻";
+    elseif mIteypType == 4 then
+        txtInfo = GetTextToId(102143);
+        -- "获得 {0} 蓝钻";
+    elseif mIteypType == 5 then
+        txtInfo = GetTextToId(102144);
+        -- "获得 {0} 体力";
+    elseif mIteypType == 6 then
+        --txtInfo = GetTextToId(102145);
+        -- "获得 {0} 功勋";
+    elseif mIteypType == 7 then
+        if mItemId ~= nil then
+            txtInfo = GetTextToId(12417);
+        end
+        -- 由于身上带杀戮值，死亡掉落 {0} *{1}";
+    elseif mIteypType == 8 then
+        txtInfo = GetTextToId(102149);
+        -- "获得 {0} 骑士荣誉";
+    end
+    if nil ~= txtInfo then
+        if mItemId ~= nil then
+            local itemNameId = CCommonTool.GetNameIDByExcelID(mItemId);
+            if itemNameId ~= nil then
+                local itemName = CCommonTool.GetTxtData(itemNameId).m_str;
+                str = string_format(txtInfo, itemName, mItemNum);
+            end
+        else
+            str = string_format(txtInfo, mItemNum, { mItemNum });
+        end
+    end
+    if "" ~= str then
+        ShowSystemFlowTips(str, true);
+        -- 获取道具信息显示在聊天系统频道
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+    end
+end
+
+-- 得到对应部位的装备空置的图片名称
+function GetEquipEmptyBGSpriteName(selectPos)
+    if selectPos - 1 == EquipType.ET_Arm then
+        return "UI_ZBTB_Kong_WuQi_001";
+    elseif selectPos - 1 == EquipType.ET_Necklace then
+        return "UI_ZBTB_Kong_XiangLian_001";
+    elseif selectPos - 1 == EquipType.ET_Ring then
+        return "UI_ZBTB_Kong_JieZhi_001";
+    elseif selectPos - 1 == EquipType.ET_Dress then
+        return "UI_ZBTB_Kong_HuFu_001";
+    elseif selectPos - 1 == EquipType.ET_Helmet then
+        return "UI_ZBTB_Kong_TouKui_001";
+    elseif selectPos - 1 == EquipType.ET_Cuirass then
+        return "UI_ZBTB_Kong_KaiJia_001";
+    elseif selectPos - 1 == EquipType.ET_Leg_Guard then
+        return "UI_ZBTB_Kong_HuShou_001";
+    elseif selectPos - 1 == EquipType.ET_Shoes then
+        return "UI_ZBTB_Kong_XueZi_001";
+    elseif selectPos - 1 == EquipType.ET_Pants then
+        return "UI_ZBTB_Kong_HuTui_001";
+    elseif selectPos - 1 == EquipType.ET_Earing then
+        return "UI_ZBTB_Kong_ErHuan_001";
+    else
+        error("没有此装备部位，得不到装备空图片名称");
+    end
+end
+
+-------------------------------------------道具悬浮提示接口---------------------------------------
+-- @param 母对象
+-- @param 子对象的位置
+-- @param 哪个面板中对象触发的道具悬浮
+-- @param 是否是真实存在的道具（有crid）
+-- @param 如果是真实存在的道具这个就是itemAttribute类的对象，如果不是就是excelID
+-- @param 是否是在身上装备
+-- @param 是否是其他玩家的装备
+function SetItemToolTipsEvent(parentObj, childStr, panelID, isRealItem, itemData, isEquiped, isOtherPlayerEquip)
+    local obj = child(parentObj, childStr).gameObject;
+    if obj ~= nil then
+        local paraTable = { };
+        paraTable.PanelID = panelID;
+        paraTable.IsRealItem = isRealItem;
+        paraTable.ItemData = itemData;
+        if isEquiped then
+            paraTable.IsEquiped = true;
+        else
+            paraTable.IsEquiped = false;
+        end
+        if isOtherPlayerEquip then
+            paraTable.IsOtherPlayerEquip = true;
+        else
+            paraTable.IsOtherPlayerEquip = false;
+        end
+        UIEventListener.Get(obj).onClick = LuaHelper.OnClickWithLuaTable(OnItemToolTipsPanelClick, paraTable);
+    else
+        error("cannot set itemToolTipsEvent cause cannot find:" .. childStr);
+    end
+end
+
+function OnItemToolTipsPanelClick(e, paraTable)
+    ToolTipsPanel.SetData(paraTable);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL) == 1 then
+        ToolTipsPanel.InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+    end
+end
+
+---------------道具悬框方法带回调----------------------------------------------------
+function SetItemToolTipsEventTwo(parentObj, childStr, panelID, isRealItem, itemData, isEquiped, isOtherPlayerEquip,callback)
+    local obj = child(parentObj, childStr).gameObject;
+    if obj ~= nil then
+        local paraTable = { };
+        paraTable.PanelID = panelID;
+        paraTable.IsRealItem = isRealItem;
+        paraTable.ItemData = itemData;
+        if isEquiped then
+            paraTable.IsEquiped = true;
+        else
+            paraTable.IsEquiped = false;
+        end
+        if isOtherPlayerEquip then
+            paraTable.IsOtherPlayerEquip = true;
+        else
+            paraTable.IsOtherPlayerEquip = false;
+        end
+        if callback ~=nil then
+            paraTable.Callback = callback;
+        end
+        UIEventListener.Get(obj).onClick = LuaHelper.OnClickWithLuaTable(OnItemToolTipsPanelClickTwo, paraTable);
+    else
+        error("cannot set itemToolTipsEvent cause cannot find:" .. childStr);
+    end
+end
+
+function OnItemToolTipsPanelClickTwo(e, paraTable)
+    ToolTipsPanel.SetData(paraTable);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL) == 1 then
+        ToolTipsPanel.InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+    end
+    local callback = paraTable.Callback;
+    local itemData = paraTable.ItemData;
+    if callback ~= nil and itemData ~= nil then
+        callback(itemData);
+    end
+end
+
+-- 设置真实存在的道具显示信息
+-- @param 如果是真实存在的道具这个就是itemAttribute类的对象
+-- @param 哪个面板中对象触发的道具悬浮
+function SetRealItemTipsEvent(itemData, panelId)
+    local paraTable = { };
+    paraTable.PanelID = panelId;
+    paraTable.IsRealItem = true;
+    paraTable.ItemData = itemData;
+    ToolTipsPanel.SetData(paraTable);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL) == 1 then
+        ToolTipsPanel.InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+    end
+end
+
+-- 打开道具显示信息
+-- @param 道具Id
+-- @param 哪个面板中对象触发的道具悬浮
+function OpenPropToolTips(excelId, panelId, showGetWay)
+    local paraTable = { };
+    paraTable.PanelID = panelId;
+    paraTable.IsRealItem = false;
+    paraTable.ItemData = excelId;
+    paraTable.IsEquiped = false;
+    paraTable.ShowGetWay = showGetWay;
+    ToolTipsPanel.SetData(paraTable);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL) == 1 then
+        ToolTipsPanel.InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+    end
+end
+
+-----------------------------------------道具悬浮提示接口End--------------------------------------
+-----------------------------------------打开系统提示界面的事件注册--------------------------------
+function SetSystemExplainEvent(parentObj, childStr, luaTable)
+    if luaTable == nil then
+        luaTable = { };
+    end
+    local obj = child(parentObj, childStr).gameObject;
+    if obj ~= nil then
+        UIEventListener.Get(obj).onClick = LuaHelper.OnClickWithLuaTable(CreateSystemExplainPanel, luaTable);
+    else
+        error("cannot set itemToolTipsEvent cause cannot find:" .. childStr);
+    end
+end
+
+function CreateSystemExplainPanel(e, luaTable)
+    SystemExplainPanel.SetData(luaTable);
+    createPanel(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL);
+end
+-----------------------------------------打开系统提示界面的事件注册end-----------------------------
+-- 得到是PK模式，是和平，还是自由，还是公会，还是阵营
+function GetPKModePanelType(PKModeType)
+    if bit:IsEnumFlagOpen(PKModeType, ENUM_PK_CHANGE_TYPE.PK_SWITCH_PEACE_NEW) then
+        return ENUM_MAINPANEL_PKMODE.PEACE;
+    elseif bit:IsEnumFlagOpen(PKModeType, ENUM_PK_CHANGE_TYPE.PK_SWITCH_ALL_NEW) then
+        return ENUM_MAINPANEL_PKMODE.FREE;
+    elseif bit:IsEnumFlagOpen(PKModeType, ENUM_PK_CHANGE_TYPE.PK_SWITCH_GUILD_NEW) then
+        return ENUM_MAINPANEL_PKMODE.GUILD;
+    elseif bit:IsEnumFlagOpen(PKModeType, ENUM_PK_CHANGE_TYPE.PK_SWITCH_TYPE_CAMP) then
+        return ENUM_MAINPANEL_PKMODE.CAMP;
+    else
+        error("PK模式错误，不存在的PK模式::::" .. PKModeType);
+        return ENUM_MAINPANEL_PKMODE.PEACE;
+    end
+end
+
+-- 获取通过attrIndex表配置的参数获取增加角色的属性值,加法直接返回值，乘法计算百分比
+-- 计算百分比时浮点数取小数点后两位，整数取整
+function GetAttrValue(attrIndex, attrValue)
+    local m_attrIndexData = CCommonTool.GetAttrIndexInfo(attrIndex);
+    local m_attrValue = 0;
+    if m_attrIndexData == nil then
+        error("GetAttrValue：attrIndex配置错误:" .. attrIndex);
+    else
+        m_attrValue = attrValue * m_attrIndexData.Ratio;
+        if m_attrIndexData.Ratio >= 1 then
+            local m_formatNum = string.format("%1d", m_attrValue);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum;
+            else
+                m_attrValue = string.format("%1d", m_attrValue);
+            end
+        end
+        if m_attrIndexData.Ratio < 1 then
+            local m_formatNum = string.format("%0.1f", m_attrValue * 100);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum .. "%";
+            else
+                m_attrValue = string.format("%1d", m_attrValue * 100) .. "%";
+            end
+        end
+    end
+    return m_attrValue;
+end
+
+-- 执行UITable的reposition方法
+-- @param1 路径
+-- @param2 对象
+function RepositionUITableComp(childName, parentObj)
+    if parentObj ~= nil then
+        local uiTableComp = GetComponent(parentObj, childName, "UITable");
+        if uiTableComp ~= nil then
+            uiTableComp:Reposition();
+        end
+    else
+        error("RepositionUITableComp::parentObj is nil");
+    end
+end
+
+-- [Comment]
+-- 设置阵营图标
+-- @param path 路径
+-- @param camType 阵营类型
+-- @param parentObj 父对象
+function SetCampIcon(path, campType, parentObj, isPixelPerfect)
+    if JOINCAMPENUM.UNION == campType then
+        SetSpriteByAtlasID(path, CCommonTool.GetDefineInfo(EDefineContentID.LianMengCampIcon):GetIntContent(), parentObj, isPixelPerfect);
+        SetGameObjectState(path, true, parentObj);
+    elseif JOINCAMPENUM.TRIBE == campType then
+        SetSpriteByAtlasID(path, CCommonTool.GetDefineInfo(EDefineContentID.BuLuoCampIcon):GetIntContent(), parentObj, isPixelPerfect);
+        SetGameObjectState(path, true, parentObj);
+    else
+        SetGameObjectState(path, false, parentObj);
+    end
+end
+
+-- [Comment]
+-- 设置职业图标
+-- @param path 路径
+-- @param professionId 职业ID
+-- @param parentObj 父对象
+function SetProfessionIcon(path, professionId, parentObj)
+    if professionId == PROFESSION_ID.ASSASSIN then
+        -- 刺客职业图标
+        SetSpriteByAtlasID(path, EDefineContentID.TYPE_PROFESSION_ASSASSIN_ICONID, parentObj, true);
+    elseif professionId == PROFESSION_ID.FEILIBA then
+        -- 法师职业图标
+        SetSpriteByAtlasID(path, EDefineContentID.TYPE_PROFESSION_FEILIBA_ICONID, parentObj, true);
+    elseif professionId == PROFESSION_ID.LOLI then
+        -- 萝莉职业图标
+        SetSpriteByAtlasID(path, EDefineContentID.TYPE_PROFESSION_LOLI_ICONID, parentObj, true);
+    elseif professionId == PROFESSION_ID.WARDRAGONWHITE then
+        -- 战士职业图标
+        SetSpriteByAtlasID(path, EDefineContentID.TYPE_PROFESSION_WARDRAGONWHITE_ICONID, parentObj, true);
+    else
+        error(string_format("职业ID:{0}错误!!", professionId));
+    end
+end
+
+-- 执行UIScrollView的ResetPosition方法
+-- @param1 路径
+-- @param2 对象
+function RepositionUIScrollViewComp(childName, parentObj)
+    if parentObj ~= nil then
+        local UIScrollViewComp = GetComponent(parentObj, childName, "UIScrollView");
+        if UIScrollViewComp ~= nil then
+            UIScrollViewComp:ResetPosition();
+        end
+    else
+        error("RepositionUITableComp::parentObj is nil");
+    end
+end
+
+-- 设置附魔的品质图片
+-- @param1 路径
+-- @param2 品质
+-- @param3 对象
+function SetEnchantSpriteByQuality(strObjectName, Quality, ParentObject)
+    if Quality == 1 then
+        SetSpriteByAtlasID(strObjectName, 150, ParentObject, true);
+    elseif Quality == 2 then
+        SetSpriteByAtlasID(strObjectName, 151, ParentObject, true);
+    elseif Quality == 3 then
+        SetSpriteByAtlasID(strObjectName, 152, ParentObject, true);
+    elseif Quality == 4 then
+        SetSpriteByAtlasID(strObjectName, 153, ParentObject, true);
+    elseif Quality == 5 then
+        SetSpriteByAtlasID(strObjectName, 154, ParentObject, true);
+    elseif Quality == 6 then
+        SetSpriteByAtlasID(strObjectName, 155, ParentObject, true);
+    else
+        error("附魔品质数值不为1~6" .. strObjectName);
+    end
+end
+
+-- 根据奖励ID得到对应的奖励table
+function GetRewardTable(rewardID)
+    local result = { };
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+    if rewardInfo == nil then
+        return result;
+    end
+    for Index = 1, 5 do
+        local itemType = CCommonTool.GetValueInRewardInfo(rewardID, Index * 3 - 2);
+        local itemID = CCommonTool.GetValueInRewardInfo(rewardID, Index * 3 - 1);
+        local itemNum = CCommonTool.GetValueInRewardInfo(rewardID, Index * 3);
+        local excelID;
+        if itemType == nil or itemID == nil or itemNum == nil then
+            itemType = 0;
+        end
+        if itemType == 0 then
+            return result;
+        elseif itemType == 1 then
+            excelID = CCommonTool.GetProfessionItemId(itemID);
+        elseif itemType == 2 then
+            -- 暂未设计
+        elseif itemType == 3 then
+            excelID = G_ItemToolTipDefine.BINDMONEY;
+        elseif itemType == 4 then
+            excelID = G_ItemToolTipDefine.BINDDIAMOND;
+        elseif itemType == 5 then
+            excelID = G_ItemToolTipDefine.NOTBINDMONEY;
+        end
+        local itemTable = { };
+        itemTable.ExcelID = excelID;
+        itemTable.ItemNum = itemNum;
+        table.insert(result, itemTable);
+    end
+    return result;
+end
+
+-- 判定当前场景是否公会战场景或公会战准备场景
+function IsGuildWarScene(ID)
+    local m_TableWar = CCommonTool.GetAllActivityWarInfo();
+    if m_TableWar ~= nil then
+        for i = 0, m_TableWar.count - 1 do
+            if m_TableWar[i].SceneID == ID then
+                return true;
+            end
+        end
+    end
+    -- 准备场景
+    if ID == 60 or ID == 61 or ID == 62 then
+        return true;
+    end
+    return false;
+end
+
+-- 根据小数大小四舍五入取整
+function GetNumber(num)
+    local t1, t2 = math.modf(num / 1);
+    if t2 >= 0.5 then
+        t1 = t1 + 1;
+    end
+    return t1;
+end
+
+-- 根据float类型参数显示问题 float类型参数添加0.00000001
+function GetFloatValue(num)
+    local addValue = 0.00000001;
+    if num > 0 then
+        num = num + addValue;
+    end
+    return num;
+end
+-- 转换绑定非绑定
+function GetBindAndNotNumById(unBind_id)
+    local unBind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, unBind_id);
+    local bind_Id = WrapBindExceId(unBind_id);
+    local bind_Num  = 0;
+    if bind_Id >0 then
+      bind_Num  = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bind_Id);
+    end
+    
+    return unBind_Num+bind_Num;
+end
+--根据得到非绑定id 得到绑定id
+function WrapBindExceId(unBind_id)
+    local num = -1;
+    local  datas = CCommonTool.GetTradableInfo(unBind_id);
+    if datas ~=nil then
+        num =   datas.UntradableItemID; -- 绑定id
+    end   
+    return num
+end
+]]

@@ -1,0 +1,30 @@
+﻿module("OnlineTimeProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 服务器发给客户端在线奖励数据
+    network.Register(GMI_STOC_RETURN_SIGNIN_DATA_OL, OnRewardOnlineBack);
+end
+
+-- 服务器发送给客户端的在线奖励数据
+function OnRewardOnlineBack(protocolId, buffer)
+    local sendType = buffer:ReadByte();
+    -- error("sendType::::" .. sendType);
+    local RewardOnlineData = buffer:ReadInt();
+    -- error("RewardOnlineData::::" .. RewardOnlineData);
+    G_RewardMng.OnlineRewardGetState = RewardOnlineData;
+    if sendType == 1 then
+        G_RewardMng.OnlineTime = buffer:ReadInt();
+        G_RewardMng.ServerSendOnlineTime = buffer:ReadInt64();
+        -- error("OnlineTime::::" .. G_RewardMng.OnlineTime);
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_ONLINE_TIME_PANEL) == 1 then
+        OnlineTimePanel.InitInfoOut();
+    end
+    if G_SceneMng.isAlreadyInGame then
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLINE, OnlineTimePanel.IsShowRedHintOnLine());
+    end
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

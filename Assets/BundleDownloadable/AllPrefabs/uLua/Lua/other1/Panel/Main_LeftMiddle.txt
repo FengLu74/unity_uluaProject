@@ -1,0 +1,1582 @@
+﻿module("Main_LeftMiddle", package.seeall)
+-- 当前所在面板名字
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- 任务追踪文本所在的位置
+local m_TaskTraceLabelStr = "Label_Intro";
+-- 任务名称文本所在的位置
+local m_TaskNameStr = "Label_Name";
+
+-- 队伍成员等级
+local m_TeamMemLevelPath = "Member/Info/Level";
+-- 队伍成员名称
+local m_TeamMemNamePath = "Member/Info/Name";
+
+-----------------------------------------按钮路径--------------------------------------
+local m_LeftMiddlePath = "LeftMiddle"; 
+-- 任务按钮所在的位置
+local m_TaskButtonStr = "LeftMiddle/Button_Mission";
+-- 组队按钮所在的位置
+local m_TeamButtonStr = "LeftMiddle/Button_Team";
+-- 公会战信息按钮位置
+local m_GuildWarButtonStr = "LeftMiddle/Button_GuildWar";
+
+-- 创建队伍按钮
+local m_ButtonCreatePath = "NoTeam/NoTeamButtons/Button_Create";
+-- 附近队伍按钮
+local m_ButtonNearbyPath = "NoTeam/NoTeamButtons/Button_Nearby";
+-- 组队大厅按钮
+local m_ButtonTeamHallPath = "NoTeam/NoTeamButtons/Button_TeamHall";
+-- 自动匹配队伍
+local m_ButtonTeamMatchingPath = "NoTeam/TeamMatch/Button_TeamMatching";
+-- 更换匹配队伍目标
+local m_ButtonChangeGoalPath = "NoTeam/TeamMatch/Button_ChangeGoal";
+-- 匹配成员中按钮
+local m_MemberMatchingPath = "MemberMatching";
+-- 队伍中的邀请成员按钮
+local m_InviteButtonPath = "InviteButton";
+-- 队伍成员信息
+local m_MemberPath = "Member";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 任务可交的特效
+local m_TaskCanSubmitStr = "Sprite_Complete";
+-- 任务失败的图标
+local m_TaskFailStr = "Sprite_Fail";
+
+-- 队伍成员状态图标
+local m_StateIconPath = "Member/StateIcon";
+-- 队伍成员职业图标
+local m_ProIconPath = "Member/Info/Icon";
+-- 是否为队长图标
+local m_IsLeaderPath = "Member/Info/IsLeader";
+-- 跟随状态图标
+local m_TeamFollowSelectPath = "HasTeam/Menu/Grid/Button_Follow/Select";
+
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 公会战 战场信息面板
+local m_guildWarPanelStr = "LeftMiddle/GuildWarPanel";
+-- 任务面板所在的位置
+local m_taskPanelStr = "LeftMiddle/TaskPanel";
+-- UIListView组件所在的位置
+local m_taskListViewCompStr = "LeftMiddle/TaskPanel/Grid";
+
+-- 组队面板所在的位置
+local m_TeamPanelPath = "LeftMiddle/TeamPanel";
+-- 有队伍显示的内容
+local m_HasTeamPath = "HasTeam";
+-- 无队伍的按钮内容
+local m_NoTeamButtonsPath = "NoTeam/NoTeamButtons";
+-- 没有队伍显示的内容
+local m_NoTeamPath = "NoTeam";
+-- 没有队伍的匹配内容
+local m_TeamMatchPath = "NoTeam/TeamMatch";
+-- 队伍成员1
+local m_Member1Path = "HasTeam/Member1";
+-- 队伍成员2
+local m_Member2Path = "HasTeam/Member2";
+-- 队伍成员3
+local m_Member3Path = "HasTeam/Member3";
+-- 队伍退出按钮
+local m_TeamQuitButtonPath = "HasTeam/Menu/Grid/Button_Quit";
+-- 队伍跟随按钮
+local m_TeamFollowButtonPath = "HasTeam/Menu/Grid/Button_Follow";
+-- 队伍召集按钮
+local m_TeamConvokeButtonPath = "HasTeam/Menu/Grid/Button_Convoke";
+-- 战场我方信息按钮
+local m_WarBtnMyPath = "Sub_Bottom/btn_My";
+-- 战场敌方信息按钮
+local m_WarBtnEnemyPath = "Sub_Bottom/btn_Enemy";
+-- 战场公共资源信息按钮
+local m_WarBtnResourcePath = "Sub_Bottom/btn_Resources";
+-- 战场我方信息
+local m_WarMyPath = "Sub_My";
+-- 战场敌方信息
+local m_WarEnemyPath = "Sub_Enemy";
+-- 战场公共资源信息
+local m_WarResourcePath = "Sub_Resources";
+-- 战场公共资源怪物刷新点
+local m_WarMonsterPointPath = "LeftMiddle/GuildWarPanel/Sub_Resources/Sub_Info/Sub_RefreshPoint";
+-- 战场我方防御塔
+local m_MyTowerStr = "LeftMiddle/GuildWarPanel/Sub_My/Sub_Tower";
+-- 战场敌方防御塔
+local m_EnemyTowerStr = "LeftMiddle/GuildWarPanel/Sub_Enemy/Sub_Tower";
+-- 战场中心资源塔
+local m_ResourceTower = "/Sub_Resource";
+-- 语音面板
+local m_VoicePanelPath = "LeftMiddle/RealTimeVoicePanel";
+-- 成就指引面板
+local m_AchieveGuidePanel = "LeftMiddle/AchieveGuidePanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 选中的图片
+local m_selcetStr = "/Sprite_IsOn";
+-- 未选中的图片
+local m_notSelectStr = "/Sprite_IsOff";
+-- 队伍成员血条
+local m_HpBarPath = "Member/Info/HpBar";
+-- 队伍成员点击特效
+local m_TeamClickEffectStr = "Effect_Click";
+-- 队伍成员选中特效
+local m_TeamSelectEffectStr = "Effect_Select";
+-- 队伍快捷按钮
+local m_TeamBtnGridStr = "HasTeam/Menu/Grid";
+
+-- 任务点击特效
+local m_TaskClickEffectStr = "Effect_Click";
+-- 任务追踪特效
+local m_TaskChaseEffectStr = "Effect_Chase";
+-- 任务支线特效
+local m_TaskBranchEffectStr = "Effect_Branch";
+-- 小飞鞋图片
+local m_TaskFlyShowStr = "Sprite_Flyshoe";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 当前选择的标签(true是任务，false是组队),在公会战战场时屏蔽任务面板，显示公会战信息
+local m_bIsSelectTask = true;
+-- 是否显示公会战
+m_isShowGuildWar = false;
+
+-- 当前选择公会信息页签 1：我方 2：敌方 3：资源 默认为我方
+m_guildWarSelect = 1;
+-- UIListView组件
+local m_taskListViewComp = nil;
+
+-- 队伍面板
+local m_TeamPanelObject = nil;
+-- 无队伍内容对象
+local m_NoTeam = nil;
+-- 无队伍对象中的按钮父对象
+local m_NoTeamButtons = nil;
+-- 组队大厅按钮
+local m_ButtonTeamHall = nil;
+-- 附近队伍按钮
+local m_ButtonNearby = nil;
+-- 创建队伍按钮
+local m_ButtonCreate = nil;
+-- 无队伍的匹配内容对象
+local m_TeamMatch = nil;
+-- 无队伍的匹配队伍按钮
+local m_ButtonTeamMatching = nil;
+-- 无队伍的更换队伍目标按钮
+local m_ButtonChangeGoal = nil;
+-- 有队伍内容对象
+local m_HasTeam = nil;
+-- 队伍成员对象1
+local m_Member1 = nil;
+-- 队伍成员对象2
+local m_Member2 = nil;
+-- 队伍成员对象3
+local m_Member3 = nil;
+-- 队伍成员对象数组
+local m_MemberObjects = nil;
+-- 队伍成员位置
+local m_MemberPosition = nil;
+-- 匹配中的Label
+local m_MatchingLabel = nil;
+local m_MatchingSeconds = 0;
+-- 组队Timer数据
+local m_TeamTimerData = nil;
+-- 当前选中的队伍成员特效
+local m_TeamSelectObject = nil;
+-- 队伍快捷按钮
+local m_TeamBtnGrid = nil;
+
+-- 计时器数据
+local timerdata = nil;
+local m_ChaseEffectObj = nil;
+
+-- 公会战 战场信息
+local m_GuildWarPanelObject = nil;
+-- 公会战要显示数据
+local m_ShowGuildWarInfoData = nil;
+
+-- 成就指引
+local m_AchieveGuidePanelObject = nil;
+-- 当前指引的成就
+local currentAchieve = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- 匹配中Timer名称
+local m_MatchingTimerName = "Main_LeftMiddle_Matching_Timer";
+
+-- 队伍中成员状态图集
+local m_MemberStateAtlas =  "PanelAloneOneAtlasV04";
+-- 队伍中成员离线状态图标
+local m_MemberStateOfflineSprite = "UI_BS_DuanXian_001";
+-- 队伍中成员死亡状态图标
+local m_MemberStateDeadSprite = "UI_BS_SiWang_001";
+-- 1：我方 2：敌方 3：资源 
+local ENUM_WAR_INFO_ID = {ENUM_MY = 1, ENUM_ENEMY = 2, ENUM_RESOURCE = 3};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    ClearMatchingTimer();
+    ClearTaskChaseTimer();
+    ClearTeamSelectTimer();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_taskListViewComp = nil;
+    m_TeamPanelObject = nil;
+    m_GuildWarPanelObject = nil;
+    m_AchieveGuidePanelObject = nil;
+    currentAchieve = nil;
+    m_NoTeam = nil;
+	m_NoTeamButtons = nil;
+	m_ButtonTeamHall = nil;
+	m_ButtonNearby = nil;
+	m_ButtonCreate = nil;
+	m_TeamMatch = nil;
+	m_ButtonTeamMatching = nil;
+	m_ButtonChangeGoal = nil;
+	m_HasTeam = nil;
+	m_Member1 = nil;
+	m_Member2 = nil;
+	m_Member3 = nil;
+    m_MemberObjects = nil;
+    m_MemberPosition = nil;
+    m_MatchingLabel = nil;
+    m_ChaseEffectObj = nil;
+    m_TeamSelectObject = nil;
+    m_TeamBtnGrid = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_taskListViewComp = GetComponent(m_panelObject, m_taskListViewCompStr, "UIListView");
+   
+    m_TeamPanelObject = child(m_panelObject, m_TeamPanelPath).gameObject;
+    m_NoTeam = child(m_TeamPanelObject, m_NoTeamPath).gameObject;
+    m_NoTeamButtons = child(m_TeamPanelObject, m_NoTeamButtonsPath).gameObject;
+    m_ButtonTeamHall = child(m_TeamPanelObject, m_ButtonTeamHallPath).gameObject;
+    m_ButtonNearby = child(m_TeamPanelObject, m_ButtonNearbyPath).gameObject;
+    m_ButtonCreate = child(m_TeamPanelObject, m_ButtonCreatePath).gameObject;
+    m_TeamMatch = child(m_TeamPanelObject, m_TeamMatchPath).gameObject;
+    m_ButtonTeamMatching = child(m_TeamPanelObject, m_ButtonTeamMatchingPath).gameObject;
+    m_ButtonChangeGoal = child(m_TeamPanelObject, m_ButtonChangeGoalPath).gameObject;
+    m_HasTeam = child(m_TeamPanelObject, m_HasTeamPath).gameObject;
+    m_Member1 = child(m_TeamPanelObject, m_Member1Path).gameObject;
+    m_Member2 = child(m_TeamPanelObject, m_Member2Path).gameObject;
+    m_Member3 = child(m_TeamPanelObject, m_Member3Path).gameObject;
+    m_MemberObjects = {m_Member1, m_Member2, m_Member3};
+
+    m_TeamBtnGrid = GetComponent(m_TeamPanelObject, m_TeamBtnGridStr, "UIGrid");
+
+    m_GuildWarPanelObject = child(m_panelObject, m_guildWarPanelStr).gameObject;  
+    
+    m_AchieveGuidePanelObject = child(m_panelObject, m_AchieveGuidePanel).gameObject;  
+    
+end
+
+-- 初始化事件
+function InitEvents()
+    m_taskListViewComp:SetInitCallback(OnTaskCloneInit);
+    m_taskListViewComp:SetClickCallback(OnTaskCloneClick);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_TaskButtonStr, OnTaskButtonClick, m_panelObject);
+    SetGameObjectEvent(m_TeamButtonStr, OnTeamButtonClick, m_panelObject);
+    SetGameObjectEvent(m_GuildWarButtonStr, OnGuildWarButtonClick, m_panelObject);
+    
+    UIEventListener.Get(m_ButtonTeamHall).onClick = LuaHelper.OnClick(OnButtonTeamHallClick);
+    UIEventListener.Get(m_ButtonNearby).onClick = LuaHelper.OnClick(OnButtonNearbyClick);
+    UIEventListener.Get(m_ButtonCreate).onClick = LuaHelper.OnClick(OnButtonCreateClick);
+    UIEventListener.Get(m_ButtonTeamMatching).onClick = LuaHelper.OnClick(OnButtonTeamMatchingClick);
+    UIEventListener.Get(m_ButtonChangeGoal).onClick = LuaHelper.OnClick(OnButtonChangeGoalClick);
+    
+    for i, go in ipairs(m_MemberObjects) do
+        SetGameObjectEvent(m_MemberMatchingPath, OnMemberMatchingClick, go);
+        SetGameObjectEvent(m_InviteButtonPath, OnInviteButtonClick, go);
+        SetGameObjectEvent(m_MemberPath, OnMemberClick, go);
+    end
+
+    -- 跟随按钮
+    SetGameObjectEvent(m_TeamFollowButtonPath, OnTeamFollowButtonClick, m_TeamPanelObject);
+    -- 召集按钮
+    SetGameObjectEvent(m_TeamConvokeButtonPath, OnTeamConvokeButtonClick, m_TeamPanelObject);
+    -- 退出队伍按钮
+    SetGameObjectEvent(m_TeamQuitButtonPath, OnTeamQuitButtonClick, m_TeamPanelObject);
+
+    -- 战场信息面板，我方，敌方，资源按钮
+    SetGameObjectEvent(m_WarBtnMyPath, OnWarBtnMyClick, m_GuildWarPanelObject);
+    SetGameObjectEvent(m_WarBtnEnemyPath, OnWarBtnEnemyClick, m_GuildWarPanelObject);
+    SetGameObjectEvent(m_WarBtnResourcePath, OnWarBtnResourceClick, m_GuildWarPanelObject);
+    -- 公共资源怪物刷新点 点击自动寻路
+    for i = 1, 4 do 
+        SetGameObjectEvent(m_WarMonsterPointPath..i, OnGuildWarMonsterClick, m_panelObject);
+    end
+    -- 双方防御塔点击自动寻路
+    for i = 1, 3 do 
+        SetGameObjectEvent(m_MyTowerStr..i, OnTowerClick, m_panelObject);
+        SetGameObjectEvent(m_EnemyTowerStr..i, OnTowerClick, m_panelObject);
+    end
+    -- 中心资源塔点击自动寻路
+    SetGameObjectEvent(m_guildWarPanelStr.."/"..m_WarMyPath..m_ResourceTower, OnBaseTowerClick, m_panelObject);
+    SetGameObjectEvent(m_guildWarPanelStr.."/"..m_WarEnemyPath..m_ResourceTower, OnBaseTowerClick, m_panelObject);
+    SetGameObjectEvent(m_guildWarPanelStr.."/"..m_WarResourcePath..m_ResourceTower, OnResourceTowerClick, m_panelObject);
+
+    -- 成就指引界面点击
+    SetGameObjectEvent(m_AchieveGuidePanel, onAchieveGuideClick, m_panelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitAchieveGuide();
+    InitTaskAndTeamPanelShow();
+    InitTask();
+    InitTeam();
+end
+
+-- 初始化成就指引
+function InitAchieveGuide()
+    local achieveData = AchieveManager.activeAchieves;
+    if m_isShowGuildWar or achieveData == nil then -- 如果当前是公会战战场则屏蔽任务面板显示战场信息面板
+        SetGameObjectState(m_AchieveGuidePanel, false, m_panelObject);
+        SetGameObjectPos(m_TaskButtonStr, Vector3.New(78, 354, 0), m_panelObject);
+        SetGameObjectPos(m_TeamButtonStr, Vector3.New(282, 354, 0), m_panelObject);
+        SetGameObjectPos(m_taskPanelStr, Vector3.New(183 , 148, 0), m_panelObject);
+        SetGameObjectPos(m_TeamPanelPath, Vector3.New(0 , 62, 0), m_panelObject);
+        return;
+    end
+    
+    local list = CCommonTool.GetAllAchieveData();
+    local needGuideAchTable = {};
+    local canGuideAchTable = {};
+    for i = 0, list.Count-1 do
+        if list[i].Activate == 1 then 
+            table.insert(needGuideAchTable, list[i]);
+        end
+    end
+    for i,v in pairs(needGuideAchTable) do 
+        if achieveData[v.Id] == nil then 
+            local t = AchieveManager.GetNotOpenAch(v.CompleteKey, v);
+            if t.data.count >= t.info.GoalNum then 
+                t.data.state = AchieveManager.STATE_FINISH;
+            end
+            table.insert(canGuideAchTable, t);
+        else
+            if achieveData[v.Id].data.state == AchieveManager.STATE_DOING or achieveData[v.Id].data.state == AchieveManager.STATE_FINISH then 
+                achieveData[v.Id].data.count = AchieveManager.GetAchieveCountById(v.Id);
+                table.insert(canGuideAchTable, achieveData[v.Id]);
+            end
+        end
+    end 
+
+    if #canGuideAchTable > 0 then 
+        SetGameObjectPos(m_TaskButtonStr, Vector3.New(78, 215, 0), m_panelObject);
+        SetGameObjectPos(m_TeamButtonStr, Vector3.New(282, 215, 0), m_panelObject);
+        SetGameObjectPos(m_taskPanelStr, Vector3.New(183 , 9, 0), m_panelObject);
+        SetGameObjectPos(m_TeamPanelPath, Vector3.New(0 , -77, 0), m_panelObject);
+        --SetGameObjectState(m_AchieveGuidePanel, true, m_panelObject);
+        SetGameObjectState(m_AchieveGuidePanel, false, m_panelObject);                            --20180922国服屏蔽成就面板
+        table.sort(canGuideAchTable ,function (a,b) return a.info.Value < b.info.Value end);
+        SetLabelTextByID(m_AchieveGuidePanel .. "/".. m_TaskTraceLabelStr, canGuideAchTable[1].info.DescribeId, m_panelObject);
+        -- 数量
+        local count = canGuideAchTable[1].data.count;
+        local goalNum = canGuideAchTable[1].info.GoalNum ;
+        local txtColor = count < goalNum and "ff3131" or "7CFC00";
+        local numLabel = GetComponent(m_AchieveGuidePanelObject, "ProgressBar/Label_Progress", "UILabel");
+        numLabel.text = string_format("{0}/{1}", count, goalNum);
+        GetComponent(m_AchieveGuidePanelObject, "ProgressBar", "UIProgressBar").value = count / goalNum;
+
+        local chaseEffectTrans = child(m_AchieveGuidePanelObject, m_TaskChaseEffectStr);
+        local spriteComp = GetComponent(m_AchieveGuidePanelObject,"","UISprite");
+        if chaseEffectTrans ~= nil then
+            chaseEffectTrans.localScale = Vector3.New(1,spriteComp.height/100,1);
+        end
+        local clickEffectTrans = child(m_AchieveGuidePanelObject, m_TaskClickEffectStr);
+        if clickEffectTrans ~= nil then
+            clickEffectTrans.localScale = Vector3.New(1,spriteComp.height/100,1);
+        end
+        if canGuideAchTable[1].data.state ~= AchieveManager.STATE_FINISH then 
+            SetGameObjectState("BoxContent", false, m_AchieveGuidePanelObject);
+        else
+            SetGameObjectState("BoxContent", true, m_AchieveGuidePanelObject);
+        end
+        currentAchieve = canGuideAchTable[1];
+    else
+        SetGameObjectState(m_AchieveGuidePanel, false, m_panelObject);
+        SetGameObjectPos(m_TaskButtonStr, Vector3.New(78, 354, 0), m_panelObject);
+        SetGameObjectPos(m_TeamButtonStr, Vector3.New(282, 354, 0), m_panelObject);
+        SetGameObjectPos(m_taskPanelStr, Vector3.New(183 , 148, 0), m_panelObject);
+        SetGameObjectPos(m_TeamPanelPath, Vector3.New(0 , 62, 0), m_panelObject);
+    end
+
+end
+
+-- 初始化任务和组队面板显示
+function InitTaskAndTeamPanelShow()
+    if BattleFieldManager.IsInBattleFieldScene() or EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_LeftMiddlePath, false, m_panelObject);
+    else
+        SetGameObjectState(m_LeftMiddlePath, true, m_panelObject);
+    end
+    local leftMiddleWidget = GetComponent(m_panelObject, m_LeftMiddlePath, "UISprite");
+    -- 判断是不是Iphone10的分辨率
+    if Constants.ISIos10Resolution == true then
+        if leftMiddleWidget.isAnchored == true then
+            -- 设置距左侧边缘的距离
+            leftMiddleWidget.leftAnchor.relative = 0.038;
+            -- 设置语音面板的信息
+            SetGameObjectPos(m_VoicePanelPath, Vector3.New(-87, 376, 0), m_panelObject);
+        end
+    end
+    if m_bIsSelectTask then
+        SetGameObjectState(m_guildWarPanelStr, false, m_panelObject);
+        SetGameObjectState(m_GuildWarButtonStr, false, m_panelObject);
+        if m_isShowGuildWar then -- 如果当前是公会战战场则屏蔽任务面板显示战场信息面板
+            SetGameObjectState(m_guildWarPanelStr, true, m_panelObject);
+            SetGameObjectState(m_GuildWarButtonStr, true, m_panelObject);
+            SetGameObjectState(m_taskPanelStr, false, m_panelObject);
+            SetGameObjectState(m_TeamPanelPath, false, m_panelObject);
+            SetGameObjectState(m_TaskButtonStr, false, m_panelObject);
+            SetGameObjectState(m_GuildWarButtonStr .. m_notSelectStr, false, m_panelObject);
+            SetGameObjectState(m_GuildWarButtonStr .. m_selcetStr, true, m_panelObject);
+            SetGameObjectState(m_TeamButtonStr .. m_notSelectStr, true, m_panelObject);
+            SetGameObjectState(m_TeamButtonStr .. m_selcetStr, false, m_panelObject);
+            InitGuildWar();
+            return;
+        end
+        SetGameObjectState(m_taskPanelStr, true, m_panelObject);
+        SetGameObjectState(m_TeamPanelPath, false, m_panelObject);
+        SetGameObjectState(m_TaskButtonStr, true, m_panelObject);
+        SetGameObjectState(m_TaskButtonStr .. m_selcetStr, true, m_panelObject);
+        SetGameObjectState(m_TeamButtonStr .. m_selcetStr, false, m_panelObject);
+        SetGameObjectState(m_TaskButtonStr .. m_notSelectStr, false, m_panelObject);
+        SetGameObjectState(m_TeamButtonStr .. m_notSelectStr, true, m_panelObject);
+    else
+        if m_isShowGuildWar then
+            SetGameObjectState(m_GuildWarButtonStr, true, m_panelObject);
+            SetGameObjectState(m_guildWarPanelStr, false, m_panelObject);
+            SetGameObjectState(m_TeamPanelPath, true, m_panelObject);
+            SetGameObjectState(m_GuildWarButtonStr .. m_selcetStr, false, m_panelObject);
+            SetGameObjectState(m_TeamButtonStr .. m_selcetStr, true, m_panelObject);
+            SetGameObjectState(m_GuildWarButtonStr .. m_notSelectStr, true, m_panelObject);
+            SetGameObjectState(m_TeamButtonStr .. m_notSelectStr, false, m_panelObject);
+            SetGameObjectState(m_TaskButtonStr, false, m_panelObject);
+            InitGuildWar();
+            return;
+        end
+        SetGameObjectState(m_taskPanelStr, false, m_panelObject);
+        SetGameObjectState(m_TeamPanelPath, true, m_panelObject);
+        SetGameObjectState(m_TaskButtonStr, true, m_panelObject);
+        SetGameObjectState(m_TaskButtonStr .. m_selcetStr, false, m_panelObject);
+        SetGameObjectState(m_TeamButtonStr .. m_selcetStr, true, m_panelObject);
+        SetGameObjectState(m_TaskButtonStr .. m_notSelectStr, true, m_panelObject);
+        SetGameObjectState(m_TeamButtonStr .. m_notSelectStr, false, m_panelObject);
+    end
+end
+
+-- 初始化任务显示
+function InitTask()
+    local taskList = G_MissionMng:GetPlayerCurrentMissions(true);
+    m_taskListViewComp:RemoveAll();
+    m_ChaseEffectObj = nil;
+    for Index = 1, taskList.Count do
+        m_taskListViewComp:AddData(taskList[Index - 1]);
+    end
+    m_taskListViewComp:LookAt(-1, false);
+end
+
+-- 任务单个初始化
+function OnTaskCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local missionInfo = data.missionInfo;
+    local missiontype = missionInfo.TaskType;
+    local taskTraceStr = "";
+    local numStr = "";
+    taskTraceStr = taskTraceStr .. G_MissionMng:GetMissionTraceTxt(data.missionState, data.missionID);
+    if data.missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_GOING then
+        if missionInfo.CompleteKey ~= ENUM_MISSION_TYPE.E_MSSN_TYPE_BASE_LEVELUP then
+            local maxvalue = G_MissionMng:GetMissionNeedValueById(data.missionID);
+            if maxvalue ~= 0 then
+                local value = G_MissionMng:GetMissionValueById(data.missionID);
+                local valuestr = tostring(value);
+                local maxvaluestr = tostring(maxvalue);
+                local isSpecialDealValue = false;
+                if missionInfo.CompleteKey == ENUM_MISSION_TYPE.E_MSSN_TYPE_BASE_CONVOY then
+                    isSpecialDealValue = true;
+                end
+                if missionInfo.CompleteKey == ENUM_MISSION_TYPE.E_MSSN_TYPE_BASE_COLLECTION then
+                    if missionInfo.CompleteKeyValue5 > 0 then
+                        isSpecialDealValue = true;
+                    end
+                end
+                if isSpecialDealValue then
+                    if valuestr < maxvaluestr then
+                        valuestr = 0;
+                        maxvaluestr = 1;
+                    else
+                        valuestr = 1;
+                        maxvaluestr = 1;
+                    end
+                end
+                
+                numStr = "(" .. valuestr .. "/" .. maxvaluestr .. ")";
+            end
+        end
+        SetGameObjectState(m_TaskCanSubmitStr, false, go);
+    elseif data.missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_COMPLETE then
+        SetGameObjectState(m_TaskCanSubmitStr, true, go);
+    else
+        SetGameObjectState(m_TaskCanSubmitStr, false, go);
+    end
+    local showFail = false;
+    if data.missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_GOING then
+        if missionInfo.CompleteKey == ENUM_MISSION_TYPE.E_MSSN_TYPE_BASE_CONVOY then
+            if G_MissionMng:GetMissionValueById(data.missionID) == 0 then
+                showFail = true;
+            end
+        end
+    end
+    SetGameObjectState(m_TaskFailStr,showFail,go);
+    taskTraceStr = taskTraceStr .. numStr;
+    SetLabelContent(m_TaskTraceLabelStr, taskTraceStr, go);
+    local nameStr = "";
+    
+    if missiontype == ENUM_MISSIONTYPE.MAIN then
+        nameStr = "[" .. CCommonTool.GetTxtData(8117).m_str .. "]";
+        SetLabelColor(m_TaskNameStr, "fff43e", go);
+        SetGameObjectState(m_TaskBranchEffectStr,false,go);
+    elseif missiontype == ENUM_MISSIONTYPE.BRANCH then
+        nameStr = "[" .. CCommonTool.GetTxtData(8119).m_str .. "]";
+        SetLabelColor(m_TaskNameStr, "ff9600", go);
+        SetGameObjectState(m_TaskBranchEffectStr,G_MissionMng.ShowBranchLineEffect,go);
+    elseif missiontype == ENUM_MISSIONTYPE.EVERYDAY then
+        nameStr = "[" .. CCommonTool.GetTxtData(8121).m_str .. "]";
+        SetLabelColor(m_TaskNameStr, "ff9600", go);
+        SetGameObjectState(m_TaskBranchEffectStr,false,go);
+    else
+        error("this missiontype does not made by game designer:::" .. missiontype);
+    end
+    local taskName = "";
+    if missiontype == ENUM_MISSIONTYPE.EVERYDAY then
+        taskName = GetEveryDayTaskName(data);
+    else
+        taskName = CCommonTool.GetTxtData(missionInfo.TaskNameId).m_str;
+    end
+    if missionInfo.CompleteKey == ENUM_MISSION_TYPE.E_MSSN_TYPE_BASE_SPECIAL_PARAM then
+        local value = G_MissionMng:GetMissionValueById(data.missionID);
+        local valuestr = tostring(value);
+        local maxvaluestr = tostring(missionInfo.CompleteKeyValue2);
+        nameStr = taskName .. "(" .. valuestr .. "/" .. maxvaluestr .. ")";
+    else
+        nameStr = nameStr .. taskName;
+    end
+    SetLabelContent(m_TaskNameStr, nameStr, go);
+    local spriteComp = GetComponent(go,"","UISprite");
+    spriteComp:ResetAndUpdateAnchors();
+    local clickEffectTrans = child(go,m_TaskClickEffectStr);
+    if clickEffectTrans ~= nil then
+        clickEffectTrans.localScale = Vector3.New(1,spriteComp.height/100,1);
+    end
+    local chaseEffectTrans = child(go,m_TaskChaseEffectStr);
+    if chaseEffectTrans ~= nil then
+        chaseEffectTrans.localScale = Vector3.New(1,spriteComp.height/100,1);
+    end
+    local branchEffectTrans = child(go,m_TaskBranchEffectStr);
+    if branchEffectTrans ~= nil then
+        branchEffectTrans.localScale = Vector3.New(1,spriteComp.height/100,1);
+    end
+    if data.missionID == _G.LogicData_CurTraceTaskID then
+        SetGameObjectState(m_TaskChaseEffectStr,true,go);
+        m_ChaseEffectObj = chaseEffectTrans.gameObject;
+    else
+        SetGameObjectState(m_TaskChaseEffectStr,false,go);
+    end
+    SetGameObjectState(m_TaskFlyShowStr, true, go);
+    if missiontype == ENUM_MISSIONTYPE.EVERYDAY then
+        if data.missionID >= 400000 and data.missionID <= 499990 then 
+            SetGameObjectState(m_TaskFlyShowStr, true, go);
+            if data.missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_COMPLETE then 
+                SetGameObjectState(m_TaskFlyShowStr, false, go);
+            end
+        else
+            SetGameObjectState(m_TaskFlyShowStr, false, go);
+        end
+    else
+        if data.missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_GOING then
+            if missionInfo.TraceAcceptType == 2 then 
+                SetGameObjectState(m_TaskFlyShowStr, false, go);
+            end
+        else
+            SetGameObjectState(m_TaskFlyShowStr, true, go);
+        end
+    end
+    if missionInfo.CompleteKey == ENUM_MISSION_TYPE.E_MSSN_TYPE_BASE_CONVOY then
+        SetGameObjectState(m_TaskFlyShowStr, false, go);
+    end
+end
+
+-- 得到跑环任务的名称
+function GetEveryDayTaskName(data)
+    local randomId = data.missionInfo.TaskRandom;
+    if randomId > 0 then
+        local randomInfo = CCommonTool.GetMissionRandomInfo(randomId);
+        if randomInfo == nil then
+            error("this mission does not exist in the mission dic:::" .. data.missionID);
+            return;
+        end
+        if randomInfo.EverydayNum > 1 and data.missionID >= randomInfo.StartTask and data.missionID <= randomInfo.FinishTask then
+            loopTime = G_MissionMng:GetDayMissionLoopTimeById(data.missionID);
+            loopAllTime = randomInfo.EverydayNum;
+            if randomInfo.TxtId == 0 then
+                if randomInfo.TaskType == ENUM_EVERYDAY_TASKTYPE.EXP then
+                    return string_format(CCommonTool.GetTxtData(8116).m_str, loopTime, loopAllTime);
+                elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.BOTHCAMP and randomInfo.TaskType < ENUM_EVERYDAY_TASKTYPE.GUILD then
+                    return string_format(CCommonTool.GetTxtData(8115).m_str, loopTime, loopAllTime);
+                elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.GUILD then
+                    return string_format(CCommonTool.GetTxtData(8114).m_str, loopTime, loopAllTime);
+                end
+            else
+                return CCommonTool.GetTxtData(randomInfo.TxtId).m_str .. "(" .. loopTime .. "/" .. loopAllTime .. ")";
+            end
+        else
+            if randomInfo.TxtId == 0 then
+                if randomInfo.TaskType == ENUM_EVERYDAY_TASKTYPE.EXP then
+                    return CCommonTool.GetTxtData(8113).m_str;
+                elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.BOTHCAMP and randomInfo.TaskType < ENUM_EVERYDAY_TASKTYPE.GUILD then
+                    return CCommonTool.GetTxtData(8112).m_str;
+                elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.GUILD then
+                    return CCommonTool.GetTxtData(8111).m_str;
+                end
+            else
+                return CCommonTool.GetTxtData(randomInfo.TxtId).m_str;
+            end
+        end
+    else
+        error("everyday mission is wrong");
+    end
+    return "";
+end
+
+function ChangeSelectTag()
+    m_bIsSelectTask = not m_bIsSelectTask;
+    InitTaskAndTeamPanelShow();
+end
+
+-- 选中组队伍标签
+function SelectTeamTag()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if not m_bIsSelectTask then
+            return;
+        end
+        return ChangeSelectTag();
+    end
+end
+
+-- 初始化组队信息
+function InitTeam()
+    local manager = TeamManager;
+    local hasTeam = manager.HasTeam();
+    ClearMatchingTimer();
+    if hasTeam then
+        m_NoTeam:SetActive(false);
+        m_HasTeam:SetActive(true);
+        InitTeamMembers();
+    else
+        m_NoTeam:SetActive(true);
+        m_HasTeam:SetActive(false);
+        if manager.autoMatchTeam then
+            m_TeamMatch:SetActive(true);
+            m_NoTeamButtons:SetActive(false);
+            m_MatchingLabel = GetComponent(m_TeamPanelObject, m_ButtonTeamMatchingPath .. "/Label", "UILabel");
+            StartMatchingTimer();
+        else
+            m_TeamMatch:SetActive(false);
+            m_NoTeamButtons:SetActive(true);
+        end
+    end
+    InitTeamButtons();
+end
+
+function InitTeamMembers()
+    local members = TeamManager.GetTeamMembersExceptSelf();
+    local isLeader = TeamManager.IsLeader();
+    local autoMatch = TeamManager.teamData.autoMatchMember
+    local matchingShown = false;
+    m_MemberPosition = {};
+    for i = 1, 3 do
+        local member = members[i];
+        local go = m_MemberObjects[i];
+        local memberVisible = member ~= nil;
+        local inviteVisible = isLeader and not memberVisible and not autoMatch;
+        local matchingVisible = isLeader and not memberVisible and not inviteVisible and not matchingShown;
+        local goVisible = memberVisible or inviteVisible or matchingVisible;
+        go:SetActive(goVisible);
+        if goVisible then
+            SetGameObjectState(m_MemberPath, memberVisible, go);
+            SetGameObjectState(m_InviteButtonPath, inviteVisible, go);
+            SetGameObjectState(m_MemberMatchingPath, matchingVisible, go);
+            if memberVisible then
+                m_MemberPosition[member.globalId] = i;
+                InitTeamMember(go, member, -1);
+                SetTeamMemberSelect(go, member);
+            end
+            if matchingVisible then
+                matchingShown = true;
+                m_MatchingLabel = GetComponent(go, m_MemberMatchingPath .. "/Label", "UILabel");
+                StartMatchingTimer();
+            end
+        end
+    end
+end
+
+-- 设置队伍按钮列表
+function InitTeamButtons()
+    if TeamManager.HasTeam() then
+        local isLeader = TeamManager.IsLeader();
+        local memberCount = TeamManager.GetTeamMemberCount();
+        local followState = TeamManager.GetTeamFollowState();
+        -- 跟随按钮是否可见
+        SetGameObjectState(m_TeamFollowButtonPath, isLeader ~= true, m_TeamPanelObject);
+        -- 跟随状态是否可见
+        SetGameObjectState(m_TeamFollowSelectPath, followState == 1, m_TeamPanelObject);
+        -- 召集按钮是否可见
+        SetGameObjectState(m_TeamConvokeButtonPath, isLeader, m_TeamPanelObject);
+    end
+    InitTeamSmallButtons();
+end
+
+function InitTeamSmallButtons()
+    local hasTeam = TeamManager.HasTeam();
+    local isLeader = TeamManager.IsLeader();
+    local pos = m_TeamBtnGrid.transform.localPosition;
+    local itemCount = 0;
+    if hasTeam then
+        local autoMatch = TeamManager.teamData.autoMatchMember;
+        local memberCount = TeamManager.GetTeamMemberCount();
+        if isLeader == true then
+            if not autoMatch then
+                itemCount = 3;--这里显示的队员和邀请按钮
+            else
+                itemCount = math.min(3, memberCount);--这里显示队员和匹配中
+            end
+        else
+            itemCount = memberCount - 1;
+        end
+    else
+        local autoMatch = TeamManager.autoMatchTeam;
+        if autoMatch then 
+            itemCount = 2;--这里显示匹配中和改变目标
+        else
+            itemCount = 3;--这里显示组队大厅/附近队伍/创建队伍
+        end
+    end
+    pos.y = -30 - itemCount * 104;
+    m_TeamBtnGrid.transform.localPosition = pos;
+    m_TeamBtnGrid:Reposition();
+end
+
+--[Comment]
+-- 设置队伍队员信息
+-- @param go 成员显示对象
+-- @param member 成员数据
+-- @param updateAttrId 更新成员的哪个属性 -1:所有 0:HP 1:MP 2:无 3:Level 4:Profession 5:PKMode 6:跟随状态
+function InitTeamMember(go, member, updateAttrId)
+    updateAttrId = updateAttrId or -1;
+    -- Level
+    if updateAttrId == -1 or updateAttrId == 3 then
+        SetLabelContent(m_TeamMemLevelPath, member.level, go);
+    end
+    -- state
+    if updateAttrId == -1 then
+        local infoGo = child(go, "Member/Info").gameObject;
+        -- 状态图标
+        if member.offline == 1 then
+            SetGameObjectState(m_StateIconPath, true, go);
+            SetSpriteContent(m_StateIconPath, m_MemberStateAtlas, m_MemberStateOfflineSprite, go, true);
+            CCommonTool.SetGameObjectGrey(infoGo, false);
+        elseif member.dead == 1 then
+            SetGameObjectState(m_StateIconPath, true, go);
+            SetSpriteContent(m_StateIconPath, m_MemberStateAtlas, m_MemberStateDeadSprite, go, true);
+            CCommonTool.SetGameObjectGrey(child(go, "Member/Info").gameObject, true);
+        else
+            SetGameObjectState(m_StateIconPath, false, go);
+            CCommonTool.SetGameObjectGrey(child(go, "Member/Info").gameObject, false);
+        end
+        SetLabelContent(m_TeamMemNamePath, member.name, go);
+        SetGameObjectState(m_IsLeaderPath, member.globalId == TeamManager.teamData.leaderId, go);
+    end
+    -- profession
+    if updateAttrId == -1 or updateAttrId == 4 then
+        SetProfessionIcon(m_ProIconPath, member.proId, go);
+    end
+    -- HP
+    if updateAttrId == -1 or updateAttrId == 0 then
+        GetComponent(go, m_HpBarPath, "UIProgressBar").value = member.hpPercent;
+    end
+
+    if updateAttrId == -1 or updateAttrId == 6 then
+        local teamData = TeamManager.teamData;
+        SetGameObjectState("Member/FollowStateIcon", teamData.leaderId ~= member.globalId and  member.followState == 1, go);
+    end
+end
+
+-- 设置队伍成员选中状态
+function SetTeamMemberSelect(go, member)
+    local selected = member.globalId == G_SceneMng.CurSelectAlliedPlayerId;
+    SetGameObjectState("Member/"..m_TeamSelectEffectStr, selected, go);
+end
+
+-- 清除匹配中Timer事件
+function ClearMatchingTimer()
+    m_MatchingLabel = nil;
+    G_TimerMng:RemoveTimeTask(m_MatchingTimerName);
+end
+
+-- 开始匹配中Timer事件
+function StartMatchingTimer()
+    AddTimerEvent(m_MatchingTimerName,100000,nil,nil,OnTimerUpdateEvent,ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 匹配中Timer更新事件
+function OnTimerUpdateEvent()
+    if m_MatchingLabel ~= nil then
+        m_MatchingSeconds = m_MatchingSeconds + 1;
+        local index = m_MatchingSeconds % 4;
+        if index == 0 then 
+            m_MatchingLabel.text = --[[正在匹配中]]CCommonTool.GetTxtData(1014).m_str;
+        elseif index == 1 then
+            m_MatchingLabel.text = --[[正在匹配中]]CCommonTool.GetTxtData(1014).m_str..".";
+        elseif index == 2 then
+            m_MatchingLabel.text = --[[正在匹配中]]CCommonTool.GetTxtData(1014).m_str.."..";
+        elseif index == 3 then
+            m_MatchingLabel.text = --[[正在匹配中]]CCommonTool.GetTxtData(1014).m_str.."...";
+        end
+    end
+end
+
+-- 初始化公会战信息界面
+function InitGuildWar(data)
+    print("左侧更新的数据 data = ",SerializeTable(data),"m_ShowGuildWarInfoData = ",SerializeTable(m_ShowGuildWarInfoData));
+    print("m_guildWarSelect = ",m_guildWarSelect);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 and data ~= nil then
+        m_ShowGuildWarInfoData = data;
+        return;
+    end
+    if data ~= nil then 
+        m_ShowGuildWarInfoData = data;
+    elseif m_ShowGuildWarInfoData == nil then
+        return;
+    end
+    if m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_MY then 
+        InitMyInfo();
+    elseif m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_ENEMY then 
+        InitEnemyInfo()
+    elseif m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_RESOURCE then
+        InitResourceInfo();
+    end
+    SetBtnState(m_guildWarSelect);
+end
+
+-- 初始化我方资源信息
+function InitMyInfo()
+    data = m_ShowGuildWarInfoData;
+    local baseStr = "";
+    local towerStr = "";
+    if data.aDType == 0 then 
+        baseStr = "UI_GH_LDZ_ShuiJing_001";
+        towerStr = "UI_GH_LDZ_JianTa_001";
+    else
+        baseStr = "UI_GH_LDZ_ShuiJing_002";
+        towerStr = "UI_GH_LDZ_JianTa_002";
+    end
+
+    SetSpriteContent(m_WarMyPath.."/Sub_Resource/sp_ Resources","PanelAloneFourAtlasV04", baseStr, m_GuildWarPanelObject, true);
+    -- 第一个数据是主基地的数据,往后依次是上中下塔
+    local progressBarStr = m_WarMyPath.."/Sub_Resource/ProgressBar";
+    local progressBar = GetComponent(m_GuildWarPanelObject, progressBarStr, "UIProgressBar");
+    if progressBar ~= nil then 
+        if data.aDType == 0 then
+            SetLabelGradientColor("C3FCE4","79DDC6",m_WarMyPath.."/Sub_Resource/lb_Belong",m_GuildWarPanelObject);
+            SetSpriteGradientColor(progressBarStr.."/Sprite","008B48FF","25FF44FF",m_GuildWarPanelObject);
+        else
+            SetLabelGradientColor("FF805E","E74544",m_WarMyPath.."/Sub_Resource/lb_Belong",m_GuildWarPanelObject);
+            SetSpriteGradientColor(progressBarStr.."/Sprite","B11515FF","E83623FF",m_GuildWarPanelObject);
+        end
+        progressBar.value = data[1].towerBlood / 100;
+        SetLabelContent(m_WarMyPath.."/Sub_Resource/lb_Belong", data[1].towerLimited, m_GuildWarPanelObject);
+        
+        if data[1].towerState == 0 then
+            progressBar.value = data[1].towerBlood / 100;
+            SetLabelContent(m_WarMyPath.."/Sub_Resource/lb_Progress", --[[无敌]]CCommonTool.GetTxtData(1606).m_str, m_GuildWarPanelObject);
+        elseif data[1].towerState == 1 then
+            progressBar.value = data[1].towerBlood / 100;
+            SetLabelContent(m_WarMyPath.."/Sub_Resource/lb_Progress", data[1].towerBlood.."%", m_GuildWarPanelObject);
+        elseif data[1].towerState == 2 then
+            progressBar.value = data[1].towerBlood / 100;
+            SetLabelContent(m_WarMyPath.."/Sub_Resource/lb_Progress", data[1].towerBlood.."%", m_GuildWarPanelObject);
+    --        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/lb_Progress").gameObject, data[i].towerState == 2);
+        end
+    end
+    for i = 2, 4 do
+        local path = m_WarMyPath.."/Sub_Tower"..i-1;
+        SetSpriteContent(path.."/sp_Icon","PanelAloneFourAtlasV04", towerStr, m_GuildWarPanelObject, true);
+        if data.aDType == 0 then
+            SetLabelGradientColor("C3FCE4","79DDC6",path.."/lb_Invincible",m_GuildWarPanelObject);
+        else
+            SetLabelGradientColor("FF805E","E74544",path.."/lb_Invincible",m_GuildWarPanelObject);
+        end
+        if data[i].towerState == 0 then  -- 塔的状态（0：无敌  1：非无敌  2:死亡状态）
+            SetGameObjectState(path.."/lb_Progress", false, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Unconquerable", true, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Invincible", true, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Invincible",data[i].towerLimited, m_GuildWarPanelObject);
+        elseif data[i].towerState == 1 then
+            SetGameObjectState(path.."/lb_Progress", true, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Unconquerable", false, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Invincible", false, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Progress", data[i].towerBlood.."%", m_GuildWarPanelObject);
+        elseif data[i].towerState == 2 then
+            SetGameObjectState(path.."/lb_Progress", true, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Unconquerable", false, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Invincible", false, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Progress", "0%", m_GuildWarPanelObject);
+        end
+        if IsObjectActive(m_GuildWarPanelObject, path.."/lb_Progress") then
+            CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/lb_Progress").gameObject, data[i].towerState == 2);
+        end
+        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/lb_Name").gameObject, data[i].towerState == 2);
+        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/sp_Icon").gameObject, data[i].towerState == 2);
+    end
+end
+-- 初始化敌方资源信息
+function InitEnemyInfo()
+    data = m_ShowGuildWarInfoData;
+    local baseStr = "";
+    local towerStr = "";
+    if data.aDType == 0 then 
+        baseStr = "UI_GH_LDZ_ShuiJing_001";
+        towerStr = "UI_GH_LDZ_JianTa_001";
+    else
+        baseStr = "UI_GH_LDZ_ShuiJing_002";
+        towerStr = "UI_GH_LDZ_JianTa_002";
+    end
+    local progressBarStr = m_WarEnemyPath.."/Sub_Resource/ProgressBar";
+    local progressBar = GetComponent(m_GuildWarPanelObject, progressBarStr, "UIProgressBar");
+    if progressBar ~= nil then 
+        if data.aDType == 0 then
+            SetLabelGradientColor("C3FCE4","79DDC6",m_WarEnemyPath.."/Sub_Resource/lb_Belong",m_GuildWarPanelObject);
+            SetSpriteGradientColor(progressBarStr.."/Sprite","008B48FF","25FF44FF",m_GuildWarPanelObject);
+        else
+            SetLabelGradientColor("FF805E","E74544",m_WarEnemyPath.."/Sub_Resource/lb_Belong",m_GuildWarPanelObject);
+            SetSpriteGradientColor(progressBarStr.."/Sprite","B11515FF","E83623FF",m_GuildWarPanelObject);
+        end
+        SetLabelContent(m_WarEnemyPath.."/Sub_Resource/lb_Belong", data[1].towerLimited, m_GuildWarPanelObject);
+        -- 第一个数据是主基地的数据,往后依次是上中下塔
+        if data[1].towerState == 0 then
+            progressBar.value = data[1].towerBlood / 100;
+            SetLabelContent(m_WarEnemyPath.."/Sub_Resource/lb_Progress", --[[无敌]]CCommonTool.GetTxtData(1606).m_str, m_GuildWarPanelObject);
+        elseif data[1].towerState == 1 then
+            progressBar.value = data[1].towerBlood / 100;
+            SetLabelContent(m_WarEnemyPath.."/Sub_Resource/lb_Progress", data[1].towerBlood.."%", m_GuildWarPanelObject);
+        elseif data[1].towerState == 2 then
+            progressBar.value = data[1].towerBlood / 100;
+            SetLabelContent(m_WarEnemyPath.."/Sub_Resource/lb_Progress", data[1].towerBlood.."%", m_GuildWarPanelObject);
+    --        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/lb_Progress").gameObject, data[i].towerState == 2);
+        end
+    end
+    for i = 2, 4 do
+        local path = m_WarEnemyPath.."/Sub_Tower"..i-1;
+        SetSpriteContent(path.."/sp_Icon","PanelAloneFourAtlasV04", towerStr, m_GuildWarPanelObject, true);
+        if data.aDType == 0 then
+            SetLabelGradientColor("C3FCE4","79DDC6",path.."/lb_Invincible",m_GuildWarPanelObject);
+        else
+            SetLabelGradientColor("FF805E","E74544",path.."/lb_Invincible",m_GuildWarPanelObject);
+        end
+        if data[i].towerState == 0 then  -- 塔的状态（0：无敌  1：非无敌  2:死亡状态）
+            SetGameObjectState(path.."/lb_Progress", false, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Unconquerable", true, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Invincible", true, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Invincible",data[i].towerLimited, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Unconquerable", --[[无敌]]CCommonTool.GetTxtData(1606).m_str, m_GuildWarPanelObject);
+        elseif data[i].towerState == 1 then
+            SetGameObjectState(path.."/lb_Progress", true, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Unconquerable", false, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Invincible", false, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Progress", data[i].towerBlood.."%", m_GuildWarPanelObject);
+        elseif data[i].towerState == 2 then
+            SetGameObjectState(path.."/lb_Progress", true, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Unconquerable", false, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Invincible", false, m_GuildWarPanelObject);
+            SetLabelContent(path.."/lb_Progress", "0%", m_GuildWarPanelObject);
+        end
+        if IsObjectActive(m_GuildWarPanelObject, path.."/lb_Progress") then
+            CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/lb_Progress").gameObject, data[i].towerState == 2);
+        end
+        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/lb_Name").gameObject, data[i].towerState == 2);
+        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/sp_Icon").gameObject, data[i].towerState == 2);
+    end
+end
+-- 初始化公共资源信息
+function InitResourceInfo()
+    data = m_ShowGuildWarInfoData;
+    if data == nil then return end
+    for i=1, 4 do
+        local path = m_WarResourcePath.."/Sub_Info/Sub_RefreshPoint"..i;
+        if data[i].refresTim ~= nil then
+            SetGameObjectState(path.."/lb_Time", data[i].refresTim > 0, m_GuildWarPanelObject);
+            if data[i].refresTim ~= nil then 
+                if data[i].refresTim > 0 then
+                    local ishaveTimer = G_TimerMng:GetTimeTask("GuildWarResourceCool"..i);
+                    if ishaveTimer == nil then 
+                        local currentTime = G_TimerMng:GetCurrentSeconds();
+                        local time = data[i].refresTim;
+                        AddTimerEvent("GuildWarResourceCool"..i, time, CallBackOver, ETimeShowType.TypeNumberEight, CallBack, i, i, nil, 2);
+                        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/sp_Icon").gameObject, true);
+                    end
+                else
+                    local ishaveTimer = G_TimerMng:GetTimeTask("GuildWarResourceCool"..i);
+                    if ishaveTimer ~= nil then CallBackOver(i); end
+                    CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/sp_Icon").gameObject, false);
+                end
+            end
+        end
+        if data[i].restNum ~= nil then 
+            SetLabelContent(path.."/lb_Num", data[i].restNum, m_GuildWarPanelObject);
+            SetGameObjectState(path.."/lb_Num", data[i].restNum > 0, m_GuildWarPanelObject);
+        end
+        if data[i].resourceScore ~= nil then 
+            SetLabelContent(path.."/lb_Resource", "+"..data[i].resourceScore, m_GuildWarPanelObject);
+        end
+    end
+    
+    -- 公共资源的归属（1：归属我方  2：归属敌方 0：无归属）
+    local path = m_WarResourcePath.."/Sub_Resource";
+    if data.resourceBelong ~= nil then 
+        SetGameObjectState(path.."/lb_Belong", data.resourceBelong == 1, m_GuildWarPanelObject);
+        SetGameObjectState(path.."/ProgressBar", data.resourceBelong == 1 or data.resourceBelong == 0, m_GuildWarPanelObject);
+        SetGameObjectState(path.."/lb_BelongEnemy", data.resourceBelong == 2, m_GuildWarPanelObject);
+        SetGameObjectState(path.."/EnemyProgressBar", data.resourceBelong == 2, m_GuildWarPanelObject);
+        if data.resourceBelong == 1 then 
+            local progressBarStr = path.."/ProgressBar";
+            local progressBar = GetComponent(m_GuildWarPanelObject, progressBarStr, "UIProgressBar");
+            if data.resourceHP then progressBar.value = data.resourceHP / 100; end
+        elseif data.resourceBelong == 2 then
+            local progressBarStr = path.."/EnemyProgressBar";
+            local progressBar = GetComponent(m_GuildWarPanelObject, progressBarStr, "UIProgressBar");
+            if data.resourceHP then progressBar.value = data.resourceHP / 100; end
+        elseif data.resourceBelong == 0 then
+            local progressBarStr = path.."/ProgressBar";
+            local progressBar = GetComponent(m_GuildWarPanelObject, progressBarStr, "UIProgressBar");
+            if data.resourceHP then progressBar.value = data.resourceHP / 100; end
+        end
+    end
+    if data.resourceHP then
+        SetLabelContent(path.."/lb_Progress", data.resourceHP.."%", m_GuildWarPanelObject);
+    end
+    if data.resourceProduce then
+        SetLabelContent(path.."/lb_Add", string_format(--[[每分钟 +{0}]]CCommonTool.GetTxtData(1589).m_str,data.resourceProduce), m_GuildWarPanelObject);
+    end
+end
+
+function CallBackOver(i)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bIsSelectTask and m_guildWarSelect == 3 then
+        local path = m_WarResourcePath.."/Sub_Info/Sub_RefreshPoint"..i;
+        CCommonTool.SetGameObjectGrey(child(m_GuildWarPanelObject, path.."/sp_Icon").gameObject, false);
+        SetGameObjectState(path.."/lb_Time", false, m_GuildWarPanelObject);
+    end
+    G_TimerMng:RemoveTimeTask("GuildWarResourceCool"..i);
+end
+
+function CallBack(timeTxt, i)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bIsSelectTask and m_guildWarSelect == 3 then
+        local path = m_WarResourcePath.."/Sub_Info/Sub_RefreshPoint"..i;
+        SetLabelContent(path.."/lb_Time", timeTxt, m_GuildWarPanelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击任务按钮
+function OnTaskButtonClick()
+    if m_bIsSelectTask then
+        createPanel(ENUMPANELID.ENUM_PANEL_MISSIONPANEL);
+    else
+        ChangeSelectTag();
+    end
+end
+
+-- 点击组队按钮
+function OnTeamButtonClick()
+    if not m_bIsSelectTask then
+        --TeamPanel.OpenThisPanelByTag(3);
+        TeamPanel.OpenByDungeonId(0);
+    else
+        ChangeSelectTag();
+    end
+end
+
+-- 点击公会战信息()
+function OnGuildWarButtonClick()
+    if not m_bIsSelectTask then
+        ChangeSelectTag();
+    end
+end
+
+function ClearTaskChaseTimer()
+    if timerdata ~= nil then
+        Timer.Instance:StopTimer(timerdata);
+        timerdata = nil;
+    end
+end
+
+-- 点击任务
+function OnTaskCloneClick(listView, cell, go)
+    if TeamManager.IsTeamFollowing() == true then
+        ShowSystemFlowTips(8052);
+        return;
+    end
+    local data = listView:GetData(cell.dataIndex);
+    _G.LogicData_CurTraceTaskID = data.missionID;
+    EveryDayTaskManager.CheckIsCamionFollow();
+    if go.name == m_TaskFlyShowStr then 
+        error("点击小飞鞋");
+        if VipManager.MyVipData == nil then error("vipData is null"); return end
+        if CheckDistance(data) == true then 
+            if VipManager.MyVipData.vipLv > 0 then 
+                VipProtocol.RequestFly(data.missionInfo.TaskType, data.missionID);
+            else
+                local flyShoeExcelID = 21022; -- 小飞鞋excelId
+                local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, flyShoeExcelID);
+                if num > 0 then 
+                    VipProtocol.RequestFly(data.missionInfo.TaskType, data.missionID);
+                else
+                    ShowSystemFlowTips(9215);
+                end
+            end
+        else
+            G_MissionMng:TraceTypeOperate(_G.LogicData_CurTraceTaskID, true, false);
+        end
+        ReportManager.RequestReportPanel(10274);
+    else
+        G_MissionMng:TraceTypeOperate(_G.LogicData_CurTraceTaskID, true, false);
+    end
+    local particleComp = GetComponent(cell.gameObject,m_TaskClickEffectStr,"ParticleSystem");
+    particleComp:Stop();
+    particleComp:Play();
+    ClearTaskChaseTimer();
+    if m_ChaseEffectObj ~= nil then
+        m_ChaseEffectObj:SetActive(false);
+    end
+    m_ChaseEffectObj = child(cell.gameObject,m_TaskChaseEffectStr).gameObject;
+    if G_MissionMng.ShowBranchLineEffect then
+        G_MissionMng.ShowBranchLineEffect = false;
+    end
+    timerdata = Timer.Instance:AddTimer(0.5, 0, OnShowChaseTaskEffect);
+    -- 新手期引导特殊处理
+    NewPlayerGuideManager.SkipGreenHandGuide(cell.gameObject);
+    ReportManager.RequestReportPanel(10273);
+end
+
+function CheckDistance(data)
+    -- 计算距离
+    local minDistance = CCommonTool.GetDefineInfo(6656):GetIntContent();
+    local missionState = G_MissionMng:GetMissionStateById(data.missionID);
+    local targetSceneID = G_MissionMng:GetMissionNpcSceneId(tonumber(missionState), data.missionID);
+    if G_SceneMng.SceneID == targetSceneID then 
+        local m_PlayerSelfObject = nil;
+        if G_UserInfo:GetCurPlayer() ~= nil then
+            m_PlayerSelfObject = G_UserInfo:GetCurPlayer().GameObject.transform;
+        end
+        local m_fPosX = m_PlayerSelfObject.transform.position.x;
+        local m_fPosZ = m_PlayerSelfObject.transform.position.z;
+        local targetPos = G_MissionMng:GetMissionPosById(missionState, data.missionID, false, false);
+        local distance = math.sqrt( math.pow(targetPos.x - m_fPosX, 2) + math.pow(targetPos.z - m_fPosZ, 2));
+        if distance <= minDistance then     
+            return false;
+        end
+    end
+    return true;
+end
+
+function OnShowChaseTaskEffect()
+    m_taskListViewComp:Refresh();
+end
+
+-- 组队大厅按钮
+function OnButtonTeamHallClick(gameObject)
+    TeamPanel.OpenThisPanelByTag(1);
+    ReportManager.RequestReportPanel(10280);
+end
+
+-- 附近队伍
+function OnButtonNearbyClick(gameObject)
+    TeamPanel.OpenThisPanelByTag(2);
+    ReportManager.RequestReportPanel(10281);
+end
+
+-- 创建队伍按钮
+function OnButtonCreateClick(gameObject)
+    TeamPanel.OpenThisPanelByTag(3);
+    local goalData = TeamManager.teamHallGoalData;
+    TeamProtocol.RequestCreateTeam(goalData.goalId, goalData.diffIndex);
+    ReportManager.RequestReportPanel(10282);
+end
+
+-- 自动匹配队伍按钮
+function OnButtonTeamMatchingClick(gameObject)
+    
+end
+
+-- 更新匹配队伍目标
+function OnButtonChangeGoalClick(gameObject)
+    local goalData = TeamManager.teamHallGoalData;
+    TeamGoalPanel.SelectTeamGoal(goalData.goalId, goalData.diffIndex, OnSelectTeamGoal, ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 选择目标回调
+function OnSelectTeamGoal(goalId, diffIndex)
+    local goalData = TeamManager.teamHallGoalData;
+    if goalId ~= goalData.goalId or diffIndex ~= goalData.diffIndex then
+        if TeamManager.HasTeam() then
+            ShowSystemFlowTips(3790);
+            return;
+        end
+        -- 目标ID为2表示匹配全部目标 不支持全部目标
+        if goalId == 2 then
+            ShowSystemFlowTips(3789);
+        else
+            TeamProtocol.RequestMatchTeam(goalId, diffIndex);
+        end
+    end
+end
+
+-- 队伍邀请按钮
+function OnInviteButtonClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL,ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 队伍匹配成员中按钮
+function OnMemberMatchingClick(gameObject)
+    
+end
+
+function ClearTeamSelectTimer()
+    if m_TeamTimerData ~= nil then
+        Timer.Instance:StopTimer(m_TeamTimerData);
+        m_TeamTimerData = nil;
+    end
+end
+
+function OnShowTeamSelectEffect()
+    if m_TeamSelectObject ~= nil then
+        m_TeamSelectObject:SetActive(true);
+    end
+end
+
+-- 队伍成员点击
+function OnMemberClick(gameObject)
+    -- name: Member1
+    local index = tonumber(string.sub(gameObject.transform.parent.name, 7));
+    local member = nil;
+    for globalId, i in pairs(m_MemberPosition) do
+        if i == index then
+            member = TeamManager.GetTeamMember(globalId);
+            break;
+        end
+    end
+    if member == nil then
+        error("点击的成员数据不存在, BUG!");
+        return;
+    end
+
+    -- 显示头像
+    Main_MiddleBottom.ShowHudOut(member.globalId, member.name, member.level, member.proId, member.guildId);
+
+    local particleComp = GetComponent(gameObject, m_TeamClickEffectStr, "ParticleSystem");
+    particleComp.gameObject:SetActive(true);
+    particleComp:Stop();
+    particleComp:Play();
+
+    --按配置的职业选中
+    local proId = G_UserInfo.RoleAttribute.ProID;
+    local canSelect = PlayerSelectEffectProIdDict[proId] == true;
+    if canSelect == false then return end;
+
+    ClearTeamSelectTimer();
+    if m_TeamSelectObject ~= nil then
+        m_TeamSelectObject:SetActive(false);
+    end
+    m_TeamSelectObject = child(gameObject, m_TeamSelectEffectStr).gameObject;
+    m_TeamTimerData = Timer.Instance:AddTimer(0.5, 0, OnShowTeamSelectEffect);
+    if G_SceneMng.CurSelectAlliedPlayerId == member.globalId then
+        return;
+    end
+    G_SceneMng:SelectAlliedPlayerByGlobalId(member.globalId);
+    Main_LeftTop.CancelPlayerSelect();
+end
+
+-- 队伍跟随按钮
+function OnTeamFollowButtonClick()
+    local followState = TeamManager.GetTeamFollowState();
+    if followState == 1 then
+        TeamProtocol.RequestCancelFollowState();
+    else
+        ParameterToMessageTextBox.ShowConfirm("", CCommonTool.GetTxtData(2000).m_str, TeamFollowCallback);
+    end
+end
+
+function TeamFollowCallback(isOK)
+    if isOK == true then
+        TeamProtocol.RequestEnterFollowState();
+    end
+end
+
+-- 召集按钮
+function OnTeamConvokeButtonClick()
+    TeamProtocol.RequestTeamConvoke();
+end
+
+-- 退出队伍按钮
+function OnTeamQuitButtonClick()
+    ParameterToMessageTextBox.ShowConfirm("", CCommonTool.GetTxtData(2002).m_str, TeamQuitCallback);
+end
+
+function TeamQuitCallback(isOK)
+    if isOK == true then
+        TeamProtocol.RequestQuitTeam();
+    end
+end
+
+-- 战场信息面板我方按钮点击
+function OnWarBtnMyClick()
+    SetBtnState(ENUM_WAR_INFO_ID.ENUM_MY);
+    GuildProtocol.RequestStrongHoldInfo(ENUM_WAR_INFO_ID.ENUM_MY);
+end
+
+-- 战场信息面板敌方按钮点击
+function OnWarBtnEnemyClick()
+    SetBtnState(ENUM_WAR_INFO_ID.ENUM_ENEMY);
+    GuildProtocol.RequestStrongHoldInfo(ENUM_WAR_INFO_ID.ENUM_ENEMY);
+end
+
+-- 战场信息面板资源按钮点击
+function OnWarBtnResourceClick()
+    SetBtnState(ENUM_WAR_INFO_ID.ENUM_RESOURCE);
+    GuildProtocol.RequestStrongHoldInfo(ENUM_WAR_INFO_ID.ENUM_RESOURCE);
+end
+
+-- 公共资源怪物刷新点 点击自动寻路
+function OnGuildWarMonsterClick(gameObject)
+    local index = tonumber(string.sub(gameObject.name, 17));
+    GuildProtocol.RequestFindMonster(index);
+end
+
+-- 防御塔点击自动寻路
+function OnTowerClick(gameObject)
+    local index = tonumber(string.sub(gameObject.name, 10));
+    GuildProtocol.RequestFindTower(m_ShowGuildWarInfoData.aDType, index);
+end
+
+-- 中心资源塔点击自动寻路
+function OnResourceTowerClick(gameObject)
+    GuildProtocol.RequestFindMonster(0);
+end
+
+-- 攻守双方核心自动寻路
+function OnBaseTowerClick()
+    GuildProtocol.RequestFindTower(m_ShowGuildWarInfoData.aDType, 0);
+end
+
+-- 设置按钮状态
+function SetBtnState(index)
+    m_guildWarSelect = index;
+    SetGameObjectState(m_WarBtnMyPath.."/sp_IsOn", m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_MY, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarBtnMyPath.."/sp_IsOff", m_guildWarSelect ~= ENUM_WAR_INFO_ID.ENUM_MY, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarBtnEnemyPath.."/sp_IsOn", m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_ENEMY, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarBtnEnemyPath.."/sp_IsOff", m_guildWarSelect ~= ENUM_WAR_INFO_ID.ENUM_ENEMY, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarBtnResourcePath.."/sp_IsOn", m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_RESOURCE, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarBtnResourcePath.."/sp_IsOff", m_guildWarSelect ~= ENUM_WAR_INFO_ID.ENUM_RESOURCE, m_GuildWarPanelObject);
+
+    SetGameObjectState(m_WarMyPath, m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_MY, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarEnemyPath, m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_ENEMY, m_GuildWarPanelObject);
+    SetGameObjectState(m_WarResourcePath, m_guildWarSelect == ENUM_WAR_INFO_ID.ENUM_RESOURCE, m_GuildWarPanelObject);
+end
+
+-- 点击成就指引界面
+function onAchieveGuideClick(gameObject)
+    if currentAchieve.data.state == AchieveManager.STATE_DOING or currentAchieve.data.state == AchieveManager.STATE_NOTSTART then
+        createPanel(ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    else
+        AchievePanel.OpenPanelByTag(currentAchieve.info.CompleteType);
+    end
+    local particleComp = GetComponent(m_AchieveGuidePanelObject, m_TaskClickEffectStr, "ParticleSystem");
+    particleComp:Stop();
+    particleComp:Play();
+    ReportManager.RequestReportPanel(10272);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 更改追踪任务id
+function ChangeTraceMissionId(missionid)
+    _G.LogicData_CurTraceTaskID = missionid;
+end
+
+-- 更新任务面板信息
+function InitTaskOut(missionID, missionType)
+    if 1 == IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) and m_bCreateSuccess then
+        Main_LeftMiddle.InitTask();
+    end
+    if missionID ~= nil and missionType ~= nil then
+        TaskCallBack.DealMission(missionID, missionType);
+        if missionID == G_OpenAutoFightTaskID and missionType == MISSIONSTATE.MISSION_MSG_TYPE_COMPLETE then
+            Main_RightBottom.InitAutoFightShowOut();
+            Main_MiddleBottom.InitFlyButtonShowOut();
+        end
+    end
+end
+
+-- 队伍信息更新刷新界面
+function RefreshTeamPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitTeam();
+        Main_LeftTop.InitPlayerHasTeamTag();
+        Main_MiddleBottom.AutoSelectRecordChannel();
+    end
+end
+
+
+-- 更新队伍成员血量
+function RefreshMainPanelTeamHp(globalId, hpPercent)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if m_MemberPosition ~= nil then
+            local index = m_MemberPosition[globalId];
+            if index ~= nil and index > 0 then
+                local member = TeamManager.GetTeamMember(globalId);
+                local go = m_MemberObjects[index];
+                InitTeamMember(go, member, 0);
+            end
+        end
+    end
+end
+
+-- 更新队伍成员等级
+function RefreshMainPanelTeamLevel(globalId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if m_MemberPosition ~= nil then
+            local index = m_MemberPosition[globalId];
+            if index ~= nil and index > 0 then
+                local member = TeamManager.GetTeamMember(globalId);
+                local go = m_MemberObjects[index];
+                InitTeamMember(go, member, 3);
+            end
+        end
+    end
+end
+
+-- 更新队伍成员职业
+function RefreshMainPanelTeamPro(globalId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if m_MemberPosition ~= nil then
+            local index = m_MemberPosition[globalId];
+            if index ~= nil and index > 0 then
+                local member = TeamManager.GetTeamMember(globalId);
+                local go = m_MemberObjects[index];
+                InitTeamMember(go, member, 4);
+            end
+        end
+    end
+end
+
+-- 更新队员跟随状态
+function RefreshMainPanelTeamFollowState(globalId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if m_MemberPosition ~= nil then
+            local index = m_MemberPosition[globalId];
+            if index ~= nil and index > 0 then
+                local member = TeamManager.GetTeamMember(globalId);
+                local go = m_MemberObjects[index];
+                InitTeamMember(go, member, 6);
+            end
+        end
+    end
+end
+
+--显示
+function Show()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetGameObjectState(m_LeftMiddlePath, true, m_panelObject);
+    end
+end
+
+--隐藏
+function Hide()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetGameObjectState(m_LeftMiddlePath, false, m_panelObject);
+    end
+end
+
+-- 取消队友选中
+function CancelTeamMemberSelect()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if TeamManager.HasTeam() then
+            InitTeamMembers();
+        end
+    end
+end
+
+-- 队伍按钮刷新
+function InitTeamButtonsOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if TeamManager.HasTeam() then
+            InitTeamButtons();
+        end
+    end
+end
+
+-- 初始化主界面战场左侧数据
+function InitGuildWarLeft(data)
+    m_isShowGuildWar = true;
+    InitGuildWar(data);
+end
+
+-- 领地战结束重置
+function OnGuildWarEnd()
+    m_isShowGuildWar = false;
+    m_guildWarSelect = 1;
+end
+
+-- 切换到任务标签
+function SelectTaskTag()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if not m_bIsSelectTask then
+            ChangeSelectTag();
+        end
+    end
+end
+
+---- 押镖自动跟随检测
+--function CheckIsEscortFloow(args)
+--    local m_EscortData = CCommonTool.GetAllUnionConvoyInfo();
+--    if m_EscortData ~= nil then 
+--        for i=1, m_EscortData.count do 
+--            if m_EscortData[i-1].MissionID == _G.LogicData_CurTraceTaskID then 
+
+--                break;
+--            end
+--        end
+--    end
+--end

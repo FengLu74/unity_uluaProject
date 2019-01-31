@@ -1,0 +1,276 @@
+﻿module('WelfarePanel', package.seeall)
+--当前所在面板名字
+local m_PanelName = 'GameWelfarePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+--关闭按钮
+local m_ClosePath = "Close";
+
+----------------------------------通用的名称路径---------------------------------------
+--主菜单Grid路径
+local m_MenuGridPath = "MainMenu/Scroll View/Grid";
+--主菜单Item路径
+local m_MenuItemPath = "MainMenu/Scroll View/Grid/Item";
+-----------------------------------引用的对象------------------------------------------
+--面板对象
+local m_PanelObject = nil;
+--是否创建成功
+local m_CreateSuccess = false;
+--主菜单Grid路径
+local m_MenuGrid = nil;
+--关闭按钮
+local m_Close = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+--主菜单Index
+local m_MainMenuIndex = 0;
+--当前开启的面板Id
+local m_CurPanelId = 0;
+--下一个需要开启的面板Id
+local m_NextPanelId = 0;
+--主菜单Item列表
+local m_MenuItemList = {};
+--存储主菜单数据
+local m_WelfareMenuDatas = {};
+--打开面板时数据
+local m_OpenData = nil;
+------------------------------------BaseLua调用的同名方法------------------------------
+--初始化的内容放在start方法中
+function Start()
+    LoadData();
+    InitObjects();
+    InitEvents();
+    InitMenuItemList();
+    InitShow();
+    LuaEventDispatcher.AddEventListener("WelfarePanel.CloseWelfarePanel", OnCloseWelfarePanel);
+    LuaEventDispatcher.AddEventListener("WelfarePanel.ValidatePanel", OnValidatePanel);
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_MainMenuIndex = 0;
+    m_CurPanelId = 0;
+    m_NextPanelId = 0;
+    CloseWelfarePanels();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MenuGrid = nil;
+	m_Close = nil;
+    m_MainMenuIndex = 0;
+    m_CurPanelId = 0;
+    m_NextPanelId = 0;
+    m_MenuItemList = {};
+    m_OpenData = nil;
+    LuaEventDispatcher.RemoveEventListener("WelfarePanel.CloseWelfarePanel", OnCloseWelfarePanel);
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+--加载文本
+function LoadData()
+    WelfareManager.LoadData();
+end
+
+--初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_WELFARE_PANEL);
+    m_MenuGrid = GetComponent(m_PanelObject, m_MenuGridPath, "UIGrid");
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+
+end
+
+--初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+
+end
+
+--初始化菜单Items
+function InitMenuItemList()
+    local count = WelfareType.Count;
+    local menuItem = child(m_PanelObject, m_MenuItemPath).gameObject;
+    for index = 1 , count do
+        local item = newobject(menuItem);
+        item.transform.parent = m_MenuGrid.transform;
+        item.name = "Item" .. index;
+        item.transform.localScale = Vector3.one;
+        item:SetActive(false);
+        m_MenuItemList[index] = item;
+        SetGameObjectEvent("", OnMenuItemClick, item);
+    end
+end
+
+--初始化显示信息
+function InitShow()
+    WelfareProtocol.RequestWelfarePanelData();
+    InitOpenData();
+    InitMenu();
+end
+
+--初始化打开界面的数据信息
+function InitOpenData()
+    if m_OpenData ~= nil then
+        m_MainMenuIndex = m_OpenData.MainMenuIndex;
+        m_OpenData = nil;
+    end
+end
+
+--初始化主菜单
+function InitMenu()
+    for key, var in pairs(m_MenuItemList) do
+        local item = var;
+        item:SetActive(false);
+    end
+    local menuDatas = WelfareManager.GetWelfareMenuDatas();
+    m_WelfareMenuDatas = {};
+    for key, var in pairs(WelfareManager.m_NeedShow) do
+        local menuData = menuDatas[var];
+		if menuData ~= nil then 
+			local index = menuData.Type;
+			local panelId = menuData.PanelId;
+			local item = m_MenuItemList[index];
+			local data = 
+			{
+				Type = index;
+				Item = item;
+				PanelId = panelId;
+			}
+			table.insert(m_WelfareMenuDatas,data);
+            if index == WelfareType.WT_ThirtyDayPick and ThirtyDayPickManager.TodayIndex <= 0 then
+                item:SetActive(false);
+            else
+                item:SetActive(true);
+            end
+			SetLabelContent("Sprite_Deactive/Label",menuData.Text,item);
+			SetLabelContent("Sprite_Active/Label",menuData.Text,item);
+		end
+    end
+    m_MenuGrid:Reposition();
+    SetMainMenu(m_MainMenuIndex);
+end
+
+--设置主菜单状态
+function SetMainMenu(menuIndex)
+    m_MainMenuIndex = menuIndex;
+    local index = menuIndex + 1;
+    local length = GetTableLength(m_WelfareMenuDatas);
+    for i = 1 , length do
+        local welfareMenuData = m_WelfareMenuDatas[i];
+        local welfareType = welfareMenuData.Type;
+        local item = welfareMenuData.Item;
+        local panelId = welfareMenuData.PanelId;
+	    SetGameObjectState("Sprite_Deactive", i ~= index, item);
+	    SetGameObjectState("Sprite_Active", i == index, item);
+        if i == index then
+            SetWelfarePanel(panelId);
+        end
+    end
+end
+
+--设置福利面板
+function SetWelfarePanel(panelId)
+    m_NextPanelId = panelId;
+    if m_CurPanelId ~= m_NextPanelId then
+        if m_CurPanelId > 0 then
+            if IsOpenPanel(m_CurPanelId) == 1 then
+                closePanel(m_CurPanelId);
+            end
+        end
+        m_CurPanelId = m_NextPanelId;
+        createPanel(m_CurPanelId,ENUMPANELID.ENUM_WELFARE_PANEL);
+    end
+end
+--关闭福利面板
+function CloseWelfarePanels()
+    local length = GetTableLength(WelfareManager.WelfareDatas);
+    for index = 1, length do
+        local welfareData = WelfareManager.WelfareDatas[index];
+        local panelId = welfareData.PanelId;
+        if IsOpenPanel(panelId) == 1 then
+            closePanel(panelId);
+        end
+    end
+    closePanel(ENUMPANELID.ENUM_WELFARE_PANEL);
+end
+
+------------------------------------------事件方法------------------------------------
+--菜单响应按钮
+function OnMenuItemClick(gameObject)
+    local length = GetTableLength(m_WelfareMenuDatas);
+    for i = 1 , length do
+        local welfareMenuData = m_WelfareMenuDatas[i];
+        local welfareType = welfareMenuData.Type;
+        local item = welfareMenuData.Item;
+        local panelId = welfareMenuData.PanelId;
+        if item == gameObject then
+            SetMainMenu(i - 1);
+        end
+    end
+end
+
+--关闭按钮
+function OnCloseClick(gameObject)
+    CloseWelfarePanels();
+end
+
+--关闭福利界面
+function OnCloseWelfarePanel()
+    CloseWelfarePanels();
+end
+--关闭福利子界面
+function OnValidatePanel(data)
+    if IsOpenPanel(ENUMPANELID.ENUM_WELFARE_PANEL) == 0 then
+        if data ~= nil then
+            local panelId = data.PanelId;
+            if panelId ~= nil then
+                closePanel(panelId);
+            end
+        end
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--刷新主菜单显示信息
+function RefreshMainMenu()
+    if IsOpenPanel(ENUMPANELID.ENUM_WELFARE_PANEL) == 1 then
+        InitMenu();
+    end
+end
+
+--设置主菜单指针
+function SetMenuIndex(index)
+    m_MainMenuIndex = index;
+end
+
+--打开福利界面
+function OpenPanel(index,causePanelId)
+    m_MainMenuIndex = index;
+    if IsOpenPanel(ENUMPANELID.ENUM_WELFARE_PANEL) == 0 then
+        createPanel(ENUMPANELID.ENUM_WELFARE_PANEL, causePanelId);
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local data = 
+    {
+        MainMenuIndex = m_MainMenuIndex;
+    };
+    return data;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_OpenData = paramTable;
+end

@@ -1,0 +1,199 @@
+﻿module("PetProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 魔法熔炉数据初始化
+    network.Register(GMI_STOC_PET_OPERATE_RETURN, PetOperateReturn);
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+-- 魔法熔炉数据初始化
+function PetOperateReturn(protocolId,buffer)
+    local subMsgID = buffer:ReadInt();
+    if subMsgID == PET_ITEM_OPERATE_MSG.PET_EAT_EXPITEM then
+        local levelChanged = buffer:ReadInt();
+        PetPanel.RefreshPanelAfterAddExp(levelChanged);
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_RELEASE then
+        ShowSystemFlowTips(7837);
+        PetPanel.RefreshPanelAfterRelease();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_CHANGE_TO_ITEM then
+        ShowSystemFlowTips(7838);
+        PetPanel.RefreshPanelAfterChangeToItem();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_ADD_SAVVY then
+        local result = buffer:ReadInt();
+        if result == 1 then
+            ShowSystemFlowTips(7830);
+        else
+            ShowSystemFlowTips(7831);
+        end
+        PetPanel.RefreshPanelAfterAddSavvy();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_ADD_INTIMATE then
+        ShowSystemFlowTips(7833);
+        PetPanel.RefreshPanelAfterAddIntimate();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_SET_OUTPET_ID then
+        ShowSystemFlowTips(7821);
+        local isSetPetOut = buffer:ReadByte();
+        local petPos = buffer:ReadByte();
+        if isSetPetOut == 1 then
+            PetManager.m_yIsSetPetOut = true;
+        else
+            PetManager.m_yIsSetPetOut = false;
+        end
+        PetManager.m_yPetPanelPos = petPos;
+        PetPanel.RefreshPanelAfterSetPetOut();
+        Main_LeftTop.InitPetInfoOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_REST_OUTPET_ID then
+        ShowSystemFlowTips(7822);
+        PetManager.m_yIsSetPetOut = false;
+        PetPanel.RefreshPanelAfterRestPetOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_INFO_INIT then
+        local isSetPetOut = buffer:ReadByte();
+        local petPos = buffer:ReadByte();
+        if isSetPetOut == 1 then
+            PetManager.m_yIsSetPetOut = true;
+        else
+            PetManager.m_yIsSetPetOut = false;
+        end
+        local nextCanClickOutButtonTime = buffer:ReadInt();
+        PetManager.m_aPetCombineData[1] = buffer:ReadByte();
+        PetManager.m_aPetCombineData[2] = buffer:ReadByte();
+        PetManager.m_aPetCombineData[3] = buffer:ReadByte();
+        for Index = 1,3 do
+            if PetManager.m_aPetCombineData[Index] == 255 then
+                PetManager.m_aPetCombineData[Index] = -1;
+            end
+        end
+        PetManager.m_yPetPanelPos = petPos;
+        PetManager.m_nNextCanClickOutButtonTime = nextCanClickOutButtonTime;
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_GROW_TO_ADULT then
+        ShowSystemFlowTips(7823);
+        PetPanel.RefreshPanelAfterEvolutionOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_QUALITY_FOSTER then
+        ShowSystemFlowTips(7824);
+        PetPanel.RefreshPanelAfterQualityAddOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_QUALITY_REFRESH then
+        ShowSystemFlowTips(7825);
+        PetPanel.RefreshPanelAfterQualityRefreshOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_QUALITY_SAVE then
+        ShowSystemFlowTips(7826);
+        PetPanel.RefreshPanelAfterQualitySaveOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_SETOUT_ADDINTIMATE then
+        ShowSystemFlowTips(7827);
+        PetPanel.RefreshPanelAfterSetOutAddIntimate();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_SETOUT_ADDEXP then
+        local petCrid = buffer:ReadInt();
+        local addExp = buffer:ReadInt();
+        local petLevel = buffer:ReadInt();
+        local needClientAddExp = buffer:ReadByte();
+        local levelChangedServer = buffer:ReadByte();
+        if needClientAddExp == 1 then
+            PetManager.AddPetExp(petCrid,addExp,petLevel);
+        end
+        if levelChangedServer == 1 then
+            ShowSystemFlowTips(7828);
+            Main_LeftTop.InitPetInfoOut();
+        end
+        PetPanel.RefreshPanelAfterSetOutAddExp(levelChangedServer);
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_SETOUT_DEAD then
+        ShowSystemFlowTips(7829);
+        PetPanel.DealRebornLogic();
+        Main_LeftTop.InitPetInfoOut();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_CAPTURE then
+        local result = buffer:ReadInt();
+        if result == 1 then
+            ShowSystemFlowTips(7872);
+        else
+            ShowSystemFlowTips(7873);
+        end
+        Main_MiddleBottom.RefreshCapturePetInfo();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_LEARN_SKILL then
+        local result = buffer:ReadByte();
+        if result == 1 then
+            ShowSystemFlowTips(7879);
+        else
+            ShowSystemFlowTips(7880);
+        end
+        PetPanel.RefreshPanelAfterLearnSkill();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_CREATE_IN_SCENE then
+        local petCridInScene = buffer:ReadUInt();
+        PetManager.m_dwPetCridInScene = petCridInScene;
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_SHOWTIPS_LEARNSKILL_BYLEVELUP then
+        local excelID = buffer:ReadInt();
+        local skillID = buffer:ReadUInt();
+        local txtID = CCommonTool.GetNameIDByExcelID(excelID);
+        local info = CCommonTool.GetSkillMainData(skillID);
+        if info == nil then 
+            error(string_format("skill_main表ID:{0}不存在!", tostring(m_Id)));
+            return;
+        end
+        local m_SubId = info.SonSkill0;
+        local nameInfo = CCommonTool.GetSkillNameData(m_SubId);
+        if nameInfo == nil  then
+            error(string_format("skill_name表ID:{0}不存在!", tostring(m_SubId)));
+            return;
+        end
+        local petName = GetColorStrByPinZhi(CCommonTool.GetAptitudeIDByExcelID(excelID))..CCommonTool.GetTxtData(txtID).m_str.."[-]";
+        ShowSystemFlowTips(9008,nil,{petName,CCommonTool.GetTxtData(nameInfo.SkillName).m_str});
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_DECOMPOSE then
+        local itemCount = buffer:ReadByte();
+        local allItemTable = {};
+        local itemInfo = {};
+        for Index = 1,itemCount do
+            itemInfo[Index] = {};
+            itemInfo[Index].ExcelID = buffer:ReadInt();
+            itemInfo[Index].ItemNum = buffer:ReadInt();
+        end
+        for Index = 1,#itemInfo do
+            if #allItemTable == 0 then 
+                table.insert(allItemTable,itemInfo[Index]);
+            else
+                local isNew = true;
+                for i = 1, #allItemTable do
+                    if itemInfo[Index].ExcelID == allItemTable[i].ExcelID then
+                        allItemTable[i].ItemNum = allItemTable[i].ItemNum + itemInfo.ItemNum;
+                        isNew = false;
+                        break;
+                    end
+                end
+                if isNew then 
+                    table.insert(allItemTable, #allItemTable + 1, itemInfo[Index]);
+                end
+            end
+        end
+        ResolvePanel.ResultBack(allItemTable);
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_STARUP then
+        local result = buffer:ReadInt();
+        PetPanel.RefreshPanelAfterStarUp(result);
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_COMBINE then
+        local yCombinePanelPos = buffer:ReadByte();
+        local yPetPanelPos = buffer:ReadByte();
+        PetManager.m_aPetCombineData[yCombinePanelPos + 1] = yPetPanelPos;
+        if PetManager.m_aPetCombineData[yCombinePanelPos + 1] == 255 then
+            PetManager.m_aPetCombineData[yCombinePanelPos + 1] = -1;
+        end
+        PetCombinePanel.RefreshPanel();
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM then
+        -- 是否设置了优先出战第一只宠物(1为勾选0为非勾选)
+        PetManager.m_yIsPriorFirst = buffer:ReadByte() == 1;
+        local opType = buffer:ReadByte();
+        local size = buffer:ReadByte()
+        PetManager.m_aPetTeamData = {};
+        for i = 1, size do
+            PetManager.m_aPetTeamData[i] = {};
+            -- 对应宠物面板位置
+            PetManager.m_aPetTeamData[i].pos = buffer:ReadInt();
+            -- 能出战CD
+            PetManager.m_aPetTeamData[i].time = 0;
+            if PetManager.m_aPetTeamData[i].pos == 255 then
+                PetManager.m_aPetTeamData[i].pos = -1;
+            end
+        end
+        for i = size + 1, PET_ENUM.PET_FIGHT_ORDER_NUM do
+            table.insert(PetManager.m_aPetTeamData, {
+                pos = -1,    -- 对应宠物面板位置
+                time = 0     -- 能出战CD
+            });
+        end
+    elseif subMsgID == PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM_PRIORFIRST then
+        PetManager.m_yIsPriorFirst = buffer:ReadByte() == 1;
+    end
+end

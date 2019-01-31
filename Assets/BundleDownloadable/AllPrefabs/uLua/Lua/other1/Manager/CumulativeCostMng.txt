@@ -1,0 +1,132 @@
+﻿module("CumulativeCostMng", package.seeall)
+
+-------------------------------- 强化统计 --------------------------------
+-- 强化统计返回列表
+strengthenRechargeTable = { };
+-- 活动开始时间
+strengthenBeginTime = 0;
+-- 结束时间
+strengthenEndTime = 0;
+-- 领取状态
+strengthenRewardState = nil;
+-- 总的充值经验数
+strengthenAllGetExp = 0;
+
+-------------------------------- 精炼统计 --------------------------------
+-- 精炼统计返回列表
+RefiningRechargeTable = { };
+-- 活动开始时间
+RefiningBeginTime = 0;
+-- 结束时间
+RefiningEndTime = 0;
+-- 领取状态
+RefiningRewardState = nil;
+-- 总的充值经验数
+RefiningAllGetExp = 0;
+
+-------------------------------- 宠物悟性统计 --------------------------------
+-- 宠物悟性统计返回列表
+PetSavvyRechargeTable = { };
+-- 活动开始时间
+PetSavvyBeginTime = 0;
+-- 结束时间
+PetSavvyEndTime = 0;
+-- 领取状态
+PetSavvyRewardState = nil;
+-- 总的充值经验数
+PetSavvyAllGetExp = 0;
+
+-------------------------------- 宠物洗练统计 --------------------------------
+-- 宠物洗练统计返回列表
+PetQualityRefreshRechargeTable = { };
+-- 活动开始时间
+PetQualityRefreshBeginTime = 0;
+-- 结束时间
+PetQualityRefreshEndTime = 0;
+-- 领取状态
+PetQualityRefreshRewardState = nil;
+-- 总的充值经验数
+PetQualityRefreshAllGetExp = 0;
+
+-------------------------------- 坐骑进阶统计 --------------------------------
+-- 坐骑进阶统计返回列表
+RideLevelUpRechargeTable = { };
+-- 活动开始时间
+RideLevelUpBeginTime = 0;
+-- 结束时间
+RideLevelUpEndTime = 0;
+-- 领取状态
+RideLevelUpRewardState = nil;
+-- 总的充值经验数
+RideLevelUpAllGetExp = 0;
+
+-------------------------------- 累日充值 --------------------------------
+-- 累日充值返回列表
+CumulativeDaysRechargeTable = { };
+-- 活动开始时间
+CumulativeDaysBeginTime = 0;
+-- 结束时间
+CumulativeDaysEndTime = 0;
+-- 领取状态
+CumulativeDaysRewardState = nil;
+-- 总的充值经验数
+CumulativeDaysAllGetExp = 0;
+-- 当前是第几天
+CumulativeDay = 1;
+
+-------------------------------- 限时抽奖 --------------------------------
+-- 奖品列表
+LimitTimeDrawTable = {};
+-- 活动开始时间
+LimitTimeDrawBeginTime = 0;
+-- 结束时间
+LimitTimeDrawEndTime = 0; 
+-- 幸运值
+LimitTimeDrawLuckyNum = 0;
+-- 达到幸运值
+LimitAttainLuckyNum=0;
+
+-- 数据清理
+function ClearData()
+    strengthenRechargeTable = { };
+    strengthenBeginTime = 0;
+    strengthenEndTime = 0;
+    strengthenRewardState = nil;
+    strengthenAllGetExp = 0;
+    
+    RefiningRechargeTable = { };
+    RefiningBeginTime = 0;
+    RefiningEndTime = 0;
+    RefiningRewardState = nil;
+    RefiningAllGetExp = 0;
+
+    PetSavvyRechargeTable = { };
+    PetSavvyBeginTime = 0;
+    PetSavvyEndTime = 0;
+    PetSavvyRewardState = nil;
+    PetSavvyAllGetExp = 0;
+
+    PetQualityRefreshRechargeTable = { };
+    PetQualityRefreshBeginTime = 0;
+    PetQualityRefreshEndTime = 0;
+    PetQualityRefreshRewardState = nil;
+    PetQualityRefreshAllGetExp = 0;
+
+    RideLevelUpRechargeTable = { };
+    RideLevelUpBeginTime = 0;
+    RideLevelUpEndTime = 0;
+    RideLevelUpRewardState = nil;
+    RideLevelUpAllGetExp = 0;
+
+    CumulativeDaysRechargeTable = { };
+    CumulativeDaysBeginTime = 0;
+    CumulativeDaysEndTime = 0;
+    CumulativeDaysRewardState = nil;
+    CumulativeDaysAllGetExp = 0;
+    CumulativeDay = 1;
+
+    LimitTimeDrawTable = {};
+    LimitTimeDrawBeginTime = 0;
+    LimitTimeDrawEndTime = 0; 
+    LimitTimeDrawLuckyNum = 0;
+end

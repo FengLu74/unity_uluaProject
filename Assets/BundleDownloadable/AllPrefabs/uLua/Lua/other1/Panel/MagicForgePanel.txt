@@ -1,0 +1,635 @@
+﻿module("MagicForgePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 每次熔炼获得的经验
+local m_GetExpStr = "Right/Label_ExpNum";
+-- 当前累积次数
+local m_curCaculateTimesStr = "Right/Label_Accumulate"
+-- 奖励道具描述
+local m_AccumulateDesStr = "Right/Label_CalculateDes";
+-- 参加次数
+local m_JoinTimesStr = "Left/Start/OperatePanel/Label_JoinTimes";
+-- 参加次数
+local m_JoinTimes2Str = "Left/Collecting/OperatePanel/Label_JoinTimes";
+-- 剩余重置次数
+local m_LeftResetTimesStr = "ResetPanel/Label_Times";
+-- 重置花费
+local m_ResetCostStr = "ResetPanel/CoinTable/Label_Num";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonStr = "Close_Button";
+-- 祭祀按钮
+local m_StartMagicForgeButtonStr = "Left/Start/OperatePanel/Button_Start";
+-- 重置按钮
+local m_ResetButtonStr = "Left/Collecting/Reset_Button";
+-- 熔炼按钮
+local m_StartTweenButtonStr = "Left/Collecting/OperatePanel/Button_Start";
+-- 重置取消按钮
+local m_ResetPanelCancelButtonStr = "ResetPanel/Button_Close";
+-- 重置按钮
+local m_ResetPanelResetButtonStr = "ResetPanel/Button_Reset";
+
+-- 返回按钮
+local m_PlayTweenReturnButtonStr = "Left/PlayTweening/Return_Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 重置花费
+local m_ResetCostIconStr = "ResetPanel/CoinTable/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 右侧奖励道具所在的位置
+local m_RightRewardUITableStr = "Right/ItemTable";
+-- 左侧开始位置
+local m_LeftStartStateStr = "Left/Start";
+-- 左侧收集位置
+local m_LeftCollectStateStr = "Left/Collecting";
+-- 左侧播放动画位置
+local m_LeftPlayTweenStateStr = "Left/PlayTweening";
+-- 左侧活动已完成的位置
+local m_LeftStartOverStr = "Left/Start/OperatePanel/Over";
+
+-- 是否重置的弹板
+local m_ResetPanel = "ResetPanel";
+-- 重置花费
+local m_ResetCostUITable = "ResetPanel/CoinTable";
+
+-- 选中的标所在的位置
+local m_SelectObjStr = "/Sprite_Select";
+-- 奖励的位置
+local m_RewardStr = "Left/PlayTweening/RewardItem";
+
+-- 获得低品质奖励特效
+local m_LowQualityEffectStr = "/Effect_Quality_Low";
+-- 获得高品质奖励特效
+local m_HighQualityEffectStr = "/Effect_Quality_High";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具名称
+local m_ItemStr = "/Item";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+-- 操作面板
+local m_OperatePanelStr = "/OperatePanel";
+
+-- 道具图标
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具遮罩
+local m_ItemMaskStr = "/Sprite_Mask";
+-- 道具加号
+local m_ItemAddStr = "/Label_Add";
+
+-- 道具品质1
+local m_ItemApptitude1Str = "/Sprite_Apptitude";
+-- 道具品质2
+local m_ItemApptitude2Str = "/Sprite_Apptitude2";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 所有魔法熔炉表数据
+local m_AllMagicForgeTableData = nil;
+-- 当前魔法熔炉数据
+local m_CurMagicForgeData = nil;
+-- 是否有足够的道具
+local m_IsHaveEnoughItems = false;
+-- 重置弹板是否打开
+local m_ResetPanelIsOpen = false;
+-- 是否有足够的金钱重置
+local m_IsHaveEnoughMoneyToReset = false;
+-- 动画的显示table
+local m_OrderTable = {};
+-- 真实的和显示的道具Table
+local m_RewardAndShowItems = nil;
+
+-- 播放动画选中的标记
+local m_SelectObj = nil;
+-- 正在播放动画
+local m_IsPlayTweening = false;
+
+-- 开始播放的时间
+local m_StartTime = nil;
+-- 匀减速时间
+local m_minusSpeedTime = 1;
+
+local deltaTime = 0;
+local tempPath = "";
+local distance = 0;
+local curVelocity = 0;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够道具的颜色
+local m_EnoughColor = "DDEEFF";
+-- 不够道具的颜色
+local m_NotEnoughColor = "D83232";
+-- 够金钱的颜色
+local m_EnoughMoneyColor = "FFFFFF";
+
+-- 匀速时间
+local m_ConstantSpeedTime = 3.5;
+-- 匀速速度(栏位/s)
+local m_ConstantSpeed = 8;
+-- 减到的速度
+local m_MinSpeed = 3;
+-- 最后匀速时间
+local m_lastConstantSpeedTime = 5;
+-- 匀速速度(栏位/s)
+local m_LastConstantSpeed = 3;
+-- 转动圈数
+local m_CircleTimes = 3;
+-- 一圈多少栏位
+local m_TotalItems = 14;
+
+-- 6个道具位置
+local NeedItemsPos = 
+{
+    [1] = {x = -106, y = 230},
+    [2] = {x = 16, y = -3},
+    [3] = {x = -106, y = -233},
+    [4] = {x = -439, y = -232},
+    [5] = {x = -560, y = -3},
+    [6] = {x = -439, y = 230},
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitData();
+    InitObjects();
+    InitEvents();
+    InitShowData();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShowData();
+        InitShow();
+    end
+end
+
+function Update()
+    if m_IsPlayTweening and MagicForgeManager.MagicForgeState == ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_PLAYTWEENING then
+        deltaTime = Time.time - m_StartTime;
+        if deltaTime >= 0 and deltaTime <= m_ConstantSpeedTime then
+            distance = deltaTime*m_ConstantSpeed;
+            tempPath = m_LeftPlayTweenStateStr .. m_ItemStr .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+            m_SelectObj.transform.localPosition = child(m_panelObject,tempPath).localPosition;
+        elseif deltaTime > m_ConstantSpeedTime and deltaTime < m_ConstantSpeedTime + m_minusSpeedTime then
+            curVelocity = (m_minusSpeedTime - deltaTime + m_ConstantSpeedTime)/ m_minusSpeedTime * (m_ConstantSpeed - m_MinSpeed) + m_MinSpeed;
+            distance = m_ConstantSpeedTime * m_ConstantSpeed + (m_ConstantSpeed + curVelocity)*(deltaTime - m_ConstantSpeedTime)/2;
+            tempPath = m_LeftPlayTweenStateStr .. m_ItemStr .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+            m_SelectObj.transform.localPosition = child(m_panelObject,tempPath).localPosition;
+        elseif deltaTime >= m_ConstantSpeedTime + m_minusSpeedTime and deltaTime < m_ConstantSpeedTime + m_minusSpeedTime + m_lastConstantSpeedTime then
+            distance = m_ConstantSpeedTime * m_ConstantSpeed + (m_ConstantSpeed + m_MinSpeed)*m_minusSpeedTime/2 + (deltaTime - m_ConstantSpeedTime - m_minusSpeedTime)*m_LastConstantSpeed;
+            tempPath = m_LeftPlayTweenStateStr .. m_ItemStr .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+            m_SelectObj.transform.localPosition = child(m_panelObject,tempPath).localPosition;
+        else
+            for Index = 1,14 do
+                if m_OrderTable[Index] == 1 then
+                    tempPath = m_LeftPlayTweenStateStr .. m_ItemStr .. Index;
+                    m_SelectObj.transform.localPosition = child(m_panelObject,tempPath).localPosition;
+                    SetGameObjectState(m_PlayTweenReturnButtonStr,true,m_panelObject);
+                    SetGameObjectState(m_RewardStr .. m_ItemApptitude1Str,true,m_panelObject);
+                    local qualityID = CCommonTool.GetAptitudeIDByExcelID(m_RewardAndShowItems[1].ExcelID);
+                    SetSpriteApptitudeV04(m_RewardStr .. m_ItemApptitude1Str, qualityID, m_panelObject);
+                    SetGameObjectState(m_RewardStr .. m_ItemApptitude2Str,true,m_panelObject);
+                    SetSpriteApptitude2V04(m_RewardStr .. m_ItemApptitude2Str, qualityID, m_panelObject);
+                    SetGameObjectState(m_RewardStr .. m_ItemIconStr,true,m_panelObject);
+                    SetSpriteByAtlasID(m_RewardStr .. m_ItemIconStr,CCommonTool.GetImageIDByExcelID(m_RewardAndShowItems[1].ExcelID),m_panelObject,true);
+                    if qualityID >= 4 then
+                        local particleSys = GetComponent(m_panelObject,m_RewardStr..m_HighQualityEffectStr,"ParticleSystem");
+                        particleSys:Play();
+                    else
+                        local particleSys = GetComponent(m_panelObject,m_RewardStr..m_LowQualityEffectStr,"ParticleSystem");
+                        particleSys:Play();
+                    end
+                    m_IsPlayTweening = false;
+                    SendGetRewardMsg();
+                    break;
+                end
+            end
+        end
+    end
+end
+
+function OnDisable()
+    if m_IsPlayTweening then
+        m_IsPlayTweening = false;
+        SendGetRewardMsg();
+    end
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitData()
+    m_AllMagicForgeTableData = CCommonTool.GetAllMagicForgeInfo();
+end
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL);
+    m_SelectObj = child(m_panelObject,m_LeftPlayTweenStateStr .. m_SelectObjStr);
+end
+
+function InitEvents()
+end
+
+function InitShowData()
+    local tempTableData;
+    local curLevel = G_UserInfo.RoleAttribute.Level;
+    m_CurMagicForgeData = nil;
+    for Index = 1,m_AllMagicForgeTableData.Count do
+        tempTableData = m_AllMagicForgeTableData[Index - 1];
+        if curLevel >= tempTableData.MinLevel and curLevel <= tempTableData.MaxLevel then
+            m_CurMagicForgeData = tempTableData;
+        end
+    end
+    if m_CurMagicForgeData == nil then
+        error("魔法熔炉表中没有当前等级的数据当前等级为::"..curLevel);
+    end
+    m_ResetPanelIsOpen = false;
+end
+
+function InitShow()
+    InitLeft();
+    InitRight();
+    InitResetPanel();
+end
+
+function InitResetPanel()
+    SetGameObjectState(m_ResetPanel,m_ResetPanelIsOpen,m_panelObject);
+    SetSpriteByAtlasID(m_ResetCostIconStr,CCommonTool.GetImageIDByExcelID(G_ItemToolTipDefine.BINDMONEY),m_panelObject,true);
+    SetLabelContent(m_ResetCostStr,m_CurMagicForgeData.ResetMoney,m_panelObject);
+    if G_UserInfo.BindCoin >= m_CurMagicForgeData.ResetMoney then
+        SetLabelColor(m_ResetCostStr,m_EnoughMoneyColor,m_panelObject);
+        m_IsHaveEnoughMoneyToReset = true;
+    else
+        SetLabelColor(m_ResetCostStr,m_NotEnoughColor,m_panelObject);
+        m_IsHaveEnoughMoneyToReset = false;
+    end
+    SetLabelContent(m_LeftResetTimesStr,string_format(CCommonTool.GetTxtData(1202).m_str,m_CurMagicForgeData.ResetTimesPerWeek - MagicForgeManager.ResetDailyTimes),m_panelObject);
+end
+
+function InitLeft()
+    if MagicForgeManager.MagicForgeState == ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_START then
+        SetGameObjectState(m_LeftStartStateStr, true, m_panelObject);
+        SetGameObjectState(m_LeftCollectStateStr, false, m_panelObject);
+        SetGameObjectState(m_LeftPlayTweenStateStr, false, m_panelObject);
+        InitLeftStartState();
+    elseif MagicForgeManager.MagicForgeState == ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_COLLECTING then
+        SetGameObjectState(m_LeftStartStateStr, false, m_panelObject);
+        SetGameObjectState(m_LeftCollectStateStr, true, m_panelObject);
+        SetGameObjectState(m_LeftPlayTweenStateStr, false, m_panelObject);
+        InitLeftCollectState();
+    elseif MagicForgeManager.MagicForgeState == ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_PLAYTWEENING then
+        SetGameObjectState(m_LeftStartStateStr, false, m_panelObject);
+        SetGameObjectState(m_LeftCollectStateStr, false, m_panelObject);
+        SetGameObjectState(m_LeftPlayTweenStateStr, true, m_panelObject);
+        InitLeftPlayTweenState();
+    end
+end
+
+function InitLeftStartState()
+    local curRemainTimes,curJoinTimes,curMaxTimes = ActivityManager.GetActivityTimes(ENUM_AOT_ID.AOT_ID_MAGICFORGE_ACTIVITY);
+    if curJoinTimes >= curMaxTimes then
+        SetGameObjectState(m_LeftStartOverStr,true,m_panelObject);
+        SetGameObjectState(m_StartMagicForgeButtonStr,false,m_panelObject);
+        SetGameObjectState(m_JoinTimesStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_LeftStartOverStr,false,m_panelObject);
+        SetGameObjectState(m_StartMagicForgeButtonStr,true,m_panelObject);
+        SetGameObjectState(m_JoinTimesStr,true,m_panelObject);
+        SetLabelContent(m_JoinTimesStr,string_format("{0}/{1}",curJoinTimes,curMaxTimes),m_panelObject);
+    end
+end
+
+function InitLeftCollectState()
+    local curRemainTimes,curJoinTimes,curMaxTimes = ActivityManager.GetActivityTimes(ENUM_AOT_ID.AOT_ID_MAGICFORGE_ACTIVITY);
+    SetLabelContent(m_JoinTimes2Str,string_format("{0}/{1}",curJoinTimes,curMaxTimes),m_panelObject);
+    local collectItems = MagicForgeManager.CollectItems;
+    m_IsHaveEnoughItems = true;
+    local needCheckTable = {};
+    local itemNums = {}
+    local allots = {};
+    local curItemNums = {};
+    -- 分配每个槽位的道具数量
+    for Index = 1, 6 do
+        if collectItems[Index] ~= nil and collectItems[Index].ExcelID > 0 then
+            local data = {};
+            data.Index = Index;
+            data.needNum = collectItems[Index].ItemNum;
+            data.excelID = collectItems[Index].ExcelID;
+            data.hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, data.excelID);
+            itemNums[Index] = data;
+            -- 道具ID对应背包数量
+            curItemNums[data.excelID] = data.hasNum;
+            if allots[data.excelID] == nil then
+                allots[data.excelID] = {data};
+            else
+                table.insert(allots[data.excelID], data);
+            end
+        end
+    end
+    for excelID, items in pairs(allots) do
+        local count = #items;
+        -- 如果同一个道具被分配在多个位置上的处理
+        if count > 1 then
+            local isSameCount = true;
+            for i = 2, count do
+                if items[i].needCount ~= items[1].needCount then
+                    isSameCount = false;
+                    break;
+                end
+            end
+            local hasNum = curItemNums[excelID];
+            local remainNum = hasNum;
+            local needNum = items[1].needNum;
+            -- 如果每个槽位消耗的道具个数一样
+            if isSameCount == true then
+                local avg = hasNum / count;
+                -- 拥有的道具个数不够分配
+                if avg < needNum then
+                    for i = 1, count do
+                        if remainNum <= 0 then
+                            items[i].hasNum = 0;
+                        elseif remainNum <= needNum then
+                             items[i].hasNum = remainNum;
+                             remainNum = 0;
+                        else
+                            items[i].hasNum = needNum;
+                            remainNum = remainNum - needNum;
+                        end
+                    end
+                else
+                    -- 拥有的道具个数够分配
+                    avg = math.floor(avg);
+                    for i = 1, count do
+                        if i == count then
+                            items[i].hasNum = remainNum;
+                            remainNum = 0;
+                        else
+                            items[i].hasNum = avg;
+                            remainNum = remainNum - avg;
+                        end
+                        
+                    end
+                end
+            else
+                -- 如果每个槽位消耗的道具个数不一样
+                for i = 1, count do
+                    if i == count then
+                        items[i].hasNum = remainNum;
+                        remainNum = 0;
+                    else
+                        if remainNum >= items[i].needNum then
+                            items[i].hasNum = items[i].needNum;
+                            remainNum = remainNum - items[i].needNum;
+                        else
+                            items[i].hasNum = remainNum;
+                            remainNum = 0;
+                        end
+                    end 
+                end
+            end
+        end
+    end
+    for Index = 1,6 do
+        local path = m_LeftCollectStateStr .. m_ItemStr .. Index;
+        if collectItems[Index] ~= nil and collectItems[Index].ExcelID > 0 then
+            SetGameObjectState(path,true,m_panelObject);
+            local excelID = itemNums[Index].excelID;--collectItems[Index].ExcelID;
+            local itemNum = itemNums[Index].needNum;--collectItems[Index].ItemNum;
+            SetSpriteByAtlasID(path..m_ItemIconStr,CCommonTool.GetImageIDByExcelID(excelID),m_panelObject);
+            SetItemToolTipsEvent(m_panelObject, path, ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL, false, excelID);
+            local curNum = itemNums[Index].hasNum;--G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelID);
+            if curNum < itemNum then
+                m_IsHaveEnoughItems = false;
+                SetLabelColor(path..m_ItemNumStr,m_NotEnoughColor,m_panelObject);
+                SetGameObjectState(path..m_ItemMaskStr,true,m_panelObject);
+                SetGameObjectState(path..m_ItemAddStr,true,m_panelObject);
+            else
+                SetLabelColor(path..m_ItemNumStr,m_EnoughColor,m_panelObject);
+                SetGameObjectState(path..m_ItemMaskStr,false,m_panelObject);
+                SetGameObjectState(path..m_ItemAddStr,false,m_panelObject);
+            end
+            SetLabelContent(path..m_ItemNumStr,string_format("{0}/{1}",curNum,itemNum),m_panelObject);
+            if needCheckTable[excelID] ~= nil then
+                needCheckTable[excelID] = needCheckTable[excelID] + itemNum;
+            else
+                needCheckTable[excelID] = itemNum;
+            end
+        else
+            SetGameObjectState(path,false,m_panelObject);
+        end
+        local obj = child(m_panelObject,path).gameObject;
+        obj.transform.localPosition = Vector3.zero;
+        CCommonTool.TweenPositionBegin(obj,0.2,0,Vector3.New(-273,4,0),Vector3.New(NeedItemsPos[Index].x,NeedItemsPos[Index].y,0))
+    end
+    for k,v in pairs(needCheckTable) do
+        if G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, k) < v then
+            m_IsHaveEnoughItems = false;
+            break;
+        end
+    end
+end
+
+function InitLeftPlayTweenState()
+    m_RewardAndShowItems = {};
+    local rewardAndShowItems = MagicForgeManager.RewardAndShowItems;
+    for Index = 1,14 do
+        m_RewardAndShowItems[Index] = {};
+        if rewardAndShowItems[Index] == nil then
+            m_RewardAndShowItems[Index].ExcelID = 0;
+            m_RewardAndShowItems[Index].ItemNum = 0;
+        else
+            m_RewardAndShowItems[Index].ExcelID = rewardAndShowItems[Index].ExcelID;
+            m_RewardAndShowItems[Index].ItemNum = rewardAndShowItems[Index].ItemNum;
+        end
+    end
+    m_OrderTable = RandomNums(14);
+    for Index = 1,14 do
+        local order = m_OrderTable[Index];
+        local path = m_LeftPlayTweenStateStr .. m_ItemStr .. Index;
+        if m_RewardAndShowItems[order].ExcelID > 0 then
+            SetItemShowByExcelIDV04(m_panelObject,path,m_RewardAndShowItems[order].ExcelID,m_RewardAndShowItems[order].ItemNum,false,31,ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL);
+            SetItemToolTipsEvent(m_panelObject, path, ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL, false, m_RewardAndShowItems[order].ExcelID);
+        else
+            SetLabelContent(path..m_ItemNumStr,"这个道具不存在",m_panelObject);
+        end
+    end
+    local firstPath = m_LeftPlayTweenStateStr .. m_ItemStr .. 1;
+    m_SelectObj.transform.localPosition = child(m_panelObject,firstPath).localPosition;
+
+    SetGameObjectState(m_PlayTweenReturnButtonStr,false,m_panelObject);
+    SetGameObjectState(m_RewardStr .. m_ItemApptitude1Str,false,m_panelObject);
+    SetGameObjectState(m_RewardStr .. m_ItemApptitude2Str,false,m_panelObject);
+    SetGameObjectState(m_RewardStr .. m_ItemIconStr,false,m_panelObject);
+    local addNum = 1;
+    for Index = 1,14 do
+        if m_OrderTable[Index] == 1 then
+            addNum = Index;
+            break;
+        end
+    end
+    m_lastConstantSpeedTime = math.random(2,4);
+    m_minusSpeedTime = (m_TotalItems *  m_CircleTimes + addNum - m_lastConstantSpeedTime * m_LastConstantSpeed - (m_CircleTimes - 1)*m_TotalItems) * 2 /(m_ConstantSpeed + m_MinSpeed);
+    m_IsPlayTweening = true;
+    m_StartTime = Time.time;
+end
+
+-- 随机一个k个数的排列方法
+function RandomNums(k)
+    local NumTable = { };
+    local NewNumTable = { };
+    local index = nil;
+    for index = 1, k do
+        NumTable[index] = index;
+    end
+    for index = 1, k do
+        randomNum = math.random(1, k - index + 1);
+        NewNumTable[index] = NumTable[randomNum];
+        table.remove(NumTable, randomNum);
+    end
+    return NewNumTable;
+end
+
+function InitRight()
+    if m_CurMagicForgeData == nil then
+        return;
+    end
+    SetLabelContent(m_GetExpStr,m_CurMagicForgeData.GetExp,m_panelObject);
+    SetLabelContent(m_curCaculateTimesStr,string_format("({0}/{1})",MagicForgeManager.CalculateTimes,MagicForgeCalculateTimes),m_panelObject);
+    SetLabelContent(m_AccumulateDesStr,string_format(CCommonTool.GetTxtData(1196).m_str,MagicForgeCalculateTimes),m_panelObject);
+    local itemTable = {};
+    itemTable[1] = {ExcelID = m_CurMagicForgeData.RewardItem1ID,ItemNum = m_CurMagicForgeData.RewardItem1Num};
+    itemTable[2] = {ExcelID = m_CurMagicForgeData.RewardItem2ID,ItemNum = m_CurMagicForgeData.RewardItem2Num};
+    itemTable[3] = {ExcelID = m_CurMagicForgeData.RewardItem3ID,ItemNum = m_CurMagicForgeData.RewardItem3Num};
+    for Index = 1,3 do
+        local itemPath = m_RightRewardUITableStr .. m_ItemStr .. Index;
+        if itemTable[Index].ExcelID == 0 then
+            for j = Index,3 do
+                SetGameObjectState(itemPath,false,m_panelObject);
+            end
+            break;
+        end
+        SetGameObjectState(itemPath,true,m_panelObject);
+        SetItemShowByExcelIDV04(m_panelObject,itemPath,itemTable[Index].ExcelID,itemTable[Index].ItemNum,false,31,ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL);
+        SetItemToolTipsEvent(m_panelObject, itemPath, ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL, false, itemTable[Index].ExcelID);
+    end
+    RepositionUITableComp(m_RightRewardUITableStr,m_panelObject);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CloseButtonStr,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_StartMagicForgeButtonStr,OnStartClick,m_panelObject);
+    for Index = 1,6 do
+        local path = m_LeftCollectStateStr .. m_ItemStr .. Index;
+        SetGameObjectEvent(path..m_ItemMaskStr,OnGetWayClick,m_panelObject);
+    end
+    SetGameObjectEvent(m_ResetButtonStr,OnResetClick,m_panelObject);
+    SetGameObjectEvent(m_StartTweenButtonStr,OnStartTweenClick,m_panelObject);
+
+    SetGameObjectEvent(m_ResetPanelCancelButtonStr,OnCancelResetPanelClick,m_panelObject);
+    SetGameObjectEvent(m_ResetPanelResetButtonStr,OnOKResetPanelClick,m_panelObject);
+
+    SetGameObjectEvent(m_PlayTweenReturnButtonStr,OnReturnButtonClick,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL);
+end
+
+function OnStartClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MAGICFORGE_START);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnGetWayClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    GetWayPanel.Show(MagicForgeManager.CollectItems[selectIndex].ExcelID,ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL);
+end
+
+function OnResetClick()
+    if m_CurMagicForgeData.ResetTimesPerWeek - MagicForgeManager.ResetDailyTimes <= 0 then
+        log("次数不足，无法重置")
+        ShowSystemFlowTips(7701);
+        return;
+    end
+    m_ResetPanelIsOpen = true;
+    SetGameObjectState(m_ResetPanel,m_ResetPanelIsOpen,m_panelObject);
+end
+
+function OnStartTweenClick()
+    if m_IsHaveEnoughItems then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_MAGICFORGE_STARTTWEEN);
+        G_NetWorkMng:SendMessage(buffer);
+    else
+        log("道具不足")
+        ShowSystemFlowTips(7700);
+    end
+end
+
+function OnCancelResetPanelClick()
+    m_ResetPanelIsOpen = false;
+    SetGameObjectState(m_ResetPanel,m_ResetPanelIsOpen,m_panelObject);
+end
+
+function OnOKResetPanelClick()
+    if MagicForgeCalculateTimes - MagicForgeManager.ResetDailyTimes <= 0 then
+        log("次数不足，无法重置")
+        ShowSystemFlowTips(7701);
+        return;
+    end
+    if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN,math.abs(m_CurMagicForgeData.ResetMoney),ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL,OnExchangeMoneyCallBack) then
+        log("银币不足");
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MAGICFORGE_RESET);
+    G_NetWorkMng:SendMessage(buffer);
+    OnCancelResetPanelClick();
+end
+
+function OnExchangeMoneyCallBack()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MAGICFORGE_RESET);
+    G_NetWorkMng:SendMessage(buffer);
+    OnCancelResetPanelClick();
+end
+
+function SendGetRewardMsg()
+    MagicForgeManager.MagicForgeState = ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_START;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MAGICFORGE_GETREWARD);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnReturnButtonClick()
+    InitShow();
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL) == 1 then
+        InitShow();
+    end
+end
+
+function ResetPanel(yType)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL) == 1 then
+        if yType == 0 then
+            if MagicForgeManager.MagicForgeState == ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_START then
+                InitLeft();
+            end
+        elseif yType == 1 then
+            InitResetPanel();
+        end
+    end
+end
+
+function LevelUpCallBack()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAGICFORGE_PANEL) == 1 then
+        InitShowData();
+        InitRight();
+    end
+end

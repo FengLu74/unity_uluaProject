@@ -1,0 +1,106 @@
+﻿module('DungeonTipPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'DungeonTipPanel';
+---------------------------------------label路径---------------------------------------
+-- 文本1
+local m_labelTxt1 = "Label1";
+-- 文本2
+local m_labelTime = "Label_Time";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 文本1
+local m_labelContent1 = nil;
+-- 倒计时
+local m_Time = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    G_TimerMng:RemoveTimeTask("DungeonTip");
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_DUNGON_TIP_PANEL);
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetGameObjectState(m_labelTxt1, false, m_PanelObject);
+    SetGameObjectState(m_labelTime, false, m_PanelObject);
+    SetLabelColor(m_labelTime, "E8DA9B", m_PanelObject);
+    if m_labelContent1 <= 0 then
+        SetGameObjectState(m_labelTxt2, true, m_PanelObject);
+        SetGameObjectPos(m_labelTime, Vector3.New(25, 320, 0), m_PanelObject);
+    elseif m_Time <= 0 then
+        SetGameObjectState(m_labelTxt1, true, m_PanelObject);
+        SetLabelTextByID(m_labelTxt1, m_labelContent1, m_PanelObject);
+        SetGameObjectPos(m_labelTxt1, Vector3.New(-30, 320, 0), m_PanelObject);
+    else
+        SetGameObjectState(m_labelTxt1, true, m_PanelObject);
+        SetGameObjectState(m_labelTime, true, m_PanelObject);
+        SetLabelTextByID(m_labelTxt1, m_labelContent1, m_PanelObject);
+        SetGameObjectPos(m_labelTxt1, Vector3.New(-8, 320, 0), m_PanelObject);
+        SetGameObjectPos(m_labelTime, Vector3.New(8, 320, 0), m_PanelObject);
+    end
+    if m_Time > 0 then
+        AddTimerEvent("DungeonTip", m_Time, BanquetBonusCallBackOver, ETimeShowType.TypeNumberOne, CloseCallBack);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function functionParameter(paraTable)
+    m_labelContent1 = paraTable[3];
+    m_Time = paraTable[4];
+    if m_CreateSuccess then
+        -- 初始化界面所有信息
+        InitShow();
+    end
+end
+-- 每秒倒计时回调
+function CloseCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_TIP_PANEL) == 1 then
+        SetLabelContent(m_labelTime, timeTxt, m_PanelObject);
+    end
+end
+-- 倒计时结束回调
+function BanquetBonusCallBackOver()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_TIP_PANEL) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_DUNGON_TIP_PANEL);
+    end
+end

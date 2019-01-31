@@ -1,0 +1,357 @@
+﻿module("JumpManager", package.seeall)
+
+-- 执行跳转回调方法
+function ExecuteCallback(callback, jumpType, success)
+    if callback ~= nil then
+        callback(jumpType, success);
+    end
+end
+
+-- 播放读条特效
+-- @param finishCallback 读条特效完成回调
+function PlayTransferEffect(finishCallback)
+    -- 打断自动寻路和任务追踪
+    G_MissionMng:StopTracMission();
+    -- 打断镖车跟随
+    EveryDayTaskManager.CheckIsCamionFollow();
+    local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+    local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+    CollectBar.BreakTaskSendBar();
+    CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, finishCallback);
+end
+
+-- 组队跟随中, 不可以传送
+function IsTeamFollowing()
+    if TeamManager.IsTeamFollowing() then
+        ShowSystemFlowTips(8052);
+        return true;
+    end
+    return false;
+end
+
+-- 是否可前往寻找NPC
+-- @param mapnpcId mapnpc表主键ID
+function CanNpcTransfer(mapnpcId)
+    local npcInfo = CCommonTool.GetMapNpcInfo(mapnpcId);
+    if npcInfo == nil then
+        return false;
+    end
+    local following = IsTeamFollowing();
+    return not following;
+end
+
+
+-- NPC传送
+-- @param mapnpcId mapnpc表主键ID
+-- @param callback 跳转回调
+function NpcTransfer(mapnpcId, callback)
+    local jumpType = ACTIVITY_JUMP_TYPE.SEEK_NPC;
+    if not JumpManager.CanNpcTransfer(mapnpcId) then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    local npcInfo = CCommonTool.GetMapNpcInfo(mapnpcId);
+    local targetSceneId = npcInfo.SceneID;
+    local currentSceneId = G_SceneMng.SceneID;
+
+    -- 同场景直接寻路过去
+    if targetSceneId == currentSceneId then
+        SceneProtocol.SendNpcTransfer(mapnpcId);
+        ExecuteCallback(callback, jumpType, true);
+        return;
+    end
+
+    if G_SceneMng:IsInFuben() == true then
+        local func = function(isOk)
+            if isOk == true then
+                PlayTransferEffect( function() SceneProtocol.SendNpcTransfer(mapnpcId); end);
+                ExecuteCallback(callback, jumpType, true);
+            else
+                ExecuteCallback(callback, jumpType, false);
+            end
+        end
+        local content = CCommonTool.GetTxtData(2005).m_str;
+        ParameterToMessageTextBox.ShowConfirm("", content, func, true);
+    else
+        PlayTransferEffect( function() SceneProtocol.SendNpcTransfer(mapnpcId); end);
+        ExecuteCallback(callback, jumpType, true);
+    end
+end
+
+-- 帝国悬赏传送
+-- @param mapnpcId mapnpc表主键ID
+-- @param callback 跳转回调
+function EmpireBountyTransfer(mapnpcId, callback)
+    local jumpType = ACTIVITY_JUMP_TYPE.EMPIREBOUNTY;
+    if IsTeamFollowing() == true then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    local missionID = G_MissionMng:IsHaveEmpireBountyMission();
+    if missionID > 0 then
+        _G.LogicData_CurTraceTaskID = missionID;
+        G_MissionMng:TraceTypeOperate(_G.LogicData_CurTraceTaskID, true, false);
+        ExecuteCallback(callback, jumpType, true);
+    else
+        NpcTransfer(mapnpcId, callback);
+    end
+end
+
+-- 副本传送
+-- @param dungeonId 副本ID
+-- @param callback 跳转回调
+function DungeonTransfer(dungeonId, callback)
+    local jumpType = ACTIVITY_JUMP_TYPE.DUNGEON;
+    if IsTeamFollowing() == true then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    -- 进入副本
+    local canEnter = DungeonManager.CheckDungeonEnterCondition(dungeonId);
+    if not canEnter then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    if G_SceneMng:IsInFuben() == true then
+        ShowSystemFlowTips(712);
+        ExecuteCallback(callback, jumpType, false);
+        return false;
+    end
+
+    PlayTransferEffect( function() DungeonProtocol.RequestEnterDungeon(dungeonId); end);
+    ExecuteCallback(callback, jumpType, true);
+end
+
+-- 世界BOSS传送
+-- @param bossId 世界BOSS ID
+-- @param callback 跳转回调
+function WorldBossTransfer(bossId, callback)
+    local jumpType = ACTIVITY_JUMP_TYPE.WORLDBOSS;
+    local bossData = ActivityManager.GetWorldBoss(bossId);
+    if bossData == nil then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    local npcInfo = CCommonTool.GetMapNpcInfo(bossData.info.MapnpcId);
+    if npcInfo == nil then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    if IsTeamFollowing() == true then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    local targetSceneId = npcInfo.SceneID;
+    local currentSceneId = G_SceneMng.SceneID;
+    if targetSceneId == currentSceneId then
+        SceneProtocol.SendWorldBossTransfer(bossId);
+        ExecuteCallback(callback, jumpType, true);
+        return;
+    end
+
+    if G_SceneMng:IsInFuben() == true then
+        local func = function(isOk)
+            if isOk == true then
+                PlayTransferEffect( function() SceneProtocol.SendWorldBossTransfer(bossId); end);
+                ExecuteCallback(callback, jumpType, true);
+            else
+                ExecuteCallback(callback, jumpType, false);
+            end
+        end
+        local content = CCommonTool.GetTxtData(2005).m_str;
+        ParameterToMessageTextBox.ShowConfirm("", content, func, true);
+    else
+        PlayTransferEffect( function() SceneProtocol.SendWorldBossTransfer(bossId); end);
+        ExecuteCallback(callback, jumpType, true);
+    end
+end
+
+-- 场景传送
+-- @param sceneID 场景ID
+-- @param callback 跳转回调
+function SceneTransfer(sceneId, callback)
+    local jumpType = ACTIVITY_JUMP_TYPE.SCENE;
+    local currentSceneId = G_SceneMng.SceneID;
+    if currentSceneId == sceneId then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SCENE_TRANSFER_AMID);
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    local level = G_UserInfo.RoleAttribute.Level;
+    local mapInfo = CCommonTool.GetMapdateInfo(sceneId);
+    if mapInfo == nil then return; end
+    if level < mapInfo.NeedLv then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SCENE_TRANSFER_LEVEL);
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+
+    if IsTeamFollowing() == true then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+    if G_SceneMng:IsInFuben() == true then
+        local func = function(isOk)
+            if isOk == true then
+                PlayTransferEffect( function() SceneProtocol.SendSceneTransfer(sceneId); end);
+                ExecuteCallback(callback, jumpType, true);
+            else
+                ExecuteCallback(callback, jumpType, false);
+            end
+        end
+        --[副本进行中, 您确定要离开吗?	副本进行中, 您确定要离开吗?]
+        local content = CCommonTool.GetTxtData(2005).m_str;
+        ParameterToMessageTextBox.ShowConfirm("", content, func, true);
+    else
+        PlayTransferEffect( function() SceneProtocol.SendSceneTransfer(sceneId); end);
+        ExecuteCallback(callback, jumpType, true);
+    end
+end
+-- BossLobby场景传送
+-- @param sceneID 场景ID
+-- @param callback 跳转回调
+function BossLobbySceneTransfer(dungeonID, callback)
+    error("多人进入副本按钮点击事件m_DungeonId！="..dungeonID);
+    local jumpType = ACTIVITY_JUMP_TYPE.SCENE;
+    PlayTransferEffect( function() SceneProtocol.BossLobbySendSceneTransfer(dungeonID); end);
+    ExecuteCallback(callback, jumpType, true);
+end
+-- BossLobby场景传送退出
+-- @param sceneID 场景ID
+-- @param callback 跳转回调
+function BossLobbySceneTransferLeave(dungeonID, callback)
+    error("多人退出副本按钮点击事件m_SceneId！="..dungeonID);
+    local jumpType = ACTIVITY_JUMP_TYPE.SCENE;
+    PlayTransferEffect( function() SceneProtocol.BossLobbySendSceneTransferLeave(dungeonID); end);
+    ExecuteCallback(callback, jumpType, true);
+end
+
+-- 仇人追踪
+-- @param 仇人ID
+function EnemyTransfer(enemyGlobalId, callback)
+    local jumpType = -1;
+    if IsTeamFollowing() == true then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+    if G_SceneMng:IsInFuben() == true then
+        local func = function(isOk)
+            if isOk == true then
+                FriendsProtocol.RequestEnemyTrans(enemyGlobalId);
+                ExecuteCallback(callback, jumpType, true);
+            else
+                ExecuteCallback(callback, jumpType, false);
+            end
+        end
+        local content = CCommonTool.GetTxtData(2005).m_str;
+        ParameterToMessageTextBox.ShowConfirm("", content, func, true);
+    else
+        FriendsProtocol.RequestEnemyTrans(enemyGlobalId);
+        ExecuteCallback(callback, jumpType, true);
+    end
+end
+
+-- 阵营边境战场传送
+function CampBorderTransfer(callback)
+    error("ACTIVITY_JUMP_TYPE.CAMP_BORDER ");
+    local jumpType = ACTIVITY_JUMP_TYPE.CAMP_BORDER;
+    local campType = G_UserInfo.RoleAttribute.JoinCampType;
+    -- 阵营判断
+    if campType == ENUM_CAMP_TYPE.ENUM_UNIT_TYPE_NULL then
+        ShowSystemFlowTips(2769);
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+    -- 组队跟随判断
+    if IsTeamFollowing() == true then
+        ExecuteCallback(callback, jumpType, false);
+        return;
+    end
+    -- 副本中弹框确认
+    if G_SceneMng:IsInFuben() == true then
+        local func = function(isOk)
+            if isOk == true then
+                PlayTransferEffect( function() BorderWarProtocol.RequestEnterBorderWar(); end);
+                ExecuteCallback(callback, jumpType, true);
+            else
+                ExecuteCallback(callback, jumpType, false);
+            end
+        end
+        local content = CCommonTool.GetTxtData(2005).m_str;
+        ParameterToMessageTextBox.ShowConfirm("", content, func, true);
+    else
+        PlayTransferEffect( function() BorderWarProtocol.RequestEnterBorderWar(); end);
+        ExecuteCallback(callback, jumpType, true);
+    end
+end
+
+-------------------------- 跳转说明 --------------------------
+-- 1:打开指定UI        -> 界面跳转参数
+-- 2:前往NPC          -> mapnpc表ID
+-- 3:帝国悬赏          -> 特殊处理
+-- 4:进入副本          -> 副本ID
+-- 5:跳转场景          -> 场景ID
+-- 6:无主之地          -> 联盟NPCID,部落NPCID
+-- 7:世界BOSS         -> BOSS ID
+-------------------------- 跳转说明 --------------------------
+
+
+-- 执行跳转操作
+-- @param jumpType 跳转类型
+-- @param jumpValue 跳转参数
+-- @param callback 跳转回调函数(jumpType, success)
+--                 返回两个参数, jumpType跳转类型 success是否跳转成功
+function JumpTo(jumpType, jumpValue, causePanelId, callback)
+    error("jumpType="..jumpType.."***jumpValue="..jumpValue);
+    if jumpType == ACTIVITY_JUMP_TYPE.OPEN_UI then
+        -- 打开指定UI
+        OpenUIByEnum.OpenByParam(jumpValue, causePanelId);
+        ExecuteCallback(callback, jumpType, true);
+    elseif jumpType == ACTIVITY_JUMP_TYPE.SEEK_NPC then
+        -- 前往NPC
+        NpcTransfer(tonumber(jumpValue), callback);
+    elseif jumpType == ACTIVITY_JUMP_TYPE.EMPIREBOUNTY then
+        -- 帝国悬赏
+        EmpireBountyTransfer(tonumber(jumpValue), callback);
+    elseif jumpType == ACTIVITY_JUMP_TYPE.DUNGEON then
+        -- 进入副本
+        DungeonTransfer(tonumber(jumpValue), callback);
+    elseif jumpType == ACTIVITY_JUMP_TYPE.SCENE then
+        -- 跳转场景
+        SceneTransfer(tonumber(jumpValue), callback);
+    elseif jumpType == ACTIVITY_JUMP_TYPE.CAMP_NPC then
+        -- 无主之地(两个阵营NPC)
+        jumpValue = string.gsub(jumpValue, "\"", "");
+        local params = string_split(jumpValue, ",");
+        local campType = G_UserInfo.RoleAttribute.JoinCampType;
+        if campType == ENUM_CAMP_TYPE.ENUM_UNIT_TYPE_NULL then
+            ShowSystemFlowTips(2769);
+            ExecuteCallback(callback, jumpType, false);
+            return;
+        end
+        local npcId = 0;
+        if campType == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then
+            npcId = tonumber(params[1]) or 0;
+        else
+            npcId = tonumber(params[2]) or 0;
+        end
+        if npcId > 0 then
+            NpcTransfer(npcId, callback);
+        else
+            ExecuteCallback(callback, jumpType, false);
+            error("无主之地传送失败:npcId为0");
+        end
+    elseif jumpType == ACTIVITY_JUMP_TYPE.WORLDBOSS then
+        WorldBossTransfer(tonumber(jumpValue), callback);
+    elseif jumpType == ACTIVITY_JUMP_TYPE.CAMP_BORDER  then 
+        CampBorderTransfer(callback);
+    end
+end

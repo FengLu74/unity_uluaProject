@@ -1,0 +1,123 @@
+﻿--[[
+    field=Id, type=int, desc=时装id（对应时装表）
+    field=WingInfo, type=int, desc=翅膀培养表与消耗表进阶表对应的id
+    field=Name, type=int, desc=翅膀名字，对应txt表主键id
+    field=Modelres, type=int, desc=翅膀模型id
+    field=ItemId, type=int, desc=图标道具ID
+    field=QualityId, type=byte, desc=培养最大等级
+    field=NumRide, type=byte, desc=可飞行阶段
+    field=NumMax, type=byte, desc=满阶阶段
+    field=AttributeLv, type=int, desc=修为等级（对应角色进阶表）
+    field=Value, type=int, desc=客户端排序显示权重
+    field=Name1, type=int, desc=翅膀名称
+]]
+module("WingTable", package.seeall)
+local list={
+    {Id=140101,WingInfo=3200100,Name=61201,Modelres=10411,ItemId=24000,QualityId=10,NumRide=1,NumMax=10,AttributeLv=2,Value=100,Name1=56301},
+    {Id=140103,WingInfo=3200300,Name=61203,Modelres=10413,ItemId=24002,QualityId=10,NumRide=1,NumMax=10,AttributeLv=3,Value=99,Name1=56302},
+    {Id=140102,WingInfo=3200200,Name=61202,Modelres=10412,ItemId=24001,QualityId=10,NumRide=1,NumMax=10,AttributeLv=4,Value=98,Name1=56303},
+    {Id=140104,WingInfo=3200400,Name=61204,Modelres=10414,ItemId=24003,QualityId=10,NumRide=1,NumMax=10,AttributeLv=5,Value=97,Name1=56304},
+    {Id=140105,WingInfo=3200500,Name=61205,Modelres=10415,ItemId=24004,QualityId=10,NumRide=1,NumMax=10,AttributeLv=6,Value=96,Name1=56305},
+    {Id=140106,WingInfo=3200600,Name=61206,Modelres=10416,ItemId=24005,QualityId=10,NumRide=1,NumMax=10,AttributeLv=7,Value=95,Name1=56306},
+    {Id=140107,WingInfo=3200700,Name=61207,Modelres=10417,ItemId=24006,QualityId=10,NumRide=1,NumMax=10,AttributeLv=8,Value=94,Name1=56307},
+    {Id=140108,WingInfo=3200800,Name=61208,Modelres=10418,ItemId=24007,QualityId=10,NumRide=1,NumMax=10,AttributeLv=9,Value=93,Name1=56308},
+    {Id=140109,WingInfo=3200900,Name=61209,Modelres=12200,ItemId=24008,QualityId=10,NumRide=1,NumMax=10,AttributeLv=10,Value=92,Name1=56309},
+    {Id=140110,WingInfo=3201000,Name=61210,Modelres=12201,ItemId=24009,QualityId=10,NumRide=1,NumMax=10,AttributeLv=11,Value=91,Name1=56310},
+    {Id=340101,WingInfo=3200100,Name=61201,Modelres=10071,ItemId=24000,QualityId=10,NumRide=1,NumMax=10,AttributeLv=2,Value=100,Name1=56301},
+    {Id=340103,WingInfo=3200300,Name=61203,Modelres=10073,ItemId=24002,QualityId=10,NumRide=1,NumMax=10,AttributeLv=3,Value=99,Name1=56302},
+    {Id=340102,WingInfo=3200200,Name=61202,Modelres=10072,ItemId=24001,QualityId=10,NumRide=1,NumMax=10,AttributeLv=4,Value=98,Name1=56303},
+    {Id=340104,WingInfo=3200400,Name=61204,Modelres=10074,ItemId=24003,QualityId=10,NumRide=1,NumMax=10,AttributeLv=5,Value=97,Name1=56304},
+    {Id=340105,WingInfo=3200500,Name=61205,Modelres=10075,ItemId=24004,QualityId=10,NumRide=1,NumMax=10,AttributeLv=6,Value=96,Name1=56305},
+    {Id=340106,WingInfo=3200600,Name=61206,Modelres=10076,ItemId=24005,QualityId=10,NumRide=1,NumMax=10,AttributeLv=7,Value=95,Name1=56306},
+    {Id=340107,WingInfo=3200700,Name=61207,Modelres=10078,ItemId=24006,QualityId=10,NumRide=1,NumMax=10,AttributeLv=8,Value=94,Name1=56307},
+    {Id=340108,WingInfo=3200800,Name=61208,Modelres=10079,ItemId=24007,QualityId=10,NumRide=1,NumMax=10,AttributeLv=9,Value=93,Name1=56308},
+    {Id=340109,WingInfo=3200900,Name=61209,Modelres=12000,ItemId=24008,QualityId=10,NumRide=1,NumMax=10,AttributeLv=10,Value=92,Name1=56309},
+    {Id=340110,WingInfo=3201000,Name=61210,Modelres=12001,ItemId=24009,QualityId=10,NumRide=1,NumMax=10,AttributeLv=11,Value=91,Name1=56310},
+    {Id=240101,WingInfo=3200100,Name=61201,Modelres=10201,ItemId=24000,QualityId=10,NumRide=1,NumMax=10,AttributeLv=2,Value=100,Name1=56301},
+    {Id=240103,WingInfo=3200300,Name=61203,Modelres=10203,ItemId=24002,QualityId=10,NumRide=1,NumMax=10,AttributeLv=3,Value=99,Name1=56302},
+    {Id=240102,WingInfo=3200200,Name=61202,Modelres=10202,ItemId=24001,QualityId=10,NumRide=1,NumMax=10,AttributeLv=4,Value=98,Name1=56303},
+    {Id=240104,WingInfo=3200400,Name=61204,Modelres=10204,ItemId=24003,QualityId=10,NumRide=1,NumMax=10,AttributeLv=5,Value=97,Name1=56304},
+    {Id=240105,WingInfo=3200500,Name=61205,Modelres=10205,ItemId=24004,QualityId=10,NumRide=1,NumMax=10,AttributeLv=6,Value=96,Name1=56305},
+    {Id=240106,WingInfo=3200600,Name=61206,Modelres=10206,ItemId=24005,QualityId=10,NumRide=1,NumMax=10,AttributeLv=7,Value=95,Name1=56306},
+    {Id=240107,WingInfo=3200700,Name=61207,Modelres=10207,ItemId=24006,QualityId=10,NumRide=1,NumMax=10,AttributeLv=8,Value=94,Name1=56307},
+    {Id=240108,WingInfo=3200800,Name=61208,Modelres=10208,ItemId=24007,QualityId=10,NumRide=1,NumMax=10,AttributeLv=9,Value=93,Name1=56308},
+    {Id=240109,WingInfo=3200900,Name=61209,Modelres=12100,ItemId=24008,QualityId=10,NumRide=1,NumMax=10,AttributeLv=10,Value=92,Name1=56309},
+    {Id=240110,WingInfo=3201000,Name=61210,Modelres=12101,ItemId=24009,QualityId=10,NumRide=1,NumMax=10,AttributeLv=11,Value=91,Name1=56310},
+    {Id=440101,WingInfo=3200100,Name=61201,Modelres=11011,ItemId=24000,QualityId=10,NumRide=1,NumMax=10,AttributeLv=2,Value=100,Name1=56301},
+    {Id=440103,WingInfo=3200300,Name=61203,Modelres=11030,ItemId=24002,QualityId=10,NumRide=1,NumMax=10,AttributeLv=3,Value=99,Name1=56302},
+    {Id=440102,WingInfo=3200200,Name=61202,Modelres=11020,ItemId=24001,QualityId=10,NumRide=1,NumMax=10,AttributeLv=4,Value=98,Name1=56303},
+    {Id=440104,WingInfo=3200400,Name=61204,Modelres=11040,ItemId=24003,QualityId=10,NumRide=1,NumMax=10,AttributeLv=5,Value=97,Name1=56304},
+    {Id=440105,WingInfo=3200500,Name=61205,Modelres=11050,ItemId=24004,QualityId=10,NumRide=1,NumMax=10,AttributeLv=6,Value=96,Name1=56305},
+    {Id=440106,WingInfo=3200600,Name=61206,Modelres=11060,ItemId=24005,QualityId=10,NumRide=1,NumMax=10,AttributeLv=7,Value=95,Name1=56306},
+    {Id=440107,WingInfo=3200700,Name=61207,Modelres=11070,ItemId=24006,QualityId=10,NumRide=1,NumMax=10,AttributeLv=8,Value=94,Name1=56307},
+    {Id=440108,WingInfo=3200800,Name=61208,Modelres=11080,ItemId=24007,QualityId=10,NumRide=1,NumMax=10,AttributeLv=9,Value=93,Name1=56308},
+    {Id=440109,WingInfo=3200900,Name=61209,Modelres=12300,ItemId=24008,QualityId=10,NumRide=1,NumMax=10,AttributeLv=10,Value=92,Name1=56309},
+    {Id=440110,WingInfo=3201000,Name=61210,Modelres=12301,ItemId=24009,QualityId=10,NumRide=1,NumMax=10,AttributeLv=11,Value=91,Name1=56310}
+};
+local map = {[140101]=list[1],[140103]=list[2],[140102]=list[3],[140104]=list[4],[140105]=list[5],[140106]=list[6],[140107]=list[7],[140108]=list[8],[140109]=list[9],[140110]=list[10],[340101]=list[11],[340103]=list[12],[340102]=list[13],[340104]=list[14],[340105]=list[15],[340106]=list[16],[340107]=list[17],[340108]=list[18],[340109]=list[19],[340110]=list[20],[240101]=list[21],[240103]=list[22],[240102]=list[23],[240104]=list[24],[240105]=list[25],[240106]=list[26],[240107]=list[27],[240108]=list[28],[240109]=list[29],[240110]=list[30],[440101]=list[31],[440103]=list[32],[440102]=list[33],[440104]=list[34],[440105]=list[35],[440106]=list[36],[440107]=list[37],[440108]=list[38],[440109]=list[39],[440110]=list[40]};
+
+count = 40;
+Count = 40;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

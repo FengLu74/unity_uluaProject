@@ -1,0 +1,98 @@
+﻿module("ForLeaveDungeonPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-- 收集属性按钮所在的路径
+local ReviveButtonStr = "ReviveButton";
+-- 副本雷达所在的位置
+local m_DungeonRadarStr = "RightTop/InDungeon";
+-- CRadarMap组件所在的位置
+local m_RadarScriptPath = "RightTop/RadarMap";
+
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 离开按钮
+local ReviveButton=nil;
+-- 主界面
+local m_panelObjectMain=nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+
+    m_panelObject = nil;
+    m_panelObjectMain=nil;
+    ReviveButton = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FORLEAVEBOSSPANEL);
+    m_panelObjectMain = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    ReviveButton = child(m_panelObject, ReviveButtonStr).gameObject;
+end
+
+function InitEvents()
+    SetGameObjectEvent(ReviveButtonStr, SetClick, m_panelObject);
+end
+
+-- 初始化显示
+function InitShow()
+    if Constants.IsS8Resolution  then
+        error("IsS8Resolution");
+        SetGameObjectPos(ReviveButtonStr,Vector3.New(985,243,0),m_panelObject);
+    else
+        SetGameObjectPos(ReviveButtonStr,Vector3.New(827,243,0),m_panelObject);
+    end
+end
+ 
+function MoveButton(MoveAway)
+    if m_panelObject ~= nil and  MoveAway==1 then
+        SetGameObjectPos(ReviveButtonStr,Vector3.New(985+1000,243,0),m_panelObject);
+    elseif m_panelObject ~= nil then
+        InitShow();
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function SetClick(e)
+    -- 点击传送场景
+    error("当前场景ID="..G_SceneMng.SceneID);
+    if G_SceneMng.SceneID > 0 then
+        if G_UserInfo.RoleAttribute:GetAttackState() then
+            ShowSystemFlowTips(252);
+        else
+            JumpManager.BossLobbySceneTransferLeave(G_SceneMng.SceneID, function(jumpType, success)
+                if success == true then
+                    --在点击传送场景后秒请求一次closePanel
+                    AddTimerEvent("OnCloseClick",3,OnCloseClick);
+                end
+            end );
+        end
+    else
+        error("多人离开副本按钮点击事件G_SceneMng.SceneID异常！="..G_SceneMng.SceneID);
+    end
+    G_MusicMng:OnLoadMusic(4010);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_FORLEAVEBOSSPANEL);
+end 

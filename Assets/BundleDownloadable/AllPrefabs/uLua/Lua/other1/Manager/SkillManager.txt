@@ -1,0 +1,809 @@
+﻿module("SkillManager", package.seeall)
+
+
+-----------------------------------引用的对象------------------------------------------
+local tableDataInited = false;
+-- 通用主动技能ID列表(技能表)
+generalSkillInfos = nil;
+-- 天赋主动技能ID列表(技能表)
+talentSkillInfos = nil;
+-- 主动技能字典(skill_main数据表)
+skillDict = nil;
+-- 角色的流派ID/索引列表(流派表)
+genreIds = nil;
+-- 流派对应的天赋列表(天赋表)
+genreTalentIds = nil;
+-- 天赋字典
+talentDict = nil;
+-- 天赋列表数据
+uilistTalents = nil;
+
+-- 玩家激活的主动技能(通用主动技能和天赋主动技能)
+playerSkills = nil;
+-- 技能栏
+shortcutSkills = nil;
+-- 玩家天赋数据
+playerGenreData = nil;
+-- 临时天赋数据
+tempGenreData = nil;
+
+-- 新解锁的天赋(主动技能类型)
+newUnlockedTalents = nil;
+    
+
+-----------------------------------内部调用方法------------------------------------------
+
+-- 初始化技能字典
+function InitSkillDict()
+    skillDict = {};
+    local list = CCommonTool.GetAllTalentTypeInfo();
+    local count = list.Count;
+    for i = 1, count do
+        local generInfo = list[i - 1];
+        for i = 1, 4 do
+            local talentId = generInfo["TalentIdSkill"..i];
+            if talentId > 0 then
+                local talentInfo = CCommonTool.GetTalentSkillByID(talentId);
+                if talentInfo ~= nil and talentInfo.TalentSkilltype == 1 then
+                    -- 天赋主动技能ID
+                    CreateSkillData(talentInfo.Value, 2, talentId);
+                else
+                    error(string_format("流派表的主动技能配置错误: typeId:{0} talentId:{1}", genreId, talentId));
+                end
+            end
+        end
+    end
+    list = CCommonTool.GetAllSkillMainInfo();
+    count = list.Count;
+    for i = 1, count do
+        local info = list[i - 1];
+        if info.SkillType == 1 then
+            if skillDict[info.ID] == nil then
+                CreateSkillData(info.ID, 1, 0);
+            end
+        end
+    end
+end
+
+-- 获取技能静态数据
+-- @param skillId 技能ID
+-- @param skillKind 0:其它/通用:1/天赋:2
+-- @param talentId 主动技能对应的天赋ID (天赋技能使用)
+function CreateSkillData(skillId, skillKind, talentId)
+    if skillDict[skillId] ~= nil then
+        return skillDict[skillId];
+    end
+    local info = CCommonTool.GetSkillMainData(skillId);
+    if info == nil then
+        error(string_format("skill_main表不存在的ID:{0}", skillId));
+    end
+    local data = {
+        id = skillId, 
+        skillKind = skillKind, 
+        info = info,
+        talentId = talentId,
+    }
+    skillDict[skillId] = data;
+    return data;
+end
+
+-- 初始化技能/天赋静态数据
+function InitTableData()
+    tableDataInited = true;
+    generalSkillInfos = {};
+    talentSkillInfos = {};
+    genreIds = {};
+    genreTalentIds = {};
+    talentDict = {};
+
+    InitSkillDict();
+
+    local profession = G_UserInfo.RoleAttribute.ProID;
+    local roleData = CCommonTool.GetRoleDateInfo(profession);
+    local skillIds = {roleData.SkillId1,roleData.SkillId2,roleData.SkillId3,roleData.SkillUnique};
+
+    for _, id in ipairs(skillIds) do
+        local skillData = CreateSkillData(id, 1, 0);
+        if skillData ~= nil then
+            table.insert(generalSkillInfos, skillData);
+        end
+    end
+
+    if roleData.TalentType1 > 0 then
+        table.insert(genreIds, {id=roleData.TalentType1, index=0}); 
+    end
+    if roleData.TalentType2 > 0 then 
+        table.insert(genreIds, {id=roleData.TalentType2, index=1}); 
+    end
+    if roleData.TalentType3 > 0 then 
+        table.insert(genreIds, {id=roleData.TalentType3, index=2}); 
+    end
+
+    for _, data in ipairs(genreIds) do
+        local genreId = data.id;
+        local info = CCommonTool.GetTalentTypeByID(genreId);
+        if info ~= nil then
+            if not genreTalentIds[genreId] then
+                genreTalentIds[genreId] = {};
+            end
+            for i = 1, 4 do
+                local talentId = info["TalentIdSkill"..i];
+                if talentId > 0 then
+                    local talentInfo = CCommonTool.GetTalentSkillByID(talentId);
+                    if talentInfo ~= nil then
+                        talentDict[talentId] = {id=talentId, genreId=genreId, index=i-1, info=talentInfo};
+                        table.insert(genreTalentIds[genreId], talentDict[talentId]);
+                        -- 角色天赋的主动技能
+                        if talentInfo.TalentSkilltype == 1 then
+                            local skillData = CreateSkillData(talentInfo.Value, 2, talentId);
+                            if skillData ~= nil then
+                                table.insert(talentSkillInfos, skillData);
+                            end
+                        end
+                    end
+                end
+            end
+            for i = 1, 15 do
+                local talentId = info["TalentId"..i];
+                if talentId > 0 then
+                    local talentInfo = CCommonTool.GetTalentSkillByID(talentId);
+                    talentDict[talentId] = {id=talentId, genreId=genreId, index=i+3, info=talentInfo};
+                    table.insert(genreTalentIds[genreId], talentDict[talentId]);
+                end
+            end
+            table.sort(genreTalentIds[genreId], function(t1, t2) 
+                return t1.info.TalentPlace < t2.info.TalentPlace;
+            end);
+        end
+    end
+end
+
+-- 初始化主角技能信息
+function InitPlayerSkills()
+    playerSkills = {};
+    if generalSkillInfos ~= nil then
+        SetPlayerSkills(generalSkillInfos, 1);
+    end
+    if talentSkillInfos ~= nil then
+        SetPlayerSkills(talentSkillInfos, 2);
+    end
+end
+
+-- 设置角色的技能信息
+-- @param list 技能列表
+-- @param skillKind 技能列表类型 1:通用 2天赋
+function SetPlayerSkills(list, skillKind)
+    for _, data in ipairs(list) do
+        local id = data.id;
+        local level = G_UserInfo:GetSkillLevel(id);
+        local locked = level <= 0;
+        local subSkillIndex = G_UserInfo:GetSubSkillIndex(id);
+        local subId = 0;
+        local talentId = 0;
+        if data.info ~= nil then
+            subId = data.info["SonSkill"..subSkillIndex];
+        end
+        if skillDict ~= nil and skillDict[id] ~= nil then
+            talentId = skillDict[id].talentId;
+        end
+        if level <= 0 then
+            level = 1;
+        end
+        playerSkills[id] = {
+            id = id, 
+            level = level, 
+            locked = locked, 
+            subId = subId, 
+            subSkillIndex = subSkillIndex, 
+            skillKind = skillKind, 
+            talentId = talentId
+        };
+    end
+end
+
+-----------------------------------外部调用方法------------------------------------------
+
+-- 初始化技能相关的数据
+function InitSkillData()
+    if tableDataInited then
+        return;
+    end
+    InitTableData();
+    UpdateSkillShortcutList();
+    InitPlayerSkills();
+    if tempGenreData ~= nil then
+        UpdateTalentList(tempGenreData);
+        tempGenreData = nil;
+    end
+end
+
+-- 更新角色激活的主动技能
+function UpdatePlayerSkills()
+    if tableDataInited then
+        InitPlayerSkills();
+    end
+end
+
+-- 获取主动技能数据
+-- @param skillId 技能ID
+function GetSkillData(skillId)
+    local data = skillDict[skillId];
+    if data == nil then
+        data = CreateSkillData(skillId, 0, 0);
+    end
+    return data;
+end
+
+-- 更新玩家天赋列表
+-- @param1 data 服务器发的天赋数据
+function UpdateTalentList(data)
+    if not tableDataInited then
+        tempGenreData = data;
+        return;
+    end
+    playerGenreData = nil;
+    playerGenreData = GetPlayerGenreData();
+    playerGenreData.count = data.count;
+    playerGenreData.currentGenreIndex = data.currentGenreIndex;
+    playerGenreData.currentGenreId = data.currentGenreId;
+    for _, info in pairs(genreIds) do
+        local genreId = info.id;
+        local genre = data[genreId];
+        if genre ~= nil then
+            local playerGenre = playerGenreData[genreId];
+            playerGenre.genreIndex = genre.genreIndex;
+            playerGenre.genreId = genre.genreId;
+            playerGenre.point = genre.point;
+            playerGenre.talentCount = genre.talentCount;
+            playerGenre.talents = genre.talents;
+        end
+    end
+end
+
+-- 玩家天赋数据
+function GetPlayerGenreData()
+    if playerGenreData == nil then
+        playerGenreData = {};
+        playerGenreData.count = 0;
+        playerGenreData.currentGenreIndex = -1;
+        playerGenreData.currentGenreId = -1;
+        for _, data in ipairs(genreIds) do
+            local genreId = data.id;
+            local genre = {};
+            playerGenreData[genreId] = genre;
+            genre.index = data.index;
+            genre.point = 0;
+            genre.talents = {};
+        end
+    end
+    return playerGenreData;
+end
+
+-- 更新技能栏信息
+function UpdateSkillShortcutList()
+    shortcutSkills = {};
+    local count = G_UserInfo.ShortcutSkills.Count;
+    for i = 1, 4 do
+        local data = {};
+        data.index = i - 1;
+        -- id > 0 表示技能ID, 
+        -- id == 0 表示技能栏解锁但未装配技能 
+        -- id == -1 表示技能栏未解锁
+        if i <= count then
+            data.id = G_UserInfo.ShortcutSkills[i-1];
+        else
+            data.id = -1;
+        end
+        data.locked = data.id == -1;
+        shortcutSkills[i] = data;
+    end
+end
+
+-- 获取玩家的技能数据
+-- @param skillId 技能ID
+function GetPlayerSkill(skillId)
+    local data = playerSkills[skillId];
+    if data == nil then
+        error(string_format("角色技能{0}不存在!", skillId));
+    end
+    return data;
+end
+
+-- 判断技能是否已装备
+function IsEquipedSkill(skillId)
+    if not skillId or skillId <= 0 then
+        return false;
+    end
+    for _, data in ipairs(shortcutSkills) do
+        if data.id == skillId then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 判断技能是否可装备
+function CanEquipSkill(skillId)
+    --if IsEquipedSkill(skillId) then
+    --    return false;
+    --end
+    local skill = playerSkills[skillId];
+    if skill == nil then
+        return false;
+    end
+    if skill.locked then
+        return false;
+    end
+    if skill.skillKind == 1 then
+        return true;
+    end
+    local actived = IsActiveTalent(skill.talentId);
+    if actived == true then 
+        local talentInfo = talentDict[skill.talentId];
+        return playerGenreData.currentGenreId == talentInfo.genreId;
+    end
+    return false;
+end
+
+-- 技能是否未解锁
+-- @param skillId 技能ID
+function IsLockedSkill(skillId)
+    local skill = playerSkills[skillId];
+    if skill == nil or skill.locked then
+        return true;
+    end
+    if skill.skillKind == 1 then
+        return false;
+    end
+    return not IsActiveTalent(skill.talentId);
+end
+
+-- 获取技能名称信息
+-- @param skillNameId 子技能ID (skill_name表)
+function GetSkillNameInfo(skillNameId)
+    if skillNameId == nil or skillNameId == 0 then
+        error(string_format("技能名称ID:{0}有误!", tostring(skillNameId)));
+        return nil;
+    end
+    local info = CCommonTool.GetSkillNameData(skillNameId)
+    if info == nil then
+        error(string_format("skill_name表ID{0}不存在!", skillNameId));
+        return nil;
+    end
+    return info;
+end
+
+-- 获取天赋数据
+-- @param talentId (talent_skill表)
+function GetTalentData(talentId)
+    local talent = talentDict[talentId];
+    if talent == nil then
+        error(string_format("天赋不存在! ID:{0}", talentId));
+        return nil;
+    end
+    return talent;
+end
+
+-- 天赋是否解锁
+-- @param talentId (talent_skill表)
+-- return 是否未解锁, 锁定类型, 锁定类型值, 文本ID
+function IsLockedTalent(talentId)
+    local talent = talentDict[talentId];
+    if not talent then
+        return true;
+    end
+    local info = talent.info;
+    if info.NendLevel > G_UserInfo.RoleAttribute.Level then
+        return true, 1, info.NendLevel, info.Describe1;
+    end
+    if info.NendAttribute > G_UserInfo.RoleAttribute.CultivateLv then
+        return true, 2, info.NendAttribute, info.Describe2;
+    end
+    local playerGenre = playerGenreData[talent.genreId];
+    if info.TalentTypeNum > playerGenre.point then
+        return true, 3, info.TalentTypeNum, info.Describe3;
+    end
+
+    local prevIndex = info.NendTalent1;
+    if prevIndex >= 0 then
+        local talents = genreTalentIds[talent.genreId];
+        for _, t in ipairs(talents) do
+            if t.index == prevIndex then
+                if playerGenre.talents[t.id] == nil or info.Talent1Level > playerGenre.talents[t.id].level then
+                    return true, 4, info.Talent1Level, info.Describe4;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 是否已激活
+-- @param talentId 天赋ID
+-- return true:已激活 false:未激活
+function IsActiveTalent(talentId)
+    local info = talentDict[talentId];
+    if info == nil then
+        error(string_format("天赋ID:{0}不存在!", talentId));
+        return false;
+    end
+    if not playerGenreData then
+        return false;
+    end
+    local playerGenre = playerGenreData[info.genreId]
+    local talent = playerGenre.talents[talentId];
+    return talent ~= nil and talent.level > 0;
+end
+
+-- 通过天赋ID判断对应流派是否激活
+-- @param talentId 天赋ID
+-- return true:已激活 false:未激活
+function IsActiveGenre(talentId)
+    local info = talentDict[talentId];
+    if info == nil then
+        error(string_format("天赋ID:{0}不存在!", talentId));
+        return false;
+    end
+    if not playerGenreData then
+        return false;
+    end
+    local current = playerGenreData.currentGenreId;
+    return current == info.genreId;
+end
+
+-- 获取天赋界面列表数据
+-- @param genreId 流派ID
+function GetUIListTalents(genreId)
+    if not uilistTalents then
+        uilistTalents = {};
+    end
+    local items = uilistTalents[genreId];
+    if not items then
+        items = {};
+        uilistTalents[genreId] = items;
+        local talents = genreTalentIds[genreId];
+        local maxLine = math.floor(talents[#talents].info.TalentPlace / 100);
+        for i = 1, maxLine do
+            local places = {};
+            local item = {line = i, needLevel = 0, places = places};
+            for j = 1, 4 do
+                local place = i * 100 + j;
+                places[j] = {place = place, talent = nil};
+                for _, talent in ipairs(talents) do
+                    if talent.info.TalentPlace == place then
+                        places[j].talent = talent;
+                        local needLevel = talent.info.NendLevel;
+                        if item.needLevel == 0 or item.needLevel > needLevel then
+                            item.needLevel = needLevel;
+                        end
+                        break;
+                    end
+                end
+            end
+            table.insert(items, item);
+        end
+    end
+    return items;
+end
+
+-- 获取流派点数信息
+-- @param genreId 流派ID
+-- return 剩余点数, 投入点数, 总点数
+function GetGenrePointInfo(genreId)
+    local playerGenre = playerGenreData[genreId];
+    local usedPoint = playerGenre.point;
+    local totalPoint = G_UserInfo.RoleAttribute.TalentNumber
+    local unusedPoint = totalPoint - usedPoint;
+    return unusedPoint, usedPoint, totalPoint;
+end
+
+-- 判断技能是否可升级
+-- @return true 可升级 false 不可升级 
+function CanUpgrade(skillId)
+    if IsLockedSkill(skillId) then
+        return false;
+    end
+    local info = GetSkillData(skillId).info;
+    if info == nil then
+        error("技能是否可升级::空指针::skillId"..tostring(skillId));
+        return false;
+    end
+    local playerSkill = GetPlayerSkill(skillId);
+    local level = playerSkill.level;
+    local maxLevel = info.MaxLv;
+    if level >= maxLevel then
+        return false;
+    end
+
+    local levelInfo = CCommonTool.GetSkillLvUpData(info.LvupData, level);
+    if G_UserInfo.RoleAttribute.Level < levelInfo.Need_lv then
+        return false;
+    end
+    if G_UserInfo.BindCoin < levelInfo.Need_money then
+        return false;
+    end
+
+    local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, levelInfo.Need_item_id);
+    if itemNum < levelInfo.Need_item_num then
+        return false;
+    end
+    return true;
+end
+
+-- 判断是否有可升级的技能
+function HasUpgradableSkill()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILL) then
+        return false;
+    end
+    if generalSkillInfos == nil or talentSkillInfos == nil then
+        return false;
+    end
+    for _, data in ipairs(generalSkillInfos) do
+        if CanUpgrade(data.id) then
+            return true;
+        end
+    end
+    for _, data in ipairs(talentSkillInfos) do
+        if CanUpgrade(data.id) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 天赋是否可升级
+-- @param number talentId 天赋ID
+-- @return true:可升级
+function CanUpgradeTalent(talentId)
+    if genreIds == nil or playerGenreData == nil then
+        return false;
+    end
+    if not IsLockedTalent(talentId) then
+        local data = talentDict[talentId];
+        if data == nil then
+            return false;
+        end
+        local genreId = talentDict[talentId].genreId;
+        local unusedPoint, usedPoint, totalPoint = GetGenrePointInfo(genreId);
+        local playerData = playerGenreData[genreId].talents[talentId];
+        local level = playerData == nil and 0 or playerData.level;
+        local maxLevel = data.info.TalentLevelMax;
+        if level < maxLevel then
+            local levelInfoId = talentId * 100 + level + 1;
+            local levelInfo = CCommonTool.GetTalentLevelByID(levelInfoId);
+            if levelInfo ~= nil then
+                if unusedPoint >= levelInfo.CostNum then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 是否有可升级的天赋
+-- @return true:有可升级的天赋
+function HasUpgradableTalent()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILL) then
+        return false;
+    end
+    if genreIds == nil or playerGenreData == nil then
+        return false;
+    end
+    for i, genre in ipairs(genreIds) do
+        local genreId = genre.id;
+        for _, data in ipairs(genreTalentIds[genreId]) do
+            if CanUpgradeTalent(data.id) then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+-- 指定流派中是否有可升级的开赋
+-- @param genreId 流派ID
+function HasUpgradableTalentByGenreId(genreId)
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILL) then
+        return false;
+    end
+    if genreIds == nil or playerGenreData == nil then
+        return false;
+    end
+    for i, genre in ipairs(genreIds) do
+        if genreId == genre.id then
+            for _, data in ipairs(genreTalentIds[genreId]) do
+                if CanUpgradeTalent(data.id) then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 是否有小于玩家等级的技能
+function HasSkillLessPlayerLevel()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILL) then
+        return nil;
+    end
+    if generalSkillInfos == nil or talentSkillInfos == nil then
+        return nil;
+    end
+
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    for _, data in ipairs(generalSkillInfos) do
+        if not IsLockedSkill(data.id) then
+            local playerSkill = GetPlayerSkill(data.id);
+            local level = playerSkill.level;
+            local maxLevel = data.info.MaxLv;
+            if level < maxLevel then
+                local lvupTemplateId = data.info.LvupData;
+                local levelInfo = CCommonTool.GetSkillLvUpData(lvupTemplateId, level);
+                if levelInfo ~= nil and levelInfo.Need_lv <= playerLevel then
+                    return true;
+                end
+            end
+        end
+    end
+    for _, data in ipairs(talentSkillInfos) do
+        if not IsLockedSkill(data.id) then
+            local playerSkill = GetPlayerSkill(data.id);
+            local level = playerSkill.level;
+            local maxLevel = data.info.MaxLv;
+            if level < maxLevel then
+                local lvupTemplateId = data.info.LvupData;
+                local levelInfo = CCommonTool.GetSkillLvUpData(lvupTemplateId, level);
+                if levelInfo ~= nil and levelInfo.Need_lv <= playerLevel then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+function GetGeneralSkillInfos()
+    return generalSkillInfos;
+end
+
+-- 获取全部升级的所有技能数据
+-- @return {{id,lv},...}
+function GetAllSkillLvUpInfos()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILL) then
+        return nil;
+    end
+    if generalSkillInfos == nil or talentSkillInfos == nil then
+        return nil;
+    end
+
+    -- 可升级的技能列表
+    local list = {};
+    for _, data in ipairs(generalSkillInfos) do
+        if CanUpgrade(data.id) then
+            local playerSkill = GetPlayerSkill(data.id);
+            local level = playerSkill.level;
+            local maxLevel = data.info.MaxLv;
+            local lvupTemplateId = data.info.LvupData;
+            table.insert(list, {id = data.id, level=level, originalLv=level, maxLv = maxLevel, templateId=lvupTemplateId});
+        end
+    end
+    for _, data in ipairs(talentSkillInfos) do
+        if CanUpgrade(data.id) then
+            local playerSkill = GetPlayerSkill(data.id);
+            local level = playerSkill.level;
+            local maxLevel = data.info.MaxLv;
+            local lvupTemplateId = data.info.LvupData;
+            table.insert(list, {id = data.id, level=level, originalLv=level, maxLv = maxLevel, templateId=lvupTemplateId});
+        end
+    end
+
+    if #list == 0 then
+        return nil;
+    end
+
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    local playerHaved = {}
+    playerHaved.coin = G_UserInfo.BindCoin;
+    while true do
+        local target = nil;
+        local level = 0;
+        for i, data in ipairs(list) do
+            if data.isTop ~= true and (level == 0 or data.level < level) then
+                target = data;
+                level = data.level;
+            end
+        end
+
+        -- 已没有可升级的技能
+        if target == nil then
+            break;
+        end
+
+        local maxLevel = target.maxLv;
+        local levelInfo = CCommonTool.GetSkillLvUpData(target.templateId, level);
+        local needCoin = levelInfo.Need_money;
+        local needItemId = levelInfo.Need_item_id;
+        local needItemNum = levelInfo.Need_item_num;
+
+        if playerHaved[needItemId] == nil then
+            playerHaved[needItemId] = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemId);
+        end
+        local isTop = level >= maxLevel 
+                        or playerLevel < levelInfo.Need_lv 
+                        or playerHaved.coin < needCoin 
+                        or playerHaved[needItemId] < needItemNum;
+
+        if isTop ~= true then
+            playerHaved[needItemId] = playerHaved[needItemId] - needItemNum;
+            playerHaved.coin = playerHaved.coin - needCoin;
+            target.level = level + 1;
+        end
+        target.isTop = isTop;
+    end
+
+    for i=#list, 1, -1 do
+        local data = list[i];
+        if data.level == data.originalLv then
+            table.remove(list, i);
+        end
+    end
+    return list;
+end
+
+-- 新解锁的天赋(主动技能类型)
+function AddNewUnlockedTalent(talentId)
+    if newUnlockedTalents == nil then
+        newUnlockedTalents = {};
+    end
+    table.insert(newUnlockedTalents, talentId);
+end
+
+-- 新解锁的天赋(主动技能类型)
+function DeleteNewUnlockedTalent(talentId)
+    if newUnlockedTalents == nil then
+        return;
+    end
+    local count = #newUnlockedTalents;
+    for i = count , 1, -1 do
+        local id = newUnlockedTalents[i];
+        if id == talentId then
+            table.remove(newUnlockedTalents, i);
+        end
+    end
+end
+
+-- 清除新解锁的天赋(主动技能类型)
+function ClearNewUnlockedTalents()
+    newUnlockedTalents = nil;
+end
+
+-- 是否为刚解锁的天赋(主动技能类型)
+function IsNewUnlockedTalent(talentId)
+    if newUnlockedTalents == nil then
+        return false;
+    end
+    for _, id in ipairs(newUnlockedTalents) do
+        if id == talentId then
+            return true;
+        end
+    end
+    return false;
+end
+
+
+function ClearData()
+    tableDataInited = false;
+    generalSkillInfos = nil;
+    talentSkillInfos = nil;
+    skillDict = nil;
+    genreIds = nil;
+    genreTalentIds = nil;
+    talentDict = nil;
+    playerSkills = nil;
+    shortcutSkills = nil;
+    playerGenreData = nil;
+    uilistTalents = nil;
+    tempGenreData = nil;
+    newUnlockedTalents = nil;
+end

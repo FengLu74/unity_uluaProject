@@ -1,0 +1,647 @@
+﻿module("WingPanelCN", package.seeall)
+-- 加载子界面lua
+require "Panel/WingPanelContentCN";    --！！！界面命名特异，只为在主lua后加载子lua
+require "Panel/WingSkillPanelCN";
+require "Panel/WingStarPanelCN";
+-- 当前所在面板名字-------------------------------------神翼界面------------------------------------------------------
+local m_PanelName = "WingPanelCN"; 
+-- 神翼界面
+local m_WingPanelStr = "WingPanelContentCN";
+-- 技能界面
+local m_SkillPanelStr = "WingSkillPanelCN"
+-- 化灵界面
+local m_StarPanelStr = "WingStarPanelCN";
+-- 亮暗按钮路径
+local m_MenuItemPath = "LeftContent/Grid/MenuItem";
+------------------------ 神翼和技能公共中部---------------------------------------------
+local m_publicMiddleStr = "PublicMiddle";
+-- 神翼名称
+local m_godNameStr = "PublicMiddle/Top_Name";
+-- 神翼第几阶
+local m_godStageStr = "PublicMiddle/Top_Name/Top_Lvl";
+-- 神翼技能组
+local m_skillMidStr = "PublicMiddle/Skills/Item";
+-----------------------------------引用的对象---------------------------------------------------------------------
+-- 玩家身上的组件
+local m_PlayerChangeEquip = nil;
+local m_middles = nil;
+local m_SContentPanel = nil;
+local m_SSkillPanel = nil;
+local m_SStarPanel = nil;
+-- 上次选中的页签
+local m_lastSelectTagNum = 1;
+-- 当前选中的第几个标签
+local m_selectTagNum = 1;
+-- 页签最大数
+local PAGEMAX = 3;
+-- 技能组id
+local m_middleSkillTab = {};
+-- 当前显示第几阶
+local m_curShowStageLvl = -1;
+-- toggles组成的table内容
+local m_toggleTable =
+{
+    [1] = {  panelName = m_WingPanelStr, isFirstOpen = true, luaFileName = WingPanelContentCN },
+    [2] = {  panelName = m_SkillPanelStr, isFirstOpen = true, luaFileName = WingSkillPanelCN },
+    [3] = {  panelName = m_StarPanelStr, isFirstOpen = true, luaFileName = WingStarPanelCN },
+};
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+--
+local LeftTableType = 
+{
+    GOD = 1, 
+    SKILL = 2,
+    STAR = 3,
+}
+-- 翅膀类型
+local FASHION_WING_TYPE = 4;
+------------------------------------BaseLua调用的同名方法-----------------------------------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    Hide3DModel();
+    m_PlayerChangeEquip = nil;
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = 1;
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    m_curShowStageLvl = -1;
+    m_middleSkillTab = {};
+    m_SContentPanel:SetActive(false);
+    m_SStarPanel:SetActive(false);
+    m_SSkillPanel:SetActive(false);
+end
+function SwiftBtnToggle()
+    for index=1,PAGEMAX do
+        if m_selectTagNum == index then
+            SetGameObjectState(m_MenuItemPath..index.."/Toggle",true,m_panelObject);
+        else
+            SetGameObjectState(m_MenuItemPath..index.."/Toggle",false,m_panelObject);
+        end
+    end
+    if m_toggleTable[m_lastSelectTagNum] ~= nil then
+        m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    end
+    if m_toggleTable[m_selectTagNum] ~= nil then
+        --error("神翼lua文件名称：："..m_toggleTable[m_selectTagNum].luaFileName);
+        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    end
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+    if m_selectTagNum == LeftTableType.GOD or m_selectTagNum == LeftTableType.SKILL then
+        m_middles:SetActive(true);
+        setPubMiddleContent();
+    else
+        m_middles:SetActive(false);
+        Hide3DModel();
+   end
+end
+function OnDestroy()
+    Hide3DModel();
+    m_PlayerChangeEquip = nil;
+    for index = 1, PAGEMAX do
+        if m_toggleTable[index].luaFileName ~= nil then
+            m_toggleTable[index].luaFileName.OnDestroy();
+            m_toggleTable[index].isFirstOpen = true;
+        end
+    end
+    m_curShowStageLvl = -1;
+    m_middles = nil;
+    m_SContentPanel = nil;
+    m_SSkillPanel = nil;
+    m_SStarPanel = nil;
+    -- 上次选中的页签
+    m_lastSelectTagNum = 1;
+    -- 当前选中的第几个标签
+    m_selectTagNum = 1;
+    -- 面板对象
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_middleSkillTab = {};
+end
+-- object
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_WINGPANEL);--神翼界面
+    m_SContentPanel = child(m_panelObject,m_WingPanelStr).gameObject;
+    m_SSkillPanel = child(m_panelObject,m_SkillPanelStr).gameObject;
+    m_SStarPanel = child(m_panelObject,m_StarPanelStr).gameObject;
+
+    m_middles = child(m_panelObject,m_publicMiddleStr).gameObject;
+    m_SContentPanel:SetActive(false);
+    m_SStarPanel:SetActive(false);
+    m_SSkillPanel:SetActive(false);
+
+end
+-- 事件
+function InitEvents()  
+    -- 左侧页签事件
+    for index=1,PAGEMAX do
+        SetGameObjectEvent(m_MenuItemPath .. index , leftItemButtonClick, m_panelObject);
+    end
+    setItemClick();
+    -- 神翼穿戴
+    SetGameObjectEvent(m_publicMiddleStr.."/ButtonEquip",OnClickEquip,m_panelObject);
+end
+
+-- 点击装备翅膀按钮
+function OnClickEquip()
+    local fashionMainKeyID=getFashionMainKeyIdByIndex(m_curShowStageLvl*10 + G_UserInfo.RoleAttribute.ProID);
+    local data = {
+            Type = FASHION_WING_TYPE,
+            State = FashionManager.WEAR_STATE,        --2:装备状态
+            ExcelId =fashionMainKeyID;                --发送的是主键id
+        };
+    FashionProtocol.RequestFashionOperate(data);
+end
+
+function leftItemButtonClick(e)
+    local Index = tonumber(string.sub(e.transform.name, 9, string.len(e.transform.name)));
+    -- 判定页签是否开启了
+    if checkLeftBtnOpen(Index) == false then
+        local need_lvl = WingPanelManagerCN.getMinState();
+        ShowSystemFlowTips(9838,nil,{need_lvl});
+        return;
+    end
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = Index;
+    -- 变换按钮亮暗
+    SwiftBtnToggle();
+end
+-- 判断技能页签是否能够开启
+function checkLeftBtnOpen(index)
+    if index == LeftTableType.STAR then
+        local stage_lvl = WingPanelManagerCN.getPlayerGodData();
+        local need_lvl = WingPanelManagerCN.getMinState();
+        --error("现阶段：："..stage_lvl.." 要求：："..need_lvl);
+        if stage_lvl < need_lvl then
+            return false;
+        else
+            return true;
+        end
+    end
+    return true;
+end
+-- show
+function InitShow()
+    for i=1,PAGEMAX do
+        local canshow = false;
+        if i == LeftTableType.GOD then
+            canshow = WingPanelContentCN.godsCanShowRed();
+        elseif i == LeftTableType.SKILL then
+            canshow = WingSkillPanelCN.skillCanShowRed();
+        elseif i == LeftTableType.STAR then
+            if checkLeftBtnOpen(LeftTableType.STAR) == true then
+                canshow = WingStarPanelCN.starCanShowRed();
+            else
+               canshow = false; 
+            end 
+        end
+        SetLeftTabRedShow(i,canshow);
+    end
+    SwiftBtnToggle();
+end
+-- 关闭按钮事件
+function OnCloseClick(e)
+    closePanel(ENUMPANELID.ENUM_PANEL_WINGPANEL);
+end
+-- 跳转界面获取数据
+function GetJumpCloseData()
+
+    local panelParams = {};
+    local tabIndex = m_selectTagNum;
+    if tabIndex == LeftTableType.GOD then
+        -- 神翼
+        panelParams.godIndex = m_curShowStageLvl;
+        panelParams.data = WingPanelContentCN.GetJumpCloseData();
+        panelParams.tabIndex = tabIndex;
+    elseif tabIndex == LeftTableType.SKILL then
+        -- 技能
+        panelParams.godIndex = m_curShowStageLvl;
+        panelParams.data = WingSkillPanelCN.GetJumpCloseData();
+        panelParams.tabIndex = tabIndex;
+    elseif tabIndex == LeftTableType.STAR then
+        -- 化灵
+        panelParams.data = SkillConfigPanel.GetJumpCloseData();
+        panelParams.tabIndex = tabIndex;
+    end
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_JumpPanelParamsTable = paramTable;
+    if m_JumpPanelParamsTable == nil then
+        return;
+    end
+   m_selectTagNum = m_JumpPanelParamsTable.tabIndex;
+   if m_selectTagNum == LeftTableType.GOD then
+        -- 神翼
+        m_curShowStageLvl = m_JumpPanelParamsTable.godIndex;
+        --panelParams.data = SkillLevelupPanel.SetJumpCloseData();
+    elseif m_selectTagNum == LeftTableType.SKILL then
+        -- 技能
+        m_curShowStageLvl = m_JumpPanelParamsTable.godIndex;
+        --error(m_JumpPanelParamsTable.data.skillIndex);
+        --panelParams.data = SkillTalentPanel.SetJumpCloseData();
+    elseif m_selectTagNum == LeftTableType.STAR then
+        -- 化灵
+        --panelParams.data = SkillConfigPanel.SetJumpCloseData();
+    end
+    SwiftBtnToggle();
+end
+---------------------------------------------------子界面公共调用方法----------------------------------------
+-- 更换神翼模型
+function ChangeWingModel(modeId)
+    if m_PlayerChangeEquip~=nil then
+        error("[lua]想要跟换翅膀的模型id：-->"..modeId);
+        m_PlayerChangeEquip:SetUIFashion(4, modeId, true);
+    end
+end
+-- 缓存进阶动画模型
+function SaveAnimator(animator)
+    m_PlayerChangeEquip = animator.gameObject:GetComponent("CPlayerChangeEquip");
+end
+-- 加载翅膀模型
+function SetPlayerModel(id)
+    local buffer = ByteBuffer.New();  
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_WINGPANEL);   
+    buffer:WriteInt(id);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 隐藏或删除3d模型
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_WINGPANEL);
+end
+-- 设置中部内容
+function setPubMiddleContent()
+    Hide3DModel();
+    local stage_lvl = WingPanelManagerCN.getPlayerGodData();
+    if m_curShowStageLvl <=0 then
+        m_curShowStageLvl = stage_lvl;
+    end
+    --设置装备按钮
+    local cur_wingId = WingPanelManagerCN.getCurWingID();
+    if m_curShowStageLvl <=  stage_lvl and m_curShowStageLvl~=cur_wingId then
+        SetGameObjectState(m_publicMiddleStr.."/ButtonEquip",true,m_panelObject);
+    else
+        SetGameObjectState(m_publicMiddleStr.."/ButtonEquip",false,m_panelObject);
+    end
+    --设置名称，
+    local txtName = GetTextToId(WingMainTable.Get(m_curShowStageLvl*10 + G_UserInfo.RoleAttribute.ProID).Name);
+    SetLabelContent(m_godNameStr,txtName,m_panelObject);
+    --设置阶数
+    SetLabelContent(m_godStageStr,string_format(GetTextToId(9232),m_curShowStageLvl),m_panelObject);  
+    -- 設置模型
+    SetPlayerModel(getModelIdByIndex(m_curShowStageLvl*10 + G_UserInfo.RoleAttribute.ProID));
+   -- ChangeWingModel();
+    -- 设置技能图标，显隐
+    m_middleSkillTab = getPlayerSkillTab();    -- 玩家技能数据
+    for index=1,#m_middleSkillTab do
+        local skillMainInfo = CCommonTool.GetSkillMainData(WingSkillTable.Get(m_middleSkillTab[index].skillIndex).SkillMain);
+        if skillMainInfo ~= nil then
+            local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+            if skillDataInfo ~= nil then
+                SetSpriteByAtlasID(m_skillMidStr..index.."/Sprite_Icon", WingSkillTable.Get(m_middleSkillTab[index].skillIndex).IconID, m_panelObject);
+                local go = child(m_panelObject,m_skillMidStr..index).gameObject;
+               -- error("该技能id： "..JewelSkillTable.Get(skill_tables[index]).SkillId.." 子技能id ："..skillMainInfo.SonSkill0); 
+                if m_selectTagNum == LeftTableType.GOD then
+                    TipsManager.SkillTips(go, WingSkillTable.Get(m_middleSkillTab[index].skillIndex).SkillMain, skillMainInfo.SonSkill0, WingSkillTable.Get(m_middleSkillTab[index].skillIndex).Lv, true);
+                else
+                    local tipTool = GetComponent(m_panelObject,m_skillMidStr..index, "CUITooltip",false);
+                    if tipTool ~= nil then
+                        destroy(tipTool);
+                    end
+                    SetGameObjectEvent(m_skillMidStr..index,SetSkillItemOnClick,m_panelObject);
+                end      
+            end
+        end
+        --设置技能图标箭头，文本
+        local state = getPlayerSkillState(stage_lvl,index);
+        if state ==1 then
+            SetGameObjectState(m_skillMidStr..index.."/Sprite_Up",false,m_panelObject);
+            SetGameObjectState(m_skillMidStr..index.."/Label_Max",false,m_panelObject);
+        elseif state == 2 then
+            SetGameObjectState(m_skillMidStr..index.."/Sprite_Up",true,m_panelObject);
+            SetGameObjectState(m_skillMidStr..index.."/Label_Max",false,m_panelObject);
+        elseif state == 3 then
+            SetGameObjectState(m_skillMidStr..index.."/Sprite_Up",false,m_panelObject);
+            SetGameObjectState(m_skillMidStr..index.."/Label_Max",true,m_panelObject);
+        end
+
+        if stage_lvl/2 >= index and m_middleSkillTab[index].lvl >0 then
+            --已经解锁
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_skillMidStr..index.."/Sprite_Icon").gameObject, false);
+        else
+            --未解锁
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_skillMidStr..index.."/Sprite_Icon").gameObject, true);
+        end
+    end
+    if m_selectTagNum == LeftTableType.SKILL then
+        local index = 1;
+        if WingSkillPanelCN.setSkillIndex() >0 then
+            index = WingSkillPanelCN.setSkillIndex();
+        end
+        if index <=0 then
+            if m_JumpPanelParamsTable.data ~= nil and m_JumpPanelParamsTable.data.skillIndex~=nil then
+                if m_JumpPanelParamsTable.data.skillIndex>=1 and m_JumpPanelParamsTable.data.skillIndex <= 6 then
+                    index = m_JumpPanelParamsTable.data.skillIndex;
+                end     
+            end
+        end
+        
+        local go = child(m_panelObject,m_skillMidStr..index).gameObject;
+        SetSkillItemOnClick(go);
+    else
+        SetSelectPositon(-1);
+    end
+end
+-- 根据当前 得到技能组
+function getPlayerSkillTab()
+    local playskill_tab = WingPanelManagerCN.getPlayerSkillData();
+    if #playskill_tab < 6 then
+        error("[神翼] 技能组数据错误！！！");
+        return ;
+    end
+    local playerSkillTab = {};
+    for index=1,#playskill_tab do
+        playerSkillTab[index] = {};
+        if playskill_tab[index].id == 0 and playskill_tab[index].lvl == 0 then
+            playerSkillTab[index].skillIndex = playskill_tab[index].index*1000; 
+            --error("index="..index.."playskill_tab[index].index*1000="..playskill_tab[index].index*1000);
+            playerSkillTab[index].lvl = playskill_tab[index].lvl;
+        else
+            local lvl = playskill_tab[index].lvl <=1 and 0 or playskill_tab[index].lvl-1 
+            playerSkillTab[index].skillIndex = playskill_tab[index].id+lvl;
+            --error("index="..index.."playskill_tab[index].id="..playskill_tab[index].id.."_lvl="..lvl);
+            playerSkillTab[index].lvl = playskill_tab[index].lvl;
+        end
+        --error("index="..index.."_playskill_tab[index].id ="..playskill_tab[index].id .."_playerSkillTab[index].skillIndex="..playerSkillTab[index].skillIndex.."_playerSkillTab[index].lvl="..playerSkillTab[index].lvl);
+    end
+    return playerSkillTab;
+end
+-- 根据index 技能得到状态
+function getPlayerSkillState(stage_lvl,index)
+    local state = -1;                   -- 1 不可升级，未满级，2 可升级，3 满级
+    local playerSkillInfos = getPlayerSkillTab();
+    --local playerSkillInfos = m_middleSkillTab;
+    if playerSkillInfos~=nil then
+        local INDEX = playerSkillInfos[index].skillIndex;
+        if WingSkillTable.Get(INDEX).Lv >=WingSkillTable.Get(INDEX).MaxLv then  -- 滿級
+            state = 3;
+            return state;
+        end
+        if stage_lvl/2 < index then    ------------------------------ 改技能沒解鎖
+            state = 1;
+        else
+            local cost_id = WingSkillTable.Get(INDEX).NeedId;
+            local cost_num  = -1;
+            if playerSkillInfos[index].lvl >0 then
+                cost_num = WingSkillTable.Get(INDEX+1).NeedNum;
+            else
+                cost_num = WingSkillTable.Get(INDEX).NeedNum;
+            end
+        
+            if GetBindAndNotNumById(cost_id) < cost_num then
+                state = 1;
+            else
+                state = 2;
+            end
+        end
+        return state;
+    else
+        error("技能数据为空!");
+    end
+end
+
+function SetSelectPositon(index)
+    for i=1,6 do
+        SetGameObjectState(m_skillMidStr..i.."/Sprite_Select",index==i,m_panelObject);
+    end
+end
+-- 左右选框点击事件,被动技能点击事件
+function setItemClick()
+    for i=0,1 do
+        SetGameObjectEvent(m_publicMiddleStr.."/jew_"..i,onBtnCLick1,m_panelObject);
+    end
+end
+-- 左右选框点击事件
+function onBtnCLick1(e)
+    local Index = tonumber(string.sub(e.transform.name, 5, string.len(e.transform.name)));
+    if Index == 1 then
+        if m_curShowStageLvl <=1 then
+            return;
+        end
+        m_curShowStageLvl = m_curShowStageLvl-1;
+        if m_curShowStageLvl <=1 then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,true);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,false);
+        end
+        if m_curShowStageLvl < WingMainTable.Count/WingPanelManagerCN.roleUseNum then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..0).gameObject,false);
+        end
+    elseif Index == 0 then
+        if m_curShowStageLvl >= WingMainTable.Count/WingPanelManagerCN.roleUseNum then
+            return;
+        end
+        m_curShowStageLvl = m_curShowStageLvl+1;
+        if m_curShowStageLvl >=WingMainTable.Count/WingPanelManagerCN.roleUseNum then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,true);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..Index).gameObject,false);
+        end
+        if m_curShowStageLvl >1 then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_publicMiddleStr.."/jew_"..1).gameObject,false);
+        end
+    end
+    -- 重新顯示中部內容
+    setPubMiddleContent();
+end
+-- 被动技能点击事件
+function SetSkillItemOnClick(e)
+    if  m_selectTagNum ~= LeftTableType.SKILL then
+        return;
+    end
+    local Index = tonumber(string.sub(e.transform.name, 5, string.len(e.transform.name)));
+    if #m_middleSkillTab <=0 or m_middleSkillTab[Index].skillIndex <=0 then
+        return;
+    end
+    SetSelectPositon(Index);
+    --刷新技能右侧界面
+    WingSkillPanelCN.setSkillIndex(Index);
+end
+
+-----------------------------------------------------------外部事件---------------------------------------------
+function SetLeftTabRedShow(index,canshow)
+    SetGameObjectState(m_MenuItemPath..index.."/Sprite_RedHint",canshow,m_panelObject);
+end
+-- 神翼界面是否可以显示小红点
+function WingCanShowRed()
+     -- 是否开启
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_WING) == false then
+        return false;
+    end
+    local stage_lvl,star_lvl,exp = WingPanelManagerCN.getPlayerGodData();    
+    if stage_lvl == nil or star_lvl ==nil or exp == nil then
+        return false;
+    end
+    if WingPanelContentCN.godsCanShowRed() == true then
+        return true;
+    elseif WingSkillPanelCN.skillCanShowRed() == true then
+        return true;
+    elseif (checkLeftBtnOpen(LeftTableType.STAR) == true) and (WingStarPanelCN.starCanShowRed() == true)  then
+        return true
+    end
+    return false;
+end
+
+-- 神翼界面是否可以显示小红点
+function IsShowRedHintRide()
+     -- 是否开启
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_WING) == false then
+        return false;
+    end
+    local stage_lvl,star_lvl,exp = WingPanelManagerCN.getPlayerGodData();    
+    if stage_lvl == nil or star_lvl ==nil or exp == nil then
+        return false;
+    end
+    if WingPanelContentCN.godsCanShowRed() == true then
+        return true;
+    elseif WingSkillPanelCN.skillCanShowRed() == true then
+        return true;
+    elseif (checkLeftBtnOpen(LeftTableType.STAR) == true) and (WingStarPanelCN.starCanShowRed() == true)  then
+        return true
+    end
+    return false;
+end
+-- 刷新神翼界面
+function RefreshWingPanel(change,god_change)
+    -- 是否开启
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_WING) == false then
+        return false;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL) == 1 then 
+        local stage_lvl = WingPanelManagerCN.getPlayerGodData();
+        if m_selectTagNum == LeftTableType.GOD then
+            WingPanelContentCN.Show();
+            if change ~=nil and change ==true then
+                local stage_lvl = WingPanelManagerCN.getPlayerGodData();
+                m_curShowStageLvl = stage_lvl;
+
+--                -- 3d模型炫耀
+--                local midel_id = getModelIdByIndex(WingPanelManagerCN.getCurWingID()*10 + G_UserInfo.RoleAttribute.ProID);
+--                local resName = "";
+--                error("############################midel_id="..midel_id);
+--                if WingTable.Get(midel_id) ~=nil and WingTable.Get(midel_id).Name~=nil then
+--                    resName = GetTextToId(WingTable.Get(midel_id).Name); 
+--                end               
+--                ShowOffPanel.ShowGetModel(midel_id,resName);
+
+            end
+            if god_change ~= nil and god_change == true then
+                --error("CurWingID="..WingPanelManagerCN.getCurWingID());
+                local midel_id = getModelIdByIndex(WingPanelManagerCN.getCurWingID()*10 + G_UserInfo.RoleAttribute.ProID);
+                --ChangeWingModel(midel_id);
+                setPubMiddleContent()
+            end
+        elseif m_selectTagNum == LeftTableType.SKILL then
+            WingSkillPanelCN.InitShow();
+            
+            if god_change ~= nil and god_change == true then
+                --ChangeWingModel();
+                setPubMiddleContent();
+            end
+        elseif m_selectTagNum == LeftTableType.STAR then
+            if WingPanelManagerCN.getCurWingID() ~=0 then
+                local midel_id = getModelIdByIndex(WingPanelManagerCN.getCurWingID()*10 + G_UserInfo.RoleAttribute.ProID);
+                WingStarPanelCN.InitShow(midel_id);
+            else
+                error("当前没有装备翅膀异常！！！");
+            end
+        end
+    end
+end
+-------------------------------------------C#调用--------------------------------------
+function getModelIdByIndex(index) --index:id
+    local model_id = 0;
+    local id=0;
+    if  index >0 then
+        --时装id
+        model_id = WingMainTable.Get(index).ModelID;
+        local fashionRow=CCommonTool.GetFashion(model_id);
+        --模型id
+        id=fashionRow.ModelresId;
+    else
+        error("当前WingMainTable没有ID=:"..index);
+    end
+    return id;
+end
+function getFashionMainKeyIdByIndex(index) --index:id
+    local model_id = 0;
+    local id=0;
+    if  index >0 then
+        --时装id
+        model_id = WingMainTable.Get(index).ModelID;
+        local fashionRow=CCommonTool.GetFashion(model_id);
+        --模型id
+        id=fashionRow.Id;
+    else
+        error("当前WingMainTable没有ID=:"..index);
+    end
+    return id;
+end
+--根据时装fashion表主键index找到WingMainTable表中的主键id
+function getWingMainTableIdByIndex(index) --index:id
+    local id=0;
+    if  index >0 then
+        --时装主键
+        for k,v in ipairs(WingMainTable.GetAll()) do
+            if v.ModelID == index then
+                 id=v.Id;
+                 return id;
+            end
+        end
+    else
+        error("当前fashion表没有ID=:"..index);
+    end
+    return id;
+end
+-- 刷新当前翅膀模型
+function RefreshWingModeShow(fashionType)
+    if fashionType == FASHION_WING_TYPE then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL) == 1 then
+            if m_PlayerChangeEquip ~= nil then
+                local fashionWingId = G_UserInfo.RoleAttribute.FashionWingId;
+                if fashionWingId > 0 then
+                    local fashionInfo = WingMainTable.Get(fashionWingId*10 + G_UserInfo.RoleAttribute.ProID);
+                    if fashionInfo ~= nil then
+                        local modelId = fashionInfo.Modelres;
+                        m_PlayerChangeEquip:SetUIFashion(FASHION_WING_TYPE, modelId, true);
+                    end
+                else
+                    m_PlayerChangeEquip:SetUIFashion(FASHION_WING_TYPE, 0, true);
+                end
+                --SetEquipButtonState();
+            end
+        end
+    end
+end

@@ -1,0 +1,273 @@
+﻿module('BuffBrowsePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'BuffBrowsePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+local m_DynamicBackgroundPath1 = "BuffDescribes/Background/Bg1";
+local m_DynamicBackground1 = nil;
+local m_DynamicBackgroundPath2 = "BuffDescribes/Background/Bg2";
+local m_DynamicBackground2 = nil;
+local m_DynamicBackgroundPath3 = "BuffDescribes/Background/Bg3";
+local m_DynamicBackground3 = nil;
+----------------------------------gameobject所在的路径---------------------------------
+-- 关闭框路径
+local m_MaskPath = "Mask";
+-- 界面路径
+local m_BuffDescribesViewPath = "BuffDescribes";
+----------------------------------通用的名称路径---------------------------------------
+-- Buff描述
+local m_BuffDescribesPath = "BuffDescribes/Scroll View/Grid";
+local m_DynamicScrollViewPath = "BuffDescribes/Scroll View";
+local m_DynamicScrollView = nil;
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 关闭框
+local m_Mask = nil;
+-- 界面
+local m_BuffDescribesView = nil;
+-- Buff描述
+local m_BuffDescribes = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+local m_Data = nil;
+local m_BuffEventNameList = {};
+------------------------------------BaseLua调用的同名方法------------------------------
+function functionParameter(data)
+    m_Data = data;
+    --error("functionParameter");
+    if m_CreateSuccess then
+        InitShow(); 
+    end
+end
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+
+end
+
+function OnDisable()
+    for key, var in pairs(m_BuffEventNameList) do
+        local eventName = var;
+        G_TimerMng:RemoveTimeTask(eventName);
+    end
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Mask = nil;
+	m_BuffDescribes = nil;
+    m_BuffEventNameList = {};
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BUFFBROWSE);
+    m_Mask = child(m_PanelObject, m_MaskPath).gameObject;
+    m_BuffDescribesView = child(m_PanelObject, m_BuffDescribesViewPath); 
+    m_BuffDescribes = GetComponent(m_PanelObject, m_BuffDescribesPath, "UIListView");
+    --菜单动态背景
+    m_DynamicBackground1 = GetComponent(m_PanelObject, m_DynamicBackgroundPath1, "UISprite");
+    m_DynamicBackground2 = GetComponent(m_PanelObject, m_DynamicBackgroundPath2, "UISprite");
+    m_DynamicBackground3 = GetComponent(m_PanelObject, m_DynamicBackgroundPath3, "UISprite");
+    --菜单动态面板
+    m_DynamicScrollView = GetComponent(m_PanelObject, m_DynamicScrollViewPath, "UIPanel");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Mask).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_Mask).onPress = LuaHelper.OnPress(OnClosePress);
+    m_BuffDescribes:SetInitCallback(OnBuffDescribesViewInit);
+    m_BuffDescribes:SetClickCallback(OnBuffDescribesViewClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_Data ~= nil then
+        m_BuffDescribesView.localPosition = Vector3.New(m_Data.x, m_Data.y, 0);
+        local length = GetTableLength(m_Data.BuffInfos);
+        SetPanelSize(length);
+        InitBuffDescribes(m_Data.BuffInfos);
+    end
+    --error("InitShow");
+end
+-- 设置界面的大小
+function SetPanelSize(count)
+    local minCount = 1;
+    local maxCount = 3;
+    local curCount = count;
+    if curCount <= minCount then
+        curCount = minCount;
+    end
+    if curCount >= maxCount then
+        curCount = maxCount;
+    end
+    local titleHeight = 0;
+    local cellHeight = 124;
+    local height = cellHeight * curCount;
+    if count > maxCount then
+        height = height + cellHeight / 2;
+    end
+    local viewHeight = height;
+    m_DynamicBackground1.height = titleHeight + height;
+    m_DynamicBackground2.height = titleHeight + height + 48;
+    m_DynamicBackground3.height = titleHeight + height + 48;
+    m_DynamicScrollView.baseClipRegion =Vector4.New(0,0,600,viewHeight);
+    local x = m_Data.x;
+    local y = m_Data.y + (maxCount - count) * cellHeight / 2;
+    if count > maxCount then
+        y = y + cellHeight / 4;
+    end
+    m_BuffDescribesView.localPosition = Vector3.New(x, y, 0);
+end
+--初始化Buff信息
+function InitBuffDescribes(buffInfos)
+    m_BuffDescribes:RemoveAll();
+    if buffInfos ~= nil then
+        local length = GetTableLength(buffInfos);
+        for index = 1, length do
+            local data = 
+            {
+                Index = index;
+                Info = buffInfos[index];
+            };
+            m_BuffDescribes:AddData(data);
+        end
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 关闭按钮
+function OnCloseClick(gameObject)
+    --closePanel(ENUMPANELID.ENUM_PANEL_BUFFBROWSE);
+end
+function OnClosePress(gameObject,isPressed)
+    if isPressed == true then
+        closePanel(ENUMPANELID.ENUM_PANEL_BUFFBROWSE);
+    end
+end
+
+-- Buff的Item列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnBuffDescribesViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local buffId = data.Info.BuffId;
+    local buffInfo = G_UIBuffManager:GetBuffInfo(buffId);
+    if buffInfo ~= nil then
+        SetSpriteByAtlasID("IconBg/Icon", buffInfo.BuffIcon, item);
+        SetSpriteWidth("IconBg/Icon",94,item);
+        SetSpriteHeight("IconBg/Icon",94,item);
+        SetLabelContent("Name", GetTextToId(buffInfo.BuffTitle), item);
+        local buffLayer = data.Info.Layer;
+        local attributeDatas = GetAttributeDatas(buffInfo,buffLayer);
+        local length = GetTableLength(attributeDatas);
+        local buffTxt = GetTextToId(buffInfo.BuffTxt);
+        local attributeDesc = buffTxt;
+        if length > 0 then
+            attributeDesc = string_format(buffTxt,attributeDatas);
+        end
+        SetLabelContent("Desc", attributeDesc, item);
+        if data.Info.Time > 0 then
+            local time = math.floor(data.Info.Time - G_TimerMng:GetCurrentSeconds());
+            local eventName = "BuffDescribesItem"..data.Index;
+            table.insert(m_BuffEventNameList,eventName);
+            local overData =
+            {
+                Index = data.Index;
+                Item = item;
+            };
+            local backData = 
+            {
+                Index = data.Index;
+                Item = item;
+            };
+            AddTimerEvent(eventName, time, BuffTimeBackOver, ETimeShowType.TypeNumberNine, BuffTimeCallBack,overData,backData, nil, 2, 1);
+        elseif data.Info.Time == -1 then
+            SetLabelContent("Time", GetTextToId(1600), item);
+        else
+            SetLabelContent("Time", "", item);
+        end
+    end
+end
+--获取Buff增加属性信息
+function GetAttributeDatas(buffInfo,layer)
+    local attributeDatas = {};
+    for i = 1, 5 do
+        local attributeId = buffInfo["AttributeMod"..i];
+        if attributeId > 0 then
+            local buffType = buffInfo.BuffType;
+            local keepType = buffInfo.KeepType;
+            local result = true;
+            if buffType == 101 then
+                result = keepType == 1;
+            end
+            local modNum = buffInfo[string_format("Mod{0}Num",i)];
+            if modNum ~= 1 then
+                modNum = math.abs(modNum);
+                local modUpGet = buffInfo[string_format("Mod{0}UpGet",i)];
+                modUpGet = math.abs(modUpGet);
+                local attrInfo = CCommonTool.GetAttrIndexInfo(attributeId);
+                if attrInfo ~= nil then
+                    local formulaType = attrInfo.FormulaType;
+                    local ratio = attrInfo.Ratio;
+                    local attributeValue = nil;
+                    if result == true then
+                        if ratio < 1 then
+                            attributeValue = string_format("{0}%",string.format("%1d", (modNum + (modUpGet * layer))* ratio * 100));
+                        else
+                            attributeValue = modNum + (modUpGet * layer);
+                        end
+                    else
+                        attributeValue = string_format("{0}%",string.format("%1d", (modNum + (modUpGet * layer)) * 0.001 * 100));
+                    end
+                    if attributeValue ~= nil then
+                        table.insert(attributeDatas,attributeValue);
+                    end
+                end
+            end
+            
+        end
+    end
+    return attributeDatas;
+end
+-- Buff的Item列表事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnBuffDescribesViewClick(listView, cell, go)
+    
+end
+
+--时间监听回调
+--@param timeTxt 时间字符串
+function BuffTimeCallBack(timeTxt,data)
+    if data ~= nil and data.Item ~= nil then
+        SetLabelContent("Time", timeTxt, data.Item);
+    end
+end
+--时间监听结束回调
+--@param data buff数据信息
+function BuffTimeBackOver(data)
+    if data ~= nil and data.Item ~= nil then
+        SetLabelContent("Time", "00:00", data.Item);
+        local eventName = "BuffDescribesItem"..data.Index;
+        G_TimerMng:RemoveTimeTask(eventName);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

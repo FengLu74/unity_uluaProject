@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black_overlay">#66000000</color>
+    <color name="xy_color_transparent">#00000000</color>
+    <color name="xy_color_cc000000">#cc000000</color>
+    <color name="xy_color_80000000">#80000000</color>
+    <color name="xy_color_b3000000">#b3000000</color>
+    <color name="xy_color_e6000000">#e6000000</color>
+    <color name="xy_color_51ffffff">#51ffffff</color>
+    <!--<color name="xy_color_ff5a00">#19c5ae</color>-->
+    <color name="xy_color_ff5a00">#00a1f1</color>
+    <!--<color name="xy_color_beff5a00">#0a8895</color>-->
+    <color name="xy_color_beff5a00">#008eee</color>
+    <drawable name="xy_color_3b3b3b">#3b3b3b</drawable>
+    <drawable name="xy_color_ff3c3c">#ff3c3c</drawable>
+    <color name="xy_color_2c67eb">#2c67eb</color>
+    <color name="xy_color_513d3c">#513d3c</color>
+    <drawable name="xy_color_282828">#282828</drawable>
+    <drawable name="xy_color_cc2d2d">#cc2d2d</drawable>
+    <color name="xy_color_b3ffffff">#b3ffffff</color>
+    <color name="xy_color_4dffffff">#4dffffff</color>
+    <color name="xy_color_a3a3a3">#a3a3a3</color>
+    <color name="xy_color_555555">#0f4e46</color>
+    <color name="xy_color_e5e5e5">#e5e5e5</color>
+    <color name="xy_color_5e5e5e">#5e5e5e</color>
+    <color name="xy_color_cfcfcf">#cfcfcf</color>
+    <color name="xy_color_7e7e7e">#7e7e7e</color>
+    <color name="xy_color_6c6c6c">#6c6c6c</color>
+    <color name="xy_color_warning">#d40e00</color>
+    <!--
+    <color name="xy_color_ff5a00">#ff5a00</color>
+    <color name="xy_color_555555">#555555</color>
+    <color name="xy_color_beff5a00">#beff5a00</color>
+    <color name="xy_color_ff7b33">#ff7b33</color>
+    -->
+
+    <color name="xy_color_c1">#666666</color>
+    <color name="xy_color_c2">#9a9b98</color>
+    <color name="xy_color_c3">#cacaca</color>
+    <color name="xy_color_c4">#16aaef</color>
+    <color name="xy_color_c5">#f80202</color>
+
+    <color name="xy_color_line">#d5d5d6</color>
+    <color name="xy_color_bg_1">#fdfdfd</color>
+    <color name="xy_color_bg_2">#ffffff</color>
+
+    <color name="xy_color_bg_register_nor">#fd8237</color>
+    <color name="xy_color_bg_register_sel">#fd682b</color>
+    <color name="xy_color_bg_login_nor">#17adf2</color>
+    <color name="xy_color_bg_login_sel">#1297ed</color>
+    <color name="xy_color_bg_confirm_nor">#f91917</color>
+    <color name="xy_color_bg_confirm_sel">#f81213</color>
+    <color name="xy_color_bg_cancel_nor">#c0c0c0</color>
+    <color name="xy_color_bg_cancel_sel">#b3b3b3</color>
+    <color name="xy_color_bg_guest_login_nor">#c6c6c6</color>
+    <color name="xy_color_bg_guest_login_sel">#bbbbbb</color>
+    <!--pay activity color-->
+    <color name="xy_color_pay_fm_title_bg">#313740</color>
+    <color name="xy_color_pay_fm_method_bg">#eeeeee</color>
+    <color name="xy_color_pay_fm_method_text_color">#999999</color>
+    <color name="xy_color_pay_fm_count_text_color">#fe905a</color>
+    <color name="xy_color_pay_fm_pay_bt_bg">#ef4f44</color>
+    
+    <color name="xy_color_button_positive_normal">#00a2f0</color>
+    <color name="xy_color_button_positive_pressed">#0093ee</color>
+    <color name="xy_color_button_negative_normal">#33cdcc</color>
+    <color name="xy_color_button_negative_pressed">#2bc5c4</color>
+    <color name="xy_color_button_primary_normal">#556671</color>
+    <color name="xy_color_button_primary_pressed">#495661</color>
+
+    <color name="xy_color_fffffd">#fffffd</color>
+    <color name="xy_color_f9ffff">#f9ffff</color>
+    <color name="xy_color_c9c9c9">#c9c9c9</color>
+    <color name="xy_color_646464">#646464</color>
+    <color name="xy_color_cbcbcb">#cbcbcb</color>
+    <color name="xy_color_232323">#232323</color>
+
+    <color name="xy_color_text_normal">#999999</color>
+    <color name="xy_color_text_highlight">#666666</color>
+
+</resources>

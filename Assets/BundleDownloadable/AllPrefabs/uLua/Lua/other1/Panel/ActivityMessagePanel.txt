@@ -1,0 +1,152 @@
+﻿module('ActivityMessagePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityMessagePanel';
+---------------------------------------label路径---------------------------------------
+-- 标题
+local m_LabelTitlePath = "Label_Title";
+-- 提示内容
+local m_LabelContentPath = "Label_Content";
+-- 取消倒计时
+local m_LabelCountdownPath = "ButtonConfirm/Label_Countdown";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 确定
+local m_ButtonConfirmPath = "ButtonConfirm";
+-- 取消
+local m_ButtonCancelPath = "ButtonCancel";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_ZheZhaoPath = "ZheZhao";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 取消倒计时
+local m_LabelCountdown = nil;
+
+-- 界面数据
+local m_Data = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local panelId = ENUMPANELID.ENUM_PANEL_ACTIVITY_MESSAGE;
+local timerName = "ActivityMessagePanel_Timer";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_Data = nil;
+    G_TimerMng:RemoveTimeTask(timerName);
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_LabelCountdown = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(panelId);
+    m_LabelCountdown = GetComponent(m_PanelObject, m_LabelCountdownPath, "UILabel");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonConfirmPath, OnButtonConfirmClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonCancelPath, OnButtonCancelClick, m_PanelObject);
+	SetGameObjectEvent(m_ZheZhaoPath, OnZheZhaoClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    G_TimerMng:RemoveTimeTask(timerName);
+    if m_Data.opType == 1 or m_Data.opType == 2 then
+        local text = CCommonTool.GetTxtData(m_Data.contentTextId).m_str;
+        local activityName = "";
+        if m_Data.activityData ~= nil then
+            activityName = CCommonTool.GetTxtData(m_Data.activityData.info.Name).m_str;
+        end
+        text = string_format(text, activityName);
+        SetLabelContent(m_LabelContentPath, text, m_PanelObject);
+        if m_Data.countdown > 0 then
+            m_LabelCountdown.text = m_Data.countdown;
+            AddTimerEvent(timerName, m_Data.countdown, OverCallBack, ETimeShowType.TypeNumberSeven, UpdateCallBack);
+        else
+            m_LabelCountdown.text = "";
+        end
+    end
+end
+
+function UpdateCallBack(timeTxt)
+    if IsOpenPanel(panelId) == 1 then
+         m_LabelCountdown.text = "("..timeTxt..")";
+    end
+end
+
+function OverCallBack()
+    OnButtonConfirmClick();
+end
+
+------------------------------------------事件方法------------------------------------
+
+function OnCloseClick()
+    closePanel(panelId);
+end
+
+-- 确定按钮
+function OnButtonConfirmClick(gameObject)
+    local opType = m_Data.opType;
+    if opType == 1 then
+        ActivityManager.Jump(m_Data.activityId);
+    elseif opType == 2 then
+        ActivityManager.JumpTo(m_Data.jumpType, m_Data.jumpValue);
+    end
+    closePanel(panelId);
+end
+
+-- 取消按钮
+function OnButtonCancelClick(gameObject)
+    OnCloseClick();
+end
+
+-- 遮罩
+function OnZheZhaoClick(gameObject)
+    OnCloseClick();
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(data)
+    m_Data = data;
+    error("ActivityMessagePanel.Show -> " .. SerializeTable(data));
+    if IsOpenPanel(panelId) == 1 then
+        InitShow();
+    else
+        createPanel(panelId);
+    end
+end

@@ -1,0 +1,280 @@
+﻿module("FriendsListPanel", package.seeall)
+
+-----------------------------------------------label路径--------------------------------------------
+-----------------------------------------------sprite路径--------------------------------------------
+-----------------------------------------------button路径--------------------------------------------
+
+local m_FriendlinessButtonPath = "Friendliness/Button";
+local m_FriendlinessMaskPath = "Friendliness/Info/Mask";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+
+local m_listViewStr = "ScrollView/Grid";
+--好友列表空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+--好友列表背景
+local m_BgListPath = "bg_List";
+--好友列表未选择时提示对象的路径
+local m_NonSelectBoxPath = "NonSelectBox";
+--添加好友按钮路径
+local m_AddButtonPath = "addButton";
+--申请好友路径
+local m_ApplyButtonPath = "applyButton";
+-- 友好度信息
+local m_FriendlinessPath = "Friendliness";
+-- 友好度信息面板
+local m_FriendlinessInfoPath = "Friendliness/Info";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+--------------------------------------------引用的对象-------------------------------------------------
+local m_panelObject = nil;
+local m_listView = nil;
+
+selectId = 0;
+isOpenApply = false;
+m_FriendlinessInfoIsOpen = false;
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+function Start()
+    InitObjects();
+    InitOnClick();
+    FriendsChatPanel.HidePanel();
+    InitList();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitList();
+    end
+end
+
+function OnDisable()
+    selectId = 0;
+    m_listView:RemoveAll();
+    FriendsChatPanel.HidePanel();
+    isOpenApply = false;
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_listView = nil;
+    m_panelInitAlready = false;
+    FriendsApplyPanel.OnDestroy();
+    FriendsAddPanel.OnDestroy();
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    m_panelObject = child(m_panelObject, "ListPanel").gameObject;
+    SetGameObjectState(m_FriendlinessPath, false, m_panelObject);
+    m_FriendlinessInfoIsOpen = false;
+    SetGameObjectState(m_FriendlinessInfoPath, m_FriendlinessInfoIsOpen, m_panelObject);
+    m_listView = GetComponent(m_panelObject, m_listViewStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+function InitOnClick()
+    --添加好友事件
+    SetGameObjectEvent(m_AddButtonPath, OnAddFriendClick, m_panelObject, nil);
+    --申请好友事件
+    SetGameObjectEvent(m_ApplyButtonPath, OnApplyFriendClick, m_panelObject, nil);
+    -- 查看友好度按钮
+    SetGameObjectEvent(m_FriendlinessButtonPath, OnFriendlinessClick, m_panelObject, nil);
+    -- 关闭友好度面板
+    SetGameObjectEvent(m_FriendlinessMaskPath, OnFriendlinessMaskClick, m_panelObject, nil);
+end
+
+function InitList()
+    m_listView:RemoveAll();
+    local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_FRIEND);
+    local lookAtIndex = -1;
+    local currentData = nil;
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+        if data.guid == selectId then
+            lookAtIndex = i - 1;
+            currentData = data;
+        end
+    end
+    
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, m_panelObject);
+--    SetGameObjectState(m_BgListPath, #dataList == 0, m_panelObject);
+    SetGameObjectState(m_NonSelectBoxPath, true, m_panelObject);
+    SetGameObjectState(m_FriendlinessPath, false, m_panelObject);
+    SetLabelContent("ScrollView/CountLabel", #dataList .. "/" .. FriendsData.MAX_COUNT_FRIEND, m_panelObject);
+
+    if lookAtIndex >= 0 then
+        FriendsData.ClearChatRedHint(currentData);
+        m_listView:LookAt(lookAtIndex, true);
+        ShowChatPanel(currentData)
+        FriendsData.ClearChatRedHint(currentData.guid);
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND,FriendsListPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_RECENT,FriendsRecentPanel.IsShowRedHint());
+        local unReadData = ChatManager.GetChannelRecords(CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+        for i,v in pairs(unReadData) do
+            if v.dwSpkGlobleID == currentData.guid then
+                table.remove(unReadData, i);
+            end 
+        end
+    else
+        selectId = 0;
+    end
+    -- 设置申请按钮红点状态
+    IsShowApplyRedHint();
+
+    -- 如果打开申请面板标识为true则打开申请面板
+    if isOpenApply then 
+        isOpenApply = false;
+        OnApplyFriendClick(nil);
+    end
+end
+
+function ShowChatPanel(data, cell)
+    if not cell then cell = m_listView:GetCellByData(data) end
+    if cell then  SetGameObjectState("RedHint", false, cell.gameObject); end
+    --G_RedHintMng:StartTrigRedHint(CREDHINTENUM.FRIEND_RECENT);
+    --G_RedHintMng:StartTrigRedHint(CREDHINTENUM.FRIEND);
+    FriendsChatPanel.ShowPanel(data);
+    SetGameObjectState(m_NonSelectBoxPath, false, m_panelObject);
+    SetGameObjectState(m_FriendlinessPath, true, m_panelObject);
+    InitFriendlinessInfo(data);
+end
+
+function InitFriendlinessInfo(data)
+    local infoPanel = child(m_panelObject, m_FriendlinessInfoPath).gameObject;
+    local info = FriendsData.GetFriendlinessInfo(data.friendliness);
+    local strValue = string_format(GetTextToId(8901), CCommonTool.GetTxtData(info.NameId).m_str, data.friendliness);
+    SetLabelContent(m_FriendlinessPath.."/FriendlinessLabel", strValue, m_panelObject);
+    strValue = string_format(GetTextToId(8900), data.name);
+    SetLabelContent("FriendlinessLabel", strValue, infoPanel);
+    local level = info.Id;
+    local maxLevel = CCommonTool.GetAllFriendlinessInfo().Count;
+    local levelGameObject = child(infoPanel, "Level").gameObject;
+    for i = 1, 10 do
+        SetGameObjectState("Star"..i, i <= level, levelGameObject);
+    end
+    if level < maxLevel then
+        local nextInfo = CCommonTool.GetFriendlinessInfo(level+1);
+        strValue = string_format(GetTextToId(8899), nextInfo.NeedValue, data.dailyFriendliness, info.DayTop);
+    else
+        strValue = string_format(GetTextToId(8898), GetTextToId(8897), data.dailyFriendliness, info.DayTop);
+    end
+    strValue = string.gsub(strValue, "\\n", "\n");
+    SetLabelContent("Desc", strValue, infoPanel);
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local redHintVisible = FriendsData.HasUnreadRecord(data.guid);
+    SetGameObjectState("RedHint", redHintVisible, go);
+    FriendsPanel.SetFriendBaseInfo(go, data, false, false, true);
+    local gived = FriendsData.IsGivedGift(data);
+    local giftIcon = child(go, "Icon_Gift").gameObject;
+    CCommonTool.SetGameObjectGrey(giftIcon, gived);
+end
+
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Hot_Head" then
+        ParameterToMessageTextBox.OpenOtherButtonListPanel(data.guid, data.name, data.level, data.profession, data.guildId, data.onlineState);
+    elseif go.name == "Hot_Menu" then
+        selectId = data.guid;
+        m_listView:SetSelect(cell.dataIndex, true);
+        ShowChatPanel(data, cell);
+        SetGameObjectState(m_NonSelectBoxPath, false, m_panelObject);
+        FriendsData.ClearChatRedHint(data.guid);
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND,FriendsListPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_RECENT,FriendsRecentPanel.IsShowRedHint());
+        local unReadData = ChatManager.GetChannelRecords(CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+        for i,v in pairs(unReadData) do
+            if v.dwSpkGlobleID == data.guid then
+                table.remove(unReadData, i);
+            end 
+        end
+    elseif go.name == "Icon_Gift" then
+        FriendsProtocol.RequestGiveGift(data.guid);
+    end
+end
+
+function OnAddFriendClick(go)
+    if m_panelObject ~= nil then
+        local addPanel = child(m_panelObject, "AddPanel").gameObject;
+        FriendsAddPanel.Show(addPanel);
+    end
+end
+
+function OnApplyFriendClick(go)
+    if m_panelObject ~= nil then 
+        local addPanel = child(m_panelObject, "ApplyPanel").gameObject;
+        FriendsApplyPanel.Show(addPanel);
+    end
+end
+
+function OnFriendlinessClick()
+    m_FriendlinessInfoIsOpen = true;
+    SetGameObjectState(m_FriendlinessInfoPath, m_FriendlinessInfoIsOpen, m_panelObject);
+end
+
+function OnFriendlinessMaskClick()
+    m_FriendlinessInfoIsOpen = false;
+    SetGameObjectState(m_FriendlinessInfoPath, m_FriendlinessInfoIsOpen, m_panelObject);
+end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+-- 显示好友页签红点
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_FRIEND) then
+        return false;
+    end
+    if FriendsData.HasNewChatInFriendList() then
+        return true;
+    elseif FriendsData.HasApplyFriend() then
+        return true;
+    end
+
+    return false;
+end
+ -- 设置申请按钮红点状态
+function IsShowApplyRedHint()
+    if m_panelObject.activeSelf then
+        local dataList = FriendsData.applyList;
+        local applyNum = #dataList;
+        if #dataList > 0 then
+            SetGameObjectState(m_ApplyButtonPath.."/RedHint", true, m_panelObject)
+            SetGameObjectState(m_ApplyButtonPath.."/lb_Num", true, m_panelObject)
+            SetLabelContent(m_ApplyButtonPath.."/lb_Num", applyNum, m_panelObject)
+        else
+            SetGameObjectState(m_ApplyButtonPath.."/RedHint", false, m_panelObject)
+            SetGameObjectState(m_ApplyButtonPath.."/lb_Num", false, m_panelObject)
+        end
+    end
+end
+
+-- 点击赠送礼物刷新好友数据
+function RefreshGiftState()
+    m_listView:Refresh();
+end
+
+-- 删除好友时移除数据刷新列表不移动位置
+function RemoveFriend(Index)
+    if Index == nil then return end
+    m_listView:RemoveDataByIndex(Index);
+end 
+
+-- 主界面打开好友申请面板
+function OpenApplyPanel()
+    if m_panelInitAlready == true then
+        OnApplyFriendClick();
+    else
+        isOpenApply = true;
+    end
+end

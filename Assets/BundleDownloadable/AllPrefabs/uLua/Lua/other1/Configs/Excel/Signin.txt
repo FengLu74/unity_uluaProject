@@ -1,0 +1,85 @@
+﻿--[[
+    field=Id, type=int, desc=主键ID，对应捐献次数
+    field=MoneyType, type=byte, desc=捐献所需货币类型，0=不消耗，1=不绑定红钻，2=绑定蓝钻
+    field=UpgradeNeed, type=int, desc=捐献所需货币数值
+]]
+module("SigninTable", package.seeall)
+local list={
+    {Id=1,MoneyType=2,UpgradeNeed=10},
+    {Id=2,MoneyType=2,UpgradeNeed=20},
+    {Id=3,MoneyType=2,UpgradeNeed=30},
+    {Id=4,MoneyType=2,UpgradeNeed=40},
+    {Id=5,MoneyType=2,UpgradeNeed=50},
+    {Id=6,MoneyType=2,UpgradeNeed=50},
+    {Id=7,MoneyType=2,UpgradeNeed=50},
+    {Id=8,MoneyType=2,UpgradeNeed=50},
+    {Id=9,MoneyType=2,UpgradeNeed=50},
+    {Id=10,MoneyType=2,UpgradeNeed=50}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10]};
+
+count = 10;
+Count = 10;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

@@ -1,0 +1,1200 @@
+﻿module("ActivityManager", package.seeall)
+
+-----------------------------------引用的对象------------------------------------------
+-- 活动列表
+activities = nil;
+-- 活动列表字典
+activityDict = nil;
+-- 标签页对应的活动列表
+tabActivities = nil;
+activityWeights = nil;
+-- 活跃度信息
+liveness = nil;
+-- 世界BOSS列表
+worldBosses = nil;
+-- 世界BOSS字典
+worldBossDict = nil;
+
+-- 公会押镖
+activityEscort = nil;
+
+-- 骑士荣誉
+activityHonor = nil;
+
+-- 场景切回之后是否需要恢复界面
+needRestorePanel = false;
+lastActivityId = 0;
+curActivityId=0;
+
+-- 爬塔活动数据(神之试炼/宝珠副本/神将副本)
+activityStairData = nil;
+activityStairCurLayerData = nil;
+
+-----------------------------------内部调用方法------------------------------------------
+
+-- 初始化活跃度信息
+function InitLiveness()
+    liveness = {};
+    liveness.value = 0;
+    liveness.maxValue = 0;
+    liveness.boxes = {};
+    local list = CCommonTool.GetAllActivityLivenessInfo();
+    local count = list.Count;
+    for i = 1, count do
+        local box = {};
+        local info = list[i-1];
+        box.id = info.Id;
+        box.state = 0;
+        box.index = i;
+        box.info = info;
+        if liveness.maxValue < info.PointNum then
+            liveness.maxValue = info.PointNum;
+        end
+        table.insert(liveness.boxes, box);
+    end
+end
+
+-- 初始化BOSS列表
+function InitWorldBosses()
+    worldBosses = {};
+    worldBossDict = {};
+    local list = CCommonTool.GetWorldBossInfo();
+    local count = list.Count;
+    for i = 1, count do
+        local info = list[i-1];
+        local data = {};
+        data.id = info.Id;
+        data.info = info;
+        data.state = 0;
+        data.hp = 0;
+        data.maxHp = 0;
+        data.weekdays = GetWeekDays(info.OpenWeek);
+        data.beginTimes = {};
+        for i = 1, 5 do
+            local beginTime = TimeToSeconds(info["BeginTime"..i]);
+            if beginTime > 0 then
+                table.insert(data.beginTimes, beginTime);
+            end
+        end
+        table.sort(data.beginTimes);
+        worldBossDict[data.id] = data;
+        if #data.weekdays > 0 and #data.beginTimes > 0 then
+            table.insert(worldBosses, data);
+        end
+    end
+end
+
+function RefreshActivitiesState()
+    
+end
+
+-----------------------------------外部调用方法------------------------------------------
+
+-- 获取活动列表
+-- @param tabId 标签ID 1:日常活动 2:帮派活动 3:阵营日常
+function GetActivityList(tabId)
+    if not tabActivities then
+        tabActivities = {};
+    end
+    if tabActivities[tabId] == nil then
+        tabActivities[tabId] = {};
+        for i, act in ipairs(activities) do
+            if act.info ~= nil then
+                if act.info.TagId == tabId and act.showState == 1 then
+                    table.insert(tabActivities[tabId], act);
+                end
+            end
+        end
+    end
+    local list = tabActivities[tabId];
+    table.sort(list, ActivitySortFunc);
+    return list;
+end
+
+-- 活动列表排序
+function ActivitySortFunc(a1, a2)
+    -- 未完成->可前往->限时->权重->等级->id
+    local passed1 = a1.passed;
+    local passed2 = a2.passed;
+    if passed1 ~= passed2 then
+        return passed1 == false;
+    end
+
+    local state1 = GetActivityState(a1.id);
+    local state2 = GetActivityState(a2.id);
+    if state1 ~= state2 then
+        if state1 == ACTIVITY_STATE.OPENING then
+            return true;
+        end
+        if state2 == ACTIVITY_STATE.OPENING then
+            return false
+        end
+    end
+
+    local isLimit1 = a1.info.IsLimit;
+    local isLimit2 = a2.info.IsLimit;
+    if isLimit1 ~= isLimit2 then
+        return isLimit1 == 1;
+    end
+
+    local weight1 = GetActivityWeight(a1.id);
+    local weight2 = GetActivityWeight(a2.id);
+    if weight1 ~= weight2 then
+        return weight1 > weight2;
+    end
+
+    local level1 = a1.openLevel;
+    local level2 = a2.openLevel;
+    if level1 ~= level2 then
+        return level1 > level2;
+    end
+
+    return a1.id < a2.id;
+end
+
+-- 获取活动权重
+function GetActivityWeight(activityId)
+    if not activityWeights then
+        activityWeights = {};
+        local list = CCommonTool.GetAllActivityWeightInfo();
+        local count = list.Count;
+        for i = 0, count - 1 do
+            local info = list[i];
+            local w = {};
+            w.id = info.Id;
+            w.minLevel = info.MinLevel;
+            w.maxLevel = info.MaxLevel;
+            w.dict = {};
+            w.dict[info.ActivityId1] = info.Weight1;
+            w.dict[info.ActivityId2] = info.Weight2;
+            w.dict[info.ActivityId3] = info.Weight3;
+            w.dict[info.ActivityId4] = info.Weight4;
+            w.dict[info.ActivityId5] = info.Weight5;
+            w.dict[info.ActivityId6] = info.Weight6;
+            w.dict[info.ActivityId7] = info.Weight7;
+            w.dict[info.ActivityId8] = info.Weight8;
+            table.insert(activityWeights, w);
+        end
+    end
+    local level = G_UserInfo.RoleAttribute.Level;
+    local result = 0;
+    for _, w in ipairs(activityWeights) do
+        if level >= w.minLevel and level <= w.maxLevel then
+            for actId, weight in pairs(w.dict) do
+                if actId == activityId then
+                    result = weight;
+                end
+            end
+        end
+    end
+    return result;
+end
+
+-- 获取日常/帮派活动数据
+-- @param activityId 日常或帮派活动ID
+function GetActivity(activityId)
+    if activityDict == nil then
+        error(string_format("活动数据不存在 ID:{0}", activityId));
+        return nil;
+    end
+    return activityDict[activityId];
+end
+
+-- 获取日常/帮派活动是否可见
+function GetActivityVisible(activityId)
+    local data = GetActivity(activityId);
+    if data == nil then
+        return false;
+    end
+    if data.info == nil then
+        return false;
+    end
+    local level = G_UserInfo.RoleAttribute.Level;
+    if level < data.info.ShowLevel then
+        return false;
+    end
+    local hideLevel = data.info.HideLevel;
+    if hideLevel > 0 and level >= hideLevel then
+        return false;
+    end
+    local isLimit = IsLimitActivity(activityId);
+    if isLimit == true then
+        local state = GetActivityState(activityId);
+        if state == ACTIVITY_STATE.UNSTART then
+            return false;
+        end
+    end
+    return true;
+end
+
+-- 更新活动次数
+-- @param1 activityId 活动ID(日常或帮派活动ID)
+-- @param2 times 已用次数
+-- @param3 maxTimes 最大次数
+-- @param4 weekTimes 周已用次数
+-- @param maxWeekTimes 周最大次数
+-- @param timesByUseItem 已使用道具增加的次数
+function UpdateActivityTimes(activityId, times, maxTimes, weekTimes, maxWeekTimes, timesByUseItem)
+    local data = GetActivity(activityId);
+    if data ~= nil then
+        data.times = times;
+        data.maxTimes = maxTimes;
+        data.weekTimes = weekTimes;
+        data.maxWeekTimes = maxWeekTimes;
+        data.timesByUseItem = timesByUseItem;
+        data.passed = IsPassed(data);
+    end
+end
+
+-- 重置活动次数
+-- @param activityId 活动ID
+-- @param resetType 清空类型 0:每日 1:每周
+function ResetActivityTimes(activityId, resetType)
+    local data = GetActivity(activityId);
+    if data ~= nil then
+        if resetType == 0 then
+            data.times = 0;
+            data.timesByUseItem = 0;
+        elseif resetType == 1 then
+            data.weekTimes = 0;
+        end
+        data.passed = IsPassed(data);
+    end
+end
+
+-- 活动是否完成
+function IsPassed(data)
+    local passed = data.maxTimes > 0 and data.times >= data.maxTimes;
+    if not passed then
+        passed = data.maxWeekTimes > 0 and data.weekTimes >= data.maxWeekTimes;
+    end
+    if not passed and data.maxLimitMinute > 0 and data.limitEndTime > 0 then
+        passed = data.remainLimitMinute == 0;
+    end
+    --特殊为不使用道具增加次数的活动
+    local notUseItemIDdata = GetActivity(data.id);
+    local increaseNum=data.timesByUseItem;  --得到增加的次数
+    local mainKeyID=data.id*100+increaseNum+1;
+    --在表：Copynum_increase--根据主键找到消耗钱币类型，消耗红钻个数
+    local listRow = CopynumIncreaseTable.Get(mainKeyID);
+    local notUseItemID = false;
+    if  listRow ~= nil then
+        notUseItemID=true;
+    end
+    -----
+    -- 可以使用道具增加次数的活动
+    if  passed == true and ( data.addTimesItemId > 0  or notUseItemID == true) then
+        passed =  data.timesByUseItem >= data.addMaxTimes;
+    end
+    return passed;
+end
+
+-- 获取活动的次数信息
+-- @param activityId 活动ID
+-- return remainTimes, usedTimes, maxTimes 返回剩余次数, 已使用次数, 总次数
+function GetActivityTimes(activityId)
+    local data = GetActivity(activityId);
+    if data ~= nil then
+        local times = data.times;
+        local maxTimes = data.maxTimes;
+        local weekTimes = data.weekTimes;
+        local maxWeekTimes = data.maxWeekTimes;
+        if maxWeekTimes > 0 then
+            if maxTimes <= 0 or maxTimes >= maxWeekTimes then
+                local remainTimes = math.max(0, maxWeekTimes - weekTimes);
+                --error(data.id.."***maxWeekTimes="..maxWeekTimes.."***weekTimes="..weekTimes.."***剩余次数remainTimes="..remainTimes.."***maxTimes="..maxTimes.."***data.addMaxTimes="..data.addMaxTimes.."***data.timesByUseItem="..data.timesByUseItem);
+                return remainTimes, weekTimes, maxWeekTimes;
+            end
+            -- 每天总次数<每周总次数的情况
+            local todayMaxTimes = maxWeekTimes - weekTimes + times;
+            if todayMaxTimes <= 0 then
+                -- 当天已没有次数
+                return 0, maxTimes, maxTimes;
+            end
+            todayMaxTimes = math.min(maxTimes, todayMaxTimes);
+            local remainTimes = math.max(0, todayMaxTimes - times);
+            --error(data.id.."***剩余次数remainTimes="..remainTimes.."***maxTimes="..maxTimes.."***data.addMaxTimes="..data.addMaxTimes.."***data.timesByUseItem="..data.timesByUseItem);
+            return remainTimes, times, todayMaxTimes;
+        else
+            local remainTimes = math.max(0, maxTimes - times);
+            --error(data.id.."***剩余次数remainTimes="..remainTimes.."***maxTimes="..maxTimes.."***times="..times.."***data.addMaxTimes="..data.addMaxTimes.."***data.timesByUseItem="..data.timesByUseItem);
+            return remainTimes, times, maxTimes;
+        end
+    else
+        if CheckIdIsExit(activityId) then
+            error(string_format("该活动未到开启时间:{0}", activityId));
+        else
+            error(string_format("该活动ID{0}不存在!", activityId));
+        end    
+    end
+    return 0, 0, 0;
+end
+
+-- 获取活跃度信息
+function GetLiveness()
+    if liveness == nil then
+        InitLiveness();
+    end
+    return liveness;
+end
+
+-- 是否可领取活跃度奖励
+function CanGetLivenessReward()
+    local liveness = GetLiveness();
+    local boxes = liveness.boxes;
+    for i, data in ipairs(boxes) do
+        local info = data.info;
+        if data.state == 0 and liveness.value >= info.PointNum then
+            return true;
+        end
+    end
+    return false;
+end 
+
+function HasUndoneActive()
+	if (IsLackTimes(101)==1 and IsLackTimes(102)==1 and IsLackTimes(401)==1 and IsLackTimes(901)==1 and IsLackTimes(1301)==1 and IsLackTimes(20021)==1 and CanGetLivenessReward()==false) then 
+		return false;
+	else 
+		return true;
+	end	
+end
+function HasUndoneActiveInBossLobby()
+    local redShow=false;
+    local dungeons = DungeonManager.GetBossLobbyDungeons();
+    if dungeons~=nil and #dungeons > 0 then
+        for _, data in ipairs(dungeons) do
+            local id = data.info.Id;
+            local IsLackValue = IsLackTimes(id);
+            if IsLackValue ~= 1 then
+                redShow = true;
+                return redShow;
+            end
+        end
+    end
+    if CanGetLivenessReward()==true then
+        redShow = true;
+        return redShow;
+    end
+    return redShow;
+end
+
+-- 获取拥有多个时间段活动的最开始时间到最后时间
+function GetActivityDayTime(activityId)
+    local data = GetActivity(activityId);
+    local timeInfo = data.timeInfo;
+    local dayTimes = timeInfo.dayTimes;
+
+    local startTime = TimeToString(dayTimes[1].beginTime);
+    local endTime = TimeToString(dayTimes[#dayTimes].endTime);
+    return string_format("{0}-{1}", startTime, endTime);
+end
+
+-- 获取活动的开启时间
+-- @param activityId 活动ID
+-- @param showWeek 是否显示周信息
+-- @param separator 分隔符
+function GetOpenTime(activityId, showWeek, separator)
+    separator = separator or "\n";
+    local data = GetActivity(activityId);
+    local timeInfo = data.timeInfo;
+    local weekdays = timeInfo.weekdays;
+    local dayTimes = timeInfo.dayTimes;
+    local values = {};
+    if showWeek and #weekdays < 7 then
+        for i, w in ipairs(weekdays) do
+            table.insert(values, GetWeekDayName(w));
+        end
+    end
+    for i, t in ipairs(dayTimes) do
+        if t.beginTime == 0 and t.endTime == 2400 then
+            table.insert(values, --[[全天]]CCommonTool.GetTxtData(900).m_str);
+            break;
+        end
+        local s = TimeToString(t.beginTime);
+        local e = TimeToString(t.endTime);
+        table.insert(values, string_format("{0}-{1}", TimeToString(t.beginTime), TimeToString(t.endTime)));
+    end
+    return table.concat(values, separator);
+end
+
+-- 获取活动的开启时间
+-- @param activityId 活动ID
+-- return 10:20-12:00 或 全天
+function GetCurrentOpenTime(activityId)
+    local data = GetActivity(activityId);
+    if data == nil then
+        if CheckIdIsExit(activityId) then
+            error(string_format("该活动未到开启时间:{0}", activityId));
+        else
+            error(string_format("该活动ID{0}不存在!", activityId));
+        end
+        return "";
+    end
+    local timeInfo = data.timeInfo;
+    local dayTimes = timeInfo.dayTimes;
+    local seconds = GetSecondsSinceZeroTime();
+    local beginTime = nil;
+    local endTime = nil;
+    for i, t in ipairs(dayTimes) do
+        if t.beginTime == 0 and t.endTime == 2400 then
+            return CCommonTool.GetTxtData(900).m_str;--[[全天]]
+        end
+        local beginSeconds = TimeToSeconds(t.beginTime);
+        local endSeconds = TimeToSeconds(t.endTime);
+        if seconds >= beginSeconds and seconds <= endSeconds then
+            beginTime = t.beginTime;
+            endTime = t.endTime;
+            break;
+        end
+        if beginTime == nil then
+            beginTime = t.beginTime;
+            endTime = t.endTime;
+        else
+            -- 最接近当前时间的
+            if math.abs(beginSeconds - seconds) < math.abs(endSeconds - seconds) then
+                beginTime = t.beginTime;
+                endTime = t.endTime;
+            end
+        end
+    end
+    local s = TimeToString(beginTime);
+    local e = TimeToString(endTime);
+    return string_format("{0}-{1}", s, e);
+end
+
+-- 获取活动的开启时间
+-- @param activityId 活动ID
+-- return 只返回当前活动的开启时间
+function GetCurrentActivityTime(activityId)
+    local data = GetActivity(activityId);
+    if data == nil then
+        if CheckIdIsExit(activityId) then
+            error(string_format("该活动未到开启时间:{0}", activityId));
+        else
+            error(string_format("该活动ID{0}不存在!", activityId));
+        end
+        return "";
+    end
+    local timeInfo = data.timeInfo;
+    local dayTimes = timeInfo.dayTimes;
+    local seconds = GetSecondsSinceZeroTime();
+    local beginTime = nil;
+    local endTime = nil;
+    for i, t in ipairs(dayTimes) do
+        if t.beginTime == 0 and t.endTime == 2400 then
+            return CCommonTool.GetTxtData(900).m_str;--[[全天]]
+        end
+        local beginSeconds = TimeToSeconds(t.beginTime);
+        local endSeconds = TimeToSeconds(t.endTime);
+        if seconds >= beginSeconds and seconds <= endSeconds then
+            beginTime = t.beginTime;
+            endTime = t.endTime;
+            break;
+        end
+        if beginTime == nil then
+            beginTime = t.beginTime;
+            endTime = t.endTime;
+        else
+            -- 最接近当前时间的
+            if math.abs(beginSeconds - seconds) < math.abs(endSeconds - seconds) then
+                beginTime = t.beginTime;
+                endTime = t.endTime;
+            end
+        end
+    end
+    return beginTime;
+end
+
+-- 是否为竞技场活动
+-- @param activityId 活动ID
+function IsBattleFieldActivity(activityId)
+    return activityId == ENUM_AOT_ID.AOT_ID_BATTLE_FIELD 
+            or activityId == ENUM_AOT_ID.AOT_ID_BATTLE_FIELD_NIGHT
+end
+
+-- 针对一个活动有不同时间段的情况,判断当前时间段内此活动是否已经完成 false: 未完成
+-- @param activityId 活动ID
+function CheckIsCurTimeDown(activityId)
+    local data = nil;
+    if _G.MultipleTimeActInfo ~= nil and #_G.MultipleTimeActInfo > 0 then
+        for i,v in pairs(_G.MultipleTimeActInfo) do
+            if activityId == v.actID then 
+                data = _G.MultipleTimeActInfo[i];
+            end
+        end
+    end
+    if data == nil then 
+        if CheckIdIsExit(activityId) then
+            error(string_format("该活动未到开启时间:{0}", activityId));
+        else
+            error(string_format("该活动ID{0}不存在!", activityId));
+        end 
+        return true;
+    end
+    local dayTimes = data.dayTimes;
+    local seconds = GetSecondsSinceZeroTime();
+    for i, t in ipairs(dayTimes) do
+        local s = TimeToSeconds(t.beginTime);
+        local e = TimeToSeconds(t.endTime);
+        if seconds >= s and seconds < e then
+           return t.isGet > 0;
+        end
+    end
+    return false;
+end
+
+-- 活动是否在进行中
+-- @param activityId 活动ID
+function GetActivityState(activityId)
+    local data = GetActivity(activityId);
+    if data == nil then 
+        if CheckIdIsExit(activityId) then
+            error(string_format("该活动未到开启时间:{0}", activityId));
+        else
+            error(string_format("该活动ID{0}不存在!", activityId));
+        end 
+        return;
+    end
+    local timeInfo = data.timeInfo;
+    local week = timeInfo.week;
+    
+    if week == 0 then
+        return ACTIVITY_STATE.CLOSED;
+    end
+
+    if data.openLevel > G_UserInfo.RoleAttribute.Level then
+        return ACTIVITY_STATE.LOCKED;
+    end
+    
+    local weekdays = timeInfo.weekdays;
+    local currentWeek = GetWeekday();
+    local isOpenWeekday = false;
+    for i, w in ipairs(weekdays) do
+        if w == currentWeek then
+            isOpenWeekday = true;
+            break;
+        end
+    end
+    if not isOpenWeekday then
+        -- 不是当天的活动
+        return ACTIVITY_STATE.UNSTART;
+    end
+
+    local seconds = GetSecondsSinceZeroTime();
+    local dayTimes = timeInfo.dayTimes;
+    local maxTime = 0;
+    for i, t in ipairs(dayTimes) do
+        local s = TimeToSeconds(t.beginTime);
+        local e = TimeToSeconds(t.endTime);
+        if seconds >= s and seconds < e then
+            return ACTIVITY_STATE.OPENING;
+        end
+        if maxTime < e then
+            maxTime = e;
+        end
+    end
+    if seconds < maxTime then
+        return ACTIVITY_STATE.WAITING;
+    end
+    return ACTIVITY_STATE.OVER;
+end
+
+--周配置 7位十进制数字, 从左到右第一位表示周一 1表示开启 0表示不开启
+--例: 1000101 表示周一,周五,周日开启
+--如果配置超过7位, 周一默认开启, 周二至周六读后六位, 与服务器算法一致
+function GetWeekDays(week)
+    local weekConfig = string.format("%07d", week);
+    if #weekConfig > 7 then
+	    weekConfig = "1"..string.sub(weekConfig, -6);
+    end
+    local weekdays = {};
+    for i = 1, 7 do
+        local isOpen = string.sub(weekConfig, i, i) ~= "0";
+        if isOpen then
+            table.insert(weekdays, i);
+        end
+    end
+    return weekdays;
+end
+
+-- 秒数转换为--:-- 格式 
+function SecondToString(seconds)
+    local zeroTime = G_TimerMng:GetTodayZeroTimestamp();
+    local time = seconds - zeroTime;
+    local h = math.floor(time / 3600);
+    local m = math.floor((time - h * 3600) / 60);
+    return string.format("%02d:%02d", h, m)
+end
+
+--1230转化为12:30
+function TimeToString(time)
+    local h = math.floor(time / 100);
+    return string.format("%02d:%02d", h, time - h * 100)
+end
+
+--1230(12:30)转化为秒数
+function TimeToSeconds(time)
+    if time == nil then  return 0 ;end
+    local h = math.floor(time / 100);
+    local m = time - h * 100;
+    return h * 3600 + m * 60
+end
+
+-- 包装成一个时间段 12:30-14:30
+function TimeToStringRange(time1,time2)
+    return TimeToString(time1).."-"..TimeToString(time2)
+end
+
+-- 获取当天0点到现在的秒数
+function GetSecondsSinceZeroTime()
+    local zeroTime = G_TimerMng:GetTodayZeroTimestamp();
+    local nowTime = G_TimerMng:GetCurrentSeconds();
+    return nowTime - zeroTime;
+end
+
+function GetWeekday()
+    local currentWeek = G_TimerMng:GetCurrentWeekDay();
+    if currentWeek == 0 then currentWeek = 7 end
+    return currentWeek;
+end
+
+-- 周几
+function GetWeekDayName(week)
+    if week == 1 then return CCommonTool.GetTxtData(8101).m_str;
+    elseif week == 2 then return CCommonTool.GetTxtData(8102).m_str;
+    elseif week == 3 then return CCommonTool.GetTxtData(8103).m_str;
+    elseif week == 4 then return CCommonTool.GetTxtData(8104).m_str;
+    elseif week == 5 then return CCommonTool.GetTxtData(8105).m_str;
+    elseif week == 6 then return CCommonTool.GetTxtData(8106).m_str;
+    elseif week == 7 then return CCommonTool.GetTxtData(8107).m_str;
+    else return ""; end
+end
+
+-- 此活动是否为推荐活动
+-- @param activityId 活动ID
+function IsRecommendActivity(activityId)
+    if IsNewActivity(activityId) then
+        return false;
+    end
+    if IsLimitActivity(activityId) then
+        return false;
+    end
+    if IsWeekActivity(activityId) then
+        return false;
+    end
+    return GetActivityWeight(activityId) > 0;
+end
+
+-- 此活动是否为新活动
+-- @param activityId 活动ID
+function IsNewActivity(activityId)
+    local data = GetActivity(activityId);
+    if data == nil then
+        return false;
+    end
+    return data.openLevel == G_UserInfo.RoleAttribute.Level;
+end
+
+-- 此活动是否为限时活动
+-- @param activityId 活动ID
+function IsLimitActivity(activityId)
+    if IsNewActivity(activityId) then
+        return false;
+    end
+    local data = GetActivity(activityId);
+    if data == nil then
+        return false;
+    end
+    return data.info.IsLimit == 1;
+end
+
+-- 是否为周活动
+-- @param activityId 活动ID
+function IsWeekActivity(activityId)
+    if IsNewActivity(activityId) then
+        return false;
+    end
+    if IsLimitActivity(activityId) then
+        return false;
+    end
+    local data = GetActivity(activityId);
+    if data == nil then
+        return false;
+    end
+    return data.maxWeekTimes > 0;
+end
+
+-- 判断活动是否可前往
+-- @param activityId 活动ID
+function CanJump(activityId)
+    if IsBattleFieldActivity(activityId) then
+        return true;
+    end
+    local data = GetActivity(activityId);
+    if data == nil then
+        return false;
+    end
+--    local info = data.info;
+--    if info.TagId == 2 and not GuildManager.HasGuild() then
+--        ShowSystemFlowTips(6027);
+--        return false;
+--    end
+
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local state = ActivityManager.GetActivityState(data.id);
+    if data.passed then
+        ShowSystemFlowTips(6021);
+        error("活动已完成!");
+        return false;
+    end
+
+    if state == ACTIVITY_STATE.LOCKED then
+        ShowSystemFlowTips(6022);
+        error(string_format("{0}级开放", data.openLevel));
+        return false;
+    end
+
+    if userLevel > data.maxLevel then
+        ShowSystemFlowTips(6023);
+        error("等级超过活动要求");
+        return false;
+    end
+
+    if state == ACTIVITY_STATE.WAITING or state == ACTIVITY_STATE.UNSTART then
+        ShowSystemFlowTips(6020);
+        return false;
+    end
+
+    if state == ACTIVITY_STATE.CLOSED then
+        ShowSystemFlowTips(2779);
+        error("活动已关闭");
+        return false;
+    end
+
+    if state == ACTIVITY_STATE.OVER then
+        ShowSystemFlowTips(2779);
+        error("活动已结束");
+        return false;
+    end
+    return true;
+end
+
+-- 活动前往
+-- @param activityId 活动ID
+-- @param causePanelId 
+-- @param callback 跳转回调
+function Jump(activityId, causePanelId, callback)
+    local info = nil;
+    local data = GetActivity(activityId);
+    if data ~= nil then 
+        info = data.info;
+    else
+        info = CCommonTool.GetActivityListDataInfo(activityId);
+    end
+    if info == nil then
+        error(string_format("活动跳转 ID:{0} 不存在", activityId));
+        return;
+    end
+    if CanJump(activityId) then
+        local jumpType = info.JumpType;
+        JumpTo(jumpType, info.JumpValue, causePanelId, callback);
+    else
+        if callback ~= nil then
+            callback(info.JumpType, false);
+        end
+    end
+end
+
+-- 执行跳转操作
+-- @param jumpType 跳转类型 
+-- @param jumpValue 跳转参数
+-- @param callback 跳转回调
+function JumpTo(jumpType, jumpValue, causePanelId, callback)
+    JumpManager.JumpTo(jumpType, jumpValue, causePanelId, callback);
+    --[[
+-- 1:打开指定UI        -> 界面跳转参数
+-- 2:前往NPC          -> mapnpc表ID
+-- 3:帝国悬赏          -> 特殊处理
+-- 4:进入副本          -> 副本ID
+-- 5:跳转场景          -> 场景ID
+-- 6:无主之地          -> 联盟NPCID,部落NPCID
+    print(string_format("jumpType:{0}, jumpValue:{1}", jumpType, jumpValue));
+    if jumpType == ACTIVITY_JUMP_TYPE.OPEN_UI then
+        -- 打开指定UI
+        OpenUIByEnum.OpenByParam(jumpValue, causePanelId);
+        return true;
+    elseif jumpType == ACTIVITY_JUMP_TYPE.SEEK_NPC then
+        -- 前往NPC
+        SceneProtocol.RequestNpcTransfer(tonumber(jumpValue), true);
+        return true;
+    elseif jumpType == ACTIVITY_JUMP_TYPE.EMPIREBOUNTY then
+        -- 帝国悬赏
+        local missionID = G_MissionMng:IsHaveEmpireBountyMission();
+        if missionID > 0 then
+            if TeamManager.IsTeamFollowing() then
+                ShowSystemFlowTips(8052);
+                return false;
+            end
+            _G.LogicData_CurTraceTaskID = missionID;
+             G_MissionMng:TraceTypeOperate(_G.LogicData_CurTraceTaskID, true, false);
+        else
+            SceneProtocol.RequestNpcTransfer(tonumber(jumpValue), true);
+        end
+        return true;
+    elseif jumpType == ACTIVITY_JUMP_TYPE.DUNGEON then
+        -- 进入副本
+        if checkTeamFollowing and TeamManager.IsTeamFollowing() then
+            ShowSystemFlowTips(8052);
+            return false;
+        end
+        DungeonProtocol.RequestEnterDungeon(tonumber(jumpValue), checkInDungeon, checkTeamFollowing, closePanelId, causePanelId);
+        return true;
+    elseif jumpType == ACTIVITY_JUMP_TYPE.SCENE then
+        -- 跳转场景
+        SceneProtocol.RequestSceneTransfer(tonumber(jumpValue), true);
+        return true;
+    elseif jumpType == ACTIVITY_JUMP_TYPE.CAMP_NPC then
+        -- 无主之地(两个阵营NPC)
+        jumpValue = string.gsub(jumpValue, "\"", "");
+        local params = string_split(jumpValue, ",");
+        local campType = G_UserInfo.RoleAttribute.JoinCampType;
+        if campType == ENUM_CAMP_TYPE.ENUM_UNIT_TYPE_NULL then
+            ShowSystemFlowTips(2769);
+            return false;
+        end
+        local npcId = 0;
+        if campType == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then
+            npcId = tonumber(params[1]) or 0;
+        else
+            npcId = tonumber(params[2]) or 0;
+        end
+        if npcId > 0 then
+            SceneProtocol.RequestNpcTransfer(npcId, true);
+            return true;
+        else
+            error("无主之地传送失败:npcId为0");
+        end
+    end
+    return false;
+    ]]
+end
+
+
+-- 获取单个世界BOSS信息
+function GetWorldBoss(id)
+    if worldBosses == nil then
+        InitWorldBosses();
+    end
+    local data = worldBossDict[id];
+    if data == nil then
+        error(string_format("World Boss ID:{0} Not Exist!", bossId));
+        return;
+    end
+    return data;
+end
+
+-- 更新世界BOSS状态
+-- @param bossId 世界BOSS'Id
+-- @param state BOSS状态 0:未刷新 1:刷新
+function UpdateWorldBossState(bossId, state)
+    local data = GetWorldBoss(bossId);
+    if data == nil then
+        return;
+    end
+    data.state = state;
+end
+
+-- 更新世界BOSS血量
+-- @param bossId 世界BOSS'Id
+-- @param hp 当前血量
+-- @param maxHp 最大血量
+function UpdateWorldBossHp(bossId, hp, maxHp)
+    local data = GetWorldBoss(bossId);
+    if data == nil then
+        return;
+    end
+    data.state = 1;
+    data.hp = hp;
+    data.maxHp = maxHp;
+end
+
+-- 获取世界BOSS列表
+function GetWorldBosses()
+    if worldBosses == nil then
+        InitWorldBosses();
+    end
+    return worldBosses;
+end
+
+-- 获取世界BOSS的刷新时间
+-- @param bossId BOSS'Id
+-- return 秒数, 是否可挑战
+function GetWorldBossRefreshTime(bossId)
+    local data = GetWorldBoss(bossId);
+    if data == nil then
+        return;
+    end
+    -- 周一0点到现在秒数
+    local now = (GetWeekday() - 1) * 86400 + GetSecondsSinceZeroTime();
+    local duration = data.info.LifeTime * 60;
+    for _, w in ipairs(data.weekdays) do
+        for i, time in ipairs(data.beginTimes) do
+            local begin = (w - 1) * 86400 + time;
+            if now < begin then
+                return begin - now, false;
+            end
+            if now < begin + duration then
+                -- BOSS已刷新或刚刷新还没有收到刷新数据时, 3秒延时处理
+                if data.state == 1 or now - begin <= 3 then
+                    return 0, true;
+                end
+            end
+        end
+    end
+    local w = data.weekdays[1] + 7;
+    return (w - 1) * 86400 + data.beginTimes[1] - now, false;
+end
+
+-- 获取世界BOSS刷新时间列表字符串
+-- @param bossId BOSS'Id
+-- return 10:30-11:00 | 13:30-14:00
+function GetWorldBossRefreshTimes(bossId)
+    local data = GetWorldBoss(bossId);
+    if data == nil then
+        return;
+    end
+    local list = {};
+    for i, seconds in ipairs(data.beginTimes) do
+        local h = math.floor(seconds / 3600);
+        local m = math.floor((seconds - h * 3600) / 60);
+        table.insert(list, string_format("{0}:{1}", string.format("%02d", h), string.format("%02d", m)));
+    end
+    return table.concat(list, " | ");
+end
+
+-- 检查是否在存在该活动ID
+function CheckIdIsExit(ID)
+    local ActivityTable = CCommonTool.GeActivityListData(); -- 所有活动表数据
+    for i = 1, ActivityTable.count do
+        local data = ActivityTable[i-1];
+        if data.Id == ID then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 清除限时活动时间
+function ClearLimitTime()
+    if activityDict == nil then
+        return;
+    end
+    for id, data in pairs(activityDict) do
+        data.limitEndTime = 0;
+    end
+end
+
+-- 活动次数是否不足
+-- @param activityId 活动ID
+-- @return 1:次数不足 0:次数足够 -1:其它
+function IsLackTimes(activityId)
+    local data = GetActivity(activityId);
+    if data ~= nil then
+        local state = GetActivityState(data.id);
+        if state == ACTIVITY_STATE.OPENING then
+            if not IsPassed(data) then
+                if data.isServerLimit == true then
+                    if data.maxLimitMinute > 0 and data.limitEndTime > 0 then
+                        if data.remainLimitMinute <= 0 then
+                            if data.addTimesItemId > 0 and data.addMaxTimes > 0 and data.timesByUseItem < data.addMaxTimes then
+                                return 1;
+                            end
+                        end
+                    end
+                    return 0;
+                else
+                    local remainTimes, usedTimes, maxTimes = GetActivityTimes(data.id);
+                    if remainTimes > 0 or maxTimes == 0 then
+                        return 0;
+                    elseif data.addTimesItemId > 0 and data.addMaxTimes > 0 and data.timesByUseItem < data.addMaxTimes then
+                        return 1;
+                    end
+                end
+            end
+        end
+    end
+    return -1;
+end
+
+-- 清空数据 
+function ClearData()
+    activities = nil;
+    activityDict = nil;
+    tabActivities = nil;
+    liveness = nil;
+    activityWeights = nil;
+    worldBosses = nil;
+    worldBossDict = nil;
+    activityEscort = nil;
+    activityHonor = nil;
+    needRestorePanel = nil;
+    lastActivityId = nil;
+    curActivityId=nil;
+    activityStairData = nil;
+    activityStairCurLayerData = nil;
+end
+
+
+
+-------------------------------------------------神之试炼相关数据操作-------------------------------------------------
+
+function SetStairActivityData(activityId, data)
+    if activityStairData == nil then
+        activityStairData = {};
+    end
+    activityStairData[activityId] = data;
+end
+
+function GetStairActivityData(activityId)
+    if activityStairData == nil then
+        return;
+    end
+    return activityStairData[activityId];
+end
+
+function GetStairActivityLayer(activityId)
+    if activityStairData == nil then
+        return 1;
+    end
+    if activityStairData[activityId] == nil then
+        return 1;
+    end
+    return activityStairData[activityId].layer;
+end
+
+function SetStairActivityLayer(activityId, layer)
+    local data = GetStairActivityData(activityId);
+    if data ~= nil then
+        data.layer = layer;
+    end
+end
+
+function SetStairActivityCurLayer(activityId, layer)
+    if activityStairCurLayerData == nil then
+        activityStairCurLayerData = {};
+    end
+    activityStairCurLayerData[activityId] = layer;
+end
+
+function GetStairActivityCurLayer(activityId)
+    if activityStairCurLayerData == nil then
+        error("获取当前正在挑战的层数无效!");
+        return 1;
+    end
+    return activityStairCurLayerData[activityId] or 1;
+end
+
+
+function GetStairActivityInfo(activityId, layer)
+    if activityId == ENUM_AOT_ID.AOT_ID_AOTAI_WUXIAN_ACTIVITY then
+        return CCommonTool.GetActivityEndlessFBDice(layer);
+    elseif activityId == ENUM_AOT_ID.AOT_ID_ACTIVITY_BALL then
+        return CCommonTool.GetActivityJewelInfo(layer);
+    elseif activityId == ENUM_AOT_ID.AOT_ID_ACTIVITY_SHO then
+        return CCommonTool.GetActivityGodInfo(layer);
+	elseif activityId == ENUM_AOT_ID.AOT_ID_ACTIVITY_PET then
+        return ActivityPetTable.Get(layer);
+    elseif activityId == ENUM_AOT_ID.AOT_ID_ACTIVITY_MOUNT then
+        return ActivityMountTable.Get(layer);
+    end
+end
+
+function GetLayerFightState(activityId, layer)
+    local data = GetStairActivityData(activityId);
+    if data == nil or data.layerFightState == nil then
+        return false;
+    end
+    return data.layerFightState[layer] == 1;
+end
+function SetGodAndBallState(actid,state)
+    EndlessActiWinPanel.SetPanelState(actid,state);
+end
+----------------------------------------------------宠物和坐骑副本读取lua表--------------------
+
+function GetAllItemsInLuaTable(activityStair)
+        
+    local  list ={
+    [1]=activityStair.Item1;
+    [2]=activityStair.Item2;
+    [3]=activityStair.Item3;
+    };
+    local needList={};
+    local iIndex=1;
+    for Index=1,3 do
+        if list[Index] >0 then
+            error(Index);
+            needList[iIndex]=list[Index];
+            iIndex=iIndex+1;
+        end
+    end
+    
+    return needList;
+end
+
+function GetAllItemNumsInLuaTable(activityStair)
+    local list=
+    {
+    [1]=activityStair.Item1Num;
+    [2]=activityStair.Item2Num;
+    [3]=activityStair.Item3Num;
+    };
+    local needList={};
+    local iIndex=1;
+    for Index=1,3 do
+        if list[Index] >0 then
+            error(Index);
+            needList[iIndex]=list[Index];
+            iIndex=iIndex+1;
+        end
+    end
+    return needList;
+end
+
+function GetFirstItemsInLuaTable(activityStair)
+    local list=
+    {
+    [1]=activityStair.FirstItem1;
+    [2]=activityStair.FirstItem2;
+    [3]=activityStair.FirstItem3;
+    }
+        local needList={};
+        local iIndex=1;
+        for Index=1,3 do
+            if list[Index] >0 then
+                error(Index);
+                needList[iIndex]=list[Index];
+                iIndex=iIndex+1;
+            end
+        end
+        return needList;
+end
+
+function GetFirstItemNumsInLuaTable(activityStair)
+    local list=
+    {
+    [1]=activityStair.FirstItem1Num;
+    [2]=activityStair.FirstItem2Num;
+    [3]=activityStair.FirstItem3Num;
+    };
+        local needList={};
+        local iIndex=1;
+        for Index=1,3 do
+            if list[Index] >0 then
+                error(Index);
+                needList[iIndex]=list[Index];
+                iIndex=iIndex+1;
+            end
+        end
+        return needList;
+
+end

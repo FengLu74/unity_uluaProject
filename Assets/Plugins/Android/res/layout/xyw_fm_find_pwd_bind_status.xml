@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="250dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <include layout="@layout/xyw_fragment_navigation" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/xy_common_margin_10dip"
+            android:orientation="vertical"
+            android:paddingBottom="8dp"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:paddingTop="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                >
+                <TextView
+                    style="@style/xy.label.form"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:text="@string/xy_find_pwd_form_account" />
+                <TextView
+                    android:id="@+id/xy_find_pwd_form_account"
+                    style="@style/xy.label.middle"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="2"
+                    android:gravity="left"
+                    android:textColor="@color/xy_color_646464"
+                    android:text="@string/xy_sign_guest_login" />
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                >
+                <TextView
+                    style="@style/xy.label.form"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/xy_find_pwd_form_way" />
+
+                <RadioGroup
+                    android:layout_width="0dip"
+                    android:layout_weight="2"
+                    android:layout_height="match_parent">
+                    <RadioButton
+                        android:layout_height="match_parent"
+                        android:layout_width="wrap_content"
+                        android:button="@drawable/xy_radio"
+                        android:checked="true"
+                        android:textColor="@color/xy_color_646464"
+                        android:text="@string/xy_find_pwd_bind_phone"/>
+                </RadioGroup>
+
+
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                >
+                <TextView
+                    style="@style/xy.label.form"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center_horizontal"
+                    android:text="@string/xy_find_pwd_form_phone" />
+                <TextView
+                    android:id="@+id/xy_find_pwd_form_phone_or_mail"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="2"
+                    android:gravity="left"
+                    android:textSize="@dimen/xy_font_size_middle"
+                    android:textColor="@color/xy_color_button_positive_normal"
+                    android:text="15828***2345" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/xy_find_pwd_next_step"
+                style="@style/xy.button.positive"
+                android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                android:text="@string/xy_next_step" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

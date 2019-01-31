@@ -1,0 +1,220 @@
+﻿module("FriendsApplyPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+--关闭按钮路径
+local m_CloseButtonPath = "Top/CloseButton";
+--全部同意按钮路径
+local m_AllAgreeButtonPath = "Bottom/AllRefuseButton";
+--全部拒绝按钮路径
+local m_AllRefuseButtonPath = "Bottom/AllAgreeButton";
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+local m_listViewPath = "ScrollView/Grid";
+--空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+local inited = false;
+local gameObject = nil;
+local m_listView = nil;
+
+-- 面板是否开启
+m_FriendsPanelIsOpen = false;
+
+-- 当前操作状态 :1,全部添加 2,全部拒绝
+local m_CurState = 0;
+-----------------------------------一些写死的规定--------------------------------------
+local DealMaxNum = 20;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Show(go)
+    gameObject = go;
+    m_FriendsPanelIsOpen = true;
+    gameObject:SetActive(m_FriendsPanelIsOpen);
+    if not inited then
+        Init();
+    end
+
+    InitList();
+end
+
+function OnDestroy()
+    gameObject = nil;
+    m_listView = nil;
+    inited = false;
+    m_CurState = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitList()
+    local go = gameObject;
+    local dataList = FriendsData.applyList;
+    if dataList == nil then return end
+    m_listView:RemoveAll();
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+    end
+    --空列表提示
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, go);
+end
+
+function Init()
+    inited = true;
+    local go = gameObject;
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, go, nil); --关闭
+    SetGameObjectEvent(m_AllAgreeButtonPath, OnAllRefuseClick, go, nil);  --全部拒绝
+    SetGameObjectEvent(m_AllRefuseButtonPath, OnAllAgreeClick, go, nil);    --全部同意
+
+    m_listView = GetComponent(go, m_listViewPath, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    FriendsPanel.SetFriendBaseInfo(go, data, false, true);
+    SetLabelContent("Level", data.level, go); 
+--    --联盟图标
+--    if data.unionId > 0 then
+--        local iconId = 0;
+--        if data.unionId == JOINCAMPENUM.UNION then 
+--            if CCommonTool.GetDefineInfo(EDefineContentID.LianMengCampIcon) ~= nil then
+--                iconId = CCommonTool.GetDefineInfo(EDefineContentID.LianMengCampIcon):GetIntContent();
+--            end
+--        else
+--            if CCommonTool.GetDefineInfo(EDefineContentID.BuLuoCampIcon) ~= nil then
+--                iconId = CCommonTool.GetDefineInfo(EDefineContentID.BuLuoCampIcon):GetIntContent();
+--            end
+--        end
+--        SetGameObjectState("UnionIcon", true, go);
+--        SetSpriteByAtlasID("UnionIcon", iconId, go, true);
+--    else
+--        SetGameObjectState("UnionIcon", false, go);
+--    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if data == nil then return end
+    if go.name == "RefuseButton" then
+        --发送协议
+        FriendsProtocol.RequestApplyBack(data.guid, 2);
+        FriendsData.DeleteIfExist(FriendsData.applyList, data.guid);
+        InitList();
+        FriendsPanel.RefreshRedHint();
+        FriendsListPanel.IsShowApplyRedHint();
+        local tempData = {globalId = data.guid};
+        Main_RightBottom.RemoveTipTableData(tempData, ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY);
+        G_TimerMng:RemoveTimeTask("FriendsApplyTimer");
+    elseif go.name == "AgreeButton" then
+        local result = FriendsProtocol.RequestApplyBack(data.guid, 1);
+        if result then
+            local index, data = FriendsData.GetData(FriendsData.applyList, data.guid);
+--            FriendsData.AddFriend(data);
+            FriendsData.DeleteIfExist(FriendsData.recommendList, data.guid);
+            FriendsData.DeleteIfExist(FriendsData.applyList, data.guid);
+            InitList();
+            FriendsPanel.RefreshList();
+            FriendsPanel.RefreshRedHint();
+            FriendsListPanel.IsShowApplyRedHint();
+            local tempData = {globalId = data.guid};
+            Main_RightBottom.RemoveTipTableData(tempData, ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY);
+            G_TimerMng:RemoveTimeTask("FriendsApplyTimer");
+        end
+    end
+end
+
+--关闭
+function OnCloseClick(go)
+    Hide();
+end
+
+--全部拒绝
+function OnAllRefuseClick(go)
+    local list = FriendsData.applyList;
+    if list == nil or #list <= 0 then return end
+    if m_CurState ~= 0 then return end
+    m_CurState = 2;
+    DealAllFriends();
+end
+
+--全部同意
+function OnAllAgreeClick(go)
+    local list = FriendsData.applyList;
+    if list == nil or #list <= 0 then return end
+    if m_CurState ~= 0 then return end
+    m_CurState = 1;
+    DealAllFriends();
+end
+
+-- 处理全部操作
+function DealAllFriends()
+    local list = FriendsData.applyList;
+    if list == nil then return end
+    local num1,num2 = 0,0;
+    if #list > DealMaxNum then 
+        num1,num2 = math.modf(#list / DealMaxNum);
+    end
+    if #list > num1 * DealMaxNum then 
+        AddTimerEvent("DealAllFriendsTimer", num1 + 1, DealAllFriendsOver, ETimeShowType.TypeNumberSeven, DealAllFriendsCallBack);
+    else
+        AddTimerEvent("DealAllFriendsTimer", num1, DealAllFriendsOver, ETimeShowType.TypeNumberSeven, DealAllFriendsCallBack);
+    end
+end
+-- 结束回调
+function DealAllFriendsOver()
+    if m_CurState == 1 then 
+    elseif m_CurState == 2 then 
+        FriendsData.ClearList(FriendsData.LIST_TYPE_APPLY);
+    end
+    InitList();
+    FriendsPanel.RefreshRedHint();
+    FriendsListPanel.IsShowApplyRedHint();
+    Main_RightBottom.RemoveAllTypeInTipTable(ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY);
+    G_TimerMng:RemoveTimeTask("FriendsApplyTimer");
+    m_CurState = 0;
+end
+-- 每秒回调
+function DealAllFriendsCallBack(leftTime)
+    local time = tonumber(leftTime);
+    local list = FriendsData.applyList;
+    if m_CurState == 1 then 
+        local deleteDatas = {};
+        for i = 1 + DealMaxNum * (time - 1), DealMaxNum + DealMaxNum * (time - 1) do
+            if list[i] == nil then return end
+            local data = list[i];
+            local result = FriendsProtocol.RequestApplyBack(data.guid, 1);
+            if result then
+                table.insert(deleteDatas, data);
+            else
+                break;
+            end
+        end
+        for i, data in ipairs(deleteDatas) do
+            FriendsData.DeleteIfExist(FriendsData.recommendList, data.guid);
+            FriendsData.DeleteIfExist(FriendsData.applyList, data.guid);
+        end
+    elseif m_CurState == 2 then 
+        for i = 1 + DealMaxNum * (time - 1), DealMaxNum + DealMaxNum * (time - 1) do
+            if list[i] == nil then return end
+            local data = list[i];
+            FriendsProtocol.RequestApplyBack(data.guid, 2);
+        end
+    end
+end
+
+function Hide()
+    if gameObject ~= nil then
+        m_FriendsPanelIsOpen = false;
+        gameObject:SetActive(m_FriendsPanelIsOpen);
+    end
+end
+
+--刷新
+function Refresh()
+    if inited and gameObject ~= nil and gameObject.activeInHierarchy then
+        InitList();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

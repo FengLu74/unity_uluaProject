@@ -1,0 +1,379 @@
+﻿module('ThirtyDayPickPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ThirtyDayPickPanel';
+---------------------------------------label路径---------------------------------------
+--签到次数记录Label路径
+local m_SignInNumLabelPath = "Content/Reward/Content/Sign/SignLabel";
+--补签次数
+local m_FillCheckLabelLabelPath = "Content/Reward/Content/Sign/FillCheckLabel";
+-----------------------------------------按钮路径--------------------------------------
+-- 说明按钮
+local m_explainButton = "Content/Reward/Content/Button";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 签到物品列表
+local m_SignGridPath = "Content/Sign/Scroll View/Grid";
+-- 连续签到奖励列表
+local m_RewardGridPath = "Content/Reward/Content/Accumulate/Scroll View/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 签到物品列表
+local m_SignGrid = nil;
+-- 连续签到奖励列表
+local m_RewardGrid = nil;
+-- 签到物品列表数据
+local m_SignItemDatas = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    ValidatePanel();
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_SignGrid = nil;
+	m_RewardGrid = nil;
+    m_SignItemDatas = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL);
+    m_SignGrid = GetComponent(m_PanelObject, m_SignGridPath, "UIListView");
+    m_RewardGrid = GetComponent(m_PanelObject, m_RewardGridPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_SignGrid:SetInitCallback(OnSignViewInit);
+    m_SignGrid:SetClickCallback(OnSignViewClick);
+    m_RewardGrid:SetInitCallback(OnRewardViewInit);
+    m_RewardGrid:SetClickCallback(OnRewardViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitItemInfos();
+    InitRewardInfo();
+    InitRewardItemInfos();
+    InitOnClick();
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 说明面板的点击事件
+    SetGameObjectEvent(m_explainButton, OnExplainPanelClick, m_PanelObject);
+end
+
+--设置签到道具列表信息
+function InitItemInfos()
+    local itemDatas = ThirtyDayPickManager.GetItemDatas();
+    m_SignGrid:RemoveAll();
+    for key, var in pairs(itemDatas) do
+        local data = var;
+        m_SignGrid:AddData(data);
+    end
+    local index = ThirtyDayPickManager.TodayIndex - 1;
+    if index <= 0 then
+        index = 0;
+    end
+    m_SignGrid:LookAt(index,true);
+end
+--刷新签到道具列表信息
+function RefreshItemInfos(index)
+    local itemDatas = ThirtyDayPickManager.GetItemDatas();
+    local itemData = itemDatas[index];
+    m_SignGrid:SetData(index - 1,itemData,"");
+    m_SignGrid:Refresh();
+end
+
+--初始化签到奖励显示信息
+function InitRewardInfo()
+    local signInNum = ThirtyDayPickManager.GetSignInNum();
+    local signInNumText = string_format("{0} {1}/30",GetTextToId(2129),signInNum);
+    SetLabelContent(m_SignInNumLabelPath,signInNumText,m_PanelObject);
+    local fillCheckText = string_format("{0} {1}",GetTextToId(2130),ThirtyDayPickManager.FillCheckNum);
+    SetLabelContent(m_FillCheckLabelLabelPath,fillCheckText,m_PanelObject);
+end
+--刷新签到奖励显示信息
+function RefreshRewardInfo()
+    InitRewardInfo();
+end
+
+--初始化签到奖励道具列表信息
+function InitRewardItemInfos()
+    local rewardDatas = ThirtyDayPickManager.GetRewardDatas();
+    m_RewardGrid:RemoveAll();
+    for key, var in pairs(rewardDatas) do
+        local data = var;
+        m_RewardGrid:AddData(data);
+    end
+end
+--刷新签到奖励道具列表信息
+function RefreshRewardItemInfos()
+    InitRewardItemInfos();
+end
+------------------------------------------事件方法------------------------------------
+
+-- 签到道具列表
+function OnSignViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local index = data.Index;
+    SetLabelContent("Title/Label",index,item);
+    local excelId = data.ExcelId;
+    local num = data.Num;
+    SetItemShowByExcelIDV04(item, "Item/Prop", excelId, num, false, 110, ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL);
+--    SetItemToolTipsEvent(item, "Item", ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL, false, excelId);
+    local isPick = data.IsPick;
+    SetGameObjectState("Brought", false, item);
+    SetGameObjectState("Item/Pick", isPick == true, item);
+    SetGameObjectState("Item/FillCheck", false, item);
+    if index == ThirtyDayPickManager.TodayIndex then--需要签到
+        SetGameObjectState("Brought", isPick == false, item);
+    elseif index < ThirtyDayPickManager.TodayIndex then--需要补签
+        SetGameObjectState("Item/FillCheck", isPick == false, item);
+    end
+    if data.NeedVipLevel > 0 then
+        SetGameObjectState("Corner", true, item);
+        SetLabelContent("Corner/Label", string_format(CCommonTool.GetTxtData(9263).m_str, data.NeedVipLevel), item);
+    else
+        SetGameObjectState("Corner", false, item);
+    end
+end
+local signIndex=0;
+-- 签到道具列表
+function OnSignViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    signIndex = data.Index;
+    local isPick = data.IsPick;
+    if signIndex == ThirtyDayPickManager.TodayIndex then--需要签到
+        if isPick == false then
+            local signData = 
+            {
+                Type = 1;
+                Index = signIndex;
+            }
+            ThirtyDayPickProtocol.RequestThirtyDaySignIn(signData);
+        else
+            --error("已经签到！！！");
+            ShowSystemFlowTips(9050);
+        end
+    elseif signIndex < ThirtyDayPickManager.TodayIndex then --需要补签
+        if isPick == false then
+            if ThirtyDayPickManager.IsFillCheck == true then
+                --error("今日已经补签！！！!");
+                ShowSystemFlowTips(9058);
+            elseif ThirtyDayPickManager.AdditionalTimes<=0 and ThirtyDayPickManager.FillCheckNum>0 then
+                --error("所有免费补签(送的5次)用完，此时vip补签需要消耗蓝钻！！！!");
+                --此时补签需要消耗蓝钻
+                local diamondNum=0;
+                --error((ThirtyDayPickManager.VipUseAdditionalTimes+1).."--vip已使用补签次数+1==》=id=下次补签需要消耗的钱币类型");
+                local moneyType=SigninTable.Get(ThirtyDayPickManager.VipUseAdditionalTimes+1).MoneyType;
+                local  IsXiaoHao=true;
+                if moneyType==2 then
+                    IsXiaoHao=true;
+                    diamondNum=SigninTable.Get(ThirtyDayPickManager.VipUseAdditionalTimes+1).UpgradeNeed;
+                    if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND, math.abs(diamondNum), ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL, OnExchangeMoneyCallBack,IsXiaoHao,moneyType,diamondNum,signIndex,false) then
+                        OnExchangeMoneyCallBack(IsXiaoHao,moneyType,diamondNum,signIndex,false);
+                        --error("消耗蓝钻："..diamondNum.."index="..signIndex);
+                    else
+                        --error("蓝钻not enough,跳转到钱币兑换回调");        
+                    end
+
+                elseif moneyType==1 then
+                    IsXiaoHao=true;
+                    diamondNum=SigninTable.Get(ThirtyDayPickManager.VipUseAdditionalTimes+1).UpgradeNeed;
+                    if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.NOTBIND_DIAMOND, math.abs(diamondNum), ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL, OnExchangeMoneyCallBack,IsXiaoHao,moneyType,diamondNum,signIndex,false) then
+                        OnExchangeMoneyCallBack(IsXiaoHao,moneyType,diamondNum,signIndex,false);
+                    else
+                        --error("！！!");        
+                    end
+                    --error("消耗红钻："..diamondNum);
+                elseif moneyType==0 then
+                    local signData = 
+                    {
+                        Type = 2;
+                        Index = signIndex;
+                    }
+                    ThirtyDayPickProtocol.RequestThirtyDaySignIn(signData); 
+                    --error("无消耗直接补签！");
+                end
+            elseif ThirtyDayPickManager.AdditionalTimes>0 and ThirtyDayPickManager.FillCheckNum>0 then
+                local signData = 
+                {
+                    Type = 2;
+                    Index = signIndex;
+                }
+                ThirtyDayPickProtocol.RequestThirtyDaySignIn(signData); 
+            else
+                --error("补签次数都用完了！");
+                ShowSystemFlowTips(9052);
+
+            end
+        else
+            --error("已经补签！！！");
+            ShowSystemFlowTips(9050);
+        end
+    else
+        --error("没到签到！！！");
+        ShowSystemFlowTips(9057);
+    end
+end
+
+function OnExchangeMoneyCallBack(IsXiaoHao,moneyType,diamondNum,signIndex,back)
+    if back==true then
+        local signData = 
+        {
+            Type = 2;
+            Index = signIndex;
+        }
+        ThirtyDayPickProtocol.RequestThirtyDaySignIn(signData); 
+    else
+        if IsXiaoHao==true then
+            ShowContinue(IsXiaoHao,moneyType,diamondNum,signIndex);
+        end
+    end  
+end
+
+---------------------------------
+local m_ContinuePanelIsOpen=false;
+-- 弹板传参
+function ShowContinue(IsXiaoHao,moneyType,Num,signIndex)
+    m_ContinuePanelIsOpen = true;
+    local monyStr;
+    if moneyType==1 then
+        monyStr=CCommonTool.GetTxtData(10006).m_str;
+    elseif moneyType==2 then
+        monyStr=CCommonTool.GetTxtData(75006).m_str;
+    else
+        monyStr=" ";
+    end
+    local tempTable = { };
+    --[提示]
+    table.insert(tempTable, 1,CCommonTool.GetTxtData(949).m_str);
+    --[显示文档]
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(9326).m_str,Num,monyStr));--[补签将消耗3个蓝钻]
+    --点击continue
+    table.insert(tempTable, 3, OnContinueSignButtonClick);
+    --[确定]
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    --点击close
+    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+    --[取消]
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 9, ContinueClose);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable, ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL);
+end
+function ContinueClose()
+    m_ContinuePanelIsOpen = false;
+end
+-- 继续的确认回调
+function OnContinueSignButtonClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    OnExchangeMoneyCallBack(false,nil,nil,signIndex,true);
+end
+---------------------------------
+-- 奖励领取列表
+function OnRewardViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local index = data.Index;
+    SetLabelContent("Day/Label",string_format("{0}{1}",index,GetTextToId(2020)),item);
+    local excelId = data.ExcelId;
+    local num = data.Num;
+    SetItemShowByExcelIDV04(item, "Item/Prop", excelId, num, false, 110, ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL);
+    local isPick = data.IsPick;
+    SetGameObjectState("Item/Pick", isPick == true, item);
+    local signInNum = ThirtyDayPickManager.GetSignInNum();
+    SetGameObjectState("Brought", false, item);
+    if signInNum >= index then
+        SetGameObjectState("Brought", isPick == false, item);
+    end
+end
+
+-- 奖励领取列表
+function OnRewardViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    local index = data.Index;
+    local isPick = data.IsPick;
+    if isPick == false then
+        local signData = 
+        {
+            Type = 3;
+            Index = index;
+        }
+        ThirtyDayPickProtocol.RequestThirtyDaySignIn(signData);
+    else
+        ShowSystemFlowTips(9050);
+    end
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+--检测界面是否需要开启
+function ValidatePanel()
+    local data = 
+    {
+        PanelId = ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel",data);
+end
+-- 说明弹板
+function OnExplainPanelClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL, 1);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--刷新签到数据
+function RefreshSignList(index)
+    if IsOpenPanel(ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL) == 1 then
+        RefreshItemInfos(index);
+        RefreshRewardItemInfos();
+        RefreshRewardInfo();
+    end
+end
+
+--刷新签到奖励数据
+function RefreshSignRewardList(index)
+    if IsOpenPanel(ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL) == 1 then
+        RefreshRewardItemInfos();
+    end
+end
+
+--刷新签到和补签数据
+function RefreshSignInfo()
+    if IsOpenPanel(ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL) == 1 then
+        InitItemInfos();
+        RefreshRewardItemInfos();
+        RefreshRewardInfo();
+    end
+end

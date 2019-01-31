@@ -1,0 +1,1107 @@
+﻿module("PetCombinePanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 右侧title
+local m_RightTitleStr = "Right/Selected/Top/Label_Title";
+-- 4星转化率
+local m_FourStarValueStr = "Right/Selected/Top/Label_FourStarValue";
+-- 6星转化率
+local m_SixStarValueStr = "Right/Selected/Top/Label_SixStarValue";
+-- 8星转化率
+local m_EightStarValueStr = "Right/Selected/Top/Label_EightStarValue";
+-- 10星转化率
+local m_TenStarValueStr = "Right/Selected/Top/Label_TenStarValue";
+-- 4数字
+local m_FourValueStr = "Right/Selected/Top/Label_Four";
+-- 6数字
+local m_SixValueStr = "Right/Selected/Top/Label_Six";
+-- 8数字
+local m_EightValueStr = "Right/Selected/Top/Label_Eight";
+-- 10数字
+local m_TenValueStr = "Right/Selected/Top/Label_Ten";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonStr = "Button_Close";
+-- 重置按钮
+local m_ResetButtonStr = "Middle/Button_Reset";
+-- 卸下按钮
+local m_CombineDownButtonStr = "Right/Selected/Button_CombineDown";
+-- 替换面板取消按钮
+local m_ReplaceCancelButtonStr = "ReplacePanel/Button_Cancel";
+-- 替换面板替换按钮
+local m_ReplaceReplaceButtonStr = "ReplacePanel/Button_Replace";
+-- 问号按钮
+local m_ExplainButtonStr = "Middle/Button_Intro";
+-----------------------------------------Sprite路径------------------------------------
+-- 0-4星
+local m_StarZeroToFourStr = "Right/Selected/Top/Sprite_0_4";
+-- 4-6星
+local m_StarFourToSixStr = "Right/Selected/Top/Sprite_4_6";
+-- 6-8星
+local m_StarSixToEightStr = "Right/Selected/Top/Sprite_6_8";
+-- 8-10星
+local m_StarEightToTenStr = "Right/Selected/Top/Sprite_8_10";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧UIListView组件所在的位置
+local m_leftUIListViewCompStr = "Left/PetsList/Grid";
+-- 右侧选中
+local m_RightSelectedStr = "Right/Selected";
+-- 右侧未选中
+local m_RightNotSelectedStr = "Right/NotSelected";
+-- 需求品质显示
+local m_RightNeedQualityStr = "Right/Selected/Top/NeedQuality/";
+
+-- 选中属性所在的位置
+local m_RightSelectAttrStr = "Right/Selected/AttrPanel/Drag/Attribute_";
+-- 未选中属性所在的位置
+local m_RightNotSelectAttrStr = "Right/NotSelected/Drag/Attribute_";
+-- 选中属性所在的位置
+local m_RightSelectAttrPanelStr = "Right/Selected/AttrPanel";
+
+-- 替换面板
+local m_ReplacePanelStr = "ReplacePanel";
+-- 当前孔位中的宠物
+local m_CurSlotItemStr = "ReplacePanel/CurItem/";
+-- 换成的宠物
+local m_ChangeItemStr = "ReplacePanel/ChangeItem/";
+-- 替换面板属性
+local m_ReplaceAttrStr = "ReplacePanel/AttrPanel/Drag/Attribute_";
+-- 替换面板
+local m_ReplaceAttrPanelStr = "ReplacePanel/AttrPanel";
+
+-- 面板UIPlayTween组件
+local m_UIPlayTweenCompStr = "Right/AddValueTween";
+----------------------------------通用的名称路径---------------------------------------
+-- 宠物图标
+local m_IconStr = "Sprite_Icon";
+-- 图标品质
+local m_QualityStr = "Sprite_Quality";
+-- 不可选中
+local m_CannotSelectStr = "CannotSelect";
+-- 宠物星级
+local m_StarNumStr = "Label_StarNum";
+-- 选择
+local m_SelectStr = "Sprite_Select";
+-- 出战中
+local m_OutStr = "/Label_Out";
+-- 合体中
+local m_CombineStr = "/Label_Combine";
+-- 星级不足
+local m_StarNotEnoughStr = "/Label_StarNotEnough";
+
+-- 合体孔位
+local m_PetCombineSlotStr = "Middle/Slot";
+-- 星级
+local m_SlotPetStarStr = "/Sprite_Star";
+-- 品质
+local m_SLotPetQualityStr = "/Sprite_Quality";
+
+-- 未解锁
+local m_SlotLockStr = "/Lock";
+-- {0}级解锁文本
+local m_SlotUnlockLabelStr = "/Label_Unlock";
+
+-- 解锁
+local m_SlotOpenStr = "/NotLock";
+-- 有宠物
+local m_SlotHavePetStr = "/HavePet";
+-- 宠物图标
+local m_SlotPetIconStr = "/Sprite_Icon";
+-- 转化率
+local m_SlotPetTransValueStr = "/Label_TransValue";
+-- 没有宠物
+local m_SlotNoPetStr = "/NoPet";
+-- 需求星级
+local m_SlotNeedStarStr = "/Label_Star";
+
+-- 选中特效
+local m_SlotSelectEffectStr = "/Effect_Select";
+-- 上升下降箭头
+local m_SlotCompareStr = "/Compare";
+-- 上升箭头
+local m_SlotHighStr = "/Sprite_High";
+-- 下降箭头
+local m_SlotLowStr = "/Sprite_Low";
+-- 操作特效
+local m_SlotEffectStr = "/Effect";
+-- 可操作
+local m_SlotCanOperateStr = "/Effect_Can";
+-- 不可操作
+local m_SlotCannotOperateStr = "/Effect_Cannot";
+
+-- 属性名称
+local m_AttrNameStr = "/Label_Name";
+-- 属性数值
+local m_AttrValueStr = "/Label_Num";
+-- 当前属性数值
+local m_AttrCurValueStr = "/Label_CurNum";
+-- 下一属性数值
+local m_AttrNextValueStr = "/Label_NextNum";
+-- 增加属性数值
+local m_AttrAddValueStr = "/Label_AddNum";
+-- 属性箭头
+local m_AttrArrowStr = "/Sprite_Tag";
+
+-- 转化率
+local m_ReplaceTransValueStr = "Label_Value";
+
+-- 显示数字变化的label
+local m_ShowAddValueLabelStr = "Right/AddValueTween/Label_AddNum";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左侧UIlistView组件
+local m_leftUIListViewComp = nil;
+-- 所有宠物
+local m_PetList = nil;
+-- 左侧选中的是第几个
+local m_LeftSelect = 0;
+-- 中间选中的是第几个
+local m_MiddleSelect = 0;
+-- 左侧所有数据
+local m_LeftShowTable = {};
+-- 中间如果点击的数据传参OperateState,Param
+local m_MiddleSelectDataTable = {};
+-- 替换弹板状态
+local m_ReplacePanelOpenState = false;
+-- 显示变化数字table
+local m_ChangeValueTable = {};
+-----------------------------------一些写死的规定--------------------------------------
+-- 左侧栏位状态
+local PetCloneState = 
+{
+    NotHavePetState = 0,-- 没有宠物
+    CanClickState = 1,-- 有宠物且可操作
+    SetOutState = 2, -- 出战
+    CombineState = 3, -- 合体
+    NotEnoughStarState = 4, -- 星级不足
+}
+-- 多少星以下不让操作
+local CanOperateMinStar = 4;
+-- 中间孔位操作情况
+local SlotOperateState = 
+{
+    CanOperate = 0,
+    NoByLock = 1,
+    NoByOutLevel = 2,
+    NoByQuality = 3,
+    NoByStar = 4,
+}
+
+local ENUM_PET_COMBINE_OPERATE_TYPE = 
+{
+	ENUM_PET_COMBINE_OPERATE_TYPE_CHANGE = 0,
+	ENUM_PET_COMBINE_OPERATE_TYPE_DOWN = 1,
+};
+
+-- 6种品质的渐变颜色
+local ItemQualityColor =
+{
+    [1] = "e8da9b",
+    [2] = "91e464",
+    [3] = "3bbdee",
+    [4] = "d719ff",
+    [5] = "fffd37",
+    [6] = "f63333",
+}
+
+-- 属性变化箭头图标ID
+ATTR_CHANGE_ICONID =
+{
+    HIGH = 31,
+    LOW = 32,
+}
+
+-- 属性值文本高低色值
+ENUM_ATTR_LABEL_COLOR =
+{
+    HIGH = "A0F35A",
+    LOW = "D83232",
+}
+
+-- 转化率文本颜色
+ENUM_TRANS_LABEL_COLOR =
+{
+    ORANGE = "F28423",
+    WHITE = "FFFED6",
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETCOMBINEPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnPetCloneInit);
+    m_leftUIListViewComp:SetSelectedCallback(OnPetCloneSelect);
+    m_leftUIListViewComp:SetDeselectedCallback(OnPetCloneDeselect);
+end
+
+function InitData()
+    m_LeftSelect = 0;
+    m_MiddleSelect = 0;
+    m_ReplacePanelOpenState = false;
+end
+
+function InitShow()
+    SetGameObjectState(m_ReplacePanelStr,m_ReplacePanelOpenState,m_panelObject);
+    InitLeftContent();
+    InitMiddleContent();
+    InitRightContent();
+end
+
+function InitLeftContent()
+    m_leftUIListViewComp:RemoveAll();
+    m_LeftShowTable = {};
+    m_PetList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+    for Index = 1, m_PetList.Count do
+        if Index > PET_ENUM.PET_PANEL_MAX_NUM then
+            break;
+        end
+        m_LeftShowTable[Index] = {};
+        m_LeftShowTable[Index].ItemAttr = m_PetList[Index - 1];
+        m_LeftShowTable[Index].FightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_PetList[Index - 1],1) + 0.5);
+        m_LeftShowTable[Index].State = GetPetState(m_PetList[Index - 1]);
+    end
+    for Index = m_PetList.Count + 1,PET_ENUM.PET_PANEL_MAX_NUM do
+        m_LeftShowTable[Index] = {};
+        m_LeftShowTable[Index].ItemAttr = nil;
+        m_LeftShowTable[Index].FightValue = -1;
+        m_LeftShowTable[Index].State = GetPetState(nil);
+    end
+    table.sort(m_LeftShowTable,SortFunc);
+    local findSameSelect = false;
+    for Index = 1, #m_LeftShowTable do
+        m_leftUIListViewComp:AddData(m_LeftShowTable[Index]);
+        if m_LeftShowTable[Index].State ~= PetCloneState.CanClickState then
+            m_leftUIListViewComp:SetDisable(Index - 1);
+        end
+    end
+end
+
+function SortFunc(data1,data2)
+    return data1.FightValue > data2.FightValue;
+end
+
+function GetPetState(itemAttr)
+    if itemAttr == nil then
+        return PetCloneState.NotHavePetState;
+    else
+        local petATT = itemAttr.AllPetAttribute;
+        if petATT == nil then
+            error("拿不到道具中的宠物属性");
+            return PetCloneState.NotHavePetState;
+        end
+        if PetManager.m_yIsSetPetOut then
+            if PetManager.m_yPetPanelPos == itemAttr.PakID then
+                return PetCloneState.SetOutState;
+            end
+        end
+
+        for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+            local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+            if orderPosId == itemAttr.PakID then
+                return PetCloneState.SetOutState;
+            end
+        end
+
+        for k,v in ipairs(PetManager.m_aPetCombineData) do
+            if v == itemAttr.PakID then
+                return PetCloneState.CombineState;
+            end
+        end
+        if petATT.PetStar < CanOperateMinStar then
+            return PetCloneState.NotEnoughStarState;
+        end
+    end
+    return PetCloneState.CanClickState;
+end
+
+function OnPetCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local itemPetAttr = data.ItemAttr;
+    if data.State == PetCloneState.NotHavePetState then
+        SetGameObjectState(m_IconStr,false,go);
+        SetGameObjectState(m_QualityStr,false,go);
+        SetGameObjectState(m_StarNumStr,false,go);
+        SetGameObjectState(m_SelectStr,false,go);
+        SetGameObjectState(m_CannotSelectStr,false,go);
+    else
+        SetGameObjectState(m_IconStr,true,go);
+        SetGameObjectState(m_QualityStr,true,go);
+        SetGameObjectState(m_StarNumStr,true,go);
+        SetSpriteByAtlasID(m_IconStr, itemPetAttr:GetImageIdById(), go);
+        SetSpriteApptitudeV04(m_QualityStr, itemPetAttr:GetAptitudeID(), go);
+        local petATT = itemPetAttr.AllPetAttribute;
+        if petATT == nil then
+            return;
+        end
+        SetLabelContent(m_StarNumStr,petATT.PetStar,go);
+        if data.State == PetCloneState.CanClickState then
+            SetGameObjectState(m_CannotSelectStr,false,go);
+        else
+            SetGameObjectState(m_SelectStr,false,go);
+            SetGameObjectState(m_CannotSelectStr,true,go);
+            if data.State == PetCloneState.SetOutState then
+                SetGameObjectState(m_CannotSelectStr..m_OutStr,true,go);
+                SetGameObjectState(m_CannotSelectStr..m_CombineStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_StarNotEnoughStr,false,go);
+            elseif data.State == PetCloneState.CombineState then
+                SetGameObjectState(m_CannotSelectStr..m_OutStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_CombineStr,true,go);
+                SetGameObjectState(m_CannotSelectStr..m_StarNotEnoughStr,false,go);
+            elseif data.State == PetCloneState.NotEnoughStarState then
+                SetGameObjectState(m_CannotSelectStr..m_OutStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_CombineStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_StarNotEnoughStr,true,go);
+            end
+        end
+    end
+end
+
+function InitMiddleContent()
+    InitPetCombineSlotInfo();
+    InitPetCombineCompareAndSelectInfo();
+end
+
+function InitPetCombineSlotInfo()
+    local SlotStr = nil;
+    for Index = 1,PET_ENUM.PET_COMBINE_SLOT_NUM do
+        SlotStr = m_PetCombineSlotStr .. Index;
+        local combinePosID = PetManager.m_aPetCombineData[Index];
+        local itemPetAttr = nil;
+        if combinePosID >= 0 then
+            for Index = 1, m_PetList.Count do
+                if m_PetList[Index - 1].PakID == combinePosID then
+                    itemPetAttr = m_PetList[Index - 1];
+                    break;
+                end
+            end
+        end
+        if itemPetAttr == nil then
+            SetSpriteFillAmountTwo(SlotStr..m_SlotPetStarStr,0,m_panelObject);
+            SetSpriteApptitude2V04(SlotStr..m_SLotPetQualityStr, CCommonTool.GetValueInPetCombineInfo(Index,2), m_panelObject);
+        else
+            SetSpriteApptitude2V04(SlotStr..m_SLotPetQualityStr, itemPetAttr:GetAptitudeID(), m_panelObject);
+            local petATT = itemPetAttr.AllPetAttribute;
+            if petATT ~= nil then
+                SetSpriteFillAmountTwo(SlotStr..m_SlotPetStarStr,petATT.PetStar/PET_ENUM.PET_MAX_STAR_NUM,m_panelObject);
+            end
+            SetSpriteColor(SlotStr..m_SlotPetStarStr,ItemQualityColor[GetQualityByStarLevel(petATT.PetStar)],m_panelObject);
+        end
+        local lockLevel = CCommonTool.GetValueInPetCombineInfo(Index,1);
+        if G_UserInfo.RoleAttribute.Level < lockLevel then
+            SetGameObjectState(SlotStr..m_SlotLockStr,true,m_panelObject);
+            SetGameObjectState(SlotStr..m_SlotOpenStr,false,m_panelObject);
+            SetLabelContent(SlotStr..m_SlotLockStr..m_SlotUnlockLabelStr,string_format(CCommonTool.GetTxtData(171130).m_str,lockLevel),m_panelObject);
+        else
+            SetGameObjectState(SlotStr..m_SlotLockStr,false,m_panelObject);
+            SetGameObjectState(SlotStr..m_SlotOpenStr,true,m_panelObject);
+            local openStr = SlotStr..m_SlotOpenStr;
+            local havePetStr = openStr..m_SlotHavePetStr;
+            local noPetStr = openStr..m_SlotNoPetStr;
+            if itemPetAttr == nil then
+                SetGameObjectState(havePetStr,false,m_panelObject);
+                SetGameObjectState(noPetStr,true,m_panelObject);
+                SetLabelContent(noPetStr..m_SlotNeedStarStr,CCommonTool.GetValueInPetCombineInfo(Index,3),m_panelObject);
+            else
+                SetGameObjectState(havePetStr,true,m_panelObject);
+                SetGameObjectState(noPetStr,false,m_panelObject);
+                SetSpriteByAtlasID(havePetStr..m_SlotPetIconStr,itemPetAttr:GetImageIdById(),m_panelObject);
+                local petATT = itemPetAttr.AllPetAttribute;
+                if petATT ~= nil then
+                    SetLabelContent(havePetStr..m_SlotPetTransValueStr,string_format(CCommonTool.GetTxtData(171131).m_str,CCommonTool.GetValueInPetCombineInfo(Index,petATT.PetStar+3)),m_panelObject);
+                    SetLabelColor(havePetStr..m_SlotPetTransValueStr,ItemQualityColor[GetQualityByStarLevel(petATT.PetStar)],m_panelObject);
+                end
+            end
+        end
+    end
+end
+
+function GetQualityByStarLevel(starLevel)
+    if starLevel >= 1 and starLevel <= 4 then
+        return 2;
+    elseif starLevel >= 5 and starLevel <= 6 then
+        return 3;
+    elseif starLevel >= 7 and starLevel <= 9 then
+        return 4;
+    elseif starLevel >= 10 then
+        return 5;
+    end
+end
+
+function InitPetCombineCompareAndSelectInfo()
+    if m_LeftSelect <= 0 then
+        for Index = 1,PET_ENUM.PET_COMBINE_SLOT_NUM do
+            local SlotStr = m_PetCombineSlotStr .. Index;
+            SetGameObjectState(SlotStr..m_SlotEffectStr,false,m_panelObject);
+            SetGameObjectState(SlotStr..m_SlotCompareStr,false,m_panelObject);
+            if Index == m_MiddleSelect then
+                SetGameObjectState(SlotStr..m_SlotSelectEffectStr,true,m_panelObject);
+            else
+                SetGameObjectState(SlotStr..m_SlotSelectEffectStr,false,m_panelObject);
+            end
+        end
+    else
+        local itemAttr = m_LeftShowTable[m_LeftSelect].ItemAttr;
+        local petATT = itemAttr.AllPetAttribute;
+        if petATT == nil then
+            return false;
+        end
+        m_MiddleSelectDataTable = {};
+        for Index = 1,PET_ENUM.PET_COMBINE_SLOT_NUM do
+            local SlotStr = m_PetCombineSlotStr .. Index;
+            if Index == m_MiddleSelect then
+                SetGameObjectState(SlotStr..m_SlotSelectEffectStr,true,m_panelObject);
+            else
+                SetGameObjectState(SlotStr..m_SlotSelectEffectStr,false,m_panelObject);
+            end
+            SetGameObjectState(SlotStr..m_SlotEffectStr,true,m_panelObject);
+            m_MiddleSelectDataTable[Index] = {};
+            local bCanOperate = false;
+            local petCombineInfo = CCommonTool.GetPetCombineInfo(Index);
+            local petMainInfo = CCommonTool.GetPetMainInfo(itemAttr.ExcelID);
+            if petMainInfo ~= nil and petCombineInfo ~= nil then
+                if petCombineInfo.ActiveLevel > G_UserInfo.RoleAttribute.Level then
+                    m_MiddleSelectDataTable[Index].OperateState = SlotOperateState.NoByLock;
+                    m_MiddleSelectDataTable[Index].Param = petCombineInfo.ActiveLevel;
+                elseif G_UserInfo.RoleAttribute.Level < petMainInfo.NeedLv then
+                    m_MiddleSelectDataTable[Index].OperateState = SlotOperateState.NoByOutLevel;
+                    m_MiddleSelectDataTable[Index].Param = petMainInfo.NeedLv;
+                elseif petMainInfo.AptitudeID < petCombineInfo.MinQualityNeed then
+                    m_MiddleSelectDataTable[Index].OperateState = SlotOperateState.NoByQuality;
+                    m_MiddleSelectDataTable[Index].Param = petCombineInfo.MinQualityNeed;
+                elseif petATT.PetStar < petCombineInfo.MinStarLevelNeed then
+                    m_MiddleSelectDataTable[Index].OperateState = SlotOperateState.NoByStar;
+                    m_MiddleSelectDataTable[Index].Param = petCombineInfo.MinStarLevelNeed;
+                else
+                    m_MiddleSelectDataTable[Index].OperateState = SlotOperateState.CanOperate;
+                    m_MiddleSelectDataTable[Index].Param = 0;
+                end
+            end
+            if m_MiddleSelectDataTable[Index].OperateState == SlotOperateState.CanOperate then
+                SetGameObjectState(SlotStr..m_SlotEffectStr..m_SlotCanOperateStr,true,m_panelObject);
+                SetGameObjectState(SlotStr..m_SlotEffectStr..m_SlotCannotOperateStr,false,m_panelObject);
+                SetGameObjectState(SlotStr..m_SlotCompareStr,true,m_panelObject);
+                local curSlotItemAttr = nil;
+                if PetManager.m_aPetCombineData[Index] >= 0 then
+                    for Index2 = 1, m_PetList.Count do
+                        if m_PetList[Index2 - 1].PakID == PetManager.m_aPetCombineData[Index] then
+                            curSlotItemAttr = m_PetList[Index2 - 1];
+                            break;
+                        end
+                    end
+                end
+                local curSlotPetATT = nil;
+                if curSlotItemAttr == nil then
+                    curSlotPetATT = nil;
+                else
+                    curSlotPetATT = curSlotItemAttr.AllPetAttribute;
+                end
+                local curSlotPetTransValue = 0;
+                if curSlotPetATT == nil then
+                    curSlotPetTransValue = 0;
+                else
+                    curSlotPetTransValue = CCommonTool.GetValueInPetCombineInfo(Index,curSlotPetATT.PetStar+3);
+                end
+                local curTransValue = CCommonTool.GetValueInPetCombineInfo(Index,petATT.PetStar+3);
+                if curSlotPetTransValue > curTransValue then
+                    SetGameObjectState(SlotStr..m_SlotCompareStr..m_SlotHighStr,false,m_panelObject);
+                    SetGameObjectState(SlotStr..m_SlotCompareStr..m_SlotLowStr,true,m_panelObject);
+                elseif curSlotPetTransValue < curTransValue then
+                    SetGameObjectState(SlotStr..m_SlotCompareStr..m_SlotHighStr,true,m_panelObject);
+                    SetGameObjectState(SlotStr..m_SlotCompareStr..m_SlotLowStr,false,m_panelObject);
+                else
+                    SetGameObjectState(SlotStr..m_SlotCompareStr..m_SlotHighStr,false,m_panelObject);
+                    SetGameObjectState(SlotStr..m_SlotCompareStr..m_SlotLowStr,false,m_panelObject);
+                end
+            else
+                SetGameObjectState(SlotStr..m_SlotEffectStr..m_SlotCanOperateStr,false,m_panelObject);
+                SetGameObjectState(SlotStr..m_SlotEffectStr..m_SlotCannotOperateStr,true,m_panelObject);
+                SetGameObjectState(SlotStr..m_SlotCompareStr,false,m_panelObject);
+            end
+        end
+    end
+end
+
+function InitRightContent()
+    local hp,ap,map,dp,mdp,ac,ah,dc,dh = 0,0,0,0,0,0,0,0,0;
+    local attrStr;
+    if m_MiddleSelect == 0 then
+        SetGameObjectState(m_RightSelectedStr,false,m_panelObject);
+        SetGameObjectState(m_RightNotSelectedStr,true,m_panelObject);
+        local hp1,ap1,map1,dp1,mdp1,ac1,ah1,dc1,dh1 = GetAttrDataBySlotIndex(1);
+        local hp2,ap2,map2,dp2,mdp2,ac2,ah2,dc2,dh2 = GetAttrDataBySlotIndex(2);
+        local hp3,ap3,map3,dp3,mdp3,ac3,ah3,dc3,dh3 = GetAttrDataBySlotIndex(3);
+        hp,ap,map,dp,mdp,ac,ah,dc,dh = hp1+hp2+hp3,ap1+ap2+ap3,map1+map2+map3,dp1+dp2+dp3,mdp1+mdp2+mdp3,ac1+ac2+ac3,ah1+ah2+ah3,dc1+dc2+dc3,dh1+dh2+dh3;
+        attrStr = m_RightNotSelectAttrStr;
+    else
+        SetGameObjectState(m_RightSelectedStr,true,m_panelObject);
+        SetGameObjectState(m_RightNotSelectedStr,false,m_panelObject);
+        hp,ap,map,dp,mdp,ac,ah,dc,dh = GetAttrDataBySlotIndex(m_MiddleSelect);
+        local petCombineInfo = CCommonTool.GetPetCombineInfo(m_MiddleSelect);
+        SetLabelContent(m_RightTitleStr,string_format(CCommonTool.GetTxtData(171133).m_str,petCombineInfo.ActiveLevel),m_panelObject);
+        for Index = 3,5 do
+            if petCombineInfo.MinQualityNeed <= Index then
+                SetGameObjectState(m_RightNeedQualityStr..Index,true,m_panelObject);
+            else
+                SetGameObjectState(m_RightNeedQualityStr..Index,false,m_panelObject);
+            end
+        end
+        SetLabelContent(m_FourStarValueStr,petCombineInfo.Star4TransValue.."%",m_panelObject);
+        SetLabelContent(m_SixStarValueStr,petCombineInfo.Star6TransValue.."%",m_panelObject);
+        SetLabelContent(m_EightStarValueStr,petCombineInfo.Star8TransValue.."%",m_panelObject);
+        SetLabelContent(m_TenStarValueStr,petCombineInfo.Star10TransValue.."%",m_panelObject);
+        SetLabelColor(m_FourStarValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_FourValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_SixStarValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_SixValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_EightStarValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_EightValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_TenStarValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        SetLabelColor(m_TenValueStr,ENUM_TRANS_LABEL_COLOR.WHITE,m_panelObject);
+        local itemPetAttr = nil;
+        if PetManager.m_aPetCombineData[m_MiddleSelect] >= 0 then
+            for Index = 1, m_PetList.Count do
+                if m_PetList[Index - 1].PakID == PetManager.m_aPetCombineData[m_MiddleSelect] then
+                    itemPetAttr = m_PetList[Index - 1];
+                    break;
+                end
+            end
+        end
+        if itemPetAttr == nil then
+            SetSpriteFillAmount(m_StarZeroToFourStr,0,m_panelObject);
+            SetSpriteFillAmount(m_StarFourToSixStr,0,m_panelObject);
+            SetSpriteFillAmount(m_StarSixToEightStr,0,m_panelObject);
+            SetSpriteFillAmount(m_StarEightToTenStr,0,m_panelObject);
+            SetGameObjectState(m_CombineDownButtonStr,false,m_panelObject);
+        else
+            local petATT = itemPetAttr.AllPetAttribute;
+            if petATT == nil then
+                return;
+            end
+            SetSpriteFillAmount(m_StarZeroToFourStr,(petATT.PetStar - 0)/4,m_panelObject);
+            SetSpriteFillAmount(m_StarFourToSixStr,(petATT.PetStar - 4)/2,m_panelObject);
+            SetSpriteFillAmount(m_StarSixToEightStr,(petATT.PetStar - 6)/2,m_panelObject);
+            SetSpriteFillAmount(m_StarEightToTenStr,(petATT.PetStar - 8)/2,m_panelObject);
+            SetGameObjectState(m_CombineDownButtonStr,true,m_panelObject);
+            if petATT.PetStar >= 10 then
+                SetLabelColor(m_TenStarValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+                SetLabelColor(m_TenValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+            elseif petATT.PetStar >= 8 then
+                SetLabelColor(m_EightStarValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+                SetLabelColor(m_EightValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+            elseif petATT.PetStar >= 6 then
+                SetLabelColor(m_SixStarValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+                SetLabelColor(m_SixValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+            elseif petATT.PetStar >= 4 then
+                SetLabelColor(m_FourStarValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+                SetLabelColor(m_FourValueStr,ENUM_TRANS_LABEL_COLOR.ORANGE,m_panelObject);
+            end
+        end
+        attrStr = m_RightSelectAttrStr;
+        RepositionUIScrollViewComp(m_RightSelectAttrPanelStr,m_panelObject);
+    end
+    local attrIndex;
+    -- 生命
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[1]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(1)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(1)..m_AttrValueStr,"+"..math.floor(hp),m_panelObject);
+
+    -- 外攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[2]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(2)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(2)..m_AttrValueStr,"+"..math.floor(ap),m_panelObject);
+
+    -- 内攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[3]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(3)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(3)..m_AttrValueStr,"+"..math.floor(map),m_panelObject);
+
+    -- 外防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[5]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(4)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(4)..m_AttrValueStr,"+"..math.floor(dp),m_panelObject);
+
+    -- 内防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[6]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(5)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(5)..m_AttrValueStr,"+"..math.floor(mdp),m_panelObject);
+
+    -- 暴击
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[7]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(6)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(6)..m_AttrValueStr,"+"..math.floor(ac),m_panelObject);
+    
+    -- 韧性
+    attrIndex = 91;
+    SetLabelTextByID(attrStr..tostring(7)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(7)..m_AttrValueStr,"+"..math.floor(dc),m_panelObject);
+
+    -- 命中
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[8]):GetIntContent();
+    SetLabelTextByID(attrStr..tostring(8)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(8)..m_AttrValueStr,"+"..math.floor(ah),m_panelObject);
+
+
+    -- 闪避
+    attrIndex = 61;
+    SetLabelTextByID(attrStr..tostring(9)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(attrStr..tostring(9)..m_AttrValueStr,"+"..math.floor(dh),m_panelObject);
+end
+
+function GetAttrDataBySlotIndex(Index)
+    if Index < 1 or Index > PET_ENUM.PET_COMBINE_SLOT_NUM then
+        return 0,0,0,0,0,0,0,0,0;
+    end
+    if PetManager.m_aPetCombineData[Index] < 0 then
+        return 0,0,0,0,0,0,0,0,0;
+    end
+    local itemPetAttr = nil;
+    for startIndex = 1, m_PetList.Count do
+        if m_PetList[startIndex - 1].PakID == PetManager.m_aPetCombineData[Index] then
+            itemPetAttr = m_PetList[startIndex - 1];
+            break;
+        end
+    end
+    return GetAttrDataByItemAttr(itemPetAttr,Index);
+end
+
+function GetAttrDataByItemAttr(itemPetAttr,slotIndex)
+    if itemPetAttr == nil then
+        return 0,0,0,0,0,0,0,0,0;
+    end
+    local petATT = itemPetAttr.AllPetAttribute;
+    if petATT == nil then
+        return 0,0,0,0,0,0,0,0,0;
+    end
+    local personClass = PetManager.ChangePetItemIntoCLGPerson(itemPetAttr,1);
+    local starPercent = CCommonTool.GetValueInPetCombineInfo(slotIndex,3+petATT.PetStar);
+    if starPercent == nil then
+        return 0,0,0,0,0,0,0,0,0;
+    end
+    starPercent = starPercent/100;
+    return personClass:GetMaxHp()*starPercent,personClass:GetAp()*starPercent,personClass:GetMap()*starPercent,personClass:GetDp()*starPercent,personClass:GetMdp()*starPercent,
+    personClass:GetAc()*starPercent,personClass:GetAh()*starPercent,personClass:GetDc()*starPercent,personClass:GetDh()*starPercent;
+end
+
+function ShowReplacePanel()
+    m_ReplacePanelOpenState = true;
+    SetGameObjectState(m_ReplacePanelStr,m_ReplacePanelOpenState,m_panelObject);
+    RepositionUIScrollViewComp(m_ReplaceAttrPanelStr,m_panelObject);
+    local curItem = nil;
+    for startIndex = 1, m_PetList.Count do
+        if m_PetList[startIndex - 1].PakID == PetManager.m_aPetCombineData[m_MiddleSelect] then
+            curItem = m_PetList[startIndex - 1];
+            break;
+        end
+    end
+    if curItem == nil then
+        return;
+    end
+    local curPetATT = curItem.AllPetAttribute;
+    local changeItem = m_LeftShowTable[m_LeftSelect].ItemAttr;
+    local changePetATT = changeItem.AllPetAttribute;
+    if changePetATT == nil or curPetATT == nil and changeItem == nil then
+        return;
+    end
+    SetSpriteByAtlasID(m_CurSlotItemStr..m_IconStr, curItem:GetImageIdById(), m_panelObject);
+    SetSpriteApptitudeV04(m_CurSlotItemStr..m_QualityStr, curItem:GetAptitudeID(), m_panelObject);
+    SetLabelContent(m_CurSlotItemStr..m_ReplaceTransValueStr,string_format(CCommonTool.GetTxtData(171131).m_str,CCommonTool.GetValueInPetCombineInfo(m_MiddleSelect,3+curPetATT.PetStar)),m_panelObject);
+    SetSpriteByAtlasID(m_ChangeItemStr..m_IconStr, changeItem:GetImageIdById(), m_panelObject);
+    SetSpriteApptitudeV04(m_ChangeItemStr..m_QualityStr, changeItem:GetAptitudeID(), m_panelObject);
+    SetLabelContent(m_ChangeItemStr..m_ReplaceTransValueStr,string_format(CCommonTool.GetTxtData(171131).m_str,CCommonTool.GetValueInPetCombineInfo(m_MiddleSelect,3+changePetATT.PetStar)),m_panelObject);
+    local attrIndex;
+    local curValue;
+    local nextValue;
+    local addValue;
+    local hp1,ap1,map1,dp1,mdp1,ac1,ah1,dc1,dh1 = GetAttrDataBySlotIndex(m_MiddleSelect);
+    local hp2,ap2,map2,dp2,mdp2,ac2,ah2,dc2,dh2 = GetAttrDataByItemAttr(changeItem,m_MiddleSelect);
+    m_ChangeValueTable = {};
+    -- 生命
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[1]):GetIntContent();
+    curValue = math.floor(hp1);
+    nextValue = math.floor(hp2);
+    addValue = math.floor(hp2) - math.floor(hp1);
+    m_ChangeValueTable[1] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(1)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(1)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(1)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(1)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(1)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(1)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 外攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[2]):GetIntContent();
+    curValue = math.floor(ap1);
+    nextValue = math.floor(ap2);
+    addValue = math.floor(ap2) - math.floor(ap1);
+    m_ChangeValueTable[2] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(2)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(2)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(2)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(2)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(2)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(2)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 内攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[3]):GetIntContent();
+    curValue = math.floor(map1);
+    nextValue = math.floor(map2);
+    addValue = math.floor(map2) - math.floor(map1);
+    m_ChangeValueTable[3] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(3)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(3)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(3)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(3)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(3)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(3)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 外防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[5]):GetIntContent();
+    curValue = math.floor(dp1);
+    nextValue = math.floor(dp2);
+    addValue = math.floor(dp2) - math.floor(dp1);
+    m_ChangeValueTable[4] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(4)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(4)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(4)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(4)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(4)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(4)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 内防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[6]):GetIntContent();
+    curValue = math.floor(mdp1);
+    nextValue = math.floor(mdp2);
+    addValue = math.floor(mdp2) - math.floor(mdp1);
+    m_ChangeValueTable[5] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(5)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(5)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(5)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(5)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(5)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(5)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 暴击
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[7]):GetIntContent();
+    curValue = math.floor(ac1);
+    nextValue = math.floor(ac2);
+    addValue = math.floor(ac2) - math.floor(ac1);
+    m_ChangeValueTable[6] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(6)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(6)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(6)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(6)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(6)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(6)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 命中
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[8]):GetIntContent();
+    curValue = math.floor(ah1);
+    nextValue = math.floor(ah2);
+    addValue = math.floor(ah2) - math.floor(ah1);
+    m_ChangeValueTable[7] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(7)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(7)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(7)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(7)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(7)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(7)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 韧性
+    attrIndex = 91;
+    curValue = math.floor(dc1);
+    nextValue = math.floor(dc2);
+    addValue = math.floor(dc2) - math.floor(dc1);
+    m_ChangeValueTable[8] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(8)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(8)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(8)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(8)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(8)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(8)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+
+    -- 闪避
+    attrIndex = 61;
+    curValue = math.floor(dh1);
+    nextValue = math.floor(dh2);
+    addValue = math.floor(dh2) - math.floor(dh1);
+    m_ChangeValueTable[9] = addValue;
+    SetLabelTextByID(m_ReplaceAttrStr..tostring(9)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(9)..m_AttrCurValueStr,curValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(9)..m_AttrNextValueStr,nextValue,m_panelObject);
+    SetLabelContent(m_ReplaceAttrStr..tostring(9)..m_AttrAddValueStr,math.abs(addValue),m_panelObject);
+    SetSpriteByAtlasID(m_ReplaceAttrStr..tostring(9)..m_AttrArrowStr,addValue >= 0 and ATTR_CHANGE_ICONID.HIGH or ATTR_CHANGE_ICONID.LOW,m_panelObject);
+    SetLabelColor(m_ReplaceAttrStr..tostring(9)..m_AttrAddValueStr,addValue >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CloseButtonStr,OnCloseClick,m_panelObject);
+    for Index = 1,PET_ENUM.PET_COMBINE_SLOT_NUM do
+        local SlotStr = m_PetCombineSlotStr .. Index;
+        UIEventListener.Get(child(m_panelObject,SlotStr).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnSlotClick, {Index});
+    end
+    SetGameObjectEvent(m_ResetButtonStr,OnResetClick,m_panelObject);
+    SetGameObjectEvent(m_CombineDownButtonStr,OnCombineDownClick,m_panelObject);
+    SetGameObjectEvent(m_ReplaceCancelButtonStr,OnReplaceCancelClick,m_panelObject);
+    SetGameObjectEvent(m_ReplaceReplaceButtonStr,OnReplaceReplaceClick,m_panelObject);
+    SetGameObjectEvent(m_ExplainButtonStr, OnExplainButtonClick, m_panelObject);
+end
+
+function InitAddValueTweenShow()
+    if m_ChangeValueTable == nil or #m_ChangeValueTable == 0 then
+        return;
+    end
+    for Index = 1,9 do
+        SetLabelContent(m_ShowAddValueLabelStr..Index,m_ChangeValueTable[Index] >= 0 and "+" .. m_ChangeValueTable[Index] or m_ChangeValueTable[Index],m_panelObject);
+        SetLabelColor(m_ShowAddValueLabelStr..Index,m_ChangeValueTable[Index] >= 0 and ENUM_ATTR_LABEL_COLOR.HIGH or ENUM_ATTR_LABEL_COLOR.LOW,m_panelObject);
+    end
+    m_ChangeValueTable = nil;
+    GetComponent(m_panelObject,m_UIPlayTweenCompStr,"UIPlayTween"):Play(true);
+end
+
+function SetChangeValueData(isDown)
+    if isDown then
+        local curItem = nil;
+        for startIndex = 1, m_PetList.Count do
+            if m_PetList[startIndex - 1].PakID == PetManager.m_aPetCombineData[m_MiddleSelect] then
+                curItem = m_PetList[startIndex - 1];
+                break;
+            end
+        end
+        if curItem == nil then
+            return;
+        else
+            m_ChangeValueTable = {};
+            local hp1,ap1,map1,dp1,mdp1,ac1,ah1,dc1,dh1 = GetAttrDataByItemAttr(curItem,m_MiddleSelect);
+            m_ChangeValueTable = {-math.floor(hp1),-math.floor(ap1),-math.floor(map1),-math.floor(dp1),-math.floor(mdp1),-math.floor(ac1),-math.floor(ah1),-math.floor(dc1),-math.floor(dh1)}
+        end
+    else
+        if m_LeftSelect > 0 and m_MiddleSelect > 0 then
+            m_ChangeValueTable = {};
+            local hp1,ap1,map1,dp1,mdp1,ac1,ah1,dc1,dh1 = GetAttrDataByItemAttr(m_LeftShowTable[m_LeftSelect].ItemAttr,m_MiddleSelect);
+            m_ChangeValueTable = {math.floor(hp1),math.floor(ap1),math.floor(map1),math.floor(dp1),math.floor(mdp1),math.floor(ac1),math.floor(ah1),math.floor(dc1),math.floor(dh1)}
+        else
+            m_ChangeValueTable = nil;
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    if m_ReplacePanelOpenState then
+        m_ReplacePanelOpenState = false;
+        SetGameObjectState(m_ReplacePanelStr,m_ReplacePanelOpenState,m_panelObject);
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_PETCOMBINEPANEL);
+end
+
+function OnPetCloneSelect(listView, dataIndex)
+    if dataIndex + 1 == m_LeftSelect then
+        return;
+    else
+        m_LeftSelect = dataIndex + 1;
+        InitPetCombineCompareAndSelectInfo();
+        if m_MiddleSelect > 0 then
+            local itemPetAttr = nil;
+            if PetManager.m_aPetCombineData[m_MiddleSelect] >= 0 then
+                for Index = 1, m_PetList.Count do
+                    if m_PetList[Index - 1].PakID == PetManager.m_aPetCombineData[m_MiddleSelect] then
+                        itemPetAttr = m_PetList[Index - 1];
+                        break;
+                    end
+                end
+            end
+            local operateState = m_MiddleSelectDataTable[m_MiddleSelect].OperateState;
+            local param = m_MiddleSelectDataTable[m_MiddleSelect].Param;
+            if operateState == SlotOperateState.NoByLock then
+                ShowSystemFlowTips(7884);
+            elseif operateState == SlotOperateState.NoByOutLevel then
+                ShowSystemFlowTips(7885);
+            elseif operateState == SlotOperateState.NoByQuality then
+                ShowSystemFlowTips(7886);
+            elseif operateState == SlotOperateState.NoByStar then
+                ShowSystemFlowTips(7887);
+            elseif operateState == SlotOperateState.CanOperate then
+                if itemPetAttr == nil then
+                    SetChangeValueData();
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+                    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_COMBINE);
+                    buffer:WriteByte(ENUM_PET_COMBINE_OPERATE_TYPE.ENUM_PET_COMBINE_OPERATE_TYPE_CHANGE);
+                    buffer:WriteByte(m_MiddleSelect - 1);
+                    buffer:WriteByte(m_LeftShowTable[m_LeftSelect].ItemAttr.PakID);
+                    G_NetWorkMng:SendMessage(buffer);
+                else
+                    ShowReplacePanel();
+                end
+            end
+            if operateState ~= SlotOperateState.CanOperate then
+                m_MiddleSelect = 0;
+                InitPetCombineCompareAndSelectInfo();
+                InitRightContent();
+            end
+            
+        end
+    end
+end
+
+function OnPetCloneDeselect(listView, dataIndex)
+    if dataIndex + 1 == m_LeftSelect then
+        m_LeftSelect = 0;
+        InitPetCombineCompareAndSelectInfo();
+        InitRightContent();
+    end
+end
+
+function OnSlotClick(e,paramTable)
+    local slotIndex = paramTable[1];
+    if slotIndex == m_MiddleSelect then
+        m_MiddleSelect = 0;
+        InitPetCombineCompareAndSelectInfo();
+        InitRightContent();
+    else
+        if m_LeftSelect > 0 then
+            if m_MiddleSelectDataTable[slotIndex].OperateState == SlotOperateState.CanOperate then
+                m_MiddleSelect = slotIndex;
+                local itemPetAttr = nil;
+                if PetManager.m_aPetCombineData[slotIndex] >= 0 then
+                    for Index = 1, m_PetList.Count do
+                        if m_PetList[Index - 1].PakID == PetManager.m_aPetCombineData[slotIndex] then
+                            itemPetAttr = m_PetList[Index - 1];
+                            break;
+                        end
+                    end
+                end
+                if itemPetAttr == nil then
+                    SetChangeValueData();
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+                    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_COMBINE);
+                    buffer:WriteByte(ENUM_PET_COMBINE_OPERATE_TYPE.ENUM_PET_COMBINE_OPERATE_TYPE_CHANGE);
+                    buffer:WriteByte(slotIndex - 1);
+                    buffer:WriteByte(m_LeftShowTable[m_LeftSelect].ItemAttr.PakID);
+                    G_NetWorkMng:SendMessage(buffer);
+                else
+                    InitPetCombineCompareAndSelectInfo();
+                    InitRightContent();
+                    ShowReplacePanel();
+                end
+            else
+                local operateState = m_MiddleSelectDataTable[slotIndex].OperateState;
+                local param = m_MiddleSelectDataTable[slotIndex].Param;
+                if operateState == SlotOperateState.NoByLock then
+                    ShowSystemFlowTips(7884);
+                    return;
+                elseif operateState == SlotOperateState.NoByOutLevel then
+                    ShowSystemFlowTips(7885);
+                    return;
+                elseif operateState == SlotOperateState.NoByQuality then
+                    ShowSystemFlowTips(7886);
+                    return;
+                elseif operateState == SlotOperateState.NoByStar then
+                    ShowSystemFlowTips(7887);
+                    return;
+                end
+            end
+        else
+            local lockLevel = CCommonTool.GetValueInPetCombineInfo(slotIndex,1);
+            if G_UserInfo.RoleAttribute.Level < lockLevel then
+                return;
+            end
+            m_MiddleSelect = slotIndex;
+            for Index = 1,PET_ENUM.PET_COMBINE_SLOT_NUM do
+                local SlotStr = m_PetCombineSlotStr .. Index;
+                if Index == m_MiddleSelect then
+                    SetGameObjectState(SlotStr..m_SlotSelectEffectStr,true,m_panelObject);
+                else
+                    SetGameObjectState(SlotStr..m_SlotSelectEffectStr,false,m_panelObject);
+                end
+            end
+            InitRightContent();
+        end
+    end
+end
+
+function OnResetClick()
+    if m_LeftSelect ~= 0 then
+        m_leftUIListViewComp:Deselect(m_LeftSelect - 1,true);
+    end
+    if m_LeftSelect == 0 and m_MiddleSelect == 0 then
+        return;
+    end
+    m_LeftSelect = 0;
+    m_MiddleSelect = 0;
+    InitPetCombineCompareAndSelectInfo();
+    InitRightContent();
+end
+
+function OnCombineDownClick()
+    SetChangeValueData(true);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_COMBINE);
+    buffer:WriteByte(ENUM_PET_COMBINE_OPERATE_TYPE.ENUM_PET_COMBINE_OPERATE_TYPE_DOWN);
+    buffer:WriteByte(m_MiddleSelect - 1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnReplaceCancelClick()
+    m_MiddleSelect = 0;
+    m_ReplacePanelOpenState = false;
+    SetGameObjectState(m_ReplacePanelStr,m_ReplacePanelOpenState,m_panelObject);
+    InitPetCombineCompareAndSelectInfo();
+    InitRightContent();
+end
+
+function OnReplaceReplaceClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_COMBINE);
+    buffer:WriteByte(ENUM_PET_COMBINE_OPERATE_TYPE.ENUM_PET_COMBINE_OPERATE_TYPE_CHANGE);
+    buffer:WriteByte(m_MiddleSelect - 1);
+    buffer:WriteByte(m_LeftShowTable[m_LeftSelect].ItemAttr.PakID);
+    G_NetWorkMng:SendMessage(buffer);
+    m_ReplacePanelOpenState = false;
+    SetGameObjectState(m_ReplacePanelStr,m_ReplacePanelOpenState,m_panelObject);
+end
+
+function OnExplainButtonClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_PETCOMBINEPANEL, 1);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETCOMBINEPANEL) == 1 then
+        InitAddValueTweenShow();
+        InitData();
+        InitShow();
+    end
+end

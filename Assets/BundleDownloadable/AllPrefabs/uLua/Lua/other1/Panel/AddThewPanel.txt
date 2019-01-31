@@ -1,0 +1,85 @@
+﻿module('AddThewPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'AddThewPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_BtnGoPath = "btn_Go";
+local m_BtnBgPath = "btn_Bg";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_BtnGo = nil;
+local m_BtnBg = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_BtnBg = nil;
+    m_CreateSuccess = false;
+	m_BtnGo = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ADD_THEW_PANEL);
+    m_BtnGo = child(m_PanelObject, m_BtnGoPath).gameObject;
+    m_BtnBg = child(m_PanelObject, m_BtnBgPath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_BtnGo).onClick = LuaHelper.OnClick(OnBtnGoClick);
+    UIEventListener.Get(m_BtnBg).onClick = LuaHelper.OnClick(OnCLoseClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 加注释
+function OnBtnGoClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    closePanel(ENUMPANELID.ENUM_PANEL_ADD_THEW_PANEL);
+end
+-- 加注释
+function OnCLoseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ADD_THEW_PANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

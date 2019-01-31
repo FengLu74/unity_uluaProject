@@ -1,0 +1,296 @@
+﻿module('TitleManager', package.seeall)
+
+-- 当前称号ID
+currentTitleId = 0;
+-- 新获得的称号
+newTitleIds = {};
+-- 已获取称号列表
+titleList = {};
+
+-- 称号未获得
+TITLE_NOTGET = 0;
+-- 称号已获得
+TITLE_GET = 1;
+
+-- 获取当前获取的称号列表
+function GetTitleList()
+    return titleList;
+end
+
+-- 获取称号属性文本
+function GetTitleAttrText(info)
+    if info == nil then
+        return "";
+    end
+    local attrTexts = {};
+    for i = 1, 4 do
+        local attrId = info["Attr"..i];
+        if attrId > 0 then
+            local attrValue = info["Value"..i];
+            local attrText = GetAttrText(attrId, attrValue);
+            if attrText ~= nil then
+                table.insert(attrTexts, attrText);
+            end
+        end
+    end
+    return table.concat(attrTexts, ",");
+end
+
+-- 获取属性文本
+function GetAttrText(attrId, attrValue)
+    local attrInfo = CCommonTool.GetAttrIndexInfo(attrId);
+    local valueText = nil;
+    if attrInfo == nil then
+        error("称号：attr_index表配置错误:" .. attrId);
+        return;
+    else
+        local value = attrValue * attrInfo.Ratio;
+        if attrInfo.Ratio >= 1 then
+            valueText = string.format("%1d", value);
+        else
+            local i, r = math.modf(value);
+            if r * 10 >= 1 then
+                valueText = string.format("%.1f%%", value*100);
+            else
+                valueText = string.format("%d", value*100) .. "%";
+            end
+        end
+    end
+    local nameText = CCommonTool.GetTxtData(attrInfo.TextID).m_str;
+    return string_format("{0} +{1}", nameText, valueText);
+end
+
+-- 获取称号表数据
+function GetTitleInfo(titleId)
+    return CCommonTool.GetTitleInfo(titleId);
+end
+
+-- 添加称号
+-- @param titleId 称号ID
+-- @param expireTime 过期时间 -1表示永久
+function AddTitle(titleId, expireTime)
+    local info = GetTitleInfo(titleId);
+    if info == nil then
+        return;
+    end
+    RemoveTitle(titleId);
+    table.insert(titleList, {id=titleId, titleId=titleId, info=info, expireTime=expireTime, isGet = TITLE_GET});
+    table.insert(newTitleIds, titleId);
+    RefreshRedHint();
+end
+
+-- 删除称号
+-- @param titleId 称号ID
+function RemoveTitle(titleId)
+    for i, data in ipairs(titleList) do
+        if data.id == titleId then
+            table.remove(titleList, i);
+            break;
+        end
+    end
+end
+
+-- 更新称号过期时间
+function UpdateTitleExpireTime(titleId, expireTime)
+    local data = GetPlayerTitle(titleId);
+    if data ~= nil and type(expireTime) == "number" then
+        data.expireTime = expireTime;
+        return true;
+    end
+    return false;
+end
+
+-- 获得玩家称号
+-- @param titleId 称号ID
+function GetPlayerTitle(titleId)
+    for i, data in ipairs(titleList) do
+        if data.id == titleId then
+            return data;
+        end
+    end
+end
+
+-- 装备称号
+-- @param titleId 称号ID
+function EquipTitle(titleId)
+    currentTitleId = titleId;
+end
+
+-- 是否有新称号
+function HasNewTitle()
+    return #newTitleIds > 0;
+end
+
+-- 是否为新获得的称号
+function IsNewTitle(titleId)
+    for i, id in ipairs(newTitleIds) do
+        if id == titleId then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 取消新称号状态
+function CancelNewTitleState(titleId)
+    local count = #newTitleIds;
+    local exist = false;
+    for i = count, 1, -1 do
+        local id = newTitleIds[i];
+        if id == titleId then
+            exist = true;
+            table.remove(newTitleIds, i);
+        end
+    end
+    if exist == true then
+        RefreshRedHint();
+    end
+end
+
+-- 称号界面打开后, 新称号红点消失
+function ClearNewTitle()
+    newTitleIds = {};
+    RefreshRedHint();
+end
+
+-- 刷新红点
+function RefreshRedHint()
+    error("刷新称号红点");
+    RedHintMng.SetRedHintState(CREDHINTENUM.TITLE, HasNewTitle());
+end
+
+-- 获取当前称号名称
+function GetTitleName()
+    return GetTitleNameById(currentTitleId);
+end
+
+-- 通过称号ID获取称号名称
+-- @param titleId 称号ID
+function GetTitleNameById(titleId)
+    if titleId > 0 then
+        local info = GetTitleInfo(titleId);
+        if info ~= nil and info.TitleType == 1 then
+            return CCommonTool.GetTxtData(info.TitleValue).m_str;
+        end
+    end
+    return CCommonTool.GetTxtData(8126).m_str;--[[无]]
+end
+
+-- 获得要显示的称号列表
+function GetTitleTable()
+    local m_TitleTable = CCommonTool.GetAllTitleInfo();
+    local allTitleList = {};    -- 所有的称号数据
+    local notGetTitle = {};     -- 未获得称号列表
+    for i = 1, m_TitleTable.count do
+        notGetTitle[i] = {};
+        notGetTitle[i].info = m_TitleTable[i - 1];
+        notGetTitle[i].isGet = TITLE_NOTGET;
+        notGetTitle[i].Id = m_TitleTable[i - 1].Id;
+        if #titleList > 0  then 
+            for j,k in ipairs(titleList) do 
+                k.isGet = TITLE_GET;
+                if m_TitleTable[i - 1].Id == k.info.id then 
+                    notGetTitle[i].isGet = TITLE_GET;
+                end
+            end 
+        end
+    end
+    
+    for i = #notGetTitle, 1, -1 do
+        if notGetTitle[i].isGet == TITLE_GET then 
+            table.remove(notGetTitle, i);
+        else
+            if notGetTitle[i].info.Id >= 200 and notGetTitle[i].info.Id < 300 then
+                if GetProfessionTitle(notGetTitle[i].info.Id) ~= G_UserInfo.RoleAttribute.ProID then 
+                    table.remove(notGetTitle, i);
+                end    
+            end 
+        end
+    end
+
+    table.sort(notGetTitle, sortFunc);
+
+    -- 已获得称号排序处理
+    local litmitTitle = {};
+    local notLimitTitle = {};
+    if #titleList > 0 then 
+        for i,v in pairs(titleList) do 
+            if v.expireTime > 0 then 
+                table.insert(litmitTitle, v)  
+            else
+                table.insert(notLimitTitle, v)  
+            end 
+        end 
+        if #litmitTitle > 0 then 
+            table.sort(litmitTitle, sortFunc)
+
+            if #notLimitTitle > 0 then 
+                table.sort(notLimitTitle, sortFunc)
+
+                for i,v in ipairs(litmitTitle) do
+                    table.insert(allTitleList, i, v);
+                end
+                for i,v in ipairs(notLimitTitle) do
+                    table.insert(allTitleList, i + #litmitTitle , v);
+                end
+            else
+                allTitleList = litmitTitle;
+            end
+        else
+            if #notLimitTitle > 0 then
+                table.sort(notLimitTitle, sortFunc)
+                allTitleList = notLimitTitle;
+            end
+        end
+        for i,v in pairs(allTitleList) do
+            if v.id == currentTitleId then 
+                table.remove(allTitleList, i);
+                table.insert(allTitleList, 1, v);
+            end
+        end
+        
+        for i,v in pairs(notGetTitle)do
+            table.insert(allTitleList, #titleList + i, v);
+        end
+    else
+        allTitleList = notGetTitle;
+    end
+
+    return allTitleList;
+end
+
+function sortFunc(a, b)
+    if a.info.Weight == b.info.Weight then
+        return a.info.Id < b.info.Id;
+    end
+    return a.info.Weight < b.info.Weight
+end
+
+-- 获得职业对应的称号
+function GetProfessionTitle(ID)
+    local num = nil;          -- 个位数
+    local num1 = nil;         -- 十位数
+    if ID - 200 > 10 then 
+        num1 = (ID - 200) / 10;
+        num = ID - 200 - num1 * 10;
+    else
+        num = ID - 200;
+    end
+    if num == 0 then 
+        return PROFESSION_ID.WARDRAGONWHITE;
+    elseif num == 1 then 
+        return PROFESSION_ID.FEILIBA;
+    elseif num == 2 then 
+        return PROFESSION_ID.ASSASSIN;
+    elseif num == 3 then 
+        return PROFESSION_ID.LOLI;
+    end
+
+    return nil;
+end
+
+function Clear()
+    currentTitleId = 0;
+    newTitleIds = {};
+    titleList = {};
+end

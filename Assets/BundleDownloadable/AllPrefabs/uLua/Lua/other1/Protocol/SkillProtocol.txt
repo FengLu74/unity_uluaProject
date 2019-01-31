@@ -1,0 +1,304 @@
+﻿module("SkillProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 帧听主角属性初始化完成事件
+    LuaEventDispatcher.AddEventListener("PlayerEvent.AttributeInited", OnPlayerAttributeInited);
+    -- 天赋点数更新事件(C#触发)
+    LuaEventDispatcher.AddEventListener("PlayerEvent.TalentPointUpdate", OnPlayerTalentPointUpdate);
+    -- 更新技能列表
+    network.Register(GMI_STOC_UPDATE_SKILL_LIST, UpdateSkillList);
+    -- 上线同步天赋数据
+    network.Register(GMI_STOC_LIUPAI_ONLINE_UPDATE, UpdateTalentList);
+    -- 技能快捷栏的技能
+    network.Register(GMI_STOC_SKILL_SHORTCUTBAR_DATA, UpdateSkillShortcutList);
+    -- 技能栏解锁数据
+    network.Register(GMI_STOC_SKILL_SHORTCUTBAR_UNLOCK, UpdateSkillShortcutList);
+    -- 技能栏改变时发送装备技能的位置
+    network.Register(GMI_STOC_LIUPAI_SKILL_POS, OnSkillEquipChange);
+    -- 流派切换成功
+    network.Register(GMI_STOC_LIUPAI_SWITCHOVER, OnGenreChanged);
+    -- 升级天赋返回
+    network.Register(GMI_STOC_LIUPAI_PROMOTE_LEVEL, OnTalentLevelUp);
+    -- 流派重置成功返回
+    network.Register(GMI_STOC_RESETTALENT_SUCCESS, OnGenreReset);
+    -- 技能解锁以及技能升级
+    network.Register(GMI_STOC_SETSKILLSTEP, SkillLevelUpReturn);
+    -- 技能全部升级返回
+    network.Register(GMI_STOC_LGS_SKILL_UPDATE_ONCE, OnAllSkillLevelUpReturn);
+    
+end
+
+-- 帧听主角属性初始化完成事件
+function OnPlayerAttributeInited()
+    SkillManager.InitSkillData();
+end
+
+-- 天赋点数更新事件
+function OnPlayerTalentPointUpdate()
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+end
+
+-- 更新技能列表
+function UpdateSkillList(protocolId, buffer)
+    SkillManager.UpdatePlayerSkills();
+    SkillConfigPanel.Refresh();
+    SkillLevelupPanel.Refresh();
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+end
+
+-- 上线同步天赋数据
+function UpdateTalentList(protocolId, buffer)
+    --error("上线同步天赋数据");
+    local genreData = {};
+    -- 激活的流派个数
+    genreData.count = buffer:ReadInt();
+    genreData.currentGenreIndex = buffer:ReadInt();
+    genreData.currentGenreId = buffer:ReadInt();
+    for i = 1, genreData.count do
+        local genre = {};
+        genre.genreIndex = buffer:ReadInt();
+        genre.genreId = buffer:ReadInt();
+        genre.point = buffer:ReadInt();
+        genre.talentCount = buffer:ReadInt();
+        genre.talents = {};
+        for j = 1, genre.talentCount do
+            local talent = {};
+            talent.index = buffer:ReadInt();
+            talent.id = buffer:ReadInt();
+            talent.level = buffer:ReadInt();
+            genre.talents[talent.id] = talent;
+        end
+        genreData[genre.genreId] = genre;
+    end
+    --error(SerializeTable(genreData));
+    SkillManager.UpdateTalentList(genreData);
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+end
+
+-- 技能快捷栏的技能
+function UpdateSkillShortcutList(protocolId, buffer)
+    --索引 技能ID->已装备:技能ID 0>解锁但没有装备技能 -1>未解锁
+    SkillManager.UpdateSkillShortcutList();
+    SkillConfigPanel.Refresh();
+    --SkillLevelupPanel.Refresh();
+end
+
+-- 技能栏改变时发送装备技能的位置
+function OnSkillEquipChange(protocolId, buffer)
+    local skillIndex = buffer:ReadByte() + 1;
+    local skillId = buffer:ReadInt();
+    SkillConfigPanel.OnSkillEquipChange(skillIndex, skillId);
+end
+
+-- 流派切换成功
+function OnGenreChanged(protocolId, buffer)
+    -- 当前流派index
+    local genreIndex = buffer:ReadInt();
+    -- 当前流派ID
+    local genreId = buffer:ReadInt();
+    local genreData = SkillManager.GetPlayerGenreData();
+    genreData.currentGenreIndex = genreIndex;
+    genreData.currentGenreId = genreId;
+    SkillTalentPanel.Refresh();
+    SkillTalentPanel.OnGenreChanged(genreIndex);
+end
+
+-- 升级天赋返回
+function OnTalentLevelUp(protocolId, buffer)
+    local genreIndex = buffer:ReadInt();   -- 流派索引
+    local genreId = buffer:ReadInt();      -- 流派ID
+    local talentIndex = buffer:ReadInt();  -- 天赋索引
+    local talentId = buffer:ReadInt();     -- 天赋ID
+    local level = buffer:ReadInt();             -- 天赋等级
+    local genrePoint = buffer:ReadInt();       -- 流派的总点数
+
+    local playerGenreData = SkillManager.GetPlayerGenreData();
+    local genre = playerGenreData[genreId];
+    if genre == nil then
+       error("error: genreId not exist.");
+       return;
+    end
+    genre.point = genrePoint;
+    local talent = genre.talents[talentId];
+    if not talent then
+        talent = {};
+        genre.talents[talentId] = talent;
+    end
+    talent.index = talentIndex;
+    talent.id = talentId;
+    talent.level = level;
+    SkillTalentPanel.Refresh();
+    SkillTalentPanel.OnTalentLevelUp(talentId, level);
+    local data = SkillManager.talentDict[talentId];
+    if data ~= nil and data.info ~= nil then
+        local info = data.info;
+        if info.TalentSkilltype == 1 then
+            SkillManager.AddNewUnlockedTalent(talentId);
+        end
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+end
+
+-- 重置成功返回
+function OnGenreReset(protocolId, buffer)
+    local point = buffer:ReadInt();
+    local genreIndex = buffer:ReadInt();
+    local genreId = buffer:ReadInt();
+    local playerGenreData = SkillManager.GetPlayerGenreData();
+    local genre = playerGenreData[genreId];
+    genre.talents = {};
+    genre.point = point;
+    SkillTalentPanel.Refresh();
+    ShowSystemFlowTips(2669);
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+end
+
+-- 服务器发送给客户端技能升级消息返回
+function SkillLevelUpReturn(protocolId, buffer)
+    local m_ySkillID = buffer:ReadInt();
+    local m_ySkillLevel = buffer:ReadByte();
+    local m_yStatus = buffer:ReadByte();
+    local m_yErrorCode = buffer:ReadByte();
+    if m_yStatus == 0 then
+        local skillTable = { };
+        table.insert(skillTable, 1, m_ySkillID);
+        -- 技能解锁
+    end
+    if m_yStatus == 1 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLEVELUP);
+        RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+        SkillLevelupPanel.OnSkillLevelUp(m_ySkillID);
+    end
+    if m_yStatus == 2 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLUNLOCKWRONG);
+    end
+    local errorCodeNum = m_yErrorCode;
+    if m_yStatus == 3 then
+        if errorCodeNum == 1 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKCONFIG);
+            -- error("不存在这个技能配置信息");
+        elseif errorCodeNum == 2 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLNOLEARN);
+            -- error("没有学习技能");
+        elseif errorCodeNum == 3 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLEVELMAX);
+            -- error("玩家技能的等级已经达到最大");
+        elseif errorCodeNum == 4 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKPLAYERLEVEL);
+            -- error("玩家的等级不足，不能升级");
+        elseif errorCodeNum == 5 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKCONFIGITEM);
+            -- error("技能消耗的道具配置信息不存在");
+        elseif errorCodeNum == 6 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKCOSTITEM);
+            -- error("玩家不存在技能消耗的道具");
+        elseif errorCodeNum == 7 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKPLAYERITEM);
+            -- error("玩家消耗的道具不足");
+        elseif errorCodeNum == 8 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLACKPLAYERMONEY);
+            -- error("玩家消耗的银币不足");
+        elseif errorCodeNum == 9 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLCOSTMONEY);
+            -- error("玩家扣除银币出现问题");
+        elseif errorCodeNum == 10 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLCOSTITEM);
+            -- error("玩家扣除道具出现问题");
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLRETURNBADARG);
+            -- error("未知错误");
+        end
+    end
+end
+
+-- 全部技能升级返回
+function OnAllSkillLevelUpReturn(protocolId, buffer)
+    local count = buffer:ReadByte();
+    error("全部技能升级返回:::"..count);
+    local list = {};
+    for i = 1, count do
+        table.insert(list, buffer:ReadInt());
+    end
+    SkillLevelupPanel.OnAllSkillLevelUp(list);
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLLEVELUP);
+end
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+-------------------------------------------------------发送协议 START-------------------------------------------------------
+
+-- 请求技能升级
+function RequestSkillLevelUp(skillId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_ADDSKILLSTEP);
+    buffer:WriteInt(skillId);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4050);
+end
+
+-- 请求技能全部升级
+function RequestAllSkillLevelUp(list)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_SKILL_UPDATE_ONCE);
+    buffer:WriteByte(#list);
+    error("请求技能升级 总个数::"..#list);
+    for i, data in ipairs(list) do
+        buffer:WriteInt(data.id);
+        buffer:WriteInt(data.level);
+        error(string_format("skillId:{0}, skillLevel:{1}", data.id, data.level));
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4050);
+end
+
+-- 请求装备技能栏
+function RequestChangeShortcutSkill(index, skillId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_LIUPAI_CHANGE_SKILL_SHORTCUTBAR);
+    buffer:WriteInt(skillId);
+    buffer:WriteInt(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求天赋升级
+-- @param genreIndex 流派索引
+-- @param genreId 流派ID
+-- @param talentIndex 天赋索引
+-- @param talentId 天赋ID
+function RequestTalentLevelUp(genreIndex, genreId, talentIndex, talentId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_LIUPAI_PROMOTE_LEVEL);
+    buffer:WriteInt(genreIndex);
+    buffer:WriteInt(genreId);
+    buffer:WriteInt(talentId);
+    buffer:WriteInt(talentIndex);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求重置流派
+-- @param genreIndex 流派索引 
+-- @param genreId 流派ID
+-- @param costType 消耗类型
+function RequestResetGenre(genreIndex, genreId, costType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_LIUPAI_RESET_TALENT);
+    buffer:WriteInt(genreId);
+    buffer:WriteInt(genreIndex);
+    buffer:WriteInt(costType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 切换天赋
+-- @param genreIndex 流派索引
+-- @param genreId 流派ID
+function RequestChangeGenre(genreIndex, genreId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_LIYPAI_SWITCHOVER);
+    buffer:WriteInt(genreId);
+    buffer:WriteInt(genreIndex);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------发送协议 END-------------------------------------------------------

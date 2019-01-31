@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:orientation="horizontal"
+    android:paddingLeft="25dp"
+    android:layout_height="50dp">
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:id="@+id/xy_pay_list_item_method_ic"
+        android:layout_gravity="center_vertical"
+        />
+    <TextView
+        android:id="@+id/xy_pay_list_item_method_name"
+        android:layout_marginLeft="5dp"
+        android:textSize="18sp"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:gravity="center_vertical"
+        android:layout_gravity="center_vertical"
+        android:text="pay method name"
+        android:textColor="#333333"
+        />
+    <!--保证横竖屏控件个数一致-->
+    <ImageView
+        android:visibility="gone"
+        android:id="@+id/xyw_pay_list_item_selete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:focusable="false"
+        android:layout_centerVertical="true"
+        android:src="@drawable/xyw_pay_item_nor"
+        android:background="@android:color/transparent"
+        />
+</LinearLayout>

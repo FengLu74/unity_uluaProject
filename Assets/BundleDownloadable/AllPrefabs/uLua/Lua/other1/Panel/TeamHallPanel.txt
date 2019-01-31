@@ -1,0 +1,427 @@
+﻿module('TeamHallPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamHallPanel';
+---------------------------------------label路径---------------------------------------
+-- 队伍目标名称
+local m_GoalNamePath = "TeamGoal/GoalName";
+-- 匹配中
+local m_MatchingLabelPath = "CancelAutoButton/Point";
+-----------------------------------------按钮路径--------------------------------------
+-- 刷新按钮
+local m_RefreshButtonPath = "RefreshButton";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 创建队伍
+local m_CreateButtonPath = "CreateButton";
+-- 自动匹配
+local m_AutoButtonPath = "AutoButton";
+-- 取消匹配
+local m_CancelAutoButtonPath = "CancelAutoButton";
+-- 退出队伍
+local m_QuitButtonPath = "QuitButton";
+-- 没有队伍
+local m_BlankPath = "Blank";
+-- 队伍目标
+local m_TeamGoalPath = "TeamGoal";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 队伍列表
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 队伍列表
+local m_List = nil;
+-- 创建队伍按钮
+local m_CreateButton = nil;
+-- 自动匹配
+local m_AutoButton = nil;
+-- 取消匹配
+local m_CancelAutoButton = nil;
+-- 退出队伍
+local m_QuitButton = nil;
+-- 没有队伍面板
+local m_Blank = nil;
+-- 队伍目标名称
+local m_GoalName = nil;
+-- 匹配中
+local m_MatchingLabel = nil;
+
+local m_LastTeamId = 0;
+-- 计时对象
+local m_TimerObject = nil;
+-- 匹配中TimerData
+local m_MatchingTimerData = nil;
+-- 匹配秒数
+local m_MatchingSeconds = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    RequestTeamList(0);
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+        RequestTeamList(0);
+    end
+end
+
+function OnDisable()
+    if m_CreateSuccess then
+        ClearMatchingTimer();
+    end
+    m_LastTeamId = 0;
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+	m_CreateButton = nil;
+    m_QuitButton = nil;
+	m_AutoButton = nil;
+	m_Blank = nil;
+	m_GoalName = nil;
+    m_LastTeamId = 0;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_CreateButton = child(m_PanelObject, m_CreateButtonPath).gameObject;
+    m_AutoButton = child(m_PanelObject, m_AutoButtonPath).gameObject;
+    m_CancelAutoButton = child(m_PanelObject, m_CancelAutoButtonPath).gameObject;
+    m_QuitButton = child(m_PanelObject, m_QuitButtonPath).gameObject;
+    m_Blank = child(m_PanelObject, m_BlankPath).gameObject;
+    m_GoalName = GetComponent(m_PanelObject, m_GoalNamePath, "UILabel");
+    m_MatchingLabel = GetComponent(m_PanelObject, m_MatchingLabelPath, "UILabel");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+    m_List:SetDownScrollCallback(OnListViewScrollDown);
+    UIEventListener.Get(m_CreateButton).onClick = LuaHelper.OnClick(OnCreateButtonClick);
+    UIEventListener.Get(m_AutoButton).onClick = LuaHelper.OnClick(OnAutoButtonClick);
+    UIEventListener.Get(m_CancelAutoButton).onClick = LuaHelper.OnClick(OnCancelAutoButtonClick);
+    UIEventListener.Get(m_QuitButton).onClick = LuaHelper.OnClick(OnQuitButtonClick);
+	SetGameObjectEvent(m_TeamGoalPath, OnTeamGoalClick, m_PanelObject);
+    SetGameObjectEvent(m_RefreshButtonPath, OnRefreshButtonClick, m_PanelObject);
+    m_RefreshButtonPath = "RefreshButton";
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitList();
+    InitButtonState();
+    InitTeamGoalName();
+    AddTimer();
+end
+
+function ClearTimer()
+    if m_TimerObject ~= nil then
+        Timer.Instance:StopTimer(m_TimerObject);
+        m_TimerObject = nil;
+    end
+end
+
+function AddTimer()
+    ClearTimer();
+    m_TimerObject = Timer.Instance:AddTimer(1, -1, OnTimer);
+end
+
+function OnTimer()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TEAMPANEL) == 1 then
+        m_List:Refresh();
+    end
+end
+
+-- 初始化列表
+function InitList()
+    if m_LastTeamId == 0 then
+        m_List:RemoveAll();
+    end
+    local items = TeamManager.hallTeamList;
+    for i, item in ipairs(items) do
+        m_List:AddData(item);
+    end
+    local count = #items;
+    m_LastTeamId = count > 0 and items[count].id or 0;
+    m_Blank:SetActive(#items == 0);
+end
+
+-- 初始化按钮状态
+function InitButtonState()
+    local isMatching = false;
+    if TeamManager.HasTeam() then
+        m_CreateButton:SetActive(false);
+        m_AutoButton:SetActive(false);
+        m_CancelAutoButton:SetActive(false);
+        m_QuitButton:SetActive(true);
+    else
+        m_CreateButton:SetActive(true);
+        m_AutoButton:SetActive(not TeamManager.autoMatchTeam);
+        isMatching = TeamManager.autoMatchTeam;
+        m_CancelAutoButton:SetActive(isMatching);
+        m_QuitButton:SetActive(false);
+    end
+    if isMatching == true then 
+        StartMatchingTimer();
+    else
+        ClearMatchingTimer();
+    end
+end
+
+-- 设置队伍目标
+function InitTeamGoalName()
+    local data = TeamManager.teamHallGoalData;
+    m_GoalName.text = TeamManager.GetTeamGoalName(data.goalId, data.diffIndex, true);
+end
+
+-- 请求队伍列表
+function RequestTeamList(lastTeamId)
+    m_LastTeamId = lastTeamId or 0;
+    local goalData = TeamManager.teamHallGoalData;
+    TeamProtocol.RequestTeamHallList(goalData.goalId, goalData.diffIndex, m_LastTeamId);
+end
+
+-- 清除匹配中Timer事件
+function ClearMatchingTimer()
+    if m_MatchingTimerData ~= nil then
+        Timer.Instance:StopTimer(m_MatchingTimerData);
+        m_MatchingTimerData = nil;
+        m_MatchingSeconds = 0;
+        m_MatchingLabel.text = "";
+    end
+end
+
+-- 开始匹配中Timer事件
+function StartMatchingTimer()
+    if m_MatchingTimerData == nil then
+        m_MatchingTimerData = Timer.Instance:AddTimer(0.5, -1, OnTimerUpdateEvent);
+    end
+end
+
+-- 匹配中Timer更新事件
+function OnTimerUpdateEvent()
+    m_MatchingSeconds = m_MatchingSeconds + 1;
+    local index = m_MatchingSeconds % 4;
+    if index == 0 then 
+        m_MatchingLabel.text = "";
+    elseif index == 1 then
+        m_MatchingLabel.text = ".";
+    elseif index == 2 then
+        m_MatchingLabel.text = "..";
+    elseif index == 3 then
+        m_MatchingLabel.text = "...";
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 队伍列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local teamData = data.teamData;
+    local goalInfo = TeamManager.GetTeamGoalInfo(teamData.goalId);
+    local hasTeam = TeamManager.HasTeam();
+    local applied = TeamManager.IsAppliedTeam(teamData.id);
+    SetLabelContent("Level", string_format("Lv.{0}", goalInfo and goalInfo.Level or 1), go);
+    SetLabelContent("Name", TeamManager.GetTeamGoalName(teamData.goalId, teamData.diffIndex), go);
+    SetGameObjectState("ApplyButton", not hasTeam and not applied, go);
+    SetGameObjectState("AppliedButton", not hasTeam and applied, go);
+
+    local proInfos = teamData.proInfos;
+    for i = 1, 4 do
+        local globalId = proInfos[i].globalId;
+        local matchProId = proInfos[i].proId;
+        local isMatchAll = matchProId == TeamManager.MATCH_ALL_PRO_ID;
+        local index = proInfos[i].index;
+        local member = data.members[i];
+        local hasMember = member ~= nil
+        local path = "Members/Member"..i;
+        local memGo = child(go, path).gameObject;
+
+        SetGameObjectState("Toggle", hasMember, memGo);
+        SetGameObjectState("Level", hasMember, memGo);
+        SetGameObjectState("All", not hasMember and isMatchAll, memGo);
+        SetGameObjectState("Icon", hasMember or not isMatchAll, memGo);
+
+        if hasMember then
+            SetProfessionIcon("Icon", member.proId, memGo);
+            SetLabelContent("Level", member.level, memGo);
+        else
+            if not isMatchAll then
+                SetProfessionIcon("Icon", matchProId, memGo);
+            end
+        end
+    end
+
+    local leaderInfo = data.leaderInfo;
+    SetGameObjectState("Leader", leaderInfo ~= nil, go);
+    if leaderInfo ~= nil then
+        SetLabelContent("Leader/Name", leaderInfo.name, go);
+        SetLabelContent("Leader/Level", leaderInfo.level, go);
+        local nameColor = "FDF5A0"
+        if FriendsData.IsFriend(leaderInfo.globalId) == true then
+            nameColor = "BFFF8B";
+        end
+        SetLabelColor("Leader/Name", nameColor, go);
+        -- 角色头像
+        local iconId =  CCommonTool.GetRoleDateInfo(leaderInfo.proId).HeadRes;
+        SetSpriteByAtlasID("Leader/Icon", iconId, go, true);
+        -- 阵营
+        SetGameObjectState("Leader/CampIcon", leaderInfo.campType > 0, go);
+        SetCampIcon("Leader/CampIcon", leaderInfo.campType, go);
+    end
+
+    SetLabelContent("MemberCount", data.memberCount .. "/4", go);
+end
+
+-- 队伍列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local teamData = data.teamData;
+    if go.name == "ApplyButton" then
+        if teamData.leaderId ~= G_UserInfo.GlobalDBID then
+            TeamProtocol.RequestApplyTeam(teamData.leaderId);
+            TeamManager.UpdateAppliedTeamTime(teamData.id);
+            m_List:Refresh();
+        else
+            ShowSystemFlowTips(3753);
+            RequestTeamList(0);
+        end
+    end
+end
+
+-- 列表向下滑动事件
+function OnListViewScrollDown(listView)
+    if m_LastTeamId > 0 then
+        RequestTeamList(m_LastTeamId);
+    end
+end
+
+-- 创建队伍按钮点击事件
+function OnCreateButtonClick(gameObject)
+    local goalData = TeamManager.teamHallGoalData;
+    TeamProtocol.RequestCreateTeam(goalData.goalId, goalData.diffIndex);
+    TeamPanel.OpenThisPanelByTag(3);
+end
+
+-- 自动匹配按钮点击事件
+function OnAutoButtonClick(gameObject)
+    local goalData = TeamManager.teamHallGoalData;
+    if TeamManager.HasTeam() then
+        ShowSystemFlowTips(3790);
+        return;
+    end
+    -- 目标ID为2表示匹配全部目标 不支持全部目标
+    if goalData.goalId == 2 then
+        ShowSystemFlowTips(3789);
+    else
+        TeamProtocol.RequestMatchTeam(goalData.goalId, goalData.diffIndex);
+    end
+end
+
+-- 队伍目标点击事件
+function OnTeamGoalClick(gameObject)
+    local goalData = TeamManager.teamHallGoalData;
+    TeamGoalPanel.SelectTeamGoal(goalData.goalId, goalData.diffIndex, OnSelectTeamGoal, ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+end
+
+-- 选择目标回调
+function OnSelectTeamGoal(goalId, diffIndex)
+    local goalData = TeamManager.teamHallGoalData;
+    if goalId ~= goalData.goalId or diffIndex ~= goalData.diffIndex then
+        goalData.goalId = goalId
+        goalData.diffIndex = diffIndex;
+        InitTeamGoalName();
+        RequestTeamList(0);
+        if TeamManager.autoMatchTeam == true then
+            -- 目标ID为2表示匹配全部目标 不支持全部目标
+            if goalId == 2 then
+                TeamProtocol.RequestCancelMatchTeam();
+            else
+                TeamProtocol.RequestMatchTeam(goalId, diffIndex);
+            end
+        end
+    end
+end
+
+-- 取消匹配
+function OnCancelAutoButtonClick(gameObject)
+    TeamProtocol.RequestCancelMatchTeam();
+end
+
+-- 退出队伍
+function OnQuitButtonClick(gameObject)
+    TeamProtocol.RequestQuitTeam();
+end
+
+-- 刷新按钮
+function OnRefreshButtonClick(gameObject)
+    RequestTeamList(0);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function OnListUpdate()
+    if m_CreateSuccess == true then
+        InitList();
+    end
+end
+
+-- 刷新界面
+function Refresh()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitShow();
+        end
+    end
+end
+
+-- 更新队伍目标名称
+function UpdateTeamGoalName()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitTeamGoalName();
+            InitButtonState();
+        end
+    end
+end
+
+-- 自动匹配/取消匹配更新
+function UpdateMatchState()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitButtonState();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return nil;
+end
+
+function SetJumpCloseData(paramTable)
+    
+end

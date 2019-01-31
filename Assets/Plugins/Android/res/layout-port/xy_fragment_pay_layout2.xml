@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#f3f3f3"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/xy_color_pay_fm_title_bg"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/xy_pay_back"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/xy_ic_back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="充值中心"
+            android:textColor="@android:color/white"
+            android:textSize="20sp" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:id="@+id/xyw_pay_medthod_list_ly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/xy_pay_method_title"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center_vertical"
+                android:paddingLeft="15dp"
+                android:text="选择支付方式"
+                android:textColor="@color/xy_color_pay_fm_method_text_color"
+                android:textSize="14sp" />
+                <ListView
+                    android:background="@drawable/xyw_amount_bg"
+                    android:id="@+id/xy_pay_method_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:choiceMode="singleChoice"
+                    android:divider="#e4e4e4"
+                    android:layout_marginTop="1px"
+                    android:dividerHeight="1px"
+                    android:scrollbars="none" />
+        </LinearLayout>
+        <RelativeLayout
+            android:id="@+id/xyw_pay_amount_list_ly"
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:layout_marginBottom="90dp"
+            android:layout_below="@id/xyw_pay_medthod_list_ly"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/xyw_pay_amount_des"
+                android:text="充值金额"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center_vertical"
+                android:paddingLeft="15dp"
+                android:textColor="@color/xy_color_pay_fm_method_text_color"
+                android:textSize="14sp" />
+
+            <com.xiyou.sdk.p.view.control.AmountGridView
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:background="@drawable/xyw_amount_bg"
+                android:layout_below="@id/xyw_pay_amount_des"
+                android:id="@+id/xyw_pay_grid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:cacheColorHint="@android:color/transparent"
+                android:columnWidth="50dp"
+                android:horizontalSpacing="10dp"
+                android:choiceMode="singleChoice"
+                android:numColumns="4"
+                android:scrollbars="none"
+                android:verticalSpacing="10dp" />
+        </RelativeLayout>
+        <Button
+            android:id="@+id/xy_pay_goto_pay"
+            android:layout_width="match_parent"
+            style="@style/xy.button.positive"
+            android:layout_height="50dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:text="立即支付"
+            android:textSize="20sp" />
+    </RelativeLayout>
+
+
+</LinearLayout>

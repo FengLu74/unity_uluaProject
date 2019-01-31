@@ -1,0 +1,77 @@
+﻿--[[
+    field=Id, type=int, desc=主键ID
+    field=ChargrExcelID, type=int, desc=调出商城表
+    field=ItemXLSMid, type=int, desc=item表道具ID
+]]
+module("InheritStoneChargeTable", package.seeall)
+local list={
+    {Id=1,ChargrExcelID=18000,ItemXLSMid=21350},
+    {Id=2,ChargrExcelID=15000,ItemXLSMid=21351}
+};
+local map = {[1]=list[1],[2]=list[2]};
+
+count = 2;
+Count = 2;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

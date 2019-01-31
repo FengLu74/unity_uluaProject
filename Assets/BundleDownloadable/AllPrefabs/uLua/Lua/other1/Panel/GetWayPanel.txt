@@ -1,0 +1,250 @@
+﻿module("GetWayPanel", package.seeall)
+
+
+---------------------------------------label路径---------------------------------------
+-- 道具名称
+local m_NameLabelPath = "Container/Other/Zone1/Item/Label_Name";
+-- 等级
+local m_LevelPath = "Container/Other/Zone1/Label_Level";
+-- 类型
+local m_TypePath = "Container/Other/Zone1/Label_Part";
+-- ExcelId 
+local m_excelIDPath = "/Label_ExcelIDNum";
+-----------------------------------------Sprite路径------------------------------------
+-- 图标
+local m_ItemIconPath = "Container/Other/Zone1/Item/Sprite_Icon";
+-- 品质1
+local m_ItemQualityPath = "Container/Other/Zone1/Item/Sprite_Apptitude";
+-- 品质2
+local m_ItemQuality2Path = "Container/Other/Zone1/Item/Sprite_Apptitude2";
+-- 道具品质
+local m_ItemBGQualityStr = "Container/Sprite_ItemQuality";
+-- 道具品质光
+local m_ItemBGLightQualityStr = "Container/Sprite_Light";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭
+local m_ClosePath = "ZheZhao";
+----------------------------------gameobject所在的路径---------------------------------
+-- 信息面板容器
+local m_ContainerPath = "Container";
+-- 单个获取途径
+local m_ContentPath = "Container/Other/Zone3/Content";
+-- GM是否开启了
+local m_GmIsOnStr = "Container/IsGm";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+local m_Contents = nil;
+local m_PanelObject = nil;
+local m_ExcelId = 0;
+local m_panelInitAlready = false;
+local getwayInfo = nil;
+
+local m_CausePanelID = 0;
+------------------------------------一些写死的规定-------------------------------------
+-- 文本正常颜色
+local NORMALTEXTCOLOR = "E8DA9B";
+-- 文本红色
+local REDTEXTCOLOR = "FF0000";
+
+-- 6种品质的渐变颜色
+local ItemQualityColorTop =
+{
+    [1] = "68655DE6",
+    [2] = "466F39E6",
+    [3] = "343F78E6",
+    [4] = "5E317AE6",
+    [5] = "7E5A26E6",
+    [6] = "751313E6",
+}
+
+-- 6种品质的渐变颜色
+local ItemQualityColorBottom =
+{
+    [1] = "68655D00",
+    [2] = "466F3900",
+    [3] = "343F7800",
+    [4] = "5E317A00",
+    [5] = "7E5A2600",
+    [6] = "75131300",
+}
+
+-- 6种品质的点光颜色
+local ItemQualityLightColor = 
+{
+    [1] = "cdcecc",
+    [2] = "94df82",
+    [3] = "81d4ff",
+    [4] = "b681ff",
+    [5] = "ffe981",
+    [6] = "ff8181",
+}
+
+GetWayJumpEvent = "GetWayJumpEvent";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitItemInfo();
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitItemInfo();
+    end
+end
+
+function OnDisable()
+    m_CausePanelID = 0;
+end
+
+function OnDestroy()
+    m_panelInitAlready = false;
+    m_PanelObject = nil;
+    m_Contents = nil;
+    m_ExcelId = 0;
+    getwayInfo = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GETWAYPANEL);
+    m_Contents = { };
+    for i = 1, 3 do
+        local content = child(m_PanelObject, m_ContentPath .. i).gameObject;
+        SetButtonObjEvent(content, OnContentClick);
+        table.insert(m_Contents, content);
+    end
+    -- 设置关闭事件
+    SetGameObjectEvent(m_ClosePath, OnCloseClick, m_PanelObject);
+    -- 面板初始化完毕
+    m_panelInitAlready = true;
+end
+
+-- 初始化道具信息
+function InitItemInfo()
+    -- Zone1
+    local itemAttr = ItemAttribute.New(m_ExcelId);
+    -- 设置道具名称
+    SetLabelContent(m_NameLabelPath, itemAttr:GetItemName(), m_PanelObject);
+    -- 设置名字颜色根据物品品质
+    SetLabelPinZhi(m_NameLabelPath, itemAttr:GetAptitudeID(), m_PanelObject);
+    -- 设置品质1
+    SetSpriteApptitudeV04(m_ItemQualityPath, itemAttr:GetAptitudeID(), m_PanelObject);
+    -- 设置品质2 
+    SetSpriteApptitude2V04(m_ItemQuality2Path, itemAttr:GetAptitudeID(), m_PanelObject);
+    -- 设置图标
+    SetSpriteByAtlasID(m_ItemIconPath, itemAttr:GetImageIdById(), m_PanelObject);
+    -- 道具品质
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_ExcelId);
+    SetSpriteGradientColor(m_ItemBGQualityStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_PanelObject);
+    SetSpriteColor(m_ItemBGLightQualityStr, ItemQualityLightColor[itemQualityID], m_PanelObject);
+    -- 道具特效
+    SetItemIconEffect(m_PanelObject, m_ItemIconPath, m_ExcelId, 301);
+    -- 设置道具可用等级
+    SetLabelContent(m_LevelPath, "Lv." .. itemAttr:GetNeeedLv(), m_PanelObject);
+    if G_UserInfo.RoleAttribute.Level >= itemAttr:GetNeeedLv() then
+        SetLabelColor(m_LevelPath, NORMALTEXTCOLOR, m_PanelObject);
+    else
+        SetLabelColor(m_LevelPath, REDTEXTCOLOR, m_PanelObject);
+    end
+    -- 设置道具类型
+    SetLabelTextByID(m_TypePath, itemAttr:GetTypeTxtID(), m_PanelObject);
+    -- ExcelD
+    if G_UserInfo.RoleAttribute.GmRightsLevel then
+        SetGameObjectState(m_GmIsOnStr, true, m_PanelObject);
+    else
+        SetGameObjectState(m_GmIsOnStr, false, m_PanelObject);
+    end
+    SetLabelContent(m_GmIsOnStr .. m_excelIDPath, m_ExcelId, m_PanelObject);
+
+    getwayInfo = CCommonTool.GetDropPointInfo(m_ExcelId);
+    local maxCount = getwayInfo.Count;
+    for i = 1, 3 do
+        SetGameObjectState(m_ContentPath .. i, i <= maxCount, m_PanelObject);
+        if i <= maxCount then
+            SetLabelWithUnderlineByID(m_ContentPath .. i .. "/Label", getwayInfo["Text" .. i], m_PanelObject);
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 获取途径点击事件
+function OnContentClick(go)
+    local num = tonumber(string.sub(go.name, 8));
+    local info = CCommonTool.GetDropPointInfo(m_ExcelId);
+    if info ~= nil then
+        if num == 1 then
+            if IsSystemUnlock(info.SystemId1) then
+                OpenUIByEnum.OpenByParam(info.OpenUIParam1, m_CausePanelID);
+                CloseCausePanel();
+                Event.DispatchEvent(GetWayJumpEvent, info.OpenUIParam1);
+            end
+        elseif num == 2 then
+            if IsSystemUnlock(info.SystemId2) then
+                OpenUIByEnum.OpenByParam(info.OpenUIParam2, m_CausePanelID);
+                CloseCausePanel();
+                Event.DispatchEvent(GetWayJumpEvent, info.OpenUIParam2);
+            end
+        elseif num == 3 then
+            if IsSystemUnlock(info.SystemId3) then
+                OpenUIByEnum.OpenByParam(info.OpenUIParam3, m_CausePanelID);
+                CloseCausePanel();
+                Event.DispatchEvent(GetWayJumpEvent, info.OpenUIParam3);
+            end
+        end
+
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_GETWAYPANEL);
+end
+
+-- 关闭关联的界面
+function CloseCausePanel()
+--    if m_CausePanelID > 0 then
+--        local panelInfo = CCommonTool.GetCreatePanelParaByID(m_CausePanelID);
+--        if panelInfo ~= nil and panelInfo.isSecondPanel == 0 then
+--            closePanel(m_CausePanelID);
+--            m_CausePanelID = 0;
+--        end
+--    end
+end
+
+function IsSystemUnlock(systemId)
+    local unlocked = true;
+    if systemId > 0 then
+        unlocked = SystemOpenMng.IsSystemUnlock(systemId);
+        if not unlocked then
+            ShowSystemFlowTips(11);
+        end
+    end
+    return unlocked;
+end
+
+
+-- 关闭事件
+function OnCloseClick(go)
+    closePanel(ENUMPANELID.ENUM_PANEL_GETWAYPANEL);
+end
+
+-----------------------------------外部调用的方法--------------------------------
+function Show(excelId,causePanelID)
+    if not excelId or excelId == 0 then
+        error("GetWayPanel.Show:: excelId invilid.");
+        return;
+    end
+    if not CCommonTool.GetDropPointInfo(excelId) then
+        print("GetWayPanel.Show:: excelId invilid.");
+        return;
+    end
+    m_ExcelId = excelId;
+    m_CausePanelID = causePanelID;
+    if 0 == IsOpenPanel(ENUMPANELID.ENUM_PANEL_GETWAYPANEL) then
+        if causePanelID == nil then
+            causePanelID = -1;
+        end
+        createPanel(ENUMPANELID.ENUM_PANEL_GETWAYPANEL,causePanelID);
+    else
+        InitItemInfo();
+    end
+end

@@ -1,0 +1,638 @@
+﻿require "Variable/enumdata"
+Input = UnityEngine.Input;
+-- Vector4 = UnityEngine.Vector4;
+-- Vector3 = UnityEngine.Vector3;
+-- Vector2 = UnityEngine.Vector2;
+GameObject = UnityEngine.GameObject;
+PlayerPrefs = UnityEngine.PlayerPrefs;
+Application = UnityEngine.Application;
+Debug = UnityEngine.Debug;
+Time = UnityEngine.Time;
+-- Color=UnityEngine.Color;
+Rect = UnityEngine.Rect;
+BoxCollider = UnityEngine.BoxCollider;
+Screen = UnityEngine.Screen;
+Input = UnityEngine.Input;
+KeyCode = UnityEngine.KeyCode;
+Animator = UnityEngine.Animator;
+
+-- 全局缓存变量配置
+-- 当前大区
+BigZoneId = "BigZoneId";
+-- 当前战区名称
+SelectZoneName = "SelectZoneName";
+-- 当前战区ID
+SelectZoneId = "SelectZoneId";
+-- 账号
+AccountName = "AccountName";
+-- 密码
+PassWord = "PassWord";
+-- 用户ID
+UserID = "UserID";
+-- 创建角色Index
+CreateRoleIndex = "CreateRoleIndex";
+-- 选择角色Index
+SelectRoleIndex = "SelectRoleIndex";
+SelectedIndex = "SelectedIndex";
+-------------------角色属性-----------
+-- 详细属性表
+G_AttrTable = { 2700, 2701, 2702, 2703, 2704, 2705, 2706, 2707, 2708, 2709, 2710, 2711, 2712, 2713, 2714, 2715, 2716, 2717, 2718, 2719, 2720, 
+2721, 2722, 2723, 2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 2733, 2734, 2735, 2736, 2737, 2738,9293,9319,9325 }; 
+
+G_CN_NEWTable = {
+    6667,
+    6666,
+    6668,
+    6669,
+    6670,
+    6671,
+    6672
+};
+
+-- 右侧属性表
+G_AtrTable1 = { 2700, 2701, 2702, 2717, 2715, 2716, 2703, 2704, 2718, 2738 };
+
+----------------设置界面药品替换的7个药品的excelID----------
+G_MedTable = { 25200, 25201, 25202, 25203, 25204, 25205, 25206, 25207, 25300, 25301, 25302, 25303, 25304, 25305, 25306, 25307, 25308, 25309 };
+
+----------------附魔中的属性ID对应的图片ID-----------------
+G_EnchantAttrPicID = {
+    [1] = { AttrID = 141, PicID = 1001 },
+    -- 生命
+    [2] = { AttrID = 11, PicID = 1002 },
+    -- 物攻
+    [3] = { AttrID = 31, PicID = 1003 },
+    -- 物防
+    [4] = { AttrID = 41, PicID = 1004 },
+    -- 法防
+    [5] = { AttrID = 51, PicID = 1006 },
+    -- 暴击
+    [6] = { AttrID = 61, PicID = 1007 },
+    -- 闪避
+    [7] = { AttrID = 21, PicID = 1005 },
+    -- 法攻
+    [8] = { AttrID = 71, PicID = 1008 },
+    -- 命中
+    [9] = { AttrID = 91, PicID = 1009 },-- 韧性
+};
+
+-------------道具tooltips中默认金币金钱经验的道具ID---------
+G_ItemToolTipDefine = {
+    -- 经验
+    EXP = 14000,
+    -- 红钻（非绑定）
+    NOTBINDDIAMOND = 19000,
+    -- 蓝钻（绑定）
+    BINDDIAMOND = 12000,
+    -- 金币（非绑定）
+    NOTBINDMONEY = 18000,
+    -- 银币（绑定）
+    BINDMONEY = 11000,
+    -- 阵营货币
+    CAMPEXPLOITS = 15000,
+    -- 公会贡献度
+    GUILD_CONTRIBUTION = 16000,
+    -- 猎魔道具
+    HOUNTDEAMONITEM = 19040,
+    -- 竞技场点数
+    BATTLEFIELDCOINITEM = 19010,
+    -- 骑士荣誉
+    HONORITEM = 19030,
+    -- 女神之泪
+    ARTIFACTIEM = 19050,
+    -- 体力
+    THEW = 14011,
+};
+
+----------------------系统公告数据-------------------------
+G_SysTipsCountMax = 30;
+----------------饮酒界面4个道具的ExcelID-------------------
+G_DrinkWineItems = { 21101, 21102, 21103, 21104 };
+-- 饮酒界面的四个道具的经验值
+G_DrinkWineEXP = { 6010, 6011, 6012, 6013 };
+----------------饮酒读条时间-------------------------------
+G_DrinkCDTime = 3;
+
+----------------------秘境寻宝活动数据-------------------------
+-- 界面展示道具列表
+G_LeisureActiItems = { 21001, 20704, 20623 };
+-- 活动规则文本ID
+G_LeisureRule1TxtId = 54531;
+-- 奖励规则文本ID
+G_LeisureRule2TxtId = 54532;
+-- 寻路的npcID
+G_LeisureChaseNpcId = 7040;
+
+-------------------- 35级之前的主线副本id --------------------------------
+G_Main_DungeonId = { 10001, 10002, 10003, 10012, 10006, 10011, 10014 };
+
+----------------------长夜梦魇活动数据-------------------------
+-- 界面展示道具列表
+G_NightmareActiItems = { 21021, 20003, 20100 };
+-- 活动规则文本ID
+G_NightmareRule1TxtId = 54560;
+-- 奖励规则文本ID
+G_NightmareRule2TxtId = 54561;
+-- 寻路的npcID
+G_NightmareChaseNpcId = 7041;
+
+-------------主界面左下角网络连接状态的3个图片ID---------------
+G_NetworkStatePicID =
+{
+    NotReachable = 14,
+    ReachableViaCarrierDataNetwork = 15,
+    ReachableViaLocalAreaNetwork = 16,
+}
+-------------主界面阵营模式的数据-----------------------------
+G_PKModePicID =
+{
+    -- 和平
+    [1] = { Mode = 1, PicID = 10, TxtID = 8928, ModeNameID = 11100, IntroID = 11104 },
+    -- 自由
+    [2] = { Mode = 2, PicID = 11, TxtID = 8927, ModeNameID = 11101, IntroID = 11105 },
+    -- 公会
+    [3] = { Mode = 4, PicID = 12, TxtID = 8926, ModeNameID = 11103, IntroID = 11107 },
+    -- 阵营
+    [4] = { Mode = 32, PicID = 13, TxtID = 8925, ModeNameID = 11102, IntroID = 11106 },
+};
+-------------主界面boss血条颜色------------------------------
+G_BossBannerColor =
+{
+    [1] = "FF0000",
+    -- 红
+    [2] = "FFA200",
+    -- 橙
+    [3] = "FFF02F",
+    -- 黄
+    [4] = "8AF949",
+    -- 绿
+    [5] = "00AAFF",
+    -- 蓝
+    FullAlpha = "FF",
+    HalfAlpha = "80",
+}
+------------主界面右上10个按钮的坐标位置----------------------
+G_MainButtonsPos =
+{
+    [1] = { x = 190, y = - 46 },
+    [2] = { x = 90, y = - 46 },
+    [3] = { x = - 10, y = - 46 },
+    [4] = { x = - 110, y = - 46 },
+    [5] = { x = - 210, y = - 46 },
+    [6] = { x = 190, y = - 150 },
+    [7] = { x = 90, y = - 150 },
+    [8] = { x = - 10, y = - 150 },
+    [9] = { x = - 110, y = - 150 },
+    [10] = { x = - 210, y = - 150 },
+    [11] = { x = 190, y = -254 },
+    [12] = {x = 90, y = -254 },
+    [13] = {x = - 10, y = - 254},
+    [14] = {x = - 110, y = - 254},
+    [15] = { x = - 210, y = - 254 },
+    [16] = {x = - 310, y = - 150 },
+}
+
+-----------主界面下方interface入口的数据-----------------------
+-- 角色按钮组
+G_RoleButtonsData =
+{
+    [1] = { TxtID = 10256, EventID = 1, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN, ConditionData = nil },
+    --[2] = { TxtID = 10257, EventID = 2, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_RIDE },
+    --[3] = { TxtID = 10258, EventID = 3, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_PET },
+    [2] = { TxtID = 10259, EventID = 4, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_FASHION },
+    [3] = { TxtID = 10263, EventID = 12, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_ACHIEVE },
+}
+
+-- 技能按钮组
+G_SkillButtonsData =
+{
+    [1] = { TxtID = 10260, EventID = 5, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_SKILL },
+    [2] = { TxtID = 10261, EventID = 6, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_LIFESKILL },
+}
+
+-- 装备按钮组
+G_EquipButtonsData =
+{
+    [1] = { TxtID = 10252, EventID = 7, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.EQUIPOPEN, ConditionData = nil },
+}
+
+-- 神器按钮组
+G_ArtifactButtonsData =
+{
+    [1] = { TxtID = 180000, EventID = 13, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_ARTIFACT },
+}
+
+-- 公会按钮组
+G_GuildButtonsData =
+{
+    [1] = { TxtID = 10253, EventID = 8, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_GUILD },
+}
+
+-- 阵营按钮组
+G_CampButtonsData =
+{
+    [1] = { TxtID = 10254, EventID = 9, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_CAMP },
+}
+
+-- 社交按钮组
+G_SocialButtonsData =
+{
+    [1] = { TxtID = 795, EventID = 11, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_FRIEND },
+}
+
+-- 设置按钮组
+G_SettingButtonsData =
+{
+    [1] = { TxtID = 10255, EventID = 10, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN, ConditionData = nil },
+}
+-- 神翼按钮组
+G_WingsButtonData = 
+{
+    -- 需服务器 配合设置神翼系统是否开启
+    [1] = { TxtID = 56221, EventID = 14, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_WING },
+    --[1] = { TxtID = 56221, EventID = 14, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN, ConditionData = nil },
+}
+-- 坐骑按钮组
+G_RideButtonsData =
+{
+    [1] = { TxtID = 10257, EventID = 2, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_RIDE },
+}
+-- 宠物按钮组
+G_PetButtonsData =
+{
+    [1] = { TxtID = 10258, EventID = 3, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_PET },
+}
+-- 神翼按钮组
+G_WingsButtonData = 
+{
+    -- 需服务器 配合设置神翼系统是否开启
+    [1] = { TxtID = 56221, EventID = 14, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_WING },
+    --[1] = { TxtID = 56221, EventID = 14, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN, ConditionData = nil },
+}
+-- 神将按钮组
+G_GodButtonData = 
+{
+    -- 需服务器 配合设置神翼系统是否开启
+    [1] = { TxtID = 9215, EventID = 15, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_GOD },
+    --[1] = { TxtID = 56221, EventID = 14, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN, ConditionData = nil },
+}
+-- 宝珠按钮组
+G_JeweButtonData = 
+{
+    -- 需服务器 配合设置神翼系统是否开启
+    [1] = { TxtID = 9262, EventID = 16, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_JEWE },
+    --[1] = { TxtID = 56221, EventID = 14, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN, ConditionData = nil },
+}
+-- 神行按钮组
+G_SinhaButtonData = 
+{
+    [1] = { TxtID = 9283, EventID = 17, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_Sinah },
+}
+-- 阵法按钮组
+G_MatrixButtonData = 
+{
+    [1] = { TxtID = 9283, EventID = 18, OpenCondition = ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN, ConditionData = CSYSTEMENUM.SYSTEM_Matrix },
+}
+-- 一级按钮
+G_MainPanel_InterfaceData =
+{
+    -- 角色
+    [1] = { ButtonsData = G_RoleButtonsData, TxtID = 10250, IconID = 25, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.ALWAYSOPEN, UnlockPara1 = 0 };
+    -- 技能
+    [2] = { ButtonsData = G_SkillButtonsData, TxtID = 10251, IconID = 26, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 15 };
+    -- 强化
+    [3] = { ButtonsData = G_EquipButtonsData, TxtID = 10252, IconID = 27, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 7 };
+    -- 坐骑
+    [4] = { ButtonsData = G_RideButtonsData, TxtID = 10257, IconID = 44, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 3 };
+    -- 宠物
+    [5] = { ButtonsData = G_PetButtonsData, TxtID = 10258, IconID = 42, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 42 };
+    -- 神器
+    [6] = { ButtonsData = G_ArtifactButtonsData, TxtID = 180000, IconID = 43, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 62 };
+    -- 阵营
+    [7] = { ButtonsData = G_CampButtonsData, TxtID = 10254, IconID = 29, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 220 };
+    -- 公会
+    [8] = { ButtonsData = G_GuildButtonsData, TxtID = 10253, IconID = 28, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 220 };
+    -- 社交
+    [9] = { ButtonsData = G_SocialButtonsData, TxtID = 10262, IconID = 34, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 20 };
+    -- 设置
+    [10] = { ButtonsData = G_SettingButtonsData, TxtID = 10255, IconID = 30, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.ALWAYSOPEN, UnlockPara1 = 0 };
+     -- 神翼
+    [11] = { ButtonsData = G_WingsButtonData, TxtID = 56221, IconID = 47, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 25 };
+    -- 神将
+    --[12] = { ButtonsData = G_GodButtonData, TxtID = 9215, IconID = 49, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 65 };
+     -- 宝珠
+    [12] = { ButtonsData = G_JeweButtonData, TxtID = 9262, IconID = 51, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 85 };
+    -- 神行
+    [13] = { ButtonsData = G_SinhaButtonData, TxtID = 9283, IconID = 55, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 72 };
+    -- 阵法
+    [14] = { ButtonsData = G_MatrixButtonData, TxtID = 9305, IconID = 56, UnlockType = ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL, UnlockPara1 = 80 };
+}
+
+-- 神翼按钮开启等级
+G_OpenWingLevel = 220;
+-- 自动战斗按钮开启任务ID
+G_OpenAutoFightTaskID = 0;
+-- 自动战斗按钮开启的等级
+G_OpenAutoFightLevel = 1;
+
+-- 角色进阶开启的等级
+G_OpenCultivateLevel = 6;
+
+-- 角色名称长度
+G_RoleNameLength = 14;
+
+-- 装备强化的最大等级(这个与服务器配置一样，要同步修改)
+G_EquipMaxForceLevel = 100;
+
+-- 装备洗练消耗公式
+-- 洗练消耗货币公式 = （装备等级*等级系数 + 等级加数）*品质系数
+-- 装备洗练金币消耗公式配置参数
+EquipRandEffCoinQualityRatio = { 1, 1.05, 1.25, 1.5, 1.75, 2 }; -- 品质系数
+EquipRandEffCoinLevelMultiRatio = 25; -- 等级系数
+EquipRandEffCoinLevelAddNum = 80; -- 等级加数
+-- 洗练消耗道具公式 = 级别段对应系数*道具ID消耗数量
+EquipRandEffItemQualityID = { 20410, 20410, 20410, 20411, 20412, 20413 }; -- 品质消耗道具ID
+EquipRandEffItemQualityNum = { 1, 1, 1, 1, 1, 1 }; -- 品质消耗道具数量
+
+EquipLevelChunk = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110 }; -- 装备所在的级别段
+EquipLevelChunkRatio = { 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4 }; -- 装备所在的级别段对应的系数
+
+-- 需要检索的宝石的ID起始端key值为属性ID
+G_SearchGemsConfig =
+{
+    [11] = { 30000, 30009 },
+    [21] = { 30100, 30109 },
+    [31] = { 30200, 30209 },
+    [41] = { 30300, 30309 },
+    [51] = { 30400, 30409 },
+    [61] = { 30500, 30509 },
+    [71] = { 30600, 30609 },
+    [91] = { 30700, 30709 },
+    [141] = { 30800, 30809 }
+}
+
+-- 符石界面点击购买的获取途径的excelID
+G_BuyGemsExcelID = 30000;
+
+-- 玩家附魔能达到的最大等级
+EnchantGetExpMaxLevel = 50;
+-- 玩家等级所在的级别段
+CanEnchantExpLevelChunk = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
+-- 玩家附魔能达到的最大等级
+EnchantExpMaxLevelChunk = { 20, 20, 20, 20, 30, 40, 50, 50, 50, 50 };
+-- 附魔属性品质系数（对应不同品质的属性系数）
+EnchantAttrRatio = { 1, 1.67, 3, 4.67, 6.67, 7 };
+-- 附魔得经验消耗金币数量（对应道具品质个数）
+EnchantGetExpCostMoney = { 600, 3000, 15000, 60000, 180000, 540000 };
+
+-- 帝国悬赏奖励系数
+EmpireBountyRewardRatio = { "100%", "125%", "150%", "175%", "200%" };
+-- 帝国悬赏刷新消耗绑定金币(非周卡)
+EmpireBountyRefreshStarCost = 20;
+-- 帝国悬赏刷新消耗绑定金币(周卡)
+EmpireBountyRefreshStarCostIfWeekCard = 15;
+
+-- 货币兑换比率
+-- 钻石换非绑定金币的兑换率(正整数)
+GoldToNotBindMoney = 100;
+-- 钻石换绑定金币的兑换率(正整数)
+GoldToBindMoney = 1000;
+-- 非绑定金币换绑定金币的兑换率(正整数)
+NotBindMoneyToBindMoney = 10;
+-- 绑钻换银币的兑换率(正整数)
+BindDiamondToBindMoney = 1000;
+-- 钻石换绑钻的兑换率(正整数)
+DiamondToBindDiamond = 1;
+
+-- 银币奖励道具的ExcelId
+RewardCoinExcelId = 10000;
+
+-- 公会福利 俸禄等级贡献值范围
+-- 领取俸禄需要昨日贡献最小值(三个等级)
+GuildSalaryMinLimit = { 100, 500, 800 };
+-- 领取俸禄需要昨日贡献最大值(三个等级)
+GuildSalaryMaxLimit = { 200, 1000, 1600 };
+-- 领取俸禄需要的公会资金危险值(低于危险值不能领)
+GuildWelfareCriticalValue = 2000;
+
+-- 魔法熔炉
+MagicForgeCalculateTimes = 5;
+
+-- 宠物
+PetAddExpExcelIDChunk = { 25700, 25701, 25702 }; -- 宠物提升经验的所需道具
+PetChildMaxLevel = 30; -- 宠物幼年期最大等级
+PetMaxOverPlayerLevel = 10; -- 宠物与玩家的最大等级差
+PetSavvyNeedExcelID = 25900; -- 悟性提升道具ID
+PetSavvyProValueChunk = { 5000, 3500, 2000, 1000, 200 }; -- 悟性提升基础权重
+PetSavvyProQualityRatioChunk = { 1, 1, 0.85, 0.7, 0.55, 0.55 };-- 悟性提升品质系数
+PetQualityFosterNeedItemsChunk = { 25500, 25501, 25502, 25503 };-- 宠物资质培养需要道具
+PetQualityRefreshNeedItemID = 25600; -- 宠物资质刷新需要道具ID
+PetQualityRefreshNeedItemNum = { 1, 1, 1, 2, 3, 4 }; -- 宠物资质刷新需要道具个数,根据品质
+PetLockSkillItemID = 25901; -- 宠物学习技能锁定道具
+-- 主动技能战斗力 = 主动技能数量*(宠物等级*主动技能战力系数+主动技能战力常数)
+PetMainSkillFightAbilityRatio = 50; -- 主动技能战力系数
+PetMainSkillFightAbilityConstant = 200; -- 主动技能战力常数
+PetCharacterToSkillProfit = { 1, 0.9, 0.8, 0.65, 0.5 }; -- 技能性格对应宠物性格的收益
+PetHighQualityPercent = 0.85;-- 宠物资质达到最大的多少倍显示紫色
+PetNextCanOutTime = 30; -- 玩家点击召唤按钮多少秒后可再次点击召唤
+PetDecomposeGetExcelIDByStar = { 0, 0, 31491, 31492, 31493, 31494, 31495, 31496, 31497, 31498, 31499 }; -- 宠物分解通过星级获得的固定道具
+PetCanStarUpLevel = 35; -- 宠物可升星的等级
+PetCombineButtonShowLevel = 46; -- 角色界面显示宠物合体按钮等级
+
+-- 宠物加资质道具的能作用的范围
+PetQualityAddRange =
+{
+    [1] = { low = 0, high = 1500 },
+    [2] = { low = 0, high = 2000 },
+    [3] = { low = 0, high = 2500 },
+    [4] = { low = 0, high = 3000 },
+}
+
+-- 神器碎片分解获得的固定道具
+ArtifactResolveReturn = 
+{
+    [1] = { itemId = 21811, num = 3 }, 
+    [2] = { itemId = 21811, num = 6 }, 
+    [3] = { itemId = 21811, num = 12 }, 
+    [4] = { itemId = 21811, num = 24 }, 
+    [5] = { itemId = 21811, num = 48 },
+}
+
+-- 玩家自己和队友根据职业出现选中特效
+PlayerSelectEffectProIdDict = { [1] = false, [2] = false, [3] = false, [4] = true };
+
+-- 背包还剩多少格子提示背包满
+BagFullEffectTriggerEmptyCell = 3;
+
+-- 新手期主线任务指引
+--GreenHandLevelLimit = 30;      -- 等级上限
+--GreenHandGuildStepId = 150;    -- 引导ID
+--GreenHandIdleSeconds = 180;     -- 空闲x秒后触发指引
+--GreenHandIntervalSeconds = 10; -- 指引触发后间隔x秒再次检测
+
+-- 变强功能开启等级
+StrongerStartLv = 220;
+
+
+-- 首冲界面4个档位
+ChargeAccumulateStage = 
+{
+    [1] = {itemId =100302,txtId = 57},
+    [2] = {itemId =20800,txtId = 57},
+    [3] = {itemId = 209101,txtId = 57},
+    [4] = {itemId = 22207,txtId = 57},
+};
+
+-- 公会界面据点商店显示物品表
+ShopItem =
+{
+    [63] =
+    {
+        [1] =
+        {
+            [1] = "22491,22421,0,0",
+            [2] = "1900525,1900535,22451,22411",
+            [3] = "1900525,1900535,22471,22431",
+            [4] = "1900525,1900535,22481,22441",
+            [5] = "1900525,1900535,22401,22461",
+            [6] = "1900525,1900535,22401,22461",
+            [7] = "1900525,1900535,22401,22461",
+            [8] = "1900525,1900535,22401,22461",
+            [9] = "1900525,1900535,22401,22461",
+            [10] = "1900525,1900535,22401,22461",
+        },
+    },
+    [64] =
+    {
+        [1] =
+        {
+            [1] = "22491,22421,0,0",
+            [2] = "1900525,1900535,22451,22411",
+            [3] = "1900525,1900535,22471,22431",
+            [4] = "1900525,1900535,22481,22441",
+            [5] = "1900525,1900535,22401,22461",
+            [6] = "1900525,1900535,22401,22461",
+            [7] = "1900525,1900535,22401,22461",
+            [8] = "1900525,1900535,22401,22461",
+            [9] = "1900525,1900535,22401,22461",
+            [10] = "1900525,1900535,22401,22461",
+        },
+    },
+    [65] =
+    {
+        [1] =
+        {
+            [1] = "22491,0,0,0",
+            [2] = "22451,22411,22491,0",
+            [3] = "208157,22471,22431,0",
+            [4] = "208157,22481,22441,0",
+            [5] = "208157,22401,22461,0",
+            [6] = "208157,22401,22461,0",
+            [7] = "208157,22401,22461,0",
+            [8] = "208157,22401,22461,0",
+            [9] = "208157,22401,22461,0",
+            [10] = "208157,22401,22461,0",
+        },
+    },
+    [66] =
+    {
+        [1] =
+        {
+            [1] = "22491,0,0,0",
+            [2] = "22451,22411,22491,0",
+            [3] = "208157,22471,22431,0",
+            [4] = "208157,22481,22441,0",
+            [5] = "208157,22401,22461,0",
+            [6] = "208157,22401,22461,0",
+            [7] = "208157,22401,22461,0",
+            [8] = "208157,22401,22461,0",
+            [9] = "208157,22401,22461,0",
+            [10] = "208157,22401,22461,0",
+        },
+    },
+    [67] =
+    {
+        [1] =
+        {
+            [1] = "22491,22421,0,0",
+            [2] = "22451,22411,22491,22421",
+            [3] = "22471,22431,22451,22411",
+            [4] = "1300525,1300535,22481,22441",
+            [5] = "1300525,1300535,22401,22461",
+            [6] = "1300525,1300535,22401,22461",
+            [7] = "1300525,1300535,22401,22461",
+            [8] = "1300525,1300535,22401,22461",
+            [9] = "1300525,1300535,22401,22461",
+            [10] = "1300525,1300535,22401,22461",
+        },
+    },
+    [68] =
+    {
+        [1] =
+        {
+            [1] = "22491,22421,0,0",
+            [2] = "22451,22411,22491,22421",
+            [3] = "22471,22431,22451,22411",
+            [4] = "1300525,1300535,22481,22441",
+            [5] = "1300525,1300535,22401,22461",
+            [6] = "1300525,1300535,22401,22461",
+            [7] = "1300525,1300535,22401,22461",
+            [8] = "1300525,1300535,22401,22461",
+            [9] = "1300525,1300535,22401,22461",
+            [10] = "1300525,1300535,22401,22461",
+        },
+    },
+}
+
+-- 成长基金1可购买等级
+GrowFundOneCanBuyLevel = 10;
+-- 成长基金2可购买等级
+GrowFundTwoCanBuyLevel = 40;
+-- 相机后效果FxPro 第一位标示作用
+TypeCameraFxPro = 2052;
+
+-- 主界面七日签到奖励名字(韩国版本跟cn，tw 文字第三个不一样)
+SevenDaysRewardName = {
+    [1] = 2339, [2] = 2349, [3] = 2340, [4] = 2350, [5] = 2351, [6] = 2352, [7] = 2345
+}
+
+-- 排行版前三名的底板颜色
+colorTable = { [1] = "7B4E2E", [2] = "2E5B7C", [3] = "517D2F",}
+
+-- 猎魔任务NPC ID段
+HunterDemonNpcIdSeg = {
+    {250031, 250044},
+    {120240, 120240},
+    {120250, 120250},
+    {130191, 130192},
+};
+
+--上报日志相关---start-------
+ReportIC = "TrackEvent";
+ReportCat = "Client";
+ReportActStart = "GameStart";
+ReportActPanel = "RolePanelOP";
+ReportAppIdAndroid = "107224242471";
+ReportAppIdIOS = "100608054602";
+ReportAppRequestUrl = "http://analytics.52xiyou.com/mo.json";
+ReportType = 
+{
+    GameStart,
+    GamePanel,
+};
+
+-- 新增护符，手镯装备的开启等级
+NewEquipOpenLv = 201;
+
+
+-- 边境采集任务需要提示的任务id
+BorderWarGatherTaskID = {10210, 10220, 10230};
+
+-- 边境击杀任务需要提示的任务id
+BorderWarKillTaskID = {10410, 10420, 10430, 20410, 20420, 20430};
+
+-- 一天有多个时间段的活动id表
+MultipleTimeActIDTable = { 302, };
+
+--Boss大厅装备Boss场景ID --》判断显示小地图的按钮
+BossSceneID={168,169,170,171,172,173,174,175,176,177,178,179,246,247,248};

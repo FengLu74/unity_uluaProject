@@ -1,0 +1,1487 @@
+﻿module("OtherPlayerRolePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 战力值的路径
+local m_labelFightValue = "Sprite-Left/FightValue/Label";
+-- 玩家名称显示
+local m_playerNameStr = "Sprite-Right/Attribute/Zone1/Name/Label";
+-- 玩家等级显示
+local m_PlayerLevelStr = "Sprite-Right/Attribute/Zone1/Level";
+
+-- 玩家生命值（经验）
+local m_HpStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Hp";
+-- 玩家暴击伤害值
+local m_DcStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Dc";
+-- 玩家物攻值
+local m_ApStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Ap";
+-- 玩家物防值
+local m_DpStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Dp";
+-- 玩家魔攻值
+local m_MapStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Map";
+-- 玩家魔防值
+local m_MdpStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Mdp";
+-- 玩家暴击值
+local m_AcStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Ac";
+-- 玩家命中值
+local m_AhStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Ah";
+-- 玩家闪避值
+local m_DhStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Dh";
+-- 玩家气魄值
+local m_QpStr = "Sprite-Right/Attribute/Zone3/Attribute/Attribute-Qp";
+
+-- 玩家详细属性中的生命值
+local m_DetailHpStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Hp/Label-Num";
+-- 玩家详细属性中的魔法值
+local m_DetailMpStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Mp/Label-Num";
+-- 玩家详细属性中的物攻值
+local m_DetailApStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ap/Label-Num";
+-- 玩家详细属性中的法攻值
+local m_DetailMapStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Map/Label-Num";
+-- 玩家详细属性中的物防值
+local m_DetailDpStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dp/Label-Num";
+-- 玩家详细属性中的魔防值
+local m_DetailMdpStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Mdp/Label-Num";
+-- 玩家详细属性中的暴击值
+local m_DetailAcStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ac/Label-Num";
+-- 玩家详细属性中的暴伤值
+local m_DetailChStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ch/Label-Num";
+-- 玩家详细属性中的命中值
+local m_DetailAhStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ah/Label-Num";
+-- 玩家详细属性中的气魄值
+local m_DetailQpStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Qp/Label-Num";
+-- 玩家详细属性中的闪避值
+local m_DetailDhStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dh/Label-Num";
+-- 玩家详细属性中的韧性值
+local m_DetailDcStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dc/Label-Num";
+-- 玩家详细属性中的吸血值
+local m_DetailSbStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Sb/Label-Num";
+-- 玩家详细属性中的穿透值
+local m_DetailPtStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Pt/Label-Num";
+
+-- 玩家详细属性中的命中百分比
+local m_DetailAh1Str = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ah/Label-Num1";
+-- 玩家详细属性中的闪避百分比
+local m_DetailDh1Str = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dh/Label-Num1";
+-- 玩家详细属性中的韧性百分比
+local m_DetailDc1Str = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dc/Label-Num1";
+-- 玩家详细属性中的暴击百分比
+local m_DetailAc1Str = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ac/Label-Num1";
+
+-- 玩家详细属性中的生命
+local m_DetailHpNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Hp/Label";
+-- 玩家详细属性中的魔法
+local m_DetailMpNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Mp/Label";
+-- 玩家详细属性中的物攻
+local m_DetailApNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ap/Label";
+-- 玩家详细属性中的法攻
+local m_DetailMapNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Map/Label";
+-- 玩家详细属性中的物防
+local m_DetailDpNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dp/Label";
+-- 玩家详细属性中的魔防
+local m_DetailMdpNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Mdp/Label";
+-- 玩家详细属性中的暴击
+local m_DetailAcNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ac/Label";
+-- 玩家详细属性中的暴伤
+local m_DetailChNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ch/Label";
+-- 玩家详细属性中的命中
+local m_DetailAhNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ah/Label";
+-- 玩家详细属性中的气魄
+local m_DetailQpNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Qp/Label";
+-- 玩家详细属性中的闪避
+local m_DetailDhSNametr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dh/Label";
+-- 玩家详细属性中的韧性
+local m_DetailDcNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dc/Label";
+-- 玩家详细属性中的吸血
+local m_DetailSbNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Sb/Label";
+-- 玩家详细属性中的穿透
+local m_DetailPtNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Pt/Label";
+
+
+-- 玩家详细属性中的免伤值
+local m_DetailRdStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Rd/Label-Num";
+-- 玩家详细属性中的反伤值
+local m_DetailFbStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fb/Label-Num";
+-- 玩家详细属性中的增伤值
+local m_DetailAdStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ad/Label-Num";
+
+
+-- 玩家详细属性中的免伤
+local m_DetailRdNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Rd/Label";
+-- 玩家详细属性中的反伤
+local m_DetailFbNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fb/Label";
+-- 玩家详细属性中的增伤
+local m_DetailAdNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ad/Label";
+
+
+-- 玩家详细属性中的冰攻值
+local m_DetailIhStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ih/Label-Num";
+-- 玩家详细属性中的火攻值
+local m_DetailFhStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fh/Label-Num";
+-- 玩家详细属性中的雷攻值
+local m_DetailThStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Th/Label-Num";
+-- 玩家详细属性中的风攻值
+local m_DetailWhStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Wh/Label-Num";
+-- 玩家详细属性中的光攻值
+local m_DetailLhStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Lh/Label-Num";
+-- 玩家详细属性中的暗攻值
+local m_DetailDh2Str = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dh2/Label-Num";
+-- 玩家详细属性中的冰抗值
+local m_DetailIaStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ia/Label-Num";
+-- 玩家详细属性中的火抗值
+local m_DetailFaStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fa/Label-Num";
+-- 玩家详细属性中的雷抗值
+local m_DetailTaStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ta/Label-Num";
+-- 玩家详细属性中的风抗值
+local m_DetailWaStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Wa/Label-Num";
+-- 玩家详细属性中的光抗值
+local m_DetailLaStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-La/Label-Num";
+-- 玩家详细属性中的暗抗值
+local m_DetailDaStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Da/Label-Num";
+
+
+-- 玩家详细属性中的冰攻
+local m_DetailIhNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ih/Label";
+-- 玩家详细属性中的火攻
+local m_DetailFhNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fh/Label";
+-- 玩家详细属性中的雷攻
+local m_DetailThNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Th/Label";
+-- 玩家详细属性中的风攻
+local m_DetailWhNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Wh/Label";
+-- 玩家详细属性中的光攻
+local m_DetailLhNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Lh/Label";
+-- 玩家详细属性中的暗攻
+local m_DetailDh2NameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dh2/Label";
+-- 玩家详细属性中的冰抗
+local m_DetailIaNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ia/Label";
+-- 玩家详细属性中的火抗
+local m_DetailFaNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fa/Label";
+-- 玩家详细属性中的雷抗
+local m_DetailTaNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ta/Label";
+-- 玩家详细属性中的风抗
+local m_DetailWaNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Wa/Label";
+-- 玩家详细属性中的光抗
+local m_DetailLaNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-La/Label";
+-- 玩家详细属性中的暗抗
+local m_DetailDaNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Da/Label";
+
+
+-- 玩家详细属性中的眩晕强度
+local m_DetailXsNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Xs";
+-- 玩家详细属性中的减速强度
+local m_DetailJsNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Js";
+-- 玩家详细属性中的定身强度
+local m_DetailDsNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Ds";
+-- 玩家详细属性中的沉默强度
+local m_DetailCsNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Cs";
+-- 玩家详细属性中的中毒强度
+local m_DetailZsNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Zs";
+-- 玩家详细属性中的眩晕抗性
+local m_DetailXrNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Xr";
+-- 玩家详细属性中的减速抗性
+local m_DetailJrNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Jr";
+-- 玩家详细属性中定的身抗性
+local m_DetailDrNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Dr";
+-- 玩家详细属性中的沉默抗性
+local m_DetailCrNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Cr";
+-- 玩家详细属性中的中毒抗性
+local m_DetailZrNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Zr";
+
+------------------------------------cn 新增 7条属性-------------------------------
+-- 玩家详细属性中的眩晕强度
+local m_DetailHCNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Hc";
+-- 玩家详细属性中的减速强度
+local m_DetailBCNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Bc";
+-- 玩家详细属性中的定身强度
+local m_DetailLCNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Lc";
+-- 玩家详细属性中的沉默强度
+local m_DetailFCNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Fc";
+-- 玩家详细属性中的中毒强度
+local m_DetailGCNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Gc";
+-- 玩家详细属性中的眩晕抗性
+local m_DetailACNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Acl";
+-- 玩家详细属性中的眩晕抗性
+local m_DetailBMSNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Bms";
+
+-- 玩家领主伤害
+local m_DetailBossNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-Boss";
+-- 玩家反伤
+local m_DetailFanNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-FanA";
+-- 防反伤
+local m_DetailSfanNameStr = "Sprite-Middle/Sprite-Details/Content/AllAttr/attribute-sFanA";
+
+
+
+-- 角色所在公会名称
+local m_guildNameStr = "Sprite-Right/Attribute/Zone1/Guild/HaveGuild/Label_Name";
+-- 角色所在阵营名字
+local m_campNameStr = "Sprite-Right/Attribute/Zone1/Camp/HaveCamp/Label_Name";
+-- 角色所在阵营称谓
+local m_campTitleStr = "Sprite-Right/Attribute/Zone1/Rank/Label";
+-- 角色没有加入阵营
+local m_notJoinCamp = "Sprite-Right/Attribute/Zone1/Rank/Label_None";
+-- 公会旗帜名称
+local m_guildFlagStr = "Sprite-Right/Attribute/Zone1/Guild/HaveGuild/Label";
+
+-- 角色当前修为所在的位置
+local m_cultivateStr = "Sprite-Right/Attribute/Zone1/Title/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 详情按钮所在的路径
+local m_buttonDetail = "Sprite-Right/AllAttrButton";
+-- 遮罩按钮所在的路径
+local m_zheZhao = "ZheZhao";
+-- 关闭详细属性面板
+local m_closeDetailsPanel = "Sprite-Middle/Sprite-Details/CloseButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 角色所在阵营图标
+local m_tribeSpriteStr = "Sprite-Right/Attribute/Zone1/Camp/HaveCamp/Sprite_Tribe";
+-- 角色所在阵营图标
+local m_campSpriteStr = "Sprite-Right/Attribute/Zone1/Camp/HaveCamp/Sprite_Camp";
+-- 公会旗帜
+local m_guildFlag = "Sprite-Right/Attribute/Zone1/Guild/BG/Sprite1";
+-- 无工会
+local m_notGuildFlag = "Sprite-Right/Attribute/Zone1/Guild/BG/NoneGuild";
+-- 玩家职业显示
+local m_playerProfessionStr = "Sprite-Right/Attribute/Zone1/Profession/Sprite1";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧点击的激活框所在的位置
+local m_selectObjectStr = "Sprite-Left/Sprite-Select";
+-- 中间部分整体
+local m_middleAllZoneStr = "Sprite-Middle";
+-- 中间部分详细信息
+local m_middleDetailZoneStr = "Sprite-Middle/Sprite-Details";
+
+-- 角色有公会
+local m_haveGuildStr = "Sprite-Right/Attribute/Zone1/Guild/HaveGuild";
+-- 角色没有公会
+local m_notGuildStr = "Sprite-Right/Attribute/Zone1/Guild/None";
+-- 角色有阵营
+local m_haveCampStr = "Sprite-Right/Attribute/Zone1/Camp/HaveCamp";
+-- 角色没有阵营
+local m_notCampStr = "Sprite-Right/Attribute/Zone1/Camp/None";
+-- 角色属性信息
+local m_roleAttrStr = "Sprite-Right/Attribute";
+-- 详细属性面板内容
+local m_detailPanel = "Sprite-Middle/Sprite-Details/Content";
+----------------------------------通用的名称路径---------------------------------------
+-- 左侧装备所在的通用路径
+local m_equipObjectName = "Sprite-Left/Item";
+-- 装备的星星所在的位置
+local m_equipStarsStr = "/Label-StarNum";
+-- 装备的星星的数量
+local m_equipStarsNumStr = "/Label-StarNum/Label";
+-- 左侧装备套装标志
+local m_spriteSuit = "/Sprite_Suit";
+
+-- 角色属性名字
+local m_attrNameStr = "/Label";
+-- 角色属性值
+local m_attrValueStr = "/Label-Num";
+-- 角色属性图片
+local m_attrPicterStr = "/Icon";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左侧点击的是第几个装备,0为未点击
+local m_equipSelect = 0;
+-- 左侧点击的激活框的object
+local m_selectObject = nil;
+-- 中间显示的是那个部分，0为未显示，1为显示的是装备信息，2为显示的是详细属性
+local m_middleState = 0;
+-- 韧性百分比
+local perValue = nil;
+-- 伤害计算等级系数
+local coeffValue = nil;
+-- 伤害计算等级常数
+local constValu = nil;
+-- 当前角色的信息
+local m_OtherPlayerRoleAttribute = nil;
+-- 所有装备的信息
+local m_OtherPlayerEquipTable = nil;
+-- 所有时装的信息
+local m_OtherPlayerFashionTable = nil;
+-- 当前翅膀的ExcelID
+local m_currentWringExcelID = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+-- 战力达到一千
+local m_FightValue1 = 1000;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化按钮信息
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_middleState = 0;
+    m_equipSelect = 0;
+    m_panelObject = nil;
+    m_selectObject = nil;
+    m_OtherPlayerRoleAttribute = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化界面所有信息
+function InitAllInfo()
+    -- 初始化数据
+    InitData();
+    -- 初始化左侧装备的信息
+    InitEquipInfo();
+    -- 初始化中部的信息（详细属性，装备属性）
+    InitMiddleInfo();
+    -- 初始化右侧角色的信息
+    InitPlayerInfo();
+    -- 加载玩家模型
+    InitPlayerModel();
+    -- 初始化跳转界面点击道具显示情况
+    InitJumpLeftEquipSelect();
+end
+
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL);
+    -- 亮色选中框对象
+    m_selectObject = child(m_panelObject, m_selectObjectStr).gameObject;
+end
+
+-- 初始化数据
+function InitData()
+    if not m_isJumpPanelSave then
+        m_middleState = 0;
+        m_equipSelect = 0;
+    else
+        m_OtherPlayerRoleAttribute = m_JumpPanelParamsTable[4];
+        m_OtherPlayerEquipTable = m_JumpPanelParamsTable[5];
+        m_OtherPlayerFashionTable = m_JumpPanelParamsTable[6];
+        m_middleState = m_JumpPanelParamsTable[1];
+        if m_middleState == 1 then
+            m_equipSelect = m_JumpPanelParamsTable[2];
+        else
+            m_equipSelect = 0;
+        end
+    end
+end
+
+function InitJumpLeftEquipSelect()
+    if m_isJumpPanelSave then
+        if m_middleState == 1 then
+            local strPath = m_equipObjectName .. m_equipSelect;
+            local tempObj = child(m_panelObject, strPath).gameObject;
+            tempObj:SendMessage("OnClick", tempObj);
+        end
+        m_isJumpPanelSave = false;
+    end
+end
+
+-- 初始化中部的信息（详细属性，装备属性）
+function InitMiddleInfo()
+    if m_middleState == 0 then
+        SetGameObjectState(m_zheZhao, false, m_panelObject);
+        SetGameObjectState(m_middleAllZoneStr, false, m_panelObject);
+        SetGameObjectState(m_middleDetailZoneStr, false, m_panelObject);
+    elseif m_middleState == 1 and m_equipSelect ~= 0 then
+        SetGameObjectState(m_zheZhao, true, m_panelObject);
+        SetGameObjectState(m_middleAllZoneStr, true, m_panelObject);
+        SetGameObjectState(m_middleDetailZoneStr, false, m_panelObject);
+    elseif m_middleState == 2 then
+        SetGameObjectState(m_zheZhao, true, m_panelObject);
+        InitDetailInfo();
+        SetGameObjectState(m_middleAllZoneStr, true, m_panelObject);
+        SetGameObjectState(m_middleDetailZoneStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_zheZhao, false, m_panelObject);
+        SetGameObjectState(m_middleAllZoneStr, false, m_panelObject);
+        SetGameObjectState(m_middleDetailZoneStr, false, m_panelObject);
+    end
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 详情按钮的点击事件
+    SetGameObjectEvent(m_buttonDetail, OnDetailClick, m_panelObject);
+    -- 遮罩的点击事件
+    SetGameObjectEvent(m_zheZhao, OnZheZhaoClick, m_panelObject);
+    -- 关闭详情面板的点击事件
+    SetGameObjectEvent(m_closeDetailsPanel, OnCloseDetailClick, m_panelObject);
+end
+
+function GetItemPosIndexByItemInfo(itemType)
+    if EquipType.ET_Arm == itemType then
+        return 1;
+    elseif EquipType.ET_Necklace == itemType then
+        return 2;
+    elseif EquipType.ET_Ring == itemType then
+        return 3;
+    elseif EquipType.ET_Dress == itemType then
+        return 4;
+    elseif EquipType.ET_Helmet == itemType then
+        return 5;
+    elseif EquipType.ET_Cuirass == itemType then
+        return 6;
+    elseif EquipType.ET_Leg_Guard == itemType then
+        return 7;
+    elseif EquipType.ET_Shoes == itemType then
+        return 8;
+    elseif EquipType.ET_Pants == itemType then
+        return 9;
+    elseif EquipType.ET_Earing == itemType then
+        return 10;
+    elseif EquipType.ET_Wing == itemType then
+        return 12;
+    elseif EquipType.ET_Bracelet == itemType then
+        return 13;
+    elseif EquipType.ET_Juju == itemType then
+        return 14;
+    end
+    return 1;
+end
+
+-- 初始化左侧12件装备的信息
+function InitEquipInfo()
+    for Index = 1, 14 do
+        if Index ~= 11 and Index ~= 12 then 
+            local strPath = m_equipObjectName .. Index;
+            SetItemShowByExcelIDV04(m_panelObject, strPath, 0, 1, false);
+            SetGameObjectEvent(strPath, Kong, m_panelObject);
+            SetGameObjectState(strPath .. "/Sprite_Name", true, m_panelObject);
+            SetGameObjectState(strPath .. "/lb_Equip_Apptitude", false, m_panelObject);
+            SetGameObjectState(strPath .. m_equipStarsStr, false, m_panelObject);
+            SetGameObjectState(strPath .. m_spriteSuit, false, m_panelObject);
+        end
+    end
+    if nil == m_OtherPlayerEquipTable then
+        return;
+    end
+    local m_count = 1;
+    table.foreach(m_OtherPlayerEquipTable, function(k, v)
+        local ItemInfo = v;
+        local equipType = ItemInfo:GetEquipType();
+        if EquipType.ET_Wing ~= equipType then
+            m_count = GetItemPosIndexByItemInfo(equipType);
+            local strPath = m_equipObjectName .. m_count;
+            if ItemInfo ~= nil then
+                local curEquipInfo = ItemInfo:GetEquipInfo();
+                -- 套装图标
+                if curEquipInfo.SuitID > 0 then
+                    SetGameObjectState(strPath .. m_spriteSuit, true, m_panelObject);
+                else
+                    SetGameObjectState(strPath .. m_spriteSuit, false, m_panelObject);
+                end
+                SetItemShowByExcelIDV04(m_panelObject, strPath, ItemInfo.ExcelID, 1, false, 7, ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL);
+                SetItemToolTipsEvent(m_panelObject, strPath, ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL, true, {itemInfo=ItemInfo,equipTable=m_OtherPlayerEquipTable}, false, true);
+                local itemObj = child(m_panelObject, strPath).gameObject;
+                LuaHelper.AddObjOnClickEvent(itemObj, LeftEquipClick);
+                SetGameObjectState(strPath .. "/Sprite_Name", false, m_panelObject);
+                SetGameObjectState(strPath .. "/lb_Equip_Apptitude", true, m_panelObject);
+                SetGameObjectState(strPath .. m_equipStarsStr, true, m_panelObject);
+                if ItemInfo.StarItemLevel > 15 then
+                    error("equipinfo table write error StarItemLevel is larger than 15");
+                else
+                    if ItemInfo.StarItemLevel > 0 then
+                        SetGameObjectState(strPath .. m_equipStarsStr, true, m_panelObject);
+                        SetLabelContent(strPath .. m_equipStarsNumStr, ItemInfo.StarItemLevel, m_panelObject);
+                        if ItemInfo.StarItemLevel < 10 then
+                            SetGameObjectPos(strPath .. m_equipStarsStr, Vector3.New(40, -48, 0), m_panelObject);
+                            SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(25, -48, 0), m_panelObject);
+                        else
+                            SetGameObjectPos(strPath .. m_equipStarsStr, Vector3.New(25, -48, 0), m_panelObject);
+                            SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(10, -48, 0), m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(strPath .. m_equipStarsStr, false, m_panelObject);
+                        SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(50, -48, 0), m_panelObject);
+                    end
+                end
+            end
+        end
+    end );
+    local Lv = m_OtherPlayerRoleAttribute.Level;
+    SetGameObjectState(m_equipObjectName .. 13, Lv >= NewEquipOpenLv, m_panelObject);
+    SetGameObjectState(m_equipObjectName .. 14, Lv >= NewEquipOpenLv, m_panelObject);
+    InitLeftSpriteSelect();
+end
+
+-- 初始化左边激活的按钮
+function InitLeftSpriteSelect()
+    -- 设置点击的图标显示的地方
+    if m_equipSelect == 0 then
+        -- 不显示中间的界面
+        SetGameObjectState(m_selectObjectStr, false, m_panelObject);
+    else
+        -- 显示中间的界面
+        local selectedStr = m_equipObjectName .. m_equipSelect;
+        local selectedObject = child(m_panelObject, selectedStr).gameObject;
+        m_selectObject.transform.localPosition = selectedObject.transform.localPosition;
+        SetGameObjectState(m_selectObjectStr, true, m_panelObject);
+    end
+end
+
+-- 更新中间角色属性的详细信息
+function InitDetailInfo()
+    --  初始化坐标位置
+    local panelObj = GetComponent(m_panelObject, m_detailPanel, "UIPanel");
+    if m_isJumpPanelSave then
+        panelObj.gameObject.transform.localPosition = Vector3.New(-334, m_JumpPanelParamsTable[2], 0);
+        panelObj.clipOffset = Vector2.New(0, m_JumpPanelParamsTable[3]);
+    else
+        panelObj.gameObject.transform.localPosition = Vector3.New(-334, 346, 0);
+        panelObj.clipOffset = Vector2.New(0, 1);
+    end
+
+    local Health = math.modf(m_OtherPlayerRoleAttribute.Health);
+    local MaxHealth = math.modf(m_OtherPlayerRoleAttribute.MaxHealth);
+    local Mp = math.modf(m_OtherPlayerRoleAttribute.Mp);
+    -- local MaxMp = math.modf(m_OtherPlayerRoleAttribute.MaxMp);
+    local Ap = math.modf(m_OtherPlayerRoleAttribute.Ap);
+    local Map = math.modf(m_OtherPlayerRoleAttribute.Map);
+    local Dp = math.modf(m_OtherPlayerRoleAttribute.Dp);
+    local Mdp = math.modf(m_OtherPlayerRoleAttribute.Mdp);
+    local Ac = math.modf(m_OtherPlayerRoleAttribute.Ac);
+    local Dh = math.modf(m_OtherPlayerRoleAttribute.Dh);
+    local Ah = math.modf(m_OtherPlayerRoleAttribute.Ah);
+    local Dc = math.modf(m_OtherPlayerRoleAttribute.Dc);
+
+    local Ch = GetFloatValue(m_OtherPlayerRoleAttribute.Ch);
+    Ch = math.modf(Ch * 1000 + 1500);
+    local Sb = GetFloatValue(m_OtherPlayerRoleAttribute.Sb);
+    Sb = math.modf(Sb * 1000);
+    local Pt = GetFloatValue(m_OtherPlayerRoleAttribute.Pt);
+    Pt = math.modf(Pt * 1000);
+    local Rd = GetFloatValue(m_OtherPlayerRoleAttribute.ReduceDamage);
+    Rd = math.modf(Rd * 1000);
+    local Fb = GetFloatValue(m_OtherPlayerRoleAttribute.FeedBack);
+    Fb = math.modf(Fb * 1000);
+    local Ad = GetFloatValue(m_OtherPlayerRoleAttribute.AddDamage);
+    Ad = math.modf(Ad * 1000)
+
+    local Ih = math.modf(m_OtherPlayerRoleAttribute.IceHurt);
+    local Fh = math.modf(m_OtherPlayerRoleAttribute.FireHurt);
+    local Th = math.modf(m_OtherPlayerRoleAttribute.ThunderHurt);
+    local Wh = math.modf(m_OtherPlayerRoleAttribute.WindHurt);
+    local Lh = math.modf(m_OtherPlayerRoleAttribute.LightHurt);
+    local Dh2 = math.modf(m_OtherPlayerRoleAttribute.DarkHurt);
+    local Qp = math.modf(m_OtherPlayerRoleAttribute.QipoValue);
+
+    -- 伤害计算等级系数
+    coeffValue = CCommonTool.GetDefineInfo(EDefineContentID.Type_GradeCoefficient):GetIntContent();
+    -- 伤害计算等级常数
+    constValue = CCommonTool.GetDefineInfo(EDefineContentID.Type_GradeConstant):GetIntContent();
+
+    -- 生命
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[1]):GetIntContent();
+    SetLabelTextByID(m_DetailHpNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Health);
+    -- 设置玩家生命值
+    OnNumberShow(m_DetailHpStr, m_attrValue);
+
+    -- 外攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[2]):GetIntContent();
+    SetLabelTextByID(m_DetailApNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ap);
+    -- 设置玩家外攻值
+    OnNumberShow(m_DetailApStr, m_attrValue);
+
+    -- 内攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[3]):GetIntContent();
+    SetLabelTextByID(m_DetailMapNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Map);
+    -- 设置玩家内攻值
+    OnNumberShow(m_DetailMapStr, m_attrValue);
+
+    -- 暴击
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[4]):GetIntContent();
+    SetLabelTextByID(m_DetailAcNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ac);
+    -- 设置玩家暴击值
+    OnNumberShow(m_DetailAcStr, m_attrValue);
+    -- 暴击百分比
+    perValue = m_attrValue /(m_attrValue + G_UserInfo.RoleAttribute.Level * coeffValue + constValue);
+    local m_attrPer = string.format("%0.4f", perValue) * 100;
+    SetLabelContent(m_DetailAc1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+
+    -- 命中
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[5]):GetIntContent();
+    SetLabelTextByID(m_DetailAhNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ah);
+    -- 设置玩家命中值
+    OnNumberShow(m_DetailAhStr, m_attrValue);
+    -- 命中百分比
+    perValue = m_attrValue /(m_attrValue + G_UserInfo.RoleAttribute.Level * coeffValue + constValue);
+    local m_attrPer = string.format("%0.4f", perValue) * 100;
+    SetLabelContent(m_DetailAh1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+
+    -- 暴伤
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[6]):GetIntContent();
+    SetLabelTextByID(m_DetailChNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ch);
+    -- 设置玩家暴伤值
+    SetLabelContent(m_DetailChStr, m_attrValue, m_panelObject);
+
+    -- 穿透
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[7]):GetIntContent();
+    SetLabelTextByID(m_DetailPtNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Pt);
+    -- 设置玩家穿透值
+    SetLabelContent(m_DetailPtStr, m_attrValue, m_panelObject);
+
+    -- 增伤
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[8]):GetIntContent();
+    SetLabelTextByID(m_DetailAdNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ad);
+    -- 设置玩家增伤值
+    SetLabelContent(m_DetailAdStr, m_attrValue, m_panelObject);
+
+    -- 火攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[9]):GetIntContent();
+    SetLabelTextByID(m_DetailFhNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Fh);
+    -- 设置玩家火攻
+    OnNumberShow(m_DetailFhStr, m_attrValue);
+
+    -- 冰攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[10]):GetIntContent();
+    SetLabelTextByID(m_DetailIhNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ih);
+    -- 设置玩家冰攻
+    OnNumberShow(m_DetailIhStr, m_attrValue);
+
+    -- 雷攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[11]):GetIntContent();
+    SetLabelTextByID(m_DetailThNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Th);
+    -- 设置玩家雷攻
+    OnNumberShow(m_DetailThStr, m_attrValue);
+
+    -- 风攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[12]):GetIntContent();
+    SetLabelTextByID(m_DetailWhNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Wh);
+    -- 设置玩家风攻
+    OnNumberShow(m_DetailWhStr, m_attrValue);
+
+    -- 光攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[13]):GetIntContent();
+    SetLabelTextByID(m_DetailLhNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Lh);
+    -- 设置玩家光攻
+    OnNumberShow(m_DetailLhStr, m_attrValue);
+
+    -- 暗攻
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[14]):GetIntContent();
+    SetLabelTextByID(m_DetailDh2NameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Dh2);
+    -- 设置玩家暗攻
+    OnNumberShow(m_DetailDh2Str, m_attrValue);
+
+    -- 魔法
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[15]):GetIntContent();
+    SetLabelTextByID(m_DetailMpNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Mp);
+    -- 设置玩家魔法值
+    OnNumberShow(m_DetailMpStr, m_attrValue);
+
+    -- 外防
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[16]):GetIntContent();
+    SetLabelTextByID(m_DetailDpNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Dp);
+    -- 设置玩家外防值
+    OnNumberShow(m_DetailDpStr, m_attrValue);
+
+    -- 内防
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[17]):GetIntContent();
+    SetLabelTextByID(m_DetailMdpNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Mdp);
+    -- 设置玩家内防值
+    OnNumberShow(m_DetailMdpStr, m_attrValue);
+
+    -- 韧性
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[18]):GetIntContent();
+    SetLabelTextByID(m_DetailDcNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Dc);
+    -- 设置玩家韧性值
+    OnNumberShow(m_DetailDcStr, m_attrValue);
+    -- 韧性百分比
+    perValue = m_attrValue /(m_attrValue + G_UserInfo.RoleAttribute.Level * coeffValue + constValue);
+    local m_attrPer = string.format("%0.4f", perValue) * 100;
+    SetLabelContent(m_DetailDc1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+
+    -- 闪避
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[19]):GetIntContent();
+    SetLabelTextByID(m_DetailDhSNametr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Dh);
+    -- 设置玩家闪避值
+    OnNumberShow(m_DetailDhStr, m_attrValue);
+    -- 闪避百分比
+    perValue = m_attrValue /(m_attrValue + G_UserInfo.RoleAttribute.Level * coeffValue + constValue);
+    local m_attrPer = string.format("%0.4f", perValue) * 100;
+    SetLabelContent(m_DetailDh1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+
+    -- 吸血
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[20]):GetIntContent();
+    SetLabelTextByID(m_DetailSbNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject)
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Sb);
+    -- 设置玩家吸血值
+    SetLabelContent(m_DetailSbStr, m_attrValue, m_panelObject);
+
+    -- 反伤
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[21]):GetIntContent();
+    SetLabelTextByID(m_DetailFbNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Fb);
+    -- 设置玩家反伤值
+    SetLabelContent(m_DetailFbStr, m_attrValue, m_panelObject);
+
+    -- 免伤
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[22]):GetIntContent();
+    SetLabelTextByID(m_DetailRdNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Rd);
+    -- 设置玩家免伤值
+    SetLabelContent(m_DetailRdStr, m_attrValue, m_panelObject);
+
+    -- 气魄
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[39]):GetIntContent();
+    SetLabelTextByID(m_DetailQpNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Qp);
+    OnNumberShow(m_DetailQpStr, m_attrValue);
+
+    -- 新增属性
+    AttrInfo();
+
+end
+
+-- 新增属性
+function AttrInfo()
+    local m_attrIndexData = nil;
+    local m_attrValue = nil;
+    local Xs = GetFloatValue(m_OtherPlayerRoleAttribute.XuanYunQD);
+    Xs = math.modf(Xs * 1000);
+    local Js = GetFloatValue(m_OtherPlayerRoleAttribute.JIANSUQD);
+    Js = math.modf(Js * 1000);
+    local Ds = GetFloatValue(m_OtherPlayerRoleAttribute.DINGSHENQD);
+    Ds = math.modf(Ds * 1000);
+    local Cs = GetFloatValue(m_OtherPlayerRoleAttribute.CHENMOQD);
+    Cs = math.modf(Cs * 1000);
+    local Zs = GetFloatValue(m_OtherPlayerRoleAttribute.ZHONGDUQD);
+    Zs = math.modf(Zs * 1000);
+    local Xr = GetFloatValue(m_OtherPlayerRoleAttribute.XuanYunKX);
+    Xr = math.modf(Xr * 1000);
+    local Jr = GetFloatValue(m_OtherPlayerRoleAttribute.JIANSUKX);
+    Jr = math.modf(Jr * 1000);
+    local Dr = GetFloatValue(m_OtherPlayerRoleAttribute.DINGSHENKX);
+    Dr = math.modf(Dr * 1000);
+    local Cr = GetFloatValue(m_OtherPlayerRoleAttribute.CHENMOKX);
+    Cr = math.modf(Cr * 1000);
+    local Zr = GetFloatValue(m_OtherPlayerRoleAttribute.ZHONGDUKX);
+    Zr = math.modf(Zr * 1000);
+
+     -------------------------------
+    local Bs = GetFloatValue(G_UserInfo.RoleAttribute.BossAttackRadio);
+    Bs = math.modf(Bs * 1000);
+
+    local Fs = GetFloatValue(G_UserInfo.RoleAttribute.FanAttackRadio);
+    Fs = math.floor(Fs );
+
+    local Sfs = GetFloatValue(G_UserInfo.RoleAttribute.PreventAttackRadio);
+    Sfs = math.floor(Sfs);
+
+
+
+    local Ia = math.modf(m_OtherPlayerRoleAttribute.IceAnt);
+    local Fa = math.modf(m_OtherPlayerRoleAttribute.FireAnt);
+    local Ta = math.modf(m_OtherPlayerRoleAttribute.ThunderAnt);
+    local Wa = math.modf(m_OtherPlayerRoleAttribute.WindAnt);
+    local La = math.modf(m_OtherPlayerRoleAttribute.LightAnt);
+    local Da = math.modf(m_OtherPlayerRoleAttribute.DarkAnt);
+ ------------------------------------各种刺 属性---start-------------------------------
+    local HC = math.modf(G_UserInfo.RoleAttribute.HuoCiValue);
+    local BC = math.modf(G_UserInfo.RoleAttribute.BingCiValue);
+    local LC = math.modf(G_UserInfo.RoleAttribute.LeiCiValue);
+    local FC = math.modf(G_UserInfo.RoleAttribute.FengCiValue);
+    local GC = math.modf(G_UserInfo.RoleAttribute.GuangCiValue);
+    local AC = math.modf(G_UserInfo.RoleAttribute.AnCiValue);
+    local BMS = math.modf(G_UserInfo.RoleAttribute.BaoMianValue);
+
+-- 火刺 m_DetailHCNameStr
+        local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[1]):GetIntContent();
+        SetLabelTextByID(m_DetailHCNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+        local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, HC);
+        SetLabelContent(m_DetailHCNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+        --OnNumberShow(m_DetailFaStr, m_attrValue);
+    -- 冰刺
+        local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[2]):GetIntContent();
+        SetLabelTextByID(m_DetailBCNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+        local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, BC);
+        SetLabelContent(m_DetailBCNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+        --OnNumberShow(m_DetailFaStr, m_attrValue);
+    -- 雷刺
+        local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[3]):GetIntContent();
+        SetLabelTextByID(m_DetailLCNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+        local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, LC);
+        SetLabelContent(m_DetailLCNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+        --OnNumberShow(m_DetailFaStr, m_attrValue);
+    -- 风刺
+        local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[4]):GetIntContent();
+        SetLabelTextByID(m_DetailFCNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+        local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, FC);
+        SetLabelContent(m_DetailFCNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+        --OnNumberShow(m_DetailFaStr, m_attrValue);
+    -- 光刺
+        local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[5]):GetIntContent();
+        SetLabelTextByID(m_DetailGCNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+        local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, GC);
+        SetLabelContent(m_DetailGCNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+        --OnNumberShow(m_DetailFaStr, m_attrValue);
+    -- 暗刺
+        local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[6]):GetIntContent();
+        SetLabelTextByID(m_DetailACNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+        local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, AC);
+        SetLabelContent(m_DetailACNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+        --OnNumberShow(m_DetailFaStr, m_attrValue);
+    -- 暴击免伤
+     local m_attrIndexData = CCommonTool.GetDefineInfo(G_CN_NEWTable[7]):GetIntContent();
+     SetLabelTextByID(m_DetailBMSNameStr.. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+     local m_attrValue = GetAttrIndexValueTwo(m_attrIndexData, BMS);
+     SetLabelContent(m_DetailBMSNameStr..m_attrValueStr, m_attrValue, m_panelObject);
+
+
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[23]):GetIntContent();
+    SetLabelTextByID(m_DetailFaNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Fa);
+    -- 设置玩家火抗
+    --OnNumberShow(m_DetailFaStr, m_attrValue);
+    SetLabelContent(m_DetailFaStr, m_attrValue, m_panelObject);
+    -- 冰抗
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[24]):GetIntContent();
+    SetLabelTextByID(m_DetailIaNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject)
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ia);
+    -- 设置玩家冰抗
+    --OnNumberShow(m_DetailIaStr, m_attrValue);
+    SetLabelContent(m_DetailIaStr, m_attrValue, m_panelObject);
+    -- 雷抗
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[25]):GetIntContent();
+    SetLabelTextByID(m_DetailTaNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Ta);
+    -- 设置玩家雷抗
+    --OnNumberShow(m_DetailTaStr, m_attrValue);
+    SetLabelContent(m_DetailTaStr, m_attrValue, m_panelObject);
+    -- 风抗
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[26]):GetIntContent();
+    SetLabelTextByID(m_DetailWaNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Wa);
+    -- 设置玩家风抗
+    --OnNumberShow(m_DetailWaStr, m_attrValue);
+    SetLabelContent(m_DetailWaStr, m_attrValue, m_panelObject);
+    -- 光抗
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[27]):GetIntContent();
+    SetLabelTextByID(m_DetailLaNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, La);
+    -- 设置玩家光抗
+    --OnNumberShow(m_DetailLaStr, m_attrValue);
+    SetLabelContent(m_DetailLaStr, m_attrValue, m_panelObject);
+    -- 暗抗
+    local m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[28]):GetIntContent();
+    SetLabelTextByID(m_DetailDaNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject)
+    local m_attrValue = GetAttrIndexValue(m_attrIndexData, Da);
+    -- 设置玩家暗抗
+    --OnNumberShow(m_DetailDaStr, m_attrValue);
+     SetLabelContent(m_DetailDaStr, m_attrValue, m_panelObject);   
+    -- 晕眩强度
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[29]):GetIntContent();
+    SetLabelTextByID(m_DetailXsNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家晕眩强度值
+    ReserveTwoNums(m_attrIndexData, Xs, m_DetailXsNameStr);
+
+    -- 减速强度
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[30]):GetIntContent();
+    SetLabelTextByID(m_DetailJsNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家减速强度值
+    ReserveTwoNums(m_attrIndexData, Js, m_DetailJsNameStr);
+
+    -- 定身强度
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[31]):GetIntContent();
+    SetLabelTextByID(m_DetailDsNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject)
+    -- 设置玩家定身强度值
+    ReserveTwoNums(m_attrIndexData, Ds, m_DetailDsNameStr);
+
+    -- 沉默强度
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[32]):GetIntContent();
+    SetLabelTextByID(m_DetailCsNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家沉默强度值
+    ReserveTwoNums(m_attrIndexData, Cs, m_DetailCsNameStr);
+
+    -- 中毒强度
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[33]):GetIntContent();
+    SetLabelTextByID(m_DetailZsNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家中毒强度值
+    ReserveTwoNums(m_attrIndexData, Zs, m_DetailZsNameStr);
+
+    -- 晕眩抗性
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[34]):GetIntContent();
+    SetLabelTextByID(m_DetailXrNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家晕眩抗性
+    ReserveTwoNums(m_attrIndexData, Xr, m_DetailXrNameStr);
+
+    -- 减速抗性
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[35]):GetIntContent();
+    SetLabelTextByID(m_DetailJrNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject)
+    -- 设置玩家减速抗性
+    ReserveTwoNums(m_attrIndexData, Jr, m_DetailJrNameStr);
+
+    -- 定身抗性
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[36]):GetIntContent();
+    SetLabelTextByID(m_DetailDrNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家定身抗性
+    ReserveTwoNums(m_attrIndexData, Dr, m_DetailDrNameStr);
+
+    -- 沉默抗性
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[37]):GetIntContent();
+    SetLabelTextByID(m_DetailCrNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家沉默抗性
+    ReserveTwoNums(m_attrIndexData, Cr, m_DetailCrNameStr);
+
+    -- 中毒抗性
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[38]):GetIntContent();
+    SetLabelTextByID(m_DetailZrNameStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    -- 设置玩家中毒抗性
+    ReserveTwoNums(m_attrIndexData, Zr, m_DetailZrNameStr);
+
+    -- boss伤害
+    --m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[40]):GetIntContent();
+    --SetLabelTextByID(m_DetailBossNameStr .. m_attrNameStr, G_AttrTable[40], m_panelObject);
+    --ReserveTwoNums(m_attrIndexData, Bs, m_DetailBossNameStr)
+    -- 反伤
+    --m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[41]):GetIntContent();
+    --SetLabelTextByID(m_DetailFanNameStr .. m_attrNameStr, G_AttrTable[41], m_panelObject);
+    --SetLabelContent(m_DetailFanNameStr..m_attrValueStr,Fs,m_panelObject);
+    --ReserveTwoNums(m_attrIndexData, Fs, m_DetailFanNameStr)
+    -- 防反伤
+    --m_attrIndexData = CCommonTool.GetDefineInfo(G_AttrTable[42]):GetIntContent();
+    --SetLabelTextByID(m_DetailSfanNameStr .. m_attrNameStr, G_AttrTable[42], m_panelObject);
+    --SetLabelContent(m_DetailSfanNameStr..m_attrValueStr,Sfs,m_panelObject);
+    --ReserveTwoNums(m_attrIndexData, Sfs, m_DetailSfanNameStr)
+
+
+end
+function GetAttrIndexValueTwo(attrIndex, attrValue)
+    local m_attrIndexData = CCommonTool.GetAttrIndexInfo(attrIndex);
+    local m_attrValue = 0;
+    if m_attrIndexData == nil then
+        error("attrIndex配置错误:" .. attrIndex);
+    else
+        m_attrValue = attrValue * m_attrIndexData.Ratio;
+
+        if m_attrIndexData.Ratio >= 1 then
+            local m_formatNum = string.format("%0.2f", m_attrValue);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum;
+            else
+                m_attrValue = string.format("%1d", m_attrValue);
+            end
+        end
+        if m_attrIndexData.Ratio < 1 then
+            local m_formatNum = string.format("%0.2f", m_attrValue * 100);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum .. "%";
+            else
+                error("cccccccsasas:::"..attrValue * 100)
+                m_attrValue = string.format("%1d", attrValue * 100) .. "%";
+            end
+        end
+    end
+
+    return m_attrValue;
+end
+
+-- 初始化右侧角色的信息
+function InitPlayerInfo()
+    local panelObj = GetComponent(m_panelObject, "Sprite-Right/Attribute/Zone3", "UIPanel");
+    panelObj.gameObject.transform.localPosition = Vector3.New(0, -136, 0);
+    panelObj.clipOffset = Vector2.New(0, -15);
+
+    -- 需要改角色的 状态的信息---------------------
+    local Health = math.modf(m_OtherPlayerRoleAttribute.Health);
+    local Mp = math.modf(m_OtherPlayerRoleAttribute.Mp);
+    local Ap = math.modf(m_OtherPlayerRoleAttribute.Ap);
+    local Map = math.modf(m_OtherPlayerRoleAttribute.Map);
+    local Dp = math.modf(m_OtherPlayerRoleAttribute.Dp);
+    local Mdp = math.modf(m_OtherPlayerRoleAttribute.Mdp);
+    local Ac = math.modf(m_OtherPlayerRoleAttribute.Ac);
+    local Dh = math.modf(m_OtherPlayerRoleAttribute.Dh);
+    local Ah = math.modf(m_OtherPlayerRoleAttribute.Ah);
+    local Ch = math.modf(m_OtherPlayerRoleAttribute.Ch * 1000 + 1500);
+    local Dc = math.modf(m_OtherPlayerRoleAttribute.Dc);
+    local Sb = math.modf(m_OtherPlayerRoleAttribute.Sb);
+    local Pt = math.modf(m_OtherPlayerRoleAttribute.Pt);
+    local Qp = math.modf(m_OtherPlayerRoleAttribute.QipoValue);
+
+    local PlayerProID = m_OtherPlayerRoleAttribute.ProID;
+    local playerRoleDate = CCommonTool.GetRoleDateInfo(PlayerProID);
+
+    -- 设置玩家名字
+    SetLabelContent(m_playerNameStr, m_OtherPlayerRoleAttribute.Name, m_panelObject);
+    -- 设置玩家等级
+    SetLabelContent(m_PlayerLevelStr, "Lv." .. m_OtherPlayerRoleAttribute.Level, m_panelObject);
+    -- 设置玩家职业
+    SetSpriteProfessionV04(m_playerProfessionStr, m_OtherPlayerRoleAttribute.ProID, m_panelObject);
+    -- 设置玩家的战斗力
+    OnNumberShow(m_labelFightValue, math.floor(m_OtherPlayerRoleAttribute.BattlePower));
+    -- 公会
+    if m_OtherPlayerRoleAttribute.GuildId > 0 then
+        SetGameObjectState(m_haveGuildStr, true, m_panelObject);
+        SetGameObjectState(m_notGuildStr, false, m_panelObject);
+
+        local guildName = GuildManager.GetGuildName(m_OtherPlayerRoleAttribute.GuildId);
+        local guildFlagName = GuildManager.GetGuildFlagName(m_OtherPlayerRoleAttribute.GuildId);
+        SetGameObjectState(m_notGuildFlag, false, m_panelObject);
+        SetGameObjectState(m_guildFlag, true, m_panelObject);
+        -- 公会名字
+        SetLabelContent(m_guildNameStr, guildName, m_panelObject);
+        local guildInfo = CCommonTool.GetGuildInfoByIndex(m_OtherPlayerRoleAttribute.GuildLevel);
+        SetSpriteByAtlasID(m_guildFlag, guildInfo.FlagIconBig, m_panelObject, true);
+        -- 公会旗帜名称
+        SetLabelContent(m_guildFlagStr, guildFlagName, m_panelObject);
+    else
+        SetGameObjectState(m_haveGuildStr, false, m_panelObject);
+        SetGameObjectState(m_notGuildStr, true, m_panelObject);
+        SetGameObjectState(m_notGuildFlag, true, m_panelObject);
+        SetGameObjectState(m_guildFlag, false, m_panelObject);
+    end
+
+    -- 阵营
+    if m_OtherPlayerRoleAttribute.JoinCampType > 0 then
+        SetGameObjectState(m_haveCampStr, true, m_panelObject);
+        SetGameObjectState(m_notCampStr, false, m_panelObject);
+        SetGameObjectState(m_notJoinCamp, false, m_panelObject);
+        SetGameObjectState(m_campTitleStr, true, m_panelObject);
+        -- 设置阵营图标
+        if JOINCAMPENUM.UNION == m_OtherPlayerRoleAttribute.JoinCampType then
+            SetGameObjectState(m_campSpriteStr, true, m_panelObject);
+            SetGameObjectState(m_tribeSpriteStr, false, m_panelObject);
+            SetLabelTextByID(m_campNameStr, CCommonTool.GetDefineInfo(EDefineContentID.TypeUnionTittle):GetIntContent(), m_panelObject);
+        elseif JOINCAMPENUM.TRIBE == m_OtherPlayerRoleAttribute.JoinCampType then
+            SetGameObjectState(m_campSpriteStr, false, m_panelObject);
+            SetGameObjectState(m_tribeSpriteStr, true, m_panelObject);
+            SetLabelTextByID(m_campNameStr, CCommonTool.GetDefineInfo(EDefineContentID.TypeTribeTittle):GetIntContent(), m_panelObject);
+        end
+        -- 军衔称谓
+        local m_creditData = CCommonTool.GetCreditDataInfos();
+        for Index = 1, m_creditData.Count do
+            if m_creditData[Index - 1].curTotalNeed > m_OtherPlayerRoleAttribute.N64AllExploits then
+                if m_OtherPlayerRoleAttribute.JoinCampType == JOINCAMPENUM.UNION then
+                    SetLabelTextByID(m_campTitleStr, m_creditData[Index - 1].NameID, m_panelObject);
+                else
+                    SetLabelTextByID(m_campTitleStr, m_creditData[Index - 1].NameID, m_panelObject);
+                end
+                break;
+            end
+            if Index == m_creditData.Count then
+                if m_OtherPlayerRoleAttribute.JoinCampType == JOINCAMPENUM.UNION then
+                    SetLabelTextByID(m_campTitleStr, m_creditData[Index - 1].NameID, m_panelObject);
+                else
+                    SetLabelTextByID(m_campTitleStr, m_creditData[Index - 1].NameID, m_panelObject);
+                end
+            end
+        end
+    else
+        SetGameObjectState(m_haveCampStr, false, m_panelObject);
+        SetGameObjectState(m_notCampStr, true, m_panelObject);
+        SetGameObjectState(m_notJoinCamp, true, m_panelObject);
+        SetGameObjectState(m_campTitleStr, false, m_panelObject);
+    end
+
+    local m_attrIndexData = nil;
+    local m_attrValue = nil;
+
+    -- 生命
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[1]):GetIntContent();
+    SetLabelTextByID(m_HpStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Health);
+    -- 属性图片
+    SetSpriteByAtlasID(m_HpStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家生命值
+    OnNumberShow(m_HpStr .. m_attrValueStr, m_attrValue);
+
+    -- 物攻
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[2]):GetIntContent();
+    SetLabelTextByID(m_ApStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Ap);
+    -- 属性图片
+    SetSpriteByAtlasID(m_ApStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家外攻值
+    OnNumberShow(m_ApStr .. m_attrValueStr, m_attrValue);
+
+    -- 魔攻
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[3]):GetIntContent();
+    SetLabelTextByID(m_MapStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Map);
+    -- 属性图片
+    SetSpriteByAtlasID(m_MapStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家内攻值
+    OnNumberShow(m_MapStr .. m_attrValueStr, m_attrValue);
+
+    -- 暴击伤害
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[4]):GetIntContent();
+    SetLabelTextByID(m_DcStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Dc);
+    -- 属性图片
+    SetSpriteByAtlasID(m_DcStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家魔法值
+    SetLabelContent(m_DcStr .. m_attrValueStr, m_attrValue, m_panelObject);
+
+    -- 物防
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[5]):GetIntContent();
+    SetLabelTextByID(m_DpStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Dp);
+    -- 属性图片
+    SetSpriteByAtlasID(m_DpStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家外防值
+    OnNumberShow(m_DpStr .. m_attrValueStr, m_attrValue);
+
+    -- 魔防
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[6]):GetIntContent();
+    SetLabelTextByID(m_MdpStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Mdp);
+    -- 属性图片
+    SetSpriteByAtlasID(m_MdpStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家内防值
+    OnNumberShow(m_MdpStr .. m_attrValueStr, m_attrValue);
+
+    -- 暴击
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[7]):GetIntContent();
+    SetLabelTextByID(m_AcStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Ac);
+    -- 属性图片
+    SetSpriteByAtlasID(m_AcStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家暴击值
+    OnNumberShow(m_AcStr .. m_attrValueStr, m_attrValue);
+
+    -- 命中
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[8]):GetIntContent();
+    SetLabelTextByID(m_AhStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Ah);
+    -- 属性图片
+    SetSpriteByAtlasID(m_AhStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家命中值
+    OnNumberShow(m_AhStr .. m_attrValueStr, m_attrValue);
+
+    -- 闪避
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[9]):GetIntContent();
+    SetLabelTextByID(m_DhStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Dh);
+    -- 属性图片
+    SetSpriteByAtlasID(m_DhStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家闪避值
+    OnNumberShow(m_DhStr .. m_attrValueStr, m_attrValue);
+
+    -- 气魄值
+    m_attrIndexData = CCommonTool.GetDefineInfo(G_AtrTable1[10]):GetIntContent();
+    SetLabelTextByID(m_QpStr .. m_attrNameStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).TextID, m_panelObject);
+    m_attrValue = GetAttrIndexValue(m_attrIndexData, Qp);
+    -- 属性图片
+    SetSpriteByAtlasID(m_QpStr .. m_attrPicterStr, CCommonTool.GetAttrIndexInfo(m_attrIndexData).PicterID, m_panelObject);
+    -- 设置玩家气魄值
+    OnNumberShow(m_QpStr .. m_attrValueStr, m_attrValue);
+
+    -- 称号名称
+    SetLabelContent(m_cultivateStr, TitleManager.GetTitleNameById(m_OtherPlayerRoleAttribute.TitleId), m_panelObject);
+
+end
+
+-- 加载玩家模型
+function InitPlayerModel()
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL);
+    buffer:WriteInt(m_OtherPlayerRoleAttribute.ProID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+-- 角色属性值显示方式
+function OnNumberShow(path, num)
+    local value1 = nil;
+    local value2 = nil;
+    local value = nil;
+    num = tonumber(num);
+    if num >= m_FightValue1 then
+        value1 = math.floor(num / m_FightValue1);
+        value2 = num - value1 * m_FightValue1;
+        if value1 >= m_FightValue1 then
+            local value3 = math.floor(value1 / m_FightValue1);
+            local value4 = value1 - value3 * m_FightValue1;
+            if OnValueShow(value4) == 0 then
+                value = value3 .. "," .. "000";
+            else
+                value = value3 .. "," .. OnValueShow(value4);
+            end
+        else
+            value = value1;
+        end
+        if OnValueShow(value2) == 0 then
+            SetLabelContent(path, value .. "," .. "000", m_panelObject);
+        else
+            SetLabelContent(path, value .. "," .. OnValueShow(value2), m_panelObject);
+        end
+    else
+        SetLabelContent(path, num, m_panelObject);
+    end
+end
+
+function OnValueShow(value)
+    local num = nil;
+    if value >= 100 then
+        num = value;
+    elseif value >= 10 then
+        num = "0" .. value;
+    elseif value >= 1 then
+        num = "00" .. value;
+    else
+        num = 0;
+    end
+    return num;
+end
+
+-- 属性值保留两位小数
+function ReserveTwoNums(attrIndex, attrValue, path)
+    local m_indexData = nil;
+    local m_attrValue = nil;
+    if attrValue <= 0 then
+        m_attrValue = string.format("%1d", attrValue) .. "%";
+    else
+        m_indexData = CCommonTool.GetAttrIndexInfo(attrIndex).Ratio;
+        m_attrValue = string.format("%0.2f", attrValue * m_indexData * 100) .. "%";
+    end
+
+    SetLabelContent(path .. m_attrValueStr, m_attrValue, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭界面按钮事件
+function OnCloseClick()
+    m_OtherPlayerRoleAttribute = nil;
+    m_OtherPlayerEquipTable = nil;
+    m_OtherPlayerFashionTable = nil;
+    m_currentWringExcelID = nil;
+    -- 关闭当前界面
+    closePanel(ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL);
+end
+
+-- 左侧装备按钮点击事件
+function LeftEquipClick(e)
+    m_equipSelect = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    m_middleState = 1;
+    InitMiddleInfo();
+    InitLeftSpriteSelect();
+end
+
+-- 详情的按钮点击
+function OnDetailClick()
+    if m_middleState == 2 then
+        m_middleState = 0;
+    else
+        m_middleState = 2;
+    end
+    m_equipSelect = 0;
+    InitLeftSpriteSelect();
+    InitMiddleInfo();
+end
+
+-- 遮罩的按钮点击
+function OnZheZhaoClick()
+    m_middleState = 0;
+    m_equipSelect = 0;
+    InitLeftSpriteSelect();
+    InitMiddleInfo();
+end
+
+-- 关闭详情的按钮点击
+function OnCloseDetailClick()
+    m_middleState = 0;
+    m_equipSelect = 0;
+    SetGameObjectState(m_middleDetailZoneStr, false, m_panelObject);
+end
+
+-- 点击空事件
+function Kong()
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 外部调用更新左侧装备的方法
+function OnSetOtherPlayerWing(mGlobalID)
+    m_currentWringExcelID = mGlobalID;
+end
+
+function SetData(roleAttribute, equipTable, fashionTable)
+    m_OtherPlayerRoleAttribute = roleAttribute;
+    m_OtherPlayerEquipTable = equipTable;
+    m_OtherPlayerFashionTable = fashionTable;
+end
+
+-- 外部调用更新玩家属性
+function UpdatePlayerEquipInfo(playerChangeEquip)
+    if nil == m_OtherPlayerEquipTable then
+        return;
+    end
+
+    -- 撤销合并
+    local stateType = System.Type.GetType("CCombineSkinnedMeshRender+EMeshState, Assembly-CSharp", false);
+    if stateType ~= nil then
+        local values = System.Enum.GetValues(stateType);
+        if values ~= nil and values.Length ~= 0 then
+            playerChangeEquip:SetSkinnedMeshState(values[1]);
+        end
+    end
+
+    local proID = m_OtherPlayerRoleAttribute.ProID;
+    local partnerInfo = CCommonTool.GetPartnerInfo(proID);
+    -- 设置玩家初始模型
+    if partnerInfo.CuirassModelID > 0 then
+        playerChangeEquip:SetChangeEquip(partnerInfo.CuirassModelID);
+    end
+    local hairID = m_OtherPlayerRoleAttribute.HairID;
+    local faceID = m_OtherPlayerRoleAttribute.FaceID;
+    local hairColor = m_OtherPlayerRoleAttribute.HairColor;
+    -- 发型
+    local hairModelId = GetFashionIdToModelId(m_OtherPlayerFashionTable[1]);
+    if hairModelId > 0 then
+        playerChangeEquip:SetChangeEquip(hairModelId);
+        local fashion = CCommonTool.GetFashion(m_OtherPlayerFashionTable[1]);
+        playerChangeEquip:SetChangeEquip(fashion.MaterialId);
+    else
+        hairModelId = G_IndividuationMng:GetHairResID(proID, hairID);
+        playerChangeEquip:SetChangeEquip(hairModelId);
+        local fairColorModelID = G_IndividuationMng:GetHairColorResID(proID, hairID, hairColor);
+        playerChangeEquip:SetChangeEquip(fairColorModelID);
+    end
+    -- 脸型
+    local faceModelId = GetFashionIdToModelId(m_OtherPlayerFashionTable[2]);
+    if faceModelId == 0 then
+        faceModelId = G_IndividuationMng:GetHeadResID(proID, faceID);
+    end
+    playerChangeEquip:SetChangeEquip(faceModelId);
+
+    local typeModels = { };
+    -- 时装服装
+    local clothesModelId = GetFashionIdToModelId(m_OtherPlayerFashionTable[3]);
+    if clothesModelId > 0 then
+        typeModels[5] = clothesModelId;
+    end
+    -- 时装翅膀
+    local wingModelId = GetFashionIdToModelId(m_OtherPlayerFashionTable[4]);
+    if wingModelId > 0 then
+        typeModels[11] = wingModelId;
+    end
+    -- 时装武器
+    local weaponModelId = GetFashionIdToModelId(m_OtherPlayerFashionTable[5]);
+    if weaponModelId > 0 then
+        typeModels[0] = weaponModelId;
+    end
+
+    table.foreach(m_OtherPlayerEquipTable, function(k, v)
+        local ItemInfo = v;
+        local equipInfo = ItemInfo:GetEquipInfo();
+        if equipInfo ~= nil then
+            local modelId = equipInfo.ModelResourceID;
+            local equipType = ItemInfo:GetEquipType();
+            if equipType ~= 11 then
+                if typeModels[equipType] == nil then
+                    typeModels[equipType] = modelId;
+                end
+            end
+        end
+    end );
+
+    -- 默认武器
+    local defaultWeaponModelId = partnerInfo.WeaponModelID;
+    if typeModels[0] == nil and defaultWeaponModelId > 0 then
+        typeModels[0] = defaultWeaponModelId;
+    end
+
+    -- 设置玩家初始装备
+    local equipList = GetDefaultEquipList(partnerInfo);
+    for i, equipId in pairs(equipList) do
+        local equipInfo = CCommonTool.GetEquipInfo(equipId);
+        if equipInfo ~= nil then
+            local modelId = equipInfo.ModelResourceID;
+            local equipType = ItemAttribute.GetEquipType(equipId);
+            if typeModels[equipType] == nil and modelId > 0 and equipType >= 0 then
+                typeModels[equipType] = modelId;
+            end
+        end
+    end
+    -- 没有翅膀
+    if typeModels[11] == nil then
+        local modelId = 10077;
+        playerChangeEquip:SetChangeEquip(modelId);
+    end
+    error(SerializeTable(typeModels));
+    -- 设置模型
+    for equipType, modelId in pairs(typeModels) do
+        playerChangeEquip:SetChangeEquip(modelId);
+    end
+
+end
+-- 通时装Id获取模型Id
+function GetFashionIdToModelId(fashionId)
+    if fashionId ~= nil then
+        local fashionInfo = CCommonTool.GetFashion(fashionId);
+        if fashionInfo ~= nil then
+            return fashionInfo.ModelresId;
+        end
+    end
+    return 0;
+end
+
+-- 获取默认装备列表信息
+function GetDefaultEquipList(partnerInfo)
+    local equipList = { };
+    for i = 1, 8 do
+        if partnerInfo["Equip" .. i] > 0 then
+            error(partnerInfo["Equip" .. i]);
+            table.insert(equipList, partnerInfo["Equip" .. i]);
+        end
+    end
+    return equipList;
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { m_middleState };
+    if m_middleState == 1 then
+        jumpParamsTable[2] = m_equipSelect;
+        jumpParamsTable[3] = nil;
+    elseif m_middleState == 2 then
+        local panelObj = GetComponent(m_panelObject, m_detailPanel, "UIPanel");
+        jumpParamsTable[2] = panelObj.gameObject.transform.localPosition.y;
+        jumpParamsTable[3] = panelObj.clipOffset.y;
+    end
+    jumpParamsTable[4] = m_OtherPlayerRoleAttribute;
+    jumpParamsTable[5] = m_OtherPlayerEquipTable;
+    jumpParamsTable[6] = m_OtherPlayerFashionTable;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+    

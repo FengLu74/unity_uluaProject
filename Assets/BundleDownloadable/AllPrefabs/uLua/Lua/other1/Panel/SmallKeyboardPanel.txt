@@ -1,0 +1,198 @@
+﻿module("SmallKeyboardPanel", package.seeall)
+
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+
+-- 面板遮罩背景图片路径
+local m_BackgroundPath = "Background";
+
+-- 整体所在的位置
+local m_ContentStr = "Content";
+local m_Content = nil;
+
+-- 点击的点所在的位置
+local m_AnchorStr = "Anchor";
+local m_Anchor = nil;
+
+-- 显示的整体uisprite所在的位置
+local m_UISpriteStr = "Content/Decoration/Bg1";
+local m_UISprite = nil;
+--删除按钮路径
+local m_RemoveButtonStr = "Content/ButtonGrid/RemoveButton";
+--0按钮路径
+local m_ZeroButtonStr = "Content/ButtonGrid/ZeroButton";
+--确定按钮路径
+local m_ConfirmButtonStr = "Content/ButtonGrid/ConfirmButton";
+--数字按钮路径
+local m_NumButtonStr = "Content/NumGrid/Item";
+
+local m_CurValue = nil;
+local m_Data = nil;
+function functionParameter(data)
+    m_Data  = data;
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitEvents();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+   
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL);
+    --菜单锚点GameObject
+    m_Content = child(m_panelObject, m_ContentStr).gameObject;
+    --菜单点击位置
+    m_Anchor = child(m_panelObject, m_AnchorStr).gameObject;
+    --显示的整体uisprite所在的位置
+    m_UISprite = GetComponent(m_panelObject, m_UISpriteStr, "UISprite");
+end
+
+function InitEvents()
+    -- 设置关闭按钮
+    SetGameObjectEvent(m_BackgroundPath, OnConfirmButtonClick, m_panelObject);
+    --设置删除按钮事件
+    SetGameObjectEvent(m_RemoveButtonStr, OnRemoveButtonClick, m_panelObject);
+    --设置0按钮事件
+    SetGameObjectEvent(m_ZeroButtonStr, OnZeroButtonClick, m_panelObject);
+    --设置确定按钮事件
+    SetGameObjectEvent(m_ConfirmButtonStr, OnConfirmButtonClick, m_panelObject);
+    --设置数字键按钮事件
+    for index = 1, 9 do
+        SetGameObjectEvent(m_NumButtonStr..index, OnNumButtonClick, m_panelObject);
+    end
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitShowPos(m_Data.X,m_Data.Y);
+    local num = tonumber(m_Data.Text);
+    if num then
+        m_CurValue = m_Data.Text;
+    else
+        m_CurValue = "0";
+    end
+    OnInputCallback(m_CurValue);
+end
+
+--删除按钮回调
+function OnRemoveButtonClick()
+    local len = string.len(m_CurValue);
+    if len > 0 then
+        if len == 1 then
+            m_CurValue = "0";
+        else
+            m_CurValue = string.sub(m_CurValue, 0, string.len(m_CurValue)-1);
+        end
+        OnInputCallback(m_CurValue);
+    end
+    --error("OnRemoveButtonClick : "..m_CurValue);
+end
+--0按钮回调
+function OnZeroButtonClick()
+    local len = string.len(m_CurValue);
+    if len < 6 then
+        if len > 0 then
+            if tonumber(m_CurValue) > 0 then
+                m_CurValue = m_CurValue.."0";
+                OnInputCallback(m_CurValue);
+            end
+        end
+    end
+    --error("OnZeroButtonClick : "..m_CurValue);
+end
+
+--确定按钮回调
+function OnConfirmButtonClick()
+    OnCloseClick();
+    OnConfirmCallback();
+    InputCallback = nil;
+    ConfirmCallback = nil;
+end
+
+--设置数字显示回调
+function OnNumButtonClick(e)
+    local len = string.len(m_CurValue);
+    if len < 7 then
+        local num = string.sub(e.name, 5, string.len(e.name));
+        m_CurValue = m_CurValue..num;
+        OnInputCallback(m_CurValue);
+    end
+    --error("OnNumButtonClick : "..m_CurValue);
+end
+
+--设置小键盘显示位置
+--@param x 显示坐标x
+--@param y 显示坐标y
+function InitShowPos(x,y)
+    m_Content.transform.localPosition = Vector3.New(x, y, 0);
+end
+
+--function InitShowPos()
+--    m_Anchor.transform.position = UICamera.mainCamera:ScreenToWorldPoint(Input.mousePosition);
+--    local xPos = m_Anchor.transform.localPosition.x;
+--    local yPos = m_Anchor.transform.localPosition.y;
+--    if xPos <= 0 and yPos <= 0 then
+--        m_Content.transform.localPosition = Vector3.New(xPos, yPos, 0);
+--    elseif xPos <= 0 and yPos >= 0 then
+--        m_Content.transform.localPosition = Vector3.New(xPos, yPos - m_UISprite.height, 0);
+--    elseif xPos >= 0 and yPos >= 0 then
+--        m_Content.transform.localPosition = Vector3.New(xPos, yPos - m_UISprite.height, 0);
+--    elseif xPos >= 0 and yPos <= 0 then
+--        m_Content.transform.localPosition = Vector3.New(xPos, yPos, 0);
+--    end
+--end
+--输入回调
+--@param value 输入内容
+InputCallback = nil;
+function OnInputCallback(value)
+    if InputCallback ~= nil then
+        local num = 0;
+        if value == "" or value == nil then
+            num = 0;
+        else
+            num = tonumber(value);
+        end
+        local data = 
+        {
+            Num = num;
+            Text = value;
+        };
+        InputCallback(data);
+    end
+end
+--确定回调
+ConfirmCallback = nil;
+function OnConfirmCallback()
+     if ConfirmCallback ~= nil then
+        ConfirmCallback();
+    end
+end
+
+--关闭界面
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL);
+end
+

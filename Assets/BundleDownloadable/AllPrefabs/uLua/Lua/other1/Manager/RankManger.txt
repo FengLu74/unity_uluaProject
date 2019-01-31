@@ -1,0 +1,44 @@
+﻿module("RankManger", package.seeall)
+
+-- 排行榜角色字典
+rankPlayerDict = nil;
+-- 角色列表
+players = nil;
+--排行榜总人数
+rankAllNum = 0;
+--自己的排名
+myRank = 0;
+--排行榜一级类型
+rankFirstType = nil;
+--排行榜二级类型
+rankSecendType = nil;
+--版本号
+rankVersion = 0;
+
+-- 获取排行榜角色信息
+function GetMember(ranklId)
+    if rankPlayerDict then
+        return rankPlayerDict[ranklId];
+    end
+    return nil;
+end
+
+--通用标签获取list数据
+function GetListByTabIndex(tabIndex)
+    return players;
+end
+
+--清空排行榜数据
+function ClearRankData()
+    rankPlayerDict = nil;
+    players = nil;
+    rankAllNum = 0;
+    myRank = 0;
+    rankFirstType = nil;
+    rankSecendType = nil;
+end
+-- 数据清理
+function ClearData()
+    rankPlayerDict = nil;
+    players = nil;
+end

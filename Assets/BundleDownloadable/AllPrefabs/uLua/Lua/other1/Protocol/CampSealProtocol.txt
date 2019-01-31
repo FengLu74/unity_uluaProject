@@ -1,0 +1,55 @@
+﻿module("CampSealProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --角色成就数据
+    network.Register(GMI_STOC_CAMP_SEAL_INIT_DATA, OnCampSealInit);
+    --成就数据的刷新
+    network.Register(GMI_STOC_CAMP_SEAL_OPERATE_RETURN, OnCampSealOperateReturn);
+end
+
+--角色成就数据
+function OnCampSealInit(protocolId, buffer)
+    CampSealManager.CampSealData = {};
+    local count = buffer:ReadInt();
+    local key;
+    local value;
+    for Index = 1,count do
+        key = buffer:ReadInt();
+        value = buffer:ReadInt();
+        CampSealManager.CampSealData[key] = value;
+    end
+end
+
+--角色成就数据
+function OnCampSealOperateReturn(protocolId, buffer)
+    local subMsgID = buffer:ReadByte();
+    if subMsgID == CAMPSEAL_OPERATE_MSG.CAMPSEAL_ACTIVE then
+        local activeSlot = buffer:ReadInt();
+        CampSealManager.CampSealData[activeSlot] = 0;
+        CampSealPanel.OnRefresh();
+    elseif subMsgID == CAMPSEAL_OPERATE_MSG.CAMPSEAL_SEAL_ON then
+        local activeSlot = buffer:ReadInt();
+        local excelID = buffer:ReadInt();
+        CampSealManager.CampSealData[activeSlot] = excelID;
+        CampSealPanel.OnRefresh();
+        ShowSystemFlowTips(9210);
+    elseif subMsgID == CAMPSEAL_OPERATE_MSG.CAMPSEAL_SEAL_CHANGE then
+        local activeSlot = buffer:ReadInt();
+        local excelID = buffer:ReadInt();
+        CampSealManager.CampSealData[activeSlot] = excelID;
+        CampSealPanel.OnRefresh();
+        ShowSystemFlowTips(9210);
+    elseif subMsgID == CAMPSEAL_OPERATE_MSG.CAMPSEAL_SEAL_DOWN then
+        local activeSlot = buffer:ReadInt();
+        CampSealManager.CampSealData[activeSlot] = 0;
+        CampSealPanel.OnRefresh();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_SEAL, CampSealManager.IsShowRedHint());
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

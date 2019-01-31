@@ -1,0 +1,112 @@
+﻿module("EatChickenManager", package.seeall)
+
+-- 吃鸡场景号ID
+SceneID = 208;
+-- 小地图x偏移,y偏移,缩放
+MapData = {xOffset = -182,yOffset = -182,scale = 225/256};
+-- 地图界面小地图x偏移,y偏移,缩放
+PanelMapData = {xOffset = -470,yOffset = -500,scale = 75/32};
+
+-- 安全区
+fCurSecurityPosX = 0; -- 当前安全区x坐标
+fCurSecurityPosZ = 0; -- 当前安全区z坐标
+fCurSecurityRadius = 0; -- 当前安全区半径
+bShowCurCircle = false; -- 是否显示当前安全区
+fNextSecurityPosX = 0; -- 下一安全区x坐标
+fNextSecurityPosZ = 0; -- 下一安全区z坐标
+fNextSecurityRadius = 0; -- 下一安全区半径
+bShowNextCircle = false; -- 是否显示下一安全区
+
+-- 显示文本ID
+nTxtID = 0;
+
+wKillPlayerNum = 0; -- 击杀人数
+wActivityScore = 0; -- 活动分数
+wDeadPlayerNum = 0; -- 死亡人数
+wAllPlayerNum = 0; -- 所有人数
+
+-- 排行数据
+RankData = {};
+-- 排行版本号
+nVersion = -1;
+
+-- 技能等级
+SkillData = {};
+
+-- 是否在吃鸡场景
+function IsInEatChickenScene()
+    if G_SceneMng.SceneID == SceneID then
+        return true;
+    end
+    return false;
+end
+
+-- 添加计时器
+function AddCountDownTimer(nSeconds)
+    G_TimerMng:RemoveTimeTask("EatChickenTimer");
+    AddTimerEvent("EatChickenTimer", nSeconds, EatChickenTimerOver, ETimeShowType.TypeNumberFour, EatChickenTimerUpdate);
+end
+
+function InitSceneData()
+    local Effect_Circle = nil;
+    if Effect_Circle == nil then
+        Effect_Circle = GameObject.Find("Circle");
+        if Effect_Circle == nil then
+            error("吃鸡场景找不到毒圈特效");
+        end
+    end
+    if Effect_Circle ~= nil then
+        if bShowCurCircle then
+            Effect_Circle.transform.localPosition = Vector3.New(fCurSecurityPosX,20,fCurSecurityPosZ);
+            Effect_Circle.transform.localScale = Vector3.New(fCurSecurityRadius,1,fCurSecurityRadius);
+        else
+            Effect_Circle.transform.localPosition = Vector3.New(0,0,0);
+            Effect_Circle.transform.localScale = Vector3.New(1,1,1);
+        end
+    end
+end
+
+function EatChickenTimerOver()
+    
+end
+
+function EatChickenTimerUpdate(timeStr)
+    Main_MiddleTop.UpdateEatChickenTimeStr(timeStr);
+end
+
+function AddRankData(rankDataTable)
+    local findIndex = 0;
+    for k,v in ipairs(RankData) do
+        if v.GlobalID == rankDataTable.GlobalID then
+            findIndex = k;
+        end
+    end
+    if findIndex == 0 then
+        table.insert(RankData,rankDataTable);
+    else
+        RankData[findIndex].KillNum = rankDataTable.KillNum;
+        RankData[findIndex].Score = rankDataTable.Score;
+        RankData[findIndex].RankOrder = rankDataTable.RankOrder;
+    end
+end
+
+function RankDataSort()
+    table.sort(RankData,SortFunc);
+end
+
+function SortFunc(data1,data2)
+    if data1.RankOrder == data2.RankOrder then
+        return data1.Score > data2.Score;
+    else
+        return data1.RankOrder < data2.RankOrder;
+    end
+end
+
+function ClearData()
+    G_TimerMng:RemoveTimeTask("EatChickenTimer");
+    bShowCurCircle = false;
+    bShowNextCircle = false;
+    RankData = {};
+    SkillData = {};
+    Effect_Circle = nil;
+end

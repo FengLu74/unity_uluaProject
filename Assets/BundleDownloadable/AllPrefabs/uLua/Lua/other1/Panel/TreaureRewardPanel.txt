@@ -1,0 +1,242 @@
+﻿module('TreaureRewardPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TreaureRewardPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 道具Prefab
+local m_ItemClonePath = "ItemClone";
+-- 红色道具组
+local m_Reward6Path = "ScrollView/Content/Reward6";
+-- 橙色道具组
+local m_Reward5Path = "ScrollView/Content/Reward5";
+-- 紫色道具组
+local m_Reward4Path = "ScrollView/Content/Reward4";
+-- 蓝色道具组
+local m_Reward3Path = "ScrollView/Content/Reward3";
+-- 绿色道具组
+local m_Reward2Path = "ScrollView/Content/Reward2";
+-- 白色道具组
+local m_Reward1Path = "ScrollView/Content/Reward1";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 滚动面板
+local m_ScrollViewPath = "ScrollView";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_ItemClone = nil;
+-- 加注释
+local m_ScrollView = nil;
+-- 红色道具组
+local m_Reward6 = nil;
+-- 橙色道具组
+local m_Reward5 = nil;
+-- 紫色道具组
+local m_Reward4 = nil;
+-- 蓝色道具组
+local m_Reward3 = nil;
+-- 绿色道具组
+local m_Reward2 = nil;
+-- 白色道具组
+local m_Reward1 = nil;
+
+-- 掉落组ID(drop_mother.xlsm)
+local m_DropGroupIds = nil;
+local m_RewardObjects = nil;
+local m_QualityItems = nil;
+local m_ItemGoCaches = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+PanelId = ENUMPANELID.ENUM_PANEL_TRAEURE_REWARD_PANEL;
+HeaderTxtTable =
+{
+    [1] = 9194,
+    [2] = 9194,
+    [3] = 9193,
+    [4] = 9192,
+    [5] = 9191,
+    [6] = 9190,
+}
+
+-- 6种品质的渐变颜色
+ItemQualityColor =
+{
+    [1] = "e8da9b",
+    [2] = "91e464",
+    [3] = "3bbdee",
+    [4] = "d719ff",
+    [5] = "fffd37",
+    [6] = "f63333",
+}
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_ItemClone = nil;
+	m_ScrollView = nil;
+	m_Reward6 = nil;
+	m_Reward5 = nil;
+	m_Reward4 = nil;
+	m_Reward3 = nil;
+	m_Reward2 = nil;
+	m_Reward1 = nil;
+    m_RewardObjects = nil;
+    m_ItemGoCaches = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(PanelId);
+    m_ItemClone = child(m_PanelObject, m_ItemClonePath).gameObject;
+    m_ScrollView = GetComponent(m_PanelObject, m_ScrollViewPath, "UIScrollView");
+    m_Reward6 = child(m_PanelObject, m_Reward6Path).gameObject;
+    m_Reward5 = child(m_PanelObject, m_Reward5Path).gameObject;
+    m_Reward4 = child(m_PanelObject, m_Reward4Path).gameObject;
+    m_Reward3 = child(m_PanelObject, m_Reward3Path).gameObject;
+    m_Reward2 = child(m_PanelObject, m_Reward2Path).gameObject;
+    m_Reward1 = child(m_PanelObject, m_Reward1Path).gameObject;
+    m_ItemClone:SetActive(false);
+
+    m_RewardObjects = {
+        [1] = m_Reward1,
+        [2] = m_Reward2,
+        [3] = m_Reward3,
+        [4] = m_Reward4,
+        [5] = m_Reward5,
+        [6] = m_Reward6,
+    }
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitData();
+    local totalHeight = 0;
+    local y = 0;
+    for i = 6, 1, -1 do
+        local rewardGo = m_RewardObjects[i];
+        local items = m_QualityItems[i];
+        if items ~= nil then
+            rewardGo:SetActive(true);
+            local pos = rewardGo.transform.localPosition;
+            pos.y = y;
+            rewardGo.transform.localPosition = pos;
+            SetLabelTextByID("Label_Header", HeaderTxtTable[i], rewardGo);
+            SetLabelColor("Label_Header", ItemQualityColor[i], rewardGo);
+            itemsTrans = child(rewardGo, "Items");
+            Util.ClearChild(itemsTrans);
+            if itemsTrans ~= nil then
+                local itemCount = 0;
+                for itemId, _ in pairs(items) do
+                    local cell = newobject(m_ItemClone);
+                    cell:SetActive(true);
+                    cell.transform.parent = itemsTrans;
+                    cell.transform.localScale = Vector3.one;
+                    cell.name = "item" .. itemId;
+                    SetItemShowByExcelIDV04(cell, "Item", itemId, 1, false, 145, PanelId);
+                    SetItemToolTipsEvent(cell, "Item", PanelId, false, itemId, false, false);
+                    itemCount = itemCount + 1;
+                end
+                local uiTable = itemsTrans.gameObject:GetComponent("UITable");
+                if uiTable ~= nil then
+                    uiTable:Reposition();
+                end
+                local itemHeight = math.ceil(itemCount / 6)  * 150;
+                local bg = GetComponent(rewardGo, "bg", "UISprite");
+                if bg ~= nil then
+                    bg.height = itemHeight + 10;
+                end
+                y = y - 80 - itemHeight;
+            end
+        else
+            rewardGo:SetActive(false);
+        end
+    end
+    m_ScrollView:ResetPosition();
+end
+
+function InitData()
+    m_QualityItems = {};
+    for _, dropMotherId in ipairs(m_DropGroupIds) do
+        local mother = DropMotherTable.Get(dropMotherId);
+        if mother ~= nil then
+            local num = mother.Num;
+            for i = 1, num do
+                local son = DropSonTable.Get(mother[string_format("SonBag{0}ID", i)]);
+                if son ~= nil then
+                    local sonNum = son.Num;
+                    for j = 1, sonNum do
+                        local itemId = son[string_format("Item{0}ID", j)];
+                        itemId = CCommonTool.GetProfessionItemId(itemId);
+                        if itemId > 0 then
+                            local quality = CCommonTool.GetAptitudeIDByExcelID(itemId);
+                            if m_QualityItems[quality] == nil then
+                                m_QualityItems[quality] = {};
+                            end
+                            m_QualityItems[quality][itemId] = true;
+                        end
+                    end
+                end
+            end
+        else
+            error("drop_mother.xlsm表中没有找到指定ID: " .. tostring(dropMotherId));
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 加注释
+function OnMaskClick(gameObject)
+    closePanel(PanelId);
+end
+
+-- 加注释
+function OnButtonCloseClick(gameObject)
+    closePanel(PanelId);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(dropGroupIds)
+    m_DropGroupIds = dropGroupIds;
+    createPanel(PanelId);
+end

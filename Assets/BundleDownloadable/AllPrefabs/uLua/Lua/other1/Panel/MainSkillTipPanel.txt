@@ -1,0 +1,148 @@
+﻿module('MainSkillTipPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'MainSkillTipPanel';
+---------------------------------------label路径---------------------------------------
+
+-- 描述Label
+local m_DescPath = "Anchor/Content/Desc";
+-----------------------------------------按钮路径--------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+
+----------------------------------通用的名称路径---------------------------------------
+-- 内容面板
+local m_ContentPath = "Anchor/Content";
+-- tips锚点
+local m_AnchorPath = "Anchor";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 内容面板
+local m_Content = nil;
+-- tips锚点
+local m_Anchor = nil;
+-- ID 技能
+local m_Id = 0;
+-- 技能等级
+local m_Level = 0;
+-- 子技能ID
+local m_SubId = 0;
+-- tips触发位置
+local m_Position = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Content = nil;
+    m_Anchor = nil;
+
+    m_Id = 0;
+    m_SubId = 0;
+    m_Position = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN_SKILL_TIPS);
+    m_Content = child(m_PanelObject, m_ContentPath);
+    m_Anchor = child(m_PanelObject, m_AnchorPath);
+end
+
+-- 初始化对象事件
+function InitEvents()
+	--SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local info = CCommonTool.GetSkillMainData(m_Id);
+    if m_SubId == 0 then
+        m_SubId = info.SonSkill0;
+    end
+    local manager = SkillManager;
+    local nameInfo = CCommonTool.GetSkillNameData(m_SubId);
+    local dateInfo = CCommonTool.GetSkillDateByIndex(m_SubId);
+    local desc = CCommonTool.GetTxtData(nameInfo.Describe).m_str;
+    local level = m_Level;
+    -- 吃J技能ID, 等级特殊处理
+    if m_Id >= 2150 and m_Id <= 2160 then
+        local dict = EatChickenManager.SkillData;
+        for i, data in pairs(dict) do
+            if data.SkillID == m_Id then
+                level = data.SkillLevel;
+                break;
+            end
+        end
+    end
+
+    -- 替换描述中的{0}, 策划给的公式
+    desc = string_format(
+            desc, 
+            NumberToString(nameInfo.Att1Fixed + (level - 1) * nameInfo.Att1Up), 
+            NumberToString(nameInfo.Att2Fixed + (level - 1) * nameInfo.Att2Up), 
+            NumberToString(nameInfo.Att3Fixed + (level - 1) * nameInfo.Att3Up)
+        );
+    SetLabelContent(m_DescPath, desc, m_PanelObject);
+    m_Anchor.position = m_Position;
+end
+
+function NumberToString(number)
+    if math.floor(number) < number then
+        return string.format("%0.1f", number);
+    else
+        return string.format("%d", number);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_MAIN_SKILL_TIPS);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 技能tips界面打开时传入的参数
+function SetTipsData(position, data)
+    m_Position = position;
+    m_Level = data.level or 0;
+    m_Id = data.id;
+    m_SubId = data.subId;
+end
+
+function Show(position, id, subId, level)
+    error(position);
+    m_Position = position;
+    m_Level = level or 0;
+    m_Id = id;
+    m_SubId = subId;
+    createPanel(ENUMPANELID.ENUM_PANEL_MAIN_SKILL_TIPS);
+end

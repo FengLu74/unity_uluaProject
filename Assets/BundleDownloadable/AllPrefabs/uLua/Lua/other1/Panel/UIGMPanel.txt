@@ -1,0 +1,694 @@
+﻿module("UIGMPanel", package.seeall)
+-----------------------------------------按钮路径--------------------------------------
+-- 提升权限
+local m_addTiShengButton = "ButtonsPanel/Buttons1/Button_TiShengQuanXian";
+-- 清空背包
+local m_ClearBeiBaoButton = "ButtonsPanel/Buttons1/Button_QingKongBeiBao";
+-- 设置新手引导ID
+local m_setGuideButton = "ButtonsPanel/Buttons1/Button_Guide";
+-- 服务器位置
+local m_PostionButton = "ButtonsPanel/Buttons1/Button_Postion";
+-- 解锁所有系统按钮
+local m_unlockButton = "ButtonsPanel/Buttons1/Button_UnlockAll";
+--  重新载入lua文件
+local m_ButtonReloadLua = "ButtonsPanel/Buttons1/Button_ReloadLua";
+-- 重置所有的活动次数
+local m_resetAllActButton = "ButtonsPanel/Buttons1/Button_ResetAllAct";
+-- 加载服务器数据
+local m_loadSeverDataButton = "ButtonsPanel/Buttons1/Button_LoadSeverData";
+-- 加载服务器配置文件
+local m_loadSeverFileButton = "ButtonsPanel/Buttons1/Button_LoadSeverFile";
+-- 服务器测试
+local m_severTest = "ButtonsPanel/Buttons1/Button_SeverTest";
+-- 强行加载
+local m_forceLoad = "ButtonsPanel/Buttons1/Button_ForceLoad";
+-- GM戒指
+local m_ringGMButton = "ButtonsPanel/Buttons1/Button_GMRing";
+-- 加任务
+local m_addRenWuButton = "ButtonsPanel/Buttons1/Button_JiaRenWu";
+-- 当前任务
+local m_FinishRenWuButton = "ButtonsPanel/Buttons1/Button_WanChengRenWu";
+-- 切换语言按钮
+local m_changeLangaugeButton = "ButtonsPanel/Buttons1/Button_ChangeLanguage";
+-- 添加杀戮值
+local m_addPkValueButton = "ButtonsPanel/Buttons1/Button_AddPKValue";
+-- 添加背包格数
+local m_addBagButton = "ButtonsPanel/Buttons1/Button_AddBag";
+-- 震动按钮
+-- local m_shakeButton = "Button_Shake";
+local m_GmBtn = "GmBtn";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 输入框；
+local m_InputText = "Input";
+-- 输入列表
+local m_InputList = "Chat Area";
+
+-- 左侧grid对象所在的位置
+local m_leftGridObjStr = "ScrollView-First/Grid";
+-- 左侧UIPanel对象所在的位置
+local m_leftUIPanelCompStr = "ScrollView-First";
+-- 右侧grid对象所在的位置
+local m_rightGridObjStr = "ScrollView_Second/Grid";
+-- 右侧UIPanel对象所在的位置
+local m_rightUIPanelCompStr = "ScrollView_Second";
+-----------------------------------------通用的名称路径--------------------------------------
+-- 二级按钮
+local m_buttonsPanel = "ButtonsPanel/Buttons";
+-- 按钮名称
+local m_buttonName = "Label";
+-----------------------------------引用的对象------------------------------------------
+-- 当前面板的对象
+local m_strPanelObject = nil;
+-- 输入框对象
+local m_InputObject = nil;
+-- 列表对象
+local m_ListInputObject = nil;
+-- 当前点击的命令条数的索引
+local m_curIdx = 0;
+-- 界面是否已经打开
+local m_bCreateSuccess = false;
+-- 按键类型
+local keyType = nil;
+-- 左侧选择的是第几个
+local m_leftSelectNum = 1;
+-- 左侧UIPanel组件
+local m_leftUIPanelComp = nil;
+-- 右侧UIPanel组件
+local m_rightUIPanelComp = nil;
+-- 左侧列表
+local m_leftListView = nil;
+-- 右侧列表
+local m_rightListView = nil;
+-- GM 命令表数据
+local m_allGMCommandTable = { };
+-- 左侧页签表
+local m_leftButtonTable = { };
+-- 右侧按钮表
+local m_rightButtonTable = { };
+-- 左侧按钮的类型
+local m_buttonType = nil;
+-----------------------------------------写死的数据--------------------------------------
+--  按钮组的总数
+local m_buttonsCount = 1;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitData();
+    InitObjects();
+    InitAllInfo();
+    if m_InputObject then
+        m_InputObject.isSelected = true;
+    end
+    m_bCreateSuccess = true;
+    showButton(true);
+end
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_bCreateSuccess then
+        InitAllInfo();
+        if m_InputObject then
+            m_InputObject.isSelected = true;
+        end
+    end
+end
+
+-- 按上下键 进行翻页
+function Update()
+    -- body
+    keyType = G_UserInfo:GetKeyBoardValue();
+    if keyType == "Return" then
+        OnSendGMMessage();
+        m_InputObject.isSelected = true;
+    elseif keyType == "UpArrow" then
+        if m_curIdx - 1 < 0 then
+            return;
+        end
+        m_curIdx = m_curIdx - 1;
+        m_InputObject.value = G_GMMng.m_input[m_curIdx];
+    elseif keyType == "DownArrow" then
+        if m_curIdx + 1 >= G_GMMng.m_input.Count then
+            return;
+        end
+        m_curIdx = m_curIdx + 1;
+        m_InputObject.value = G_GMMng.m_input[m_curIdx];
+    end
+end
+
+function OnDestroy()
+    -- G_GMMng:ClearData();
+    -- m_curIdx = 0;
+    m_leftSelectNum = 1
+    m_bCreateSuccess = false;
+    m_allGMCommandTable = { };
+    m_leftButtonTable = { };
+    m_rightButtonTable = { };
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitData()
+    m_allGMCommandTable = CCommonTool.GetAllGMCommandInfo();
+end
+
+function InitObjects()
+    -- 面板对象
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GMPANEL);
+    local inputObj = child(m_strPanelObject, m_InputText);
+    m_InputObject = inputObj:GetComponent("UIInput");
+    -- m_InputObject.isSelected = true;
+    local inputList = child(m_strPanelObject, m_InputList);
+    m_ListInputObject = inputList:GetComponent("UITextList");
+    -- 左侧组件
+    m_leftUIPanelComp = GetComponent(m_strPanelObject, m_leftUIPanelCompStr, "UIPanel");
+    m_leftListView = GetComponent(m_strPanelObject, m_leftGridObjStr, "UIListView");
+    m_leftListView:SetInitCallback(OnLeftListViewInit);
+    m_leftListView:SetSelectedCallback(OnLeftListViewSelected);
+
+    -- 右侧组件
+    m_rightUIPanelComp = GetComponent(m_strPanelObject, m_rightUIPanelCompStr, "UIPanel");
+    m_rightListView = GetComponent(m_strPanelObject, m_rightGridObjStr, "UIListView");
+    m_rightListView:SetInitCallback(OnRightListViewInit);
+    m_rightListView:SetClickCallback(OnRightListViewSelected);
+end
+
+
+-- 初始化背包的所有数据信息
+function InitAllInfo()
+    InitOnClick();
+    InitLeftGMDataList();
+    InitRightInfo();
+    InitRightGMDataList();
+end
+
+
+-- 点击发送
+function InitOnClick()
+    -- 对象消息
+    SetGameObjectEvent(m_GmBtn, OnSendGMMessage, m_strPanelObject, nil);
+    -- 提升权限
+    SetGameObjectEvent(m_addTiShengButton, addTiShengClick, m_strPanelObject, nil);
+    -- 解锁所有系统
+    SetGameObjectEvent(m_unlockButton, OnUnlockAllClick, m_strPanelObject);
+    -- 开启服务器位置
+    SetGameObjectEvent(m_PostionButton, OnPostionClick, m_strPanelObject);
+    -- 清空背包
+    SetGameObjectEvent(m_ClearBeiBaoButton, OnClearBagClick, m_strPanelObject);
+    -- 设置新手引导ID
+    SetGameObjectEvent(m_setGuideButton, onSetGuideID, m_strPanelObject, nil);
+    -- 重新载入lua文件
+    SetGameObjectEvent(m_ButtonReloadLua, OnReloadLuaClick, m_strPanelObject);
+    -- 重置所有的活动次数
+    SetGameObjectEvent(m_resetAllActButton, OnResetActNumsClick, m_strPanelObject);
+    -- 加载服务器数据
+    SetGameObjectEvent(m_loadSeverDataButton, OnLoadSeverDataClick, m_strPanelObject);
+    -- 加载服务器配置文件
+    SetGameObjectEvent(m_loadSeverFileButton, OnLoadSeverFileClick, m_strPanelObject);
+    -- 服务器测试
+    SetGameObjectEvent(m_severTest, onTestClick, m_strPanelObject);
+    -- 强行加载
+    SetGameObjectEvent(m_forceLoad, onForceLoadClick, m_strPanelObject);
+    -- GM戒指
+    SetGameObjectEvent(m_ringGMButton, OnGMRingClick, m_strPanelObject);
+    -- 任务
+    SetGameObjectEvent(m_addRenWuButton, OnAddTaskClick, m_strPanelObject, nil);
+    SetGameObjectEvent(m_FinishRenWuButton, OnFinsihTaskClick, m_strPanelObject, nil);
+    -- 切换语言
+    SetGameObjectEvent(m_changeLangaugeButton, OnChangeLanguageClick, m_strPanelObject, nil);
+    -- 添加PK杀戮值
+    SetGameObjectEvent(m_addPkValueButton, OnAddPKValueClick, m_strPanelObject, nil);
+    -- 添加背包格数
+    SetGameObjectEvent(m_addBagButton, OnAddBagClick, m_strPanelObject, nil);
+end
+
+-- 发送GM命令；
+function OnSendGMMessage()
+    local ms = m_InputObject.value;
+    -- 检测ms的格式是否是number[space]number的情况
+    ms = IsBirthitem(ms);
+    ms = string.lower(ms);
+    m_InputObject.value = "";
+    if ms == "clear" then
+        m_ListInputObject:Clear();
+        return;
+    elseif ms == "test" then
+        SetGameObjectState(m_testButton, true, m_strPanelObject);
+    elseif ms == "hang" then
+        showButton(true);
+        return;
+    elseif "openshake" == ms then
+        -- SetGameObjectState(m_shakeButton, true, m_strPanelObject);
+        return;
+    elseif "closeshake" == ms then
+        -- SetGameObjectState(m_shakeButton, false, m_strPanelObject);
+        return;
+    elseif ms == "openguide" then
+        SetGameObjectState(m_setGuideButton, true, m_strPanelObject);
+        SetGameObjectState(m_readTxtButton, true, m_strPanelObject);
+        return;
+        -- 设置新手引导ID
+    elseif ms == "closeguide" then
+        SetGameObjectState(m_setGuideButton, false, m_strPanelObject);
+        SetGameObjectState(m_readTxtButton, false, m_strPanelObject);
+        return;
+    elseif ms == "show_ping_value" then
+        Constants.IsShowPingValue = not Constants.IsShowPingValue;
+        Main_MiddleBottom.InitPingShowOut();
+        return;
+    elseif string.find(ms,"createpanel") ~= nil then
+        local a, b = string.find(ms, " ");
+        if a ~= nil then
+            local panelID = tonumber(string.sub(ms, b, string.len(ms)));
+            createPanel(panelID);
+            return;
+        end
+    end
+    if ms ~= nil and ms ~= "" then
+        if string.find(ms, "log") then
+            local strLog = string.find(ms, ' ');
+            local iLevel = 0;
+            if strLog ~= null then
+                iLevel = tonumber(string.sub(ms, strLog + 1));
+                CCommonTool.Level = iLevel;
+            end
+        end
+        m_InputObject.value = "";
+        -- 查找是否存在双引号gm命令格式
+        local splitidx = string.find(ms, " ");
+        local input = "";
+        if splitidx == nil then
+            -- 如果不存在直接赋值；
+            input = ms;
+        else
+            input = string.sub(ms, 1, splitidx - 1);
+        end
+        m_ListInputObject:Add(ms);
+        -- 转换为小写
+        local inputlow = string.lower(input);
+        local isCommond = G_GMMng:Client_Gm_Local_Function(inputlow);
+        if isCommond == true then
+            return;
+        end
+        G_GMMng:AddData(ms);
+        m_curIdx = G_GMMng.m_input.Count;
+        local m_type = G_GMMng:CMD_GetCommandIDByName(input);
+        if m_type == GMI_CTOS_WIZARD_CMD_INVALID then
+            m_ListInputObject:Add("has no this GM commond");
+            return;
+        end
+        -- 提示权限
+        if m_type == GMI_CTOS_WIZARD_CMD_RIGHTS then
+            local m_name = "";
+            local pwd = "111";
+            -- 输入 用户名和密码的情况
+            if tonumber(splitidx) ~= nil then
+                if tonumber(splitidx) > 0 then
+                    local index = string.find(ms, " ", 8);
+                    if index ~= nil then
+                        local nameUper = string.sub(ms, splitidx + 1, index);
+                        m_name = string.lower(nameUper);
+                        pwd = string.sub(ms, index + 1);
+                    end
+                else
+                    m_name = input;
+                    pwd = m_name;
+                end
+            end
+            local sPwd = Util.md5(pwd);
+            local Buf = ByteBuffer.New();
+            Buf:WriteUShort(E_CTON_ACTIVE_GMRIGHT);
+            Buf:WriteString(m_name);
+            Buf:WriteString(sPwd);
+            G_NetWorkMng:SendMessage(Buf);
+            return;
+        else
+            if G_UserInfo.RoleAttribute.GmRightsLevel then
+                local sBuf = ByteBuffer.New();
+                sBuf:WriteUShort(m_type);
+                local param = "";
+                if splitidx then
+                    if tonumber(splitidx) > 0 then
+                        param = string.sub(ms, splitidx + 1);
+                    end
+                end
+                sBuf:WriteString(param);
+                G_NetWorkMng:SendMessage(sBuf);
+            else
+                m_ListInputObject:Add("have no rights,plz levelUp GM level");
+            end
+        end
+    end
+    m_InputObject.value = "";
+    m_InputObject.isSelected = false;
+end
+
+function showButton(isShow)
+    SetGameObjectState(m_addTiShengButton, isShow, m_strPanelObject);
+    SetGameObjectState(m_addMoneyButton, isShow, m_strPanelObject);
+    SetGameObjectState(m_addGoldButton, isShow, m_strPanelObject);
+    SetGameObjectState(m_addItemButton, isShow, m_strPanelObject);
+    SetGameObjectState(m_addBindGoldButton, isShow, m_strPanelObject);
+    SetGameObjectState(m_addBindMoneyButton, isShow, m_strPanelObject);
+end
+
+
+-- 简化创建道具的命令
+function IsBirthitem(str)
+    local a, b = string.find(str, " ");
+    if a ~= nil then
+        local str1 = string.sub(str, 1, a - 1);
+        local num1 = tonumber(str1);
+        if num1 == nil then
+            return str;
+        else
+            local str2 = string.sub(str, b, string.len(str));
+            local num2 = tonumber(str2);
+            if num2 == nil then
+                return str;
+            else
+                return("birthitem " .. str);
+            end
+        end
+    else
+        return str;
+    end
+end
+
+-- 简化加任务的命令
+function IsAddTask(str)
+    local a, b = string.find(str, " ");
+    if a ~= nil then
+        local str1 = string.sub(str, 1, a - 1);
+        local num1 = tonumber(str1);
+    else
+    end
+end
+
+-- 初始化左侧数据
+function InitLeftGMDataList()
+    m_leftButtonTable = { };
+    m_leftListView:RemoveAll();
+    for Index = 1, m_allGMCommandTable.Count do
+        local tempTableData = m_allGMCommandTable[Index - 1];
+        if tempTableData.Title ~= 0 and tempTableData.TypeId == 0 then
+            table.insert(m_leftButtonTable, tempTableData);
+        end
+    end
+    for i, data in ipairs(m_leftButtonTable) do
+        m_leftListView:AddData(data);
+    end
+    m_leftListView:LookAt(0, true);
+end
+
+function OnLeftListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    SetLabelTextByID(m_buttonName, data.ButtonName, go);
+end
+
+function OnLeftListViewSelected(listView, dataIndex)
+    local data = listView:GetData(dataIndex);
+    local num = dataIndex + 1;
+    if m_leftSelectNum ~= num then
+        m_leftSelectNum = num;
+    end
+    m_buttonType = data.TypeId;
+    InitRightInfo();
+end
+
+
+-- 初始化右侧信息
+function InitRightInfo()
+    --  初始化坐标位置
+    local panelObj = GetComponent(m_strPanelObject, "ButtonsPanel", "UIPanel");
+    panelObj.gameObject.transform.localPosition = Vector3.New(-95, -34, 0);
+    panelObj.clipOffset = Vector2.New(0, 0);
+    if m_leftSelectNum == 1 then
+        setButtonsState(1);
+    else
+        setButtonsState(0);
+    end
+    InitRightGMDataList();
+end
+
+-- 初始化右侧数据
+function InitRightGMDataList()
+    m_rightButtonTable = { };
+    m_rightListView:RemoveAll();
+    for Index = 1, m_allGMCommandTable.Count do
+        local tempTableData = m_allGMCommandTable[Index - 1];
+        if tempTableData.TypeId == m_leftSelectNum then
+            table.insert(m_rightButtonTable, tempTableData);
+        end
+    end
+    for i, data in ipairs(m_rightButtonTable) do
+        m_rightListView:AddData(data);
+    end
+    m_rightListView:LookAt(0, false);
+end
+
+function OnRightListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    SetLabelTextByID(m_buttonName, data.ButtonName, go);
+end
+
+function OnRightListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local content = data.GMCommand;
+    m_InputObject.value = data.GMCommand;
+    OnSendGMMessage();
+end
+--------------------------------------按钮事件方法------------------------------------
+
+-- 解锁所有系统
+function OnUnlockAllClick()
+    m_InputObject.value = "opensystem 0";
+    OnSendGMMessage()
+end
+
+-- 清空背包
+function OnClearBagClick()
+    m_InputObject.value = "clearitem 0";
+    OnSendGMMessage();
+end
+-- 设置引导
+function onSetGuideID()
+    local ms = m_InputObject.value;
+    if ms ~= nil and ms ~= "" then
+        NewPlayerGuideManager.TestStep(tonumber(ms));
+    end
+    m_InputObject.value = "";
+end
+-- 提升权限
+function addTiShengClick()
+    local ms = m_InputObject.value;
+    local sAct = "";
+    if ms ~= "" then
+        local sPwd = Util.md5(ms);
+        local Buf = ByteBuffer.New();
+        if PlayerPrefs.GetString(AccountName) ~= nil then
+            sAct = PlayerPrefs.GetString(AccountName);
+        end
+        Buf:WriteUShort(E_CTON_ACTIVE_GMRIGHT);
+        Buf:WriteString(sAct);
+        Buf:WriteString(sPwd);
+        G_NetWorkMng:SendMessage(Buf);
+    else
+        local sPwd = Util.md5("111");
+        local Buf = ByteBuffer.New();
+        Buf:WriteUShort(E_CTON_ACTIVE_GMRIGHT);
+        Buf:WriteString("");
+        Buf:WriteString(sPwd);
+        G_NetWorkMng:SendMessage(Buf);
+    end
+    m_InputObject.value = "";
+    m_InputObject.isSelected = false;
+end
+
+-- 开启服务器位置
+function OnPostionClick()
+    m_InputObject.value = "sendserverpos 1";
+    OnSendGMMessage();
+end
+
+-- 重新载入lua文件
+function OnReloadLuaClick()
+    local value = m_InputObject.value;
+    if string.sub(value, 1, 1) == "@" then
+        if value == "@l" or value == "@L" then
+            Util.OpenLogPanel();
+            return;
+        end
+        if string.sub(value, 1, 3) == "@s:" then
+            local value = string_format("return SerializeTable({0})", string.sub(value, 4))
+            local func = loadstring(value);
+            if func ~= nil then
+                local result = func();
+                if result ~= nil then
+                    m_ListInputObject:Add(tostring(result));
+                    error(tostring(result));
+                end
+            end
+            return;
+        end
+        if string.sub(value, 1, 3) == "@v:" then
+            local value = string_format("return {0}", string.sub(value, 4))
+            local func = loadstring(value);
+            if func ~= nil then
+                local result = func();
+                if result ~= nil then
+                    m_ListInputObject:Add(tostring(result));
+                    error(tostring(result));
+                end
+            end
+            return;
+        end
+        local func = loadstring(string.sub(value, 2));
+        if func ~= nil then
+            func();
+        end
+        return;
+    end
+    local files = string_split(m_InputObject.value, ",");
+    local reloadFiles = { };
+    for i, v in ipairs(files) do
+        if package.loaded[v] then
+            package.loaded[v] = nil;
+        end
+        table.insert(reloadFiles, v);
+    end
+    for i, v in ipairs(reloadFiles) do
+        error("reload lua file : " .. v);
+        G_GameMng.luaMgr.fileList:Remove(v);
+    end
+end
+
+--- 重置所有的活动次数
+function OnResetActNumsClick()
+    m_InputObject.value = "rfb -1";
+    OnSendGMMessage();
+end
+
+-- 加载服务器所有数据
+function OnLoadSeverDataClick()
+    m_InputObject.value = "forcereloadcfg d";
+    OnSendGMMessage();
+end
+
+-- 加载服务器所有配置文件
+function OnLoadSeverFileClick()
+    m_InputObject.value = "forcereloadcfg g";
+    OnSendGMMessage();
+end
+
+-- GM戒指
+function OnGMRingClick()
+    m_InputObject.value = "1222222 1";
+    OnSendGMMessage();
+end
+
+-- 加任务
+function OnAddTaskClick()
+    local ms = m_InputObject.value;
+    m_InputObject.value = "task add " .. ms;
+    OnSendGMMessage();
+end
+-- 完成任务
+function OnFinsihTaskClick()
+    local ms = m_InputObject.value;
+    m_InputObject.value = "task finish " .. ms;
+    OnSendGMMessage();
+end
+
+function OnOtherTestClick()
+    setButtonsState(0);
+    OpenUIByEnum.OpenUIByEnum(1148);
+end
+
+-- 摄像机模糊效果
+function OnShakeComera()
+    local ms = m_InputObject.value;
+    if ms ~= nil and ms ~= "" then
+        CCommonTool.GoShakeCamera(tonumber(ms));
+    end
+    m_InputObject.value = "";
+end
+
+function onReadTxt()
+    local define = require("Configs.DataTable.TableDefine.TableDefinejackaroo");
+    local tableDefine = DataTableDefine.New(tableName, DataPath .. tableName .. ".txt", define.IndexColumn, define.ColumnNum)
+    for _, column in pairs(define.Columns) do
+        tableDefine:AddColumn(column.Name, column.Type);
+    end
+    DataTableManager.Instance:LoadTable(tableDefine);
+end
+
+-- 关闭按钮
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_GMPANEL);
+end
+
+-- 给服务器测试功能使用
+function onTestClick(e)
+    local ms = m_InputObject.value;
+    if ms ~= "" or ms ~= " " then
+        OnSendTestMessage(ms);
+    end
+end
+
+-- 强行加载
+function onForceLoadClick(e)
+    m_InputObject.value = "forcereloadcfg";
+    OnSendGMMessage();
+end
+
+-- 切换语言
+function OnChangeLanguageClick()
+    Constants.IsOriginalLanguage = not Constants.IsOriginalLanguage;
+    G_GameMng:ChangeAccount();
+end
+
+-- 添加PK杀戮值
+function OnAddPKValueClick()
+    m_InputObject.value = "givepkvalue 1 100";
+    OnSendGMMessage();
+end
+
+-- 添加背包格数
+function OnAddBagClick()
+    m_InputObject.value = "openbag 50";
+    OnSendGMMessage();
+end
+
+-- 设置按钮组的显示状态
+function setButtonsState(num)
+    for index = 1, m_buttonsCount do
+        if num == index then
+            SetGameObjectState(m_buttonsPanel .. index, true, m_strPanelObject);
+        else
+            SetGameObjectState(m_buttonsPanel .. index, false, m_strPanelObject);
+        end
+
+    end
+end
+
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_GMPANEL);
+end
+
+--------------------------外部调用的(或内部)方法----------------------
+-- 更新 UITextList内容的显示
+function OnUpdateList(buffer)
+    if m_bCreateSuccess then
+        local yStrLen = buffer:ReadInt();
+        local s = buffer:ReadString(yStrLen);
+        m_ListInputObject:Add(s);
+    end
+end
+
+-- 测试消息方法
+function OnSendTestMessage(value)
+    -- //测试方法
+    Logger.Log("Server test");
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMO_CTOS_LGS_TEXT_BY_CLIENT);
+    buffer:WriteByte(value);
+    G_NetWorkMng:SendMessage(buffer);
+end

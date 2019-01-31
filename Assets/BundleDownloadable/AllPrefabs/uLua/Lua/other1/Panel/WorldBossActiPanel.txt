@@ -1,0 +1,339 @@
+﻿module("WorldBossActiPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- boss名称
+local m_bossNameStr = "Content_Right/Sprite_RightBg/Label_BossName";
+-- boss刷新时间
+local m_bossRefreshTimeStr = "Content_Right/Sprite_RightBg/Label_RefreshTime/Label_Content";
+-- boss存在时间
+local m_bossExistTimeStr = "Content_Right/Sprite_RightBg/Label_ExistTime/Label_Content";
+-- boss所在地图
+local m_bossLocationStr = "Content_Right/Sprite_RightBg/Label_Location/Label_Content";
+-- boss推荐等级
+local m_bossLevelStr = "Content_Right/Sprite_RightBg/Label_Level/Label_Content";
+-----------------------------------------按钮路径--------------------------------------
+-- 击杀按钮路径
+local m_btnForwardStr = "Content_Right/Sprite_RightBg/Button_Forward";
+-- ?按钮
+local m_btnDesStr = "Content_Right/Sprite_RightBg/Sprite_TitleBg/Button_Des";
+--问号点击事件
+local m_DesButton = "Button_Explain";
+
+-----------------------------------------Sprite路径------------------------------------
+-- bossICON
+local m_spriteBossIconStr = "/Boss_Icon";
+-- boss锁
+local m_spriteLockStr = "/Sprite_Lock";
+-- bossICON背景
+local m_spriteBossIconBgStr = "/Sprite_IconBg";
+-- 选择状态
+local m_spriteSelected = "Content_Buttom/BossInfoScrollView/Sprite_Selected";
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- boss列表Grid路径
+local m_bossListGridStr = "Content_Buttom/BossInfoScrollView/Grid";
+-- boss奖励列表Grid路径
+local m_rewardListGridStr = "Content_Right/Sprite_RightBg/Grid";
+-- boss信息Item
+local m_bossListItemStr = "Content_Buttom/Boss_Item";
+-- boss奖励Item
+local m_bossRewardItemStr = "Content_Right/Sprite_RightBg/Reward_Item_";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- boss列表Grid对象
+local m_bossListGridObject = nil;
+-- boss奖励列表Grid对象
+local m_rewardListGridObject = nil;
+-- boss信息Item对象
+local m_bossInfoItemObject = nil;
+-- boss奖励Item对象
+local m_bossRewardItemObject = nil;
+-- boss信息列表
+local m_bossInfoTable = { };
+-- boss状态信息
+local m_bossStateTable = { };
+-- 选择状态对象引用
+local m_selectedObject = nil;
+-- bossIcon对象
+local m_bossIconObj = nil;
+-- bossIcon背景对象
+local m_bossIconBgObj = nil;
+-- 击杀按钮对象
+local m_forwardBtnObj = nil;
+-- bossid
+local m_bossId = -1;
+-- 服务器返回的bossid
+local m_bossIdCallBack = 0;
+-- 服务器返回的boss状态
+local m_bossStateCallBack = 0;
+-- 是否可以击杀boss
+local m_notUse = false;
+-- boss信息
+local m_bossInfo = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+--
+local m_itemCollider = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化对象
+    InitObjects();
+    -- 初始化boss信息
+    InitInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitInfo();
+    end
+end
+function OnDisable()
+    -- 删除boss模型
+    Delete3DModel();
+end
+
+function OnDestroy()
+    m_bossId = -1;
+    m_notUse = false;
+    m_bossInfo = nil;
+    m_panelObject = nil;
+    m_bossListGridObject = nil;
+    m_bossInfoItemObject = nil;
+    m_selectedObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_panelObject = child(m_panelObject, "WorldBossActiPanel").gameObject;
+    m_bossListGridObject = GetComponent(m_panelObject, m_bossListGridStr, "UIGrid");
+    m_bossInfoItemObject = child(m_panelObject, m_bossListItemStr).gameObject;
+    m_selectedObject = child(m_panelObject, m_spriteSelected).gameObject;
+end
+-- 初始化boss列表
+function InitInfo()
+    m_bossId = -1;
+    if m_bossListGridObject ~= nil then
+        m_selectedObject.transform.parent = m_panelObject.transform;
+        while m_bossListGridObject:GetChildList().Count > 0 do
+            destroy(m_bossListGridObject.transform:GetChild(0).gameObject);
+        end
+        m_bossInfo = CCommonTool.GetWorldBossInfo();
+        for Index = 1, m_bossInfo.Count do
+            local item = newobject(m_bossInfoItemObject);
+            item.transform.parent = m_bossListGridObject.transform;
+            item.name = "Item_" .. Index;
+            item.transform.localScale = Vector3.one;
+            item:SetActive(true);
+            local txtInfo = CCommonTool.GetTxtData(m_bossInfo[Index - 1].Level).m_str;
+            local level = tonumber(string.sub(txtInfo, 0, string.len(txtInfo) -3));
+            m_bossIconObj = GetComponent(m_panelObject, m_bossListGridStr .. "/Item_" .. Index .. m_spriteBossIconStr, "UISprite");
+            m_bossIconBgObj = GetComponent(m_panelObject, m_bossListGridStr .. "/Item_" .. Index .. m_spriteBossIconBgStr, "UISprite");
+            if G_UserInfo.RoleAttribute.Level >= level then
+                SetGameObjectState(m_bossListGridStr .. "/Item_" .. Index .. m_spriteLockStr, false, m_panelObject);
+            else
+                SetGameObjectState(m_bossListGridStr .. "/Item_" .. Index .. m_spriteLockStr, true, m_panelObject);
+            end
+
+            SetSpriteByAtlasID(m_bossListGridStr .. "/Item_" .. Index .. m_spriteBossIconStr, m_bossInfo[Index - 1].HeadID, m_panelObject);
+            SetGameObjectEvent(m_bossListGridStr .. "/Item_" .. Index, OnItemClick, m_panelObject);
+        end
+        if m_bossListGridObject:GetChildList().Count > 0 then
+            m_selectedObject.transform.parent = m_bossListGridObject:GetChild(0).transform;
+            m_selectedObject.transform.localPosition = Vector3.New(0, -6.5, 0);
+            m_selectedObject:SetActive(true);
+        else
+            m_selectedObject:SetActive(false);
+        end
+        m_bossListGridObject:Reposition();
+        InitBossInfo(m_bossInfo[0]);
+        Delete3DModel();
+        LoadBossModel(m_bossInfo[0]);
+        RefreshBossState();
+    end
+end
+-- 初始化boss信息
+function InitBossInfo(info)
+    SetLabelContent(m_bossNameStr, GetBossInfo(info.Name), m_panelObject);
+    SetLabelContent(m_bossRefreshTimeStr, GetBossInfo(info.Time), m_panelObject);
+    SetLabelContent(m_bossExistTimeStr, GetBossInfo(info.Life), m_panelObject);
+    SetLabelContent(m_bossLocationStr, GetBossInfo(info.SuitableMap), m_panelObject);
+    SetLabelContent(m_bossLevelStr, GetBossInfo(info.Level), m_panelObject);
+    for index = 1, 4 do
+        local itemID, imageID = GetFunName(info, index);
+        SetGameObjectState(m_bossRewardItemStr .. index, itemID > 0, m_panelObject);
+        if itemID > 0 then
+            SetSpriteByAtlasID(m_bossRewardItemStr .. index .. "/Sprite-DaoJuTuBiao", imageID, m_panelObject);
+            SetItemIconEffect(m_panelObject, m_bossRewardItemStr .. index .. "/Sprite-DaoJuTuBiao", itemID, 0);
+            SetSpriteApptitudeV04(m_bossRewardItemStr .. index .. "/Sprite",CCommonTool.GetAptitudeIDByExcelID(itemID), m_panelObject);
+        end
+        SetItemToolTipsEvent(m_panelObject, m_bossRewardItemStr .. index, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, false, GetItemExcelID(info,index));
+    end
+    SetGameObjectEvent(m_btnForwardStr, OnForwardKill, m_panelObject);
+    local tempTable = { 11915, 11916 };
+    -- 说明标题，说明文本（TXT_id）
+    SetSystemExplainEvent(m_panelObject, m_DesButton, tempTable);
+end
+function RefreshBossState()
+    for Index = 1, m_bossInfo.Count do
+        m_bossIconObj = GetComponent(m_panelObject, m_bossListGridStr .. "/Item_" .. Index .. m_spriteBossIconStr, "UISprite");
+        m_bossIconBgObj = GetComponent(m_panelObject, m_bossListGridStr .. "/Item_" .. Index .. m_spriteBossIconBgStr, "UISprite");
+        --CUIWidgetEx.SetGray(m_bossIconObj, true);
+        --CUIWidgetEx.SetGray(m_bossIconBgObj, true);
+        m_bossIconObj.saturationAmount = 0;
+        m_bossIconBgObj.saturationAmount = 0;
+    end
+    SetGameObjectState(m_btnForwardStr.."/On",false,m_panelObject);
+    SetGameObjectState(m_btnForwardStr.."/Off",true,m_panelObject);
+    for bossIndex = 1, #m_bossInfoTable do
+        if m_bossInfoTable[bossIndex] == 1 then
+            SetGameObjectState(m_btnForwardStr.."/On",true,m_panelObject);
+            SetGameObjectState(m_btnForwardStr.."/Off",false,m_panelObject);
+        end
+    end  
+    for Index = 1, #m_bossInfoTable do        
+        local txtInfo = CCommonTool.GetTxtData(m_bossInfo[m_bossInfoTable[Index] -1].Level).m_str;
+        local level = tonumber(string.sub(txtInfo, 0, string.len(txtInfo) -3));
+        if G_UserInfo.RoleAttribute.Level >= level then
+            m_bossIconObj = GetComponent(m_panelObject, m_bossListGridStr .. "/Item_" .. m_bossInfoTable[Index] .. m_spriteBossIconStr, "UISprite");
+            m_bossIconBgObj = GetComponent(m_panelObject, m_bossListGridStr .. "/Item_" .. m_bossInfoTable[Index] .. m_spriteBossIconBgStr, "UISprite");
+            --CUIWidgetEx.SetGray(m_bossIconObj, false);
+            --CUIWidgetEx.SetGray(m_bossIconBgObj, false);
+            m_bossIconObj.saturationAmount = 1;
+            m_bossIconBgObj.saturationAmount = 1;
+        end
+    end
+end
+-- 获取txt表中相应boss信息
+function GetBossInfo(info)
+    return CCommonTool.GetTxtData(info).m_str;
+end
+-- 索引返回相应方法名
+function GetFunName(info, index)
+    if index == 1 then
+        local itemData = CCommonTool.GetItemInfo(info.DropItem_1);
+        return itemData.ItemID, itemData.PictureID;
+    elseif index == 2 then
+        local itemData = CCommonTool.GetItemInfo(info.DropItem_2);
+        return itemData.ItemID, itemData.PictureID;
+    elseif index == 3 then
+        local itemData = CCommonTool.GetItemInfo(info.DropItem_3);
+        return itemData.ItemID, itemData.PictureID;
+    elseif index == 4 then
+        local itemData = CCommonTool.GetItemInfo(info.DropItem_4);
+        return itemData.ItemID, itemData.PictureID;
+    end
+    return 0, 0
+end
+-- 索引返回相应道具ID
+function GetItemExcelID(info,index)
+    if index == 1 then
+        return info.DropItem_1;
+    elseif index == 2 then
+        return info.DropItem_2;
+    elseif index == 3 then
+        return info.DropItem_3;
+    elseif index == 4 then
+        return info.DropItem_4;
+    end
+end
+function LoadBossModel(info)
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    buffer:WriteInt(info.ModelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 删除boss3d模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 前往击杀事件
+function OnForwardKill()
+    -- 等级不足提示
+    if m_bossId == -1 then
+        m_bossId = 1;
+    end
+    if m_bossInfo[m_bossId - 1].NeedLevel > G_UserInfo.RoleAttribute.Level then
+        local nameTable = { };
+        nameTable = { tostring(m_bossInfo[m_bossId - 1].NeedLevel) };
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ACTIVITY_LEVEL, nil, nameTable);
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GOTOWORLDBOSS);
+    if m_bossId == -1 then
+        m_bossId = 1;
+    end
+    buffer:WriteInt(m_bossId);
+    G_NetWorkMng:SendMessage(buffer);
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+end
+-- boss信息点击事件
+function OnItemClick(e)
+    local index = tonumber(string.sub(e.name, 6, string.len(e.name)));
+    local txtInfo = CCommonTool.GetTxtData(m_bossInfo[index - 1].Level).m_str;
+    local level = tonumber(string.sub(txtInfo, 0, string.len(txtInfo) -3));
+    -- 等级不够提示
+    if G_UserInfo.RoleAttribute.Level < level then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ACTIVITY_WORLDBOSS_LEVEL);
+        return;
+    end
+
+    SetGameObjectState(m_btnForwardStr.."/On",false,m_panelObject);
+    SetGameObjectState(m_btnForwardStr.."/Off",true,m_panelObject);
+    for bossIndex = 1, #m_bossInfoTable do
+        if m_bossInfoTable[bossIndex] == index then
+            SetGameObjectState(m_btnForwardStr.."/On",true,m_panelObject);
+            SetGameObjectState(m_btnForwardStr.."/Off",false,m_panelObject);
+        end
+    end
+    --    -- boss未刷新提示
+    --    if m_bossStateTable[index - 1] == 0 then
+    --        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ACTIVITY_WORLDBOSS_NOREFRESH);
+    --        return;
+    --    end
+    local info = CCommonTool.GetWorldBossInfo();
+    m_bossId = index;
+    m_selectedObject.transform.parent = e.transform;
+    m_selectedObject.transform.localPosition = Vector3.New(0, -6.5, 0);
+    Delete3DModel();
+    InitBossInfo(info[index - 1]);
+    LoadBossModel(info[index - 1]);
+end
+-- boss奖励点击事件
+function OnRewardItemClick(e)
+    error(e.name);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 加载boss列表信息
+function LoadModelInfo(bossList, stateList)
+    m_bossInfoTable = { };
+    m_bossStateTable = { };
+    for index = 1, bossList.Count do
+        table.insert(m_bossInfoTable, bossList[index - 1]);
+        table.insert(m_bossStateTable, stateList[index - 1]);
+    end
+end
+-- 获取boss状态
+function GetBossState(id, state)
+    if state == 0 then
+        for index = 1, #m_bossInfoTable do
+            if m_bossInfoTable[index] == id then
+                table.remove(m_bossInfoTable, index);
+            end
+        end
+    else
+        table.insert(m_bossInfoTable, id);
+    end    
+    if ActivityPanel.GetSelectTagNum() == 3 and IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL) == 1 then
+        InitInfo();
+    end
+end

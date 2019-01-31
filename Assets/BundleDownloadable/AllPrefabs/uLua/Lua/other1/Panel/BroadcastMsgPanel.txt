@@ -1,0 +1,115 @@
+﻿module("BroadcastMsgPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 显示的内容
+local m_ContentStr = "TweenPos/Label";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 背景
+local m_BGStr = "BG";
+----------------------------------gameobject所在的路径---------------------------------
+local m_TweenPosStr = "TweenPos";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 所有等待播放的消息
+local m_allWaitBMsg = {};
+local m_TweenPos = nil;
+-- label组件
+local m_labelComp = nil;
+-- sprite组件
+local m_spriteComp = nil;
+-- 渐变事件
+local m_TweenAlphaTimer = nil;
+-- 动画移动完事件
+local m_TweenPosOverTimer = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 播放速度(像素/秒)
+local m_TweenSpeed = 192;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_allWaitBMsg = {};
+    m_TweenPosComp = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BROADCASTMSG);
+    m_TweenPos = child(m_panelObject,m_TweenPosStr).gameObject;
+    m_labelComp = GetComponent(m_panelObject,m_ContentStr,"UILabel");
+    m_spriteComp = GetComponent(m_panelObject,m_BGStr,"UISprite");
+end
+
+function InitAllInfo()
+    if #m_allWaitBMsg > 0 then
+        SetLabelContent(m_ContentStr,m_allWaitBMsg[1],m_panelObject);
+        local totalTime = (Screen.width + m_labelComp.width)/m_TweenSpeed;
+        local height = m_spriteComp.transform.localPosition.y;
+        CTweenPositionEx.NewBegin(m_TweenPos, totalTime, Vector3.New(-m_spriteComp.width/2-m_labelComp.width, height, 0), Vector3.New(m_spriteComp.width/2, height, 0), 0, false);
+        ClearTimer();
+        m_TweenAlphaTimer = Timer.Instance:AddTimer(totalTime - 1 , 0, StartTweenAlpha);
+        m_TweenPosOverTimer = Timer.Instance:AddTimer(totalTime, 0, TweenPosOver);
+        SetSpriteColor32(m_BGStr,"FFFFFFAA",m_panelObject);
+    else
+        closePanel(ENUMPANELID.ENUM_PANEL_BROADCASTMSG);
+    end
+end
+
+function StartTweenAlpha()
+    if #m_allWaitBMsg == 1 then
+        CCommonTool.TweenAlphaNewBegin(m_spriteComp.gameObject, 0.8, 0, 0.667, 0);
+    end
+end
+
+function TweenPosOver()
+    table.remove(m_allWaitBMsg,1);
+    if #m_allWaitBMsg > 0 then
+        InitAllInfo();
+    else
+        closePanel(ENUMPANELID.ENUM_PANEL_BROADCASTMSG);
+    end
+end
+
+function ClearTimer()
+    if m_TweenAlphaTimer ~= nil then
+        Timer.Instance:StopTimer(m_TweenAlphaTimer);
+        m_TweenAlphaTimer = nil;
+    end
+    if m_TweenPosOverTimer ~= nil then
+        Timer.Instance:StopTimer(m_TweenPosOverTimer);
+        m_TweenPosOverTimer = nil;
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+--------------------------外部调用的(或内部)更新此界面信息的方法-----------------------
+function BroadCastMsg(content)
+    table.insert(m_allWaitBMsg,content);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BROADCASTMSG) == 0 then
+        createPanel(ENUMPANELID.ENUM_PANEL_BROADCASTMSG);
+    end
+    ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, content, false, true);
+end

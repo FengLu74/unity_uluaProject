@@ -1,0 +1,105 @@
+﻿--[[
+    field=Id, type=int, desc=唯一ID标示
+    field=Type, type=byte, desc=类型（1=神行，2 =阵法）
+    field=Posx, type=float, desc=X轴坐标
+    field=Posy, type=float, desc=Y轴坐标
+    field=Posz, type=float, desc=Z轴坐标
+    field=Ids, type=int, desc=坐骑表主键id
+    field=Rosx, type=float, desc=X轴坐标
+    field=Rosy, type=float, desc=Y轴坐标
+    field=Rosz, type=float, desc=Z轴坐标
+]]
+module("ComponentTranTable", package.seeall)
+local list={
+    {Id=1,Type=1,Posx=0,Posy=0,Posz=-1.387,Ids=3201000,Rosx=0,Rosy=0,Rosz=0},
+    {Id=2,Type=1,Posx=0,Posy=0,Posz=-1.387,Ids=3200200,Rosx=0,Rosy=0,Rosz=0},
+    {Id=3,Type=1,Posx=0,Posy=0,Posz=-1.387,Ids=3200300,Rosx=0,Rosy=0,Rosz=0},
+    {Id=4,Type=1,Posx=0,Posy=0,Posz=-1.387,Ids=3200800,Rosx=0,Rosy=0,Rosz=0},
+    {Id=5,Type=1,Posx=0,Posy=0,Posz=-1.387,Ids=3201900,Rosx=0,Rosy=0,Rosz=0},
+    {Id=6,Type=2,Posx=0,Posy=-0.9,Posz=0,Ids=3200100,Rosx=4.25,Rosy=0,Rosz=0},
+    {Id=7,Type=2,Posx=0,Posy=-1.2,Posz=-0.25,Ids=3200400,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=8,Type=2,Posx=0,Posy=-1.2,Posz=-0.25,Ids=3200500,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=9,Type=2,Posx=0,Posy=-1.2,Posz=-0.25,Ids=3200600,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=10,Type=2,Posx=0,Posy=-1.2,Posz=-0.25,Ids=3200900,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=11,Type=2,Posx=0,Posy=-1.2,Posz=-0.25,Ids=3201500,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=12,Type=2,Posx=0,Posy=-1.04,Posz=-0.18,Ids=3201700,Rosx=-0.88,Rosy=0,Rosz=0},
+    {Id=13,Type=2,Posx=0,Posy=-0.7,Posz=0,Ids=3200700,Rosx=8,Rosy=0,Rosz=0},
+    {Id=14,Type=2,Posx=0,Posy=-0.7,Posz=0,Ids=3201800,Rosx=3.18,Rosy=0,Rosz=0},
+    {Id=15,Type=2,Posx=0,Posy=-2.7,Posz=-0.48,Ids=3201000,Rosx=-3.8,Rosy=0,Rosz=0},
+    {Id=16,Type=2,Posx=0,Posy=-2.28,Posz=-0.84,Ids=3200200,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=17,Type=2,Posx=0,Posy=-0.36,Posz=0.45,Ids=3201100,Rosx=0,Rosy=0,Rosz=0},
+    {Id=18,Type=2,Posx=0,Posy=-0.95,Posz=0.45,Ids=3201200,Rosx=-2.3,Rosy=0,Rosz=0},
+    {Id=19,Type=2,Posx=0,Posy=-0.81,Posz=0,Ids=3201300,Rosx=1.47,Rosy=0,Rosz=0},
+    {Id=20,Type=2,Posx=0,Posy=-0.7,Posz=0,Ids=3201400,Rosx=0.75,Rosy=0,Rosz=0},
+    {Id=21,Type=2,Posx=0,Posy=-3.2,Posz=-1.56,Ids=3200300,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=22,Type=2,Posx=0,Posy=-3.2,Posz=-1.56,Ids=3201900,Rosx=4.41,Rosy=0,Rosz=0},
+    {Id=23,Type=2,Posx=0,Posy=-2.68,Posz=0,Ids=3200800,Rosx=-2.5,Rosy=0,Rosz=0},
+    {Id=24,Type=2,Posx=0,Posy=-0.65,Posz=1.12,Ids=3201600,Rosx=0,Rosy=0,Rosz=0}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10],[11]=list[11],[12]=list[12],[13]=list[13],[14]=list[14],[15]=list[15],[16]=list[16],[17]=list[17],[18]=list[18],[19]=list[19],[20]=list[20],[21]=list[21],[22]=list[22],[23]=list[23],[24]=list[24]};
+
+count = 24;
+Count = 24;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

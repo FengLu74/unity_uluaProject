@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="xy_code_init_succ">初始化成功</string>
+    <string name="xy_code_init_err">初始化失败</string>
+    <string name="xy_code_no_init">请先初始化</string>
+    <string name="xy_code_no_login">请先登录</string>
+    <string name="xy_code_param_err">参数错误</string>
+    <string name="xy_code_order_err">获取订单失败</string>
+    <string name="xy_code_network_err">网络未连接，请检查手机网络设置</string>
+    <string name="xy_code_network_err2">网络异常</string>
+
+    <!-- common -->
+    <string name="xy_pwd_regex">1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <string name="xy_next_step">下一步</string>
+    <string name="xy_finish">完成</string>
+    <string name="xy_card">卡号:</string>
+    <string name="xy_pwd">密码:</string>
+    <string name="xy_please_choose">请选择</string>
+    <string name="xy_yuan">%s元</string>
+    <string name="xy_abs_yuan">元</string>
+
+    <!-- 注册模块 -->
+    <string name="xy_sign_title">注册账号</string>
+    <string name="xy_sign_phone">请输入账号</string>
+    <string name="xy_sign_username">请输入账号</string>
+    <string name="xy_sign_set_pwd">设置密码</string>
+    <string name="xy_sign_set_new_pwd">设置新密码</string>
+    <string name="xy_sign_sign">快速注册</string>
+    <string name="xy_sign_agreement_checkbox">我已阅读并同意</string>
+    <string name="xy_sign_agreement_title">用户服务协议</string>
+    <string name="xy_sign_agreement">《用户服务协议》</string>
+    <!--<string name="xy_sign_agreement">已阅读并同意用户协议</string>-->
+    <string name="xy_sign_guest_login">游客登录</string>
+    <string name="xy_sign_account_login">账户登录</string>
+    <string name="xy_sign_invaild_phone">手机号码格式有误</string>
+    <string name="xy_sign_invaild_pwd">密码只能是6到20位字符</string>
+    <string name="xy_sign_uncheck_agreement">请同意用户协议</string>
+    <string name="xy_agreement_title">用户协议</string>
+    <string name="xy_agreement_sure">确定</string>
+    <string name="xy_guest_login">一键登录</string>
+    <string name="xy_input_uname">请输入用户名</string>
+    <string name="xy_input_pwd">请输入密码</string>
+    <string name="xy_login_login">登录</string>
+    <string name="xy_login_input_pwd">请输入密码</string>
+    <string name="xy_login_input_pwd_2">请再次输入密码</string>
+    <string name="xy_login_forget_pwd">忘记密码？</string>
+    <string name="xy_login_unlogin_tip">用户未登录</string>
+    <string name="xy_welcome_back_to_game">%s,欢迎回到游戏！</string>
+    <string name="xy_welcome_join_game">%s,欢迎加入游戏！</string>
+    <string name="xy_welcome_go_to_game">进入游戏</string>
+    <string name="xy_forget_pwd_signin_phone">注册的用户名</string>
+    <string name="xy_forget_pwd_input_your_verification_code">输入您短信收到的验证码</string>
+    <string name="xy_forget_pwd_send_verification_code">发送验证码</string>
+    <string name="xy_forget_pwd_send_verification_code_suc">验证码已发送</string>
+    <string name="xy_forget_pwd_re_send">重新发送</string>
+    <string name="xy_forget_pwd_invaild_ver_code">请输入验证码</string>
+    <string name="xy_input_bind_phone">输入要绑定的手机号</string>
+    <string name="xy_unbind_tip">为了您的账户安全，请绑定手机号</string>
+    <string name="xy_unbind_guide_tip">还没有验证手机，请先验证手机</string>
+    <string name="xy_unbind_bind_immediateme">马上验证</string>
+    <string name="xy_bind_set_name_pwd">设置用户名密码</string>
+    <string name="xy_reset_pwd_old">原密码</string>
+    <string name="xy_reset_pwd_new">新密码</string>
+    <string name="xy_reset_pwd_repeat_new">重复新密码</string>
+    <string name="xy_reset_pwd_success">密码设置成功</string>
+    <string name="xy_reset_pwd_invaild_old">请输入原密码</string>
+    <string name="xy_reset_pwd_invaild_new">请输入新密码</string>
+    <string name="xy_reset_pwd_different_pwd">两次密码不一致</string>
+    <string name="xy_pay_title">支付中心</string>
+    <string name="xy_pay_pay">立即支付</string>
+    <string name="xy_pay_sum_money">需要支付</string>
+    <string name="xy_pay_charge_tip">其他金额</string>
+    <string name="xy_recharge_phone_card">手机充值</string>
+    <string name="xy_recharge_game_card">游戏点卡</string>
+    <string name="xy_recharge_game_card_type">点卡类型</string>
+    <string name="xy_recharge_amount">充值金额</string>
+    <string name="xy_recharge_recharge">充值</string>
+    <string name="xy_recharge_invaild_card_or_pwd">请输入正确的卡号和密码</string>
+    <string name="xy_recharge_invaild_game_type">请先选择点卡类型</string>
+    <string name="xy_recharge_invaild_amount">请选择金额</string>
+    <string name="xy_recharge_balance">余额</string>
+    <string name="xy_recharge_lack_of_balance">余额不足</string>
+    <string name="xy_recharge_rechrage_timeout">考虑到时间不同步原因，余额可能已经充值到您的账户中</string>
+    <string name="xy_recharge_rechrage_success">充值成功</string>
+    <string name="xy_recharge_rechrage_failed">交易失败</string>
+    <string name="xy_recharge_rechrage_cancel">交易取消</string>
+
+
+    <string name="xy_realname_title">防沉迷认证</string>
+    <string name="xy_input_realname">请输入姓名</string>
+    <string name="xy_input_idcard">请输入身份证号</string>
+    <string name="xy_idcard_regex">0123456789xyzXYZ</string>
+    <string name="xy_realname_auth">立即注册</string>
+    <string name="xy_realname_edit">立即修改</string>
+    <string name="xy_realname_name_info">姓名只能是2至6位中文</string>
+    <string name="xy_realname_idcard_info">请正确填写身份证号</string>
+
+    <string name="xy_confirm">确认</string>
+    <string name="xy_cancel">取消</string>
+
+    <string name="xy_price_10">￥10</string>
+    <string name="xy_price_30">￥30</string>
+    <string name="xy_price_50">￥50</string>
+    <string name="xy_price_100">￥100</string>
+    <string name="xy_price_200">￥200</string>
+    <string name="xy_price_500">￥500</string>
+
+
+    <string name="xy_user_center_username">账户名：</string>
+    <string name="xy_user_center_form_phone">手机号：</string>
+    <string name="xy_user_center_form_id">身份证：</string>
+    <string name="xy_user_center_bind_account">立即绑定</string>
+    <string name="xy_user_center_bind_success">绑定成功</string>
+    <string name="xy_user_center_change_pwd">修改密码</string>
+    <string name="xy_user_center_logout">退出登录</string>
+    <string name="xy_user_center_guest">游客</string>
+    <string name="xy_user_center_title">用户中心</string>
+
+    <string name="xy_account_bind_title">绑定账号</string>
+    <string name="xy_account_bind_bind">立即绑定</string>
+
+    <string name="xy_hint_guest">当前为游客账号登录，为了您的账号安全，请绑定游戏账号</string>
+
+
+    <string name="xy_sign_up_right_now">立即注册</string>
+    <string name="xy_sign_up_phone_number">手机号注册</string>
+    <string name="xy_sign_up_user_name">用户名注册</string>
+
+    <string name="xy_phone_number">手机号</string>
+    <string name="xy_sms_captcha">短信验证码</string>
+    <string name="xy_sms_captcha_request">获取验证码</string>
+    <string name="xy_identity_auth_phone">手机号绑定</string>
+    <string name="xy_identity_auth_id">身份证绑定</string>
+
+</resources>

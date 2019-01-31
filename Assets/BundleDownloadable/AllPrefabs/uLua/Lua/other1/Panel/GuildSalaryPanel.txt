@@ -1,0 +1,264 @@
+﻿module('GuildSalaryPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'Content/GuildSalaryPanel';
+---------------------------------------label路径---------------------------------------
+-- 贡献值
+local m_LabelContributionPath = "Right/Condition/ContributionButton/Label_Contribution";
+-- 消耗公会资金
+local m_LabelCostPath = "Right/Condition/Label_Cost";
+-- 维护资金警戒值
+local m_LabelWarnPath = "Right/Condition/Label_Warn";
+-- 生效提示文本
+local m_LabelEffectivePath = "Right/Condition/Label_Effective";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 取消按钮
+local m_CancelButtonPath = "Right/CancelButton";
+-- 保存按钮
+local m_SaveButtonPath = "Right/SaveButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 奖励1
+local m_Item1Path = "Right/Reward/Items/Item1";
+-- 奖励2
+local m_Item2Path = "Right/Reward/Items/Item2";
+-- 奖励3
+local m_Item3Path = "Right/Reward/Items/Item3";
+-- 奖励4
+local m_Item4Path = "Right/Reward/Items/Item4";
+-- 奖励5
+local m_Item5Path = "Right/Reward/Items/Item5";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 一级俸禄标签
+local m_ToggleSalary1Path = "Left/Toggle_Salary1";
+-- 二级俸禄标签
+local m_ToggleSalary2Path = "Left/Toggle_Salary2";
+-- 三级俸禄标签
+local m_ToggleSalary3Path = "Left/Toggle_Salary3";
+-- 修改贡献值按钮
+local m_ContributionButtonPath = "Right/Condition/ContributionButton";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 奖励Grid
+local m_ItemsPath = "Right/Reward/Items";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 贡献值
+local m_LabelContribution = nil;
+-- 消耗公会资金
+local m_LabelCost = nil;
+-- 维护资金警戒值
+local m_LabelWarn = nil;
+-- 奖励Grid
+local m_Items = nil;
+
+-- 当前选中的标签
+local m_SelectTag = 1;
+local m_TagPaths = nil;
+local m_ItemPaths = nil;
+
+-- 新设置的贡献值
+local m_NewContributionValue = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_SelectTag = 1;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_LabelContribution = nil;
+    m_LabelCost = nil;
+    m_LabelWarn = nil;
+    m_Items = nil;
+    m_TagPaths = nil;
+    m_ItemPaths = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_LabelContribution = GetComponent(m_PanelObject, m_LabelContributionPath, "UILabel");
+    m_LabelCost = GetComponent(m_PanelObject, m_LabelCostPath, "UILabel");
+    m_LabelWarn = GetComponent(m_PanelObject, m_LabelWarnPath, "UILabel");
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+
+    m_TagPaths = { m_ToggleSalary1Path, m_ToggleSalary2Path, m_ToggleSalary3Path };
+    m_ItemPaths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_ToggleSalary1Path, OnToggleSalary1Click, m_PanelObject);
+    SetGameObjectEvent(m_ToggleSalary2Path, OnToggleSalary2Click, m_PanelObject);
+    SetGameObjectEvent(m_ToggleSalary3Path, OnToggleSalary3Click, m_PanelObject);
+    SetGameObjectEvent(m_ContributionButtonPath, OnContributionButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_CancelButtonPath, OnCancelButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_SaveButtonPath, OnSaveButtonClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    SelectTag(m_SelectTag);
+end
+
+function SelectTag(index)
+    for i, path in ipairs(m_TagPaths) do
+        if i == index then
+            SetGameObjectState(path .. "/Active", true, m_PanelObject);
+            SetGameObjectState(path .. "/Deactive", false, m_PanelObject);
+        else
+            SetGameObjectState(path .. "/Active", false, m_PanelObject);
+            SetGameObjectState(path .. "/Deactive", true, m_PanelObject);
+        end
+    end
+    m_SelectTag = index;
+    InitRightInfo();
+end
+
+function InitRightInfo()
+    local guildLevel = GuildManager.myGuild.level;
+    local info = CCommonTool.GetGuildRewardInfo(guildLevel);
+    local rewardId = info["Reward" .. m_SelectTag];
+    local cost = info["Value" .. m_SelectTag];
+
+    --[[ 公会资金{0} ]]
+    m_LabelCost.text = string_format(CCommonTool.GetTxtData(1163).m_str, cost);
+    --[[ 警戒值{0} ]]
+    m_LabelWarn.text = string_format(CCommonTool.GetTxtData(2307).m_str, GuildManager.GetGuildMoneyWarnValue());
+    SetContributionValue(GuildManager.GetGuildWelfareValue(m_SelectTag));
+    InitRewards(rewardId);
+end
+
+function SetContributionValue(value)
+    m_NewContributionValue = value;
+    m_LabelContribution.text = string_format(
+    --[[ 贡献值{0} ]]
+    CCommonTool.GetTxtData(1164).m_str, value);
+
+    local isNewValue = value ~= GuildManager.GetGuildWelfareValue(m_SelectTag)
+    CCommonTool.SetGameObjectGrey(child(m_PanelObject, m_SaveButtonPath).gameObject, not isNewValue);
+    local isEffective = GuildManager.IsEffectiveWelfareValue(m_SelectTag);
+    SetGameObjectState(m_LabelEffectivePath, not isEffective, m_PanelObject);
+    if not isEffective then
+        SetLabelContent(m_LabelEffectivePath, string_format(CCommonTool.GetTxtData(1172).m_str, GuildManager.GetWillEffectiveWelfareValue(m_SelectTag)), m_PanelObject);
+    end
+end
+
+function InitRewards(rewardId)
+    local rewards = CCommonTool.GetRewardInfoByIndex(rewardId);
+    if rewards == nil then
+        error("奖励配置列表不存在")
+        return;
+    end
+    -- 获得奖励道具信息
+    local list = rewards:GetAllItem();
+    local count = list.Count;
+    for i, path in ipairs(m_ItemPaths) do
+        if i <= count then
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            SetItemShowByExcelIDV04(m_PanelObject, path, excelId, itemData.ItemNum, false, 21, ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+            SetItemToolTipsEvent(child(m_PanelObject, path).gameObject, "", ENUMPANELID.ENUM_PANEL_GUILD_MANAGER, false, excelId);
+            SetGameObjectState(path, true, m_PanelObject);
+        else
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+    m_Items:Reposition();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 一级俸禄标签点击事件
+function OnToggleSalary1Click(gameObject)
+    SelectTag(1);
+end
+
+-- 二级俸禄标签点击事件
+function OnToggleSalary2Click(gameObject)
+    SelectTag(2);
+end
+
+-- 三级俸禄标签点击事件
+function OnToggleSalary3Click(gameObject)
+    SelectTag(3);
+end
+
+-- 贡献值按钮点击事件
+function OnContributionButtonClick(gameObject)
+    if not GuildManager.IsEffectiveWelfareValue(m_SelectTag) then
+        ShowSystemFlowTips(4384);
+        return;
+    end
+    GuildWelfareConfirmPanel.Show(m_SelectTag, GuildManager.GetGuildWelfareValue(m_SelectTag), OnContributionSetup);
+end
+
+-- 俸禄设置返回
+function OnContributionSetup(value)
+    SetContributionValue(value);
+end
+
+-- 取消按钮点击事件
+function OnCancelButtonClick(gameObject)
+    SetContributionValue(GuildManager.GetGuildWelfareValue(m_SelectTag));
+end
+
+-- 保存按钮点击事件
+function OnSaveButtonClick(gameObject)
+    if m_NewContributionValue ~= GuildManager.GetGuildWelfareValue(m_SelectTag) then
+        GuildProtocol.RequestSetGuildWelfareRange(m_SelectTag, m_NewContributionValue);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新界面
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+            InitShow();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { index = m_SelectTag };
+end
+
+function SetJumpCloseData(paramTable)
+    m_SelectTag = paramTable.index;
+end

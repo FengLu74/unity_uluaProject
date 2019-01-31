@@ -1,0 +1,1810 @@
+﻿module('StorePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'StorePanel';
+---------------------------------------label路径---------------------------------------
+--道具名称
+local m_ItemNamePath = "Content/Item1/Right/Title/Name";
+--道具描述
+local m_ItemDescribePath = "Content/Item1/Right/Title/Describe";
+--道具到期倒计时
+local m_ItemTimeLabelPath = "Content/Item1/Right/Time/Title";
+-- 购买数量Label
+local m_BuyNumLabelPath = "Content/Item1/Right/Num/Content/Num_Button/Label";
+-- 消耗Label
+local m_CostNumPath = "Content/Item1/Right/Cost/Content/Num";
+-- 拥有Label
+local m_HaveNumPath = "Content/Item1/Right/Have/Content/Num";
+-----------------------------------------按钮路径--------------------------------------
+--购买弹出框确定按钮路径
+local m_BuyMessageQueDingButtonPath = "Popover/BuyMessage/Buttons/QueDing";
+--购买弹出框返回按钮路径
+local m_BuyMessageFanHuiButtonPath = "Popover/BuyMessage/Buttons/FanHui";
+--购买弹出框关闭遮罩
+local m_BuyMessageCloseButtonPath = "Popover/BuyMessage/Mask";
+--礼包弹出框确定按钮路径
+local m_GiftBagMessageQueDingButtonPath = "Popover/GiftBagMessage/Buttons/QueDing";
+--礼包弹出框返回按钮路径
+local m_GiftBagMessageFanHuiButtonPath = "Popover/GiftBagMessage/Buttons/FanHui";
+--礼包弹出框关闭遮罩
+local m_GiftBagMessageCloseButtonPath = "Popover/GiftBagMessage/Mask";
+-----------------------------------------Sprite路径------------------------------------
+-- 消耗
+local m_CostIconPath = "Content/Item1/Right/Cost/Content/Icon/Sprite";
+-- 拥有
+local m_HaveIconPath = "Content/Item1/Right/Have/Content/Icon/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+--道具属性描述
+local m_ItemRightPanelPath = "Content/Item1/Right";
+--道具到期倒计时
+local m_ItemTimePath = "Content/Item1/Right/Time";
+--周卡折扣提示语
+local m_CardDiscountPath = "Content/Item1/Right/CardDiscount/Describe";
+-- 减按钮
+local m_MinusButtonPath = "Content/Item1/Right/Num/Content/Minus_Button";
+-- 加按钮
+local m_AddButtonPath = "Content/Item1/Right/Num/Content/Add_Button";
+-- 数字按钮
+local m_NumButtonPath = "Content/Item1/Right/Num/Content/Num_Button";
+-- 购买按钮
+local m_BuyButtonPath = "Content/Item1/Right/Buy_Button";
+-- 关闭按钮路径
+local m_ClosePath = "Close";
+-- 月卡享受特权关闭按钮
+local m_MonthCardPrivilegeCloseButtonPath = "Content/Item2/Item1/Privilege/Mask";
+--购买弹出框
+local m_BuyMessagePath = "Popover/BuyMessage";
+--礼包弹出框
+local m_GiftBagMessagePath = "Popover/GiftBagMessage";
+----------------------------------通用的名称路径---------------------------------------
+-- 主菜单ItemList路径
+local m_MainMenuItemListPath = "MainMenu/Scroll View/ItemList";
+-- 道具显示面板1
+local m_ItemPanelPath1 = "Content/Item1";
+-- 子菜单ItemList路径
+local m_SubItemListPath = "Content/Item1/Menu/Scroll View/ItemList";
+-- 道具ItemList路径
+local m_PropItemListPath = "Content/Item1/Left/Scroll View/ItemList";
+-- 道具显示面板2
+local m_ItemPanelPath2 = "Content/Item2";
+-- 月卡显示面板
+local m_ItemPanelPath21 = "Content/Item2/Item1";
+-- 月卡显示列表
+local m_MonthCardListPath = "Content/Item2/Item1/Scroll View/ItemList";
+-- 月卡享受特权
+local m_MonthCardPrivilegePath = "Content/Item2/Item1/Privilege";
+-- 月卡享受特权内容
+local m_MonthCardPrivilegeContentPath = "Content/Item2/Item1/Privilege/Content";
+-- 充值显示面板
+local m_ItemPanelPath22 = "Content/Item2/Item2";
+-- 充值显示列表
+local m_RechargeListPath = "Content/Item2/Item2/Scroll View/ItemList";
+-- 礼包显示面板
+local m_ItemPanelPath23 = "Content/Item2/Item3";
+-- 礼包显示列表
+local m_GiftBagListPath = "Content/Item2/Item3/Scroll View/ItemList";
+-- 礼包菜单列表
+local m_GiftBagMenuListPath = "Content/Item2/Item3/Menu/Scroll View/ItemList";
+--礼包道具信息
+local m_GiftBagMessageListPath = "Popover/GiftBagMessage/Content/Items/Scroll View/Grid";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 主菜单ItemList
+local m_MainMenuItemList = nil;
+-- 道具显示面板1
+local m_ItemPanel1 = nil;
+-- 子菜单ItemList
+local m_SubItemList = nil;
+-- 道具ItemList
+local m_PropItemList = nil;
+-- 道具显示面板2
+local m_ItemPanel2 = nil;
+-- 礼包显示面板
+local m_ItemPanel3 = nil;
+-- 月卡享受特权
+local m_MonthCardPrivilege = nil;
+-- 月卡享受特权内容
+local m_MonthCardPrivilegeContent = nil;
+-- 月卡显示列表
+local m_MonthCardList = nil;
+-- 充值显示列表
+local m_RechargeList = nil;
+-- 礼包显示列表
+local m_GiftBagList = nil;
+-- 礼包菜单列表
+local m_GiftBagMenuList = nil;
+--礼包道具信息
+local m_GiftBagMessageList = nil;
+-- 减按钮
+local m_MinusButton = nil;
+-- 加按钮
+local m_AddButton = nil;
+-- 数字按钮
+local m_NumButton = nil;
+-- 购买按钮
+local m_BuyButton = nil;
+-- 关闭按钮
+local m_Close = nil;
+-- 月卡享受特权关闭按钮
+local m_MonthCardPrivilegeCloseButton = nil;
+--购买弹出框确定按钮
+local m_BuyMessageQueDingButton = nil;
+--购买弹出框关闭按钮
+local m_BuyMessageFanHuiButton = nil;
+--购买弹出框关闭按钮
+local m_BuyMessageCloseButton = nil;
+--购买弹出框
+local m_BuyMessage = nil;
+--礼包弹出框确定按钮路径
+local m_GiftBagMessageQueDingButton = nil;
+--礼包弹出框返回按钮路径
+local m_GiftBagMessageFanHuiButton = nil;
+--礼包弹出框关闭遮罩
+local m_GiftBagMessageCloseButton = nil;
+--礼包弹出框
+local m_GiftBagMessage = nil;
+-----------------------------------一些写死的规定--------------------------------------
+--主菜单类型（目前默认是超值礼包）
+local m_MainMenuType = 1;
+local m_OldMainMenuType = 0;
+--主菜单指针
+local m_MainMenuIndex = 0;
+--主菜单数据信息
+local m_MainMenuDatas = {};
+--商店类型（红蓝钻商城）
+local m_ShopType = 0;
+--商城礼包类型（超值礼包和钻石礼包）
+local m_GiftBagType = 0;
+--子菜单类型
+local m_SubMenuType = -1;
+-- 子菜单指针
+local m_SubMenuIndex = 0;
+-- 当前页面的道具
+local  m_PropIndex = 0;
+-- 购买数量
+local m_BuyNum = 1;
+-- 输入框最大值
+local m_MaxNum = 99;
+-- 点击的道具数据
+local m_PropItemData = nil;
+-- 打开面板时数据
+local m_OpenData = nil;
+--充值二次确认的Id
+local m_ProductId = nil;
+--购买礼包数据
+local m_BuyGiftBagData = nil;
+--充值界面赠送蓝钻时间监听
+local m_RechargeEventNames = {};
+-- Timer事件名称
+local m_TimerEventName = "ActivityStorePanelTimer";
+
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    LoadTexts();
+    InitObjects();
+    InitEvents();
+    InitShow();
+    -- SDK EventHook事件
+    CSDKManager.EventHook("enter-dia-store", function() end); 
+    AddTimerEvent(m_TimerEventName, 100000, nil, nil, OnTimerEvent);
+    m_CreateSuccess = true;
+end
+
+-- 每秒刷新事件
+function OnTimerEvent()
+    m_GiftBagList:Refresh();
+end
+function OnEnable()
+    if m_CreateSuccess == true then
+        InitShow();
+        -- SDK EventHook事件
+        CSDKManager.EventHook("enter-dia-store", function() end); 
+        AddTimerEvent(m_TimerEventName, 100000, nil, nil, OnTimerEvent);
+    end
+end
+
+function OnDisable()
+    m_MainMenuType = 1;
+    m_OldMainMenuType = 0;
+    m_MainMenuIndex = 0;
+    m_ShopType = 0;
+    m_GiftBagType = 0;
+    m_SubMenuType = -1;
+    m_SubMenuIndex = 0;
+    m_PropIndex = 0;
+    m_ProductId = nil;
+    m_BuyGiftBagData = nil;
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+end
+
+function OnDestroy()
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_MainMenuItemList = nil;
+    m_ItemPanel1 = nil;
+	m_SubItemList = nil;
+	m_PropItemList = nil;
+    m_ItemPanel2 = nil;
+    m_ItemPanel3 = nil;
+    m_MonthCardPrivilege = nil;
+    m_MonthCardPrivilegeContent = nil;
+    m_MonthCardList = nil;
+    m_RechargeList = nil;
+    m_GiftBagList = nil;
+    m_GiftBagMenuList = nil;
+    m_GiftBagMessageList = nil;
+    m_MinusButton = nil;
+	m_AddButton = nil;
+	m_NumButton = nil;
+    m_BuyButton = nil;
+	m_Close = nil;
+
+    m_MonthCardPrivilegeCloseButton = nil;
+
+    m_BuyMessageQueDingButton = nil;
+    m_BuyMessageFanHuiButton = nil;
+    m_BuyMessageCloseButton = nil;
+    m_BuyMessage = nil;
+    m_GiftBagMessageQueDingButton = nil;
+    m_GiftBagMessageFanHuiButton = nil;
+    m_GiftBagMessageCloseButton = nil;
+    m_GiftBagMessage = nil;
+
+    m_MainMenuType = 1;
+    m_OldMainMenuType = 0;
+    m_MainMenuIndex = 0;
+    m_ShopType = 0;
+    m_GiftBagType = 0;
+    m_SubMenuType = -1;
+    m_SubMenuIndex = 0;
+    m_PropIndex = 0;
+
+    m_PropItemData = nil;
+    m_OpenData = nil;
+    m_ProductId = nil;
+    m_BuyGiftBagData = nil;
+    if m_RechargeEventNames ~= nil then
+        for key, var in pairs(m_RechargeEventNames) do
+            G_TimerMng:RemoveTimeTask(var);
+        end
+    end
+    m_RechargeEventNames = {};
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+--加载文本
+function LoadTexts()
+    StoreManager.LoadTexts();
+end
+
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+    m_MainMenuItemList = GetComponent(m_PanelObject, m_MainMenuItemListPath, "UIListView");
+    m_ItemPanel1 = child(m_PanelObject, m_ItemPanelPath1).gameObject;
+    m_SubItemList = GetComponent(m_PanelObject, m_SubItemListPath, "UIListView");
+    m_PropItemList = GetComponent(m_PanelObject, m_PropItemListPath, "UIListView");
+    m_ItemPanel2 = child(m_PanelObject, m_ItemPanelPath2).gameObject;
+    m_ItemPanel3 = child(m_PanelObject, m_ItemPanelPath3).gameObject;
+    m_MonthCardPrivilege = child(m_PanelObject, m_MonthCardPrivilegePath).gameObject;
+    m_MonthCardPrivilegeContent = child(m_PanelObject, m_MonthCardPrivilegeContentPath).gameObject;
+
+    m_MonthCardList = GetComponent(m_PanelObject, m_MonthCardListPath, "UIListView");
+    m_RechargeList = GetComponent(m_PanelObject, m_RechargeListPath, "UIListView");
+    m_GiftBagList = GetComponent(m_PanelObject, m_GiftBagListPath, "UIListView");
+    m_GiftBagMenuList = GetComponent(m_PanelObject, m_GiftBagMenuListPath, "UIListView");
+    m_GiftBagMessageList = GetComponent(m_PanelObject, m_GiftBagMessageListPath, "UIListView");
+    
+    m_MinusButton = child(m_PanelObject, m_MinusButtonPath).gameObject;
+    m_AddButton = child(m_PanelObject, m_AddButtonPath).gameObject;
+    m_NumButton = child(m_PanelObject, m_NumButtonPath).gameObject;
+    m_BuyButton = child(m_PanelObject, m_BuyButtonPath).gameObject;
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+
+    m_MonthCardPrivilegeCloseButton = child(m_PanelObject, m_MonthCardPrivilegeCloseButtonPath).gameObject;
+
+    m_BuyMessageQueDingButton = child(m_PanelObject, m_BuyMessageQueDingButtonPath).gameObject;
+    m_BuyMessageFanHuiButton = child(m_PanelObject, m_BuyMessageFanHuiButtonPath).gameObject;
+    m_BuyMessageCloseButton = child(m_PanelObject, m_BuyMessageCloseButtonPath).gameObject;
+    m_BuyMessage = child(m_PanelObject, m_BuyMessagePath).gameObject;
+
+    m_GiftBagMessageQueDingButton = child(m_PanelObject, m_GiftBagMessageQueDingButtonPath).gameObject;
+    m_GiftBagMessageFanHuiButton = child(m_PanelObject, m_GiftBagMessageFanHuiButtonPath).gameObject;
+    m_GiftBagMessageCloseButton = child(m_PanelObject, m_GiftBagMessageCloseButtonPath).gameObject;
+
+    m_GiftBagMessage = child(m_PanelObject, m_GiftBagMessagePath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_MainMenuItemList:SetInitCallback(OnMainMenuItemListViewInit);
+    m_MainMenuItemList:SetClickCallback(OnMainMenuItemListViewClick);
+    m_SubItemList:SetInitCallback(OnSubItemListViewInit);
+    m_SubItemList:SetClickCallback(OnSubItemListViewClick);
+    m_PropItemList:SetInitCallback(OnPropItemListViewInit);
+    m_PropItemList:SetClickCallback(OnPropItemListViewClick);
+    m_MonthCardList:SetInitCallback(OnMonthCardListViewInit);
+    m_MonthCardList:SetClickCallback(OnMonthCardListViewClick);
+    m_RechargeList:SetInitCallback(OnRechargeListViewInit);
+    m_RechargeList:SetClickCallback(OnRechargeListViewClick);
+
+    m_GiftBagList:SetInitCallback(OnGiftBagListViewInit);
+    m_GiftBagList:SetClickCallback(OnGiftBagListViewClick);
+    m_GiftBagMenuList:SetInitCallback(OnGiftBagMenuListViewInit);
+    m_GiftBagMenuList:SetClickCallback(OnGiftBagMenuListViewClick);
+
+    m_GiftBagMessageList:SetInitCallback(OnGiftBagMessageInit);
+
+    UIEventListener.Get(m_MinusButton).onClick = LuaHelper.OnClick(OnMinusButtonClick);
+    UIEventListener.Get(m_AddButton).onClick = LuaHelper.OnClick(OnAddButtonClick);
+    UIEventListener.Get(m_NumButton).onClick = LuaHelper.OnClick(OnNumButtonClick);
+    UIEventListener.Get(m_BuyButton).onClick = LuaHelper.OnClick(OnBuyButtonClick);
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_MonthCardPrivilegeCloseButton).onClick = LuaHelper.OnClick(OnPrivilegeCloseButtonClick);
+
+    UIEventListener.Get(m_BuyMessageQueDingButton).onClick = LuaHelper.OnClick(OnBuyMessageQueDingClick);
+    UIEventListener.Get(m_BuyMessageFanHuiButton).onClick = LuaHelper.OnClick(OnBuyMessageCloseClick);
+    UIEventListener.Get(m_BuyMessageCloseButton).onClick = LuaHelper.OnClick(OnBuyMessageCloseClick);
+
+    UIEventListener.Get(m_GiftBagMessageQueDingButton).onClick = LuaHelper.OnClick(OnGiftBagMessageQueDingClick);
+    UIEventListener.Get(m_GiftBagMessageFanHuiButton).onClick = LuaHelper.OnClick(OnGiftBagMessageCloseClick);
+    UIEventListener.Get(m_GiftBagMessageCloseButton).onClick = LuaHelper.OnClick(OnGiftBagMessageCloseClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitOpenData();
+    InitMainMenu();
+    InitCardDiscount();
+end
+
+-- 初始化周卡折扣描述
+function InitCardDiscount()
+    SetGameObjectState(m_CardDiscountPath, true, m_PanelObject);
+    local isBuy = StoreManager.GetHaveWeekMemberCard();
+    local text = GetTextToId(2054);
+    if isBuy == true then
+        text = GetTextToId(2055);
+    end
+    SetLabelContent(m_CardDiscountPath, text, m_PanelObject);
+end
+
+--初始化打开界面的数据信息
+function InitOpenData()
+    if m_OpenData ~= nil then
+        m_MainMenuType = m_OpenData.MainMenuType;
+        m_SubMenuType = m_OpenData.SubMenuType;
+        m_PropIndex = m_OpenData.PropIndex;
+        m_OpenData = nil;
+    end
+--    error("InitOpenData m_MainMenuType : "..m_MainMenuType);
+--    error("InitOpenData m_SubMenuType : "..m_SubMenuType);
+--    error("InitOpenData m_PropIndex : "..m_PropIndex);
+
+    --InitMonthCardList();
+    InitRechargeList();
+end
+
+--刷新主菜单显示
+function RefreshMainMenu()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL) == 1 then
+        InitMainMenu();
+    end
+end
+
+-- 初始化主菜单信息
+function InitMainMenu()
+    local isBuy = StoreManager.GetHaveWeekMemberCard();
+    local mainMenuDatas = StoreManager.GetMainMenuDatas();
+    local count = GetTableLength(mainMenuDatas);
+    m_MainMenuDatas = {};
+    m_MainMenuItemList:RemoveAll();
+	local indexTemp = 0;
+    for index = 1 , count do 
+		if (index ~= 1 and index ~= 2 and index ~= 5 and index ~= 6) then
+			local menuData = mainMenuDatas[index];
+			if menuData ~= nil then 
+				local menuType = menuData.Type;
+				local menuText = GetTextToId(menuData.TextId);
+				local data = 
+				{
+					Index = indexTemp;
+					Type = menuType;
+					Text = menuText;
+					EventHook = menuData.EventHook;
+				};
+				indexTemp = indexTemp + 1;
+				if menuType == MainMenuType.MMT_WeekCard then
+					local CanShowWeekBtn = CanShowWeek();
+					if CanShowWeekBtn == true then
+						if menuType == MainMenuType.MMT_Blue and isBuy == true then
+							m_MainMenuItemList:AddData(data,"Item2");
+						else 
+							m_MainMenuItemList:AddData(data,"Item1");
+						end
+						 m_MainMenuDatas[menuType] = data;
+					end
+				else
+					--if menuType == MainMenuType.MMT_Blue and isBuy == true then
+					--if menuType == MainMenuType.MMT_Blue and (VipManager.CheckIsHave(1) == true or VipManager.CheckIsHave(2) == true or VipManager.CheckIsHave(3) == true) and VipManager.MyVipData.vipLv>=1 then
+					--    m_MainMenuItemList:AddData(data,"Item2");
+					if menuType == MainMenuType.MMT_Blue then
+						if (VipManager.CheckIsHave(1) == true or VipManager.CheckIsHave(2) == true or VipManager.CheckIsHave(3) == true) and VipManager.MyVipData.vipLv>=1 then
+							m_MainMenuItemList:AddData(data,"Item2");
+						else
+							m_MainMenuItemList:AddData(data,"Item3");
+						end
+					else 
+						m_MainMenuItemList:AddData(data,"Item1");
+					end
+					 m_MainMenuDatas[menuType] = data;
+				end
+			end
+		end
+    end
+    SetMainMenu(m_MainMenuType,1);
+end
+
+--设置主菜单显示页签
+function SetMainMenu(menuType,requst)
+    m_MainMenuType = menuType;
+    if requst==1 then
+        RequestDatas(menuType);
+    end
+    local menuData = m_MainMenuDatas[menuType];
+    if menuData ~= nil then
+        m_MainMenuIndex = menuData.Index;
+        m_MainMenuItemList:LookAt(m_MainMenuIndex,true);
+        SetPropItemListView(menuType);
+        if m_OldMainMenuType ~= menuType then
+            local eventHook = menuData.EventHook;
+            if eventHook ~= nil and eventHook ~= "" then
+                CSDKManager.EventHook(eventHook, function() end);
+            end
+            m_OldMainMenuType = menuType;
+        end
+    end
+end
+
+--请求数据
+function RequestDatas(menuType)
+    if menuType == MainMenuType.MMT_Red then
+        StoreProtocol.RequestItemList(0);
+    elseif menuType == MainMenuType.MMT_Blue then
+        StoreProtocol.RequestItemList(1);
+    elseif menuType == MainMenuType.MMT_GiftBag1 then
+        StoreProtocol.RequestGiftBagDatas(0);
+    elseif menuType == MainMenuType.MMT_GiftBag2 then
+        StoreProtocol.RequestGiftBagDatas(1);
+    end
+end
+function CheckGiftBag(menuType)
+    if StoreManager.WholeDatas~=nil and #StoreManager.WholeDatas > 0 and StoreManager.flag==true then
+        local datas={}; 
+        for  i,idata in ipairs(StoreManager.WholeDatas) do
+            --error(i.."=index");
+            local data =datas[idata.ItemType];
+            local giftBagItemDatas = {};
+            if data ~= nil then
+                if data.ItemDatas ~= nil then
+                    giftBagItemDatas = data.ItemDatas;
+                end
+            end
+            local giftBagItemData = 
+            {
+                Id = idata.Id;
+                GiftBagType = idata.GiftBagType;
+                PicId = idata.PicId;
+                Pos =idata.Pos;
+                ItemType =idata.ItemType;
+                ItemTypeTextId =idata.ItemTypeTextId;
+                WszName = idata.WszName;
+                MoneyType =idata.MoneyType;
+                OldKRWDot =idata.OldKRWDot;
+                NowKRWDot =idata.NowKRWDot;
+                OldUSDDot =idata.OldUSDDot;
+                NowUSDDot =idata.NowUSDDot;
+                IsHot = idata.IsHot;
+                LimitNum =idata.LimitNum;
+                LimitCycle =idata.LimitCycle;
+                IsLimitTime =idata.IsLimitTime == 1;
+                BeginTime =idata.BeginTime;
+                EndTime = idata.EndTime;
+                ItemDatas = idata.ItemDatas;
+                Content = idata.Content;
+            }
+            local can_timeShow,offsetTime =StoreProtocol.CanShowItemBysTime(giftBagItemData);
+            idata.OffsetTime=offsetTime;
+            if can_timeShow == true then
+                table.insert(giftBagItemDatas,giftBagItemData);
+                data = 
+                {
+                    ItemType = idata.ItemType;
+                    ItemTypeTextId = idata.ItemTypeTextId;
+                    ItemDatas =giftBagItemDatas;
+                }
+                datas[idata.ItemType] = data;
+            end
+        end
+        local GiftBagType=nil;
+        local UpdateSaveTime=nil;
+
+        StoreManager.RefreshGiftBagDatas(StoreManager.WholeDatas[1].GiftBagType,datas,StoreManager.WholeDatas[1].UpdateSaveTime);
+        SetGiftBagList(1);
+    else
+        error("no data");
+    end
+end
+--超值礼包初始化
+function OnGiftBagListViewInit(listView, cell, data)
+    --error("0是超值礼包1是钻石礼包初始化");
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local itemName = data.WszName;
+    SetLabelContent("Title/Label",itemName,item);
+    local picId = data.PicId;
+    SetSpriteByAtlasID("Icon",picId,item);
+    local isHot = data.IsHot;
+    SetGameObjectState("Tag/Item",isHot == true, item);
+    --0是超值礼包1是钻石礼包
+    local giftBagType =data.GiftBagType;
+    local ID=data.Id;
+    --error( data.Id.."!");
+    if giftBagType == 0 then
+        local iconText = GetTextToId(2047);
+        local oldDot = data.OldUSDDot/100;
+        local nowDot = data.NowUSDDot/100;
+        if Platform == "android" and Constants.branch ~= "tw" then
+            iconText = GetTextToId(2061);
+            oldDot = data.OldKRWDot;
+            nowDot = data.NowKRWDot;
+            if Constants.branch == "cn" then
+                oldDot = data.OldKRWDot/100;
+                nowDot = data.NowKRWDot/100;
+            end
+        end
+        local iconType = 1;
+        SetGameObjectState("Money/Now/Icon/Label", iconType == 1, item);
+        SetGameObjectState("Money/Now/Icon/Sprite", iconType ~= 1, item);
+        if iconType == 1 then
+            SetLabelContent("Money/Now/Icon/Label", iconText, item);
+        else
+            SetSpriteByAtlasID("Money/Now/Icon/Sprite", 119, item);
+        end
+        SetGameObjectState("Money/Original", nowDot < oldDot, item);
+        if nowDot < oldDot then
+            local dotText = string_format("[s]{0}{1}{2}[/s]",GetTextToId(2134),iconText,oldDot);
+            SetLabelContent("Money/Original/Value",dotText,item);
+        end
+        SetLabelContent("Money/Now/Value",nowDot,item);
+    else
+        local nowDot = data.NowKRWDot;
+        local moneyType = data.MoneyType;
+        if moneyType == 1 then
+            SetSpriteByAtlasID("Money/Now/Icon/Sprite", 201, item);
+        else
+            SetSpriteByAtlasID("Money/Now/Icon/Sprite", 205, item);
+        end
+        SetLabelContent("Money/Now/Value",nowDot,item);
+    end
+    local limitNum = data.LimitNum;
+    SetGameObjectState("Limit/Num", limitNum > 0, item);
+    if limitNum > 0 then
+        local curBuyNum = limitNum;
+        local limitDatas = StoreManager.GiftBagLimitDatas;
+        local buyNum = limitDatas[data.Id];
+        if buyNum == nil then
+            buyNum = 0;
+        end
+        curBuyNum = limitNum - buyNum;
+        if curBuyNum <= 0 then
+            curBuyNum = 0;
+        end
+        local limitCycle = data.LimitCycle;
+        --error("limitCycle : "..limitCycle);
+        local numTitleText = "";
+        if limitCycle == 1 then
+            numTitleText = GetTextToId(2139);
+        elseif limitCycle == 2 then
+            numTitleText = GetTextToId(2140);
+        elseif limitCycle == 3 then
+            numTitleText = GetTextToId(2141);
+        elseif limitCycle == 4 then
+            numTitleText = GetTextToId(2142);
+        end
+        local numText = string_format("{0} {1}",numTitleText,curBuyNum);
+        SetLabelContent("Limit/Num/Label",numText,item);
+    end
+    SetGameObjectState("Limit/Time", true, item);
+    local seconds=0;
+    local  offset=0;
+    --error("#StoreManager.WholeDatas="..#StoreManager.WholeDatas);
+    if #StoreManager.WholeDatas >0 then
+        for key,v in ipairs(StoreManager.WholeDatas) do
+            if v.Id==ID then
+                offset=math.abs(v.OffsetTime)-1;
+                if offset>0 then
+                    StoreManager.WholeDatas[key].OffsetTime=offset;
+                    seconds= SecondToString(offset);
+                else
+                    StoreManager.WholeDatas[key].OffsetTime=0;
+                    seconds="";
+                end
+                --error("offset="..offset);
+            end
+        end
+    end
+    SetLabelContent("Limit/Time",seconds, item);             
+end
+
+-- 秒数转换为--:-- 格式 
+function SecondToString(time)
+--    local zeroTime = G_TimerMng:GetTodayZeroTimestamp();
+--    local time = seconds - zeroTime;
+    if time>0 then
+        local d = math.floor(time / 86400);
+        local h = math.floor((time-d * 86400) / 3600);
+        local m = math.floor((time-d * 86400 - h * 3600) / 60);
+        if d>0 then
+            return string_format(CCommonTool.GetTxtData(1602).m_str,d, h);
+        else
+            return string_format(CCommonTool.GetTxtData(1603).m_str,h,m);
+        end
+        --return string.format("%2d天%02d时%02d分",d, h, m);
+    else
+        return "";
+    end
+end
+
+
+--刷新礼包数据
+function RefreshGiftBagList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL) == 1 then
+        SetMainMenu(m_MainMenuType,0);
+    end
+end
+
+--function CanShowItemBysTime(giftBagItemData)
+--    local local_time = G_TimerMng:GetCurrentSeconds();
+--    error(local_time.."=local_time");
+--    error(giftBagItemData.BeginTime.."=giftBagItemData.BeginTime");
+--    error(giftBagItemData.EndTime.."=giftBagItemData.EndTime");
+
+--    if giftBagItemData.BeginTime<=0 and giftBagItemData.EndTime <=0 then
+--        return true;
+--    end
+--    if giftBagItemData.BeginTime <= local_time and giftBagItemData.EndTime>=local_time then
+--        return true;
+--    end
+--    return false;
+--end
+
+-- 初始化子菜单信息
+function SetSubMenuDatas(shopType)
+    local menuDatas = StoreManager.GetShopMenuDatas(shopType);
+    m_SubItemList:RemoveAll();
+    if menuDatas ~= nil then
+        local length = GetTableLength(menuDatas);
+        for index = 1 , length do
+            local menuData = menuDatas[index];
+            if m_SubMenuType >= 0 then
+                if m_SubMenuType == 0 then
+                    m_SubMenuIndex = 0;
+                end
+                if m_SubMenuType == menuData.Type then
+                    m_SubMenuIndex = (index - 1);
+                end
+            else
+                if index == (m_SubMenuIndex + 1) then
+                    m_SubMenuType = menuData.Type;
+                end
+            end
+            m_SubItemList:AddData(menuData);
+        end
+    end
+    SetSubMenu(m_SubMenuIndex);
+end
+--设置子菜单显示页签
+function SetSubMenu(subMenuIndex)
+    m_SubMenuIndex = subMenuIndex;
+    m_SubItemList:LookAt(m_SubMenuIndex,true);
+end
+-- 刷新金币显示
+function UpdateMoneyShow()
+    --error("UpdateMoneyShow");
+    if m_PropItemData ~= nil then
+        SetLabelContent(m_BuyNumLabelPath,m_BuyNum,m_PanelObject);
+        local curHaveNum = GetCurHavebyBuyType(m_PropItemData.ShopType);
+        m_NeedCostNum = m_PropItemData.CurDot * m_BuyNum;
+        if curHaveNum >= m_NeedCostNum then
+            SetLabelColor(m_CostNumPath,"F3F1E4",m_PanelObject);
+        else
+            SetLabelColor(m_CostNumPath,"D83232",m_PanelObject);
+        end
+        SetLabelContent(m_CostNumPath,m_NeedCostNum,m_PanelObject);
+        SetItemMoneyIcon(m_PropItemData.ShopType,m_CostIconPath,m_PanelObject);
+        SetItemMoneyIcon(m_PropItemData.ShopType,m_HaveIconPath,m_PanelObject);
+        SetLabelContent(m_HaveNumPath,curHaveNum,m_PanelObject);
+    end
+end
+
+--获取当前拥有钻石
+function GetCurHavebyBuyType(moneyType)
+    if moneyType == 0 then
+        return G_UserInfo.NotBindDiamond;
+    elseif moneyType == 1 then
+        return G_UserInfo.BindDiamond;
+    else
+        return 0;
+    end
+end
+
+--设置道具消耗钻石图标
+function SetItemMoneyIcon(moneyType,iconPath,parentObject)
+    local itemInfo = nil;
+    --红钻
+    if moneyType == 0 then      
+        itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+    --蓝钻
+    elseif moneyType == 1 then
+        itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDDIAMOND);
+    end
+    if itemInfo ~= nil then
+        SetSpriteByAtlasID(iconPath, itemInfo.ImageSmallID, parentObject);
+    end
+end
+------------------------------------------事件方法------------------------------------
+-- 主菜单
+function OnMainMenuItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local menuType = data.Type;
+	SetGameObjectState("Tag", false, item);
+    if menuType == MainMenuType.MMT_MemberCard then 
+        local isRedHint = StoreManager.IsShowCardRedHint(1);
+	    SetGameObjectState("Tag", isRedHint, item);
+    elseif menuType == MainMenuType.MMT_WeekCard then
+        local isRedHint = StoreManager.IsShowCardRedHint(0);
+	    SetGameObjectState("Tag", isRedHint, item);
+    end
+    local text = data.Text;
+    SetLabelContent("Sprite_Deactive/Label",text,item);
+    SetLabelContent("Sprite_Active/Label",text,item);
+end
+
+-- 主菜单
+function OnMainMenuItemListViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    local index = data.Type;
+    if index == MainMenuType.MMT_Recharge and LuaGameManager.IsMycardChannel() then
+        Timer.Instance:AddTimer(0.01, 0, function() m_MainMenuItemList:LookAt(m_MainMenuIndex,true); end);
+        RequestMycardCharge();
+        return;
+    end
+    if m_MainMenuIndex ~= data.Index then
+        local menuType = data.Type;
+        m_SubMenuType = -1;
+        m_SubMenuIndex = 0;
+        --CheckGiftBag(menuType);
+        SetMainMenu(menuType, 1);
+    end
+    InitCardDiscount();
+
+end
+
+-- 设置道具列表
+function SetPropItemListView(menuType)
+    --error("设置道具列表");
+    local isShowItem1 = (menuType == MainMenuType.MMT_Red or menuType == MainMenuType.MMT_Blue);
+	SetGameObjectState(m_ItemPanelPath1, isShowItem1 == true , m_PanelObject);
+	SetGameObjectState(m_ItemPanelPath2, isShowItem1 == false , m_PanelObject);
+    SetGameObjectState(m_ItemPanelPath21, menuType == MainMenuType.MMT_MemberCard or menuType == MainMenuType.MMT_WeekCard , m_PanelObject);
+    SetGameObjectState(m_ItemPanelPath22, menuType == MainMenuType.MMT_Recharge , m_PanelObject);
+    SetGameObjectState(m_ItemPanelPath23, (menuType == MainMenuType.MMT_GiftBag1 or menuType == MainMenuType.MMT_GiftBag2) , m_PanelObject);
+    if isShowItem1 == true then
+        local shopType = StoreManager.GetShopType(menuType);
+        if shopType >= 0 then
+            m_ShopType = shopType;
+            SetSubMenuDatas(shopType);
+            SetItemListData(shopType,m_SubMenuType,m_PropIndex);
+        end
+    else
+        if menuType == MainMenuType.MMT_MemberCard then
+            InitMonthCardList(menuType);
+        elseif menuType == MainMenuType.MMT_WeekCard then
+            InitMonthCardList(menuType);
+        elseif menuType == MainMenuType.MMT_Recharge then
+
+        elseif menuType == MainMenuType.MMT_GiftBag1 then
+            m_GiftBagType = 0;
+            SetGiftBagInfo(m_GiftBagType);
+        elseif menuType == MainMenuType.MMT_GiftBag2 then
+            m_GiftBagType = 1;
+            SetGiftBagInfo(m_GiftBagType);
+        end
+    end
+end
+
+--红钻蓝钻商城子菜单
+function OnSubItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local text = GetTextToId(data.TextId);
+    SetLabelContent("Sprite_Deactive/Label_Name",text,item);
+    SetLabelContent("Sprite_Active/Label_Name",text,item);
+end
+
+--红钻蓝钻商城子菜单
+function OnSubItemListViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    m_SubMenuIndex = dataIndex;
+    m_SubMenuType = data.Type;
+    --error("OnSubItemListViewClick dataIndex : "..dataIndex);
+    SetItemListData(m_ShopType,m_SubMenuType,m_PropIndex);
+    m_PropIndex = 0;
+end
+
+--设置道具列表数据
+function SetItemListData(shopType,shopMenuType,propIndex)
+    local porpDatas = StoreManager.GetShopDatas(shopType,shopMenuType);
+    if porpDatas ~= nil then
+        m_PropItemList:RemoveAll();
+        for k, v in pairs(porpDatas) do
+            local data = v;
+            -- 如果propIndex>=10000表示配置的跳转数据为道具ID
+            if propIndex >= 10000 and data.ExcelId == propIndex then
+                propIndex = k - 1;
+            end
+            m_PropItemList:AddData(data);
+        end
+        local dataCount = m_PropItemList.dataCount;
+	    SetGameObjectState(m_ItemRightPanelPath, dataCount > 0, m_PanelObject);
+        if dataCount > 0 then
+            if propIndex > dataCount then
+                propIndex = 0;
+            end
+            m_PropItemList:LookAt(propIndex,true);
+            local data = m_PropItemList:GetData(propIndex);
+            SetItemData(data);
+        end
+    end
+end
+
+--设置道具显示数据
+function SetItemData(data)
+    m_BuyNum = 1;
+    m_PropItemData = data;
+    local excelId = data.ExcelId;
+    SetLabelTextByID(m_ItemNamePath, CCommonTool.GetNameIDByExcelID(excelId), m_PanelObject);
+    SetLabelPinZhi(m_ItemNamePath, CCommonTool.GetAptitudeIDByExcelID(excelId), m_PanelObject);
+    SetLabelTextByID(m_ItemDescribePath,CCommonTool.GetIntroIDByExcelID(excelId),m_PanelObject);
+    SetGameObjectState(m_ItemTimePath, data.IsLimit, m_PanelObject);
+    if data.IsLimit == true then
+        local time = math.floor(data.EndTime - G_TimerMng:GetCurrentSeconds());
+        local day = math.ceil(time/60/60/24);
+        local timeLabelText = "";
+        if day > 0 then
+            local dayText = GetTextToId(1564);
+            timeLabelText = string_format(dayText,day);
+        else
+            timeLabelText = GetTextToId(1565);
+        end
+        SetLabelContent(m_ItemTimeLabelPath,timeLabelText,m_PanelObject);
+    end
+    UpdateMoneyShow();
+end
+
+-- 道具
+function OnPropItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    --道具属性信息
+    SetItemShowByExcelIDV04(item,"Prop",data.ExcelId,data.Num,true,110,ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+    SetItemToolTipsEvent(item, "Prop", ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL, false, data.ExcelId);
+--    --道具限制个数
+--    SetLabelContent("Limit",string_format("{0}/{1}",1,data.Num),item);
+    --当前价格
+    local curDot = data.CurDot;
+    SetLabelContent("Cost/Label1",data.CurDot,item);
+    local isBuy = StoreManager.GetHaveWeekMemberCard();
+    local shopType = data.ShopType;
+    if shopType == 1 and isBuy == true then
+        SetLabelColor("Cost/Label1","ABFF56",item);
+    else 
+        SetLabelColor("Cost/Label1","FFFFFF",item);
+    end
+    --原价
+    local oldDot = data.OldDot;
+	SetGameObjectState("Cost/Label2", false, item);
+    if oldDot > curDot then
+        --之前价格
+        SetLabelContent("Cost/Label2",string_format("[s]{0}[/s]",data.OldDot),item);
+    end
+    --设置标签
+    SetPropItemTog(data,item);
+    SetItemMoneyIcon(shopType,"Cost/Icon/Sprite",item);
+end
+--设置道具标签
+function SetPropItemTog(data,item)
+    for index = 1, 4 do
+	    SetGameObjectState(string_format("Tag/Item{0}",index), false, item);
+    end
+    if data.IsLimit == true then
+        SetGameObjectState("Tag/Item1", true, item);
+    elseif data.IsNew == true then
+        SetGameObjectState("Tag/Item2", true, item);
+    elseif data.IsPromote == true then
+        SetGameObjectState("Tag/Item3", true, item);
+    elseif data.IsHot == true then
+        SetGameObjectState("Tag/Item4", true, item);
+    end
+end
+
+-- 道具
+function OnPropItemListViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    SetItemData(data);
+end
+--刷新月卡显示
+function RefreshMonthCardList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL) == 1 then
+        --InitMonthCardList();
+        if m_MonthCardList ~= nil then
+            m_MonthCardList:Refresh();
+        end
+    end
+end
+--初始化月卡数据
+function InitMonthCardList(menuType)
+    local monthCards = StoreManager.GetMonthMemberCardDatas();
+    local count = GetTableLength(monthCards);
+    m_MonthCardList:RemoveAll();
+    for index = 1 , count do
+        local data = monthCards[index];
+        local style = string_format("Item{0}",index);
+        if menuType == MainMenuType.MMT_MemberCard and data.CardType == 1 then
+            m_MonthCardList:AddData(data,style);
+        elseif menuType == MainMenuType.MMT_WeekCard and data.CardType == 0 then
+            m_MonthCardList:AddData(data,style);
+        end
+    end
+end
+--月卡
+function OnMonthCardListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local monthCard = data.MonthCard;
+--    --标题
+--    local titleText = string_format(GetTextToId(2018),monthCard.Day);
+--    SetLabelContent("Title/Label",titleText,item);
+    --是否购买了
+    local isBuy = data.IsBuy;
+    SetGameObjectState("Tag", isBuy == true, item);
+    --剩余天数
+    local remainText = GetTextToId(2019);
+    local day = data.Day;
+    local dayText = GetTextToId(2020);
+    SetLabelContent("Tag/Title",remainText,item);
+    SetLabelContent("Tag/Num",day,item);
+    SetLabelContent("Tag/Day",dayText,item);
+    --购买花费
+    SetGameObjectState("Money", isBuy == false, item);
+    --花费
+    local iconText = GetTextToId(2047);
+    local oldMoney = data.OldUSDMoney/100;
+    local money = data.USDMoney/100; 
+    if Platform == "android" and Constants.branch ~= "tw" then
+        iconText = GetTextToId(2061);
+        oldMoney = data.OldKRWMoney;
+        money = data.KRWMoney;
+        if Constants.branch == "cn" then
+            oldMoney = data.OldKRWMoney/100;
+            money = data.KRWMoney/100;
+        end
+    end
+    SetLabelContent("Money/Icon",iconText,item);
+    SetLabelContent("Money/Value",money,item);
+    --描述1
+    local describeText = string_format(GetTextToId(2021),string_format("[FFFDBF]{0}[-]",monthCard.EveryDayNum),string_format("[FFFDBF]{0}[-]",monthCard.Day));
+    SetLabelContent("Content/Desc/Describe/Label1",describeText,item);
+    --钻石卡类型
+    local cardType = data.CardType;
+    --描述2
+    local privilegeText = "";
+    if cardType == 0 then
+        privilegeText = string_format(GetTextToId(2022),string_format("[FFFDBF]{0}[-]",monthCard.PrivilegeNum));
+    else
+        privilegeText = GetTextToId(2033);
+    end
+    SetLabelContent("Content/Desc/Privilege/Label1",privilegeText,item);
+
+    local descText = GetTextToId(monthCard.PrivilegeExplain);
+    SetLabelContent("Content/Desc/Privilege/Label2",descText,item);
+
+    --判断当前按钮状态
+    local buttonState = StoreManager.GetMonthBuyButtonState(data);
+    local buttonText =StoreManager.MemberCardTexts[buttonState];
+    --error("按钮状态：："..buttonText);
+    SetLabelContent("Button/Label",buttonText,item);
+    local button = child(item, "Button").gameObject;
+    CCommonTool.SetGameObjectGrey(button, buttonState == 4);
+end
+
+
+--打开商城界面判定是否显示周卡
+function CanShowWeek()
+    local monthCards = StoreManager.GetMonthMemberCardDatas();
+    local count = GetTableLength(monthCards);
+    local buttonState = 1;
+    for index = 1 , count do
+
+        local data = monthCards[index];
+        if data.CardType == 0  then
+            buttonState= StoreManager.GetMonthBuyButtonState(data);
+            break;
+        end    
+    end
+    if buttonState ==  1   then --购买
+       return false;
+    elseif buttonState ==2 then   --续费
+        return false;
+    elseif buttonState ==3 then  --领取
+        return true;
+    elseif buttonState == 4 then -- --已领取
+        return false;
+    end
+   return false;
+end
+
+
+--月卡
+function OnMonthCardListViewClick(listView, cell, go)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    if go.name == "PrivilegeButton" then
+        SetGameObjectState(m_MonthCardPrivilegePath, true, m_PanelObject);
+        local monthCardListPos = m_MonthCardList.transform.localPosition;
+        local itemPos = item.transform.localPosition;
+        local x = monthCardListPos.x + itemPos.x;
+        local localPosition = Vector3.New(x , 76 , 0);
+        m_MonthCardPrivilegeContent.transform.localPosition = localPosition;
+        SetPrivilegeContent(m_MonthCardPrivilegeContent,data);
+    end
+    if go.name == "Button" then
+        local testData = 
+        {
+            [0] = "G";
+            [1] = "H";
+        };
+        local buttonState = StoreManager.GetMonthBuyButtonState(data);
+
+        if buttonState == 1 or buttonState == 2 then
+            m_ProductId = data.Id;
+            local money = data.USDMoney/100;
+            if Platform == "android" and Constants.branch ~= "tw" then
+                money = data.KRWMoney;
+                if Constants.branch == "cn" then
+                    money = data.KRWMoney/100;
+                end
+            end
+            --钻石卡类型
+            local cardType = data.CardType;
+            local text1 = string_format(GetTextToId(2056),GetTextToId(2034),money);
+            if Platform == "android" then
+                text1 = string_format(GetTextToId(2062),GetTextToId(2034),money);
+            end 
+            if cardType == 1 then
+                text1 = string_format(GetTextToId(2056),GetTextToId(2035),money);
+                if Platform == "android" then
+                    text1 = string_format(GetTextToId(2062),GetTextToId(2035),money);
+                end
+            end
+            local text2 = GetTextToId(2057);
+            local data = 
+            {
+                Text1 = text1;
+                Text2 = text2;
+            }
+            -- mycard渠道
+            if LuaGameManager.IsMycardChannel() then
+                RequestMycardCharge();
+                return;
+            else
+                SetBuyMessage(data,1);
+            end
+        elseif buttonState == 3 then
+            local cardType = data.CardType;
+            StoreProtocol.RequestMemberCardReward(cardType);
+        end
+    end
+end
+
+-- 设置特权显示信息
+function SetPrivilegeContent(item,data)
+    local monthCard = data.MonthCard;
+    local titleText = GetTextToId(monthCard.PrivilegeName);
+    SetLabelContent("Title/Label",titleText,item);
+    local descText = GetTextToId(monthCard.PrivilegeExplain);
+    SetLabelContent("Desc/Label",descText,item);
+    local privilegeText = GetTextToId(monthCard.PrivilegeNote);
+    SetLabelContent("Privilege/Label",privilegeText,item);
+end
+--刷新月卡显示
+function RefreshRechargeList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL) == 1 then
+        InitRechargeList();
+    end
+end
+--初始化充值数据
+function InitRechargeList()
+    local rechargeDatas = StoreManager.GetRechargeDatas();
+    local length = GetTableLength(rechargeDatas);
+    m_RechargeList:RemoveAll();
+    for index = 1 , length do
+        local data = rechargeDatas[index];
+        m_RechargeList:AddData(data);
+    end
+end
+--充值
+function OnRechargeListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    --是否热卖
+    local isHotSale = data.IsHotSale;
+    SetGameObjectState("Tag/Item", isHotSale, item);
+    --设置图标
+    SetSpriteContent("Icon", "StoreAtlasV04", "UI_CZ_TuBiao_HongZuan_00"..(dataIndex + 1), item);
+    --购买花费
+    local iconText = GetTextToId(2047);
+    local oldMoney = data.OldUSDMoney/100;
+    local money = data.USDMoney/100;
+    if Platform == "android" and Constants.branch ~= "tw" then
+        iconText = GetTextToId(2061);
+        oldMoney = data.OldKRWMoney;
+        money = data.KRWMoney;
+        if Constants.branch == "cn" then
+            oldMoney = data.OldKRWMoney/100;
+            money = data.KRWMoney/100;
+        end
+    end
+    SetLabelContent("Money/Icon",iconText,item);
+    SetLabelContent("Money/Value",money,item);
+    --是否购买过
+    local hasBoughtProduct = data.HasBoughtProduct;
+    --红钻赠送
+    local isShowRed = true;
+    if hasBoughtProduct == false then
+        --首次购买获得
+        local firstGetDiamond = data.FirstGetDiamond;
+        isShowRed = firstGetDiamond > 0;
+        SetGameObjectState("Once/Money/Red",isShowRed , item);
+        SetLabelContent("Once/Money/Red/Num",firstGetDiamond,item);
+    else
+        --非首次购买获得
+        local notFirstGetDiamond = data.NotFirstGetDiamond;
+        isShowRed = notFirstGetDiamond > 0;
+        SetGameObjectState("Once/Money/Red", isShowRed , item);
+        SetLabelContent("Once/Money/Red/Num",notFirstGetDiamond,item);
+    end
+    if isShowRed == true then
+        local redUIRect = GetComponent(item, "Once/Money/Red/Icon/Sprite", "UIRect");
+        redUIRect:ResetAndUpdateAnchors();
+    end
+    --蓝钻赠送
+    local showBlue = data.ShowBlue;
+    SetGameObjectState("Once/Money/Blue", showBlue, item);
+    if showBlue == true then
+        local haveGoldNum = 0;
+        if hasBoughtProduct == false then
+            haveGoldNum = data.FirstBindGoldNum;
+        else
+            haveGoldNum = data.BindGoldNum;
+        end
+        SetGameObjectState("Once/Money/Blue", haveGoldNum > 0 , item);
+        SetLabelContent("Once/Money/Blue/Num",haveGoldNum,item);
+        local blueUIRect = GetComponent(item, "Once/Money/Blue/Icon/Sprite", "UIRect");
+        blueUIRect:ResetAndUpdateAnchors();
+
+        local currentSecond = G_TimerMng:GetCurrentSeconds();
+        local time = math.floor(data.EndTime - currentSecond);
+        local overData =
+        {
+            Index = data.Index;
+            Item = item;
+            IsShowRed = isShowRed;
+        };
+        local backData = 
+        {
+            Index = data.Index;
+            Item = item;
+            IsShowRed = isShowRed;
+        };
+        local eventName = "OnRechargeListViewInitItem"..dataIndex;
+        table.insert(m_RechargeEventNames,eventName);
+        AddTimerEvent(eventName, time, RechargeTimeBackOver, ETimeShowType.TypeNumberEight, RechargeTimeCallBack,overData,backData, nil, 2, 1);
+    end
+    --是否显示赠送
+    local isOnce = (isShowRed == true or showBlue == true);
+    SetGameObjectState("Once", isOnce == true, item);
+    if isOnce == true then
+        RepositionUITableComp("Once/Money",item);
+    end
+    --获得钻石
+    local getDiamond = data.GetDiamond;
+    SetLabelContent("Gain/Num",getDiamond,item);
+end
+--时间监听回调
+--@param timeTxt 时间字符串
+function RechargeTimeCallBack(timeTxt,data)
+end
+--时间监听结束回调
+--@param data buff数据信息
+function RechargeTimeBackOver(data)
+    if data ~= nil and data.Item ~= nil then
+        local index = data.Index;
+        local item = data.Item;
+        local isShowRed = data.IsShowRed;
+        SetGameObjectState("Once/Money/Blue", false, item);
+        SetGameObjectState("Once", isShowRed, item);
+        if isShowRed == true then
+            RepositionUITableComp("Once/Money",item);
+        end
+        local eventName = "OnRechargeListViewInitItem"..index;
+        G_TimerMng:RemoveTimeTask(eventName);
+    end
+end
+
+--充值
+function OnRechargeListViewClick(listView, cell, go)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    m_ProductId = data.Id;
+    --是否购买过
+    local hasBoughtProduct = data.HasBoughtProduct;
+    local haveGetDiamond = 0;
+    if hasBoughtProduct == false then
+        --首次购买获得
+        haveGetDiamond = data.FirstGetDiamond;
+    else
+        --非首次购买获得
+        haveGetDiamond = data.NotFirstGetDiamond;
+    end
+    local money = data.USDMoney/100;
+    if Platform == "android" and Constants.branch ~= "tw" then
+        money = data.KRWMoney;
+        if Constants.branch == "cn" then
+            money = data.KRWMoney/100;
+        end
+    end
+    --获得钻石
+    local getDiamond = data.GetDiamond;
+    local text1 = string_format(GetTextToId(2058),getDiamond,money);
+    if Platform == "android" then
+        text1 = string_format(GetTextToId(2063),getDiamond,money);
+    end
+    --是否显示蓝钻
+    local showBlue = data.ShowBlue;
+    if showBlue == false then
+        if haveGetDiamond > 0 then
+            text1 = string_format("{0}{1}",text1,string_format(GetTextToId(2059),haveGetDiamond));
+        end
+    else
+        local haveGoldNum = 0;
+        if hasBoughtProduct == false then
+            haveGoldNum = data.FirstBindGoldNum;
+        else
+            haveGoldNum = data.BindGoldNum;
+        end
+        if haveGetDiamond > 0 then
+            text1 = string_format("{0}{1}",text1,string_format(GetTextToId(2173),haveGetDiamond,haveGoldNum));
+        else
+            text1 = string_format("{0}{1}",text1,string_format(GetTextToId(2174),haveGoldNum));
+        end
+    end
+    local text2 = GetTextToId(2060);
+    if CSDKManager.sdkName == "twsdk" or Constants.branch == "cn" then
+        text2 = ""; 
+    end
+    local data = 
+    {
+        Text1 = text1;
+        Text2 = text2;
+    }
+    SetBuyMessage(data,2);
+end
+--设置购买二次确认界面
+function SetBuyMessage(data,hintType)
+	SetGameObjectState(m_BuyMessagePath, true, m_PanelObject);
+    SetLabelContent("Content/Desc",data.Text1,m_BuyMessage);
+	SetGameObjectState("Content/Hint1", hintType == 1, m_BuyMessage);
+	SetGameObjectState("Content/Hint2", hintType ~= 1, m_BuyMessage);
+    SetLabelContent("Content/Hint1/Label",data.Text2,m_BuyMessage);
+    SetLabelContent("Content/Hint2/Label",data.Text2,m_BuyMessage);
+end
+
+
+--商城礼包
+--设置礼包显示信息
+function SetGiftBagInfo(giftBagType)
+    --error("设置礼包显示信息");
+    SetGiftBagMenuList(giftBagType);
+    SetGiftBagList(giftBagType);
+end
+
+--设置礼包菜单
+function SetGiftBagMenuList(giftBagType)
+    m_GiftBagType = giftBagType;
+    local menuDatas = StoreManager.GetGiftBagMenuDatas(giftBagType);
+    local length = GetTableLength(menuDatas);
+    m_GiftBagMenuList:RemoveAll();
+    for index = 1 , length do
+        local menuData = menuDatas[index];
+        if m_SubMenuType >= 0 then
+            if m_SubMenuType == 0 then
+                m_SubMenuIndex = 0;
+            end
+            if m_SubMenuType == menuData.Type then
+                m_SubMenuIndex = (index - 1);
+            end
+        else
+            if index == (m_SubMenuIndex + 1) then
+                m_SubMenuType = menuData.Type;
+            end
+        end
+        m_GiftBagMenuList:AddData(menuData); 
+    end
+    m_GiftBagMenuList:LookAt(m_SubMenuIndex,true);
+end
+
+--初始化礼包数据信息
+function SetGiftBagList(giftBagType)
+    local giftBagDatas = StoreManager.GetGiftBagDatas(giftBagType,m_SubMenuType); 
+    m_GiftBagList:RemoveAll();
+    local length = GetTableLength(giftBagDatas);
+    for index = 1, length do
+        local data = giftBagDatas[index];
+        if giftBagType == 0 then
+            m_GiftBagList:AddData(data,"Item1"); 
+        else
+            m_GiftBagList:AddData(data,"Item2"); 
+        end
+    end
+    local eventHook = StoreManager.GetGiftBagEventHook(m_GiftBagType,m_SubMenuType);
+    if eventHook ~= nil and eventHook ~= "" then
+        CSDKManager.EventHook(eventHook, function() end);
+    end
+end
+--礼包子菜单初始化
+function OnGiftBagMenuListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local text = GetTextToId(data.TextId);
+    SetLabelContent("Sprite_Deactive/Label_Name",text,item);
+    SetLabelContent("Sprite_Active/Label_Name",text,item);
+end
+--蓝钻限时礼包子菜单点击事件
+function OnGiftBagMenuListViewClick(listView, cell, go)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    m_SubMenuIndex = dataIndex;
+    m_SubMenuType = data.Type;
+    SetGiftBagList(m_GiftBagType);
+end
+
+function openStoreGiftBagMenu()
+    OpenPanel(MainMenuType.MMT_GiftBag2,2,0);
+end
+--超值礼包事件监听
+function OnGiftBagListViewClick(listView, cell, go)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    --error("dataIndex : "..dataIndex .."/"..data.Id);
+    SetGiftBagMessage(data);
+end
+
+--礼包购买二次确认弹出框物品列表
+function OnGiftBagMessageInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = CCommonTool.GetProfessionItemId(data.ItemId);
+    local num = data.ItemNum;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 145, ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL, false, excelId);
+end
+
+--购买礼包的二次确认框
+function SetGiftBagMessage(data)
+    m_BuyGiftBagData = data;
+	SetGameObjectState(m_GiftBagMessagePath, true, m_PanelObject);
+    local desc = data.Content;
+    SetLabelContent("Content/Desc",desc,m_GiftBagMessage);
+    local limitNum = data.LimitNum;
+    SetGameObjectState("Content/Limit", limitNum > 0, m_GiftBagMessage);
+    if limitNum > 0 then
+        local curBuyNum = limitNum;
+        local limitDatas = StoreManager.GiftBagLimitDatas;
+        local buyNum = limitDatas[data.Id];
+        if buyNum == nil then
+            buyNum = 0;
+        end
+        curBuyNum = limitNum - buyNum;
+        if curBuyNum <= 0 then
+            curBuyNum = 0;
+        end
+        local limitCycle = data.LimitCycle;
+        local numTitleText = "";
+        if limitCycle == 1 then
+            numTitleText = GetTextToId(2139);
+        elseif limitCycle == 2 then
+            numTitleText = GetTextToId(2140);
+        elseif limitCycle == 3 then
+            numTitleText = GetTextToId(2141);
+        elseif limitCycle == 4 then
+            numTitleText = GetTextToId(2142);
+        end
+        local numText = string_format("{0} {1}",numTitleText,curBuyNum);
+        SetLabelContent("Content/Limit",numText,m_GiftBagMessage);
+    end
+    local itemDatas = data.ItemDatas;
+    m_GiftBagMessageList:RemoveAll();
+    if itemDatas ~= nil then
+        local length = GetTableLength(itemDatas);
+        for index = 1,length do
+            local itemData = itemDatas[index];
+            m_GiftBagMessageList:AddData(itemData); 
+        end
+    end
+   
+    local moneyType = data.MoneyType;
+    SetGameObjectState("Buttons/QueDing/Icon/Label", moneyType == 0, m_GiftBagMessage);
+    SetGameObjectState("Buttons/QueDing/Icon/Icon/Sprite", moneyType ~= 0, m_GiftBagMessage);
+    local iconText = GetTextToId(2047);
+    local nowDot = data.NowUSDDot/100;
+    if Platform == "android" and Constants.branch ~= "tw" then
+        iconText = GetTextToId(2061);
+        nowDot = data.NowKRWDot;
+        if Constants.branch == "cn" then
+            nowDot = data.NowKRWDot/100;
+        end
+    end
+    if moneyType == 0 then
+        SetLabelContent("Buttons/QueDing/Icon/Label", iconText, m_GiftBagMessage);
+    elseif moneyType == 1 then
+        nowDot = data.NowKRWDot;
+        SetSpriteByAtlasID("Buttons/QueDing/Icon/Icon/Sprite", 201, m_GiftBagMessage);
+    elseif moneyType == 2 then
+        nowDot = data.NowKRWDot;
+        SetSpriteByAtlasID("Buttons/QueDing/Icon/Icon/Sprite", 205, m_GiftBagMessage);
+    end
+    SetLabelContent("Buttons/QueDing/Value",nowDot,m_GiftBagMessage);
+end
+
+-- 减按钮
+function OnMinusButtonClick(gameObject)
+    if m_BuyNum > 1 then
+        m_BuyNum = m_BuyNum - 1;
+        UpdateMoneyShow();
+    end
+end
+
+-- 加按钮
+function OnAddButtonClick(gameObject)
+    if m_BuyNum < m_MaxNum then
+        m_BuyNum = m_BuyNum + 1;
+        UpdateMoneyShow();
+    end
+end
+
+-- 数字按钮
+function OnNumButtonClick(gameObject)
+    OnInputClick();
+end
+-- 小键盘输入
+function OnInputClick()
+    local data = 
+    {
+        X = 600;
+        Y = -100;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnSmallKeyboardNumClick;
+    SmallKeyboardPanel.ConfirmCallback = OnSmallKeyboardConfirmClick;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+end
+--小键盘数字按下回调
+--@param data 数据信息
+function OnSmallKeyboardNumClick(data)
+    if data ~= nil then
+        m_BuyNum = data.Num;
+        if m_BuyNum <= 1 then
+            m_BuyNum = 1;
+        end
+        if m_BuyNum >= m_MaxNum then
+            m_BuyNum = m_MaxNum;
+        end
+        UpdateMoneyShow();
+    end
+end
+
+--小键盘确定按钮回调
+function OnSmallKeyboardConfirmClick()
+end
+-- 购买按钮
+function OnBuyButtonClick(gameObject)
+    if m_PropItemData ~= nil then
+        OnSecondaryConfirmBuyClick();
+    else
+        error("请选择道具！！！！");
+    end
+end
+-- 购买二次确认
+function OnSecondaryConfirmBuyClick()
+    if m_PropItemData ~= nil then
+        local shopType = m_PropItemData.ShopType;
+        local currencyText = "";
+        if shopType == 0 then
+            currencyText = GetTextToId(103101);--红钻
+        elseif shopType == 1 then
+            currencyText = GetTextToId(103102);--蓝钻
+        end
+        local currencyNum =m_PropItemData.CurDot * m_BuyNum;
+        local excelId = m_PropItemData.ExcelId;
+        local pinZhiNum = CCommonTool.GetAptitudeIDByExcelID(excelId);
+        local itemNameId = CCommonTool.GetNameIDByExcelID(excelId);
+        local itemName = string_format("{0}{1}[-]",GetColorStrByPinZhi(pinZhiNum),GetTextToId(itemNameId));
+        local titleText = string_format(GetTextToId(1551),currencyNum,currencyText,m_BuyNum,itemName);
+        local tempTable = { };
+        table.insert(tempTable, 1, GetTextToId(949));
+        table.insert(tempTable, 2, titleText);
+        table.insert(tempTable, 3, OnConfirmBuyClick);
+        table.insert(tempTable, 4, GetTextToId(375));
+        table.insert(tempTable, 5, OnCancelBuyClick);
+        table.insert(tempTable, 6, GetTextToId(407));
+        table.insert(tempTable, 7, true);
+        table.insert(tempTable, 10, true);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+    end
+end
+function OnConfirmBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local curHaveNum = GetCurHavebyBuyType(m_PropItemData.ShopType);
+    if curHaveNum >= m_NeedCostNum then
+        local data = 
+        {
+            ItemData = m_PropItemData;
+            BuyNum = m_BuyNum;
+        };
+        StoreProtocol.RequestBuyProp(data);
+    else
+        if m_PropItemData.ShopType == 0 then        --红钻不足
+            ShowSystemFlowTips(3631);
+        elseif m_PropItemData.ShopType == 1 then    --蓝钻不足
+            --需要添加蓝钻兑换界面
+            local num = m_NeedCostNum;
+            if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND,num,ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL, OnExchangeMoneyCallBack) then
+                log("OnBuyButtonClick 红钻不足!!!!");
+                return;
+            end
+        end
+    end
+end
+function OnCancelBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+function OnExchangeMoneyCallBack()
+    if m_PropItemData ~= nil then
+        local curHaveNum = GetCurHavebyBuyType(m_PropItemData.ShopType);
+        if curHaveNum >= m_NeedCostNum then
+            local data = 
+            {
+                ItemData = m_PropItemData;
+                BuyNum = m_BuyNum;
+            };
+            StoreProtocol.RequestBuyProp(data);
+        else
+            error("红钻不足！！！！");
+        end
+    else
+        error("请选择道具！！！！");
+    end
+end
+-- 关闭按钮
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+end
+-- 关闭月卡特权显示
+function OnPrivilegeCloseButtonClick(gameObject)
+    SetGameObjectState(m_MonthCardPrivilegePath, false, m_PanelObject);
+end
+
+--充值和月卡购买确认
+function OnBuyMessageQueDingClick(gameObject)
+    --error("OnBuyMessageQueDingClick ");
+    SetGameObjectState(m_BuyMessagePath, false, m_PanelObject)
+    if m_ProductId ~= nil then
+        RequestAsycPayment(m_ProductId);
+        m_ProductId = nil;
+    end
+end
+
+--充值和月卡购买关闭
+function OnBuyMessageCloseClick(gameObject)
+    m_ProductId = nil;
+    SetGameObjectState(m_BuyMessagePath, false, m_PanelObject);
+end
+
+--礼包购买确认
+function OnGiftBagMessageQueDingClick(gameObject)
+	SetGameObjectState(m_GiftBagMessagePath, false, m_PanelObject);
+    if m_BuyGiftBagData ~= nil then
+        local limitNum = m_BuyGiftBagData.LimitNum;
+        local curBuyNum = 1;
+        if limitNum > 0 then
+            local limitDatas = StoreManager.GiftBagLimitDatas;
+            local buyNum = limitDatas[m_BuyGiftBagData.Id];
+            if buyNum == nil then
+                buyNum = 0;
+            end
+            curBuyNum = limitNum - buyNum;
+            if curBuyNum <= 0 then
+                curBuyNum = 0;
+            end
+        end
+        if curBuyNum > 0 then
+            local productId = m_BuyGiftBagData.Id;
+            local moneyType = m_BuyGiftBagData.MoneyType;
+            if moneyType ~= nil and moneyType == 0 then
+                RequestAsycPayment(productId);
+            else
+                StoreProtocol.RequestBuyGiftBag(moneyType,productId);
+            end
+        else
+            ShowSystemFlowTips(9065);
+        end 
+        m_BuyGiftBagData = nil;
+    end
+end
+
+--礼包购买关闭
+function OnGiftBagMessageCloseClick(gameObject)
+    m_BuyGiftBagData = nil;
+	SetGameObjectState(m_GiftBagMessagePath, false, m_PanelObject);
+end
+
+-- 充值回调
+function OnChargeCallback(data)
+    if data.result == true then
+        local params = data.data;
+        if params ~= nil and params.Length > 0 then
+            local transactionId = params[0];
+            ChargeProtocol.RequestAsycPayment(transactionId);
+        else
+            ShowSystemFlowTips(--[[充值成功:, SDK返回数据为null]]CCommonTool.GetTxtData(1350).m_str, true);
+        end
+    else
+        ShowSystemFlowTips(--[[充值失败!]]CCommonTool.GetTxtData(1351).m_str, true);
+    end
+end
+
+--获取测试充值Id
+function RequestAsycPayment(productId)
+    --error("RequestAsycPayment productId : "..productId);
+    -- Unity中或提审包充值, 直接给奖励
+    if Platform == "editor" or Constants.IsExaminePkg == true then
+        local currentSecond = G_TimerMng:GetCurrentSeconds();
+        local id = string_format("{0}{1}",productId,string.format("%014d", currentSecond));
+        ChargeProtocol.RequestAsycPayment(id);
+    elseif CSDKManager.sdkName == "nextmv" then
+        CSDKManager.RequestPayment(productId, OnChargeCallback);
+    elseif CSDKManager.sdkName == "xiyou" then
+        ChargeProtocol.RequestGetCNOrderId(productId);
+    elseif CSDKManager.sdkName == "twsdk" then
+        ChargeProtocol.RequestGetTWOrderId(productId);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--刷新周卡折扣显示
+function RefreshCardDiscount()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL) == 1 then
+        InitCardDiscount();
+    end
+end
+
+--刷新道具列表
+function RefreshItemListData()
+    --error("RefreshItemListData");
+    if m_OpenData == nil then
+        local data = 
+        {
+            MainMenuType = m_MainMenuType;
+            SubMenuType = m_SubMenuType;
+            PropIndex = m_PropIndex;
+        };
+        m_OpenData = data;
+    end
+    if m_CreateSuccess == true then
+        InitShow();
+    end
+end
+--刷新购买道具成功
+function RefreshItemData()
+    --error("RefreshItemData");
+    if m_CreateSuccess == true then
+        UpdateMoneyShow();
+    end
+end
+-- 打开商城
+function OpenPanel(mainMenuType,subMenuType,propIndex)
+--    error("mainMenuType : "..mainMenuType);
+--    error("subMenuType : "..subMenuType);
+--    error("propIndex : "..propIndex);
+
+    if mainMenuType == MainMenuType.MMT_Recharge and LuaGameManager.IsMycardChannel() then
+        RequestMycardCharge();
+        return;
+    end
+    local data =  
+    {
+        MainMenuType = mainMenuType;
+        SubMenuType = subMenuType;
+        PropIndex = propIndex;
+    };
+    m_OpenData = data;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL) == 0 then
+        createPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+        if m_CreateSuccess == true then
+            InitShow();
+        end
+    end
+end
+--打开充值界面
+function OpenPanelRecharge()
+    OpenPanel(MainMenuType.MMT_Recharge,0,0);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local data = 
+    {
+        MainMenuType = m_MainMenuType;
+        SubMenuType = m_SubMenuType;
+        PropIndex = m_PropIndex;
+    };
+    return data;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_OpenData = paramTable;
+end
+
+function RequestMycardCharge()
+    local loginParams = CSDKManager.GetGameLoginParams();
+    local gameUserId = STOCTables.LoginReturn.m_dwUserID;
+
+    local jsonTable = {};
+    jsonTable.serverId = _G.currentServer.serverId;
+    jsonTable.gameId = tostring(TW_GAME_ID);
+    jsonTable.userId = loginParams[0];
+    jsonTable.productId = "pid";
+    jsonTable.gameCustomInfo = "code";
+    jsonTable.chargeMoney = 0;
+    jsonTable.amount = "1";
+    jsonTable.diamondAmount = 0;
+    jsonTable.sdkProductName = "";
+    jsonTable.sdkProductDes = "";
+    jsonTable.ext = "";
+
+    local jsonValue = json.encode(jsonTable);
+    CSDKManager.RequestPayment(jsonValue, function(data) end);
+end

@@ -1,0 +1,410 @@
+﻿module("LifeSkillManager", package.seeall)
+
+--生活技能的数据
+LifeskillDatas = {};
+
+--技能学习菜单文字列表
+LearnMenuTexts ={};
+--装备部位文本
+PartMenuTexts = {};
+--10=武器，11=项链，12=耳环，13=戒指，14=饰品，15=头盔，16=胸甲，17=护手，18=裤子，19=鞋子
+--加载文字
+function LoadTexts()
+    --菜单选项文字
+    LearnMenuTexts=
+    {
+        [1] = GetTextToId(137200);--"锻造";--
+        [2] = GetTextToId(137201);--"缝纫";--
+        [3] = GetTextToId(137202);--"制药";--
+        [4] = GetTextToId(137203);--"烹饪";--
+        [5] = GetTextToId(137204);--"驯兽";--
+        [6] = GetTextToId(137205);--"工艺附魔";--
+        [7] = GetTextToId(137206);--"防具附魔";--
+    };
+    PartMenuTexts = 
+    {
+       [10] = GetTextToId(10028);--"武器";
+       [11] = GetTextToId(10029);--"项链";
+       [12] = GetTextToId(10037);--"耳环";
+       [13] = GetTextToId(10030);--"戒指";
+       [14] = GetTextToId(10031);--"饰品";
+       [15] = GetTextToId(10032);--"头盔";
+       [16] = GetTextToId(10033);--"胸甲";
+       [17] = GetTextToId(10034);--"护手";
+       [18] = GetTextToId(10036);--"裤子";
+       [19] = GetTextToId(10035);--"鞋子";
+    };
+end
+
+-- 本功能的输出
+function Log(text)
+    Util.LuaLog(text);
+end
+
+-- 判断是否有技能可以升级、学习、突破
+function IsShowLearnLifeSkillRedHint()
+--    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_LIFESKILL) == false then
+--        return false;
+--    end
+--    for index = 1 , 7 do
+--        local lifeSkillInfo = G_LifeSkillManager:GetLifeSkill(index);
+--        local lifeSkillParts = G_LifeSkillManager:GetLifeSkillParts(index);
+--        local data = 
+--        {
+--            Index = index;
+--            SkillInfo = lifeSkillInfo;
+--            Level = 0;
+--            Exp = 0;
+--            Parts = lifeSkillParts;
+--        };
+--        if LifeskillDatas ~= nil then
+--            local length = GetTableLength(LifeskillDatas);
+--            if length > 0 then
+--                local lifeskillData = LifeskillDatas[index];
+--                if lifeskillData ~= nil then
+--                    data.Level = lifeskillData.Level;
+--                    data.Exp = lifeskillData.Exp;
+--                end
+--            end
+--        end
+--        if GetLifeSkillLearnState(data) == true then
+--            return true;
+--        end
+--    end
+    return false;
+end
+
+-- 生活技能是否可以学习、升级和突破
+-- @param data 对应技能的数据信息
+function GetLifeSkillLearnState(data)
+    local index = data.Index;
+    local level = data.Level;
+    local buttonType = 1;
+    if level == 0 then
+        buttonType = 1;
+    else
+        local curExp = data.Exp;
+        local needExp = GetLifeSkillLvupExp(index,level);
+        if curExp < needExp then
+            buttonType = 2;
+        else
+            buttonType = 3;
+        end
+    end
+    local skillLvupData = GetLifeSkillLvupData(index,level);
+    if buttonType == 3 then
+        skillLvupData = GetLifeSkillBreakData(index,level);
+    end
+    
+    if skillLvupData ~= nil then
+        local breakLevel = skillLvupData.BreakLevel;
+        local level = G_UserInfo.RoleAttribute.Level;
+        if level >= breakLevel then
+            local count = GetLearnSkillLvupCount(skillLvupData.Materials);
+            return count > 0;
+        end
+    end
+    return false;
+end
+
+-- 获取可升级次数
+-- @param materials 所需材料数据
+function GetLearnSkillLvupCount(materials)
+    local num = nil;
+    if materials ~= nil then
+        local numData = {};
+        local materialCount = GetTableLength(materials);
+        for index = 1, materialCount do
+            local needNum = materials[index].Num;
+            local itemType = materials[index].Type;
+            if itemType == 1 then
+                numData[index] = math.floor(G_UserInfo.BindCoin/needNum);
+            else
+                local excelId = CCommonTool.GetProfessionItemId(materials[index].ExcelId);
+                local curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,excelId);
+                numData[index] = math.floor(curNum/needNum);
+            end
+        end
+        for key, var in pairs(numData) do
+            if num == nil then
+                num = var;
+            end
+            if num >= var then
+                num = var;
+            end
+        end
+    end
+    if num == nil then
+        num = 0;
+    end
+    return num;
+end
+
+-- 是否可以制造物品
+function IsShowProductionLifeSkillRedHint()
+--    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_LIFESKILL) == false then
+--        return false;
+--    end
+--    for index = 1 , 7 do
+--        local lifeSkillInfo = G_LifeSkillManager:GetLifeSkill(index);
+--        local lifeSkillParts = G_LifeSkillManager:GetLifeSkillParts(index);
+--        local data = 
+--        {
+--            Index = index;
+--            SkillInfo = lifeSkillInfo;
+--            Level = 0;
+--            Exp = 0;
+--            Parts = lifeSkillParts;
+--        };
+--        if LifeskillDatas ~= nil then
+--            local length = GetTableLength(LifeskillDatas);
+--            if length > 0 then
+--                local lifeskillData = LifeskillDatas[index];
+--                if lifeskillData ~= nil then
+--                    data.Level = lifeskillData.Level;
+--                    data.Exp = lifeskillData.Exp;
+--                end
+--            end
+--        end
+--        local skillLevel = data.Level;
+--        if index == 1 or index == 2 then
+--            local partCount = lifeSkillParts.count;
+--            for p = 1 , partCount do
+--                local equipPart = lifeSkillParts[p-1];
+--                local levels = G_LifeSkillManager:GetLifeSkillLevels(index,skillLevel,equipPart);
+--                local levelCount = levels.count;
+--                for l = 1 , levelCount do
+--                    local equipLevel = levels[l-1];
+--                    if equipLevel <= G_UserInfo.RoleAttribute.Level then
+--                        local lifeSkillsCreate = G_LifeSkillManager:GetItemLevelToLifeSkillsCreate(index,equipLevel,equipPart);
+--                        if lifeSkillsCreate ~= nil then
+--                            if GetLifeSkillProductionState(lifeSkillsCreate) == true then
+--                                return true;
+--                            end
+--                        end
+--                    end
+--                end
+--            end
+--        else
+--            local lifeSkillsCreate = G_LifeSkillManager:GetSkillLevelToLifeSkillsCreate(index,skillLevel,0);
+--            if lifeSkillsCreate ~= nil then
+--                if GetLifeSkillProductionState(lifeSkillsCreate) == true then
+--                    return true;
+--                end
+--            end
+--        end
+--    end
+    return false;
+end
+
+-- 生活技能是否可以生产制造物品
+-- @param lifeSkillsCreate 对应技能的数据信息
+function GetLifeSkillProductionState(lifeSkillsCreate)
+    local skillCreateId = lifeSkillsCreate.ID;
+    local productionMaterials = LifeSkillManager.GetLifeSkillProductionMaterials(skillCreateId);
+    local length = GetTableLength(productionMaterials);
+    local productionData = {};
+    if length > 0 then
+        for index = 1, length do
+            local data = 
+            {
+                Index = index;
+                Info = productionMaterials[index - 1];
+            };
+            productionData[index] = data;
+        end
+    end
+    local num = GetProductionCount(productionData);
+    return num > 0;
+end
+-- 获取可生产次数
+-- @param data 技能数据
+function GetProductionCount(data)
+    local num = nil;
+    local length = GetTableLength(data);
+    if length > 0 then
+        local numData = {};
+        for key, var in pairs(data) do
+            local index = var.Index;
+            local needNum = var.Info.Num;
+            local itemType = var.Info.Type;
+            if itemType == 1 then
+                numData[index] = math.floor(G_UserInfo.RoleAttribute.Thew/needNum);
+            else
+                local excelId = CCommonTool.GetProfessionItemId(var.Info.ExcelId);
+                local curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,excelId);
+                numData[index] = math.floor(curNum/needNum);
+            end
+			
+        end
+        for key, var in pairs(numData) do
+            if num == nil then
+                num = var;
+            end
+            if num >= var then
+                num = var;
+            end
+        end
+    end
+    if num == nil then
+        num = 0;
+    end
+    return num;
+end
+
+
+-- 获取生活技能升级所需经验
+-- @param id 技能Id
+-- @param level 技能等级
+function GetLifeSkillLvupExp(id,level)
+    local lifeSkillLvup = G_LifeSkillManager:GetLifeSkillLvup(id,level);
+    if lifeSkillLvup ~= nil then
+        return lifeSkillLvup.ExpNeed; 
+    end
+    return 0;
+end
+
+-- 获取生活技能激活、升级所需材料
+-- @param id 技能Id
+-- @param level 技能等级
+function GetLifeSkillLvupData(id,level)
+    local lvupData = {};
+    local lifeSkillLvup = G_LifeSkillManager:GetLifeSkillLvup(id,level);
+    if lifeSkillLvup ~= nil then
+        local materials = {};
+        if lifeSkillLvup.MoneyNum > 0 then
+            local material = 
+            {
+                ExcelId = G_ItemToolTipDefine.BINDMONEY;
+                Type = 1;
+                Num = lifeSkillLvup.MoneyNum;
+            };
+            materials[1] = material;
+        end
+        if lifeSkillLvup.ItemId > 0 then
+            local material = 
+            {
+                ExcelId = lifeSkillLvup.ItemId;
+                Type = 2;
+                Num = lifeSkillLvup.ItemNum;
+            };
+            materials[2] = material;
+        end
+        local data = 
+        {
+            BreakLevel = 0;
+            Materials = materials;
+        };
+        lvupData = data;
+    end
+    return lvupData;
+end
+
+-- 获取生活技能突破所需材料
+-- @param id 技能Id
+-- @param level 技能等级
+function GetLifeSkillBreakData(id,level)
+    local breakData = {};
+    local lifeSkillLvup = G_LifeSkillManager:GetLifeSkillLvup(id,level);
+    if lifeSkillLvup ~= nil then
+        local materials = {};
+        for i = 1, 3 do
+            if lifeSkillLvup["BreakItem"..i] >0 then
+                local material = 
+                {
+                    ExcelId = lifeSkillLvup["BreakItem"..i];
+                    Type = 2;
+                    Num = lifeSkillLvup["BreakItemNum"..i];
+                };
+                materials[i] = material;
+            end
+        end
+        local data = 
+        {
+            BreakLevel = lifeSkillLvup.BreakLevel;
+            Materials = materials;
+        };
+        breakData = data;
+    end
+    return breakData;
+end
+
+-- 获取生活技能解锁后可制造的物品
+-- @param id 技能Id
+-- @param level 技能等级
+function GetLifeSkillLvupUnlockItems(id,level)
+    local items = {};
+    local lifeSkillLvup = G_LifeSkillManager:GetLifeSkillLvup(id,level);
+    if lifeSkillLvup ~= nil then
+        for i = 1, 3 do
+            if lifeSkillLvup["UnlockItem"..i] > 0 then
+                items[i] = lifeSkillLvup["UnlockItem"..i];
+            end
+        end
+    end
+    return items;
+end
+
+-- 获取技能可产出的物品列表
+-- @param id 技能Id
+function GetLifeSkillsLvupOutputItems(id)
+    local outputItems = {};
+    local lifeSkillsLvupPreviews = G_LifeSkillManager:GetLifeSkillsLvupPreviews(id);
+    if lifeSkillsLvupPreviews ~= nil then
+        local count = lifeSkillsLvupPreviews.count;
+        for i = 1, count do
+            local lifeSkillsLvupPreview = lifeSkillsLvupPreviews[i - 1];
+            local skillLevel = lifeSkillsLvupPreview.Level;
+            for j = 1,10 do
+                if lifeSkillsLvupPreview["CreateItem"..j] > 0 then
+                    local itemId = lifeSkillsLvupPreview["CreateItem"..j];
+                    local data = 
+                    {
+                        Level = skillLevel;
+                        ExcelId = itemId;
+                    };
+                    table.insert(outputItems,data);
+                end
+            end
+        end
+    end
+    return outputItems;
+end
+
+-- 获取技能制造所需的材料
+-- @param id 技能Id
+function GetLifeSkillProductionMaterials(id)
+    local lifeSkillsCreate = G_LifeSkillManager:GetCLifeSkillsCreate(id);
+    local materials = {};
+    if lifeSkillsCreate ~= nil then
+        if lifeSkillsCreate.EnergyCost > 0 then
+            local material = 
+            {
+                ExcelId = 14011;
+                Type = 1;
+                Num = lifeSkillsCreate.EnergyCost;
+            };
+            materials[0] = material;
+        end
+        for i = 1, 5 do
+            if lifeSkillsCreate["Item"..i] >0 then
+                local material = 
+                {
+                    ExcelId = lifeSkillsCreate["Item"..i];
+                    Type = 2;
+                    Num = lifeSkillsCreate["ItemNum"..i];
+                };
+                materials[i] = material;
+            end
+        end
+    end
+    return materials;
+end
+
+
+--清除数据信息
+function Clear()
+    LearnMenuTexts ={};
+    LifeskillData = {};
+
+end

@@ -1,0 +1,16 @@
+﻿local CAnimatorExtendManage = CAnimatorExtendManage
+local pairs = pairs
+local require = require
+
+module("Configs.Animation.Init")
+
+function Init()
+	local FilePath = "AllPrefabs/Others/Animation/"
+	local FileList = require("Configs.Animation.AnimationList")
+	
+	CAnimatorExtendManage.Instance:SetFilePath(FilePath)
+
+    for _, fileName in pairs(FileList) do
+        CAnimatorExtendManage.Instance:AddExtension(fileName)
+    end
+end

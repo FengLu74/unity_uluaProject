@@ -1,0 +1,484 @@
+﻿module("CommonProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 系统统一提示内容；游戏内提示系统
+    network.Register(GMI_STOC_ITEM_ROLLMSG, OnUpdateSystemMessage);
+    -- 服务器通知客户端打开某个界面
+    network.Register(GMI_STOC_OPEN_PLAYER_PANEL, OnServerOpenPanel);
+    -- 服务器通知客户端关闭某个界面
+    network.Register(GMI_STOC_CLOSE_PLAYER_PANEL, OnServerClosePanel);
+    -- 显示服务器提示
+    network.Register(GMI_STOC_LGS_SEND_GET_ITEM_MSG, OnShowSeverTips);
+    -- 公告数据返回
+    network.Register(GMI_STOC_PUBLIC_MESSAGE, OnPublickMessageBack);
+    -- 通用错误提示
+    network.Register(GMI_STOC_LGS_CLIENT_NOTIFY, OnRecieveErrorMessage);
+    -- 服务器踢人
+    network.Register(GMI_STOC_CLOSE_RETURN, OnKickClient);
+    -- 服务器离线通知
+    network.Register(GMI_STOC_GS_STOP, OnGsStop);
+    -- 推送账号可以领取下载奖励
+    network.Register(GMI_STOC_ACOUNT_IS_GET, OnGetDownloadRewardState);
+    -- 客户端显示开关
+    network.Register(GMI_STOC_LGS_SEND_CLIENT_SHOW_SYS, OnGetClientShowSys);
+    
+end
+
+function OnKickClient(protocolId, buffer)
+    local param1 = buffer:ReadUShort();
+    local param2 = buffer:ReadUShort();
+    closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    ParameterToMessageTextBox.ServerKickClient();
+end
+
+-- 玩家游戏内的提示
+function OnUpdateSystemMessage(protocolId, buffer)
+    local systemType = buffer:ReadByte();
+    if systemType == GAME_SYSTEM_MESSAGE.SG_BALL_NOTICE then
+        -- 普通提示
+        local systemID = buffer:ReadInt();
+        ShowSystemFlowTips(systemID);
+    elseif systemType == GAME_SYSTEM_MESSAGE.MSG_BALL_SYSTEM then
+        -- 系统频道
+        local len = buffer:ReadUShort();
+        local content = buffer:ReadString(len);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, content, false, true);
+        ShowSystemFlowTips(content, true);
+    elseif systemType == GAME_SYSTEM_MESSAGE.MSG_BALL_TEAM_NOTICE then
+        -- 队伍频道
+        local len = buffer:ReadUShort();
+        local content = buffer:ReadString(len);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_JOIN_ID, content, false, true);
+    elseif systemType == GAME_SYSTEM_MESSAGE.MSG_BALL_GUILD_NOTICE then
+        -- 公会频道
+        local len = buffer:ReadUShort();
+        local content = buffer:ReadString(len);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_GUILD_ID, content, false, true);
+    elseif systemType == GAME_SYSTEM_MESSAGE.MSG_BALL_UNION_NOTICE then
+        -- 阵营频道
+        local len = buffer:ReadUShort();
+        local content = buffer:ReadString(len);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_CAMP_ID, content, false, true);
+    end
+end
+
+-- 服务器通知客户端打开某个界面
+function OnServerOpenPanel(protocolId, buffer)
+    local panelID = buffer:ReadInt();
+    local mType1 = buffer:ReadUInt();
+    log("Server call open panel ID is::::" .. panelID);
+    if panelID == ENUMPANELID.ENUM_PANEL_USETASKITEMPANEL then
+        if panelID ~= nil then
+            log("OnServerOpenPanelByUseTaskItem:::" .. panelID);
+            UseTaskItemPanel.SetItemID(mType1);
+            createPanel(panelID);
+        end
+        --    elseif panelID ~= ENUMPANELID.ENUM_PANEL_DUNGEONPANEL then
+        --        createPanel(panelID);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_JOIN_UNIT then
+        JoinCampPanel.OnGetRecommendCamp();
+        --    elseif panelID == ENUMPANELID.ENUM_PANEL_CHANGE_UNIT then
+        --        local recommendCampId = mType1;
+        --        ChangeCampPanel.OpenChangeCampPanel(recommendCampId);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_READINGPANEL then
+        local mType2 = buffer:ReadUInt();
+        local panelTable = { };
+        table.insert(panelTable, 1, mType1);
+        table.insert(panelTable, 2, mType2);
+        createPanelExx(panelID, panelTable);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_COINANDEXPACTIPANEL then
+        --        local panelTable = { };
+        --        table.insert(panelTable, 1, mType1);
+        --        createPanelExx(panelID, panelTable);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL then
+        DrinkWinePanel.SetData(mType1);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL then
+        local mType2 = buffer:ReadUInt();
+        local mType3 = buffer:ReadInt();
+        local mType4 = buffer:ReadInt();
+        local mType5 = buffer:ReadInt();
+        local mType6 = buffer:ReadInt();
+        local mType7 = buffer:ReadInt();
+
+        local panelTable = { };
+        table.insert(panelTable, 1, mType1);
+        table.insert(panelTable, 2, mType2);
+        table.insert(panelTable, 3, mType3);
+        table.insert(panelTable, 4, mType4);
+        table.insert(panelTable, 5, mType5);
+        table.insert(panelTable, 6, mType6);
+        table.insert(panelTable, 7, mType7);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL) == 1 then
+            BanquetBonusPanel.functionParameter(panelTable);
+        else
+            createPanelExx(panelID, panelTable);
+        end
+    elseif panelID == ENUMPANELID.ENUM_PANEL_DUNGON_TIP_PANEL then
+        local mType2 = buffer:ReadUInt();
+        local mType3 = buffer:ReadInt();
+        local mType4 = buffer:ReadInt();
+        local mType5 = buffer:ReadInt();
+        local mType6 = buffer:ReadInt();
+        local mType7 = buffer:ReadInt();
+
+        local panelTable = { };
+        table.insert(panelTable, 1, mType1);
+        table.insert(panelTable, 2, mType2);
+        table.insert(panelTable, 3, mType3);
+        table.insert(panelTable, 4, mType4);
+        table.insert(panelTable, 5, mType5);
+        table.insert(panelTable, 6, mType6);
+        table.insert(panelTable, 7, mType7);
+
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_TIP_PANEL) == 1 then
+            DungeonTipPanel.functionParameter(panelTable);
+        else
+            createPanelExx(panelID, panelTable);
+        end
+    elseif panelID == ENUMPANELID.ENUM_PANEL_DUNGON_CONTENT_PANEL then
+        local mType2 = buffer:ReadUInt();
+        local mType3 = buffer:ReadInt();
+        local mType4 = buffer:ReadInt();
+        local mType5 = buffer:ReadInt();
+        local mType6 = buffer:ReadInt();
+        local mType7 = buffer:ReadInt();
+
+        local panelTable = { };
+        table.insert(panelTable, 1, mType1);
+        table.insert(panelTable, 2, mType2);
+        table.insert(panelTable, 3, mType3);
+        table.insert(panelTable, 4, mType4);
+        table.insert(panelTable, 5, mType5);
+        table.insert(panelTable, 6, mType6);
+        table.insert(panelTable, 7, mType7);
+
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_CONTENT_PANEL) == 1 then
+            DungeonContentPanel.functionParameter(panelTable);
+        else
+            createPanelExx(panelID, panelTable);
+        end
+    elseif panelID == ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL then
+        local mType2 = buffer:ReadUInt();
+        local mType3 = buffer:ReadInt();
+        local mType4 = buffer:ReadInt();
+        local mType5 = buffer:ReadInt();
+        local mType6 = buffer:ReadInt();
+        local mType7 = buffer:ReadInt();
+
+        local panelTable = { };
+        table.insert(panelTable, 1, mType1);
+        table.insert(panelTable, 2, mType2);
+        table.insert(panelTable, 3, mType3);
+        table.insert(panelTable, 4, mType4);
+        table.insert(panelTable, 5, mType5);
+        table.insert(panelTable, 6, mType6);
+        table.insert(panelTable, 7, mType7);
+
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL) == 1 then
+            DungeonCountDownPanel.functionParameter(panelTable);
+        else
+            createPanelExx(panelID, panelTable);
+        end
+    elseif panelID == ENUMPANELID.ENUM_PANEL_SUBMITITEMSTASK then
+        SubmitItemsTaskPanel.SetData(mType1);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL then
+        DungeonSoloPanel.Show(mType1);
+    elseif panelID == ENUMPANELID.ENUM_RIDE_DUNGEON_PANEL then
+        local mType2 = buffer:ReadUInt();
+        local mType3 = buffer:ReadInt();
+        local mType4 = buffer:ReadInt();
+        local mType5 = buffer:ReadInt();
+        local mType6 = buffer:ReadInt();
+        local mType7 = buffer:ReadInt();
+
+        local panelTable = { };
+        table.insert(panelTable, 1, mType1);
+        table.insert(panelTable, 2, mType2);
+        table.insert(panelTable, 3, mType3);
+        table.insert(panelTable, 4, mType4);
+        table.insert(panelTable, 5, mType5);
+        table.insert(panelTable, 6, mType6);
+        table.insert(panelTable, 7, mType7);
+        RideDungeonRatePanel.SetData(panelTable);
+    elseif panelID == ENUMPANELID.ENUM_PANEL_ACTIVITY_MESSAGE then
+        local data = {};
+        -- 操作类型
+        -- 1: 通用活动前往操作(活动主界面的前往)
+        -- 2: 通用活动前往操作(指定前往操作类型)
+        data.opType = mType1;
+        if data.opType == 1 then
+            -- 活动ID
+            data.activityId = buffer:ReadInt();
+            data.activityData = ActivityManager.GetActivity(data.activityId);
+            if data.activityData == nil then
+                error("活动数据不存在, ID:"..data.activityId);
+                return;
+            end
+            -- 提示内容文本ID
+            data.contentTextId = buffer:ReadInt();
+            -- 关闭界面倒计时(0:不倒计时)
+            data.countdown = buffer:ReadInt();
+            ActivityMessagePanel.Show(data);
+        elseif data.opType == 2 then
+            -- 活动ID
+            data.activityId = buffer:ReadInt();
+            data.jumpType = buffer:ReadInt();   -- 前往操作类型
+            data.jumpValue = buffer:ReadStringByByte(); -- 前往操作值
+            data.activityData = ActivityManager.GetActivity(data.activityId);
+            if data.activityData == nil then
+                error("活动数据不存在, ID:"..data.activityId);
+                return;
+            end
+            -- 提示内容文本ID
+            data.contentTextId = buffer:ReadInt();
+            -- 关闭界面倒计时(0:不倒计时)
+            data.countdown = buffer:ReadInt();
+            ActivityMessagePanel.Show(data);
+        end
+    elseif panelID == ENUMPANELID.ENUM_PANEL_FORLEAVEBOSSPANEL then
+        if mType1==4321 then
+            error("收到服务器：打开多人难度boss离开按钮界面");
+           --createPanel(ENUMPANELID.ENUM_PANEL_FORLEAVEBOSSPANEL);
+        else
+            error("多人难度boss离开按钮界面,第二位数据不统一(不为4321)!");
+        end
+    else
+        if G_SceneMng.isInGame == false then
+            if #STOCTables.WaitLoadPanelId == 0 then
+                CCommonTool.OpenPanelCallLuaFunc(OpenPanelByServer);
+            end
+            table.insert(STOCTables.WaitLoadPanelId, panelID);
+        else
+            createPanel(panelID);
+        end
+    end
+end
+
+-- 等待loading完毕要打开的界面
+function OpenPanelByServer()
+    createPanel(STOCTables.WaitLoadPanelId[#STOCTables.WaitLoadPanelId]);
+    STOCTables.WaitLoadPanelId = { };
+end
+
+-- 服务器通知客户端关闭某个界面
+function OnServerClosePanel(protocolId, buffer)
+    local panelID = buffer:ReadInt();
+    if panelID == ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL then
+        error("关闭界面为：ENUM_PANEL_BANQUET_BONUS_PANEL-饮酒经验界面");
+        closePanel(ENUMPANELID.ENUM_PANEL_BANQUET_BONUS_PANEL);
+    end
+    if panelID == ENUMPANELID.ENUM_PANEL_DRINKWINEPANEL then
+        DrinkWinePanel.CloseDrinkWinePanel();
+    else
+        closePanel(panelID);
+    end
+    log("Server call close panel ID is::::" .. panelID);
+end
+
+-- 显示服务器提示
+function OnShowSeverTips(protocolId, buffer)
+    -- 来源类型
+    local mType = buffer:ReadUInt();
+    -- excelid;
+    local mExcelID = buffer:ReadUInt();
+    -- 数量
+    local mItemNum = buffer:ReadUInt();
+    -- 位运算结果
+    local mResourcesType = CCommonTool.GetOperatingState(tonumber(ENUM_ITEM_CREATE_ORIGIN.ITEM_ORIGIN_QIHUOJU), mType);
+    -- 字符串
+    local str = "";
+    local txtInfo = nil;
+    --
+    local itemAtt = ItemAttribute.New(mExcelID);
+    local infoStr = itemAtt:GetItemNameWithColor();
+    if 0 ~= mResourcesType then
+        -- 商城的特殊处理文本
+        txtInfo = CCommonTool.GetTxtData(12351).m_str;
+    else
+        txtInfo = CCommonTool.GetTxtData(12415).m_str;
+    end
+    if nil ~= txtInfo then
+        str = string_format("{0} {1} *{2}",txtInfo,infoStr,mItemNum);
+    end
+    if "" ~= str then
+        ShowSystemFlowTips(str, true);
+        -- 获取道具信息显示在聊天系统频道
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+    end
+end
+
+-- 公告数据返回
+function OnPublickMessageBack(protocolId, buffer)
+    -- 消息类型【1-官方；2-系统】
+    local m_wcAnnouceType = buffer:ReadByte();
+    local m_wcAnnouceNoteType = nil;
+    local m_wcAnnounceTextID = nil;
+    local m_bIsCanJumpQuene = nil;
+    local m_vShowPosition = nil;
+    local m_vAnnounceCount = nil;
+    local m_wcAnnounceCon = nil;
+    local noteData = { };
+    -- 文本类型m_wcAnnouceNoteType【1-文本内容；2-文本ID】
+    if m_wcAnnouceType == 1 then
+        m_wcAnnouceNoteType = buffer:ReadByte();
+        if m_wcAnnouceNoteType == 2 then
+            -- 文本内容
+            m_wcAnnounceCon = buffer:ReadStringByByte();
+            EffectsPanel.AddQueueAsSystem(m_wcAnnounceCon);
+        elseif m_wcAnnouceNoteType == 1 then
+            -- 消息文本ID
+            m_wcAnnounceTextID = buffer:ReadUInt();
+            local txtContent = CCommonTool.GetTxtData(m_wcAnnounceTextID).m_str;
+            EffectsPanel.AddQueueAsSystem(txtContent);
+        end
+    elseif m_wcAnnouceType == 2 then
+        m_wcAnnouceNoteType = buffer:ReadByte();
+        if m_wcAnnouceNoteType == 2 then
+            m_wcAnnounceCon = buffer:ReadStringByByte();
+        elseif m_wcAnnouceNoteType == 1 then
+            m_wcAnnounceTextID = buffer:ReadUInt();
+            m_wcAnnounceCon = CCommonTool.GetTxtData(m_wcAnnounceTextID).m_str;
+        end
+        -- 是否允许插队【1-是；2-否】
+        m_bIsCanJumpQuene = buffer:ReadByte();
+        -- 消息显示位置
+        m_vShowPosition = buffer:ReadByte();
+        -- 循环次数
+        m_vAnnounceCount = buffer:ReadByte();
+        if m_vAnnounceCount < 1 then
+            m_vAnnounceCount = 1;
+        end
+        noteData = { JumpQueue = m_bIsCanJumpQuene, content = m_wcAnnounceCon, loopTime = m_vAnnounceCount, showType = m_vShowPosition };
+        EffectsPanel.AddQueueAsNormal(noteData);
+    end
+    -- 主界面聊天框/聊天界面系统频道都显示公告内容
+    ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, m_wcAnnounceCon, true, true);
+end
+
+-- 通用错误提示
+function OnRecieveErrorMessage(protocolId, buffer)
+    local errorId = buffer:ReadInt();
+    local textId = buffer:ReadInt();
+    local paramCount = buffer:ReadByte();
+    local params = { };
+    for i = 1, paramCount do
+        local paramType = buffer:ReadByte();
+        local paramValue = ReadParamValue(paramType, buffer);
+        table.insert(params, tostring(paramValue));
+    end
+    ShowSystemFlowTips(textId, nil, params);
+end
+
+ParamType = {
+    ByteLenString = 1,
+    ShortLenString = 2,
+    Byte = 3,
+    Short = 4,
+    UShort = 5,
+    Int = 6,
+    UInt = 7,
+    Long = 8,
+    ULong = 9,
+    Float = 10,
+    Double = 11,
+}
+
+function ReadParamValue(paramType, buffer)
+    if paramType == ParamType.ShortLenString then
+        local len = buffer:ReadUShort();
+        return buffer:ReadString(len);
+    elseif paramType == ParamType.ByteLenString then
+        return buffer:ReadStringByByte();
+    elseif paramType == ParamType.Byte then
+        return buffer:ReadByte();
+    elseif paramType == ParamType.Short then
+        return buffer:ReadShort();
+    elseif paramType == ParamType.UShort then
+        return buffer:ReadUShort();
+    elseif paramType == ParamType.Int then
+        return buffer:ReadInt();
+    elseif paramType == ParamType.UInt then
+        return buffer:ReadUInt();
+    elseif paramType == ParamType.Long then
+        return buffer:ReadInt64();
+    elseif paramType == ParamType.ULong then
+        return buffer:ReadUInt64();
+    elseif paramType == ParamType.Float then
+        return buffer:ReadFloat();
+    elseif paramType == ParamType.Double then
+        return buffer:ReadDouble();
+    end
+    return "";
+end
+
+-- 服务器关闭
+function OnGsStop(protocolId, buffer)
+    local waitTime = buffer:ReadUShort();
+    if waitTime <= 0 then
+        OnGsStopWaitTimeCallBack();
+    end
+    Timer.Instance:AddTimer(waitTime, 0, OnGsStopWaitTimeCallBack);
+end
+
+-- 推送账号可以领取下载奖励
+function OnGetDownloadRewardState(protocolId, buffer)
+    error("推送账号可以领取下载奖励");
+    -- 收到此协议说明未领取过下载奖励
+    local manager = CWebBundleManager.Instance;
+    if manager ~= nil then
+        if manager:IsComplete() == true then
+            RequestGetDownloadReward();
+        else
+            LuaEventDispatcher.AddEventListener("DownloadEvent.DownloadWebBundleFinish", OnWebBundleFinish);
+        end
+    end
+end
+
+-- 客户端显示开关
+function OnGetClientShowSys(protocolId, buffer)
+    local sw = buffer:ReadUInt();
+    local data = bit:d2b(sw);
+    local count = #data
+    for i = 1, math.floor(count / 2) do
+	    local t = data[i];
+	    local n = count-i+1;
+	    data[i] = data[n];
+	    data[n] = t;
+    end
+    _G.Sys_Show_Switch = data;
+    error("客户端显示开关::"..SerializeTable(_G.Sys_Show_Switch));
+end
+
+function OnGsStopWaitTimeCallBack()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(1267).m_str);
+    table.insert(tempTable, 3, OnRestartNetworkCasueServerStopClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnRestartNetworkCasueServerStopClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnRestartNetworkCasueServerStopClick()
+    G_GameMng:RestartNetWork();
+end
+
+-- 请求领取下载奖励
+function RequestGetDownloadReward()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_ACOUNT_GET);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnWebBundleFinish()
+    LuaEventDispatcher.RemoveEventListener("DownloadEvent.DownloadWebBundleFinish", OnWebBundleFinish);
+    RequestGetDownloadReward();
+end
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------

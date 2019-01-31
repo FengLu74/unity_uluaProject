@@ -1,0 +1,255 @@
+﻿module("MatrixPanelManager", package.seeall)
+
+-- 玩家神行数据信息
+LogicData_MatrixPlayerInfo = {};
+-- 初始化god table
+function ConstructData()
+
+    LogicData_MatrixPlayerInfo = {};
+    --神行
+    LogicData_MatrixPlayerInfo.GodInfos = {};
+    --技能
+    LogicData_MatrixPlayerInfo.SkillInfos = {};
+    --星魂
+    LogicData_MatrixPlayerInfo.StarInfos = {};
+    --当前使用的神行id
+    LogicData_MatrixPlayerInfo.CurMatrixID = 0;
+    -- 符文开启等级
+    LogicData_MatrixPlayerInfo.DavidsOpenNeedLv = 0;
+end
+--当前使用的神行id
+function getCurMatrixID()
+    if LogicData_MatrixPlayerInfo.CurMatrixID ~=nil then
+        return LogicData_MatrixPlayerInfo.CurMatrixID;
+    end
+end
+--符文开启等级
+function getMinOpenNeedLv()
+    if LogicData_MatrixPlayerInfo.DavidsOpenNeedLv ~=nil then
+        return LogicData_MatrixPlayerInfo.DavidsOpenNeedLv ;
+    end
+end
+
+-- 得到阶数，星数，经验数
+function getPlayerGodData()
+    if LogicData_MatrixPlayerInfo.GodInfos ~= nil then
+        return LogicData_MatrixPlayerInfo.GodInfos.StageLvl,LogicData_MatrixPlayerInfo.GodInfos.StarLvl,LogicData_MatrixPlayerInfo.GodInfos.Exp;
+    end
+    return nil,nil,nil;
+end
+-- 得到 技能组数据
+function getPlayerSkillData()
+    if LogicData_MatrixPlayerInfo.SkillInfos ~= nil then
+        return LogicData_MatrixPlayerInfo.SkillInfos;
+    end
+end
+-- 刷新神行数据
+function RefreshGodInfos(exp,star_lvl,stage_lvl,god_id,need_lvl)
+    local stage_change = false;
+    local god_change = false;
+    if exp ~= nil then
+        LogicData_MatrixPlayerInfo.GodInfos.Exp = exp;
+    end
+    if star_lvl ~=nil then
+        LogicData_MatrixPlayerInfo.GodInfos.StarLvl = star_lvl;
+    end
+    if stage_lvl ~= nil then
+        if stage_lvl ~=LogicData_MatrixPlayerInfo.GodInfos.StageLvl then
+            stage_change = true;
+        end
+        LogicData_MatrixPlayerInfo.GodInfos.StageLvl = stage_lvl;
+    end
+    if god_id ~= nil then
+        if god_id ~=LogicData_MatrixPlayerInfo.CurMatrixID then
+            god_change = true;
+        end
+        LogicData_MatrixPlayerInfo.CurMatrixID = god_id;
+    end
+    if need_lvl ~=nil then
+        LogicData_MatrixPlayerInfo.DavidsOpenNeedLv = need_lvl;
+    end
+    MatrixPanel.RefreshMatrixPanel(stage_change,god_change);
+end
+function inserSkillTab(tab)
+    if LogicData_MatrixPlayerInfo.SkillInfos ~=nil then
+        table.insert(LogicData_MatrixPlayerInfo.SkillInfos,tab);
+    end
+end
+--排序，填充技能数组
+function pullSkillTab()
+    local skillTab = LogicData_MatrixPlayerInfo.SkillInfos;
+    if #skillTab >= 6 then
+        table.sort( skillTab, sortFunc1);
+        return;
+    end
+    for i= #skillTab+1 , 6  do
+        local tab = 
+        {
+            id = 0,
+            lvl = 0,
+            index = i,
+        };
+        table.insert(skillTab,tab);
+    end
+    table.sort( skillTab, sortFunc1);
+end
+function RefreshPlayerSkillTab(tab)
+    local curSkillTab = LogicData_MatrixPlayerInfo.SkillInfos;
+    local refresh = false;
+    for i=1,#curSkillTab do
+        if curSkillTab[i].index == tab.index then
+            curSkillTab[i].id = tab.id;
+            curSkillTab[i].lvl = tab.lvl;
+            refresh = true;
+            break;
+        end
+    end
+    if refresh == true then
+        MatrixPanel.RefreshMatrixPanel(nil,true);
+    else
+        error("[神行技能刷新error],技能的index：-->"..tab.index);
+    end
+end
+--升序
+function sortFunc1(a,b)
+    if a.index ~= nil and b.index~=nil then
+        return a.index < b.index;
+    end
+end
+
+-- -----------------------------------------刷新星魂数据------------------------------------------
+function getStarTabDatas()
+    local starTab = LogicData_MatrixPlayerInfo.StarInfos ;
+    if starTab == nil  then
+        error("[阵法]星魂属性培养数据error");
+        return;
+    end
+    --error("长度::"..#starTab)
+    --[[for i=1,#starTab do
+        local tab = starTab[i];
+        error("长度::"..#starTab)
+        error("星魂属性升：types::"..tab.types.." 属性等级：："..tab.level.." 属性星阶：："..tab.star_lvl.." 属性培养经验::"..tab.exp);
+    end]]
+    return starTab;
+end
+function RefreshStarInfos(tab)
+    local starTab = LogicData_MatrixPlayerInfo.StarInfos ;
+    if starTab == nil  then
+        error("[阵法]星魂属性培养数据error");
+        return;
+    end
+    --error("星魂属性升级返回：types::"..tab.types.." 属性等级：："..tab.level.." 属性星阶：："..tab.star_lvl.." 属性培养经验::"..tab.exp);
+    local canFind = false;
+    for i=1,#starTab do
+        if starTab[i].types == tab.types then
+            canFind =true;
+            starTab[i].level = tab.level;
+            starTab[i].star_lvl = tab.star_lvl;
+            starTab[i].exp = tab.exp;
+            break;
+        end
+    end
+    if canFind == true then
+        MatrixPanel.RefreshMatrixPanel();
+    else
+        error("[阵法]【星魂】培养属性值types::"..tab.types.." 找不到匹配的数据table");
+    end
+
+end
+-- 初始化星魂数据
+function insertStarAttr(i,types,level,star_lvl,exp)
+    local starTab = LogicData_MatrixPlayerInfo.StarInfos ;
+    if starTab ~= nil then
+        starTab[i] = {};
+        starTab[i].types = types;
+        starTab[i].level = level;
+        starTab[i].star_lvl = star_lvl;
+        starTab[i].exp = exp;
+    end
+end
+function sortStarInfo()
+    local starTab = LogicData_MatrixPlayerInfo.StarInfos ;
+    if starTab == nil or #starTab<7 then
+        error("[阵法]星魂属性培养数据error");
+        return;
+    end
+    table.sort( starTab, sortfunction2 );
+end
+function sortfunction2(a,b)
+    if a ~= nil and b ~=nil then
+        local a_AttrsCfg = DavidsAttrTable.Get(a.types);
+        local b_AttrsCfg = DavidsAttrTable.Get(b.types);
+        if  a_AttrsCfg~= nil and b_AttrsCfg~=nil then
+            return a_AttrsCfg.Value>b_AttrsCfg.Value;
+        end
+    end
+    return a.types > b.types;
+end
+
+---------------------我要变强分数阵法计算需要--------------
+--总阵法数据分数=阵法分数+符文分数=【阵法(所有的阶数的对应的培养等级)*m_QualityScoreTable[i]】+【（[符文阶数-1]*5+符文星数)*m_QualityScoreTable2[1]】
+-- 品质系数写死
+m_QualityScoreTable2 =
+{
+    --for ceshi
+    [1]=105,
+--    [1] = 1, 
+}
+--阵法对应的每一阶单星对应的系数
+m_QualityScoreTable =
+{
+    --for ceshi
+--    [1] = 1, 
+--    [2] = 1,
+--    [3] = 1, 
+--    [4] = 1, 
+--    [5] = 1, 
+--    [6] = 1, 
+--    [7] = 1, 
+--    [8] = 1, 
+--    [9] = 1, 
+--    [10] = 1, 
+--    [11] = 1, 
+--    [12] = 1, 
+    [1] = 39, 
+    [2] = 78,
+    [3] = 117, 
+    [4] = 156, 
+    [5] = 195, 
+    [6] = 234, 
+    [7] = 283, 
+    [8] = 332, 
+    [9] = 381, 
+    [10] = 430,
+    [11] =479, 
+    [12] = 528, 
+}
+
+-- 得到变强界面系统的品质系数对应的分数
+function GetScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_Matrix) == false then return score end
+    --阵法分数
+	local Infos =LogicData_MatrixPlayerInfo.GodInfos;
+    if Infos.StageLvl<=0 then
+        score = 0;
+    end
+    for index=1,Infos.StageLvl do
+        if index~=Infos.StageLvl then
+            score=score+m_QualityScoreTable[index]*10;   --10:阵法培养10级升阶
+        else
+            score=score+m_QualityScoreTable[index]*Infos.StarLvl;
+        end
+    end
+    --符文分数
+    local ChangeInfos= LogicData_MatrixPlayerInfo.StarInfos;
+    if ChangeInfos~=nil and #ChangeInfos>0  then
+        for index=1,#ChangeInfos do  --7个符文
+            if ChangeInfos[index].level>0 then
+                score=score+((ChangeInfos[index].level-1)*5+ChangeInfos[index].star_lvl)*m_QualityScoreTable2[1];
+            end
+        end
+    end
+    return score;
+end
+------------------

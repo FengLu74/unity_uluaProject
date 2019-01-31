@@ -1,0 +1,105 @@
+﻿module("WingPanelProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 玩家上线发送客户端神翼数据
+    --network.Register(GMI_STOC_WING_PEIYANG_DATA, WingPanelDataInit); -- = 29051
+    -- 培养神翼的返回消息
+    --network.Register(GMI_STOC_SEND_CLIENT_WING_PEIYANG  , FosterWing); --22845,
+    --[[-- 培养十次神翼的返回消息
+    network.Register(GMI_STOC_FOSTERMOUNTTENTIMES_RETURN, FosterWingTenTimes);]]
+    -- 神翼进阶（突破）的返回消息
+    --network.Register(GMI_STOC_SEND_CLIENT_WING_JINJIE , FosterWing);   --22846,
+    -- 设置神翼ID的返回消息
+    --network.Register(GMI_STOC_SETRIDEPANELMOUNTID_RETURN, SetWingID);  
+    -- 服务器返回化灵属性培养
+    --network.Register(GMI_STOC_SEND_WING_CHEMICALSPIRIT_PENGYANG ,SpiritLevelUp);   -- 22847,
+    -- ----------------------------------化灵共鸣相关交互------------------------------------------------------
+
+end
+
+
+-- 获取神翼数据
+function WingPanelDataInit(protocolId, buffer)
+	WingPanelManager.LogicData_WingDataInfo = {};
+	--玩家翅膀培养数据
+	WingPanelManager.LogicData_WingDataInfo.playerWingsInfo = {};
+	-- 化灵数据
+	WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo = {};
+	local wingCount = buffer:ReadByte();
+	for index=1,wingCount do
+		local wingId = buffer:ReadInt();
+			--error("wingId: "..wingId);
+			WingPanelManager.LogicData_WingDataInfo.playerWingsInfo[index] = {};
+			WingPanelManager.LogicData_WingDataInfo.playerWingsInfo[index].Id = wingId;
+			WingPanelManager.LogicData_WingDataInfo.playerWingsInfo[index].StageLvl =  buffer:ReadInt();
+			WingPanelManager.LogicData_WingDataInfo.playerWingsInfo[index].FosterLvl =  buffer:ReadInt();
+	
+	end
+	
+	local tabll = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+	--error("玩家解锁翅膀数量："..wingCount.."   playerWingsInfo 长度-->:"..#tabll);
+
+	-- 化灵需要最低翅膀总阶数
+	WingPanelManager.LogicData_WingDataInfo.spiritWingNeedLvl = buffer:ReadInt();
+	--error("化灵需要最低翅膀总培养等级数--:>"..WingPanelManager.LogicData_WingDataInfo.spiritWingNeedLvl);
+	local spiritCount = buffer:ReadByte();
+	for index=1,spiritCount do
+		local spiritId = buffer:ReadInt();
+		WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo[index] = {};
+		WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo[index].attrType = spiritId;   			-- 属性类型
+		WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo[index].attrLvl =  buffer:ReadInt();		-- 属性化灵等级		
+		WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo[index].attrExp =  buffer:ReadInt();		-- 属性当前等级经验值
+	end
+	local tables  = WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo;
+	WingPanelManager.SortPlayerWingsTable();
+end
+
+-- 培养，进阶 神翼返回的数据
+function FosterWing(protocolId, buffer)
+	local wingID = buffer:ReadInt();
+	local playerWingsInfoTable = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+	if #playerWingsInfoTable<=0 then
+		return;
+	end
+	local isHave = false;
+	for index=1,#playerWingsInfoTable do
+		if playerWingsInfoTable[index].Id == wingID then
+			playerWingsInfoTable[index].StageLvl = buffer:ReadInt(); 
+			playerWingsInfoTable[index].FosterLvl = buffer:ReadInt();
+			isHave = true;
+			break;
+		end
+	end
+
+	if isHave ~=true then
+		return;
+	end
+	-- 刷新右侧界面
+	WingPanel.RefreshWingCostShow();
+end
+
+
+-- 化靈培養返回
+function SpiritLevelUp(protocolId, buffer)
+	local player_spirit = WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo;
+	local attr_type = buffer:ReadInt();
+	local isHave = false;
+	for index=1,#player_spirit do
+		if player_spirit[index].attrType == attr_type then
+			isHave = true;
+			player_spirit[index].attrLvl = buffer:ReadInt(); 
+			player_spirit[index].attrExp = buffer:ReadInt(); 
+		end
+
+	end
+	if isHave~=true then
+		local new_attr = {};
+		new_attr.attrType = attr_type;
+		new_attr.attrLvl = buffer:ReadInt(); 
+		new_attr.attrExp = buffer:ReadInt(); 
+		table.insert(player_spirit,new_attr);
+	end
+	WingSpiritPanel.RefreshSpiritCostAndRight();
+end

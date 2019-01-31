@@ -1,0 +1,137 @@
+﻿module('RideDungeonRatePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'RideDungeonRatePanel';
+---------------------------------------label路径---------------------------------------
+-- 怪物数量
+local m_monsterNumStr = "Content/lb_MonsterNum/lb_Data";
+-- 怪物出现的波数
+local m_monsterShowTimeStr = "Content/lb_MonsterNum/lb_Data1";
+-- 评级
+local m_rideRateStr = "Content/lb_RideRate/lb_Data";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 血量显示条
+local m_progressBarHp = "Content/lb_Hp/Hp/ProgressBar_HP";
+
+-- 血条
+local m_rideHpStr = "Content/lb_Hp/Hp";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 血量进度条
+local m_ProgressBar = nil;
+-- 血量值
+local m_hpValue = nil;
+-- 怪物数量
+local m_monsterCount = -1;
+-- 评级
+local m_rateValue = nil;
+-- 怪物波数
+local monsterShowTime = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("RideDungeonDown");
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_ProgressBar = nil;
+    m_hpValue = nil;
+    m_monsterCount = -1;
+    m_rateValue = nil;
+    monsterShowTime = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_RIDE_DUNGEON_PANEL);
+
+    m_ProgressBar = GetComponent(m_PanelObject, m_progressBarHp, "UIProgressBar");
+end
+
+-- 初始化对象事件
+function InitEvents()
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    -- 血量条
+    if m_hpValue ~= nil then
+        SetGameObjectState(m_rideHpStr, true, m_PanelObject);
+        m_ProgressBar.value = m_hpValue / 100;
+    end
+    -- 怪物的数量
+    if m_monsterCount >= 0 then
+        SetLabelContent(m_monsterNumStr, m_monsterCount, m_PanelObject);
+    end
+    if monsterShowTime > 0 then
+        -- 怪物出现的波数
+        SetLabelTextByID(m_monsterShowTimeStr, monsterShowTime, m_PanelObject);
+    end
+    -- 评级
+    if m_rateValue ~= nil then
+        SetLabelTextByID(m_rideRateStr, m_rateValue, m_PanelObject);
+    end
+    AddTimerEvent("RideDungeonDown", CCommonTool.GetDefineInfo(5110):GetIntContent(), CallBackOver, ETimeShowType.TypeNumberTen, CallBack);
+end
+
+------------------------------------------事件方法------------------------------------
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetData(paraTable)
+    m_hpValue = paraTable[3];
+    m_monsterCount = paraTable[4];
+    m_rateValue = paraTable[5];
+    monsterShowTime = paraTable[6];
+    if m_CreateSuccess then
+        -- 初始化界面所有信息
+        InitShow();
+    end
+end
+
+function CallBack(timeTxt)
+
+end
+
+function CallBackOver()
+    closePanel(ENUMPANELID.ENUM_RIDE_DUNGEON_PANEL);
+    G_TimerMng:RemoveTimeTask("RideDungeonDown");
+end
+
+function IsNeedCreate()
+    if G_SceneMng.SceneID == 205 or G_SceneMng.SceneID == 231 or G_SceneMng.SceneID == 233   then
+        createPanel(ENUMPANELID.ENUM_RIDE_DUNGEON_PANEL);
+    end
+end
+
+function IsNeedClose()
+    if G_SceneMng.SceneID == 205 or G_SceneMng.SceneID == 231 or G_SceneMng.SceneID == 233 then
+        closePanel(ENUMPANELID.ENUM_RIDE_DUNGEON_PANEL);
+    end
+end

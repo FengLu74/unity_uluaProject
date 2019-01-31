@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="xy_download_prompts">发现新版本，请下载最新版本</string>
+    <string name="xy_download_processing">下载中&#8230;</string>
+    <string name="xy_download_finish">下载完成</string>
+    <string name="xy_download_file_error">目前文件丢失或不是合法安装文件，请重新下载</string>
+    <string name="xy_download_percent_hint">0%</string>
+    <string name="xy_download_precess_hint">数据计算中&#8230;</string>
+
+
+    <string name="xy_download_cancel">取消</string>
+    <string name="xy_download_confirm">确认</string>
+
+
+</resources>

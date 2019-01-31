@@ -1,0 +1,327 @@
+﻿module("CollectBar", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 采集文本框路径
+local m_labelDir = "Label";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 背景图片
+local m_bg = "backgrand";
+-- 背景图片1
+local m_bg2 = "Sprite2";
+-- 背景图片2
+local m_bg3 = "Sprite3";
+-- 进度条
+local m_proSprite = "Sprite";
+-- 传送类型图片
+local m_typeIcon = "Icon";
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 采集物的crid
+local m_collectionId;
+-- 当前时间
+local m_CurTime;
+-- 采集需要的时间
+local m_needTime = 0;
+-- 面板是否创建成功
+local m_bCreateSuccess = false;
+-- 读条类型
+local m_gatherType = -1;
+-- 进度条组件
+local m_progressBar = nil;
+-- 采集文本ID
+local m_TextID = 0;
+-- 采集图片ID
+local m_IconID = 0;
+-- 事件ID
+local m_eventID = 0;
+-- 读条结束回调方法
+local m_Callback = nil;
+
+-- 是否正在采集或传送中
+isCollecting = false;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObj();
+    InitCollectInfo();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitObj();
+        InitCollectInfo();
+    end
+    isCollecting = true;
+end
+
+function OnDisable()
+    m_Callback = nil;
+    isCollecting = false;
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_progressBar = nil;
+    m_bCreateSuccess = false;
+end
+
+-- 根据时间更新采集条的长度
+function Update()
+    if m_progressBar == nil then m_progressBar = GetComponent(m_panelObject, "", "UIProgressBar"); end
+    if m_progressBar ~= nil then
+        m_progressBar.value =(Time.time - m_CurTime) / m_needTime;
+        if m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+            Main_MiddleBottom.UpdatePetCollectBar(m_progressBar.value);
+        end
+        if m_needTime > 0 and Time.time - m_CurTime >= m_needTime then
+            if m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECTION then
+                G_NetWorkMng:SendCollectionMsgToServer(0, 2, m_collectionId);
+                G_UserInfo:GetCurPlayer().AgentPlayerEvent.GatherCollectionID = 0;
+                --        elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_NONE then
+                --            G_NetWorkMng:SendWingFlyMsgToServer();
+            elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSMMIT then
+                G_MissionMng:SendRransmitMsgToServer(m_collectionId);
+                G_UserInfo:StopTransferEffect();
+            elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECT_ENOUGH_DEL then
+                G_NetWorkMng:SendCollectionMsgToServer(0, 2, m_collectionId);
+                G_UserInfo:GetCurPlayer().AgentPlayerEvent.GatherCollectionID = 0;
+            elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_EVENT then
+                PlayerProtocol.SendCollectBarEvent(m_eventID);
+            elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2 then
+                if m_Callback ~= nil then
+                    m_Callback();
+                end
+                G_UserInfo:StopTransferEffect();
+            elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+                G_NetWorkMng:SendCollectionMsgToServer(0, 2, m_collectionId);
+                G_SceneMng:DisablePetCaptureCollider(m_collectionId);
+            elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER3 then
+                if m_Callback ~= nil then
+                    m_Callback();
+                end
+                G_UserInfo:StopTransferEffect();
+            end
+            InterruptBar(m_progressBar);
+        end
+    end
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObj()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL);
+    m_progressBar = GetComponent(m_panelObject, "", "UIProgressBar");
+end
+
+function InitCollectInfo()
+    -- 采集图片
+    local nIconId = 0;
+    if m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_NONE then
+        SetLabelContent(m_labelDir, "", m_panelObject);
+        SetGameObjectState(m_typeIcon, true, m_panelObject);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSMMIT then
+        -- 传送文本
+        SetLabelTextByID(m_labelDir, 8967, m_panelObject);
+        -- 传送中
+        nIconId = CCommonTool.GetDefineInfo(6200):GetIntContent();
+        SetSpriteByAtlasID(m_typeIcon, nIconId, m_panelObject);
+        SetGameObjectState(m_typeIcon, true, m_panelObject);
+        G_UserInfo:PlayTransferEffect();
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECTION then
+        -- 采集 文本暂时屏蔽
+        -- 设置采集文本
+        local nTxtId = 0;
+        nTxtId = m_TextID;
+        -- nTxtId = G_MissionMng:GetMissionCollectTxtId(_G.LogicData_CurTraceTaskID);
+        if nTxtId ~= -1 and nTxtId ~= 0 then
+            SetLabelTextByID(m_labelDir, nTxtId, m_panelObject);
+        end
+        -- 采集图片
+        nIconId = m_IconID;
+        -- nIconId = G_MissionMng:GetMissionCollectIconId(_G.LogicData_CurTraceTaskID);
+        if nIconId > 0 then
+            SetSpriteByAtlasID(m_typeIcon, nIconId, m_panelObject);
+            SetGameObjectState(m_typeIcon, true, m_panelObject);
+        else
+            error("采集图片IconID错误:"..nIconId.."采集类型:"..m_gatherType.."当前追踪任务ID:".._G.LogicData_CurTraceTaskID);
+            SetGameObjectState(m_typeIcon, false, m_panelObject);
+        end
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECT_ENOUGH_DEL then
+        if m_TextID <= 0 then
+            SetLabelContent(m_labelDir, "", m_panelObject);
+        else
+            SetLabelTextByID(m_labelDir, m_TextID, m_panelObject);
+        end
+        nIconId = m_IconID;
+        if nIconId > 0 then
+            SetSpriteByAtlasID(m_typeIcon, nIconId, m_panelObject);
+            SetGameObjectState(m_typeIcon, true, m_panelObject);
+        else
+            error("采集图片IconID错误:"..nIconId.."采集类型:"..m_gatherType);
+            SetGameObjectState(m_typeIcon, false, m_panelObject);
+        end
+        -- 关闭主界面的采集按钮
+        Main_MiddleBottom.ClosCollterButton();
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_EVENT then
+        SetLabelTextByID(m_labelDir, m_TextID, m_panelObject);
+        nIconId = m_IconID;
+        if nIconId > 0 then
+            SetSpriteByAtlasID(m_typeIcon, nIconId, m_panelObject);
+            SetGameObjectState(m_typeIcon, true, m_panelObject);
+        else
+            error("采集图片IconID错误:"..nIconId.."采集类型:"..m_gatherType);
+            SetGameObjectState(m_typeIcon, false, m_panelObject);
+        end
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2 then
+        SetLabelTextByID(m_labelDir, 8967, m_panelObject);
+        -- 传送中
+        G_UserInfo:PlayTransferEffect();
+        nIconId = CCommonTool.GetDefineInfo(6200):GetIntContent();
+        SetSpriteByAtlasID(m_typeIcon, nIconId, m_panelObject);
+        SetGameObjectState(m_typeIcon, true, m_panelObject);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+        SetLabelTextByID(m_labelDir, 1317, m_panelObject);
+        -- 捕捉宠物中...
+        SetGameObjectState(m_typeIcon, false, m_panelObject);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER3 then
+        SetLabelTextByID(m_labelDir, 8967, m_panelObject);
+        -- 传送中
+        G_UserInfo:PlayTransferEffect();
+        nIconId = CCommonTool.GetDefineInfo(6200):GetIntContent();
+        SetSpriteByAtlasID(m_typeIcon, nIconId, m_panelObject);
+        SetGameObjectState(m_typeIcon, true, m_panelObject);
+    end
+    if m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+        SetGameObjectState(m_labelDir, false, m_panelObject);
+        SetGameObjectState(m_bg, false, m_panelObject);
+        SetGameObjectState(m_bg2, false, m_panelObject);
+        SetGameObjectState(m_bg3, false, m_panelObject);
+        SetGameObjectState(m_proSprite, false, m_panelObject);
+    else
+        SetGameObjectState(m_labelDir, true, m_panelObject);
+        SetGameObjectState(m_bg, true, m_panelObject);
+        SetGameObjectState(m_bg2, true, m_panelObject);
+        SetGameObjectState(m_bg3, true, m_panelObject);
+        SetGameObjectState(m_proSprite, true, m_panelObject);
+    end
+    log("当前采集类型:"..m_gatherType.."采集图标ID:"..nIconId)
+end
+
+-- 打断读条
+function InterruptBar(progressBar)
+    if m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+        Main_MiddleBottom.InterruptPetcaptureBar();
+    end
+    m_needTime = 0;
+    m_gatherType = -1;
+    if progressBar ~= nil then
+        progressBar.value = 0;
+    end
+    m_CurTime = 0;
+    m_TextID = 0;
+    nIconID = 0;
+    m_eventID = 0;
+    m_Callback = nil;
+    G_UserInfo.IsFlyWingBar = false;
+    closePanel(ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL);
+end
+
+-- 打断任务直接传送的读条
+function BreakTaskSendBar()
+    InterruptBar(m_progressBar);
+    G_UserInfo:StopTransferEffect();
+end
+--------------------------------------按钮事件方法------------------------------------
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function InterruptBarFunc(actionName)
+    warn(actionName);
+    if m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECTION and actionName ~= "TypeGather" then
+        InterruptBar(m_progressBar);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_NONE and actionName ~= "TypeBirth" then
+        InterruptBar(m_progressBar);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSMMIT and actionName ~= "TypeBirth" then
+        InterruptBar(m_progressBar);
+        G_UserInfo:StopTransferEffect();
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECT_ENOUGH_DEL then
+        InterruptBar(m_progressBar);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_EVENT then
+        InterruptBar(m_progressBar);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2 and actionName ~= "TypeFightToStand" then
+        InterruptBar(m_progressBar);
+        G_UserInfo:StopTransferEffect();
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+        Main_MiddleBottom.m_IsCollectingPet = false;
+        InterruptBar(m_progressBar);
+    elseif m_gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER3 and actionName ~= "TypeFightToStand" then
+        InterruptBar(m_progressBar);
+        G_UserInfo:StopTransferEffect();
+    end
+end
+
+-- 采集条初始化
+function InitCollectBar(gatherType, state, collectionID, nCollectTime, nTxtID, nIconID, callback)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL) == 1 then
+        InterruptBar(m_progressBar);
+    end
+    if gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_NONE
+        or gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSMMIT
+        or gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2
+        or gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER3 then
+        m_gatherType = gatherType;
+        m_collectionId = collectionID;
+        m_CurTime = Time.time;
+        m_SendCurTime = Time.time;
+        m_needTime = nCollectTime;
+        m_Callback = callback;
+        m_IconID = nIconID;
+        createPanel(ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL);
+    else
+        if nCollectTime <= 0 then
+            G_NetWorkMng:SendCollectionMsgToServer(0, 2, collectionID);
+        else
+            if gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECT_ENOUGH_DEL then
+                m_gatherType = gatherType;
+                m_TextID = nTxtID;
+            elseif gatherType == ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_CAPTUREPET then
+                Main_MiddleBottom.m_IsCollectingPet = true;
+                m_gatherType = gatherType;
+            else
+                m_gatherType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_COLLECTION;
+            end
+            m_TextID = nTxtID;
+            m_collectionId = collectionID;
+            m_CurTime = Time.time;
+            m_needTime = nCollectTime;
+            m_IconID = nIconID;
+            createPanel(ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL);
+        end
+    end
+end
+
+-- 读条初始化
+function InitLoadProgressBar(loadTime, eventID, textID, effectID, iconID)
+    if loadTime <= 0 then
+        PlayerProtocol.SendCollectBarEvent(eventID);
+    else
+        m_gatherType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_EVENT;
+        m_collectionId = 0;
+        m_CurTime = Time.time;
+        m_needTime = loadTime;
+        m_TextID = textID;
+        m_eventID = eventID;
+        m_IconID = iconID;
+        if effectID > 0 then
+            G_UserInfo:PlayTransferEffect();
+            BagPanel.OnCloseClick();
+        end
+        createPanel(ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL);
+    end
+end

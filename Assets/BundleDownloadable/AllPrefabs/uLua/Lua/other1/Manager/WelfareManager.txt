@@ -1,0 +1,194 @@
+﻿module("WelfareManager", package.seeall)
+
+-- 福利版本号
+WelfareVersion = 0;
+-- 福利菜单标记数据
+WelfareSignDatas = { };
+-- 获取服务器发来的七日签到的数据，当等于-1的时候关闭七日签到页签
+EveryDayData = 0;
+-- 第一福利面板要显示的标签
+m_NeedShow = {1, 2, 3, 4, 5, 7, 8, 9, 10 };
+-- 第二福利面板要显示的标签
+m_NeedShowPanel = {6, 11, 12, 13, 14, 15, 16, 17, 18};
+-- 福利菜单对应面板
+WelfareDatas =
+{
+    [1] = { Type = WelfareType.WT_SevenDayLogin, PanelId = ENUMPANELID.ENUM_EVERY_DAY_LOGIN_PANEL };-- 七日签到
+    [2] = { Type = WelfareType.WT_OnlineTime, PanelId = ENUMPANELID.ENUM_ONLINE_TIME_PANEL };-- 在线奖励
+    [3] = { Type = WelfareType.WT_Levelup, PanelId = ENUMPANELID.ENUM_LEVEL_UP_PANEL };-- 升级礼包
+    [4] = { Type = WelfareType.WT_Offline, PanelId = ENUMPANELID.ENUM_OFFLINE_PANEL };-- 离线经验
+    [5] = { Type = WelfareType.WT_ThirtyDayPick, PanelId = ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL };-- 30日签到
+    [6] = { Type = WelfareType.WT_Recharge, PanelId = ENUMPANELID.ENUM_RECHARGE_PANEL };-- 充值返利
+    [7] = { Type = WelfareType.WT_Exchange, PanelId = ENUMPANELID.ENUM_FRAGMENT_EXCHANGE_PANEL };-- 碎片兑换
+    [8] = { Type = WelfareType.WT_GrowFund1, PanelId = ENUMPANELID.ENUM_PANEL_GROWFUNDONEPANEL };-- 成长基金1
+    [9] = { Type = WelfareType.WT_GrowFund2, PanelId = ENUMPANELID.ENUM_PANEL_GROWFUNDTWOPANEL };-- 成长基金2
+    [10] = { Type = WelfareType.WT_ResourcesBack, PanelId = ENUMPANELID.ENUM_RESOURCSEBACKPANEL };-- 资源找回
+    [11] = { Type = WelfareType.WT_DailyCharge, PanelId = ENUMPANELID.ENUM_PANEL_DAILYCHARGE };-- 每日充值
+    [12] = { Type = WelfareType.WT_CumulativeDaysCharge, PanelId = ENUMPANELID.ENUM_PANEL_CUMULATIVEDAYSCHARGE };-- 累天充值
+    [13] = { Type = WelfareType.WT_Force, PanelId = ENUMPANELID.ENUM_PANEL_FORCESTATISTICAL };-- 强化统计
+    [14] = { Type = WelfareType.WT_Refining, PanelId = ENUMPANELID.ENUM_PANEL_REFININGSTATISTICAL };-- 精炼统计
+    [15] = { Type = WelfareType.WT_PetSavvy, PanelId = ENUMPANELID.ENUM_PANEL_PETSAVVYSTATISTICAL };-- 宠物悟性统计
+    [16] = { Type = WelfareType.WT_PetQualityRefresh, PanelId = ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHSTATISTICAL };-- 宠物洗练统计
+    [17] = { Type = WelfareType.WT_RideLevelUp, PanelId = ENUMPANELID.ENUM_PANEL_RIDELEVELUPSTATISTICAL };-- 坐骑进阶统计
+    [18] = { Type = WelfareType.WT_TimeLimitDraw, PanelId = ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW };-- 限时抽奖
+
+};
+-- 福利菜单文本
+WelfareMenuTexts = { };
+
+-- 加载数据
+function LoadData()
+    WelfareMenuTexts =
+    {
+        [1] = GetTextToId(1034);-- "七日签到";
+        [2] = GetTextToId(1035);-- "在线奖励";
+        [3] = GetTextToId(1036);-- "升级礼包";
+        [4] = GetTextToId(1037);-- "离线经验";
+        [5] = GetTextToId(2128);-- "30日签到";
+        [6] = GetTextToId(2071);-- "充值返利";
+        [7] = GetTextToId(9038);-- "碎片兑换";
+        [8] = GetTextToId(102640);-- "成长基金1";
+        [9] = GetTextToId(102642);-- "成长基金2";
+        [10] = GetTextToId(2207);-- "资源找回";
+        [11] = GetTextToId(9113);-- "每日充值";
+        [12] = GetTextToId(163800);-- "累天充值";
+        [13] = GetTextToId(163803);-- "强化统计";
+        [14] = GetTextToId(163804);-- "精炼统计";
+        [15] = GetTextToId(163805);-- "宠物悟性统计";
+        [16] = GetTextToId(163807);-- "宠物洗练统计";
+        [17] = GetTextToId(163806);-- "坐骑进阶统计";
+        [18] = GetTextToId(9201);-- "限时抽奖";
+        
+    }
+end
+
+-- 获取当前福利菜单按钮数据
+function GetWelfareMenuDatas()
+    local welfareMenuDatas = { };
+    local lenght = GetTableLength(WelfareSignDatas);
+    for index = 1, lenght do
+        local welfareSignData = WelfareSignDatas[index];
+        local welfareType = welfareSignData.Type;
+        local isOpen = welfareSignData.IsOpen;
+        if isOpen == true then
+            local result = IsOpenOffline(welfareType);
+            if welfareType == WelfareType.WT_ResourcesBack then
+                result =(ResourcesBackManager.GetResourcesBackDataCount() > 0);
+            end
+            local isClose = IsCloseEveryDay(welfareType);
+            if result == true and isClose == false then
+                local welfareData = WelfareDatas[welfareType];
+                if welfareData ~= nil then
+                    local data =
+                    {
+                        Type = welfareData.Type;
+                        PanelId = welfareData.PanelId;
+                        Text = WelfareMenuTexts[welfareType];
+                    }
+                    welfareMenuDatas[index] = data;
+                end
+            end
+        end
+    end
+    return welfareMenuDatas;
+end
+
+-- 是否开启离线奖励
+function IsOpenOffline(_welfareType)
+    if _welfareType == WelfareType.WT_Offline then
+        local pLevel = G_UserInfo.RoleAttribute.Level;
+        local levelLimited = CCommonTool.GetDefineInfo(EDefineContentID.OFFLINE_PANEL_LEVEL_LIMITED):GetIntContent();
+        return pLevel >= levelLimited;
+    end
+    return true;
+end
+
+-- 是否关闭七日签到界面
+function IsCloseEveryDay(_welfareType)
+    --error("EveryDayData:::::" .. EveryDayData);
+    if _welfareType == WelfareType.WT_SevenDayLogin then
+        if EveryDayData == -1 then
+            return true;
+        else
+            return false;
+        end
+    end
+    return false;
+end
+
+--- 获取七日签到数据
+function EveryDayLoginData(value)
+    EveryDayData = value;
+end
+
+-- 获取福利界面菜单指针
+function GetWelfareMenuIndex(_welfareType)
+    local menuIndex = 0;
+    local index = 0;
+    for key, var in pairs(WelfareSignDatas) do
+        local welfareSignData = var;
+        local welfareType = welfareSignData.Type;
+        local isOpen = welfareSignData.IsOpen;
+        if isOpen == true then
+            local result = IsOpenOffline(welfareType);
+            local isClose = IsCloseEveryDay(welfareType);
+            if result == true and isClose == false and welfareType~=WelfareType.WT_Exchange then   --道具兑换特殊处理,此页签放到外面去了 
+                if _welfareType == welfareType then
+                    menuIndex = index;
+                end
+                index = index + 1;
+            end
+        end
+    end
+    return menuIndex;
+end
+
+-- 通过福利类型设置主菜单指针
+function SetWelfareMenuIndex(_welfareType)
+    local menuIndex = GetWelfareMenuIndex(_welfareType);
+    error("SetWelfareMenuIndex menuIndex : " .. menuIndex);
+    WelfarePanel.SetMenuIndex(menuIndex);
+end
+
+-- 通过福利类型打开福利面板
+function OpenWelfarePanel(_welfareType, _causePanelId)
+    local menuIndex = GetWelfareMenuIndex(_welfareType);
+    error("OpenWelfarePanel menuIndex : " .. menuIndex);
+    WelfarePanel.OpenPanel(menuIndex, _causePanelId);
+end
+
+-- 检测角色升级(离线奖励按钮)
+function OnCheckUpgrade()
+    local result = IsOpenOffline(WelfareType.WT_Offline);
+    if result == true then
+        StorePanel.RefreshMainMenu();
+    end
+end
+
+-- 获得是否关闭七日奖励活动
+function IsCloseSevenDaysAct()
+    local lenght = GetTableLength(WelfareSignDatas);
+    for index = 1, lenght do
+        local welfareSignData = WelfareSignDatas[index];
+        local welfareType = welfareSignData.Type;
+        local isOpen = welfareSignData.IsOpen;
+        if welfareType == WelfareType.WT_SevenDayLogin then 
+            return isOpen;
+        end
+    end
+    return false;
+end
+-- 获得第二福利界面是否开启
+function IsUnlockSecondWelfare()
+    for i,v in pairs(m_NeedShowPanel) do
+        if WelfareSignDatas[v] ~= nil and WelfareSignDatas[v].IsOpen == true then
+            return true;
+        end
+    end
+    return false;
+end
+
+function Clear()
+    -- 30签到
+    ThirtyDayPickManager.Clear();
+end

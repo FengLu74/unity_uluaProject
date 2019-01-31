@@ -1,0 +1,586 @@
+﻿module('EquipBossPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'EquipBossPanel';
+---------------------------------------label路径---------------------------------------
+-- 描述文本
+local m_DescPath = "Info/Desc";
+-- 副本名称
+local m_NamePath = "Info/Name";
+-- 副本难度
+local m_DiffPath = "Info/Diff";
+local m_DiffIconPath  = "Info/Icon";
+
+-- 推荐战力
+local m_FightPowerPath = "Info/FightPower";
+-- 推荐方式
+local m_JoinTypePath = "Info/JoinType";
+-- 次数
+local m_TimesPath = "Info/Times";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 进入副本按钮
+local m_EnterButtonPath = "Info/EnterButton";
+-- 组队平台按钮
+local m_TeamButtonPath = "Info/TeamButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 奖励1
+local m_Item1Path = "Info/Items/Item1";
+-- 奖励2
+local m_Item2Path = "Info/Items/Item2";
+-- 奖励3
+local m_Item3Path = "Info/Items/Item3";
+-- 奖励4
+local m_Item4Path = "Info/Items/Item4";
+-- 奖励5
+local m_Item5Path = "Info/Items/Item5";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 难度Grid
+local m_DiffGridPath = "Info/DiffGrid";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 副本列表
+local m_ListPath = "ListPanel/List";
+-- 难度1
+local m_Diff1Path = "Info/DiffGrid/Diff1";
+-- 难度2
+local m_Diff2Path = "Info/DiffGrid/Diff2";
+-- 难度3
+local m_Diff3Path = "Info/DiffGrid/Diff3";
+-- 难度4
+local m_Diff4Path = "Info/DiffGrid/Diff4";
+-- 难度5
+local m_Diff5Path = "Info/DiffGrid/Diff5";
+-- 难度9
+local m_Diff6Path = "Info/DiffGrid/Diff6";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 副本列表
+local m_List = nil;
+-- 难度文本
+local m_Diff = nil;
+--中间显示难度图标
+local m_DiffIcon=nil;
+-- 推荐战力
+local m_FightPower = nil;
+-- 推荐方式
+local m_JoinType = nil;
+-- 次数
+local m_Times = nil;
+-- 难度Grid
+local m_DiffGrid = nil;
+-- 难度1
+local m_Diff1 = nil;
+-- 难度2
+local m_Diff2 = nil;
+-- 难度3
+local m_Diff3 = nil;
+-- 难度4
+local m_Diff4 = nil;
+-- 难度5
+local m_Diff5 = nil;
+-- 难度6
+local m_Diff6 = nil;
+
+-- 奖励路径数组
+local m_ItemPaths = nil;
+-- 难度数组
+local m_DiffObjects = nil;
+-- 当前选中的ID
+local m_DungeonId = 0;
+-- 当前选中的难度索引
+local m_DiffIndex = 0;
+-- 难度副本数组
+local m_DiffDungeons = nil;
+-- 模型ID
+local m_ModelId = 0;
+
+local m_ListIndex = 0;
+-- 当前选中副本的难度个数
+local m_DiffCount = 0;
+local panelID=0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    G_PanelMng:SetBackgroundShadow(false);
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    G_PanelMng:SetBackgroundShadow(true);
+    m_ModelId = 0;
+    m_DungeonId = 0;
+    m_DiffIndex = 0;
+    m_ListIndex = 0;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_List = nil;
+    m_Diff = nil;
+    m_DiffIcon=nil;
+    m_FightPower = nil;
+    m_JoinType = nil;
+    m_Times = nil;
+    m_DiffGrid = nil;
+    m_Diff1 = nil;
+    m_Diff2 = nil;
+    m_Diff3 = nil;
+    m_Diff4 = nil;
+    m_Diff5 = nil;
+    m_Diff6 = nil;
+
+    m_DungeonId = 0;
+    m_DiffIndex = 0;
+    m_DiffDungeons = nil;
+    m_DiffObjects = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    panelID=ENUMPANELID.ENUM_BOSSLOBBYPANEL;
+    m_PanelObject = FindPanelObjWithPanelID(panelID);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_Diff = GetComponent(m_PanelObject, m_DiffPath, "UILabel");
+    m_FightPower = GetComponent(m_PanelObject, m_FightPowerPath, "UILabel");
+    m_JoinType = GetComponent(m_PanelObject, m_JoinTypePath, "UILabel");
+    m_Times = GetComponent(m_PanelObject, m_TimesPath, "UILabel");
+    m_DiffGrid = child(m_PanelObject, m_DiffGridPath).gameObject;
+    m_Diff1 = child(m_PanelObject, m_Diff1Path).gameObject;
+    m_Diff2 = child(m_PanelObject, m_Diff2Path).gameObject;
+    m_Diff3 = child(m_PanelObject, m_Diff3Path).gameObject;
+    m_Diff4 = child(m_PanelObject, m_Diff4Path).gameObject;
+    m_Diff5 = child(m_PanelObject, m_Diff5Path).gameObject;
+    m_Diff6 = child(m_PanelObject, m_Diff6Path).gameObject;
+
+    m_ItemPaths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+    m_DiffObjects = { m_Diff1, m_Diff2, m_Diff3,m_Diff4,m_Diff5,m_Diff6 };
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetSelectedCallback(OnListViewSelected);
+    SetGameObjectEvent(m_EnterButtonPath, OnEnterButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_TeamButtonPath, OnTeamButtonClick, m_PanelObject);
+
+    UIEventListener.Get(m_Diff1).onClick = LuaHelper.OnClick(OnDiff1Changed);
+    UIEventListener.Get(m_Diff2).onClick = LuaHelper.OnClick(OnDiff2Changed);
+    UIEventListener.Get(m_Diff3).onClick = LuaHelper.OnClick(OnDiff3Changed);
+    UIEventListener.Get(m_Diff4).onClick = LuaHelper.OnClick(OnDiff4Changed);
+    UIEventListener.Get(m_Diff5).onClick = LuaHelper.OnClick(OnDiff5Changed);
+    UIEventListener.Get(m_Diff6).onClick = LuaHelper.OnClick(OnDiff6Changed);
+end
+
+-- 初始化列表数据
+function InitList()
+    m_List:RemoveAll();
+    local dungeons = DungeonManager.GetBossLobbyDungeons();
+    local levels = { };
+    for _, data in ipairs(dungeons) do
+        local lv = data.info.Level;
+        if levels[lv] == nil then
+            --error(lv);
+            m_List:AddData(data);
+            levels[lv] = true;
+        end
+    end
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local numDungeons = #dungeons;
+    for index=1 , numDungeons do
+        local lv = dungeons[index].info.Level;
+        if index~= numDungeons then
+            local lv1 = dungeons[index+1].info.Level
+            if  userLevel >= lv and userLevel < lv1 then
+                m_ListIndex=dungeons[index].info.Id-6000-1;
+                break;
+            end
+        elseif index >= numDungeons then
+            if userLevel>= lv then
+                m_ListIndex=dungeons[index].info.Id-6000-1;
+            else
+                m_ListIndex=0;
+            end
+        end
+    end
+    
+    if m_ListIndex >= m_List.dataCount then
+        m_ListIndex = 0;
+    end
+    m_List:LookAt(m_ListIndex, true);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitList();
+    IconSet();
+end
+
+-- 初始化次数信息
+function InitDungeonTimes(m_DungeonId)
+    local remainTimes, usedTimes, maxTimes = DungeonManager.GetEquipBossDungeonTimesInfo(m_DungeonId);
+    m_Times.text = string_format(
+    --[[ 次数:{0}/{1} ]]
+    CCommonTool.GetTxtData(895).m_str, usedTimes, maxTimes);
+end
+-- 初始化单人多人显示信息
+function InitDungeonJoinType(m_DungeonId)
+    local single = DungeonManager.GetEquipBossSingleInfo(m_DungeonId);
+    m_JoinType.text =
+    --[组队挑战] 931-- [单人]9045
+    CCommonTool.GetTxtData(single).m_str;
+end
+
+-- 初始化选中副本的信息
+function InitDungeonInfo(diffIndex)
+    SetGameObjectState(m_EnterButtonPath,diffIndex <= 5,m_PanelObject);
+    SetGameObjectState(m_TeamButtonPath,diffIndex == 6,m_PanelObject);
+    if m_DiffDungeons == nil then
+        return;
+    end
+    for i, diffObject in ipairs(m_DiffObjects) do
+        SetGameObjectState("Select", i == diffIndex, diffObject);
+    end
+
+    local data = m_DiffDungeons[diffIndex];
+    local diffType = diffIndex;
+    local info = data.info;
+    if info == nil then
+        m_DungeonId = 0;
+        error(string_format("BOSS副本界面出错, info==nil"));
+        return;
+    end
+    if info.Id == m_DungeonId then
+        return;
+    end
+    m_DungeonId = info.Id;
+    m_DiffIndex = diffIndex;
+    --error("diffIndex="..diffIndex.."***m_DungeonId="..m_DungeonId);
+    InitDungeonTimes(m_DungeonId);
+    SetLabelTextByID(m_NamePath, info.NameId, m_PanelObject);
+    --SetLabelTextByID(m_DescPath, info.DescId, m_PanelObject);
+    m_FightPower.text = info.FightPower;
+    InitDungeonJoinType(m_DungeonId);
+
+    local widthAndHeight=80;
+    if diffType == 1 then
+        --m_Diff.text = string_format(" {0}", CCommonTool.GetTxtData(9337).m_str);
+        SetSpriteByAtlasID(m_DiffIconPath, 1570, m_PanelObject, true);
+        -- [FFFFFF]普通[-]
+    elseif diffType == 2 then
+        --m_Diff.text = string_format(" {0}", CCommonTool.GetTxtData(9338).m_str);
+        SetSpriteByAtlasID(m_DiffIconPath, 1571, m_PanelObject, true);
+        -- [A6FF75]困难[-]
+    elseif diffType == 3 then
+        --m_Diff.text = string_format(" {0}", CCommonTool.GetTxtData(9339).m_str);
+        SetSpriteByAtlasID(m_DiffIconPath, 1572, m_PanelObject, true);
+        -- [4699FF]深渊[-]
+    elseif diffType == 4 then
+        --m_Diff.text = string_format(" {0}", CCommonTool.GetTxtData(9340).m_str);
+        SetSpriteByAtlasID(m_DiffIconPath, 1573, m_PanelObject, true);
+        -- [4699FF]地狱[-]
+    elseif diffType == 5 then
+        --m_Diff.text = string_format(" {0}", CCommonTool.GetTxtData(9341).m_str);
+        SetSpriteByAtlasID(m_DiffIconPath, 1574, m_PanelObject, true);
+        -- [4699FF]终极[-]    
+    elseif diffType == 6 then
+        --m_Diff.text = string_format(" {0}", CCommonTool.GetTxtData(9342).m_str);
+        SetSpriteByAtlasID(m_DiffIconPath, 1574, m_PanelObject, true);
+        -- [4699FF]多人[-]
+    else
+        m_Diff.text = "";
+    end
+    SetSpriteHeight(m_DiffIconPath, widthAndHeight, m_PanelObject);
+    SetSpriteWidth(m_DiffIconPath, widthAndHeight, m_PanelObject);
+
+    -- 获得奖励道具信息
+    local list = CCommonTool.GetRewardShowItemIds(info.RewardId);
+    local count = list.count;
+    for i, path in ipairs(m_ItemPaths) do
+        local itemObject = child(m_PanelObject, path).gameObject;
+        itemObject:SetActive(i <= count);
+        if i <= count then
+            local excelId = list[i - 1];
+            local num = 1;
+            if excelId == G_ItemToolTipDefine.EXP then
+                num = info.Exp;
+            end
+            SetItemShowByExcelIDV04(m_PanelObject, path, excelId, num, false, 2, panelID);
+            SetItemToolTipsEvent(itemObject, "", panelID, false, excelId);
+        end
+    end
+    --error("diffIndex="..diffIndex.."***info.Id="..info.Id.."***m_ModelId="..info.Model);
+    -- 模型
+    if m_ModelId ~= info.Model then
+        if m_ModelId > 0 then
+            Delete3DModel();
+        end
+        m_ModelId = info.Model;
+        LoadBossModel(m_ModelId);
+    end
+end
+function IconSet()
+        -- [FFFFFF]普通[-]
+        local str = string_format(" {0}", CCommonTool.GetTxtData(9337).m_str);
+        SetLabelContent(m_Diff1Path.."/Name", str, m_PanelObject);
+        SetSpriteByAtlasID(m_Diff1Path.."/Icon", 1570, m_PanelObject, true);
+        SetSpriteHeight(m_Diff1Path.."/Icon", 100, m_PanelObject);
+        SetSpriteWidth(m_Diff1Path.."/Icon", 100, m_PanelObject);
+        -- [A6FF75]困难[-]
+        str = string_format(" {0}", CCommonTool.GetTxtData(9338).m_str);
+        SetLabelContent(m_Diff2Path.."/Name", str, m_PanelObject);
+        SetSpriteByAtlasID(m_Diff2Path.."/Icon", 1571, m_PanelObject, true);
+        SetSpriteHeight(m_Diff2Path.."/Icon", 100, m_PanelObject);
+        SetSpriteWidth(m_Diff2Path.."/Icon", 100, m_PanelObject);
+        -- [4699FF]深渊[-]
+        str  = string_format(" {0}", CCommonTool.GetTxtData(9339).m_str);
+        SetLabelContent(m_Diff3Path.."/Name", str, m_PanelObject);
+        SetSpriteByAtlasID(m_Diff3Path.."/Icon", 1572, m_PanelObject, true);
+        SetSpriteHeight(m_Diff3Path.."/Icon", 100, m_PanelObject);
+        SetSpriteWidth(m_Diff3Path.."/Icon", 100, m_PanelObject);
+        -- []地狱[-]
+        str = string_format(" {0}", CCommonTool.GetTxtData(9340).m_str);
+        SetLabelContent(m_Diff4Path.."/Name", str, m_PanelObject);
+        SetSpriteByAtlasID(m_Diff4Path.."/Icon", 1573, m_PanelObject, true);
+        SetSpriteHeight(m_Diff4Path.."/Icon", 100, m_PanelObject);
+        SetSpriteWidth(m_Diff4Path.."/Icon", 100, m_PanelObject);
+        -- []终极[-]    
+        str = string_format(" {0}", CCommonTool.GetTxtData(9341).m_str);
+        SetLabelContent(m_Diff5Path.."/Name", str, m_PanelObject);
+        SetSpriteByAtlasID(m_Diff5Path.."/Icon", 1574, m_PanelObject, true);
+        SetSpriteHeight(m_Diff5Path.."/Icon", 100, m_PanelObject);
+        SetSpriteWidth(m_Diff5Path.."/Icon", 100, m_PanelObject);
+        -- []多人[-]
+        str = string_format(" {0}", CCommonTool.GetTxtData(9342).m_str);
+        SetLabelContent(m_Diff6Path.."/Name", str, m_PanelObject);
+        SetSpriteByAtlasID(m_Diff6Path.."/Icon", 1574, m_PanelObject, true);
+        SetSpriteHeight(m_Diff6Path.."/Icon", 100, m_PanelObject);
+        SetSpriteWidth(m_Diff6Path.."/Icon", 100, m_PanelObject);
+end
+function LoadBossModel(modelId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(panelID);
+    buffer:WriteInt(modelId);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 删除boss3d模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(panelID);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 副本列表初始化
+function OnListViewInit(listView, cell, data)
+    local info = data.info;
+    --local activity = data.activity;
+    local go = cell.gameObject;
+    SetLabelTextByID("Normal/Name", info.DescId, go);
+    SetLabelTextByID("Select/Name", info.DescId, go);
+    SetLabelTextByID("Stage/Name", info.DescId2, go);
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    --local level = activity.openLevel;
+    local level = info.Level;
+    if userLevel >= level then
+        SetLabelContent("Level", "[FEEF9C]" .. string_format(
+        --[[ {0}级 ]]
+        CCommonTool.GetTxtData(8056).m_str, level), go);
+    else
+        SetLabelContent("Level", "[FF3D3D]" .. string_format(
+        --[[ {0}级 ]]
+        CCommonTool.GetTxtData(8056).m_str, level), go);
+    end
+end
+
+-- 副本列表左边选中第几个事件
+function OnListViewSelected(listView, dataIndex)
+    m_ListIndex = dataIndex;
+    local data = listView:GetData(dataIndex);
+    local level = data.info.Level;
+    local dungeons = DungeonManager.GetAllBossLobbyDungeons();
+    local count = 0;
+    ----------
+    local sortDiffDungeons = { };
+    m_DiffDungeons = { };
+    for _, data in ipairs(dungeons) do
+        if data.info.Level == level then
+            table.insert(sortDiffDungeons, data);
+            count = count + 1;
+        end
+    end
+    table.sort(sortDiffDungeons, function(d1, d2)
+        if d1.info.Id ~= d2.info.Id then
+            return d1.info.Id < d2.info.Id;
+        end
+    end);
+    local first=sortDiffDungeons[1];
+    for  _, data in ipairs(sortDiffDungeons) do 
+        if data.info.Id >6000 then
+            table.insert(m_DiffDungeons, data);
+        end
+    end
+    table.insert(m_DiffDungeons, first);
+    ----------
+    m_DiffCount = count;
+    CCommonTool.SetGameObjectGreyWithValue(m_Diff2, count < 2, 0.75, 0, 1, 0);
+    CCommonTool.SetGameObjectGreyWithValue(m_Diff3, count < 3, 0.75, 0, 1, 0);
+    CCommonTool.SetGameObjectGreyWithValue(m_Diff3, count < 4, 0.75, 0, 1, 0);
+    CCommonTool.SetGameObjectGreyWithValue(m_Diff3, count < 5, 0.75, 0, 1, 0);
+    CCommonTool.SetGameObjectGreyWithValue(m_Diff3, count < 6, 0.75, 0, 1, 0);
+
+    -- m_Diff2:SetActive(count >= 2);
+    -- m_Diff3:SetActive(count >= 3);
+
+    local diffIndex = 1;
+    if m_DiffIndex > 0 then
+        if m_DiffIndex <= count then
+            diffIndex = m_DiffIndex;
+        end
+    end
+    InitDungeonInfo(diffIndex);
+end
+
+-- 进入副本按钮点击事件
+function OnEnterButtonClick(gameObject)
+    local dungeons = DungeonManager.GetBossLobbyDungeons();
+    local data = dungeons[m_ListIndex+1];
+    local level = data.info.Level;
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    if userLevel >= level then
+        --DungeonProtocol.RequestEnterDungeonInBossLobby(m_DungeonId);
+        DungeonProtocol.RequestEnterDungeonInBossLobby(m_DungeonId,(m_ListIndex+1));
+        ForLeaveDungeonPanel.OnCloseClick();
+        error("进入副本按钮点击事件m_DungeonId="..m_DungeonId);
+    else
+        ShowSystemFlowTips(2861);
+        error("当前等级未达到要求！");
+    end
+end
+
+-- 多人按钮点击事件
+function OnTeamButtonClick(gameObject)
+    -- TeamPanel.OpenThisPanelByTag(1);
+    --TeamPanel.OpenByDungeonId(m_DungeonId);
+    local dungeons = DungeonManager.GetBossLobbyDungeons();
+    local data = dungeons[m_ListIndex+1];
+    local level = data.info.Level;
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    error(userLevel.."---"..level);
+    if userLevel >= level then
+        -- 点击传送场景
+        if m_DungeonId > 0 then
+            if G_UserInfo.RoleAttribute:GetAttackState() then
+                ShowSystemFlowTips(252);
+            else
+                JumpManager.BossLobbySceneTransfer(m_DungeonId, function(jumpType, success)
+                    if success == true then
+                        OnCloseClick();
+                    end
+                end );
+            end
+        else
+            error("多人进入副本按钮点击事件m_DungeonId异常！="..m_DungeonId);
+        end
+    else
+        ShowSystemFlowTips(2861);
+        error("当前等级未达到要求！");
+    end
+end
+
+-- 难度1Toggle'OnChange事件
+function OnDiff1Changed()
+    InitDungeonInfo(1);
+end
+
+-- 难度2Toggle'OnChange事件
+function OnDiff2Changed()
+    if m_DiffCount >= 2 then
+        InitDungeonInfo(2);
+    end
+end
+
+-- 难度3Toggle'OnChange事件
+function OnDiff3Changed()
+    if m_DiffCount >= 3 then
+        InitDungeonInfo(3);
+    end
+end
+
+-- 难度4Toggle'OnChange事件
+function OnDiff4Changed()
+    if m_DiffCount >= 4 then
+        InitDungeonInfo(4);
+    end
+end
+
+-- 难度5Toggle'OnChange事件
+function OnDiff5Changed()
+    if m_DiffCount >= 5 then
+        InitDungeonInfo(5);
+    end
+end
+
+-- 难度6Toggle'OnChange事件
+function OnDiff6Changed()
+    if m_DiffCount >= 6 then
+        InitDungeonInfo(6);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 关闭界面事件
+function OnCloseClick()
+    error("closePanelid="..panelID);
+    closePanel(panelID);
+    Delete3DModel();
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = { };
+    panelParams.listIndex = m_ListIndex;
+    panelParams.diffIndex = m_DiffIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    m_ListIndex = panelParams.listIndex;
+    m_DiffIndex = panelParams.diffIndex;
+end
+
+
+function IsInEquipBossPanelScene()
+    for k,v in ipairs(BossSceneID) do
+        if G_SceneMng.SceneID == v then
+            error("在装备Boss多人Boss场景！=".. v);
+            return true;
+        end
+    end
+    return false;
+end

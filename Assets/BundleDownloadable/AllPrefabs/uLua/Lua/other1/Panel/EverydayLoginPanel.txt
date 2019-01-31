@@ -1,0 +1,232 @@
+﻿module("EverydayLoginPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 登录天数
+local m_dayLogin = "Days/Day";
+-- 道具图标
+local m_itemLogin = "Days/Icons/Icon";
+----------------------------------通用的名称路径---------------------------------------
+-- 选中的登陆天数显示路径
+local m_daySelect = "/Sprite_Select";
+-- 道具图标
+local m_itemIcon = "/Sprite-DaoJuTuBiao";
+-- 领取图标
+local m_dayGet = "/Sprite_Get";
+-- 道具数量
+local m_itemCount = "/Label-Num";
+-- 道具背景
+local m_itemSprie = "/Item/Sprite2";
+-- 道具名称
+local m_itemName = "/Label-Name";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前签到的状态
+local m_EveryDayLoginState = nil;
+-- 当前领取的状态
+local m_EveryDayGetState = nil;
+-- 选中的是第几天
+local m_selectDay = nil;
+-- 记录上一次选择的是第几天
+local m_oldSelectDay = nil;
+-- 选中的登录的数据
+local m_rewardLoginInfo = nil;
+
+-- 今天是第几天登录
+local loginDay = 0;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化数据
+    InitData();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化点击事件
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        -- 初始化界面
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_EveryDayLoginState = nil;
+    m_EveryDayGetState = nil;
+    m_selectDay = nil;
+    m_oldSelectDay = nil;
+    m_rewardLoginInfo = nil;
+    loginDay = 0;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_EVERY_DAY_LOGIN_PANEL);
+end
+
+-- 初始化数据
+function InitData()
+    m_EveryDayLoginState = G_RewardMng:GetState(G_RewardMng.EveryDayLoginState, 7);
+    m_EveryDayGetState = G_RewardMng:GetState(G_RewardMng.EveryDayRewardGetState, 7);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitDaysContent();
+    AutoSetSelectDay();
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    for Index = 1, 7 do
+        SetGameObjectEvent(m_dayLogin .. Index, OnDayButtonClick, m_panelObject);
+    end
+end
+
+-- 初始化7天的数据
+function InitDaysContent()
+    local rewardLoginData = nil;
+    for index = 1, 7 do
+        rewardLoginData = CCommonTool.GetRewardLogin(index);
+        if rewardLoginData.RewordId <= 0 or rewardLoginData.RewordId == nil then
+            error("rewardLoginData.RewordId is null");
+            return;
+        end
+        local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardLoginData.RewordId);
+        local list = rewardInfo:GetAllItem();
+        local count = list.count;
+        local itemData = nil;
+        itemData = list[0];
+        if itemData.ExcelID > 0 then
+            if itemData.ItemDealType == 3 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+            elseif itemData.ItemDealType == 4 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+            -- 道具的品质
+            local pinZhiNum = CCommonTool.GetAptitudeIDByExcelID(itemData.ExcelID);
+            -- 道具图标
+            SetSpriteByAtlasID(m_itemLogin .. index .. m_itemIcon, CCommonTool.GetImageIDByExcelID(m_itemExcelID), m_panelObject, true);
+            -- 道具 名字 数量
+            -- 道具名字
+            if itemData.ExcelID ~= nil then
+                local itemName = GetTextToId(CCommonTool.GetNameIDByExcelID(itemData.ExcelID));
+                SetLabelContent(m_itemLogin .. index .. m_itemCount, itemData.ItemNum, m_panelObject);
+                SetLabelContent(m_itemLogin .. index .. m_itemName, itemName, m_panelObject);
+                -- 道具品质颜色
+                SetLabelPinZhi(m_itemLogin .. index .. m_itemName, pinZhiNum, m_panelObject);
+                SetGameObjectState(m_dayLogin .. index .. m_itemSprie, false, m_panelObject);
+                -- 领取状态
+                SetGameObjectState(m_dayLogin .. index .. m_daySelect, false, m_panelObject);
+                if m_EveryDayGetState[index - 1] == 1 and m_EveryDayLoginState[index - 1] == 1 then
+                    SetGameObjectState(m_itemLogin .. index .. m_dayGet, true, m_panelObject);
+                else
+                    SetGameObjectState(m_itemLogin .. index .. m_dayGet, false, m_panelObject);
+                end
+            end
+        end
+    end
+    for index = 1, 7 do
+        if m_EveryDayGetState[index - 1] == 0 and m_EveryDayLoginState[index - 1] == 1 then
+            SetGameObjectState(m_dayLogin .. index .. m_daySelect, true, m_panelObject);
+            SetGameObjectState(m_dayLogin .. index .. m_itemSprie, false, m_panelObject);
+            break;
+        end
+    end
+end
+
+-- 自动选择第几天
+function AutoSetSelectDay()
+    local firstZero = 0;
+    for index = 1, 7 do
+        if m_EveryDayLoginState[index - 1] == 0 then
+            firstZero = index;
+            loginDay = index - 1;
+            break;
+        end
+    end
+    if firstZero > 1 then
+        if m_EveryDayGetState[firstZero - 2] == 1 then
+            m_selectDay = firstZero;
+        elseif m_EveryDayGetState[firstZero - 2] == 0 then
+            m_selectDay = firstZero - 1;
+        end
+    elseif firstZero == 1 then
+        error("the first day is not login,it's conflict");
+    elseif firstZero == 0 then
+        m_selectDay = 7;
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击第几天按钮
+function OnDayButtonClick(e)
+    local num = tonumber(string.sub(e.name, 4, string.len(e.name)));
+    if m_selectDay ~= num then
+        m_selectDay = num
+    end
+    if m_EveryDayGetState[m_selectDay - 1] == 0 and m_EveryDayLoginState[m_selectDay - 1] == 1 then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_REQUEST_SIGNINREWARD);
+        buffer:WriteByte(m_selectDay);
+        G_NetWorkMng:SendMessage(buffer);
+         G_MusicMng:OnLoadMusic(4436)
+    elseif m_EveryDayGetState[m_selectDay - 1] == 0 and m_EveryDayLoginState[m_selectDay - 1] == 0 and m_EveryDayLoginState[m_selectDay - 2] == 1 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REWARD_TOMORROW);
+         G_MusicMng:OnLoadMusic(4435)
+    else
+        if m_selectDay - loginDay > 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REWARD_EVERYLOGIN, nil, { m_selectDay - loginDay });
+        end
+         G_MusicMng:OnLoadMusic(4435)
+    end
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function InitInfoOut()
+    if m_panelInitAlready then
+        -- 初始化数据
+        InitData();
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+
+function IsShowRedHintOnLogin()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        return false;
+    end
+    if not G_RewardMng:IsCanGetReward() then
+        return false;
+    end
+    return true;
+end

@@ -1,0 +1,55 @@
+﻿module("WaitDonePanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+local m_labelStr = "Rect/All/Label-Content";
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+local m_UITableStr = "Rect";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+local m_labelContent = nil;
+local m_bCreateSuccess = false;
+local m_panelObject = nil;
+local m_bindUITableComp = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitObjects();
+    InitAllInfo();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    -- 底下的挂点UITable组件
+    m_bindUITableComp = GetComponent(m_panelObject, m_UITableStr, "UITable");
+
+end
+
+-- 初始化背包的所有数据信息
+function InitAllInfo()
+    if m_labelContent ~= nil then
+        SetLabelContent(m_labelStr, m_labelContent, m_panelObject);
+    end
+    m_bindUITableComp:Reposition();
+end
+--------------------------------------按钮事件方法------------------------------------
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function functionParameter(paraTable)
+    -- 传递到侠客属性界面
+    m_labelContent = paraTable[1];
+    if m_bCreateSuccess then
+        InitAllInfo();
+    end
+end

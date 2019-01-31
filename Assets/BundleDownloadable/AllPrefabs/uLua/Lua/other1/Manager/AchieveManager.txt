@@ -1,0 +1,311 @@
+﻿module("AchieveManager", package.seeall)
+
+TYPE_LEVEL = 10101; --角色等级
+TYPE_FIGHTPOWER = 10102;    --角色战力
+TYPE_ROLE_ADVANCE = 10103; --角色进阶
+TYPE_MONEY = 10501; --金币数量
+TYPE_RIDE_COUNT = 20601;    --坐骑数量
+TYPE_FRIEND_COUNT = 50101;  --好友数量
+
+STATE_DOING = 1;    --成就正在进行中
+STATE_FINISH = 2;   --成就已经完成
+STATE_GETAWARD = 3; --成就已经领取奖励
+STATE_NOTSTART = 4; --成就尚未开始
+
+-- 总的成就点数
+totalPoint = 0;
+--成就宝箱领取过的成就点
+boxTotalPoint = 0;
+
+--成就表所有数据 key:Id
+achieves = nil;
+--标签->类型table
+tabTypes = nil;
+--类型->成就列表table
+typeAchieves = nil;
+--成就界面数据
+viewAchieves = nil;
+--当前正在进行的成就数据 key:Id
+activeAchieves = nil;
+
+-- 初始化所有表数据, 存到lua端, 方便读取
+function InitAllInfo()
+    achieves = {};
+    tabTypes = {};
+    typeAchieves = {};
+    local list = CCommonTool.GetAllAchieveData();
+    for i = 0, list.Count-1 do
+        local info = list[i];
+        achieves[info.Id] = info;
+        local _type = info.CompleteKey;
+        local tabId = info.CompleteType;
+        if not tabTypes[tabId] then
+            tabTypes[tabId] = {};
+        end
+        if not typeAchieves[_type] then
+            typeAchieves[_type] = {};
+            table.insert(tabTypes[tabId], _type);
+        end
+        table.insert(typeAchieves[_type], info);
+    end
+end
+
+--更新指定标签页下正在进行的成就列表
+--@param serverAchieves 服务器成就列表typeId->achieve
+--@param tabId 标签页ID
+function UpdateAchieves(serverAchieves, tabId)
+    if achieves == nil then
+        InitAllInfo();
+    end
+    if not viewAchieves or tabId == -1 then 
+        viewAchieves = {};
+        activeAchieves = {};
+    end
+
+    if tabId == -1 then
+        -- 客户端计算正在进行的成就
+        for tabId, types in pairs(tabTypes) do
+            UpdateTabAchieves(tabId, serverAchieves);
+        end
+    else
+        UpdateTabAchieves(tabId, serverAchieves);
+    end
+end
+
+--更新分页下的成就列表
+function UpdateTabAchieves(tabId, serverAchieves)
+    ClearTabActiveAchieves(tabId);
+    viewAchieves[tabId] = {};
+    local tabAchieves = viewAchieves[tabId];
+    local types = tabTypes[tabId];
+    for i, typeId in ipairs(types) do
+        local data = serverAchieves[typeId];
+        local info = nil;
+        if not data then
+            info = typeAchieves[typeId][1];
+        else
+            info = achieves[data.id];
+        end
+        local achieve = nil;
+        if data then
+            achieve = {info = info, data = data};
+            for _, ach in ipairs(typeAchieves[typeId]) do
+                -- 服务器只记录同类型中正在进行的成就
+                -- 客户端需要把完成的成就加到列表中
+                if ach.Id < info.Id then
+                    local t = CreateAchieve(ach.Id, STATE_GETAWARD, ach.GoalNum);
+                    table.insert(tabAchieves, t);
+                    activeAchieves[ach.Id] = t;
+                end
+            end
+        elseif info.AchieveActive == 0 then
+            achieve = CreateAchieve(info.Id, STATE_DOING, 0);
+        end
+        if achieve then
+            table.insert(tabAchieves, achieve);
+            activeAchieves[info.Id] = achieve;
+        end
+    end
+    table.sort(tabAchieves, SortAchieves);
+end
+
+function CreateAchieve(id, state, count)
+    local info = achieves[id];
+    if not info then 
+        error(string_format("achieve id '{0}' not invalid!", id));
+        return nil;
+    end
+    return {
+        info = info,
+        data = {
+            id = info.Id,
+            typeId = info.CompleteKey,
+            state = state,
+            count = count,
+            count2 = 0
+        }
+    };
+end
+
+function ClearTabActiveAchieves(tabId)
+    if not activeAchieves then
+        return;
+    end
+    -- 清除tabId标签下的数据
+    for id, achieve in pairs(activeAchieves) do
+        if achieve.info.CompleteType == tabId then
+            activeAchieves[id] = nil;
+        end
+    end
+end
+
+-- 界面成就列表排序规则
+function SortAchieves(ach1, ach2)
+    if ach1.data.state == ach2.data.state then
+        return ach1.data.id < ach2.data.id;
+    end
+    if ach1.data.state == STATE_FINISH or ach2.data.state == STATE_FINISH then
+        return ach1.data.state == STATE_FINISH;
+    end
+    return ach1.data.state < ach2.data.state;
+end
+
+-- 更新单个成就信息
+function UpdateAchieve(id, state, count)
+    if not viewAchieves then
+        UpdateAchieves({}, -1);
+    end
+    local info = achieves[id];
+    local tabId = info.CompleteType;
+    local typeId = info.CompleteKey;
+    local tabAchieves = viewAchieves[tabId];
+    if not tabAchieves then
+        viewAchieves[tabId] = {};
+        tabAchieves = viewAchieves[tabId];
+    end
+    if state == STATE_FINISH then 
+        count = info.GoalNum;
+    end
+    local achieve = activeAchieves[id];
+    if achieve then
+        achieve.data.state = state;
+        achieve.data.count = count;
+    else
+        achieve = CreateAchieve(id, state, count);
+        activeAchieves[id] = achieve;
+        table.insert(tabAchieves, achieve);
+    end
+    for _, ach in ipairs(tabAchieves) do
+        -- 重置完成成就的状态和数量
+        if ach.data.typeId == typeId and ach.data.id < id then
+            ach.data.count = ach.info.GoalNum;
+            ach.data.state = STATE_GETAWARD;
+        end
+    end
+    table.sort(tabAchieves, SortAchieves);
+end
+
+-- 是否有完成状态的成就
+function HasFinishStateAchieveWithTabId(tabId)
+    if viewAchieves then
+        local tabAchieves = viewAchieves[tabId];
+        if tabAchieves then
+            for _, achieve in pairs(tabAchieves) do
+                if achieve.data.state == STATE_FINISH then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 是否有完成状态的成就(成就红点)
+function HasFinishStateAchieve()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_ACHIEVE) then
+        return false;
+    end
+    if not achieves then
+        -- 请求成就数据
+        AchieveProtocol.RequestList(-1);
+        return false;
+    end
+
+    local reward = GetCurrentRewardInfo();
+    if reward ~= nil and totalPoint >= reward.PointNum then
+        return true;
+    end
+
+    if activeAchieves then
+        for id, achieve in pairs(activeAchieves) do
+            if achieve.data.state == STATE_FINISH then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+function GetAchieveInfo(achieveId)
+    if not achieves then
+        InitAllInfo();
+    end
+    return achieves[achieveId];
+end
+
+function GetViewAchieves()
+    if not viewAchieves then
+        UpdateAchieves({}, -1);
+    end
+    return viewAchieves;
+end
+
+--获取当前成就点奖励信息
+function GetCurrentRewardInfo()
+    local rewards = CCommonTool.GetAllRewardAchieveInfo();
+    local point = boxTotalPoint;
+    for i = 0, rewards.Count - 1 do
+        local info = rewards[i];
+        if point == 0 or point < info.PointNum then
+            return info;
+        end
+    end
+    return nil;
+end
+
+-- 获取成就的记数数据 
+-- @param  isNotopen：请求未开启的成就数量
+function GetAchieveCurrentCount(achieve, isNotopen)
+    local data = achieve.data;
+    local info = achieve.info;
+    local state = data.state;
+    if isNotopen == nil then 
+        if state == STATE_GETAWARD or state == STATE_FINISH then
+            return info.GoalNum;
+        end
+    end
+    local typeId = info.CompleteKey;
+    if typeId == TYPE_LEVEL then
+        return G_UserInfo.RoleAttribute.Level;
+    elseif typeId == TYPE_FIGHTPOWER then
+        return math.floor(G_UserInfo.RoleAttribute.BattlePower);
+    --elseif typeId == TYPE_ROLE_ADVANCE then
+    --    return G_UserInfo.RoleAttribute.CultivateLv;
+    elseif typeId == TYPE_MONEY then
+        return G_UserInfo.BindCoin;
+    elseif typeId == TYPE_RIDE_COUNT then
+        local count = 0;
+        for _, v in pairs(LogicData_RideData) do
+            count = count + 1;
+        end
+        return count;
+    end
+    return data.count;
+end
+
+-- 获取成就的完成数量
+-- @param id 成就ID isNotopen：请求未开启的成就数量
+function GetAchieveCountById(id, isNotopen)
+    local achieve = activeAchieves[id];
+    if achieve == nil then
+        return 0;
+    end
+    return GetAchieveCurrentCount(achieve, isNotopen);
+end
+
+-- 获取未开始的成就的数据
+function GetNotOpenAch(typeID, info)
+    local t = {};
+    for _, ach in ipairs(typeAchieves[typeID]) do
+        if activeAchieves[ach.Id] ~= nil and activeAchieves[ach.Id].data.state ~= STATE_NOTSTART then 
+            t = CreateAchieve(info.Id, STATE_NOTSTART, GetAchieveCountById(ach.Id, true));
+        end
+    end
+    return t;
+end
+
+function Clear()
+    totalPoint = 0;
+    viewAchieves = nil;
+    activeAchieves = nil;
+end

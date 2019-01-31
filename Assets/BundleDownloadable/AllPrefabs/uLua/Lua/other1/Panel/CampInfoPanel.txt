@@ -1,0 +1,462 @@
+﻿module("CampInfoPanel", package.seeall)
+-- 面板名称
+local m_panelName = "CampInfoPanel";
+---------------------------------------label路径---------------------------------------
+-- 红色阵营人数比例
+local m_LbNumRed = "Sub_Mid/Sub_Compare/lb_NumRed";
+-- 蓝色阵营人数比例
+local m_LbNumBlue = "Sub_Mid/Sub_Compare/lb_NumBlue";
+-- 阵营等级
+local m_LbCampLv = "Sub_Right/lb_CampLv";
+-- 阵营繁荣值
+local m_LbCampExpNum = "Sub_Right/bar_CampExp/lb_Num";
+-- 当前最高军衔
+local m_LbMaxMilitaryRank = "Sub_Right/lb_MilitaryRankName";
+-- 阵营矿产值
+local m_LbCampWoodNum = "Sub_Right/bar_CampWoodRes/lb_Num";
+-- 阵营粮草值
+local m_LbCampFoodNum = "Sub_Right/bar_CampFoodRes/lb_Num";
+-- 我的军衔等级
+local m_LbMyMilitaryRank = "Sub_Right/Sub_Bottom/Sub_Military/lb_MilitaryRankName";
+-----------------------------------------按钮路径--------------------------------------
+-- 阵营商店
+local m_BtnCampStorePath = "btn_CampStore";
+-- 领取俸禄
+local m_BtnGetSalaryPath = "btn_GetSalary";
+-- 领取红点
+local m_BtnRedHintPath = "btn_GetSalary/RedHint";
+-- 阵营捐献按钮
+local m_BtnContributePath = "Sub_Right/btn_Contribute";
+-- 捐献界面关闭按钮
+local m_BtnContributeClosePath = "Sub_Donation/btn_Close";
+-- 矿产捐献按钮右边
+local m_BtnDonatePath = "Sub_Donation/Item1/Button_Donate";
+-- 粮草捐献按钮左边
+local m_BtnFoodDonatePath = "Sub_Donation/Item2/Button_Donate";
+-- 关闭军衔奖励弹窗
+local m_BtnCancelPath = "Sub_Submit/btn_Cancel";
+-- 领取军衔奖励
+local m_BtnGetPath = "Sub_Submit/btn_Get";
+-- 解释说明按钮
+local m_explainButton = "Sub_Right/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 我的军衔图片
+local m_SpMyMilitaryPath = "Sub_Right/Sub_Bottom/Sub_Military/sp_Icon";
+--左边捐献
+local m_LeftCostPath = "Sub_Donation/Item1/lb_Cost/sp_Cost";
+--右边捐献
+local m_RightCostPath = "Sub_Donation/Item2/lb_Cost/sp_Cost";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 繁荣度进度条
+local m_BarCampExpPath = "Sub_Right/bar_CampExp";
+-- 阵营铁矿进度条
+local m_BarCampWoodResPath = "Sub_Right/bar_CampWoodRes";
+-- 阵营粮草进度条
+local m_BarCampFoodResPath = "Sub_Right/bar_CampFoodRes";
+-- 功勋进度条
+local m_BarMilitaryPath = "Sub_Right/Sub_Bottom/Sub_Military/bar_Military";
+----------------------------------通用的名称路径---------------------------------------
+-- 红色阵营
+local m_CampRedPath = "Sub_Mid/Sub_CampRed";
+-- 蓝色阵营
+local m_CampBluePath = "Sub_Mid/Sub_CampBlue";
+-- 捐献界面
+local m_SubDonationPath = "Sub_Donation";
+-- 领取军衔奖励弹窗
+local m_SubSubmitPath = "Sub_Submit";
+local m_GetItemPath = "Sub_Submit/Sub_Cost/Sprite_Mask";
+-- 军衔俸禄
+local m_RewardsPath = "Sub_Submit/Sub_Rewards/Item";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 繁荣度进度条
+local m_BarCampExp = nil;
+-- 阵营铁矿进度条
+local m_BarCampWoodRes = nil;
+-- 阵营粮草进度条
+local m_BarCampFoodRes = nil;
+-- 功勋进度条
+local m_BarMilitary = nil;
+-- 俸禄每日领取次数
+local canGetNum = nil;
+-- 俸禄领取消耗道具数量
+local costItemNum = nil;
+-- 俸禄领取消耗道具excelID
+local costExcelID = nil;
+-- 军衔数据表
+local m_creditData = nil;
+-----------------------------------一些写死的规定--------------------------------------
+local ENUM_COINTYPE = {
+    -- 第一位为钻石(非绑定)红钻
+    [1] = { IconID = 601 },
+    -- 第二位为钻石（绑定）蓝钻
+    [2] = { IconID = 605 },
+    -- 第三位为金币（非绑定）
+    [3] = { IconID = 604 },
+    -- 第四位为银币绑定）
+    [4] = { IconID = 600 },
+    -- 第五位为体力
+    [5] = { IconID = 602 },
+    -- 第六位为功勋
+    [6] = { IconID = 611 },
+    -- 第七位为公会贡献度
+    [7] = { IconID = 612 },
+    -- 第八位为公会资金
+    [8] = { IconID = 614 },
+};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitData();
+    InitShow();
+    InitClickEvent();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_panelInitAlready = false;
+    m_BarMilitary = nil;
+    m_BarCampExp = nil;
+    m_BarCampWoodRes = nil;
+    m_BarCampFoodRes = nil;
+    canGetNum = nil;
+    costItemNum = nil;
+    costExcelID = nil;
+    m_creditData = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    -- 面板对象
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    m_PanelObject = child(m_PanelObject,m_panelName).gameObject;
+
+    m_BarCampExp = GetComponent(m_PanelObject, m_BarCampExpPath, "UIProgressBar");
+    m_BarCampWoodRes = GetComponent(m_PanelObject, m_BarCampWoodResPath, "UIProgressBar");
+    m_BarCampFoodRes = GetComponent(m_PanelObject, m_BarCampFoodResPath, "UIProgressBar");
+    m_BarMilitary = GetComponent(m_PanelObject, m_BarMilitaryPath, "UIProgressBar");
+end
+
+function InitClickEvent()
+    SetGameObjectEvent(m_BtnCampStorePath, OnBtnCampStoreClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnGetSalaryPath, OnBtnGetSalaryClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnContributePath, OnBtnContributeClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnContributeClosePath, OnBtnContributeCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnDonatePath, OnBtnDonateClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnFoodDonatePath, OnBtnFoodDonateClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnCancelPath, OnBtnCancelClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnGetPath, OnBtnGetClick, m_PanelObject);
+    SetGameObjectEvent(m_GetItemPath, OnBtnGetItemClick, m_PanelObject);
+    -- 解释说明按钮
+    SetGameObjectEvent(m_explainButton, OnExplainClick,m_PanelObject);
+end
+
+function InitData()
+    m_creditData = CCommonTool.GetCreditDataInfos();
+    canGetNum = CCommonTool.GetDefineInfo(6501):GetIntContent();
+    costItemNum = CCommonTool.GetDefineInfo(6502):GetIntContent();
+    costExcelID = CCommonTool.GetDefineInfo(6500):GetIntContent();
+end
+
+function InitShow()
+    print("CampManager.CampAllInfo = ",SerializeTable(CampManager.CampAllInfo));
+    if CampManager.CampAllInfo == nil then return end
+    -- 阵营信息
+    local campData = CampManager.CampAllInfo;
+    SetGameObjectState(m_CampRedPath, campData.unionID == ENUM_CAMP_TYPE.ENUM_UNIT_BULUO, m_PanelObject);
+    SetGameObjectState(m_CampBluePath, campData.unionID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG, m_PanelObject);
+    if campData.unionID == ENUM_CAMP_TYPE.ENUM_UNIT_BULUO then 
+        SetLabelContent(m_LbNumRed, campData.memberRt .. "%", m_PanelObject);
+        SetLabelContent(m_LbNumBlue, (100 - campData.memberRt) .. "%", m_PanelObject);
+    else
+        SetLabelContent(m_LbNumBlue, campData.memberRt .. "%", m_PanelObject);
+        SetLabelContent(m_LbNumRed, (100 - campData.memberRt) .. "%", m_PanelObject);
+    end
+    SetLabelContent(m_LbCampLv, "Lv.".. campData.uninoLv, m_PanelObject);
+    -- 进度
+    local allCampLvData = CCommonTool.GetCampLvInfo();
+    local campLvData = nil;
+    if campData.uninoLv >= allCampLvData.count then 
+        campLvData = CCommonTool.GetCampLvByIndex(allCampLvData.count - 1);
+    else
+        campLvData = CCommonTool.GetCampLvByIndex(campData.uninoLv);
+    end
+    if campLvData ~= nil then
+        -- 繁荣度
+        SetLabelContent(m_LbCampExpNum, campData.unionExp.."/"..campLvData.NeedBoom, m_PanelObject);
+        m_BarCampExp.value = campData.unionExp / campLvData.NeedBoom;
+        -- 阵营铁矿
+        SetLabelContent(m_LbCampWoodNum, campData.unionMineral.."/"..campLvData.NeedIron, m_PanelObject);
+        m_BarCampWoodRes.value = campData.unionMineral / campLvData.NeedIron;
+        -- 阵营粮草
+        SetLabelContent(m_LbCampFoodNum, campData.unionFood.."/"..campLvData.NeedFood, m_PanelObject);
+        m_BarCampFoodRes.value = campData.unionFood / campLvData.NeedFood;
+    end
+    -- 当前最高军衔
+    local MaxMilitaryData = CCommonTool.GetCreditDataInfo(campData.MaxMilitary);
+--    if MaxMilitaryData ~= nil then
+--        if campData.unionID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then
+--            SetLabelContent(m_LbMaxMilitaryRank, GetTextToId(MaxMilitaryData.NameID), m_PanelObject);
+--        else
+--            SetLabelContent(m_LbMaxMilitaryRank, GetTextToId(MaxMilitaryData.NameID1), m_PanelObject);
+--        end
+--        SetSpriteByAtlasID(m_LbMaxMilitaryRank.."/sp_Icon", MaxMilitaryData.PictureId, m_PanelObject, true);
+--    end
+    -- 我的军衔
+    local myMilitary = CampManager.GetMilitaryRank();
+--    local MyMilitaryData = CCommonTool.GetCreditDataInfo(campData.MyMilitary);
+    local MyMilitaryData = CCommonTool.GetCreditDataInfo(myMilitary);
+    if MyMilitaryData ~= nil then
+        SetSpriteByAtlasID(m_SpMyMilitaryPath, MyMilitaryData.PictureId, m_PanelObject, true);
+        m_BarMilitary.value = campData.unionExploit / MyMilitaryData.CurTotalNeed;
+        if campData.unionID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then
+            SetLabelContent(m_LbMyMilitaryRank, GetTextToId(MyMilitaryData.NameID), m_PanelObject);
+        else
+            SetLabelContent(m_LbMyMilitaryRank, GetTextToId(MyMilitaryData.NameID1), m_PanelObject);
+        end
+    end
+
+    InitButtonState();
+end
+
+
+--------------------------------------按钮事件方法------------------------------------
+-- 打开阵营商店
+function OnBtnCampStoreClick(gameObject)
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.CampShop);
+end
+
+-- 领取军衔俸禄
+function OnBtnGetSalaryClick(gameObject)
+    local campData = CampManager.CampAllInfo;
+    if canGetNum > campData.getSalaryCount then
+        OnShowGetSalary();
+    end
+end
+
+-- 阵营捐献按钮
+function OnBtnContributeClick(gameObject)
+    OnShowContribution();
+end
+
+-- 捐献界面关闭
+function OnBtnContributeCloseClick(gameObject)
+    SetGameObjectState(m_SubDonationPath, false, m_PanelObject);
+    -- 关闭时刷新一下进度
+    InitShow();
+end
+
+-- 粮食捐献--》左边捐献
+function OnBtnDonateClick(gameObject)
+    -- 阵营信息
+    local campData = CampManager.CampAllInfo;
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    -- 捐献数据
+    local contributeData=CampDonationTable.Get(myLv)
+    if contributeData ~= nil then
+        if contributeData.IronNum <= campData.mineralDCount then 
+            -- 捐献次数已达上限
+            ShowSystemFlowTips(4090);
+            return;
+        end
+        if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(contributeData.FoodMoneyValue), ENUMPANELID.ENUM_PANEL_CAMPPANEL, OnExchangeLeftMoneyCallBack) then
+                OnExchangeLeftMoneyCallBack();
+        else
+
+        end
+
+    end
+end
+
+function OnExchangeLeftMoneyCallBack()
+    -- 发送消息
+    CampProtocol.RequestContribute(3);
+end
+
+function OnExchangeRightMoneyCallBack()
+    -- 发送消息
+    CampProtocol.RequestContribute(4);
+end
+-- 矿石捐献--》右边捐献
+function OnBtnFoodDonateClick(gameObject)
+    -- 阵营信息
+    local campData = CampManager.CampAllInfo;
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    -- 捐献数据
+    --local contributeData = CCommonTool.GetCampDonatioByIndex(myLv);
+    local contributeData=CampDonationTable.Get(myLv)
+    if contributeData ~= nil then
+    error(contributeData.FoodNum.."--"..campData.grainDCount);
+        if contributeData.FoodNum <= campData.grainDCount then 
+            -- 捐献次数已达上限
+            ShowSystemFlowTips(4090);
+            return;
+        end
+        --if G_UserInfo.BindDiamond < contributeData.FoodMoneyValue then
+            -- 蓝钻不足
+            --ShowSystemFlowTips(4111);
+         --   MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_DIAMOND,false,nil,ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+         --   return;
+        --end
+        if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND, math.abs(contributeData.IronMoneyValue), ENUMPANELID.ENUM_PANEL_CAMPPANEL, OnExchangeRightMoneyCallBack) then
+            OnExchangeRightMoneyCallBack();
+        else
+
+        end
+    end
+    -- 发送消息
+    --CampProtocol.RequestContribute(4);
+end
+
+-- 关闭领取奖励弹窗
+function OnBtnCancelClick(gameObject)
+    SetGameObjectState(m_SubSubmitPath, false, m_PanelObject);
+end
+
+-- 领取军衔奖励
+function OnBtnGetClick(gameObject)
+    local costExcelID = CCommonTool.GetDefineInfo(6500):GetIntContent();
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    if num <= 0 then  
+        ShowSystemFlowTips(441);
+        return;
+    end
+--    local CRID = G_BagMng:GetCRIDByExcelID(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    -- 选择完成任务需要消耗的道具crid表发给服务器
+    local list = G_BagMng:GetCombineItemList(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID,1);
+    CampProtocol.RequestGetSalary(list);
+end
+
+-- 获得物品
+function OnBtnGetItemClick(gameObject)
+    GetWayPanel.Show(costExcelID, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+end
+
+-- 解释说明按钮
+function OnExplainClick(gameObject)
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_CAMPPANEL, 1);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 领取奖励按钮状态
+function InitButtonState()
+    -- 阵营信息
+    local campData = CampManager.CampAllInfo;
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    SetGameObjectState(m_BtnGetSalaryPath.."/lb_Received", campData.getSalaryCount >= canGetNum, m_PanelObject);
+    SetGameObjectState(m_BtnGetSalaryPath.."/Label", campData.getSalaryCount < canGetNum, m_PanelObject);
+    local btnGetSalary = child(m_PanelObject, m_BtnGetSalaryPath).gameObject;
+    if btnGetSalary ~= nil then 
+        if campData.getSalaryCount < canGetNum then 
+            CCommonTool.SetGameObjectGrey(btnGetSalary, false);
+        else
+            CCommonTool.SetGameObjectGrey(btnGetSalary, true);
+        end
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_INFO,CampBeyond3DPanel.IsShowRedHint());
+    if campData.getSalaryCount < canGetNum and costItemNum <= num then 
+        SetGameObjectState(m_BtnRedHintPath, true, m_PanelObject);
+    else
+        SetGameObjectState(m_BtnRedHintPath, false, m_PanelObject);
+    end
+end
+
+function IconIninal(contributeData)
+    --1红钻,2蓝钻,3金币,4银币
+    SetSpriteByAtlasID(m_SubDonationPath.."/Item1/lb_Cost/sp_Cost", ENUM_COINTYPE[contributeData.FoodMoneyType].IconID, m_PanelObject);
+    SetSpriteByAtlasID(m_SubDonationPath.."/Item2/lb_Cost/sp_Cost", ENUM_COINTYPE[contributeData.IronMoneyType].IconID, m_PanelObject);
+end
+
+-- 打开阵营捐献
+function OnShowContribution()
+    -- 阵营信息
+    local campData = CampManager.CampAllInfo;
+    SetGameObjectState(m_SubDonationPath, true, m_PanelObject);
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    -- 捐献数据
+    --local contributeData = CCommonTool.GetCampDonatioByIndex(myLv);
+    local contributeData=CampDonationTable.Get(myLv)
+    if contributeData ~= nil then
+        IconIninal(contributeData);
+        -- 右边
+        SetLabelContent(m_SubDonationPath.."/Item2/Lable_Middle/Money_IronCount", contributeData.IronGetValue, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item2/Lable_Middle/Money_GrassCount", contributeData.FoodGetValue1, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item2/Lable_Middle/Label_GuildMoney", contributeData.IronCampMoney, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item2/Lable_Middle/Label_Contribution", contributeData.IronCreditExp, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item2/lb_Cost", contributeData.IronMoneyValue, m_PanelObject);
+        if G_UserInfo.BindCoin >= contributeData.FoodMoneyValue then
+            SetLabelColor(m_SubDonationPath.."/Item1/lb_Cost", "FFFFFF", m_PanelObject);
+        else
+            SetLabelColor(m_SubDonationPath.."/Item1/lb_Cost", "FF0000", m_PanelObject);
+        end
+        SetLabelContent(m_SubDonationPath.."/Item1/Label_Times", string_format(GetTextToId(1128), (contributeData.IronNum - campData.mineralDCount)), m_PanelObject);
+        -- 左边
+        SetLabelContent(m_SubDonationPath.."/Item1/Lable_Middle/Money_GrassCount", contributeData.FoodGetValue, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item1/Lable_Middle/Money_IronCount", contributeData.IronGetValue1, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item1/Lable_Middle/Label_GuildMoney", contributeData.FoodCampMoney, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item1/Lable_Middle/Label_Contribution", contributeData.FoodCreditExp, m_PanelObject);
+        SetLabelContent(m_SubDonationPath.."/Item1/lb_Cost", contributeData.FoodMoneyValue, m_PanelObject);
+        if G_UserInfo.BindDiamond >= contributeData.IronMoneyValue then
+            SetLabelColor(m_SubDonationPath.."/Item2/lb_Cost", "FFFFFF", m_PanelObject);
+        else
+            SetLabelColor(m_SubDonationPath.."/Item2/lb_Cost", "FF0000", m_PanelObject);
+        end
+        SetLabelContent(m_SubDonationPath.."/Item2/Label_Times", string_format(GetTextToId(1128), (contributeData.FoodNum - campData.grainDCount)), m_PanelObject);
+    end
+end
+
+-- 打开领取军衔奖励弹窗
+function OnShowGetSalary()
+    SetGameObjectState(m_SubSubmitPath, true, m_PanelObject);
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    SetItemShowByExcelIDV04(m_PanelObject, m_SubSubmitPath .. "/Sub_Cost/Item", costExcelID, 10, true, 16, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    SetGameObjectState(m_GetItemPath, num < costItemNum, m_PanelObject);
+    if num < costItemNum then
+        SetLabelContent(m_SubSubmitPath .. "/Sub_Cost/Item/Label_Num", "[ff0000]"..num.."[-]/" .. 1, m_PanelObject);
+    else
+        SetLabelContent(m_SubSubmitPath .. "/Sub_Cost/Item/Label_Num", "[ffffff]"..num.."[-]/" .. 1 , m_PanelObject);
+        SetItemToolTipsEvent(m_PanelObject, m_SubSubmitPath .. "/Sub_Cost/Item", ENUMPANELID.ENUM_PANEL_CAMPPANEL, false, costExcelID);
+    end
+    -- 每日军衔俸禄
+    local campData = CampManager.CampAllInfo;
+    CampManager.SetRewards(m_creditData[campData.MyMilitary - 1], m_PanelObject, m_RewardsPath, ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    -- 领取按钮文本
+    SetLabelContent(m_BtnGetPath.."/Label",string_format(GetTextToId(2209),canGetNum - campData.getSalaryCount,canGetNum), m_PanelObject);
+end
+
+-- 阵营捐献刷新ui
+function OnContributeRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CAMPPANEL) == 1 and IsObjectActive(m_PanelObject, m_SubDonationPath) then 
+        OnShowContribution();
+    end
+end
+
+-- 领取俸禄返回刷新ui
+function OnGetSalaryRefresh(num)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CAMPPANEL) == 1 and IsObjectActive(m_PanelObject, m_SubSubmitPath) then 
+        InitButtonState();
+        if canGetNum <= num then
+            SetGameObjectState(m_SubSubmitPath, false, m_PanelObject);
+            return;
+        end
+        RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_INFO,CampBeyond3DPanel.IsShowRedHint());
+        OnShowGetSalary();
+    end
+end

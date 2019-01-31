@@ -1,0 +1,27 @@
+﻿module("EverydayLoginProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 回复客户端请求签到记录的数据
+    network.Register(GMI_STOC_RETURN_SIGNIN_DATA, OnRewardLoginBack);
+end
+
+-- 回复客户端请求签到记录的数据
+function OnRewardLoginBack(protocolId, buffer)
+    local RewardLoginLoginData = buffer:ReadInt();
+    error("RewardLoginLoginData:::" .. RewardLoginLoginData);
+    WelfareManager.EveryDayLoginData(RewardLoginLoginData);
+    G_RewardMng:DealServerData(RewardLoginLoginData);
+    --G_RewardMng.IsCloseEveryDay = RewardLoginLoginData;
+    if IsOpenPanel(ENUMPANELID.ENUM_EVERY_DAY_LOGIN_PANEL) == 1 then
+        EverydayLoginPanel.InitInfoOut();
+    end
+    if G_SceneMng.isAlreadyInGame then
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLOGIN, EverydayLoginPanel.IsShowRedHintOnLogin());
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        Main_MiddleTop.InitSevenDaysWelfare();
+    end
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

@@ -1,0 +1,152 @@
+﻿module('TimeLimitedActivityPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TimeLimitedActivityPanel';
+---------------------------------------label路径---------------------------------------
+-- 显示的内容
+local m_LabelContentPath = "Label-Content";
+-- 活动开启时间
+local m_LabelTimePath = "Label-Time";
+-- 面板关闭倒计时
+local m_LabelCountdownPath = "Button-FanHui/Label_Countdown";
+-----------------------------------------按钮路径--------------------------------------
+-- 确定按钮
+local m_ButtonQueDingPath = "Button-QueDing";
+-- 取消按钮
+local m_ButtonFanHuiPath = "Button-FanHui";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL);
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonQueDingPath, OnButtonQueDingClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonFanHuiPath, OnCloseClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+    -- 当前开启的活动表里存在数据时，取第一个提示
+    if activityOpening and #activityOpening > 0 then
+        local data = CCommonTool.GetActivityListDataInfo(activityOpening[1].ID);
+        local name = GetTextToId(data.Name);
+        local openTime = "";
+        if activityOpening[1].isFixedTime then
+            openTime = ActivityManager.GetCurrentOpenTime(activityOpening[1].ID);
+        else
+            local data = _G.LogicData_TimeLimitedActivityData.UnFixed;
+            if data and #data > 0 then 
+                for i,v in pairs(_G.LogicData_TimeLimitedActivityData.UnFixed) do
+                    if activityOpening[1].ID == v.ID then
+                        openTime = v.startTime .."-"..v.endTime;
+                        table.remove(_G.LogicData_TimeLimitedActivityData.UnFixed, i);
+                        break;
+                    end
+                end
+            end
+        end
+        SetLabelContent(m_LabelContentPath, string_format(--[[[E1B812]{0}[-]活动已经开始，是否前往参加？]]CCommonTool.GetTxtData(1583).m_str,name), m_PanelObject);
+        SetLabelContent(m_LabelTimePath, string_format(--[[[FFFDAE]开启时间：[-]{0}]]CCommonTool.GetTxtData(1584).m_str,openTime), m_PanelObject);
+    end
+    AddTimerEvent("TimeLimitedActivity", 30, OverCallBack, ETimeShowType.TypeNumberSeven, updateCallBack);
+end
+
+function OverCallBack()
+    local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+    local activityRemove = _G.LogicData_TimeLimitedActivityData.ENDING;
+    if activityRemove == nil then _G.LogicData_TimeLimitedActivityData.ENDING ={} end
+    if activityOpening and #activityOpening > 0 then 
+        if activityOpening[1].isFixedTime then 
+            local openTime = ActivityManager.GetCurrentActivityTime(activityOpening[1].ID);
+            local tempTable = {id = activityOpening[1].ID, openTime = openTime};
+            table.insert(_G.LogicData_TimeLimitedActivityData.ENDING, tempTable);  
+        end
+        table.remove(_G.LogicData_TimeLimitedActivityData.OPENING, 1);
+    end
+    G_TimerMng:RemoveTimeTask("TimeLimitedActivity");
+    closePanel(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL);
+    Main_Middle.InitTimeLimitedActivity();
+end
+function updateCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL) == 1 then
+        SetLabelContent(m_LabelCountdownPath, "("..timeTxt..")", m_PanelObject);
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 确定按钮点击
+function OnButtonQueDingClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL);
+    local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+    -- 当前开启的活动表里存在数据时，取第一个提示
+    if activityOpening and #activityOpening > 0 then
+        local data = CCommonTool.GetActivityListDataInfo(activityOpening[1].ID);
+        ActivityManager.Jump(data.Id);
+    end
+    -- 点击确定按钮时，将剩余当前可显示活动全部去掉
+    local activityRemove = _G.LogicData_TimeLimitedActivityData.ENDING;
+    if activityRemove == nil then _G.LogicData_TimeLimitedActivityData.ENDING ={} end
+    if activityOpening and #activityOpening > 0 then 
+        for i, v in pairs(_G.LogicData_TimeLimitedActivityData.OPENING) do   
+            if v.isFixedTime then 
+                local openTime = ActivityManager.GetCurrentActivityTime(v.ID);
+                local tempTable = {id = v.ID, openTime = openTime};
+                table.insert(_G.LogicData_TimeLimitedActivityData.ENDING, tempTable);  
+            end
+        end
+        _G.LogicData_TimeLimitedActivityData.OPENING = {};
+    end
+    G_TimerMng:RemoveTimeTask("TimeLimitedActivity");
+    Main_Middle.InitTimeLimitedActivity();
+end
+
+-- 取消按钮点击
+function OnCloseClick(gameObject)
+    OverCallBack();
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

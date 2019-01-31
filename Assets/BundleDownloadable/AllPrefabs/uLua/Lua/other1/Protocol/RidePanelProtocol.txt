@@ -1,0 +1,259 @@
+﻿module("RidePanelProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 玩家上线发送客户端坐骑数据
+    network.Register(GMI_STOC_RIDEPANELDATAINIT, RidePanelDataInit);
+    -- 激活坐骑的返回消息
+    network.Register(GMI_STOC_ACTIVEMOUNT_RETURN, ActiveMount);
+    -- 培养坐骑的返回消息
+    network.Register(GMI_STOC_FOSTERMOUNT_RETURN, FosterMount);
+    -- 培养十次坐骑的返回消息
+    network.Register(GMI_STOC_FOSTERMOUNTTENTIMES_RETURN, FosterMountTenTimes);
+    -- 坐骑进阶（升级）的返回消息
+    network.Register(GMI_STOC_MOUNTLEVELUP_RETURN, MountLevelUp);
+    -- 设置坐骑ID的返回消息
+    network.Register(GMI_STOC_SETRIDEPANELMOUNTID_RETURN, SetMountID);
+
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RidePanelDataInit(protocolId, buffer)
+    _G.LogicData_RideData = { };
+    local mountCount = buffer:ReadByte();
+    for Index = 1, mountCount do
+        local mountID = buffer:ReadInt();
+        LogicData_RideData[mountID] = { };
+        LogicData_RideData[mountID].level = buffer:ReadByte();
+        LogicData_RideData[mountID].attrTable = { };
+        local attrCount = buffer:ReadByte();
+        for i = 1, attrCount do
+            local a= buffer:ReadInt();
+            table.insert(LogicData_RideData[mountID].attrTable,a);
+        end
+    end
+end
+
+function ActiveMount(protocolId, buffer)
+    local mountID = buffer:ReadInt();
+    local resultID = buffer:ReadInt();
+    if resultID == 1 then
+        LogicData_RideData[mountID] = { };
+        LogicData_RideData[mountID].level = 1;
+        LogicData_RideData[mountID].attrTable = { [1] = 0, [2] = 0, [3] = 0, [4] = 0 , [5] = 0 };
+        ShowSystemFlowTips(5122);
+        G_MusicMng:OnLoadMusic(4410);
+    elseif resultID == -1 then
+        error("坐骑激活：坐骑系统已经关闭，无法操作");
+    elseif resultID == -2 then
+        error("坐骑激活：坐骑表不存在");
+    elseif resultID == -3 then
+        error("坐骑激活：坐骑表中不存在此坐骑数据");
+    elseif resultID == -4 then
+        error("坐骑激活：坐骑excelID不为100的整数倍");
+    elseif resultID == -5 then
+        error("坐骑激活：玩家身上已经有此坐骑");
+    elseif resultID == -6 then
+        error("坐骑激活：坐骑总数大于设定值");
+    elseif resultID == -7 then
+        error("坐骑激活：道具数量不足");
+    elseif resultID == -8 then
+        error("坐骑激活：金币消耗数据为负数");
+    elseif resultID == -9 then
+        error("坐骑激活：金币不足");
+    elseif resultID == -10 then
+        error("坐骑激活：这个激活的条件不存在");
+    elseif resultID == -11 then
+        error("坐骑激活：扣道具失败");
+    elseif resultID == -12 then
+        error("坐骑激活：扣金币失败");
+    elseif resultID == -13 then
+        error("坐骑激活：坐骑属性表不存在");
+    elseif resultID == -12 then
+        error("坐骑激活：坐骑属性表中不存在此坐骑数据");
+    end
+	if resultID == 1 then
+		RidePanel.MsgReturn(1);
+	else
+		RidePanel.MsgReturn(0);
+	end
+    
+end
+
+function FosterMount(protocolId, buffer)
+    local resultID = buffer:ReadInt();
+    if resultID == 1 then
+        local mountID = buffer:ReadInt();
+        local level = buffer:ReadByte();
+        local attrCount = buffer:ReadByte();
+        local attrValue;
+        for Index = 1, attrCount do
+            error("attrCount="..attrCount);
+            attrValue = buffer:ReadInt();
+            error("attrValue="..attrValue);
+            LogicData_RideData[mountID].attrTable[Index] = attrValue;
+        end
+        ShowSystemFlowTips(5129);
+        G_MusicMng:OnLoadMusic(4411);
+    elseif resultID == 0 then
+        G_MusicMng:OnLoadMusic(4412);
+        ShowSystemFlowTips(5128);
+    elseif resultID == -1 then
+        error("坐骑培养：坐骑系统已经关闭，无法操作");
+    elseif resultID == -2 then
+        error("坐骑培养：玩家身上没有此坐骑");
+    elseif resultID == -3 then
+        error("坐骑培养：坐骑培养表不存在");
+    elseif resultID == -4 then
+        error("坐骑培养：坐骑培养表中没有此数据");
+    elseif resultID == -5 then
+        error("坐骑培养：坐骑属性表不存在");
+    elseif resultID == -6 then
+        error("坐骑培养：坐骑属性表没有此数据");
+    elseif resultID == -7 then
+        error("坐骑培养：没有可以培养的属性");
+    elseif resultID == -8 then
+        error("坐骑培养：道具需求数量不足");
+    elseif resultID == -9 then
+        error("坐骑培养：金币不足");
+    elseif resultID == -10 then
+        error("坐骑培养：扣道具失败");
+    elseif resultID == -11 then
+        error("坐骑培养：扣金币失败");
+    elseif resultID == -12 then
+        error("坐骑培养：坐骑培养一个解锁的属性都没有，培养个p");
+    end
+    RidePanel.MsgReturn(0);
+end
+
+function FosterMountTenTimes(protocolId, buffer)
+    local resultID = buffer:ReadInt();
+    if resultID == -1 then
+        error("坐骑培养10次：坐骑系统已经关闭，无法操作");
+    elseif resultID == -2 then
+        error("坐骑培养10次：玩家身上没有此坐骑");
+    elseif resultID == -3 then
+        error("坐骑培养10次：坐骑培养表不存在");
+    elseif resultID == -4 then
+        error("坐骑培养10次：坐骑培养表中没有此数据");
+    elseif resultID == -5 then
+        error("坐骑培养10次：坐骑属性表不存在");
+    elseif resultID == -6 then
+        error("坐骑培养10次：坐骑属性表没有此数据");
+    end
+    local times = buffer:ReadByte();
+    local successCount = 0;
+    for Index = 1, times do
+        local result = buffer:ReadInt();
+        successCount = successCount + result;
+    end
+    if successCount > 0 then
+        local nameTable = { };
+        nameTable = { [1] = successCount };
+        ShowSystemFlowTips(5130, nil, nameTable);
+        G_MusicMng:OnLoadMusic(4411);
+    else
+        ShowSystemFlowTips(5131);
+        G_MusicMng:OnLoadMusic(4412);
+    end
+    
+    if resultID < 0 then
+        if resultID == -7 then
+            error("坐骑培养10次：没有可以培养的属性");
+        elseif resultID == -8 then
+            error("坐骑培养10次：道具需求数量不足");
+        elseif resultID == -9 then
+            error("坐骑培养10次：金币不足");
+        elseif resultID == -10 then
+            error("坐骑培养10次：扣道具失败");
+        elseif resultID == -11 then
+            error("坐骑培养10次：扣金币失败");
+        elseif resultID == -12 then
+            error("坐骑培养10次：没有可以继续培养的属性了");
+        end
+    end
+    local mountID = buffer:ReadInt();
+    local level = buffer:ReadByte();
+    local attrCount = buffer:ReadByte();
+    local attrValue;
+    for Index = 1, attrCount do
+        error("attrCount="..attrCount);
+        attrValue = buffer:ReadInt();
+        error("attrValue="..attrValue);
+        LogicData_RideData[mountID].attrTable[Index] = attrValue;
+    end
+    RidePanel.MsgReturn(0);
+end
+
+function MountLevelUp(protocolId, buffer)
+    local resultID = buffer:ReadInt();
+    if resultID == 1 then
+        local mountID = buffer:ReadInt();
+        local mountLevel = buffer:ReadInt();
+        LogicData_RideData[mountID].level = mountLevel;
+        for k, v in ipairs(LogicData_RideData[mountID].attrTable) do
+            v = 0;
+        end
+        for Index = 1, #LogicData_RideData[mountID].attrTable do
+            LogicData_RideData[mountID].attrTable[Index] = 0;
+        end
+        ShowSystemFlowTips(5136);
+        G_MusicMng:OnLoadMusic(4413);
+    elseif resultID == 0 then
+        error("培养坐骑：点太背了，居然没有升级坐骑成功");
+        G_MusicMng:OnLoadMusic(4414);
+        ShowSystemFlowTips(5135);
+    elseif resultID == -1 then
+        error("坐骑升级：坐骑系统已经关闭，无法操作");
+    elseif resultID == -2 then
+        error("坐骑升级：玩家身上没有此坐骑");
+    elseif resultID == -3 then
+        error("坐骑升级：坐骑表不存在");
+    elseif resultID == -4 then
+        error("坐骑升级：坐骑表中没有此数据");
+    elseif resultID == -5 then
+        error("坐骑升级：坐骑培养表不存在");
+    elseif resultID == -6 then
+        error("坐骑升级：坐骑培养表没有此数据");
+    elseif resultID == -7 then
+        error("坐骑升级：已经超过坐骑的最大等级了");
+    elseif resultID == -8 then
+        error("坐骑升级：坐骑属性表不存在");
+    elseif resultID == -9 then
+        error("坐骑升级：坐骑ID不存在坐骑属性表中");
+    elseif resultID == -10 then
+        error("坐骑升级：存在没有达到满格还解锁了的属性");
+    elseif resultID == -11 then
+        error("坐骑升级：满级了，到头了，不能继续进阶了");
+    elseif resultID == -12 then
+        error("坐骑升级：道具不足");
+    elseif resultID == -13 then
+        error("坐骑升级：金币不足");
+    elseif resultID == -14 then
+        error("坐骑升级：道具扣除失败");
+    elseif resultID == -15 then
+        error("坐骑升级：金币扣除失败");
+    end
+    RidePanel.MsgReturn(0);
+end
+
+function SetMountID(protocolId, buffer)
+    local resultID = buffer:ReadInt();
+    if resultID == 1 then
+        local mountID = buffer:ReadInt();
+        G_UserInfo.RoleAttribute.MountID = mountID;
+    elseif resultID == -1 then
+        error("坐骑升级：坐骑系统已经关闭，无法操作");
+    elseif resultID == -2 then
+        error("坐骑升级：玩家身上没有此坐骑");
+    elseif resultID == -3 then
+        error("坐骑升级：要设置的坐骑和当前身上的坐骑一样");
+    elseif resultID == -4 then
+        error("坐骑升级：坐骑表不存在");
+    elseif resultID == -5 then
+        error("坐骑升级：坐骑表中不存在此数据");
+    elseif resultID == -6 then
+        error("坐骑升级：此坐骑还没有达到可以骑乘的等级");
+    end
+    RidePanel.MsgReturn(0);
+end

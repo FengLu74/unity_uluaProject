@@ -1,0 +1,134 @@
+﻿module("TaskCallBack", package.seeall)
+-- 处理任务的脚本逻辑，参数1：任务ID，参数2：任务类型
+function DealMission(missionID, missionType)
+    if missionType == MISSIONSTATE.MISSION_MSG_TYPE_COUNT_CHANGE then
+        if missionID == 101130 then
+             --local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            --if missionInfo ~= nil and G_MissionMng:GetMissionStateById(missionID) == 3 then
+                --local paratable = { };
+                --table.insert(paratable, missionInfo.CompleteKeyValue5);
+                --table.insert(paratable, missionInfo.CompleteKeyValue5 + 1);
+                --table.insert(paratable, missionID);
+                --createPanelExx(ENUMPANELID.ENUM_PANEL_READINGPANEL, paratable);
+            --end
+            -- 小镇//采集伤员，查看消息
+        elseif missionID == 104090 then
+            local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            if missionInfo ~= nil and G_MissionMng:GetMissionStateById(missionID) == 3 then
+                local paratable = { };
+                table.insert(paratable, missionInfo.CompleteKeyValue5);
+                table.insert(paratable, missionInfo.CompleteKeyValue5 + 1);
+                table.insert(paratable, missionID);
+                createPanelExx(ENUMPANELID.ENUM_PANEL_READINGPANEL, paratable);
+            end
+            -- 森林/采集时间孢，阅读任务
+        elseif missionID == 106010 then
+            local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            if missionInfo ~= nil and G_MissionMng:GetMissionStateById(missionID) == 3 then
+                local paratable = { };
+                table.insert(paratable, missionInfo.CompleteKeyValue5);
+                table.insert(paratable, missionInfo.CompleteKeyValue5 + 1);
+                table.insert(paratable, missionID);
+                createPanelExx(ENUMPANELID.ENUM_PANEL_READINGPANEL, paratable);
+            end
+            -- 矿场/采集逃跑计划，阅读任务
+        elseif missionID == 103180 then
+            local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            if missionInfo ~= nil and G_MissionMng:GetMissionStateById(missionID) == 3 then
+                local paratable = { };
+                table.insert(paratable, missionInfo.CompleteKeyValue5);
+                table.insert(paratable, missionInfo.CompleteKeyValue5 + 1);
+                table.insert(paratable, missionID);
+                createPanelExx(ENUMPANELID.ENUM_PANEL_READINGPANEL, paratable);
+            end
+            -- 海底/采集安魂颂，阅读任务
+		elseif missionID == 105440 then
+            local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            if missionInfo ~= nil and G_MissionMng:GetMissionStateById(missionID) == 3 then
+                local paratable = { };
+                table.insert(paratable, missionInfo.CompleteKeyValue5);
+                table.insert(paratable, missionInfo.CompleteKeyValue5 + 1);
+                table.insert(paratable, missionID);
+                createPanelExx(ENUMPANELID.ENUM_PANEL_READINGPANEL, paratable);
+            end
+            -- 地宫/阅读号角，阅读任务
+		elseif missionID == 200490 then
+            local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            if missionInfo ~= nil and G_MissionMng:GetMissionStateById(missionID) == 3 then
+                local paratable = { };
+                table.insert(paratable, missionInfo.CompleteKeyValue5);
+                table.insert(paratable, missionInfo.CompleteKeyValue5 + 1);
+                table.insert(paratable, missionID);
+                createPanelExx(ENUMPANELID.ENUM_PANEL_READINGPANEL, paratable);
+            end
+            -- 支线任务附魔，阅读任务
+		elseif missionID == 106360 then
+            local missionInfo = CCommonTool.GetMissionInfoData(missionID);
+            if missionInfo ~= nil then
+                local buffer = ByteBuffer.New();
+                buffer:WriteInt(missionInfo.SpecialStoryId);
+                LuaEventDispatcher.TriggerByteBufferEvent(MoviePlotEvent.Awake,buffer);
+            end
+            -- 侦察森林的情况，侦察任务
+        elseif missionID == 100030 then
+            CCommonTool.CreateSceneEffect(40037, Vector3.New(87.5, 22.0, 85.5));
+            -- 反省，采集后出特效
+        elseif missionID == 106300 then
+            CCommonTool.CreateSceneEffect(40036, Vector3.New(160.8, 47.3, 110.6));
+            -- 烧毁矿井，采集
+        elseif missionID == 103550 then
+            CCommonTool.CreateSceneEffect(40049, Vector3.New(115.5, 12.4, 166.5));
+            -- 破除魔眼，采集
+        elseif missionID == 101270 then
+            CCommonTool.CreateSceneEffect(40036, Vector3.New(345.5, 3.1, 324.5));
+            -- 破坏战车，使用道具
+        elseif missionID == 101280 then
+            CCommonTool.CreateSceneEffect(40036, Vector3.New(370.5, 5.3, 297.5));
+            -- 破坏战车2，使用道具
+        elseif missionID == 101290 then
+            CCommonTool.CreateSceneEffect(40036, Vector3.New(387.5, 5.19, 283.5));
+            -- 破坏战车3，使用道具
+        elseif missionID == 101100 then
+            CCommonTool.CreateSceneEffect(40035, Vector3.New(305.5, 4.74, 204.5));
+			CCommonTool.CreateSceneEffect(40035, Vector3.New(304.5, 4.73, 207.5));
+            -- 小镇治疗伤员，使用道具
+        elseif missionID == 106240 then
+            CCommonTool.CreateSceneEffect(40044, Vector3.New(294, 43, 354));
+            -- 暴食，矿场，使用道具
+        elseif missionID == 103260 then
+            CCommonTool.CreateSceneEffect(40045, Vector3.New(199.5, 23.4, 35.5));
+            -- 使用项链囚禁八爪，使用道具，海底
+        elseif missionID == 103530 then
+            CCommonTool.CreateSceneEffect(40048, Vector3.New(87.5, 12.76, 137.5));
+            -- 魔咒，使用魔眼之力
+        elseif missionID == 104060 then
+            CCommonTool.CreateSceneEffect(40035, Vector3.New(125.5, 50, 141.5));
+            -- 使用药水为半精灵解毒
+        elseif missionID == 104180 then
+            CCommonTool.CreateSceneEffect(40050, Vector3.New(1014.9, 49, 216.5));
+            -- 使用火把火烧蜘蛛巢穴
+		elseif missionID == 105280 then
+            CCommonTool.CreateSceneEffect(40036, Vector3.New(47.5, 26.6, 89.5));
+            -- 地宫场景破坏战车，使用道具		
+        end
+    end
+    if missionType == MISSIONSTATE.MISSION_MSG_TYPE_ACCEPT then
+        -- if missionID == 101090 then
+            -- G_MissionMng:AutoFly();
+            -- 触发飞上山
+		-- elseif missionID == 101130 then
+			-- G_MissionMng:AutoFly();
+            -- 触发飞下山
+           --if missionID == 101433 then
+            --createPanel(ENUMPANELID.ENUM_PANEL_JOIN_UNIT);
+            -- 触发加入阵营面板
+        --end
+    end
+	if missionType == MISSIONSTATE.MISSION_MSG_TYPE_COMPLETE then
+        -- if missionID == 101170 then
+            -- CCommonTool.CreateSceneEffect(40034, Vector3.New(104.6, 14.6, 34.04));
+            -- 完成后触发的效果。留在备用
+        -- end
+    end
+end
+

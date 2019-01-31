@@ -1,0 +1,50 @@
+﻿module("GuildSkillProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 接收所有公会技能信息
+    network.Register(GMI_STOC_ALL_GUILD_SKILL_INFO, UpdateAllGuildSkill);
+    -- 接收单个公会技能信息
+    network.Register(GMI_STOC_SINGLE_GUILD_SKILL_INFO, UpdateGuildSkill);
+end
+
+-- 接收所有公会技能信息
+function UpdateAllGuildSkill(protocolId, buffer)
+    local count = buffer:ReadByte();
+    local skillLevels = {};
+    for i = 1, count do
+        local level = buffer:ReadUShort();
+        skillLevels[i] = level;
+    end
+    GuildManager.skillLevels = skillLevels;
+    --RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+end
+
+-- 接收单个公会技能信息
+function UpdateGuildSkill(protocolId, buffer)
+    if not GuildManager.skillLevels then
+        error("没有收到公会技能等级信息!");
+        return;
+    end
+    local index = buffer:ReadByte();
+    local level = buffer:ReadUShort();
+    GuildManager.skillLevels[index+1] = level;
+    GuildSkillPanel.Refresh();
+    GuildSkillPanel.OnSkillLevelUp(index+1);
+    ShowSystemFlowTips(4350);
+    --RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+-------------------------------------------------------发送协议 START-------------------------------------------------------
+
+-- 客户端请求公会技能升级
+function RequestSkillLevelUp(skillIndex)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GUILD_SKILL_LEVEL_UP);
+    buffer:WriteByte(skillIndex);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------发送协议 END-------------------------------------------------------

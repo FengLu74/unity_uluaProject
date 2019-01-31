@@ -1,0 +1,245 @@
+﻿module("ActivityStairProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 上线发送奥泰副本数据
+    network.Register(GMI_STOC_LGS_SEND_AOTAIACTIVITY_DATA, OnGetStairActivityData);
+    network.Register(GMI_STOC_ACTIVITY_TT_CHALLENGE_TIME, OnRefreshRecord);
+    -- 上线发送宝珠副本数据
+    network.Register(GMI_STOC_LGS_SEND_BALL_ACTIVITY_DATA, OnGetBallActivityData);
+    -- 上线发送宠物副本数据
+    network.Register(GMI_STOC_LGS_SEND_PET_ACTIVITY_DATA, OnGetPetActivityData);
+    -- 上线发送坐骑副本数据
+    network.Register(GMI_STOC_LGS_SEND_MOUNT_ACTIVITY_DATA, OnGetMountActivityData);
+    -- 上线发送神将副本数据
+    network.Register(GMI_STOC_LGS_SEND_SHO_ACTIVITY_DATA, OnGetShoActivityData);
+    -- 返回宝珠副本扫荡
+    network.Register(GMI_STOC_BALL_SWEEP_DATA_RETURN, OnGetBallActivitySweep);
+    -- 返回宠物副本扫荡
+    network.Register(GMI_STOC_PET_SWEEP_DATA_RETURN, OnGetPetActivitySweep);
+    -- 返回座骑副本扫荡
+    network.Register(GMI_STOC_MOUNT_SWEEP_DATA_RETURN, OnGetMountActivitySweep);
+    -- 返回神将副本扫荡
+    network.Register(GMI_STOC_SHO_SWEEP_DATA_RETURN, OnGetShoActivitySweep);
+    -- 點擊下一层返回结果
+    network.Register(GMI_STOC_LGS_ACTIVITY_LEVEL_GET, OnGetShoActivityLEVEL_GET);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+--返回是否能够进下一层
+function OnGetShoActivityLEVEL_GET(protocolId, buffer)
+    local act_id = buffer:ReadInt();         --ID
+    local next_state = buffer:ReadByte();  --1=能够进下一层
+    ActivityManager.SetGodAndBallState(act_id,next_state);
+end
+-- 上线发送奥泰副本数据
+function OnGetStairActivityData(protocolId, buffer)
+    local data = {};
+    data.layer = buffer:ReadUShort();   -- 即将的层数
+    ActivityManager.SetStairActivityData(EACTIVITYID.ACTIVITY_STAIR, data);
+end
+
+--刷新排行榜
+function OnRefreshRecord(protocolId, buffer)
+    local playerName = buffer:ReadStringByByte();
+    local challengeTime = buffer:ReadInt();
+    local data = 
+    {
+        Name = playerName;
+        Time = challengeTime;
+    };
+    ActivityStairPanel.RefreshRecord(data);
+end
+
+-- 上线发送宝珠副本数据
+function OnGetBallActivityData(protocolId, buffer)
+    local data = {};
+    data.layer = buffer:ReadUShort();   -- 即将的层数
+    data.state = buffer:ReadByte();    -- 扫荡状态 1:已扫荡 0:未扫荡
+    data.layerFightState = {};
+    for i = 1, 4 do
+        local bits =bit:d2b(buffer:ReadUInt());
+        for j = 32, 1, -1 do
+            table.insert(data.layerFightState, bits[j]);
+        end
+    end
+    error("宝珠 layerFightState:"..SerializeTable(data));
+    ActivityManager.SetStairActivityData(EACTIVITYID.ACTIVITY_BALL, data);
+end
+-- 上线发送宠物副本数据
+function OnGetPetActivityData(protocolId, buffer)
+    local data = {};
+    data.layer = buffer:ReadUShort();   -- 即将的层数
+    data.state = buffer:ReadByte();    -- 扫荡状态 1:已扫荡 0:未扫荡
+    data.layerFightState = {};
+    for i = 1, 4 do
+        local bits =bit:d2b(buffer:ReadUInt());
+        for j = 32, 1, -1 do
+            table.insert(data.layerFightState, bits[j]);
+        end
+    end
+    error("宠物 layerFightState:"..SerializeTable(data));
+    ActivityManager.SetStairActivityData(EACTIVITYID.ACTIVITY_PET, data);
+end
+-- 上线发送坐骑副本数据
+function OnGetMountActivityData(protocolId, buffer)
+    local data = {};
+    data.layer = buffer:ReadUShort();   -- 即将的层数
+    data.state = buffer:ReadByte();    -- 扫荡状态 1:已扫荡 0:未扫荡
+    data.layerFightState = {};
+    for i = 1, 4 do
+        local bits =bit:d2b(buffer:ReadUInt());
+        for j = 32, 1, -1 do
+            table.insert(data.layerFightState, bits[j]);
+        end
+    end
+    error("坐骑 layerFightState:"..SerializeTable(data));
+    ActivityManager.SetStairActivityData(EACTIVITYID.ACTIVITY_MOUNT, data);
+end
+
+-- 上线发送神将副本数据
+function OnGetShoActivityData(protocolId, buffer)
+    local data = {};
+    data.layer = buffer:ReadUShort();   -- 即将的层数
+    data.state = buffer:ReadByte();    -- 扫荡状态 1:已扫荡 0:未扫荡
+    data.layerFightState = {};
+    for i = 1, 4 do
+        local bits =bit:d2b(buffer:ReadUInt());
+        for j = 32, 1, -1 do
+            table.insert(data.layerFightState, bits[j]);
+        end
+    end
+    error("神将 layerFightState:"..SerializeTable(data));
+    ActivityManager.SetStairActivityData(EACTIVITYID.ACTIVITY_SHO, data);
+end
+
+-- 返回宝珠副本扫荡
+function OnGetBallActivitySweep(protocolId, buffer)
+    local size = buffer:ReadByte();
+    local items = {};
+    for i = 1, size do
+        local itemId = buffer:ReadInt();--物品ID
+        local itemNum = buffer:ReadInt();--物品数量
+        table.insert(items, {itemId, itemNum});
+    end
+    local isSendMail = buffer:ReadByte(); --是否发邮件
+    if isSendMail == true then
+        --【背包已满，道具将以邮件的形式发送】
+        ShowSystemFlowTips(728);
+    end
+    ActivityStairPanel.ShowSweepReward(items);
+    error("sweep");
+end
+
+-- 返回宠物副本扫荡
+function OnGetPetActivitySweep(protocolId, buffer)
+    local size = buffer:ReadByte();
+    local items = {};
+    for i = 1, size do
+        local itemId = buffer:ReadInt();
+        local itemNum = buffer:ReadInt();
+        table.insert(items, {itemId, itemNum});
+    end
+    local isSendMail = buffer:ReadByte();
+    if isSendMail == true then
+        --[背包已满，道具将以邮件的形式发送]
+        ShowSystemFlowTips(728);
+    end
+    ActivityStairPanel.ShowSweepReward(items);
+    error("sweep");
+end
+-- 返回坐骑副本扫荡
+function OnGetMountActivitySweep(protocolId, buffer)
+    local size = buffer:ReadByte();
+    local items = {};
+    for i = 1, size do
+        local itemId = buffer:ReadInt();
+        local itemNum = buffer:ReadInt();
+        table.insert(items, {itemId, itemNum});
+    end
+    local isSendMail = buffer:ReadByte();
+    if isSendMail == true then
+        ShowSystemFlowTips(728);
+    end
+    ActivityStairPanel.ShowSweepReward(items);
+    error("sweep");
+end
+
+-- 返回神将副本扫荡
+function OnGetShoActivitySweep(protocolId, buffer)
+    local size = buffer:ReadByte();
+    local items = {};
+    for i = 1, size do
+        local itemId = buffer:ReadInt();
+        local itemNum = buffer:ReadInt();
+        table.insert(items, {itemId, itemNum});
+    end
+    local isSendMail = buffer:ReadByte();
+    if isSendMail == true then
+        ShowSystemFlowTips(728);
+    end
+    ActivityStairPanel.ShowSweepReward(items);
+    error("sweep");
+end
+
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+-- 请求获取通过记录
+function RequestGetRecord(index)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_WJLYCHALLENGE_RANK);
+    buffer:WriteInt(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 神之试炼副本客户端请求
+-- @param opType 操作类型 0:下一层 1:扫荡
+function RequestStairActivity(opType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AOTAIACTIVITY_SWEEP_MSG);
+    -- 0:点击进入下一层 1:开始扫荡2：扫荡接受3：领奖
+    buffer:WriteByte(opType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 宝珠副本客户端请求
+-- @param opType 操作类型 0:下一层 1:扫荡
+function RequestBallActivity(opType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_BALL_ACTIVITY_MSG);
+    buffer:WriteByte(opType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 宠物副本客户端请求
+-- @param opType 操作类型 0:下一层 1:扫荡
+function RequestPetActivity(opType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_ACTIVITY_MSG);
+    buffer:WriteByte(opType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 坐骑副本客户端请求
+-- @param opType 操作类型 0:下一层 1:扫荡
+function RequestMountActivity(opType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MOUNT_ACTIVITY_MSG);
+    buffer:WriteByte(opType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 神将副本客户端请求
+-- @param opType 操作类型 0:下一层 1:扫荡
+function RequestShoActivity(opType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHO_ACTIVITY_MSG);
+    buffer:WriteByte(opType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

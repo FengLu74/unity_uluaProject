@@ -1,0 +1,296 @@
+﻿module('ChildBossLivenessPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ChildBossLivenessPanel';
+---------------------------------------label路径---------------------------------------
+-- 活跃度值
+local m_LivenessValuePath = "BoxGrid/LivenessValue";
+-- 奖励面板标题
+local m_RewardTitlePath = "RewardsContent/RewardTitle";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 奖励遮罩
+local m_RewardMaskPath = "RewardsContent/RewardMask";
+----------------------------------gameobject所在的路径---------------------------------
+-- 宝箱1
+local m_Box1Path = "BoxGrid/Box1";
+-- 宝箱2
+local m_Box2Path = "BoxGrid/Box2";
+-- 宝箱3
+local m_Box3Path = "BoxGrid/Box3";
+-- 宝箱4
+local m_Box4Path = "BoxGrid/Box4";
+-- 宝箱5
+local m_Box5Path = "BoxGrid/Box5";
+-- 宝箱奖励面板
+local m_RewardsContentPath = "RewardsContent";
+-- 宝箱奖励1
+local m_Item1Path = "RewardsContent/Items/Item1";
+-- 宝箱奖励2
+local m_Item2Path = "RewardsContent/Items/Item2";
+-- 宝箱奖励3
+local m_Item3Path = "RewardsContent/Items/Item3";
+-- 宝箱奖励4
+local m_Item4Path = "RewardsContent/Items/Item4";
+-- 宝箱奖励5
+local m_Item5Path = "RewardsContent/Items/Item5";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 进度条
+local m_PBarPath = "BoxGrid/PBar";
+-- 奖励面板Grid
+local m_ItemsPath = "RewardsContent/Items";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 活跃度值
+local m_LivenessValue = nil;
+-- 宝箱1
+local m_Box1 = nil;
+-- 宝箱2
+local m_Box2 = nil;
+-- 宝箱3
+local m_Box3 = nil;
+-- 宝箱4
+local m_Box4 = nil;
+-- 宝箱5
+local m_Box5 = nil;
+-- 进度条
+local m_PBar = nil;
+-- 奖励面板
+local m_RewardsContent = nil;
+-- 奖励列表Grid
+local m_Items = nil;
+-- 宝箱对象数组
+local m_BoxObjects = nil;
+-- 请求领取奖励索引
+local m_RequestIndex = nil;
+-- 宝箱奖励面板是否开启
+m_RewardsContentIsOpen = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    if m_CreateSuccess then
+        m_RewardsContentIsOpen = false;
+        m_RewardsContent:SetActive(m_RewardsContentIsOpen);
+        m_RequestIndex = nil;
+    end
+    if m_BoxObjects ~= nil then
+        for i, box in ipairs(m_BoxObjects) do
+            SetGameObjectState("EffectOpen", false, box);
+        end
+    end
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_LivenessValue = nil;
+    m_Box1 = nil;
+    m_Box2 = nil;
+    m_Box3 = nil;
+    m_Box4 = nil;
+    m_Box5 = nil;
+    m_PBar = nil;
+    m_RewardsContent = nil;
+    m_Items = nil;
+    m_BoxObjects = nil;
+    m_RequestIndex = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_BOSSLOBBYPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_LivenessValue = GetComponent(m_PanelObject, m_LivenessValuePath, "UILabel")
+    m_Box1 = child(m_PanelObject, m_Box1Path).gameObject;
+    m_Box2 = child(m_PanelObject, m_Box2Path).gameObject;
+    m_Box3 = child(m_PanelObject, m_Box3Path).gameObject;
+    m_Box4 = child(m_PanelObject, m_Box4Path).gameObject;
+    m_Box5 = child(m_PanelObject, m_Box5Path).gameObject;
+    m_PBar = GetComponent(m_PanelObject, m_PBarPath, "UIProgressBar")
+    m_RewardsContent = child(m_PanelObject, m_RewardsContentPath).gameObject;
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+    m_RewardsContentIsOpen = false;
+    m_RewardsContent:SetActive(m_RewardsContentIsOpen);
+
+    m_BoxObjects = { m_Box1, m_Box2, m_Box3, m_Box4, m_Box5 };
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Box1).onClick = LuaHelper.OnClick(OnBox1Click);
+    UIEventListener.Get(m_Box2).onClick = LuaHelper.OnClick(OnBox2Click);
+    UIEventListener.Get(m_Box3).onClick = LuaHelper.OnClick(OnBox3Click);
+    UIEventListener.Get(m_Box4).onClick = LuaHelper.OnClick(OnBox4Click);
+    UIEventListener.Get(m_Box5).onClick = LuaHelper.OnClick(OnBox5Click);
+    SetGameObjectEvent(m_RewardMaskPath, OnRewardMaskClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitBoxContent();
+end
+
+-- 初始化宝箱信息
+function InitBoxContent()
+    local liveness = ActivityManager.GetLiveness();
+    local boxes = liveness.boxes;
+    local count = #boxes;
+    m_LivenessValue.text = string_format("{0}/{1}", liveness.value, liveness.maxValue);
+    m_PBar.value = liveness.value / liveness.maxValue;
+    for i, go in ipairs(m_BoxObjects) do
+        local visible = i <= count;
+        go:SetActive(visible);
+        if visible then
+            local data = boxes[i];
+            local info = data.info;
+            SetSpriteByAtlasID("Icon", info.BoxClose, go, true);
+            SetSpriteByAtlasID("OpenedIcon", info.BoxOpen, go, true);
+
+            SetLabelContent("Value", info.PointNum, go);
+            SetGameObjectState("Icon", data.state == 0, go);
+            SetGameObjectState("OpenedIcon", data.state == 1, go);
+            SetGameObjectState("EffectAchieve", data.state == 0 and liveness.value >= info.PointNum, go);
+            go.transform.localPosition = Vector3.New(1470 * data.index / count, 0, 0);
+        end
+    end
+end
+
+-- 初始化宝箱奖励信息
+-- @param index 宝箱索引
+function InitRewardContent(index)
+    local liveness = ActivityManager.liveness;
+    local data = liveness.boxes[index];
+    local info = data.info;
+    local rewards = CCommonTool.GetRewardInfoByIndex(info.RewardId);
+    if rewards == nil then
+        error("奖励配置列表不存在")
+        return;
+    end
+    m_RewardsContentIsOpen = true;
+    m_RewardsContent:SetActive(m_RewardsContentIsOpen);
+    SetLabelContent(m_RewardTitlePath, string_format(CCommonTool.GetTxtData(8923).m_str, info.PointNum), m_PanelObject);
+    local paths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+    -- 获得奖励道具信息
+    local list = rewards:GetAllItem();
+    local count = list.Count;
+    for i, path in ipairs(paths) do
+        if i <= count then
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            SetItemShowByExcelIDV04(m_PanelObject, path, excelId, itemData.ItemNum, false, 21, ENUMPANELID.ENUM_BOSSLOBBYPANEL);
+            SetItemToolTipsEvent(child(m_PanelObject, path).gameObject, "", ENUMPANELID.ENUM_BOSSLOBBYPANEL, false, excelId);
+            SetGameObjectState(path, true, m_PanelObject);
+        else
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+    m_Items:Reposition();
+end
+
+-- 添加请求领取宝箱索引
+function AddRequestIndex(index)
+    if m_RequestIndex == nil then
+        m_RequestIndex = { index };
+    else
+        table.insert(m_RequestIndex, index);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+function OnBoxClick(index)
+    local liveness = ActivityManager.liveness;
+    local boxes = liveness.boxes;
+    local data = boxes[index];
+    if data.state == 0 and liveness.value >= data.info.PointNum then
+        ActivityProtocol.RequestLivenessBoxReward(index);
+        AddRequestIndex(index);
+        G_MusicMng:OnLoadMusic(4436)
+    else
+        InitRewardContent(index);
+        G_MusicMng:OnLoadMusic(4435)
+    end
+end
+
+-- 宝箱1点击事件
+function OnBox1Click(gameObject)
+    OnBoxClick(1);
+end
+
+-- 宝箱2点击事件
+function OnBox2Click(gameObject)
+    OnBoxClick(2);
+end
+
+-- 宝箱3点击事件
+function OnBox3Click(gameObject)
+    OnBoxClick(3);
+end
+
+-- 宝箱4点击事件
+function OnBox4Click(gameObject)
+    OnBoxClick(4);
+end
+
+-- 宝箱5点击事件
+function OnBox5Click(gameObject)
+    OnBoxClick(5);
+end
+
+-- 奖励遮罩点击事件
+function OnRewardMaskClick(gameObject)
+    m_RewardsContentIsOpen = false;
+    m_RewardsContent:SetActive(m_RewardsContentIsOpen);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if m_CreateSuccess then
+        InitShow();
+        if m_RequestIndex ~= nil then
+            local liveness = ActivityManager.liveness;
+            local boxes = liveness.boxes;
+            for i = #m_RequestIndex, 1 do
+                local index = m_RequestIndex[i];
+                local data = boxes[index];
+                if data.state == 1 then
+                    table.remove(m_RequestIndex, i);
+                    local box = m_BoxObjects[index];
+                    local effect = child(box, "EffectOpen").gameObject;
+                    effect:SetActive(false);
+                    effect:SetActive(true);
+                end
+            end
+        end
+    end
+end

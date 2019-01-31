@@ -1,0 +1,781 @@
+﻿module("FriendsProtocol", package.seeall)
+
+friend_op_list = 1;--好友列表
+friend_op_apply = 2;--申请添加好友
+friend_op_reapply = 3;--回复好友申请
+friend_op_delete = 4;--删除好友
+friend_op_recommend = 5;--推荐好友
+
+enemy_op_list = 1;--仇人列表
+enemy_op_info = 2;--请求仇人实时信息
+enemy_op_delete = 3;--删除仇人
+enemy_op_oath = 4;--更换宣言
+enemy_op_trans = 5;--复仇传送
+
+black_op_list = 1;--黑名单列表
+black_op_add = 2;--拉进黑名单
+black_op_delete = 3;--拉出黑名单
+
+-- 仇人记录
+tempHateList = {}
+
+friend_recent_list = 0;-- 最近列表
+friend_list_list = 1;-- 好友列表
+friend_enemy_list = 2;-- 仇人列表
+friend_black_list = 3;-- 黑名单列表
+friend_vouch_list = 4;-- 推荐列表
+friend_apply_list = 5;-- 申请列表
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 服务器发送给客户端好友数据
+    network.Register(GMI_STOC_FT_SEND_PLAYERDATAFS_TOCLIENT, RefreshFriendsList);
+    -- 服务器返回仇人击杀记录
+    network.Register(GMI_STOC_FT_SEND_ENEMYLIST_TOCLIENT, RefreshFriendsHateRecords);
+    -- 有人申请自己为好友时的服务器推送
+    network.Register(GMI_STOC_FT_SEND_APPLYER_TO_BEAPPLY, RefreshApplyFriend);
+    -- 单个添加好友信息
+    network.Register(GMI_STOC_FT_SEND_REPLY_APPLY_RESULT, RefreshAddFriend);
+    -- 服务器通知删除好友
+    network.Register(GMI_STOC_FT_SEND_REPLY_DELETE_RESULT, DeleteFriend);
+    -- 服务器发送给客户端好友数据
+    network.Register(GMI_STOC_FT_SEND_ALLLIST_TOCLIENT, RefreshFriendsList);
+    -- 添加仇人同步到客户端
+    network.Register(GMI_STOC_FT_SEND_ADDENEMY_TOCLIENT, AddEnemyRecord);
+    -- 查询好友信息返回
+    network.Register(GMI_STOC_FT_SEND_QUERY_BUYNAME_RESULT, SearchFriendsList);
+    -- 服务器保存的复仇宣言内容
+    network.Register(GMI_STOC_FT_SEND_REVENGE_OATH, PlayerDeclareValue);
+    -- 回复客户端赠送礼物消息
+    network.Register(GMI_STOC_LGS_SENDFRIENDGIFTS, OnGiveGift);
+    -- 回复客户端服务器添加礼物给好友(收到好友礼物时)
+    network.Register(GMI_STOC_LGS_FRIEND_SEND_GIFTS_TOME, OnRecieveGift);
+    -- 服务器发送所有的礼物信息
+    network.Register(GMI_STOC_SERVER_SEND_ALL_FRIEND_GIFTS_INFO, OnGiftList);
+    -- 服务器回复领取礼物
+    network.Register(GMI_STOC_LGS_GET_FRIEND_GIFTS, OnGetGift);
+    -- 服务器推送 好友系统：离线留言数据
+    network.Register(GMI_STOC_FRIEND_LEAVEWORDS_DATA, OnGetLeaveWords);
+    -- 服务器推送 好友系统：实时同步好友上下线状态：1,上线， 2,下线
+    network.Register(GMI_STOC_INFORMFRIEND_GAMELINE_STATE, OnGetFriendsState);
+--    network.Register(GMI_STOC_FRIEND_OPERATE_RESULT_RETURN, OnRemoveBlack);
+    network.Register(GMI_STOC_FT_SEND_REPLY_ENEMYINFO_RESULT, OnGetEnemyInfo);
+
+end
+
+-- 服务器返回仇人击杀记录
+function RefreshFriendsHateRecords(protocolId, buffer)
+    Logger.Log("ReadHateList.........................");
+    ReadHateList(buffer);
+    FriendsData.RefreshHiteList(tempHateList);
+    FriendsPanel.RefreshEnemyPanel();
+    FriendsPanel.RefreshRedHint();
+end
+
+-- 有人申请自己为好友时的服务器推送
+function RefreshApplyFriend(protocolId, buffer)
+    buffer:ReadUInt();--过滤无效字节
+    buffer:ReadUInt();--过滤无效字节
+    local data = ReadApplyFriend(buffer);
+    FriendsData.ApplyFriend(data);
+    FriendsPanel.RefreshApplyList();
+    -- 红点检测玩家是否有好友申请消息
+    FriendsPanel.RefreshRedHint();
+    FriendsPanel.RefreshApplyReadHint();
+    -- 主界面叹号提示
+    local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_FRIEND);
+    for i,v in pairs(dataList) do 
+        if v.guid == data.guid then 
+            return;
+        end 
+    end
+    local applyData = {};
+    for i,v in pairs (_G.LogicData_TipsTable) do
+        if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY then 
+            table.insert(applyData, v.Data);
+        end
+    end
+    if #applyData > 0 then
+        for i,v in pairs(applyData) do 
+            if v.globalId == data.guid then 
+                return;
+            end 
+        end
+    end
+    local tempData = {globalId = data.guid, name = data.name};
+    Main_RightBottom.AddTipTableData(tempData, ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY);
+end
+
+-- 单个添加好友信息
+function RefreshAddFriend(protocolId, buffer)
+    buffer:ReadUInt();--过滤无效字节
+    buffer:ReadUInt();--过滤无效字节
+    local data = ReadApplyFriend(buffer);
+    FriendsData.AddFriend(data);
+    FriendsPanel.OnAddFriend();
+    FriendsPanel.RefreshRedHint();
+end
+
+-- 服务器通知删除好友
+function DeleteFriend(protocolId, buffer)
+    local guid = buffer:ReadUInt();
+    local result = FriendsData.DeleteFriend(guid);
+    if result then
+        FriendsPanel.RefreshFriendsList();
+    end
+    FriendsPanel.RefreshRedHint();
+end
+
+-- 服务器发送给客户端好友数据
+function RefreshFriendsList(protocolId, buffer)
+    local listType, list = ReadList(buffer);
+    FriendsData.RefreshList(listType, list);
+    if listType == FriendsData.LIST_TYPE_RECOMMEND then
+        FriendsAddPanel.Refresh();
+    end
+    FriendsPanel.RefreshList();
+    FriendsPanel.RefreshRedHint();
+    TeamInvitePanel.Refresh();
+end
+
+-- 添加仇人同步到客户端
+function AddEnemyRecord(protocolId, buffer)
+    local data = ReadFriend(buffer);
+    local record = ReadHateInfo(buffer);
+    if data and record then
+        FriendsData.AddEnemy(data);
+        FriendsData.AddEnemyHateRecord(record);
+        FriendsPanel.RefreshEnemyPanel(data.guid);
+        FriendsPanel.RefreshRedHint();
+    end
+end
+
+-- 查询好友信息返回
+function SearchFriendsList(protocolId, buffer)
+    local pos = buffer:ReadByte();
+    local data = ReadApplyFriend(buffer);
+    FriendsData.searchResult = data;
+    if pos == 1 then    --申请好友
+        FriendsAddPanel.RefreshList(data);
+--        ParameterToMessageTextBox.AddFriend(data.name);
+    elseif pos == 2 then    --黑名单
+        ParameterToMessageTextBox.BlackFriend(data.name);
+    elseif pos == 3 then    --私聊
+        FriendsPanel.ShowChatByMenu(data);
+    end
+end
+
+-- 服务器保存的复仇宣言内容
+function PlayerDeclareValue(protocolId, buffer)
+    if buffer.Length == 0 then
+        return;
+    end
+    local len = buffer:ReadByte();
+    if len > 0 then
+        local value = buffer:ReadString(len);
+        FriendsData.SetDeclareValue(value);
+    end
+end
+
+-- 回复客户端赠送礼物消息
+function OnGiveGift(protocolId, buffer)
+    error("回复客户端赠送礼物消息");
+    local guid = buffer:ReadInt();
+    --友好度
+    local friendliness = math.floor(buffer:ReadFloat());
+    --每日获得的友好度
+    local dailyFriendliness = math.floor(buffer:ReadFloat());
+    FriendsData.givedGiftCount = buffer:ReadUShort();
+    local friend = FriendsData.GetFriend(guid);
+    if friend ~= nil then
+        friend.friendliness = friendliness;
+        friend.dailyFriendliness = dailyFriendliness;
+        friend.isSendGift = BitUtil.IntSet(friend.isSendGift, 0, true);
+    end
+    FriendsPanel.RefreshGift();
+    ShowSystemFlowTips(2959);
+end
+
+-- 服务器回复领取礼物
+function OnGetGift(protocolId, buffer)
+    error("服务器回复领取礼物::");
+    -- 礼物列表删除
+    local giftId = LuaInt64.ToString(buffer:ReadBytes(8))
+    local isSendGift = buffer:ReadByte();       --0可以送1不可以
+    local giftData = FriendsData.GetGift(giftId);
+    if giftData then
+        local friend = FriendsData.GetFriend(giftData.guid);
+        if friend then friend.isSendGift = isSendGift end
+    end
+    FriendsData.getGiftCount = buffer:ReadShort();
+    FriendsData.DeleteGift(giftId);
+    FriendsPanel.RefreshList();
+    FriendsPanel.RefreshRedHint();
+end
+
+-- 回复客户端服务器添加礼物给好友(收到好友礼物时)
+function OnRecieveGift(protocolId, buffer)
+    error("收到好友礼物时");
+    local gift = ReadGift(buffer);
+    if gift ~= nil then
+        local friendData = FriendsData.GetFriend(gift.guid);
+        -- 收到礼物时更新该好友的友好度
+        if buffer.Length > buffer.Postion then
+            friendData.friendliness = math.floor(buffer:ReadFloat());
+        end
+        FriendsData.AddGift(gift);
+        FriendsPanel.RefreshList();
+        FriendsPanel.RefreshRedHint();
+    end
+end
+
+-- 服务器发送所有的礼物信息
+function OnGiftList(protocolId, buffer)
+    error("服务器发送所有的礼物信息");
+    local count = buffer:ReadShort();
+    local gifts = {};
+    for i = 1, count do
+        local gift = ReadGift(buffer);
+        if gift ~= nil then
+            table.insert(gifts, gift);
+        end
+    end
+    FriendsData.givedGiftCount = buffer:ReadShort();
+    FriendsData.getGiftCount = buffer:ReadShort();
+    FriendsData.RefreshList(FriendsData.LIST_TYPE_GIFT, gifts);
+    FriendsPanel.RefreshList();
+    FriendsPanel.RefreshRedHint();
+end
+
+---- 从黑名单中删除角色信息
+--function OnRemoveBlack(protocolId, buffer)
+--    local m_yOperatetype = buffer:ReadByte();
+--    local m_yOperateSubtype = buffer:ReadByte();
+--    local friendId = buffer:ReadUInt();
+--    local result = buffer:ReadByte();
+--    print("一级操作类型：",m_yOperatetype,"二级操作类型：",m_yOperateSubtype,"操作结果",result,"角色ID",friendId);
+--    if m_yOperatetype == friend_black_list then 
+--        if m_yOperateSubtype == 2 then  --二级操作类型(1 添加；2 删除)
+--            if result == 1 then --操作结果（1 成功；2 失败）
+--                FriendsData.DeleteIfExist(FriendsData.blackList, friendId);
+--            end
+--        end
+--    end
+--end
+
+-- 服务器推送 好友系统：离线留言数据
+function OnGetLeaveWords(protocolId, buffer)
+    local tempTable = {};
+    local infoNum = buffer:ReadByte();
+    if infoNum == nil then return end
+    for i = 1, infoNum do 
+        tempTable[i] = {};
+        tempTable[i].friendID = buffer:ReadInt();
+        tempTable[i].sendTime = buffer:ReadInt();
+        tempTable[i].sendInfo = buffer:ReadStringByByte();
+        local msgData = {msg=tostring(tempTable[i].sendInfo), msgType=0};
+        local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_FRIEND);
+        for i,v in pairs(dataList) do
+            if v.guid == tempTable[i].friendID then 
+                FriendsData.AddRecent(v);
+                break;
+            end
+        end
+        FriendsData.AddChatRecord(tempTable[i].friendID, tempTable[i].friendID, msgData);
+    end
+
+    FriendsData.leaveWordsList = tempTable;
+end
+
+-- 服务器推送 好友系统：实时同步好友上下线状态：1,上线， 2,下线
+function OnGetFriendsState(protocolId, buffer)
+    local friendsGuid = buffer:ReadInt();          -- 好友guid
+    local friendsType = buffer:ReadByte();         -- 角色类型 1,好友;2,仇人
+    local friendsState = buffer:ReadByte();        -- 好友状态
+    if friendsType == 1 then  
+        FriendsData.RefreshFriendsState(friendsGuid, friendsState);
+        FriendsPanel.RefreshFriendsState();
+        if friendsState == 1 then
+            local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_FRIEND);
+            local friendName = nil;
+            for i, data in ipairs(dataList) do
+                if data.guid == friendsGuid then
+                    friendName = data.name;
+                    if friendName == nil then return end
+                    ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, string_format(--[[好友{0}已上线]]CCommonTool.GetTxtData(1566).m_str,friendName), false, true);
+                    local m_liaoTianSingleData = {
+                        wChannelID = CHAT_CHANNEL_ID.CHAT_SYSTEM_ID,
+                        wcsChat = string_format(CCommonTool.GetTxtData(1566).m_str,friendName),
+                        msgType = 0,
+                        wSpkName = "",
+                    };
+                    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+                        Main_MiddleBottom.ShowLiaoTianData(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, m_liaoTianSingleData);
+                    end
+                    break;
+                end
+            end
+        end
+    elseif friendsType == 2 then 
+        FriendsData.RefreshEnemiesState(friendsGuid, friendsState);
+        FriendsPanel.RefreshFriendsState();
+        if friendsState == 1 then
+            local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_ENEMY);
+            local enemyName = nil;
+            for i, data in ipairs(dataList) do
+                if data.guid == friendsGuid then
+                    enemyName = data.name;
+                    if enemyName == nil then return end
+                    ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID,string_format(--[[仇人{0}已上线]]CCommonTool.GetTxtData(1567).m_str,enemyName), false, true);
+                    local m_liaoTianSingleData = {
+                        wChannelID = CHAT_CHANNEL_ID.CHAT_SYSTEM_ID,
+                        wcsChat = string_format(CCommonTool.GetTxtData(1567).m_str,enemyName),
+                        msgType = 0,
+                        wSpkName = "",
+                    };
+                    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+                        Main_MiddleBottom.ShowLiaoTianData(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, m_liaoTianSingleData);
+                    end
+                    break;
+                end
+            end
+
+        end
+    end
+end
+
+-- 仇人信息返回
+function OnGetEnemyInfo(protocolId, buffer)
+    local tempData = ReadHateInfo(buffer);
+    if tempData then
+        local hateData = FriendsData.GetHateRecord(tempData.guid);
+        hateData.fightPower = tempData.fightPower;
+        hateData.guildId = tempData.guildId;
+        hateData.guildName = tempData.guildName;
+        hateData.hateValue = tempData.hateValue;
+        hateData.sceneId = tempData.sceneId;
+
+        FriendsEnemyPanel.InitHateInfo();
+        FriendsPanel.RefreshRedHint();
+    end
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+--------------------------------读取议协内容------------------------------
+
+--读取好友数据
+function ReadFriend(buffer)
+    local guid = buffer:ReadUInt();--GUID
+    local profession = buffer:ReadByte();-- 职业
+    local headIcon = nil
+    if profession > 0 then
+        if CCommonTool.GetRoleDateInfo(profession) then 
+            headIcon = CCommonTool.GetRoleDateInfo(profession).HeadRes;
+        end
+    end
+    local level = buffer:ReadUInt();-- 等级
+    local fightPower = buffer:ReadUInt();-- 战力
+    local vipLevel = buffer:ReadByte();-- VIP等级
+    local unionId = buffer:ReadByte();-- 联盟ID
+    local onlineState = buffer:ReadByte();-- 是否在线[0离线 1在线]
+    local isSendGift = buffer:ReadByte();-- 预留
+    local len = buffer:ReadByte();-- 名字 
+    local name = buffer:ReadString(len);
+    local friendliness = math.floor(buffer:ReadFloat());--友好度
+    local dailyFriendliness = math.floor(buffer:ReadFloat());--今日增加的友好度
+    
+    return {
+        guid = guid, 
+        profession = profession, 
+        headIcon = headIcon, 
+        level = level, 
+        fightPower = fightPower, 
+        vipLevel = vipLevel, 
+        unionId = unionId,
+        isSendGift = isSendGift, 
+        name = name, 
+        friendliness = friendliness,
+        dailyFriendliness = dailyFriendliness,
+        onlineState = onlineState
+    };
+end
+
+-- 读取申请好友信息
+function ReadApplyFriend(buffer)
+    local guid = buffer:ReadUInt();--GUID
+    local profession = buffer:ReadByte();-- 职业
+    local headIcon = nil
+    if profession > 0 then
+        if CCommonTool.GetRoleDateInfo(profession) then 
+            headIcon = CCommonTool.GetRoleDateInfo(profession).HeadRes;
+        end
+    end
+    local level = buffer:ReadUInt();-- 等级
+    local fightPower = buffer:ReadUInt();-- 战力
+    local vipLevel = buffer:ReadByte();-- VIP等级
+    local unionId = buffer:ReadByte();-- 联盟ID
+    local onlineState = buffer:ReadByte();-- 是否在线[0离线 1在线]
+    local isSendGift = 0;
+--    print("isSendGift = ",isSendGift);
+    local len = buffer:ReadByte();-- 名字
+--    print("len = ",len);
+    local name = buffer:ReadString(len);
+    local friendliness = 0;
+    local dailyFriendliness = 0;
+    return {
+        guid = guid, 
+        profession = profession, 
+        headIcon = headIcon, 
+        level = level, 
+        fightPower = fightPower, 
+        vipLevel = vipLevel, 
+        unionId = unionId,
+        isSendGift = isSendGift, 
+        name = name, 
+        friendliness = friendliness,
+        dailyFriendliness = dailyFriendliness,
+        onlineState = onlineState
+    };
+end
+
+--读取列表
+function ReadList(buffer)
+    local listType = nil;
+    if buffer ~= nil and buffer.Length > 0 then
+        listType = buffer:ReadByte();
+    end
+    local list = {}
+    local count = 0;
+    if buffer.Length > 1 then
+        count = buffer:ReadByte();
+    end
+    for i = 1, count do
+        if buffer.Length > buffer.Postion then
+            local data = nil;
+            if listType == FriendsData.LIST_TYPE_APPLY then
+                data = ReadApplyFriend(buffer);
+            else
+                data = ReadFriend(buffer);
+            end
+            if data.guid > 0 then
+                table.insert(list, data);
+            end
+        end
+    end
+    return listType, list
+end
+
+function ReadHateList(buffer)
+    local sign = buffer:ReadByte();
+    --开始接收
+    if sign == 1 then
+        tempHateList = {};
+    end
+    local count = 0;
+    if buffer.Length > 1 then
+        count = buffer:ReadByte();
+    end
+    for i = 1, count do
+        if buffer.Length > buffer.Postion then
+            table.insert(tempHateList, ReadHateInfo(buffer));
+        end
+    end
+    return sign;
+end
+
+--读取仇人记录
+function ReadHateInfo(buffer)
+    local guid = buffer:ReadUInt();--GUID
+    local fightPower = buffer:ReadUInt();-- 战力
+    local guildId = buffer:ReadInt();
+    local len = buffer:ReadByte();-- 公会名字
+    local guildName = buffer:ReadString(len);
+    local hateValue = buffer:ReadUInt();    --仇恨值
+    local sceneId = buffer:ReadInt();   --当前场景
+    local posX = buffer:ReadFloat();    --X坐标
+    local posZ = buffer:ReadFloat();    --Z坐标
+    local count = 0;
+    if buffer.Length > buffer.Postion then
+        count = buffer:ReadByte();
+    end
+    local records = {};
+    for i = 1, count do
+        local recordType = buffer:ReadByte();    --1被杀 2复仇
+        local time = buffer:ReadUInt();    --时间
+        local sceneId = buffer:ReadInt();   --杀戮场景
+        local posX = buffer:ReadFloat();    --X坐标
+        local posZ = buffer:ReadFloat();    --Z坐标
+        table.insert(records, {
+            recordType = recordType,
+            time = time,
+            sceneId = sceneId,
+            posX = posX,
+            posZ = posZ
+        });
+    end
+    return {
+        guid = guid,
+        fightPower = fightPower,
+        guildId = guildId,
+        guildName = guildName,
+        hateValue = hateValue,
+        sceneId = sceneId,
+        posX = posX,
+        posZ = posZ,
+        records = records
+    };
+end
+
+-- 读取礼物数据
+function ReadGift(buffer)
+    local giftId = LuaInt64.ToString(buffer:ReadBytes(8));
+    local guid = buffer:ReadUInt();
+    local giftItemId = buffer:ReadUInt();
+    local expireTime = buffer:ReadInt64(); --礼物到期时间
+    local friendData = FriendsData.GetFriend(guid);
+    
+    if friendData ~= nil then
+        local seconds = expireTime - G_TimerMng:GetCurrentSeconds();
+        if seconds > 0 then
+            return {
+                guid = guid, 
+                giftId=giftId, 
+                giftItemId=giftItemId,
+                expireTime = expireTime
+            };
+        end
+        error("当前礼物已经过期：",expireTime);
+    else
+        error("礼物列表: 好友不存在 ID:"..guid);
+    end
+    
+    return nil;
+end
+
+-------------------------------------------------------请求协议START-------------------------------------------------------
+
+--请求更新最近列表玩家数据
+function RequestUpdateRecent()
+    local guids = FriendsData.GetRecentGuids();
+    local len = #guids;
+    if len == 0 then return end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_UPDATE_QUERYDATA);
+    buffer:WriteByte(len);
+    for i, v in ipairs(guids) do
+        buffer:WriteUInt(v);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求好友列表
+function RequestFriendList()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_FRIENDINFO);
+    buffer:WriteByte(friend_op_list);
+    buffer:WriteUInt(0);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--申请好友
+function RequestApply(guid)
+    if FriendsData.IsReachLimit(FriendsData.LIST_TYPE_FRIEND) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_FRIEND_MAX_COUNT);
+        return false;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_FRIENDINFO);
+    buffer:WriteByte(friend_op_apply);
+    buffer:WriteUInt(guid);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_FRIEND_INVITE);
+    return true;
+end
+
+--申请好友回复
+--@param guid 玩家GUID
+--@param op 同意1 拒绝2
+function RequestApplyBack(guid, op)
+    if op == 1 and FriendsData.IsReachLimit(FriendsData.LIST_TYPE_FRIEND) then 
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_FRIEND_MAX_COUNT);
+        return false;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_FRIENDINFO);
+    buffer:WriteByte(friend_op_reapply);
+    buffer:WriteUInt(guid);
+    buffer:WriteByte(op);
+    G_NetWorkMng:SendMessage(buffer);
+    return true;
+end
+
+--请求删除好友
+function RequestDeleteFriend(guid)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_FRIENDINFO);
+    buffer:WriteByte(friend_op_delete);
+    buffer:WriteUInt(guid);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求推荐好友列表
+function RequestRecommend(ID)
+    if ID == nil then
+        ID = 0;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_FRIENDINFO);
+    buffer:WriteByte(friend_op_recommend);
+    buffer:WriteUInt(ID);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求删除仇人
+function RequestDeleteEnemy(guid)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_ENEMYINFO);
+    buffer:WriteByte(enemy_op_delete);
+    buffer:WriteUInt(guid);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--仇人列表
+--服务器返回两条数据 仇人列表和仇人记录列表
+--仇人记录列表会批发送到客户端, 每次发送15条
+--用tempHateList临时保存接收到的仇人记录数据, 接受完成后存到FriendsData中
+function RequestEnemyList()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_ENEMYINFO);
+    buffer:WriteByte(enemy_op_list);
+    buffer:WriteUInt(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求前往复仇
+function RequestEnemyTrans(guid)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_ENEMYINFO);
+    buffer:WriteByte(enemy_op_trans);
+    buffer:WriteUInt(guid);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求仇人信息
+function RequestEnemyInfo(guid)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_ENEMYINFO);
+    buffer:WriteByte(enemy_op_info);
+    buffer:WriteUInt(guid);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--请求黑名单列表
+function RequestBlackList()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_BLACKLISTINFO);
+    buffer:WriteByte(black_op_list);
+    buffer:WriteUInt(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--请求拉黑
+function RequestBlackFriend(guid)
+     if FriendsData.IsReachLimit(FriendsData.LIST_TYPE_BLACK) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_FRIEND_BALCK_MAX_COUNT);
+        return false;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_ABOUT_BLACKLISTINFO);
+    buffer:WriteByte(black_op_add);
+    buffer:WriteUInt(guid);
+    G_NetWorkMng:SendMessage(buffer);
+    return true;
+end
+
+--请求从黑名单中移除
+function RequestRemoveBlackFriend(guid)
+    local success = FriendsData.DeleteIfExist(FriendsData.blackList, guid);
+    if success then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_FT_ABOUT_BLACKLISTINFO);
+        buffer:WriteByte(black_op_delete);
+        buffer:WriteUInt(guid);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+
+--查找好友
+--@param name 查找的名字
+--@param pos 申请好友界面查找:1 黑名单界面查找2 私聊3
+function RequestSearch(name, pos)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_GET_PLAYERINFO_BUYNAME);
+    buffer:WriteByte(pos);
+    buffer:WriteStringByByte(name);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--保存复仇宣言内容
+function RequestSaveDeclare(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_FT_CHANGEOATH_INFO);
+    buffer:WriteStringByByte(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--根据列表类型请求数据
+function RequestListData(listType)
+    if listType == FriendsData.LIST_TYPE_RECENT then
+        RequestUpdateRecent();
+    elseif listType == FriendsData.LIST_TYPE_FRIEND then
+        RequestFriendList();
+    elseif listType == FriendsData.LIST_TYPE_ENEMY then
+        RequestEnemyList();
+    elseif listType == FriendsData.LIST_TYPE_BLACK then
+        RequestBlackList();
+    elseif listType == FriendsData.LIST_TYPE_RECOMMEND then
+        RequestRecommend();
+    elseif listType == FriendsData.LIST_TYPE_GIFT then
+        RequestGiftList();
+    end
+end
+
+-- 请求领取礼物
+function RequestGetGift(giftId)
+    error("请求领取礼物:"..giftId);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_FRIEND_GIFTS);
+    buffer:WriteBytes(LuaInt64.GetBytes(giftId));
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求一键领取礼物
+function RequestAutoGetGift()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GETALL_FRIEND_GIFTS);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求赠送好友礼物
+function RequestGiveGift(globalId)
+    error("请求赠送好友礼物");
+    error(globalId);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_SEND_FRIEND_GIFTS);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求好友礼物列表
+function RequestGiftList()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_CLIENT_ASK_ALL_FRIEND_GIFTS_INFO);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end

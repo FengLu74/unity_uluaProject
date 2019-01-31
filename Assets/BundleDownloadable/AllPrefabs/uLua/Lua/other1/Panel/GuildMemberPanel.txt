@@ -1,0 +1,534 @@
+﻿module("GuildMemberPanel", package.seeall)
+require "Panel/GuildMemberMenuPanel";
+
+-- 面板对象
+local m_PanelObject = nil;
+-----------------------------------------------label路径--------------------------------------------
+-- 表头-成员名称
+local m_NameHeaderPath = "Content_List/Headers/NameHeader";
+-- 表头-职位
+local m_JobHeaderPath = "Content_List/Headers/JobHeader";
+-- 表头-等级
+local m_LevelHeaderPath = "Content_List/Headers/LevelHeader";
+-- 表头-职业
+local m_ProfessionHeaderPath = "Content_List/Headers/ProfessionHeader";
+-- 表头-战力
+local m_FightPowerHeaderPath = "Content_List/Headers/FightPowerHeader";
+-- 表头-贡献
+local m_ContributionHeaderPath = "Content_List/Headers/ContributionHeader";
+-- 表头-在线状态
+local m_OnlineStateHeaderPath = "Content_List/Headers/OnlineStateHeader";
+-- 成员名称
+local m_NamePath = "Label_Name";
+-- 职位
+local m_JobPath = "Label_JobTitle";
+-- 等级
+local m_LevelPath = "Label_Level";
+-- 职业
+local m_ProfessionPath = "Label_Profession";
+-- 战斗力
+local m_FightPowerPath = "Label_FightPower";
+-- 贡献
+local m_ContributionPath = "Label_Contribution";
+-- 是否在线
+local m_OnlineStatePath = "Label_State";
+-- 成员人数路径
+local m_MemberCountPath = "Content_Top/Label_Count/Label_Content";
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+-- 表头-成员名称排序箭头
+local m_NameHeaderArrowPath = "Content_List/Headers/NameHeader/Arrow";
+-- 表头-职位排序箭头
+local m_JobHeaderArrowPath = "Content_List/Headers/JobHeader/Arrow";
+-- 表头-等级排序箭头
+local m_LevelHeaderArrowPath = "Content_List/Headers/LevelHeader/Arrow";
+-- 表头-职业排序箭头
+local m_ProfessionHeaderArrowPath = "Content_List/Headers/ProfessionHeader/Arrow";
+-- 表头-战力排序箭头
+local m_FightPowerHeaderArrowPath = "Content_List/Headers/FightPowerHeader/Arrow";
+-- 表头-贡献排序箭头
+local m_ContributionHeaderArrowPath = "Content_List/Headers/ContributionHeader/Arrow";
+-- 表头-在线状态排序箭头
+local m_OnlineStateHeaderArrowPath = "Content_List/Headers/OnlineStateHeader/Arrow";
+
+-----------------------------------------------button路径--------------------------------------------
+-- 退出公会按钮
+local m_ExitButtonPath = "Content_Bottom/Button_Exit";
+-- 审批按钮
+local m_ApprovalButtonPath = "Content_Bottom/Button_Approval";
+-- 普通成员按钮
+local m_GeneralTabPath = "Content_Top/Toggle_General";
+-- 先锋团按钮
+local m_EliteTabPath = "Content_Top/Toggle_Elite";
+-- 骑士团按钮
+local m_KnightTabPath = "Content_Top/Toggle_Knight";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+
+-- 菜单面板
+local m_MemberMenuPath = "Content_MemberInfo";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+-- 列表
+local m_ListViewPath = "Content_List/GuildList/Grid";
+-- 列表Panel
+local m_ListPanelPath = "Content_List/GuildList";
+-- 普通成员标签
+local m_GeneralTabPath = "Content_Top/Toggle_General";
+-- 先锋团标签
+local m_EliteTabPath = "Content_Top/Toggle_Elite";
+-- 骑士团标签
+local m_KnightTabPath = "Content_Top/Toggle_Knight";
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+-- 面板是否初始化完成
+local m_CreateSuccess = false;
+-- 任命面板
+local m_MemberMenuPanel = nil;
+-- 选中的成员ID
+local m_SelectMemberId = 0;
+-- 默认选中的标签
+local m_SelectTab = EKINDREDTYPE.GENERAL;
+-- 列表
+local m_ListView = nil;
+-- 列表Panel
+local m_ListPanel = nil;
+-- 排序方法数组
+local m_SortHeaders = nil;
+-- 排序列索引 默认在线升序排
+local m_SortIndex = 7;
+-- 当前标签的成员列表
+local m_Members = nil;
+-- 成员排序字段
+local m_SortKeys = nil;
+-- 升序/降序
+local m_SortOrder = 0;
+--------------------------------------BaseLua调用的同名方法-----------------------------------------
+
+function Start()
+    InitObjects();
+    InitEvents();
+    SelectTab(m_SelectTab);
+    InitShow();
+    m_CreateSuccess = true;
+    GuildMemberMenuPanel.Start();
+end
+
+function OnEnable()
+    if m_CreateSuccess == true then
+        InitShow();
+    end
+    GuildMemberMenuPanel.OnEnable();
+end
+
+function OnDisable()
+    m_SortIndex = 7;
+    m_Members = nil;
+    GuildMemberMenuPanel.OnDisable();
+end
+
+function OnDestroy()
+    GuildMemberMenuPanel.OnDestroy();
+    m_SelectTab = EKINDREDTYPE.GENERAL;
+    m_PanelObject = nil;
+    m_MemberMenuPanel = nil;
+    m_ListView = nil;
+    m_ListPanel = nil;
+    m_CreateSuccess = false;
+    m_SortHeaders = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    -- 面板对象
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_PanelObject = child(m_PanelObject, "GuildMemberPanel").gameObject;
+    m_ListPanel = child(m_PanelObject, m_ListPanelPath).gameObject;
+    m_MemberMenuPanel = child(m_PanelObject, m_MemberMenuPath).gameObject;
+    m_ListView = GetComponent(m_PanelObject, m_ListViewPath, "UIListView");
+    m_ListView:SetInitCallback(OnListViewInit);
+    m_ListView:SetClickCallback(OnListViewClick);
+    m_MemberMenuPanel:SetActive(false);
+
+    m_SortHeaders = {
+        {
+            name = m_NameHeaderArrowPath, 
+            sortKeys = {"job"}, 
+            order = 0
+        },
+        {
+            name = m_JobHeaderArrowPath, 
+            sortKeys = {"job","onlineSortValue","level","id"}, 
+            order = 0
+        },
+        {
+            name = m_LevelHeaderArrowPath, 
+            sortKeys = {"level","onlineSortValue","job","id"}, 
+            order = 0
+        },
+        {
+            name = m_ProfessionHeaderArrowPath, 
+            sortKeys = {"proId","job","onlineSortValue","level","id"},
+            order = 0
+        },
+        {
+            name = m_FightPowerHeaderArrowPath, 
+            sortKeys = {"fightPower","job","onlineSortValue","level","id"},
+            order = 0
+        },
+        {
+            name = m_ContributionHeaderArrowPath, 
+            sortKeys = {"weekContribution","job","onlineSortValue","level","id"},
+            order = 0
+        },
+        {
+            name = m_OnlineStateHeaderArrowPath, 
+            sortKeys = {"onlineSortValue","job","level","id"},
+            order = 0
+        }
+    };
+end
+
+-- 初始化事件信息
+function InitEvents()
+    SetGameObjectEvent(m_ExitButtonPath, OnExitButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_GeneralTabPath, OnGeneralTabClick, m_PanelObject);
+    SetGameObjectEvent(m_EliteTabPath, OnEliteTabClick, m_PanelObject);
+    SetGameObjectEvent(m_KnightTabPath, OnKnightTabClick, m_PanelObject);
+    SetGameObjectEvent(m_NameHeaderPath, OnNameHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_JobHeaderPath, OnJobHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_LevelHeaderPath, OnLevelHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_ProfessionHeaderPath, OnProfessionHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_FightPowerHeaderPath, OnFightPowerHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_ContributionHeaderPath, OnContributionHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_OnlineStateHeaderPath, OnOnlineStateHeaderClick, m_PanelObject);
+    SetGameObjectEvent(m_ApprovalButtonPath, OnApproval, m_PanelObject);
+end
+
+-- 初始化数据
+function InitShow()
+    m_Members = GuildManager.GetMembersByKindred(m_SelectTab);  --GetTestMembers();
+    -- 填充列表
+    InitList();
+    -- 人数信息
+    local membersCount = #m_Members;
+    local guildInfo = GuildManager.myGuild;
+    if m_SelectTab == EKINDREDTYPE.GENERAL then
+        SetLabelContent(m_MemberCountPath, membersCount .. "/" .. guildInfo.maxMemberCount, m_PanelObject);
+    else
+        local maxCount = CCommonTool.GetGuildInfoByIndex(guildInfo.level).BranchMax;
+        SetLabelContent(m_MemberCountPath, membersCount .. "/" .. maxCount, m_PanelObject);
+    end
+    local hasPermission = GuildManager.HasPermission(E_GUILD_PERMISSION.APPROVE);
+    SetGameObjectState(m_ApprovalButtonPath, hasPermission, m_PanelObject);
+    if hasPermission then
+        InitApprovalRedHint();
+    end
+end
+
+function GetTestMembers()
+    local members = {};
+    local jobs = {0,1,2,9}
+    for i = 1, 100 do
+        local member = {};
+        member.id = math.random(1, 100000);
+        member.globalId = member.id;                    -- id
+        member.guildId = 1;
+        member.totalContribution = math.random(1000, 5000);
+        member.contribution = math.random(1, 5000);
+        member.weekContribution = math.random(1, 5000);
+        member.right = math.random(1, 1024);
+        member.rankLevel = jobs[math.random(1, 4)];
+        member.job = member.rankLevel;                  -- 职位
+        member.profession = math.random(1,4);
+        member.proId = member.profession;               -- 职业
+        member.level = math.random(1,80);
+        member.onlineScene = math.random(0, 1) == 0 and -1 or math.random(1, 100);
+        member.joinTime = G_TimerMng:GetCurrentSeconds();
+        if member.onlineScene > 0 then
+            member.activeTime = 0
+            member.activeTimeValue = 0
+        else
+            member.activeTime = math.random(1, 4);
+            member.activeTimeValue = math.random(1, 100);
+        end
+        if member.onlineScene ~= -1 then
+            member.onlineSortValue = 0;                 -- 活跃时间排序值
+        else
+            member.onlineSortValue = 1 + member.activeTime * 1000 + member.activeTimeValue;
+        end
+        member.fightPower = math.random(1000, 100000);
+        member.nickName = ""
+        member.name = "成员名称"
+	    member.kindredType = math.random(0, 2);
+        table.insert(members, member);
+    end
+    return members;
+end
+
+function InitList()
+    m_SortKeys = nil;
+    m_SortOrder = 0;
+    for i, header in ipairs(m_SortHeaders) do
+        local arrow = child(m_PanelObject, header.name);
+        if i == m_SortIndex then
+            if header.order == 0 then
+                arrow.localRotation = Quaternion.identity;  -- 升序
+            else
+                arrow.localRotation = Quaternion.Euler(0, 0, 180); -- 降序
+            end
+            arrow.gameObject:SetActive(true);
+            m_SortKeys = header.sortKeys;
+            m_SortOrder = header.order;
+        else
+            arrow.gameObject:SetActive(false);
+        end
+    end
+
+    if m_SortOrder ~= nil then
+        if m_SortOrder == 0 then table.sort(m_Members, AscSort); end
+        if m_SortOrder ~= 0 then table.sort(m_Members, DescSort); end
+    end
+
+    -- 填充列表
+    m_ListView:RemoveAll();
+    local lookAtIndex = -1;
+    for i, data in ipairs(m_Members) do
+        m_ListView:AddData(data);
+        if data.globalId == m_SelectMemberId then
+            lookAtIndex = i - 1;
+        end
+    end
+    m_ListView:LookAt(lookAtIndex, lookAtIndex >= 0);
+end
+
+-- 升序排序成员数据
+function AscSort(m1, m2)
+    for i, key in ipairs(m_SortKeys) do
+        if m1[key] ~= m2[key] then
+            return m1[key] < m2[key];
+        end
+    end
+end
+
+-- 降序排序成员数据
+function DescSort(m1, m2)
+    for i, key in ipairs(m_SortKeys) do
+        if m1[key] ~= m2[key] then
+            return m1[key] > m2[key];
+        end
+    end
+end
+
+-- 列表排序
+function SortList(sortIndex)
+    local curHeader = m_SortHeaders[m_SortIndex];
+    local newHeader = m_SortHeaders[sortIndex];
+    if curHeader == newHeader then
+        curHeader.order = curHeader.order == 1 and 0 or 1;
+    else
+        -- 当前表头排序置为升序
+        -- 下次再选中时默认升序
+        curHeader.order = 0;
+        m_SortIndex = sortIndex;
+    end
+    m_SelectMemberId = 0;
+    InitShow();
+end
+
+function GetOnlineStateValue(onlineState, state, value)
+    if onlineState ~= -1 then
+        return CCommonTool.GetTxtData(8861).m_str;
+    end
+    if state == 1 then
+        return CCommonTool.GetTxtData(8860).m_str;  --刚刚
+    elseif state == 2 then
+        return string_format(CCommonTool.GetTxtData(8859).m_str, value);    --离线{0}小时
+    elseif state == 3 then
+        return string_format(CCommonTool.GetTxtData(8858).m_str, value);    -- 离线{0}天
+    elseif state == 4 then
+        return CCommonTool.GetTxtData(8857).m_str;  -- 离线7天
+    end
+    return CCommonTool.GetTxtData(8856).m_str;  -- 离线
+end
+
+function SetColor(item, color)
+    local labels = item:GetComponentsInChildren(UILabel.GetClassType());
+    for i = 0, labels.Length-1 do
+        local label = labels[i];
+        label.color = NGUIText.ParseColor24(color, 0);
+    end
+end
+
+function SelectTab(index)
+    m_SelectTab = index;
+    --普通成员
+    SetGameObjectState(m_GeneralTabPath .. "/Toggle", index == EKINDREDTYPE.GENERAL, m_PanelObject);
+    SetGameObjectState(m_GeneralTabPath .. "/Background", index ~= EKINDREDTYPE.GENERAL, m_PanelObject);
+    -- 先锋团
+    SetGameObjectState(m_EliteTabPath .. "/Toggle", index == EKINDREDTYPE.ELITE, m_PanelObject);
+    SetGameObjectState(m_EliteTabPath .. "/Background", index ~= EKINDREDTYPE.ELITE, m_PanelObject);
+
+    -- 骑士团
+    SetGameObjectState(m_KnightTabPath .. "/Toggle", index == EKINDREDTYPE.KNIGHT, m_PanelObject);
+    SetGameObjectState(m_KnightTabPath .. "/Background", index ~= EKINDREDTYPE.KNIGHT, m_PanelObject);
+end
+
+function InitApprovalRedHint()
+    local hasPermission = GuildManager.HasPermission(E_GUILD_PERMISSION.APPROVE);
+    if not hasPermission then
+        return;
+    end
+    local count = 0;
+    if GuildManager.guildApplicants ~= nil then
+        count = #GuildManager.guildApplicants;
+    end
+    SetGameObjectState(m_ApprovalButtonPath .. "/Sprite_RedHint", count > 0, m_PanelObject);
+    if count > 0 then
+        SetLabelContent(m_ApprovalButtonPath .. "/Sprite_RedHint/Label", count, m_PanelObject);
+    end
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local member = data;
+    SetLabelContent(m_NamePath, member.name, go);
+    SetLabelContent(m_JobPath, GuildManager.GetJobTitleName(member.rankLevel, member.kindredType), go);
+    SetLabelContent(m_LevelPath, member.level, go);
+    SetLabelContent(m_ProfessionPath, GuildManager.GetProfessionName(member.profession), go);
+    SetLabelContent(m_FightPowerPath, member.fightPower, go);
+    SetLabelContent(m_ProfessionPath, GuildManager.GetProfessionName(member.profession), go);
+    SetLabelContent(m_ContributionPath, member.weekContribution.."/"..member.totalContribution, go);
+    local onlineValue = GetOnlineStateValue(member.onlineScene, member.activeTime, member.activeTimeValue);
+    SetLabelContent(m_OnlineStatePath, onlineValue, go);
+    if member.onlineScene == -1 then
+        SetColor(go, "A5A5A5");--离线
+    else
+        SetColor(go, "F5F4E8");
+    end
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local selfId = G_UserInfo.GlobalDBID;
+    m_SelectMemberId = data.globalId;
+    if selfId == data.globalId then return; end
+    m_MemberMenuPanel:SetActive(true);
+    local pos = m_PanelObject.transform:InverseTransformPoint(cell.transform.position);
+    GuildMemberMenuPanel.Show(data, pos);
+end
+
+-- 退出公会事件
+function OnExitButtonClick()
+    ParameterToMessageTextBox.OnExitGuildPrompt();
+    ReportManager.RequestReportPanel(10325);
+end
+
+-- 审批按钮点击事件
+function OnApproval()
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.APPROVE) then
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_APPROVAL, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+    ReportManager.RequestReportPanel(10324);
+end
+
+-- 普通成员标签
+function OnGeneralTabClick()
+    SelectTab(EKINDREDTYPE.GENERAL);
+    InitShow();
+end
+
+-- 先锋团标签
+function OnEliteTabClick()
+    SelectTab(EKINDREDTYPE.ELITE);
+    InitShow();
+end
+
+-- 骑士团标签
+function OnKnightTabClick()
+    SelectTab(EKINDREDTYPE.KNIGHT);
+    InitShow();
+end
+
+-- 按名字排序
+function OnNameHeaderClick(gameObject)
+    
+end
+
+-- 按职位排序
+function OnJobHeaderClick(gameObject)
+    SortList(2);
+end
+
+-- 按等级排序
+function OnLevelHeaderClick(gameObject)
+    SortList(3);
+end
+
+-- 按职业排序
+function OnProfessionHeaderClick(gameObject)
+    SortList(4);
+end
+
+-- 按战力排序
+function OnFightPowerHeaderClick(gameObject)
+    SortList(5);
+end
+
+-- 按贡献度排序
+function OnContributionHeaderClick(gameObject)
+    SortList(6);
+end
+
+-- 按在线状态排序
+function OnOnlineStateHeaderClick(gameObject)
+    SortList(7);
+end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+
+-- 刷新成员列表
+function RefreshMemberList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy then
+            InitShow();
+        end
+    end
+end
+
+-- 取消选中
+function DeselectList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy then
+            local selectedIndex = m_ListView.selectedIndex;
+            if selectedIndex >= 0 then
+                m_ListView:Deselect(selectedIndex, false);
+            end
+        end
+    end
+end
+
+-- 刷新审批列表红点上的数字
+function RefreshApprovalRedHint()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy then
+            InitApprovalRedHint();
+        end
+    end
+end
+
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {tabIndex = m_SelectTab};
+end
+
+function SetJumpCloseData(paramTable)
+    m_SelectTab = paramTable.tabIndex;
+end

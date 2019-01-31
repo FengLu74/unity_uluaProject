@@ -1,0 +1,184 @@
+﻿module('SkillTalentResetPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'SkillTalentPanel/ResetPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 底框
+local m_MaskPath = "Mask";
+-- 消耗道具
+local m_CostItemPath = "CostItem";
+-- 确定按钮
+local m_OkButtonPath = "OkButton";
+-- 取消按钮
+local m_CancelButtonPath = "CancelButton";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 底框
+local m_Mask = nil;
+-- 关闭按按钮
+local m_Close = nil;
+-- 确定按钮
+local m_OkButton = nil;
+-- 取消按钮
+local m_CancelButton = nil;
+
+local m_GenreId = 0;
+local m_CostType = 0;
+
+-- 消耗道具ID
+local m_CostItemId = 0;
+-- 消耗道具数量
+local m_CostItemNum = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    --InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        --InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_Mask = nil;
+	m_Cost = nil;
+	m_SpriteIcon = nil;
+	m_LabelNum = nil;
+	m_Cost2 = nil;
+	m_SpriteDiamond = nil;
+	m_LabelDiamondNum = nil;
+	m_Close = nil;
+	m_OkButton = nil;
+	m_CancelButton = nil;
+    m_GenreId = 0;
+    m_CostType = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_Mask = child(m_PanelObject, m_MaskPath).gameObject;
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+    m_OkButton = child(m_PanelObject, m_OkButtonPath).gameObject;
+    m_CancelButton = child(m_PanelObject, m_CancelButtonPath).gameObject;
+
+    m_CostItemId = CCommonTool.GetDefineInfo(EDefineContentID.TypeTalentConsumeItemId):GetIntContent();
+    m_CostItemNum = CCommonTool.GetDefineInfo(EDefineContentID.TypeTalentConsumeItemCount):GetIntContent();
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Mask).onClick = LuaHelper.OnClick(OnMaskClick);
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_OkButton).onClick = LuaHelper.OnClick(OnOkButtonClick);
+    UIEventListener.Get(m_CancelButton).onClick = LuaHelper.OnClick(OnCancelButtonClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_PanelObject:SetActive(true);
+    -- 获取public_data表配置的重置消耗道具ID,如果道具不够，自动判断消耗钻石(自动消耗钻石功能废弃)
+    local itemId = m_CostItemId;
+    local costItemNum = m_CostItemNum;
+    local hasItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemId);
+    --local costDiamondNum = CCommonTool.GetDefineInfo(EDefineContentID.TypeTalentConsumeZuanShiCount):GetIntContent();
+
+    SetItemShowByExcelIDV04(m_PanelObject, m_CostItemPath, itemId, 0, false, 21, ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+    --SetLabelColor(m_CostItemPath.."/Label_Num", hasItemNum < costItemNum and "FF0000" or "B2B2B2", m_PanelObject); 
+
+    if hasItemNum < costItemNum then
+        SetLabelContent(m_CostItemPath.."/Label_Num", string_format("[FF0000]{0}[-]/{1}", hasItemNum, costItemNum), m_PanelObject);
+        SetGameObjectEvent(m_CostItemPath, function() error("get"); GetWayPanel.Show(itemId); end, m_PanelObject);
+        error("itemId:"..itemId);
+    else
+        SetLabelContent(m_CostItemPath.."/Label_Num", string_format("{0}/{1}", hasItemNum, costItemNum), m_PanelObject);
+        SetItemToolTipsEvent(m_PanelObject, m_CostItemPath, ENUMPANELID.ENUM_PANEL_SKILLPANEL, false, itemId);
+    end
+
+    m_CostType = 0;
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 底框点击事件
+function OnMaskClick(gameObject)
+    m_PanelObject:SetActive(false);
+end
+
+-- 关闭按钮点击事件
+function OnCloseClick(gameObject)
+    m_PanelObject:SetActive(false);
+end
+
+-- 确定按钮点击事件
+function OnOkButtonClick(gameObject)
+    local itemId = m_CostItemId;
+    local costItemNum = m_CostItemNum;
+    local hasItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemId);
+
+    if hasItemNum >= costItemNum then
+        local genreData = SkillManager.GetPlayerGenreData()[m_GenreId];
+        local genreIndex = genreData.index;
+        SkillProtocol.RequestResetGenre(genreIndex, m_GenreId, m_CostType);
+    else
+		if itemId>0 and  CCommonTool.GetQuickToBuyByExcelID(itemId)~=nil then
+            
+            MaterialExchangePanel.ShowPanel(itemId,ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+			
+            return;       
+        else  
+			ShowSystemFlowTips(441);
+		end
+    end
+    m_PanelObject:SetActive(false);
+end
+
+-- 刷新界面道具
+function RefreshItemInfo()
+	if m_CreateSuccess then	
+		InitShow();
+	end
+end
+
+-- 取消按钮点击事件
+function OnCancelButtonClick(gameObject)
+    m_PanelObject:SetActive(false);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 显示重置界面信息
+-- @param genreId 流派ID
+function Show(genreId)
+    if m_CreateSuccess then
+        m_GenreId = genreId;
+        InitShow();
+    end
+end

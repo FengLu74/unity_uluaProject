@@ -1,0 +1,336 @@
+﻿module("PetQualityRefreshPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 宠物名称文本
+local m_PetNameStr = "Left/Label_Name";
+-- 宠物洗练前战斗力
+local m_PetFightValueStr = "Left/Label_FightValue";
+-- 宠物洗练后战斗力
+local m_PetFightValueRefreshStr = "HasRight/Label_FightValue";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 保存资质
+local m_ButtonSaveStr = "HasRight/Button_Save";
+-- 洗练资质
+local m_ButtonRefreshStr = "Bottom/Button_Refresh";
+-- 道具
+local m_ButtonItemStr = "Bottom/NeedItem";
+-----------------------------------------Sprite路径------------------------------------
+-- 洗练石图标
+local m_ItemIconStr = "Bottom/NeedItem/Sprite_Icon";
+-- 洗练石名称
+local m_ItemNameStr = "Bottom/NeedItem/Label_Name";
+-- 洗练石数量
+local m_ItemNumStr = "Bottom/NeedItem/Label_Num";
+-- 洗练石加号
+local m_ItemAddStr = "Bottom/NeedItem/Sprite_Add";
+-- 战力提升的标记
+local m_FightValueUpStr = "HasRight/Sprite_Up";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧资质路径
+local m_LeftQualitysStr = "Left/Qualitys/";
+-- 右侧有资质
+local m_RightHasQualityStr = "HasRight";
+-- 右侧没有资质
+local m_RightNoQualityStr = "NoRight";
+-- 右侧资质路径
+local m_RightQualitysStr = "HasRight/Qualitys/";
+----------------------------------通用的名称路径---------------------------------------
+-- 资质数值
+local m_QualityValueStr = "/Label_Value";
+-- 资质进度条
+local m_QualityProStr = "/ExpProgress";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+-- 当前数量是否充足
+local m_bIsEnough = false;
+-- 当前左侧所有最大值的和
+local m_AllLeftValue = 0;
+-- 当前右侧所有最大值的和
+local m_AllRightValue = 0;
+-- 左侧战力值
+local m_LeftFightValue = 0;
+-- 右侧战力值
+local m_RightFightValue = 0;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL);
+end
+
+function InitEvents()
+end
+
+function InitData()
+end
+
+-- 初始化显示
+function InitShow()
+    InitLeftContentShow();
+    InitRightContentShow();
+    InitBottomShow();
+end
+
+function InitLeftContentShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::"..m_CurSelectPet.CRID);
+        return false;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+    local petName = CCommonTool.GetTxtData(petMainInfo.NameTextID).m_str;
+    local qualityName = CCommonTool.GetTxtData(1282).m_str;
+    SetLabelContent(m_PetNameStr,qualityName,m_panelObject);
+    if petATT.IsHaveNotSavedQulaityInfo then
+        m_LeftFightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,2) + 0.5);
+        SetLabelContent(m_PetFightValueStr,m_LeftFightValue,m_panelObject);
+    else
+        m_LeftFightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,1) + 0.5);
+        SetLabelContent(m_PetFightValueStr,m_LeftFightValue,m_panelObject);
+    end
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curValue;
+    local maxValue;
+    m_AllLeftValue = 0;
+    local petAttrInfo = CCommonTool.GetPetAttrInfo(petMainInfo.RoleAttrID);
+    local maxQualityTable = {[1] = petAttrInfo.LifeQualityMax,[2] = petAttrInfo.AttackQualityMax,[3] = petAttrInfo.DefenceQualityMax,[4] = petAttrInfo.AngerQualityMax,[5] = petAttrInfo.AgileQualityMax}
+    for Index = 1, PET_ENUM.PET_ALL_QUALITY_NUM do
+        if petATT.IsHaveNotSavedQulaityInfo then
+            curValue = petQualityInfo[Index - 1].QualityMin;
+        else
+            curValue = petQualityInfo[Index - 1].QualityMin + petQualityInfo[Index - 1].QualityCur;
+        end
+        maxValue = petQualityInfo[Index - 1].QualityMax;
+        if maxValue >= PetHighQualityPercent*maxQualityTable[Index] then
+            SetLabelContent(m_LeftQualitysStr .. Index .. m_QualityValueStr,"[F5F4E8]"..curValue .."/[-][C791FF]"..maxValue,m_panelObject);
+            SetSpriteGradientColor(m_LeftQualitysStr .. Index .. m_QualityProStr, "774CBEFF", "8E70FEFF", m_panelObject);
+        else
+            SetLabelContent(m_LeftQualitysStr .. Index .. m_QualityValueStr,"[F5F4E8]"..curValue .."/"..maxValue,m_panelObject);
+            SetSpriteGradientColor(m_LeftQualitysStr .. Index .. m_QualityProStr, "2050A8FF", "6AB0E6FF", m_panelObject);
+        end
+        m_AllLeftValue = m_AllLeftValue + maxValue;
+        SetSpriteFillAmount(m_LeftQualitysStr .. Index .. m_QualityProStr,curValue/maxValue,m_panelObject);
+    end
+end
+
+function InitRightContentShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::"..m_CurSelectPet.CRID);
+        return false;
+    end
+    m_AllRightValue = 0;
+    if petATT.IsHaveNotSavedQulaityInfo then
+        SetGameObjectState(m_RightHasQualityStr,true,m_panelObject);
+        SetGameObjectState(m_RightNoQualityStr,false,m_panelObject);
+        m_RightFightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,3) + 0.5);
+        SetLabelContent(m_PetFightValueRefreshStr,m_RightFightValue,m_panelObject);
+--        if m_RightFightValue > m_LeftFightValue then
+--            SetGameObjectState(m_FightValueUpStr,true,m_panelObject);
+--        else
+--            SetGameObjectState(m_FightValueUpStr,false,m_panelObject);
+--        end
+        local petQualityInfo = petATT.PetQualityInfo;
+        local curValue;
+        local maxValue;
+        local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+        local petAttrInfo = CCommonTool.GetPetAttrInfo(petMainInfo.RoleAttrID);
+        local maxQualityTable = {[1] = petAttrInfo.LifeQualityMax,[2] = petAttrInfo.AttackQualityMax,[3] = petAttrInfo.DefenceQualityMax,[4] = petAttrInfo.AngerQualityMax,[5] = petAttrInfo.AgileQualityMax}
+        for Index = 1, PET_ENUM.PET_ALL_QUALITY_NUM do
+            curValue = petQualityInfo[Index - 1].QualityMinNotSaved;
+            maxValue = petQualityInfo[Index - 1].QualityMaxNotSaved;
+            if maxValue >= PetHighQualityPercent*maxQualityTable[Index] then
+                SetLabelContent(m_RightQualitysStr .. Index .. m_QualityValueStr,"[F5F4E8]"..curValue .."/[-][C791FF]"..maxValue,m_panelObject);
+                SetSpriteGradientColor(m_RightQualitysStr .. Index .. m_QualityProStr, "774CBEFF", "8E70FEFF", m_panelObject);
+            else
+                SetLabelContent(m_RightQualitysStr .. Index .. m_QualityValueStr,"[F5F4E8]"..curValue .."/"..maxValue,m_panelObject);
+                SetSpriteGradientColor(m_RightQualitysStr .. Index .. m_QualityProStr, "2050A8FF", "6AB0E6FF", m_panelObject);
+            end
+            m_AllRightValue = m_AllRightValue + maxValue;
+            SetSpriteFillAmount(m_RightQualitysStr .. Index .. m_QualityProStr,curValue/maxValue,m_panelObject);
+        end
+    else
+        SetGameObjectState(m_RightHasQualityStr,false,m_panelObject);
+        SetGameObjectState(m_RightNoQualityStr,true,m_panelObject);
+    end
+end
+
+function InitBottomShow()
+    SetSpriteByAtlasID(m_ItemIconStr,CCommonTool.GetImageIDByExcelID(PetQualityRefreshNeedItemID),m_panelObject,true);
+    SetLabelTextByID(m_ItemNameStr,CCommonTool.GetNameIDByExcelID(PetQualityRefreshNeedItemID),m_panelObject);
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+    local itemQuality = petMainInfo.AptitudeID;
+    local needNum;
+    if PetQualityRefreshNeedItemNum[itemQuality] == nil then
+        needNum = 0;
+    else
+        needNum = PetQualityRefreshNeedItemNum[itemQuality];
+    end
+    local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetQualityRefreshNeedItemID);
+    if hasNum >= needNum then
+        m_bIsEnough = true;
+    else
+        m_bIsEnough = false;
+    end
+    SetLabelContent(m_ItemNumStr,hasNum.."/"..needNum,m_panelObject);
+    if hasNum <= 0 then
+        SetGameObjectState(m_ItemAddStr,true,m_panelObject);
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ItemIconStr).gameObject,true);
+    else
+        SetGameObjectState(m_ItemAddStr,false,m_panelObject);
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_ItemIconStr).gameObject,false);
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonSaveStr, OnSaveClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonRefreshStr, OnRefreshClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonItemStr,OnItemClick,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL);
+end
+
+function OnSaveClick()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::"..m_CurSelectPet.CRID);
+        return false;
+    end
+    if petATT.IsHaveNotSavedQulaityInfo then
+        local itemTable = { };
+        local curNum = 0;
+        local hasNum = false;
+        for Index = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+            curNum = petATT.PetAddQualityUseItemInfo[Index - 1];
+            itemTable[PetQualityFosterNeedItemsChunk[Index]] = curNum;
+            if curNum > 0 then
+                hasNum = true;
+            end
+        end
+        local canPutList = G_BagMng:GetCanPickUpListItem(itemTable);
+        if canPutList.Count ~= PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM then
+            log("背包不足，無法保存洗練屬性");
+            ShowSystemFlowTips(7813);
+            return false;
+        end
+        if hasNum then
+            local tempTable = { };
+            table.insert(tempTable, 1, "");
+            table.insert(tempTable, 2, CCommonTool.GetTxtData(1499).m_str);
+            table.insert(tempTable, 3, OnSendSaveMsg);
+            table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+            table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+            table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+            table.insert(tempTable, 10, true);
+            createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+            return;
+        end
+        OnSendSaveMsg();
+    end
+end
+
+function OnSendSaveMsg()
+    ParameterToMessageTextBox.OnCloseClick();
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_QUALITY_SAVE);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnRefreshClick()
+    if m_bIsEnough then
+        if m_AllRightValue >= m_AllLeftValue then
+            local tempTable = { };
+            table.insert(tempTable, 1, "");
+            table.insert(tempTable, 2, CCommonTool.GetTxtData(1498).m_str);
+            table.insert(tempTable, 3, OnSendRefreshMsg);
+            table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+            table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+            table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+            table.insert(tempTable, 10, true);
+            createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+            return;
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_QUALITY_REFRESH);
+        buffer:WriteInt(m_CurSelectPet.CRID);
+        G_NetWorkMng:SendMessage(buffer);
+    else
+        log("洗练石数量不足啊");
+        --error("PetQualityRefreshNeedItemID-->"..PetQualityRefreshNeedItemID);
+        if PetQualityRefreshNeedItemID>0 and CCommonTool.GetQuickToBuyByExcelID(PetQualityRefreshNeedItemID)~=nil then
+
+            MaterialExchangePanel.ShowPanel(PetQualityRefreshNeedItemID,ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL)
+        else
+            ShowSystemFlowTips(7814);
+        end
+        
+    end
+end
+
+function OnSendRefreshMsg()
+    ParameterToMessageTextBox.OnCloseClick();
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_QUALITY_REFRESH);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnItemClick()
+    GetWayPanel.Show(PetQualityRefreshNeedItemID,ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL) == 1 then
+        InitShow();
+    end
+end

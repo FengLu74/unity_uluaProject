@@ -1,0 +1,95 @@
+﻿module("GuildLotteryPanel", package.seeall)
+
+-----------------------------------------------label路径--------------------------------------------
+
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+
+-----------------------------------------------button路径--------------------------------------------
+
+
+-------------------------------------------通用的名称路径----------------------------------------------
+
+
+
+----------------------------------------gameobject所在的路径---------------------------------------
+-- UIListView列表
+local m_listViewStr = "ShopList/Grid";
+local m_buyItemPanelStr = "BuyItemPanel";
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+local m_shopList = nil;
+local m_buyItemPanel = nil;
+
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+function Start()
+    -- 初始化对象
+    InitObjects();
+    -- 初始化点击事件
+    InitOnClick();
+    -- 初始化数据
+    InitData();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_shopList = nil;
+    m_buyItemPanel = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_panelObject = child(m_panelObject, "GuildWelfarePanel/GuildLotteryPanel").gameObject;
+    m_buyItemPanel = child(m_panelObject, m_buyItemPanelStr).gameObject;
+
+    m_listView = GetComponent(m_panelObject, m_listViewStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+-- 初始化事件信息
+function InitOnClick()
+    
+end
+
+-- 初始化数据
+function InitData()
+    
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    
+end
+
+
+----------------------------------事件处理--------------------------------------
+
+
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+
+

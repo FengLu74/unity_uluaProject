@@ -1,0 +1,53 @@
+﻿module("GetRewardManger", package.seeall)
+
+--奖励字典
+rewardDict =nil;
+-- 奖励列表
+rewardsList = nil;
+--道具列表
+itemList = nil;
+-- 抽奖id
+rewardId = 0;
+--总的道具数
+allItemsNum = 0;
+--抽奖类型数
+rewardStateNum =0;
+--上一次领取时间 
+beginTime = 0;
+--冷却时间
+coolTime =0;
+--领取的次数
+rewardNum = 0;
+--每日可领取的总次数
+rewardAllNum = 0;
+--是否全部领取完
+allRewardState = 0;
+--道具id
+itemId = 0;
+--单个道具个数
+itemNum = 0;
+--道具状态
+itemState = 0;
+-- 获取领取信息
+function GetMember(rewardId)
+    if rewardDict then
+        return rewardDict[rewardId];
+    end
+    return nil;
+end
+
+--通用标签获取list数据
+function GetListByTabIndex(tabIndex)
+    return rewardsList;
+end
+
+-- 数据清理
+function ClearData()
+    rewardDict = nil;
+    rewardsList = nil;
+    beginTime = 0;
+    state = 0;
+    rewardNum = 0;
+    allItemsNum = 0;
+    itemList = nil;
+end

@@ -1,0 +1,176 @@
+﻿module('GuildWelfareConfirmPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildWelfareConfirmPanel';
+---------------------------------------label路径---------------------------------------
+-- 标题
+local m_LabelTitlePath = "Label-Title";
+-- 贡献值
+local m_LabelContributionPath = "Label_Contribution";
+-- 贡献值范围
+local m_LabelLimitPath = "Label_Limit";
+-- 描述
+local m_LabelDescPath = "Label_Desc";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 确认按钮
+local m_OkButtonPath = "OkButton";
+-- 取消按钮
+local m_CancelButtonPath = "CancelButton";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 标题
+local m_LabelTitle = nil;
+-- 贡献值
+local m_LabelContribution = nil;
+-- 贡献值范围
+local m_LabelLimit = nil;
+-- 描述
+local m_LabelDesc = nil;
+
+-- 俸禄等级
+local m_Level = 1;
+-- 确认回调
+local m_Callback = nil;
+-- 当前贡献值
+local m_CurrentValue = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_LabelTitle = nil;
+	m_LabelContribution = nil;
+	m_LabelLimit = nil;
+	m_LabelDesc = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_WELFARE_CONFIRM);
+    m_LabelTitle = GetComponent(m_PanelObject, m_LabelTitlePath, "UILabel");
+    m_LabelContribution = GetComponent(m_PanelObject, m_LabelContributionPath, "UILabel");
+    m_LabelLimit = GetComponent(m_PanelObject, m_LabelLimitPath, "UILabel");
+    m_LabelDesc = GetComponent(m_PanelObject, m_LabelDescPath, "UILabel");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_OkButtonPath, OnOkButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_CancelButtonPath, OnCancelButtonClick, m_PanelObject);
+    UIEventListener.Get(m_LabelContribution.gameObject).onClick = LuaHelper.OnClick(OnLabelContributionClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_Level == 1 then
+        m_LabelTitle.text = --[[一级俸禄设置]]CCommonTool.GetTxtData(1166).m_str;
+    elseif m_Level == 2 then
+        m_LabelTitle.text = --[[二级俸禄设置]]CCommonTool.GetTxtData(1167).m_str;
+    elseif m_Level == 3 then
+        m_LabelTitle.text = --[[三级俸禄设置]]CCommonTool.GetTxtData(1168).m_str;
+    end
+    local minValue, maxValue = GuildManager.GetGuildWelfareLimitValues(m_Level);
+    m_LabelLimit.text = string_format(--[[贡献值范围: {0} - {1}]]CCommonTool.GetTxtData(1169).m_str, minValue, maxValue);
+    m_LabelDesc.text = --[[贡献值范围会根据公会等级发生变化, 高级获取贡献值更简单, 因此范围会更大]]CCommonTool.GetTxtData(1170).m_str;
+    m_LabelContribution.text = tostring(m_CurrentValue);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WELFARE_CONFIRM);
+end
+
+-- 确认按钮点击事件
+function OnOkButtonClick(gameObject)
+    local minValue, maxValue = GuildManager.GetGuildWelfareLimitValues(m_Level);
+    local value = tonumber(m_LabelContribution.text);
+    if value < minValue or value > maxValue then
+        ShowSystemFlowTips(4383);
+        return;
+    end
+    if m_Callback ~= nil then
+        m_Callback(value);
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WELFARE_CONFIRM);
+end
+
+-- 取消按钮点击事件
+function OnCancelButtonClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WELFARE_CONFIRM);
+end
+
+-- 文本框点击事件
+function OnLabelContributionClick(gameObject)
+    local data = 
+    {
+        X = 0;
+        Y = -433;
+        Text = m_LabelContribution.text;
+    };
+    SmallKeyboardPanel.InputCallback = OnInputNum;
+    SmallKeyboardPanel.ConfirmCallback = OnInputConfirm;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_GUILD_WELFARE_CONFIRM);
+end
+
+--小键盘数字按下回调
+function OnInputNum(data)
+    if data ~= nil then
+        m_LabelContribution.text = data.Num;
+    end
+end
+--小键盘按下确定回调
+function OnInputConfirm()
+    
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(level, currentValue, callback)
+    m_Level = level;
+    m_CurrentValue = currentValue;
+    m_Callback = callback;
+    local panelId = ENUMPANELID.ENUM_PANEL_GUILD_WELFARE_CONFIRM;
+    if IsOpenPanel(panelId) == 1 then
+        InitShow();
+    else
+        createPanel(panelId, ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+    end
+end

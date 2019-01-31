@@ -1,0 +1,108 @@
+﻿module("WingPanelProtocolCN", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    --角色上线接收神翼数据
+    network.Register(GMI_STOC_WING_DATA, OnWingInit);    		
+    --神翼培养返回
+    network.Register(GMI_STOC_SEND_CLIENT_WING_PEIYANG, OnGodFoster);
+    --技能，升级返回
+    network.Register(GMI_STOC_SEND_CLIENT_WING_SKILL_LEVELUP, OnSkillLvlUp);
+    --化灵操作返回
+    network.Register(GMI_STOC_SEND_WING_CHEMICALSPIRIT_PENGYANG, OnStarLvlUp);
+end
+
+-- 角色上线神翼数据
+function OnWingInit(protocolId, buffer)
+	-- table 初始化
+	WingPanelManagerCN.ConstructData();
+	-- 神翼阶数[1-10]
+	local stage_lvl = buffer:ReadByte();
+	-- 神翼星级
+	local star_lvl = buffer:ReadByte();
+	-- 当前神翼id[>10]
+	local Wing_id = buffer:ReadByte();  
+	-- 当前神翼经验
+	local jewe_exp = buffer:ReadInt();
+	--error("[神翼]当前神翼的阶数："..stage_lvl.."_神翼星级:"..star_lvl.."_神翼经验："..jewe_exp.."_当前使用的神翼特效id[>10]= "..Wing_id);
+    if Wing_id>0 then
+        Wing_id=WingPanelManagerCN.getModfA(Wing_id);
+    end
+    WingPanelManagerCN.RefreshGodInfos(jewe_exp,star_lvl,stage_lvl,Wing_id);
+    -- 化灵开启等级要求
+	local davidNeedLvl = buffer:ReadInt();
+	WingPanelManagerCN.DavidsOpenNeedLvAttr(davidNeedLvl);
+    -- 原来没有神翼技能数据，解锁一个发一个
+    -- 技能数据
+    local skillCount = buffer:ReadByte();
+	for index=1,skillCount do
+		local ids = buffer:ReadUShort();
+		local tab = 
+		{
+			id = ids,
+			lvl = buffer:ReadUShort(),
+			index = ids / 1000,
+		};
+	    --error("[神翼]当前以及培养过的技能数(6)："..skillCount.."_id="..tab.id.."_lvl="..tab.lvl.."_index="..tab.index);
+		WingPanelManagerCN.inserSkillTab(tab);
+	end
+	WingPanelManagerCN.pullSkillTab();
+	-- 化灵数据--
+	local davidsCount = buffer:ReadByte();
+    davidsCount=5;
+	for i=1, davidsCount do
+		local types = buffer:ReadInt();
+		local level = buffer:ReadInt();
+		local star_lvl = buffer:ReadInt();
+		local exp =  buffer:ReadInt();
+	    --error("[神翼]化灵培养 数据长度(5)："..davidsCount.."_types="..types.."_level="..level.."_star_lvl="..star_lvl.."_exp="..exp);
+		WingPanelManagerCN.insertStarAttr(i,types,level,star_lvl,exp);
+	end
+	WingPanelManagerCN.sortStarInfo();
+end
+---------------------------------------淬炼界面 start----------------------------------
+
+-- 神翼培养返回
+function OnGodFoster( protocolId, buffer)
+	--神翼等级
+	local stage_lvl = buffer:ReadByte();
+	--神翼星级
+	local star_lvl = buffer:ReadByte();
+	--神翼id
+	local Wing_id = buffer:ReadByte();
+	--神翼经验
+	local exp = buffer:ReadInt();
+    if Wing_id>0 then
+        Wing_id=WingPanelManagerCN.getModfA(Wing_id);
+    end
+	--error("[神翼] 神翼培养 返回 神翼等级："..stage_lvl.."_神翼星级="..star_lvl.."_神翼id[<10]="..Wing_id.."_exp="..exp);
+    WingPanelManagerCN.RefreshGodInfos(exp,star_lvl,stage_lvl,Wing_id);
+end
+
+-- 技能学习返回
+function OnSkillLvlUp(protocolId, buffer)
+	local ids = buffer:ReadUShort();
+	local tab = 
+	{
+		id = ids,
+		lvl = buffer:ReadUShort(),
+		index = ids / 1000,
+	};
+	--error("[神翼] 技能升级返回id："..tab.id.."_等级="..tab.lvl.."_第几个="..tab.index);
+	WingPanelManagerCN.RefreshPlayerSkillTab(tab);
+end
+
+-- 神翼化灵培养返回
+function OnStarLvlUp(protocolId, buffer)
+	local table = 
+		{
+			types = buffer:ReadInt(),
+			level = buffer:ReadInt(),
+			star_lvl = buffer:ReadInt(),
+			exp =  buffer:ReadInt(),
+		};
+	--error("[神翼] 神翼化灵培养types："..table.types.."***table.level"..table.level.."***table.star_lvl"..table.star_lvl.."***table.exp"..table.exp);
+	WingPanelManagerCN.RefreshStarInfos(table);
+end
+
+----------------------------------------技能界面 end---------------------------------

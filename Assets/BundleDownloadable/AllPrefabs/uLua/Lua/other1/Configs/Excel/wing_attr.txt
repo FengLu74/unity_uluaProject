@@ -1,0 +1,138 @@
+﻿--[[
+    field=Id, type=int, desc=翅膀ID，对应翅膀表时装ID
+    field=ActivateAttr1, type=byte, desc=属性1激活阶数
+    field=TypeAttr1, type=int, desc=属性1类型
+    field=ValueAttr1, type=int, desc=每次培养属性1增加值
+    field=EffectTxtId, type=byte, desc=属性2激活阶数
+    field=TypeAttr2, type=int, desc=属性2类型
+    field=ValueAttr2, type=int, desc=每次培养属性2增加值
+    field=ActivateAttr3, type=byte, desc=属性3激活阶数
+    field=TypeAttr3, type=int, desc=属性3类型
+    field=ValueAttr3, type=int, desc=每次培养属性3增加值
+    field=ActivateSenior1, type=byte, desc=特殊属性1激活阶数（填255表示不激活）
+    field=TypeSenior1, type=int, desc=特殊属性1类型（不成长）
+    field=ValueSenior1, type=int, desc=特殊属性1增加的属性值
+    field=ActivateSenior2, type=byte, desc=特殊属性2激活阶数
+    field=TypeSenior2, type=int, desc=特殊属性2类型（不成长）
+    field=ValueSenior2, type=int, desc=特殊属性2增加的属性值
+    field=ActivateSenior3, type=byte, desc=特殊属性3激活阶数
+    field=TypeSenior3, type=int, desc=特殊属性3类型（不成长）
+    field=ValueSenior3, type=int, desc=特殊属性3增加的属性值
+    field=ActivateSenior4, type=byte, desc=特殊属性4激活阶数
+    field=TypeSenior4, type=int, desc=特殊属性4类型（不成长）
+    field=ValueSenior4, type=int, desc=特殊属性4增加的属性值
+    field=Attr1, type=int, desc=翅膀独有属性类型1
+    field=Value1, type=int, desc=翅膀独有属性类型1值
+    field=Attr2, type=int, desc=翅膀独有属性类型2
+    field=Value2, type=int, desc=翅膀独有属性类型2值
+]]
+module("WingAttrTable", package.seeall)
+local list={
+    {Id=140101,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=41,ValueAttr3=2,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=204,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=206,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=111,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140103,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=11,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=21,ValueAttr3=5,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=81,ValueSenior4=40,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140102,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=10,EffectTxtId=1,TypeAttr2=21,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=242,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=230,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=203,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140104,ActivateAttr1=1,TypeAttr1=31,ValueAttr1=2,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=71,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=246,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=234,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=226,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140105,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=91,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=248,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=236,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=228,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140106,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=224,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140107,ActivateAttr1=1,TypeAttr1=41,ValueAttr1=2,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140108,ActivateAttr1=1,TypeAttr1=21,ValueAttr1=5,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=258,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=201,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140109,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=5,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=259,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=207,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=140110,ActivateAttr1=1,TypeAttr1=51,ValueAttr1=10,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=209,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=210,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=101,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340101,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=41,ValueAttr3=2,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=204,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=206,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=111,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340103,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=11,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=21,ValueAttr3=5,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=81,ValueSenior4=40,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340102,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=10,EffectTxtId=1,TypeAttr2=21,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=242,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=230,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=203,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340104,ActivateAttr1=1,TypeAttr1=31,ValueAttr1=2,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=71,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=246,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=234,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=226,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340105,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=91,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=248,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=236,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=228,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340106,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=224,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340107,ActivateAttr1=1,TypeAttr1=41,ValueAttr1=2,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340108,ActivateAttr1=1,TypeAttr1=21,ValueAttr1=5,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=258,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=201,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340109,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=5,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=259,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=207,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=340110,ActivateAttr1=1,TypeAttr1=51,ValueAttr1=10,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=209,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=210,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=101,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240101,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=41,ValueAttr3=2,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=204,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=206,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=111,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240103,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=11,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=21,ValueAttr3=5,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=81,ValueSenior4=40,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240102,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=10,EffectTxtId=1,TypeAttr2=21,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=242,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=230,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=203,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240104,ActivateAttr1=1,TypeAttr1=31,ValueAttr1=2,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=71,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=246,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=234,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=226,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240105,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=91,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=248,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=236,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=228,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240106,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=224,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240107,ActivateAttr1=1,TypeAttr1=41,ValueAttr1=2,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240108,ActivateAttr1=1,TypeAttr1=21,ValueAttr1=5,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=258,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=201,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240109,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=5,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=259,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=207,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=240110,ActivateAttr1=1,TypeAttr1=51,ValueAttr1=10,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=209,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=210,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=101,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440101,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=41,ValueAttr3=2,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=204,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=206,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=111,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440103,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=80,EffectTxtId=1,TypeAttr2=11,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=21,ValueAttr3=5,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=81,ValueSenior4=40,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440102,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=10,EffectTxtId=1,TypeAttr2=21,ValueAttr2=5,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=242,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=230,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=203,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440104,ActivateAttr1=1,TypeAttr1=31,ValueAttr1=2,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=71,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=246,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=234,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=226,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440105,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=91,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=260,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=248,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=236,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=228,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440106,ActivateAttr1=1,TypeAttr1=141,ValueAttr1=72,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=51,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=261,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=224,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440107,ActivateAttr1=1,TypeAttr1=41,ValueAttr1=2,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=202,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440108,ActivateAttr1=1,TypeAttr1=21,ValueAttr1=5,EffectTxtId=1,TypeAttr2=41,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=258,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=244,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=232,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=201,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440109,ActivateAttr1=1,TypeAttr1=11,ValueAttr1=5,EffectTxtId=1,TypeAttr2=31,ValueAttr2=2,ActivateAttr3=1,TypeAttr3=61,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=259,ValueSenior1=300,ActivateSenior2=6,TypeSenior2=207,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=208,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=205,ValueSenior4=50,Attr1=0,Value1=0,Attr2=0,Value2=0},
+    {Id=440110,ActivateAttr1=1,TypeAttr1=51,ValueAttr1=10,EffectTxtId=1,TypeAttr2=71,ValueAttr2=3,ActivateAttr3=1,TypeAttr3=91,ValueAttr3=3,ActivateSenior1=3,TypeSenior1=257,ValueSenior1=225,ActivateSenior2=6,TypeSenior2=209,ValueSenior2=50,ActivateSenior3=8,TypeSenior3=210,ValueSenior3=50,ActivateSenior4=10,TypeSenior4=101,ValueSenior4=20,Attr1=0,Value1=0,Attr2=0,Value2=0}
+};
+local map = {[140101]=list[1],[140103]=list[2],[140102]=list[3],[140104]=list[4],[140105]=list[5],[140106]=list[6],[140107]=list[7],[140108]=list[8],[140109]=list[9],[140110]=list[10],[340101]=list[11],[340103]=list[12],[340102]=list[13],[340104]=list[14],[340105]=list[15],[340106]=list[16],[340107]=list[17],[340108]=list[18],[340109]=list[19],[340110]=list[20],[240101]=list[21],[240103]=list[22],[240102]=list[23],[240104]=list[24],[240105]=list[25],[240106]=list[26],[240107]=list[27],[240108]=list[28],[240109]=list[29],[240110]=list[30],[440101]=list[31],[440103]=list[32],[440102]=list[33],[440104]=list[34],[440105]=list[35],[440106]=list[36],[440107]=list[37],[440108]=list[38],[440109]=list[39],[440110]=list[40]};
+
+count = 40;
+Count = 40;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

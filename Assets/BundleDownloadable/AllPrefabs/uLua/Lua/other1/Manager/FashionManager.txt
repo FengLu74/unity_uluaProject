@@ -1,0 +1,472 @@
+﻿module("FashionManager", package.seeall)
+
+--时装解锁条件
+FashionUnlock = 
+{
+    FU_PropNum = 101;           --拥有{0}个{1}（拥有道具个数）
+    FU_FashionId = 102;         --解锁时装{0}（是否解锁该时装）
+    FU_EquipIntensify = 201;    --{0}强化到{1}级（装备部位强化到一定等级）
+    FU_EquipGem = 202;          --{0}镶嵌宝石{1}个（装备部位镶嵌宝石一定个数）
+    FU_EquipWithQuality = 203;  --装备{0}个{1}级{2}（装备同样品质达到一定个数）
+};
+
+--时装信息
+FashionDatas = {};
+--时装部位文字
+FashionPartTexts = {};
+--时装品质文字
+QualityTexts = {};
+
+-- 装备状态
+WEAR_STATE = 2;
+-- 卸下状态
+OFF_STATE = 3;
+
+function LoadTexts()
+    --菜单选项文字
+    EquipPart = 
+    {
+        [0] = GetTextToId(10028);--"武器";
+        [1] = GetTextToId(10029);--"项链";
+        [2] = GetTextToId(10030);--"戒指";
+        [3] = GetTextToId(10031);--"饰品";
+        [4] = GetTextToId(10032);--"头盔";
+        [5] = GetTextToId(10033);--"胸甲";
+        [6] = GetTextToId(10034);--"护手";
+        [7] = GetTextToId(10035);--"鞋子";
+        [8] = GetTextToId(10036);--"裤子";
+        [9] = GetTextToId(10037);--"耳环";
+    };
+    QualityTexts = 
+    {
+        [1] = GetTextToId(7036);--"白色";--
+        [2] = GetTextToId(7037);--"绿色";--
+        [3] = GetTextToId(7038);--"蓝色";--
+        [4] = GetTextToId(7039);--"紫色";--
+        [5] = GetTextToId(7040);--"橙色";--
+        [6] = GetTextToId(7041);--"红色";--
+    };
+end
+
+-- 本功能的输出
+function Log(text)
+    Util.LuaLog(text);
+end  
+
+-- 获取时装数据
+function GetFashionDatas(proId,fashionType)
+    --不要问我为什么数据这么复杂（设计如此）
+    local cFashionInfos = G_FashionManager:GetFashionInfos(proId,fashionType);
+    local fashionDatas = {};
+    local count = cFashionInfos.count;
+    for index = 1 , cFashionInfos.count do
+        local cFashionInfo = cFashionInfos[index - 1];
+        local group = cFashionInfo.FashionId;
+        local colourNum = cFashionInfo.ColourNum;
+        local data = 
+        {
+            Index = index;
+            Group = group;
+            Infos = {};
+        };
+        local infos = {};
+        local info = 
+        {
+            Index = colourNum;
+            ExcelId = cFashionInfo.Id;
+            FashionInfo = cFashionInfo;
+        }
+        if fashionDatas[group] ~= nil then
+            infos = fashionDatas[group].Infos;
+            data = fashionDatas[group];
+        end 
+        table.insert(infos,info);
+        data.Infos = infos;
+        fashionDatas[group] = data;
+    end
+    local sortFashionDatas = {};
+    for group, data in pairs(fashionDatas) do
+        local fashionData = 
+        {
+            Index = data.Index;
+            Group = data.Group;
+            Infos = data.Infos;
+        };
+        table.insert(sortFashionDatas,fashionData);
+    end
+    table.sort(sortFashionDatas, function(t1, t2) return t1.Group < t2.Group; end)
+    return sortFashionDatas;
+end
+-- 获取时装信息
+function GetFashionState(menuIndex,excelId)
+    local state = 0;
+    if FashionDatas ~= nil then
+        local length1 = GetTableLength(FashionDatas);
+        if length1 > 0 then
+            local sFashionData = FashionDatas[menuIndex];
+            if sFashionData ~= nil then
+                local length2 = GetTableLength(sFashionData);
+                if length2 > 0 then
+                    local sFashionInfo = sFashionData[excelId];
+                    if sFashionInfo ~= nil then
+                        state = sFashionInfo.State;
+                    end
+                end
+            end
+        end
+    end
+    return state;
+end
+-- 刷新时装针对主角自己
+function RefreshFashion(playerChangeEquip)
+    if playerChangeEquip ~= nil then
+        --时装发型Id
+        FashionManager.Log("G_UserInfo.RoleAttribute.FashionHairId : "..G_UserInfo.RoleAttribute.FashionHairId);
+        local fashionHairId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionHairId);
+        FashionManager.Log("fashionHairId : "..fashionHairId);
+        if fashionHairId > 0 then
+            playerChangeEquip:SetUIFashion(1,fashionHairId,true);
+            local fashion = CCommonTool.GetFashion(G_UserInfo.RoleAttribute.FashionHairId);
+            playerChangeEquip:SetUIFashion(-1,fashion.MaterialId,true);
+        else
+            FashionManager.Log("====== : "..G_SceneMng.IndividuationMng:GetHairResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.HairID));
+            playerChangeEquip:SetChangeEquip(G_SceneMng.IndividuationMng:GetHairResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.HairID));
+            --发色
+            local hairColorModelId = G_SceneMng.IndividuationMng:GetHairColorResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.HairID, G_UserInfo.RoleAttribute.HairColor);
+            FashionManager.Log("hairColorModelId : "..hairColorModelId);
+            playerChangeEquip:SetChangeEquip(hairColorModelId);
+        end
+        --时装脸型Id
+        local fashionFaceId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionFaceId);
+        FashionManager.Log("fashionFaceId : "..fashionFaceId);
+        playerChangeEquip:SetUIFashion(2,fashionFaceId,true); 
+        --时装衣服Id
+        local fashionClothesId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionClothesId);
+        FashionManager.Log("fashionClothesId : "..fashionClothesId);
+        playerChangeEquip:SetUIFashion(3,fashionClothesId,true);
+        --时装翅膀Id
+        local fashionWingId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionWingId);
+        FashionManager.Log("fashionWingId : "..fashionWingId);
+        playerChangeEquip:SetUIFashion(4,fashionWingId,true);
+        --时装武器Id
+        local fashionWeaponId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionWeaponId);
+        FashionManager.Log("fashionWeaponId : "..fashionWeaponId);
+        playerChangeEquip:SetUIFashion(5,fashionWeaponId,true);
+    end
+end
+--获取时装模型Id
+function GetFashionModelId(id)
+    if id > 0 then
+      local fashion = CCommonTool.GetFashion(id);
+      if fashion ~= nil then
+        return fashion.ModelresId;
+      end
+    end
+    return 0;
+end
+--更新时装状态信息
+function UpdateFashionData(info)
+    local length = GetTableLength(FashionDatas);
+    Log("UpdateFashionData length : "..length);
+    if length > 0 then
+        for menuIndex, fashionInfos in pairs(FashionDatas) do
+            for index, fashionInfo in pairs(fashionInfos) do
+                if info.Type == fashionInfo.Type then
+                    if fashionInfo.State > 1 then
+                        fashionInfo.State = 3;
+                    end
+                end
+                FashionDatas[menuIndex][index] = fashionInfo;
+            end
+        end
+    end 
+    local fashionData = FashionDatas[info.Type];
+    local data = {};
+    if fashionData ~= nil then
+        local length1 = GetTableLength(fashionData);
+        if length1 > 0 then
+            FashionDatas[info.Type][info.ExcelId] = info;
+            data = FashionDatas[info.Type];
+        else
+            data[info.ExcelId] = info;
+        end
+    else
+        data[info.ExcelId] = info;
+    end
+    FashionDatas[info.Type] = data;
+    local length1 = GetTableLength(FashionDatas);
+    Log("UpdateFashionData length1 : "..length1);
+end
+--判断当前时装是否存在
+function GetFashionExist(excelId)
+    local length = GetTableLength(FashionDatas);
+    if length > 0 then
+        for menuIndex, fashionInfos in pairs(FashionDatas) do
+            for index, fashionInfo in pairs(fashionInfos) do
+                if fashionInfo.ExcelId == excelId then
+                    return true;
+                end
+            end
+        end
+    end 
+    return false;
+end
+-- 获取拥有时装的信息
+function GetHaveFashionAttributeData()
+    local attributeData = {};
+    local length = GetTableLength(FashionDatas);
+    if length > 0 then
+        for menuIndex, fashionInfos in pairs(FashionDatas) do
+            for index, fashionInfo in pairs(fashionInfos) do
+                local id = fashionInfo.ExcelId;
+                local fashion = CCommonTool.GetFashion(id);
+                for i = 1, 3 do
+                    if fashion["Attr"..i] > 0 then
+                        local key = fashion["Attr"..i];
+                        local value = fashion[string_format("Attr{0}Value",i)];
+                        if attributeData[key] == nil then
+                            attributeData[key] = value;
+                        else
+                            attributeData[key] = attributeData[key] + value;  
+                        end
+                    end
+                end
+            end
+        end
+    end 
+    return attributeData;
+end
+
+--清除数据信息
+function Clear()
+    FashionDatas = {};
+end
+
+--获取解锁条件信息
+--@param unlockType 条件类型
+--@param keyValue1 条件参数1
+--@param keyValue2 条件参数2
+--@param keyValue3 条件参数3
+function GetUnlockInfo(unlockType,keyValue1,keyValue2,keyValue3)
+    --消耗{0}个{1}
+    if unlockType == FashionUnlock.FU_PropNum then
+        local notbindExcelId = keyValue1;
+        local bindExcelId = 0;
+        local tradable = CCommonTool.GetTradableInfo(notbindExcelId);
+        if tradable ~= nil then
+            bindExcelId = tradable.UntradableItemID;
+        end
+        local curNum = 0;
+        if bindExcelId == notbindExcelId then
+            curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_PIECE,notbindExcelId);
+        else
+            local bindItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_PIECE,bindExcelId);
+            curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_PIECE,notbindExcelId) + bindItemNum;
+        end
+        local needNum = keyValue2;
+        local lock = curNum >= needNum;
+        local unlockInfo = 
+        {
+            Type = 1;
+            ExcelId = notbindExcelId;
+            CurNum = curNum;
+            NeedNum = needNum;
+            Lock = lock;
+        };
+        return unlockInfo;
+    end
+    --解锁时装{0}（是否解锁该时装）
+    if unlockType == FashionUnlock.FU_FashionId then 
+        local excelId = 0;
+        local curNum = 0;
+        local needNum = 1;
+        local fashionId = keyValue1;
+        local fashion = CCommonTool.GetFashion(fashionId);
+        if fashion ~= nil then
+            excelId = fashion.ItemId;
+        end
+        local lock = GetFashionExist(fashionId);
+        if lock == true then
+            curNum = 1;
+        end
+        local unlockInfo = 
+        {
+            Type = 2;
+            ExcelId = excelId;
+            CurNum = curNum;
+            NeedNum = needNum;
+            Lock = lock;
+        };
+        return unlockInfo;
+    end
+    --{0}装备强化等级达到{1}级
+    if unlockType == FashionUnlock.FU_EquipIntensify then 
+        local partIndex = keyValue1;
+        local level = keyValue2;
+        local curNum = 0;
+        local needNum = 0;
+        local lock = false;
+        local isAll = partIndex == 255;
+        if isAll == true then
+            local index = 0;
+            local count = EquipType.ET_EquipCount;
+            for i = 1, count do
+                local equipLevel = EquipMng.EquipForceData[i-1];
+                if equipLevel >= level then
+                    index = index + 1;
+                end
+            end
+            needNum = count;
+            if index <= 0 then
+                curNum = count;
+                lock = true;
+            else
+                curNum = index;
+                lock = false;
+            end
+        else
+            local equipLevel = EquipMng.EquipForceData[partIndex];
+            if equipLevel >= level then
+                lock = true;
+            end
+        end
+        local unlockInfo = 
+        {
+            Type = 3;
+            All = isAll; 
+            PartIndex = partIndex;
+            Level = level;
+            CurNum = curNum;
+            NeedNum = needNum;
+            Lock = lock;
+        };
+        return unlockInfo;
+    end
+    --所有装备镶嵌宝石总等级到{0}级
+    if unlockType == FashionUnlock.FU_EquipGem then 
+        local partIndex = keyValue1;
+        local level = keyValue2;
+        local curLevel = 0;
+        local isAll = partIndex == 255;
+        local lock = false;
+        if isAll == true then 
+            local count = EquipType.ET_EquipCount;
+            local maxLv = 0;
+            for i = 1 , count do
+                maxLv = maxLv + EquipMng.GetGemAllLevelByIndex(i);
+            end
+            if level > maxLv then
+                lock = true;
+            end
+            curLevel = maxLv;
+        else
+            local maxLv = EquipMng.GetGemAllLevelByIndex(partIndex + 1);
+            if maxLv >= level then
+                lock = true;
+            end
+        end
+        local unlockInfo = 
+        {
+            Type = 4;
+            All = isAll; 
+            PartIndex = partIndex;
+            CurLevel = curLevel;
+            NeedLevel = level;
+            Lock = lock;
+        };
+        return unlockInfo;
+    end
+    --穿戴{0}个{1}级{2}装备
+    if unlockType == FashionUnlock.FU_EquipWithQuality then 
+        local level = keyValue1;
+        local quality = keyValue2;
+        local curNum = 0;
+        local needNum = keyValue3;
+        local lock = false;
+        local count = EquipType.ET_EquipCount;
+        for i = 1, count do
+            local equipType = i - 1;
+            local itemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+            if itemInfo ~=  nil then
+                if itemInfo:GetEquipInfo().NeedLv>=level and itemInfo:GetAptitudeID() >= quality then
+                    curNum = curNum + 1;
+                end
+            end
+        end
+        lock = curNum >= needNum;
+        local unlockInfo = 
+        {
+            Type = 5;
+            PartIndex = partIndex;
+            Level = level;
+            Quality = quality;
+            CurNum = curNum;
+            NeedNum = needNum;
+            Lock = lock;
+        };
+        return unlockInfo;
+    end
+end
+
+-- 是否显示时装红点
+-- @param index 菜单指针
+function IsShowFashionRedHint(menuIndex)
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_FASHION) == false then
+        return false;
+    end
+    local cFashionDatas = GetFashionDatas(G_UserInfo.RoleAttribute.ProID,menuIndex);
+    local fashionData = {};
+    local faceModelId = G_SceneMng.IndividuationMng:GetHeadResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.FaceID)
+    for index, data in pairs(cFashionDatas) do
+        local length = GetTableLength(data.Infos);
+        if length > 0 then
+            for i = 1 , length do
+                local fashionInfo = data.Infos[i].FashionInfo;
+                local result = true;
+                if menuIndex == 2 then
+                    if faceModelId == fashionInfo.ModelresId then
+                        result = false;
+                    end
+                end
+                if result == true then
+                    local excelId = fashionInfo.Id;
+                    local state = GetFashionState(menuIndex,excelId);
+                    if state <= 1 then
+                        local unlockData = 
+                        {
+                            [1] = false;
+                            [2] = false;
+                            [3] = false;
+                        };
+                        if fashionInfo.Key1 > 0 then 
+                            unlockData[1] = GetUnlockInfo(fashionInfo.Key1,fashionInfo.Key1Value1,fashionInfo.Key1Value2,fashionInfo.Key1Value3).Lock;
+                        else
+                            unlockData[1] = true;
+                        end
+                        if fashionInfo.Key2 > 0 then 
+                            unlockData[2] = GetUnlockInfo(fashionInfo.Key2,fashionInfo.Key2Value1,fashionInfo.Key2Value2,fashionInfo.Key2Value3).Lock;
+                        else
+                            unlockData[2] = true;
+                        end
+                        if fashionInfo.Key3 > 0 then 
+                            unlockData[3] = GetUnlockInfo(fashionInfo.Key3,fashionInfo.Key3Value1,fashionInfo.Key3Value2,fashionInfo.Key3Value3).Lock;
+                        else
+                            unlockData[3] = true;
+                        end
+                        --判断是否有未满足的条件
+                        local lockIndex = 0;
+                        for key, var in pairs(unlockData) do
+                            if var == false then
+                                lockIndex = lockIndex + 1;
+                            end
+                        end
+                        if lockIndex <= 0 then
+                            return true;
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return false;
+end

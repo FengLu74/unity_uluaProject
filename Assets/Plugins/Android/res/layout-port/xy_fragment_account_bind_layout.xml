@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <include layout="@layout/xyw_fragment_navigation" />
+
+
+
+        <ScrollView
+            android:id="@+id/xy_agreement_body_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="8dp"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingTop="8dp">
+
+                <EditText
+                    android:id="@+id/xy_account_bind_username"
+                    style="@style/xy.edit.text.account"
+                    android:layout_width="match_parent"
+                    android:drawableLeft="@drawable/xy_ic_user"
+                    android:drawablePadding="4dp"
+                    android:textCursorDrawable="@null" />
+
+
+                <RelativeLayout
+                    android:layout_marginTop="8dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_height_40dip">
+
+                    <EditText
+                        android:id="@+id/xy_account_bind_pwd"
+                        style="@style/xy.edit.text.password"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:drawableLeft="@drawable/xy_ic_pwd"
+                        android:drawablePadding="4dp"
+                        android:textCursorDrawable="@null" />
+
+                    <CheckBox
+                        android:id="@+id/xy_account_bind_pwd_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+                        android:button="@drawable/xy_checkbox_eye"
+                        android:background="@null"
+                        />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:layout_marginTop="8dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_height_40dip">
+
+                    <EditText
+                        android:id="@+id/xy_account_bind_pwd_2"
+                        style="@style/xy.edit.text.password"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:drawableLeft="@drawable/xy_ic_pwd"
+                        android:hint="@string/xy_login_input_pwd_2"
+                        android:drawablePadding="4dp"
+                        android:textCursorDrawable="@null" />
+
+                    <CheckBox
+                        android:id="@+id/xy_account_bind_pwd_2_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentRight="true"
+                        android:layout_centerVertical="true"
+                        android:button="@drawable/xy_checkbox_eye"
+                        android:background="@null"
+                        />
+                </RelativeLayout>
+
+                <Button
+                    android:id="@+id/xy_account_bind_bind"
+                    style="@style/xy.button.positive"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                    android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                    android:text="@string/xy_account_bind_bind" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</RelativeLayout>

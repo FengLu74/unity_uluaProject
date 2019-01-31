@@ -1,0 +1,70 @@
+﻿module("ChargeRewardManager", package.seeall)
+
+-----------------------------------引用的对象------------------------------------------
+--充值奖励数据信息
+--ChargeRewardDatas = {};
+--首次充值领取标记（0没充值过1可领2领过了）
+--FirstTakeGoldState = 0;
+--充值累积奖励数据
+AccumulateRewardDatas = {};
+--累积充值钱数
+AccumulateMoneyNum = 0;
+--领取状态
+DepositAcuAwardState = 0;
+-----------------------------------外部调用方法------------------------------------------
+--[[通过提取类型获取对应数据信息
+function GetChargeRewardDatas(receiveType)
+    local dataType = receiveType + 1; 
+    return ChargeRewardDatas[dataType];
+end]]
+
+--判断充值奖励界面显示状态
+function GetChargeState()
+    if FirstChargeManager.FirstChargeTakeGoldState <= 1 then
+        return true;
+    end
+--    for key, var in pairs(AccumulateRewardDatas) do
+--        if GetAccumulateRewardState(var.Id) == 0 then
+--            return true;
+--        end
+--    end
+    return false;
+end
+
+
+--充值累积奖励数据
+function GetAccumulateRewardDatas()
+    return AccumulateRewardDatas;
+end
+
+--获取领取状态
+function GetAccumulateRewardState(id)
+    local acuAwardState = GetState(DepositAcuAwardState);
+    local index = id - 1;
+    return acuAwardState[index];
+end
+
+--获取下一档次差值
+function GetAccumulateDifference()
+    local length = GetTableLength(AccumulateRewardDatas);--AccumulateMoneyNum
+    local oldMoneyNum = 0;
+    for index = 1 , length do
+        local rewardData = AccumulateRewardDatas[index];
+        if AccumulateMoneyNum < rewardData.AccumulateNum then
+            return rewardData.AccumulateNum - AccumulateMoneyNum;
+        end
+        oldMoneyNum = rewardData.AccumulateNum;
+    end
+    return 0;
+end
+
+--获取标记
+function GetState(value)
+    return G_RewardMng:GetState(value, 30);
+end
+
+--[[清空数据 
+function ClearData()
+    ChargeRewardDatas = {};
+    FirstTakeGoldState = 0;
+end]]

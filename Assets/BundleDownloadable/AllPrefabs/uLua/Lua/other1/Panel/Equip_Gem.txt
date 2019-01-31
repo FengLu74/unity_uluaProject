@@ -1,0 +1,1341 @@
+﻿module("Equip_Gem", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前选择的宝石类型文本
+local m_CurSelectGemTypeLabelStr = "GemPanel/Right/SelectAttr_Button/Label";
+
+-- 共鸣是否激活的文本
+local m_GemsIsResonateLabelStr = "GemPanel/ResonatePanel/NotActive";
+-- 共鸣等级文本所在的位置
+local m_ResonateNameStr = "/Label_Name";
+-- 共鸣等级条件所在的位置
+local m_ResonateCondiStr = "/Label_Condi";
+-- 共鸣属性所在的位置
+local m_ResonateAttrStr = "/Attr";
+-- 共鸣属性名称所在的位置
+local m_ResonateAttrNameStr = "/Label_Name";
+-- 共鸣属性数值所在的位置
+local m_ResonateAttrValueStr = "/Label_Value";
+
+-- 消息提示标题
+local m_MessageTitle = "MessagePanel/Label-Title";
+-- 消息提示文本
+local m_MessageContent = "MessagePanel/Label-Content";
+-- 开孔消耗银币数
+local m_CostNum = "MessagePanel/CostContent/Label_CostBindCoin";
+-- 玩家持有银币数
+local m_PlayerHaveNum = "MessagePanel/CostContent/Label_HasBindCoin";
+
+-- 右侧描述文本
+local m_RightDesContentStr = "GemPanel/Right/ItemPanel/Label_Des";
+-----------------------------------------按钮路径--------------------------------------
+-- 中间5个按钮的通用路径
+local m_MiddleHoleButtonsStr = "GemPanel/Middle/Gems/Gem";
+
+-- 合成按钮
+local m_CombineButtonStr = "GemPanel/Right/Combine_Button";
+-- 购买按钮
+local m_BuyButtonStr = "GemPanel/Right/Buy_Button";
+-- 选择宝石类型的按钮
+local m_SelectAttrButtonStr = "GemPanel/Right/SelectAttr_Button";
+
+-- 选择宝石类型面板的确定按钮
+local m_SureButtonInSelectPanelStr = "GemPanel/GemSelectMenuPanel/Dynamic/ConfirmButton/Button";
+
+-- 中间共鸣的按钮
+local m_GemResonateButtonStr = "GemPanel/Middle/Resonate_Button";
+-- 关闭共鸣面板的按钮
+local m_CloseResonatePanelButtonStr = "GemPanel/ResonatePanel/Button_Close";
+-- 关闭共鸣面板的按钮
+local m_CloseResonatePanel1ButtonStr = "GemPanel/ResonatePanel/Close_Shade";
+
+-- 消息提示确定按钮
+local m_MessagComfirmButtonStr = "MessagePanel/Button-QueDing";
+-- 消息提示取消按钮
+local m_MessagCloseButtonStr = "MessagePanel/Button-FanHui";
+
+-- 系统说明按钮
+local m_SystemExlpainStr = "GemPanel/Middle/Button";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧装备的listView组件所在的位置
+local m_leftEquipListViewCompStr = "GemPanel/Left/ItemPanel/Grid";
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewCompStr = "GemPanel/Right/ItemPanel/Grid";
+-- 选择分类UIListView组件所在的位置
+local m_GemTypeSelectListViewCompStr = "GemPanel/GemSelectMenuPanel/Dynamic/List/ScrollView/Grid";
+
+-- 选择宝石分类的面板
+local m_GemTypeSelectPanel = "GemPanel/GemSelectMenuPanel";
+-- 共鸣面板
+local m_GemResonatePanel = "GemPanel/ResonatePanel";
+
+-- 共鸣当前等级所在的位置
+local m_CurResonateLevelStr = "GemPanel/ResonatePanel/CurLevel";
+-- 共鸣下一等级所在的位置
+local m_NextResonateLevelStr = "GemPanel/ResonatePanel/NextLevel";
+-- 共鸣最大等级所在的位置
+local m_MaxResonateLevelStr = "GemPanel/ResonatePanel/MaxLevel";
+
+-- 消息提示面板
+local m_MessagePanel = "MessagePanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 左侧装备下有装备的路径
+local m_hasEquipStr = "HasItem";
+-- 左侧装备下没有装备的路径
+local m_noEquipStr = "NoItem";
+-- 装备部位图片的路径
+local m_noEquipPosSpriteStr = "NoItem/Sprite_Pos";
+-- 装备名称文本的路径
+local m_EquipNameLabelStr = "Label_Name";
+-- 装备红点的路径
+local m_EquipRedHintStr = "Sprite_RedHint";
+
+-- 装备图标
+local m_EquipIconSpriteStr = "HasItem/Sprite_Icon";
+-- 装备品质图标
+local m_EquipApptitudeSpriteStr = "HasItem/Sprite_Apptitude";
+local m_EquipApptitude2SpriteStr = "HasItem/Sprite_Apptitude2";
+-- 装备品质图标
+local m_EquipApptitudeSprite2Str = "HasItem/Sprite_Equip_Apptitude";
+local m_EquipApptitudeStep2Str = "HasItem/lb_Equip_Apptitude";
+-- 装备星级所在的位置
+local m_EquipStarLabelStr = "HasItem/Label_StarNum";
+local m_EquipStarAddStr = "HasItem/Label_StarNum/Label";
+-- 套装
+local m_EquipSuitStr = "HasItem/Sprite_Suit";
+
+-- 装备宝石位置
+local m_EquipGemsStr = "Gems/Gem";
+-- 装备宝石图片位置
+local m_EquipHasGemStr = "/Sprite";
+
+-- 中间宝石所在的通用位置
+local m_MiddleGemStr = "GemPanel/Middle/Gems/Gem";
+-- 宝石孔红点所在的位置
+local m_HoleRedHintStr = "/Sprite_RedHint";
+-- 中间宝石未开启的对象位置
+local m_MiddleGemClosedStr = "/Closed";
+-- 中间宝石开启的对象位置
+local m_MiddleGemOpenStr = "/Open";
+-- 中间宝石未开启等级不到没解锁的对象位置
+local m_MiddleGemClosedLockStr = "/Closed/Lock";
+-- 中间宝石未开启等级不到没解锁的多少级解锁的文本位置
+local m_MiddleGemClosedLockLabelStr = "/Closed/Lock/Label";
+-- 中间宝石未开启等级到了可开启的对象位置
+local m_MiddleGemOpenCanOpenStr = "/Closed/CanOpen";
+-- 中间宝石开启有镶嵌宝石的位置
+local m_MiddleGemOpenHasGemStr = "/Open/HasGem";
+-- 中间宝石开启的宝石的图标的位置
+local m_MiddleGemOpenHasGemIconStr = "/Open/HasGem/Sprite_Icon";
+-- 中间宝石开启的宝石的等级文本的位置
+local m_MiddleGemOpenHasGemLevelStr = "/Open/HasGem/Label";
+-- 中间宝石开启没有镶嵌宝石的位置
+local m_MiddleGemOpenNoGemStr = "/Open/NoGem";
+
+-- 中间下方宝石信息所在的通用位置
+local m_MiddleGemInfoStr = "GemPanel/Middle/GemInfo/Gem";
+-- 中间下方宝石信息未激活位置
+local m_MiddleGemInfoClosedStr = "/Closed";
+-- 中间下方宝石信息未激活文本位置
+local m_MiddleGemInfoClosedLabelStr = "/Closed/Label";
+-- 中间下方宝石信息激活位置
+local m_MiddleGemInfoOpenStr = "/Open";
+-- 中间下方宝石信息激活并且有符石位置
+local m_MiddleGemInfoOpenHasGemStr = "/Open/HasGem";
+-- 中间下方宝石信息激活并且有符石符石属性位置
+local m_MiddleGemInfoOpenHasGemLabelStr = "/Open/HasGem/Label";
+-- 中间下方宝石信息激活没有符石位置
+local m_MiddleGemInfoOpenNoGemStr = "/Open/NoGem";
+
+-- 右侧道具位置
+local m_RightItemStr = "Item";
+-- 右侧道具数量所在的位置
+local m_RightItemNumLabelStr = "/Label_Num";
+-- 右侧宝石道具属性文本所在的位置
+local m_RightItemAttrValueLabelStr = "Label_AttrValue";
+-- 右侧道具按钮文本
+local m_SetButtonLabelStr = "Set_Button/Label";
+-- 右侧获取道具按钮
+local m_SetButtonSpriteStr = "Set_Button/SetButton";
+-- 右侧使用道具按钮
+local m_GetButtonSpriteStr = "Set_Button/GetButton";
+-- 右侧道具获取加号
+local m_RightAddSpriteStr = "/Sprite_Mask";
+
+-- 宝石属性选择面板文本内容
+local m_GemAttrTypeNameLabelStr = "Label";
+
+-- 宝石镶嵌特效名称
+local m_ParticleNameStr = "/Effect_Beset";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 左侧装备的listView组件
+local m_leftEquipListViewComp = nil;
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewComp = nil;
+-- 选择分类UIListView组件所在的位置
+local m_GemTypeSelectListViewComp = nil;
+-- 左侧装备选择的是第几个(0~9)
+local m_leftEquipSelect = 0;
+-- 右侧属性选择的是第几个(1~9)
+local m_rightAttrSelect = 1;
+-- 当前点击的是第几个孔
+local m_curHoleSelect = -1;
+-- 当前需要选中的精炼的道具
+local m_SelectedItem = nil;
+
+-- 当前是否共鸣
+local m_IsResonate = false;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 共鸣界面是否开启
+local m_isResonatePanelOpen = false;
+-- 选择属性界面是否开启
+local m_isSelectAttrPanelOpen = false;
+-- 开孔弹板是否开启
+local m_isHoleCostPanelOpen = false;
+
+-- 右侧是否有道具
+local m_RightIsHaveItems = false;
+-----------------------------------一些写死的规定--------------------------------------
+-- 左侧装备显示次序对应装备枚举
+local m_EquipsMatchEnum =
+{
+    [1] = EquipType.ET_Arm,
+    [2] = EquipType.ET_Necklace,
+    [3] = EquipType.ET_Earing,
+    [4] = EquipType.ET_Ring,
+    [5] = EquipType.ET_Dress,
+    [6] = EquipType.ET_Helmet,
+    [7] = EquipType.ET_Cuirass,
+    [8] = EquipType.ET_Leg_Guard,
+    [9] = EquipType.ET_Pants,
+    [10] = EquipType.ET_Shoes,
+    [11] = EquipType.ET_Bracelet,
+    [12] = EquipType.ET_Juju,
+}
+
+-- 检索的所有属性
+local m_SearchAllAttrs =
+{
+    11,21,31,41,51,61,71,91,141
+}
+
+-- 共鸣面板文本色值
+local m_ResonatePanelLabelColor =
+{
+    GREY = "807F7E";-- 灰色
+    TITLEBRIGHT = "DDEEFF";-- 文本亮色
+    ATTRNAMECOLOR = "FFFCD1";-- 属性色
+    ATTRVALUECOLOR = "89C05A";-- 属性值色
+}
+
+-- 开孔消耗足够
+local m_CanOpenHole = "FFFFFF";
+-- 开孔消耗不足
+local m_NotCanOpenHole = "FF0000";
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_leftEquipListViewComp = nil;
+    m_RightItemListViewComp = nil;
+    m_GemTypeSelectListViewComp = nil;
+    m_leftEquipSelect = 0;
+    m_rightAttrSelect = 1;
+    m_curHoleSelect = -1;
+    m_IsResonate = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftEquipSelect = m_JumpPanelParamsTable[1];
+        m_rightAttrSelect = m_JumpPanelParamsTable[2];
+        m_isResonatePanelOpen = m_JumpPanelParamsTable[3];
+        m_isSelectAttrPanelOpen = m_JumpPanelParamsTable[4];
+        if m_JumpPanelParamsTable[5] then
+            ShowOpenHoleCostPanel(m_JumpPanelParamsTable[6]);
+        end
+        m_isJumpPanelSave = false;
+    else
+        m_leftEquipSelect = 0;
+        m_rightAttrSelect = 1;
+        m_curHoleSelect = -1;
+        m_isResonatePanelOpen = false;
+        m_isSelectAttrPanelOpen = false;
+    end
+    m_GemTypeSelectListViewComp:LookAt(m_rightAttrSelect - 1, true);
+end
+
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    m_leftEquipListViewComp = GetComponent(m_panelObject, m_leftEquipListViewCompStr, "UIListView");
+    m_RightItemListViewComp = GetComponent(m_panelObject, m_RightItemListViewCompStr, "UIListView");
+    m_GemTypeSelectListViewComp = GetComponent(m_panelObject, m_GemTypeSelectListViewCompStr, "UIListView");
+    m_GemTypeSelectListViewComp:RemoveAll();
+    for k, v in ipairs(m_SearchAllAttrs) do
+        m_GemTypeSelectListViewComp:AddData(k);
+    end
+end
+
+-- 初始化事件
+function InitEvents()
+    m_leftEquipListViewComp:SetInitCallback(OnEquipCloneInit);
+    m_leftEquipListViewComp:SetClickCallback(OnEquipCloneClick);
+    m_RightItemListViewComp:SetInitCallback(OnNeedItemCloneInit);
+    m_RightItemListViewComp:SetClickCallback(OnNeedItemClick);
+    m_GemTypeSelectListViewComp:SetInitCallback(OnGemAttrTypeInit);
+    m_GemTypeSelectListViewComp:SetClickCallback(OnGemAttrTypeClick);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_SelectAttrButtonStr, OnSelectAttrClick, m_panelObject);
+    SetGameObjectEvent(m_CombineButtonStr, OnCombineClick, m_panelObject);
+    SetGameObjectEvent(m_BuyButtonStr, OnBuyClick, m_panelObject);
+    for Index = 1, 5 do
+        SetGameObjectEvent(m_MiddleHoleButtonsStr .. Index, OnMiddleHoleClick, m_panelObject);
+    end
+    -- SetGameObjectEvent(m_SureButtonInSelectPanelStr, OnSelectPanelClick, m_panelObject);
+
+    SetGameObjectEvent(m_GemResonateButtonStr, OnResonateButtonClick, m_panelObject);
+    SetGameObjectEvent(m_CloseResonatePanelButtonStr, OnCloseResonatePanelClick, m_panelObject);
+    SetGameObjectEvent(m_CloseResonatePanel1ButtonStr, OnCloseResonatePanelClick, m_panelObject);
+    SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_panelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetGameObjectState(m_GemTypeSelectPanel, m_isSelectAttrPanelOpen, m_panelObject);
+    SetGameObjectState(m_GemResonatePanel, m_isResonatePanelOpen, m_panelObject);
+    InitLeft();
+    InitMiddle();
+    InitRight();
+    InitResonatePanelShow();
+end
+
+-- 初始化左侧的显示
+function InitLeft()
+    m_leftEquipListViewComp:RemoveAll();
+    if m_leftEquipSelect >= #m_EquipsMatchEnum then
+        m_leftEquipSelect = 0;
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    for k, v in ipairs(m_EquipsMatchEnum) do
+        if myLv < NewEquipOpenLv and k > 10 then  
+            error("装备未到开启等级");
+        else
+            m_leftEquipListViewComp:AddData(k);
+            if m_SelectedItem and G_BagMng:GetEquipUse():GetEquipByEquipType(v) == m_SelectedItem then
+                m_leftEquipSelect = k - 1;
+                m_SelectedItem = nil;
+            end
+        end
+    end
+    m_leftEquipListViewComp:LookAt(m_leftEquipSelect, true);
+end
+
+-- 初始化中间的显示
+function InitMiddle()
+    local singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then 
+        singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 3];
+    end
+    if singleEquipGemsData == nil then
+        error("EquipMng.GemData 不存在栏位为" ..(m_leftEquipSelect + 1) .. "的符石数据");
+        return;
+    end
+    for Index = 1, 5 do
+        local path = m_MiddleGemStr .. Index;
+        local bottomPath = m_MiddleGemInfoStr .. Index;
+        if singleEquipGemsData[Index] ~= nil then
+            local singleGemData = singleEquipGemsData[Index];
+            local isCanOperate = IsHoleCanGemOperate(singleEquipGemsData, Index, m_leftEquipSelect);
+            SetGameObjectState(path .. m_HoleRedHintStr, isCanOperate, m_panelObject);
+            local tweenScaleComp = GetComponent(m_panelObject, path, "TweenScale");
+            if tweenScaleComp ~= nil then
+                if singleGemData.ExcelID < 0 then
+                    tweenScaleComp.enabled = isCanOperate;
+                else
+                    tweenScaleComp.enabled = false;
+                end
+            end
+            if singleGemData.ExcelID < 0 then
+                SetGameObjectState(path .. m_MiddleGemClosedStr, true, m_panelObject);
+                SetGameObjectState(path .. m_MiddleGemOpenStr, false, m_panelObject);
+                SetGameObjectState(bottomPath .. m_MiddleGemInfoClosedStr, true, m_panelObject);
+                SetGameObjectState(bottomPath .. m_MiddleGemInfoOpenStr, false, m_panelObject);
+                local gemOpenKeyID =(m_leftEquipSelect) * 10 + Index;
+                if m_leftEquipSelect >= 10 then 
+                    gemOpenKeyID =(m_leftEquipSelect + 2) * 10 + Index;
+                end
+                -- 对应Gem_Hole表
+                local gemHoleInfo = CCommonTool.GetGemHoleByIndex(gemOpenKeyID);
+                if gemHoleInfo ~= nil then
+                    if gemHoleInfo.Level > G_UserInfo.RoleAttribute.Level then
+                        SetGameObjectState(path .. m_MiddleGemClosedLockStr, true, m_panelObject);
+                        SetGameObjectState(path .. m_MiddleGemOpenCanOpenStr, false, m_panelObject);
+                        local lockTxtInfo = CCommonTool.GetTxtData(880);
+                        if lockTxtInfo ~= nil then
+                            -- local content = string_format(lockTxtInfo.m_str, gemHoleInfo.Level);
+                            local content = "Lv." .. gemHoleInfo.Level;
+                            SetLabelContent(path .. m_MiddleGemClosedLockLabelStr, content, m_panelObject);
+                        else
+                            error("文本表不存在ID为880的文本信息");
+                        end
+                    else
+                        SetGameObjectState(path .. m_MiddleGemClosedLockStr, false, m_panelObject);
+                        SetGameObjectState(path .. m_MiddleGemOpenCanOpenStr, true, m_panelObject);
+                    end
+                else
+                    error("gem_hole表中不存在主键ID为" .. gemOpenKeyID .. "的表信息");
+                end
+                local NotActiveTxtInfo = CCommonTool.GetTxtData(879);
+                if NotActiveTxtInfo ~= nil then
+                    local content = string_format(NotActiveTxtInfo.m_str, Index);
+                    SetLabelContent(bottomPath .. m_MiddleGemInfoClosedLabelStr, content, m_panelObject);
+                else
+                    error("文本表不存在ID为879的文本信息");
+                end
+            else
+                SetGameObjectState(path .. m_MiddleGemClosedStr, false, m_panelObject);
+                SetGameObjectState(path .. m_MiddleGemOpenStr, true, m_panelObject);
+                SetGameObjectState(bottomPath .. m_MiddleGemInfoClosedStr, false, m_panelObject);
+                SetGameObjectState(bottomPath .. m_MiddleGemInfoOpenStr, true, m_panelObject);
+                if singleGemData.ExcelID == 0 then
+                    SetGameObjectState(path .. m_MiddleGemOpenHasGemStr, false, m_panelObject);
+                    SetGameObjectState(path .. m_MiddleGemOpenNoGemStr, true, m_panelObject);
+                    SetGameObjectState(bottomPath .. m_MiddleGemInfoOpenHasGemStr, false, m_panelObject);
+                    SetGameObjectState(bottomPath .. m_MiddleGemInfoOpenNoGemStr, true, m_panelObject);
+                else
+                    SetGameObjectState(path .. m_MiddleGemOpenHasGemStr, true, m_panelObject);
+                    SetGameObjectState(path .. m_MiddleGemOpenNoGemStr, false, m_panelObject);
+                    SetGameObjectState(bottomPath .. m_MiddleGemInfoOpenHasGemStr, true, m_panelObject);
+                    SetGameObjectState(bottomPath .. m_MiddleGemInfoOpenNoGemStr, false, m_panelObject);
+                    SetSpriteByAtlasID(path .. m_MiddleGemOpenHasGemIconStr, CCommonTool.GetImageIDByExcelID(singleGemData.ExcelID), m_panelObject);
+                    local itemInfo = CCommonTool.GetItemInfo(singleGemData.ExcelID);
+                    if itemInfo ~= nil then
+                        SetLabelContent(path .. m_MiddleGemOpenHasGemLevelStr, "Lv." .. itemInfo.Level, m_panelObject);
+                        local attrInfo = CCommonTool.GetAttrIndexInfo(itemInfo.Attr1);
+                        if attrInfo ~= nil then
+                            local attrValue = "";
+                            if attrInfo.Ratio < 1 then
+                                attrValue = string.format("%0.1f", itemInfo.Attr1Value * attrInfo.Ratio * 100) .. "%";
+                            else
+                                attrValue = itemInfo.Attr1Value;
+                            end
+                            SetLabelContent(bottomPath .. m_MiddleGemInfoOpenHasGemLabelStr, CCommonTool.GetAttrNameByAttrID(itemInfo.Attr1) .. "+" .. attrValue, m_panelObject);
+                        else
+                            error("符石：属性表中不存在ID为:" .. itemInfo.Attr1 .. "的属性信息");
+                        end
+                    else
+                        error("符石：道具表中不存在ID为" .. singleGemData.ExcelID .. "的信息")
+                    end
+                end
+            end
+        else
+            error("singleEquipGemsData不存在索引号为" .. Index .. "的符石数据");
+        end
+    end
+end
+
+-- 初始化右侧的消耗显示
+function InitRight()
+    --    if m_SearchAllAttrs[m_rightAttrSelect] == nil then
+    --        error("符石：m_SearchAllAttrs右侧检索存在没有设计的属性选中序列" .. m_rightAttrSelect);
+    --        return;
+    --    end
+    --    local attrID = m_SearchAllAttrs[m_rightAttrSelect];
+    --    if G_SearchGemsConfig[attrID] == nil then
+    --        error("符石：G_SearchGemsConfig右侧检索存在没有设计的属性" .. attrID);
+    --        return;
+    --    end
+    local proID = G_UserInfo.RoleAttribute.ProID;
+    local startValue = CCommonTool.GetValueInGemNeedInfo(m_leftEquipSelect + 1, 1 +(proID - 1) * 2);
+    local endValue = CCommonTool.GetValueInGemNeedInfo(m_leftEquipSelect + 1, 2 +(proID - 1) * 2);
+    if m_leftEquipSelect >= 10 then 
+        startValue = CCommonTool.GetValueInGemNeedInfo(m_leftEquipSelect + 3, 1 +(proID - 1) * 2);
+        endValue = CCommonTool.GetValueInGemNeedInfo(m_leftEquipSelect + 3, 2 +(proID - 1) * 2);
+    end
+    if startValue == nil or endValue == nil then
+        error("gem_need表中不存在数据");
+        return;
+    end
+    local gemList = G_BagMng:GetGemsWithExcelIDRange(startValue, endValue);
+    local allNum = 0;
+    for Index = 1, gemList.Count do
+        allNum = allNum + gemList[Index - 1].ItemNum;
+    end
+    -- SetLabelContent(m_CurSelectGemTypeLabelStr, CCommonTool.GetAttrNameByAttrID(attrID) .. "(" .. allNum .. ")", m_panelObject);
+    m_RightItemListViewComp:RemoveAll();
+    if gemList.Count == 0 then
+        m_RightIsHaveItems = false;
+        m_RightItemListViewComp:AddData(startValue);
+        m_RightItemListViewComp:AddData(startValue + 1);
+        m_RightItemListViewComp:AddData(startValue + 2);
+        SetGameObjectState(m_RightDesContentStr,true,m_panelObject);
+    else
+        m_RightIsHaveItems = true;
+        SetGameObjectState(m_RightDesContentStr,false,m_panelObject);
+    end
+    for Index = 1, gemList.Count do
+        m_RightItemListViewComp:AddData(gemList[Index - 1]);
+    end
+    m_RightItemListViewComp:LookAt(-1, false);
+end
+
+-- 左侧装备信息初始化
+function OnEquipCloneInit(listView, cell, data)
+    local posOrder = data;
+    local equipType = m_EquipsMatchEnum[posOrder];
+    local go = cell.gameObject;
+    local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    local posName = "";
+    local posTxtInfo = CCommonTool.GetTxtData(10028 + equipType);
+    if posOrder > 10 then 
+        posTxtInfo = CCommonTool.GetTxtData(10153 + posOrder - 10);
+    end
+    if posTxtInfo ~= nil then
+        posName = posTxtInfo.m_str;
+    else
+        error("装备符石系统:::" ..(10028 + equipType) .. "文本不存在");
+    end
+    local posNameInfo = CCommonTool.GetTxtData(862);
+    if posNameInfo ~= nil then
+        posName = posName .. posNameInfo.m_str;
+    else
+        error("装备符石系统:::|栏位|文本不存在");
+    end
+    SetLabelContent(m_EquipNameLabelStr, posName, go);
+    SetLabelPinZhi(m_EquipNameLabelStr, 1, go);
+    if itemAttr == nil then
+        SetGameObjectState(m_hasEquipStr, false, go);
+        SetGameObjectState(m_noEquipStr, true, go);
+        SetEquipPosSpriteByEquipType(m_noEquipPosSpriteStr, equipType, true, go);
+    else
+        SetGameObjectState(m_hasEquipStr, true, go);
+        SetGameObjectState(m_noEquipStr, false, go);
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_EquipIconSpriteStr, CCommonTool.GetImageIDByExcelID(excelID), go, true);
+        SetSpriteApptitudeV04(m_EquipApptitudeSpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetSpriteApptitude2V04(m_EquipApptitude2SpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+--        SetSpriteEquipApptitudeV04(m_EquipApptitudeSprite2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetGameObjectState(m_EquipApptitudeSprite2Str, false, go);
+        SetLabelContent(m_EquipApptitudeStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), go);
+        SetLabelColor(m_EquipApptitudeStep2Str, "91e464", go);
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_EquipSuitStr, true, go);
+        else
+            SetGameObjectState(m_EquipSuitStr, false, go);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_EquipStarLabelStr, false, go);
+            SetGameObjectPos(m_EquipSuitStr, Vector3.New(-85, -48, 0), go);
+        else
+            SetGameObjectState(m_EquipStarLabelStr, true, go);
+            SetLabelContent(m_EquipStarLabelStr, itemAttr.StarItemLevel, go);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_EquipStarAddStr, Vector3.New(-14, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-109, -48, 0), go);
+            else
+                SetGameObjectPos(m_EquipStarAddStr, Vector3.New(-25, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-120, -48, 0), go);
+            end
+        end
+        SetItemIconEffect(go, m_EquipIconSpriteStr, excelID, 11);
+    end
+    local gemData = EquipMng.GemData;
+    local singleEquipGemsData = gemData[posOrder];
+    if posOrder > 10 then 
+        singleEquipGemsData = gemData[posOrder + 2];
+    end
+    for Index = 1, 5 do
+        if singleEquipGemsData[Index] ~= nil then
+            if singleEquipGemsData[Index].ExcelID ~= nil then
+                if singleEquipGemsData[Index].ExcelID > 0 then
+                    SetGameObjectState(m_EquipGemsStr .. Index .. m_EquipHasGemStr, true, go);
+                else
+                    SetGameObjectState(m_EquipGemsStr .. Index .. m_EquipHasGemStr, false, go);
+                end
+            else
+                error("singleEquipGemsData[Index]不包含ExcelID属性" .. Index);
+                SetGameObjectState(m_EquipGemsStr .. Index, false, go);
+            end
+        else
+            error("singleEquipGemsData中不存在key值为" .. Index);
+            SetGameObjectState(m_EquipGemsStr .. Index, false, go);
+        end
+    end
+    SetGameObjectState(m_EquipRedHintStr, IsCanEquipGemOperate(posOrder - 1), go);
+end
+
+-- 右侧道具初始化
+function OnNeedItemCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    if m_RightIsHaveItems then
+        local itemAttr = data;
+        SetItemShowByExcelIDV04(go, m_RightItemStr, itemAttr.ExcelID, itemAttr.ItemNum, true, 11, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        SetLabelContent(m_RightItemStr .. m_RightItemNumLabelStr, itemAttr.ItemNum, go);
+        SetGameObjectState(m_RightItemStr .. m_RightItemNumLabelStr, true, go);
+        SetGameObjectState(m_RightItemStr .. m_RightAddSpriteStr, false, go);
+        local itemInfo = itemAttr:GetItemInfo();
+        local attrNameValue = "";
+        if itemInfo ~= nil then
+            attrNameValue = CCommonTool.GetAttrNameByAttrID(itemInfo.Attr1);
+            attrNameValue = attrNameValue .. " +" .. itemInfo.Attr1Value;
+            SetLabelContent(m_RightItemAttrValueLabelStr, attrNameValue, go);
+        end
+        SetGameObjectState(m_SetButtonSpriteStr, true, go);
+        SetGameObjectState(m_GetButtonSpriteStr, false, go);
+        SetLabelTextByID(m_SetButtonLabelStr, 169, go);
+    else
+        local excelID = data;
+        SetItemShowByExcelIDV04(go, m_RightItemStr, excelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        SetGameObjectState(m_RightItemStr .. m_RightAddSpriteStr, true, go);
+        local itemInfo = CCommonTool.GetItemInfo(excelID);
+        local attrNameValue = "";
+        if itemInfo ~= nil then
+            attrNameValue = CCommonTool.GetAttrNameByAttrID(itemInfo.Attr1);
+            attrNameValue = attrNameValue .. " +" .. itemInfo.Attr1Value;
+            SetLabelContent(m_RightItemAttrValueLabelStr, attrNameValue, go);
+        end
+        SetGameObjectState(m_SetButtonSpriteStr, false, go);
+        SetGameObjectState(m_GetButtonSpriteStr, true, go);
+        SetLabelTextByID(m_SetButtonLabelStr, 923, go);
+    end
+end
+
+-- 开孔消耗弹板打开
+function ShowOpenHoleCostPanel(holeSelect)
+    m_curHoleSelect = holeSelect;
+    m_isHoleCostPanelOpen = true;
+    local gemOpenKeyID =(m_leftEquipSelect) * 10 + holeSelect;
+    if m_leftEquipSelect >= 10 then 
+        gemOpenKeyID =(m_leftEquipSelect + 2) * 10 + holeSelect;
+    end
+    -- 对应Gem_Hole表
+    local gemHoleInfo = CCommonTool.GetGemHoleByIndex(gemOpenKeyID);
+    if gemHoleInfo == nil then
+        error("gem_hole表中不存在主键ID为" .. gemOpenKeyID .. "的表信息");
+        return;
+    end
+    local needMoney = gemHoleInfo.MoneyNum;
+    if needMoney > 0 then
+        local content = string_format(CCommonTool.GetTxtData(306).m_str, needMoney);
+        SetGameObjectState(m_MessagePanel, true, m_panelObject);
+        -- 标题
+        SetLabelContent(m_MessageTitle, CCommonTool.GetTxtData(1553).m_str, m_panelObject);
+        -- 文本内容
+        SetLabelContent(m_MessageContent, CCommonTool.GetTxtData(1554).m_str, m_panelObject);
+        -- 消耗银币
+        SetLabelContent(m_CostNum, needMoney, m_panelObject);
+        -- 持有银币
+        SetLabelContent(m_PlayerHaveNum, G_UserInfo.BindCoin, m_panelObject);
+        if G_UserInfo.BindCoin < needMoney then
+            SetLabelColor(m_PlayerHaveNum, m_NotCanOpenHole, m_panelObject);
+        else
+            SetLabelColor(m_PlayerHaveNum, m_CanOpenHole, m_panelObject);
+        end
+
+        SetGameObjectEvent(m_MessagCloseButtonStr, OpenHoleCostPanelClose, m_panelObject);
+        SetGameObjectEvent(m_MessagComfirmButtonStr, OnOpenHoleClick, m_panelObject);
+    else
+        OnOpenHoleClick();
+    end
+
+end
+
+function OpenHoleCostPanelClose()
+    SetGameObjectState(m_MessagePanel, false, m_panelObject);
+    m_isHoleCostPanelOpen = false;
+end
+
+-- 宝石类型分类的初始化
+function OnGemAttrTypeInit(listView, cell, data)
+    local go = cell.gameObject;
+    local gemTypeIndex = data;
+    if m_SearchAllAttrs[gemTypeIndex] == nil then
+        error("符石：m_SearchAllAttrs右侧检索存在没有设计的属性选中序列" .. gemTypeIndex);
+        return;
+    end
+    local attrID = m_SearchAllAttrs[gemTypeIndex];
+    SetLabelContent(m_GemAttrTypeNameLabelStr, CCommonTool.GetAttrNameByAttrID(attrID), go);
+end
+
+-- 初始化共鸣面板数据
+function InitResonatePanelShow(showTip)
+    local gemData = EquipMng.GemData;
+    local resonateLevel = 0;
+    local hasSetResonateLevel = false;
+    for pos, equipGemsData in ipairs(gemData) do
+        if pos ~= 11 and pos ~= 12 then 
+            local singleResonateLevel = 0;
+            local hasSetSingleResonateLevel = false;
+            local isHasEmptyHole = false;
+            for gemIndex, gemData in ipairs(equipGemsData) do
+                if gemData.ExcelID < 0 then
+                elseif gemData.ExcelID == 0 then
+                    isHasEmptyHole = true;
+                    break;
+                else
+                    local itemInfo = CCommonTool.GetItemInfo(gemData.ExcelID);
+                    if itemInfo == nil then
+                        error("符石：道具表中不存在ID为" .. gemData.ExcelID .. "的信息")
+                        return;
+                    end
+                    if hasSetSingleResonateLevel then
+                        if singleResonateLevel > itemInfo.Level then
+                            singleResonateLevel = itemInfo.Level;
+                        end
+                    else
+                        singleResonateLevel = itemInfo.Level;
+                        hasSetSingleResonateLevel = true;
+                    end
+                end
+            end
+            if isHasEmptyHole then
+                resonateLevel = 0;
+                break;
+            end
+            if hasSetSingleResonateLevel then
+                if hasSetResonateLevel then
+                    if resonateLevel > singleResonateLevel then
+                        resonateLevel = singleResonateLevel;
+                    end
+                else
+                    resonateLevel = singleResonateLevel;
+                    hasSetResonateLevel = true;
+                end
+            end
+        end
+    end
+    local beforeResonate = m_IsResonate;
+    if resonateLevel == 0 then
+        m_IsResonate = false;
+        -- SetGameObjectState(m_GemsIsResonateLabelStr, true, m_panelObject);
+    else
+        m_IsResonate = true;
+        -- SetGameObjectState(m_GemsIsResonateLabelStr, false, m_panelObject);
+    end
+
+    local curShowLevel = resonateLevel;
+    if resonateLevel == 0 then
+        curShowLevel = 1;
+    end
+    local gemEffectInfo = CCommonTool.GetGemEffectByIndex(curShowLevel);
+    if gemEffectInfo == nil then
+        error("符石:gem_effect表中不存在ID为" .. curShowLevel .. "的信息");
+        return;
+    end
+    if showTip then
+        if m_IsResonate and m_IsResonate ~= beforeResonate then
+            ShowSystemFlowTips(7250, nil, { string_format(CCommonTool.GetTxtData(903).m_str, curShowLevel) });
+        end
+    end
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateNameStr, string_format(CCommonTool.GetTxtData(903).m_str, curShowLevel), m_panelObject);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateCondiStr, string_format(CCommonTool.GetTxtData(904).m_str, curShowLevel), m_panelObject);
+    local attrValue = GetAttrIndexValue(gemEffectInfo.Attr1, gemEffectInfo.AttrValue1);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "1" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr1), m_panelObject);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "1" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+    attrValue = GetAttrIndexValue(gemEffectInfo.Attr2, gemEffectInfo.AttrValue2);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "2" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr2), m_panelObject);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "2" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+    attrValue = GetAttrIndexValue(gemEffectInfo.Attr3, gemEffectInfo.AttrValue3);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "3" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr3), m_panelObject);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "3" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+    attrValue = GetAttrIndexValue(gemEffectInfo.Attr4, gemEffectInfo.AttrValue4);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "4" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr4), m_panelObject);
+    SetLabelContent(m_CurResonateLevelStr .. m_ResonateAttrStr .. "4" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+    if resonateLevel == 0 then
+        SetLabelColor(m_CurResonateLevelStr .. m_ResonateNameStr, m_ResonatePanelLabelColor.GREY, m_panelObject);
+        SetLabelColor(m_CurResonateLevelStr .. m_ResonateCondiStr, m_ResonatePanelLabelColor.GREY, m_panelObject);
+        for Index = 1, 4 do
+            SetLabelColor(m_CurResonateLevelStr .. m_ResonateAttrStr .. Index .. m_ResonateAttrNameStr, m_ResonatePanelLabelColor.GREY, m_panelObject);
+            SetLabelColor(m_CurResonateLevelStr .. m_ResonateAttrStr .. Index .. m_ResonateAttrValueStr, m_ResonatePanelLabelColor.GREY, m_panelObject);
+        end
+    else
+        SetLabelColor(m_CurResonateLevelStr .. m_ResonateNameStr, m_ResonatePanelLabelColor.TITLEBRIGHT, m_panelObject);
+        SetLabelColor(m_CurResonateLevelStr .. m_ResonateCondiStr, m_ResonatePanelLabelColor.TITLEBRIGHT, m_panelObject);
+        for Index = 1, 4 do
+            SetLabelColor(m_CurResonateLevelStr .. m_ResonateAttrStr .. Index .. m_ResonateAttrNameStr, m_ResonatePanelLabelColor.ATTRNAMECOLOR, m_panelObject);
+            SetLabelColor(m_CurResonateLevelStr .. m_ResonateAttrStr .. Index .. m_ResonateAttrValueStr, m_ResonatePanelLabelColor.ATTRVALUECOLOR, m_panelObject);
+        end
+    end
+
+    if curShowLevel == 15 then
+        SetGameObjectState(m_NextResonateLevelStr, false, m_panelObject);
+        SetGameObjectState(m_MaxResonateLevelStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_NextResonateLevelStr, true, m_panelObject);
+        SetGameObjectState(m_MaxResonateLevelStr, false, m_panelObject);
+        gemEffectInfo = CCommonTool.GetGemEffectByIndex(curShowLevel + 1);
+        if gemEffectInfo == nil then
+            error("符石:gem_effect表中不存在ID为" ..(curShowLevel + 1) .. "的信息");
+            return;
+        end
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateNameStr, string_format(CCommonTool.GetTxtData(903).m_str, curShowLevel + 1), m_panelObject);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateCondiStr, string_format(CCommonTool.GetTxtData(904).m_str, curShowLevel + 1), m_panelObject);
+        local attrValue = GetAttrIndexValue(gemEffectInfo.Attr1, gemEffectInfo.AttrValue1);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "1" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr1), m_panelObject);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "1" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+        attrValue = GetAttrIndexValue(gemEffectInfo.Attr2, gemEffectInfo.AttrValue2);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "2" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr2), m_panelObject);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "2" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+        attrValue = GetAttrIndexValue(gemEffectInfo.Attr3, gemEffectInfo.AttrValue3);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "3" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr3), m_panelObject);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "3" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+        attrValue = GetAttrIndexValue(gemEffectInfo.Attr4, gemEffectInfo.AttrValue4);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "4" .. m_ResonateAttrNameStr, CCommonTool.GetAttrNameByAttrID(gemEffectInfo.Attr4), m_panelObject);
+        SetLabelContent(m_NextResonateLevelStr .. m_ResonateAttrStr .. "4" .. m_ResonateAttrValueStr, "(+" .. attrValue .. ")", m_panelObject);
+    end
+end
+
+-- 获取通过attrIndex表配置的参数获取增加角色的属性值,加法直接返回值，乘法计算百分比
+-- 计算百分比时浮点数取小数点后两位，整数取整
+function GetAttrIndexValue(attrIndex, attrValue)
+    local m_attrIndexData = CCommonTool.GetAttrIndexInfo(attrIndex);
+    local m_attrValue = 0;
+    if m_attrIndexData == nil then
+        error("符石：attrIndex配置错误:" .. attrIndex);
+    else
+        m_attrValue = attrValue * m_attrIndexData.Ratio;
+        if m_attrIndexData.Ratio >= 1 then
+            local m_formatNum = string.format("%0.2f", m_attrValue);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum;
+            else
+                m_attrValue = string.format("%1d", m_attrValue);
+            end
+        end
+        if m_attrIndexData.Ratio < 1 then
+            local m_formatNum = string.format("%0.2f", m_attrValue * 100);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum .. "%";
+            else
+                m_attrValue = string.format("%1d", m_attrValue * 100) .. "%";
+            end
+        end
+    end
+    return m_attrValue;
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击装备
+function OnEquipCloneClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if m_leftEquipSelect == data - 1 then
+        return;
+    else
+        m_leftEquipSelect = data - 1;
+        InitMiddle();
+        InitRight();
+    end
+    --锻造-符石上报
+	if Constants.branch == "cn" then
+		local button_id = 10219+tonumber(cell.dataIndex);
+		ReportManager.RequestReportPanel(button_id);
+	end
+end
+
+-- 点击道具
+function OnNeedItemClick(listView, cell, go)
+    if m_RightIsHaveItems == false then
+        local excelID = listView:GetData(cell.dataIndex);
+        GetWayPanel.Show(excelID, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        return;
+    end
+    local data = listView:GetData(cell.dataIndex);
+    local itemAttr = data;
+    if not EquipMng.CanClickEquipGemButton then
+        log("正在等待服务器上一次宝石操作的回馈，无法继续点击")
+        ShowSystemFlowTips(7289);
+        return;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+        log("装备符石系统还没解锁");
+        ShowSystemFlowTips(7000);
+        return;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        log("主角不存在无法进行镶嵌操作");
+        ShowSystemFlowTips(7010);
+        return;
+    end
+    if not G_UserInfo:GetCurPlayer().IsAlive then
+        log("主角死亡无法进行镶嵌操作");
+        ShowSystemFlowTips(7020);
+        return;
+    end
+    local singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then 
+        singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 3];
+    end
+    if singleEquipGemsData == nil then
+        log("EquipMng.GemData 不存在栏位为" ..(m_leftEquipSelect + 1) .. "的符石数据");
+        ShowSystemFlowTips(7030, nil, { m_leftEquipSelect + 1 });
+        return;
+    end
+    local besetIndex = -1;
+    local curGemCount = 0;
+    local curGemItemInfo = itemAttr:GetItemInfo();
+    if curGemItemInfo == nil then
+        log(string_format("装备符石：道具表中不存在excelID为{0}的道具信息", itemAttr.ExcelID));
+        ShowSystemFlowTips(7040, nil, { itemAttr.ExcelID });
+        return;
+    end
+    -- 2017年6月13日11:28:40 策划要求修改，现在不是这种方式了
+    --    for Index = 1,5 do
+    --        if singleEquipGemsData[Index] ~= nil then
+    --            local singleGemData = singleEquipGemsData[Index];
+    --            if singleGemData.ExcelID > 0 then
+    --                -- 看是否是同类型
+    --                local hasGemItemInfo = CCommonTool.GetItemInfo(singleGemData.ExcelID);
+    --                if hasGemItemInfo == nil then
+    --                    log(string_format("装备符石：道具表中不存在excelID为{0}的道具信息", singleGemData.ExcelID));
+    --                    ShowSystemFlowTips(7040, nil, { singleGemData.ExcelID });
+    --                    return;
+    --                end
+    --                if hasGemItemInfo.Type == curGemItemInfo.Type then
+    --                    log("当前栏位已经有相同类型的宝石了,无法镶嵌");
+    --                    ShowSystemFlowTips(7050);
+    --                    return;
+    --                end
+    --            end
+    --        end
+    --    end
+    for Index = 1, 5 do
+        if singleEquipGemsData[Index] ~= nil then
+            local singleGemData = singleEquipGemsData[Index];
+            if singleGemData.ExcelID == 0 then
+                besetIndex = Index;
+                break;
+            else
+                if singleGemData.ExcelID > 0 then
+                    curGemCount = curGemCount + 1;
+                end
+            end
+        end
+    end
+    if curGemCount == 5 then
+        log("5个空位都已经镶嵌满了，不用再镶嵌了");
+        ShowSystemFlowTips(7060);
+        return;
+    end
+    if besetIndex == -1 then
+        log("没有能够镶嵌的孔位了，无法镶嵌");
+        ShowSystemFlowTips(7070);
+        return;
+    end
+    EquipMng.CanClickEquipGemButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ITEM_STONE_SET);
+    if m_leftEquipSelect >= 10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    buffer:WriteByte(besetIndex);
+    buffer:WriteInt(itemAttr.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4150);
+    local particleComp = GetComponent(m_panelObject, m_MiddleGemStr .. besetIndex .. m_ParticleNameStr, "ParticleSystem");
+    if particleComp ~= nil then
+        particleComp:Stop();
+        particleComp:Play();
+        EquipMng.IsPlayingParticle = true;
+        Timer.Instance:AddTimer(0.7, 0, PlayParticleOver);
+    end
+end
+
+function PlayParticleOver()
+    EquipMng.IsPlayingParticle = false;
+    if EquipMng.EventExcuteAfterPlaying ~= nil then
+        local excuteEvent = EquipMng.EventExcuteAfterPlaying;
+        excuteEvent[1](unpack(excuteEvent[2]));
+        EquipMng.EventExcuteAfterPlaying = nil;
+    end
+end
+
+-- 点击宝石属性检索按钮
+function OnSelectAttrClick()
+    m_isSelectAttrPanelOpen = true;
+    SetGameObjectState(m_GemTypeSelectPanel, m_isSelectAttrPanelOpen, m_panelObject);
+end
+
+-- 点击合成按钮
+function OnCombineClick()
+    ResolveAndCombinePanel.OpenThisPanelByTag(2);
+end
+
+-- 点击购买按钮
+function OnBuyClick()
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.CoinShop, 2, 1);
+end
+
+-- 点击中间孔位按钮
+function OnMiddleHoleClick(e)
+    holeSelect = tonumber(string.sub(e.name, 4, string.len(e.name)));
+    if holeSelect < 1 or holeSelect > 5 then
+        log("中间孔位索引值不为1~5" .. holeSelect);
+        ShowSystemFlowTips(7080, nil, { holeSelect });
+        return;
+    end
+    local singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then 
+        singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 3];
+    end
+    if singleEquipGemsData == nil then
+        log("EquipMng.GemData 不存在栏位为" ..(m_leftEquipSelect + 1) .. "的符石数据");
+        ShowSystemFlowTips(7090, nil, { m_leftEquipSelect + 1 });
+        return;
+    end
+    if singleEquipGemsData[holeSelect] == nil then
+        log("singleEquipGemsData不存在索引号为" .. holeSelect .. "的符石数据");
+        ShowSystemFlowTips(7100, nil, { holeSelect });
+        return;
+    end
+    local singleGemData = singleEquipGemsData[holeSelect];
+    if singleGemData.ExcelID < 0 then
+        local gemOpenKeyID =(m_leftEquipSelect) * 10 + holeSelect;
+        if m_leftEquipSelect >= 10 then 
+            gemOpenKeyID =(m_leftEquipSelect + 2) * 10 + holeSelect;
+        end
+        -- 对应Gem_Hole表
+        local gemHoleInfo = CCommonTool.GetGemHoleByIndex(gemOpenKeyID);
+        if gemHoleInfo == nil then
+            log("gem_hole表中不存在主键ID为" .. gemOpenKeyID .. "的表信息");
+            ShowSystemFlowTips(7100, nil, { gemOpenKeyID });
+            return;
+        end
+        if gemHoleInfo.Level > G_UserInfo.RoleAttribute.Level then
+            log("没看着写着没解锁呢，点啥啊");
+            ShowSystemFlowTips(7120);
+            return;
+        else
+            ShowOpenHoleCostPanel(holeSelect);
+            return;
+        end
+    elseif singleGemData.ExcelID == 0 then
+        log("空的孔，别点了，摘不下来宝石");
+        ShowSystemFlowTips(7130);
+        return;
+    else
+        if not EquipMng.CanClickEquipGemButton then
+            log("正在等待服务器上一次宝石操作的回馈，无法继续点击")
+            ShowSystemFlowTips(7289);
+            return;
+        end
+        if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+            log("装备符石系统还没解锁");
+            ShowSystemFlowTips(7140);
+            return;
+        end
+        if G_UserInfo:GetCurPlayer() == nil then
+            log("主角不存在无法进行摘除操作");
+            ShowSystemFlowTips(7150);
+            return;
+        end
+        if not G_UserInfo:GetCurPlayer().IsAlive then
+            log("主角死亡无法进行摘除操作");
+            ShowSystemFlowTips(7160);
+            return;
+        end
+        local singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 1];
+        if m_leftEquipSelect >= 10 then 
+            singleEquipGemsData = EquipMng.GemData[m_leftEquipSelect + 3];
+        end
+        if singleEquipGemsData == nil then
+            log("EquipMng.GemData 不存在栏位为" ..(m_leftEquipSelect + 1) .. "的符石数据");
+            ShowSystemFlowTips(7170, nil, { m_leftEquipSelect + 1 });
+            return;
+        end
+        if singleEquipGemsData[holeSelect] == nil then
+            log("singleEquipGemsData 不存在孔位索引为" .. holeSelect .. "的符石数据");
+            ShowSystemFlowTips(7180, nil, { holeSelect });
+            return;
+        end
+        local itemTable = { };
+        itemTable[singleGemData.ExcelID] = 1;
+        local itemList = G_BagMng:GetCanPickUpListItem(itemTable);
+        if itemList.Count <= 0 then
+            log("背包放不下，摘不下来啊")
+            ShowSystemFlowTips(7190);
+            return;
+        end
+        EquipMng.CanClickEquipGemButton = false;
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ITEM_STONE_UNSET);
+        if m_leftEquipSelect >= 10 then 
+            buffer:WriteByte(m_leftEquipSelect + 3);
+        else
+            buffer:WriteByte(m_leftEquipSelect + 1);
+        end
+        buffer:WriteByte(holeSelect);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4151);
+    end
+end
+
+function OnOpenHoleClick()
+    SetGameObjectState(m_MessagePanel, false, m_panelObject);
+    m_isHoleCostPanelOpen = false;
+    if not EquipMng.CanClickEquipGemButton then
+        log("正在等待服务器上一次宝石操作的回馈，无法继续点击")
+        ShowSystemFlowTips(7289);
+        return;
+    end
+    local gemOpenKeyID =(m_leftEquipSelect) * 10 + m_curHoleSelect;
+    if m_leftEquipSelect >= 10 then 
+        gemOpenKeyID =(m_leftEquipSelect + 2) * 10 + m_curHoleSelect;
+    end
+    -- 对应Gem_Hole表
+    local gemHoleInfo = CCommonTool.GetGemHoleByIndex(gemOpenKeyID);
+    if gemHoleInfo == nil then
+        log("gem_hole表中不存在主键ID为" .. gemOpenKeyID .. "的表信息");
+        ShowSystemFlowTips(7200, nil, { gemOpenKeyID });
+        return;
+    end
+    local needMoney = gemHoleInfo.MoneyNum;
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+        log("装备符石系统还没解锁");
+        ShowSystemFlowTips(7220);
+        return;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        log("主角不存在无法进行开孔操作");
+        ShowSystemFlowTips(7230);
+        return;
+    end
+    if not G_UserInfo:GetCurPlayer().IsAlive then
+        log("主角死亡无法进行开孔操作");
+        ShowSystemFlowTips(7240);
+        return;
+    end
+    if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(needMoney), ENUMPANELID.ENUM_PANEL_EQUIPPANEL, OnExchangeMoneyCallBack) then
+        log("绑定银币不够，无法开孔");
+        -- ShowSystemFlowTips(7210);
+        return;
+    end
+    EquipMng.CanClickEquipGemButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ITEM_STONE_HOLE_OPEN);
+    if m_leftEquipSelect >= 10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    buffer:WriteByte(m_curHoleSelect);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    EquipMng.CanClickEquipGemButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ITEM_STONE_HOLE_OPEN);
+    if m_leftEquipSelect >= 10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    buffer:WriteByte(m_curHoleSelect);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击宝石分类
+function OnGemAttrTypeClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    m_rightAttrSelect = data;
+end
+
+-- 点击宝石分类面板确定按钮
+function OnSelectPanelClick()
+    m_isSelectAttrPanelOpen = false;
+    SetGameObjectState(m_GemTypeSelectPanel, m_isSelectAttrPanelOpen, m_panelObject);
+    InitRight();
+end
+
+-- 点击共鸣的按钮
+function OnResonateButtonClick()
+    m_isResonatePanelOpen = true;
+    SetGameObjectState(m_GemResonatePanel, m_isResonatePanelOpen, m_panelObject);
+end
+
+-- 关闭共鸣面板按钮
+function OnCloseResonatePanelClick()
+    m_isResonatePanelOpen = false;
+    SetGameObjectState(m_GemResonatePanel, m_isResonatePanelOpen, m_panelObject);
+end
+
+-- 系统说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_EQUIPPANEL, 2);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshEquipGemPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        error("InitMiddleOver:::" .. Time.time);
+        InitRight();
+        InitResonatePanelShow(true);
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_GEM, Equip_Gem.IsShowRedHintEquipGem());
+end
+
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        InitRight();
+    end
+end
+
+-- 打开符石界面并选中道具
+function SelectItem(itemAttr)
+    m_SelectedItem = itemAttr;
+    EquipPanel.OpenThisPanelByTag(2);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_leftEquipSelect;
+    jumpParamsTable[2] = m_rightAttrSelect;
+    jumpParamsTable[3] = m_isResonatePanelOpen;
+    jumpParamsTable[4] = m_isSelectAttrPanelOpen;
+    jumpParamsTable[5] = m_isHoleCostPanelOpen;
+    jumpParamsTable[6] = m_curHoleSelect;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+-- 是否进行宝石按钮的红点显示
+function IsShowRedHintEquipGem()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+        return false;
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    local num = #m_EquipsMatchEnum;
+    if myLv < NewEquipOpenLv then
+        num = num - 2;
+    end
+    for Index = 1, num do
+        if IsCanEquipGemOperate(Index - 1) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可以进行宝石操作
+function IsCanEquipGemOperate(leftSelect)
+    local singleEquipGemsData = EquipMng.GemData[leftSelect + 1];
+    if leftSelect >= 10 then 
+        singleEquipGemsData = EquipMng.GemData[leftSelect + 3];
+    end
+    if singleEquipGemsData == nil then
+        error("EquipMng.GemData 不存在栏位为" ..(leftSelect + 1) .. "的符石数据");
+        return false;
+    end
+    for Index = 1, 5 do
+        if IsHoleCanGemOperate(singleEquipGemsData, Index, leftSelect) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 宝石孔是否可以操作
+function IsHoleCanGemOperate(singleEquipGemsData, holeIndex, leftSelect)
+    if singleEquipGemsData[holeIndex] ~= nil then
+        local singleGemData = singleEquipGemsData[holeIndex];
+        if singleGemData.ExcelID < 0 then
+            local gemOpenKeyID =(leftSelect) * 10 + holeIndex;
+            if leftSelect >= 10 then 
+                gemOpenKeyID =(leftSelect + 2) * 10 + holeIndex;
+            end
+            local gemHoleInfo = CCommonTool.GetGemHoleByIndex(gemOpenKeyID);
+            if gemHoleInfo ~= nil then
+                if gemHoleInfo.Level > G_UserInfo.RoleAttribute.Level then
+                    return false;
+                end
+                local needMoney = gemHoleInfo.MoneyNum;
+                if G_UserInfo.BindCoin < needMoney then
+                    return false;
+                end
+                return true;
+            else
+                return false;
+            end
+        else
+            local curGemLevel = 0;
+            if singleGemData.ExcelID > 0 then
+                curGemLevel = CCommonTool.GetItemInfo(singleGemData.ExcelID).Level;
+            end
+
+            local proID = G_UserInfo.RoleAttribute.ProID;
+            local startValue = CCommonTool.GetValueInGemNeedInfo(leftSelect + 1, 1 +(proID - 1) * 2);
+            local endValue = CCommonTool.GetValueInGemNeedInfo(leftSelect + 1, 2 +(proID - 1) * 2);
+            if leftSelect >= 10 then 
+                startValue = CCommonTool.GetValueInGemNeedInfo(leftSelect + 3, 1 +(proID - 1) * 2);
+                endValue = CCommonTool.GetValueInGemNeedInfo(leftSelect + 3, 2 +(proID - 1) * 2);
+            end
+            if startValue == nil or endValue == nil then
+                error("gem_need表中不存在数据");
+                return false;
+            end
+            local gemList = G_BagMng:GetGemsWithExcelIDRange(startValue, endValue);
+            for Index = 1, gemList.Count do
+                local compareItemInfo = CCommonTool.GetItemInfo(gemList[Index - 1].ExcelID);
+                if curGemLevel < compareItemInfo.Level then
+                    return true;
+                end
+            end
+
+            return false;
+        end
+    else
+        return false;
+    end
+    return false;
+end

@@ -1,0 +1,121 @@
+﻿--[[
+    field=PrivilegeID, type=int, desc=特权ID
+    field=TextID, type=int, desc=特权说明
+    field=IsClientShow, type=byte, desc=客户端是否显示
+    field=NeedVIPCardID, type=byte, desc=需要特权卡的ID
+    field=IsPercentage, type=int, desc=是否是百分比
+    field=Pos, type=int, desc=位置
+    field=VIP0, type=int, desc=VIP0
+    field=VIP1, type=int, desc=VIP1
+    field=VIP2, type=int, desc=VIP2
+    field=VIP3, type=int, desc=VIP3
+    field=VIP4, type=int, desc=VIP4
+    field=VIP5, type=int, desc=VIP5
+    field=VIP6, type=int, desc=VIP6
+    field=VIP7, type=int, desc=VIP7
+    field=VIP8, type=int, desc=VIP8
+    field=VIP9, type=int, desc=VIP9
+    field=VIP10, type=int, desc=VIP10
+    field=VIP11, type=int, desc=VIP11
+    field=VIP12, type=int, desc=VIP12
+    field=VIP13, type=int, desc=VIP13
+    field=VIP14, type=int, desc=VIP14
+    field=VIP15, type=int, desc=VIP15
+    field=VIP16, type=int, desc=VIP16
+    field=VIP17, type=int, desc=VIP17
+    field=VIP18, type=int, desc=VIP18
+    field=VIP19, type=int, desc=VIP19
+    field=VIP20, type=int, desc=VIP20
+]]
+module("VIPPrivilegeTable", package.seeall)
+local list={
+    {PrivilegeID=1,TextID=101830,IsClientShow=1,NeedVIPCardID=1,IsPercentage=0,Pos=2,VIP0=1,VIP1=1,VIP2=1,VIP3=1,VIP4=1,VIP5=1,VIP6=1,VIP7=1,VIP8=1,VIP9=1,VIP10=1,VIP11=1,VIP12=1,VIP13=1,VIP14=1,VIP15=1,VIP16=1,VIP17=1,VIP18=1,VIP19=1,VIP20=1},
+    {PrivilegeID=2,TextID=101831,IsClientShow=1,NeedVIPCardID=1,IsPercentage=1,Pos=3,VIP0=150,VIP1=150,VIP2=150,VIP3=150,VIP4=150,VIP5=150,VIP6=150,VIP7=150,VIP8=150,VIP9=150,VIP10=150,VIP11=150,VIP12=150,VIP13=150,VIP14=150,VIP15=150,VIP16=150,VIP17=150,VIP18=150,VIP19=150,VIP20=150},
+    {PrivilegeID=3,TextID=101832,IsClientShow=1,NeedVIPCardID=2,IsPercentage=1,Pos=9,VIP0=100,VIP1=100,VIP2=100,VIP3=130,VIP4=130,VIP5=130,VIP6=130,VIP7=130,VIP8=130,VIP9=130,VIP10=130,VIP11=130,VIP12=130,VIP13=130,VIP14=130,VIP15=130,VIP16=130,VIP17=130,VIP18=130,VIP19=130,VIP20=130},
+    {PrivilegeID=4,TextID=101833,IsClientShow=0,NeedVIPCardID=2,IsPercentage=1,Pos=10,VIP0=150,VIP1=150,VIP2=150,VIP3=150,VIP4=150,VIP5=150,VIP6=150,VIP7=150,VIP8=150,VIP9=150,VIP10=150,VIP11=150,VIP12=150,VIP13=150,VIP14=150,VIP15=150,VIP16=150,VIP17=150,VIP18=150,VIP19=150,VIP20=150},
+    {PrivilegeID=5,TextID=101834,IsClientShow=0,NeedVIPCardID=1,IsPercentage=0,Pos=4,VIP0=1,VIP1=1,VIP2=1,VIP3=2,VIP4=2,VIP5=2,VIP6=2,VIP7=4,VIP8=4,VIP9=4,VIP10=4,VIP11=4,VIP12=4,VIP13=4,VIP14=4,VIP15=4,VIP16=4,VIP17=4,VIP18=4,VIP19=4,VIP20=4},
+    {PrivilegeID=6,TextID=101835,IsClientShow=0,NeedVIPCardID=3,IsPercentage=0,Pos=16,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=1,VIP5=1,VIP6=1,VIP7=2,VIP8=2,VIP9=3,VIP10=3,VIP11=4,VIP12=4,VIP13=3,VIP14=3,VIP15=3,VIP16=3,VIP17=3,VIP18=3,VIP19=3,VIP20=3},
+    {PrivilegeID=7,TextID=101836,IsClientShow=1,NeedVIPCardID=2,IsPercentage=1,Pos=11,VIP0=100,VIP1=100,VIP2=100,VIP3=200,VIP4=200,VIP5=200,VIP6=200,VIP7=200,VIP8=200,VIP9=200,VIP10=200,VIP11=200,VIP12=200,VIP13=200,VIP14=200,VIP15=200,VIP16=200,VIP17=200,VIP18=200,VIP19=200,VIP20=200},
+    {PrivilegeID=8,TextID=101837,IsClientShow=1,NeedVIPCardID=1,IsPercentage=0,Pos=5,VIP0=1,VIP1=1,VIP2=1,VIP3=1,VIP4=1,VIP5=1,VIP6=1,VIP7=1,VIP8=1,VIP9=1,VIP10=1,VIP11=1,VIP12=1,VIP13=1,VIP14=1,VIP15=1,VIP16=1,VIP17=1,VIP18=1,VIP19=1,VIP20=1},
+    {PrivilegeID=9,TextID=101838,IsClientShow=1,NeedVIPCardID=3,IsPercentage=0,Pos=17,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=1,VIP5=1,VIP6=1,VIP7=1,VIP8=1,VIP9=1,VIP10=1,VIP11=1,VIP12=1,VIP13=1,VIP14=1,VIP15=1,VIP16=1,VIP17=1,VIP18=1,VIP19=1,VIP20=1},
+    {PrivilegeID=10,TextID=101839,IsClientShow=0,NeedVIPCardID=3,IsPercentage=1,Pos=18,VIP0=100,VIP1=100,VIP2=100,VIP3=100,VIP4=95,VIP5=95,VIP6=95,VIP7=95,VIP8=95,VIP9=95,VIP10=95,VIP11=95,VIP12=95,VIP13=95,VIP14=95,VIP15=95,VIP16=95,VIP17=95,VIP18=95,VIP19=95,VIP20=95},
+    {PrivilegeID=11,TextID=101840,IsClientShow=1,NeedVIPCardID=2,IsPercentage=1,Pos=12,VIP0=100,VIP1=100,VIP2=100,VIP3=90,VIP4=90,VIP5=90,VIP6=80,VIP7=80,VIP8=80,VIP9=80,VIP10=75,VIP11=75,VIP12=75,VIP13=75,VIP14=75,VIP15=75,VIP16=75,VIP17=75,VIP18=75,VIP19=75,VIP20=75},
+    {PrivilegeID=12,TextID=101841,IsClientShow=1,NeedVIPCardID=2,IsPercentage=1,Pos=13,VIP0=100,VIP1=100,VIP2=100,VIP3=200,VIP4=200,VIP5=200,VIP6=200,VIP7=200,VIP8=200,VIP9=200,VIP10=200,VIP11=200,VIP12=200,VIP13=200,VIP14=200,VIP15=200,VIP16=200,VIP17=200,VIP18=200,VIP19=200,VIP20=200},
+    {PrivilegeID=13,TextID=101842,IsClientShow=0,NeedVIPCardID=3,IsPercentage=0,Pos=19,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=1,VIP5=1,VIP6=1,VIP7=2,VIP8=2,VIP9=3,VIP10=3,VIP11=4,VIP12=4,VIP13=4,VIP14=4,VIP15=4,VIP16=4,VIP17=4,VIP18=4,VIP19=4,VIP20=4},
+    {PrivilegeID=14,TextID=101843,IsClientShow=1,NeedVIPCardID=1,IsPercentage=0,Pos=6,VIP0=1,VIP1=1,VIP2=1,VIP3=2,VIP4=2,VIP5=2,VIP6=2,VIP7=2,VIP8=2,VIP9=3,VIP10=3,VIP11=3,VIP12=3,VIP13=3,VIP14=3,VIP15=3,VIP16=3,VIP17=3,VIP18=3,VIP19=3,VIP20=3},
+    {PrivilegeID=15,TextID=162957,IsClientShow=1,NeedVIPCardID=2,IsPercentage=0,Pos=14,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=0,VIP5=0,VIP6=0,VIP7=0,VIP8=0,VIP9=0,VIP10=0,VIP11=0,VIP12=0,VIP13=0,VIP14=0,VIP15=0,VIP16=0,VIP17=0,VIP18=0,VIP19=0,VIP20=0},
+    {PrivilegeID=16,TextID=162958,IsClientShow=1,NeedVIPCardID=3,IsPercentage=0,Pos=20,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=0,VIP5=0,VIP6=0,VIP7=0,VIP8=0,VIP9=0,VIP10=0,VIP11=0,VIP12=0,VIP13=0,VIP14=0,VIP15=0,VIP16=0,VIP17=0,VIP18=0,VIP19=0,VIP20=0},
+    {PrivilegeID=17,TextID=162959,IsClientShow=1,NeedVIPCardID=1,IsPercentage=0,Pos=1,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=0,VIP5=0,VIP6=0,VIP7=0,VIP8=0,VIP9=0,VIP10=0,VIP11=0,VIP12=0,VIP13=0,VIP14=0,VIP15=0,VIP16=0,VIP17=0,VIP18=0,VIP19=0,VIP20=0},
+    {PrivilegeID=18,TextID=162960,IsClientShow=1,NeedVIPCardID=2,IsPercentage=0,Pos=8,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=0,VIP5=0,VIP6=0,VIP7=0,VIP8=0,VIP9=0,VIP10=0,VIP11=0,VIP12=0,VIP13=0,VIP14=0,VIP15=0,VIP16=0,VIP17=0,VIP18=0,VIP19=0,VIP20=0},
+    {PrivilegeID=19,TextID=162961,IsClientShow=1,NeedVIPCardID=3,IsPercentage=0,Pos=15,VIP0=0,VIP1=0,VIP2=0,VIP3=0,VIP4=0,VIP5=0,VIP6=0,VIP7=0,VIP8=0,VIP9=0,VIP10=0,VIP11=0,VIP12=0,VIP13=0,VIP14=0,VIP15=0,VIP16=0,VIP17=0,VIP18=0,VIP19=0,VIP20=0},
+    {PrivilegeID=20,TextID=101844,IsClientShow=1,NeedVIPCardID=1,IsPercentage=1,Pos=7,VIP0=0,VIP1=100,VIP2=50,VIP3=50,VIP4=50,VIP5=50,VIP6=50,VIP7=50,VIP8=50,VIP9=50,VIP10=50,VIP11=50,VIP12=50,VIP13=50,VIP14=50,VIP15=50,VIP16=50,VIP17=50,VIP18=50,VIP19=50,VIP20=50},
+    {PrivilegeID=21,TextID=101845,IsClientShow=1,NeedVIPCardID=2,IsPercentage=0,Pos=12,VIP0=0,VIP1=1,VIP2=1,VIP3=1,VIP4=1,VIP5=1,VIP6=2,VIP7=2,VIP8=2,VIP9=3,VIP10=3,VIP11=3,VIP12=4,VIP13=4,VIP14=5,VIP15=6,VIP16=7,VIP17=8,VIP18=8,VIP19=8,VIP20=8},
+    {PrivilegeID=22,TextID=101846,IsClientShow=1,NeedVIPCardID=2,IsPercentage=0,Pos=13,VIP0=0,VIP1=1,VIP2=1,VIP3=1,VIP4=1,VIP5=1,VIP6=2,VIP7=2,VIP8=2,VIP9=3,VIP10=3,VIP11=3,VIP12=4,VIP13=4,VIP14=5,VIP15=6,VIP16=7,VIP17=8,VIP18=8,VIP19=8,VIP20=8}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10],[11]=list[11],[12]=list[12],[13]=list[13],[14]=list[14],[15]=list[15],[16]=list[16],[17]=list[17],[18]=list[18],[19]=list[19],[20]=list[20],[21]=list[21],[22]=list[22]};
+
+count = 22;
+Count = 22;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

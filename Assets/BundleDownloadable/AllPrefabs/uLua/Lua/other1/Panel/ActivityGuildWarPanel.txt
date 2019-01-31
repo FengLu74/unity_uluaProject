@@ -1,0 +1,576 @@
+﻿module('ActivityGuildWarPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityGuildWarPanel';
+---------------------------------------label路径---------------------------------------
+-- 据点战时间点相关提示
+local m_LbContentPath = "Sub_Bottom/lb_Content";
+-- 玩法解释标题
+local m_ExplainTitle = "Sub_Tips/Sub_Bg/sp_Title/lb_Title";
+-----------------------------------------按钮路径--------------------------------------
+-- 领地战 战斗流程提示按钮
+local m_BtnTipsPath = "btn_Tips";
+-- 领地战 战报按钮
+local m_BtnInfoPath = "btn_Info";
+-- 竞价按钮
+local m_BtnAuctionPath = "Sub_Bottom/btn_Auction";
+-- 报名按钮
+local m_BtnSignPath = "Sub_Bottom/btn_Sign";
+-- 战报界面关闭按钮
+local m_BtnClosePath = "Sub_Result/btn_Close";
+local m_BtnExplainClosePath = "Sub_Tips/btn_ExplainClose";
+-- 据点详情tip关闭按钮
+local m_BtnCloseInfoPath = "Sub_StrongholdInfo/btn_Close";
+-----------------------------------------Sprite路径------------------------------------
+-- 据点路径
+local m_SubStrongholdPath = "Sub_Content/Sub_Stronghold";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 战报面板据点信息列表路径
+local m_UIGridPath = "Sub_Result/Sub_ResultList/UIGrid";
+-- 据点信息弹板奖励列表路径
+local m_RewardListPath = "Sub_StrongholdInfo/Sub_Reward/UIGrid";
+-- 领地战玩法解释弹板中单个解释路径
+local m_ExplainItemPath = "Sub_Tips/Sub_Left/ListPanel/Content/Zone";
+-- 标题内容
+local m_labelContent = "/Label_Content";
+-- 小标题
+local m_labelTitle = "/Label_Title";
+-- 拖拽对象
+local m_dragStr = "Sub_Tips/Sub_Left/ListPanel/Drag";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表对象
+local m_UIGrid = nil;
+local m_RewardList = nil;
+
+-- 竞拍，报名是否可点击
+local isCanAuction = nil;
+local isCanSign = nil;
+-- 当前选中的据点
+local m_CurSelectHold = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+    RequestStrongHoldInfo();
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_UIGrid = nil;
+    m_RewardList = nil;
+    isCanAuction = nil;
+    isCanSign = nil;
+    m_CurSelectHold = nil;
+    G_TimerMng:RemoveTimeTask("RequestStrongHoldInfo");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_UIGrid = GetComponent(m_PanelObject, m_UIGridPath, "UIListView");
+    m_RewardList = GetComponent(m_PanelObject, m_RewardListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_BtnTipsPath, OnBtnTipsClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnInfoPath, OnBtnInfoClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnAuctionPath, OnBtnAuctionClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnSignPath, OnBtnSignClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnCloseInfoPath, OnBtnCloseInfoClick, m_PanelObject);
+    m_UIGrid:SetInitCallback(OnUIGridViewInit);
+    m_UIGrid:SetClickCallback(OnUIGridViewClick);
+    m_RewardList:SetInitCallback(OnRewardListInit);
+    m_RewardList:SetClickCallback(OnRewardListClick);
+    SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnExplainClosePath, OnBtnExplainCloseClick, m_PanelObject);
+    for i = 1, 6 do
+        local objectPath = m_SubStrongholdPath .. i
+        SetGameObjectEvent(objectPath, OnStrongHoldClick, m_PanelObject);
+    end
+end
+
+-- 初始化显示信息
+function InitShow()
+    if GuildManager.guildAuctionInfo == nil then return end
+    --    SetLabelTextByID(m_LbContentPath,34357, m_PanelObject);
+    local StrongHoldInfo = GuildManager.guildAuctionInfo.StrongHoldInfo;
+    if IsObjectActive(m_PanelObject, "Sub_StrongholdInfo") then
+        if m_CurSelectHold ~= nil then
+            OnShowStrongholdInfo(m_CurSelectHold);
+        end
+    end
+    if StrongHoldInfo then
+        SetLabelContent(m_LbContentPath, GuildManager.guildAuctionInfo.timeInfoStr, m_PanelObject);
+        -- 按钮显示（0：置灰所有按钮  1：显示竞拍按钮 2：显示报名按钮）
+        local btnState = GuildManager.guildAuctionInfo.btnState;
+        local m_BtnAuction = child(m_PanelObject, m_BtnAuctionPath .. "/Sprite_Background");
+        local m_BtnSign = child(m_PanelObject, m_BtnSignPath .. "/Sprite_Background");
+        isCanAuction = btnState == 1;
+        isCanSign = btnState == 2;
+        CCommonTool.SetGameObjectGrey(m_BtnAuction.gameObject, btnState ~= 1);
+        CCommonTool.SetGameObjectGrey(m_BtnSign.gameObject, btnState ~= 2);
+
+        -- 设置每个据点的状态及信息
+        for i, v in pairs(StrongHoldInfo) do
+            local objectPath = m_SubStrongholdPath .. i .. "/";
+            SetGameObjectState(objectPath, true, m_PanelObject);
+            SetGameObjectState(objectPath .. "Sub_Info/lb_Sign", false, m_PanelObject);
+            local m_Label = GetComponent(m_PanelObject, objectPath .. "Sub_Info/lb_Name", "UILabel");
+            Util.SetLabelOverflow(m_Label, 2);
+            local sceneID = v.sceneID;
+            local sceneData = CCommonTool.GetActivityWarInfoIndex(sceneID);
+            if sceneData then
+                SetLabelTextByID(objectPath .. "lb_Name", sceneData.NameID, m_PanelObject);
+            end
+            -- 领地的状态（0：未激活状态 1：已激活但无公会占领 2：已有公会占领 3：交战中）
+            local icon = child(m_PanelObject, objectPath .. "sp_Icon");
+            local name = child(m_PanelObject, objectPath .. "lb_Name");
+            local spBg = child(m_PanelObject, objectPath .. "sp_Bg");
+            local notActive = child(m_PanelObject, objectPath .. "Sub_Info/lb_NotActive");
+            CCommonTool.SetGameObjectGrey(icon.gameObject, v.sceneState == 0);
+            CCommonTool.SetGameObjectGrey(name.gameObject, v.sceneState == 0);
+            CCommonTool.SetGameObjectGrey(notActive.gameObject, v.sceneState == 0);
+            CCommonTool.SetGameObjectGrey(spBg.gameObject, v.sceneState == 0);
+            SetGameObjectState(objectPath .. "sp_FightState", v.sceneState == 3, m_PanelObject);
+            if v.sceneState == 2 then
+                SetSpriteContent(objectPath .. "sp_Bg", "PanelAloneFourAtlasV04", "UI_GH_LDZ_DiBiaoDi_002", m_PanelObject, true);
+            else
+                SetSpriteContent(objectPath .. "sp_Bg", "PanelAloneFourAtlasV04", "UI_GH_LDZ_DiBiaoDi_001", m_PanelObject, true);
+            end
+            SetGameObjectState(objectPath .. "Sub_Info/sp_FightBg", v.sceneState ~= 1, m_PanelObject);
+            if v.sceneState == 0 then
+                SetGameObjectState(objectPath .. "Sub_Info/lb_Name", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_NotActive", true, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlag", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlagAttack", false, m_PanelObject);
+                SetLabelTextByID(objectPath .. "Sub_Info/lb_NotActive", 905, m_PanelObject);
+            elseif v.sceneState == 1 then
+                SetGameObjectState(objectPath .. "Sub_Info/lb_Name", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_NotActive", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlag", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlagAttack", false, m_PanelObject);
+            elseif v.sceneState == 2 then
+                SetGameObjectState(objectPath .. "Sub_Info/lb_Name", true, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_NotActive", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlag", true, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlagAttack", false, m_PanelObject);
+                -- 占有工会信息
+                local guildName = G_GuildMng:GetGuildName(v.ownerID);
+                local flagName = G_GuildMng:GetFlagName(v.ownerID);
+                local guildLv = G_GuildMng:GetGuildLevel(v.ownerID);
+                local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+                SetLabelContent(objectPath .. "Sub_Info/lb_Name", guildName, m_PanelObject);
+                if m_Label.width > 96 then
+                    Util.SetLabelOverflow(m_Label, 1);
+                    m_Label.width = 102;
+                    SetGameObjectState(objectPath .. "Sub_Info/lb_Sign", true, m_PanelObject);
+                end
+                SetLabelContent(objectPath .. "Sub_Info/lb_GuildFlag", flagName, m_PanelObject);
+                SetSpriteByAtlasID(objectPath .. "Sub_Info/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            elseif v.sceneState == 3 then
+                SetGameObjectState(objectPath .. "Sub_Info/lb_Name", true, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_NotActive", false, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlag", true, m_PanelObject);
+                SetGameObjectState(objectPath .. "Sub_Info/lb_GuildFlagAttack", true, m_PanelObject);
+                SetLabelContent(objectPath .. "Sub_Info/lb_Name",
+                --[[ 交战中 ]]
+                CCommonTool.GetTxtData(1586).m_str, m_PanelObject);
+                -- 占有工会信息
+                local flagName = G_GuildMng:GetFlagName(v.ownerID);
+                local guildLv = G_GuildMng:GetGuildLevel(v.ownerID);
+                local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+                SetLabelContent(objectPath .. "Sub_Info/lb_GuildFlag", flagName, m_PanelObject);
+                SetSpriteByAtlasID(objectPath .. "Sub_Info/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+                -- 进攻工会信息
+                local flagName = G_GuildMng:GetFlagName(v.attackID);
+                local guildLv = G_GuildMng:GetGuildLevel(v.attackID);
+                local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+                SetLabelContent(objectPath .. "Sub_Info/lb_GuildFlagAttack", flagName, m_PanelObject);
+                SetSpriteByAtlasID(objectPath .. "Sub_Info/lb_GuildFlagAttack/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            end
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 领地战流程说明按钮点击
+function OnBtnTipsClick(gameObject)
+    --    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_NOTMADE);
+    GuildWarExplain(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, 4);
+end
+
+-- 公会战报按钮点击
+function OnBtnInfoClick(gameObject)
+    GuildProtocol.RequestAuctionResult();
+end
+
+-- 公会战竞拍按钮点击
+function OnBtnAuctionClick(gameObject)
+    if isCanAuction then
+        GuildProtocol.RequestGetWarInfo();
+    end
+end
+
+-- 公会战报名点击
+function OnBtnSignClick(gameObject)
+    if isCanSign then
+        for i, v in pairs(_G.LogicData_TipsTable) do
+            if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_WAR then
+                table.remove(_G.LogicData_TipsTable, i);
+            end
+        end
+    
+        GuildProtocol.RequestEnterScene();
+    end
+end
+
+-- 据点信息弹板关闭按钮点击
+function OnBtnCloseInfoClick(gameObject)
+    SetGameObjectState("Sub_StrongholdInfo", false, m_PanelObject)
+end
+
+-- 战报据点信息列表初始化
+function OnUIGridViewInit(listView, cell, data)
+    print("竞标结果数据 data = ", SerializeTable(data));
+    local go = cell.gameObject;
+    --    SetGameObjectState("lb_Time", false, go);
+    local strTime = timeToString(data.date, data.time);
+    SetLabelContent("lb_Time", strTime, go);
+    local defendCorpsID = data.defendCorpsID;
+    local attackCorpsID = data.attackCorpsID;
+    local sceneID = data.sceneID;
+    local index = sceneID - 62;
+    if index <= 5 and index > 1  then 
+        SetSpriteContent("sp_Bg", "Activity01AtlasV04", "UI_HDJM_DiTu_00"..index - 1, go, true);
+    else
+        SetSpriteContent("sp_Bg", "Activity01AtlasV04", "UI_HD_DiTu_101", go, true);
+    end
+    SetLabelTextByID("lb_Name", CCommonTool.GetActivityWarInfoIndex(sceneID).NameID, go);
+    -- 攻方公会信息
+    if attackCorpsID > 0 then
+        local myGuildName = G_GuildMng:GetGuildName(attackCorpsID);
+        local myGuildLv = G_GuildMng:GetGuildLevel(attackCorpsID);
+        local myGuildFlag = G_GuildMng:GetFlagName(attackCorpsID);
+        local myInfo = CCommonTool.GetGuildInfoByIndex(tonumber(myGuildLv));
+
+        SetLabelContent("Sub_Red/lb_Name", myGuildName, go);
+        SetLabelContent("Sub_Red/lb_GuildFlag", myGuildFlag, go);
+        SetSpriteByAtlasID("Sub_Red/lb_GuildFlag/sp_Flag", myInfo.FlagIconBig, go, true);
+    else
+        SetLabelContent("Sub_Red/lb_Name", "???", go);
+        SetLabelContent("Sub_Red/lb_GuildFlag", "?", go);
+    end
+    -- 守方公会相关信息
+    if defendCorpsID > 0 then
+        local guildName = G_GuildMng:GetGuildName(defendCorpsID);
+        local flagName = G_GuildMng:GetFlagName(defendCorpsID);
+        local guildLv = G_GuildMng:GetGuildLevel(defendCorpsID);
+        local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+
+        SetLabelContent("Sub_Blue/lb_Name", guildName, go);
+        SetLabelContent("Sub_Blue/lb_GuildFlag", flagName, go);
+        SetSpriteByAtlasID("Sub_Blue/lb_GuildFlag/sp_Flag", info.FlagIconBig, go, true);
+    else
+        SetLabelContent("Sub_Blue/lb_Name", "???", go);
+        SetLabelContent("Sub_Blue/lb_GuildFlag", "?", go);
+    end
+    -- 战报状态（0：显示竞拍结果信息  1：显示战斗结果信息）
+    if data.state == 0 then
+        SetGameObjectState("Sub_Red/sp_Result", false, go);
+        SetGameObjectState("Sub_Blue/sp_Result", false, go);
+    elseif data.state == 1 then
+        SetGameObjectState("Sub_Red/sp_Result", true, go);
+        SetGameObjectState("Sub_Blue/sp_Result", true, go);
+        local txtWin = string_format(CCommonTool.GetTxtData(1179).m_str, "");
+        local txtLose = string_format(CCommonTool.GetTxtData(1180).m_str, "");
+        if data.defendCorpsState == 0 then
+            SetLabelContent("Sub_Red/sp_Result/lb_Result", txtWin, go);
+            SetLabelContent("Sub_Blue/sp_Result/lb_Result", txtLose, go);
+        else
+            SetLabelContent("Sub_Red/sp_Result/lb_Result", txtLose, go);
+            SetLabelContent("Sub_Blue/sp_Result/lb_Result", txtWin, go);
+        end
+        local blueSp = child(go, "Sub_Blue/sp_Result");
+        local blueLb = child(go, "Sub_Blue/sp_Result/lb_Result");
+        local redSp = child(go, "Sub_Red/sp_Result");
+        local redLb = child(go, "Sub_Red/sp_Result/lb_Result");
+        CCommonTool.SetGameObjectGrey(blueSp.gameObject, data.defendCorpsState == 0);
+        CCommonTool.SetGameObjectGrey(blueLb.gameObject, data.defendCorpsState == 0);
+        CCommonTool.SetGameObjectGrey(redSp.gameObject, data.attackCorpsState == 0);
+        CCommonTool.SetGameObjectGrey(redLb.gameObject, data.attackCorpsState == 0);
+    end
+    -- 显示据点产出
+    local m_RewardListPath = "Sub_Reward/UIGrid";
+    local m_RewardList = GetComponent(go, m_RewardListPath, "UIListView");
+    m_RewardList:SetInitCallback(OnRewardListInit);
+    local sceneData = CCommonTool.GetActivityWarInfoIndex(sceneID);
+    local rewardID = sceneData.OutputId;
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+    local itemTable = { };
+    if rewardInfo ~= nil then
+        local list = rewardInfo:GetAllItem();
+        local count = list.Count;
+        for i = 1, count do
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            table.insert(itemTable, { excelId = excelId, num = itemData.ItemNum });
+        end
+        m_RewardList:RemoveAll();
+        for i, v in pairs(itemTable) do
+            m_RewardList:AddData(v);
+        end
+    end
+end
+
+-- 战报据点信息列表点击
+function OnUIGridViewClick(listView, cell, go)
+
+end
+
+-- 据点奖励列表初始化 
+function OnRewardListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.excelId;
+    local num = math.floor(data.num * GuildManager.strongHoldInfo.initProductC);
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 11, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, false, excelId);
+end
+
+-- 据点奖励列表点击
+function OnRewardListClick(listView, cell, go)
+
+end
+-- 公会战战报关闭按钮点击
+function OnBtnCloseClick(gameObject)
+    SetGameObjectState("Sub_Result", false, m_PanelObject);
+end
+-- 玩法解释关闭按钮点击
+function OnBtnExplainCloseClick(gameObject)
+    SetGameObjectState("Sub_Tips", false, m_PanelObject);
+end
+-- 据点点击显示据点信息
+function OnStrongHoldClick(gameObject)
+    local index = tonumber(string.sub(gameObject.name, 15));
+    m_CurSelectHold = index;
+    if index <= 3 then
+        SetGameObjectPos("Sub_StrongholdInfo", Vector3.New(0, 0, 0), m_PanelObject);
+    else
+        SetGameObjectPos("Sub_StrongholdInfo", Vector3.New(-1115, 0, 0), m_PanelObject);
+    end
+    OnShowStrongholdInfo(index);
+end
+-- 显示据点信息
+function OnShowStrongholdInfo(index)
+    -- 暂时屏蔽据点信息的描述
+    SetGameObjectState("Sub_StrongholdInfo/lb_Shop", false, m_PanelObject);
+
+    local StrongHoldInfo = GuildManager.guildAuctionInfo.StrongHoldInfo;
+    if StrongHoldInfo and #StrongHoldInfo > 0 then
+        local data = StrongHoldInfo[tonumber(index)];
+        if data.sceneState == 0 then return end
+        local sceneID = data.sceneID;
+        local sceneData = CCommonTool.GetActivityWarInfoIndex(sceneID);
+        if sceneData then
+            SetLabelTextByID("Sub_StrongholdInfo/lb_Name", sceneData.NameID, m_PanelObject);
+        end
+        SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo", data.sceneState ~= 3, m_PanelObject);
+        SetGameObjectState("Sub_StrongholdInfo/Sub_Fight", data.sceneState == 3, m_PanelObject);
+        if data.sceneState ~= 0 then
+            SetGameObjectState("Sub_StrongholdInfo", true, m_PanelObject)
+        end
+        if data.sceneState == 1 then
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/lb_Name", false, m_PanelObject);
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/lb_GuildFlag", false, m_PanelObject);
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/sp_NoGuildFlag", true, m_PanelObject);
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/lb_NoGuild", true, m_PanelObject);
+        elseif data.sceneState == 2 then
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/lb_Name", true, m_PanelObject);
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/lb_GuildFlag", true, m_PanelObject);
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/sp_NoGuildFlag", false, m_PanelObject);
+            SetGameObjectState("Sub_StrongholdInfo/Sub_GuildInfo/lb_NoGuild", false, m_PanelObject);
+            -- 占有工会信息
+            local guildName = G_GuildMng:GetGuildName(data.ownerID);
+            local flagName = G_GuildMng:GetFlagName(data.ownerID);
+            local guildLv = G_GuildMng:GetGuildLevel(data.ownerID);
+            local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+            SetLabelContent("Sub_StrongholdInfo/Sub_GuildInfo/lb_Name", guildName, m_PanelObject);
+            SetLabelContent("Sub_StrongholdInfo/Sub_GuildInfo/lb_GuildFlag", flagName, m_PanelObject);
+            SetSpriteByAtlasID("Sub_StrongholdInfo/Sub_GuildInfo/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+        elseif data.sceneState == 3 then
+            -- 占有工会信息
+            local guildName = G_GuildMng:GetGuildName(data.ownerID);
+            local flagName = G_GuildMng:GetFlagName(data.ownerID);
+            local guildLv = G_GuildMng:GetGuildLevel(data.ownerID);
+            local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+            local defendPath = "Sub_StrongholdInfo/Sub_Fight/Sub_GuildDefend";
+            SetLabelContent(defendPath .. "/lb_Name", guildName, m_PanelObject);
+            SetLabelContent(defendPath .. "/lb_GuildFlag", flagName, m_PanelObject);
+            SetSpriteByAtlasID(defendPath .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            -- 进攻工会信息
+            local guildName = G_GuildMng:GetGuildName(data.attackID);
+            local flagName = G_GuildMng:GetFlagName(data.attackID);
+            local guildLv = G_GuildMng:GetGuildLevel(data.attackID);
+            local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+            print("attackID = ", data.attackID, "guildName = ", guildName, "flagName = ", flagName);
+            local attackPath = "Sub_StrongholdInfo/Sub_Fight/Sub_GuildAttack";
+            SetLabelContent(attackPath .. "/lb_Name", guildName, m_PanelObject);
+            SetLabelContent(attackPath .. "/lb_GuildFlag", flagName, m_PanelObject);
+            SetSpriteByAtlasID(attackPath .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+        end
+        local rewardID = sceneData.OutputId;
+        local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+        local itemTable = { };
+        if rewardInfo ~= nil then
+            -- 获得奖励道具信息
+            local list = rewardInfo:GetAllItem();
+            local count = list.Count;
+            for i = 1, count do
+                local itemData = list[i - 1];
+                local excelId = itemData.ExcelID;
+                if itemData.ItemDealType == 3 then
+                    excelId = 10000;
+                elseif itemData.ItemDealType == 4 then
+                    excelId = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                table.insert(itemTable, { excelId = excelId, num = itemData.ItemNum });
+            end
+            m_RewardList:RemoveAll();
+            for i, v in pairs(itemTable) do
+                m_RewardList:AddData(v);
+            end
+        end
+    end
+end
+-- 时间转为文本 x年x月x日 xx:xx
+function timeToString(date, time)
+    local y = math.floor(date / 10000);
+    local m = math.floor((date - y * 10000) / 100);
+    local d = date - y * 10000 - m * 100;
+    local h = math.floor(time / 100);
+    local min = time - h * 100;
+    local strTime = string.format("%02d:%02d", h, min);
+    local str = string_format(CCommonTool.GetTxtData(1587).m_str, y, m, d) .. strTime;
+    return str;
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 显示战报
+function RefreshResult(data)
+    SetGameObjectState("Sub_Result", true, m_PanelObject);
+    -- 显示竞价结果
+    m_UIGrid:RemoveAll();
+    local AuctionResult = data;
+    if AuctionResult ~= nil then
+        for i, v in pairs(AuctionResult) do
+            local data = v;
+            m_UIGrid:AddData(data);
+        end
+    end
+end
+
+-- 在打开活动界面的领地战标签后每三秒请求一次领地战据点数据
+function RequestStrongHoldInfo()
+    AddTimerEvent("RequestStrongHoldInfo", 3, RequestStrongHoldInfo);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL) == 1 and m_PanelObject.activeSelf then
+        GuildProtocol.RequestStrongHold();
+    end
+end
+
+-- 领地战玩法介绍
+function GuildWarExplain(m_panelId, m_tabId)
+    SetGameObjectState("Sub_Tips", true, m_PanelObject);
+    local allExplainInfo = CCommonTool.GetAllExplainInfo();
+    local explainInfo = nil;
+    local count = allExplainInfo.Count;
+    for index = 1, 10 do
+        SetGameObjectState(m_ExplainItemPath .. index, false, m_PanelObject);
+    end
+    if allExplainInfo ~= nil then
+        for index = 1, count do
+            if allExplainInfo[index - 1].PanelId == m_panelId and allExplainInfo[index - 1].TabId == m_tabId then
+                explainInfo = CCommonTool.GetAllExplainInfoByIndex(index);
+            end
+        end
+        if explainInfo ~= nil then
+            SetLabelTextByID(m_ExplainTitle, explainInfo.MainTitle, m_PanelObject);
+            -- 内容组1
+            SystemExplainInfo(explainInfo.Title1, explainInfo.Content1, 1);
+            -- 内容组2
+            SystemExplainInfo(explainInfo.Title2, explainInfo.Content2, 2);
+            -- 内容组3
+            SystemExplainInfo(explainInfo.Title3, explainInfo.Content3, 3);
+            -- 内容组4
+            SystemExplainInfo(explainInfo.Title4, explainInfo.Content4, 4);
+            -- 内容组5
+            SystemExplainInfo(explainInfo.Title5, explainInfo.Content5, 5);
+            -- 内容组6
+            SystemExplainInfo(explainInfo.Title6, explainInfo.Content6, 6);
+            -- 内容组7
+            SystemExplainInfo(explainInfo.Title7, explainInfo.Content7, 7);
+            -- 内容组8
+            SystemExplainInfo(explainInfo.Title8, explainInfo.Content8, 8);
+            -- 内容组9
+            SystemExplainInfo(explainInfo.Title9, explainInfo.Content9, 9);
+            -- 内容组10
+            SystemExplainInfo(explainInfo.Title10, explainInfo.Content10, 10);
+        end
+    end
+end
+
+-- 单个对象的处理
+function SystemExplainInfo(title, content, index)
+    local height = 0;
+    local length = 0;
+    local count = index;
+    if title > 0 then
+        SetGameObjectState(m_ExplainItemPath .. index, true, m_PanelObject);
+        for index = 1, count do
+            local Index = index - 1;
+            length = length + GetComponent(m_PanelObject, m_ExplainItemPath .. index .. m_labelContent, "UILabel").height + 80;
+            if Index > 0 then
+                height = height + GetComponent(m_PanelObject, m_ExplainItemPath .. Index .. m_labelContent, "UILabel").height + 80;
+            end
+        end
+        -- 设置对象高度
+        SetGameObjectPos(m_ExplainItemPath .. index, Vector3.New(0, - height, 0), m_PanelObject);
+        SetLabelTextByID(m_ExplainItemPath .. index .. m_labelContent, content, m_PanelObject);
+        SetLabelTextByID(m_ExplainItemPath .. index .. m_labelTitle, title, m_PanelObject);
+        -- 设置拖拽的长度
+        SetSpriteHeight(m_dragStr, length, m_PanelObject);
+    end
+end

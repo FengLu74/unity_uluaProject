@@ -1,0 +1,105 @@
+﻿--[[********************************************************************
+	created:	2016/04/7
+	created:	7:4:2016   16:01
+	filename: 	D:\TFS-WORK\Long2\Client\Assets\Lua\GlobalVariables.lua
+	file path:	D:\TFS-WORK\Long2\Client\Assets\Lua
+	file base:	GlobalVariables
+	file ext:	Lua
+	author:		����
+	
+	purpose:	���ֹ�����������ȫ��lua����
+*********************************************************************]]--
+-- ��Ϸ������
+--[[
+G_GameMng = nil;
+
+-- network������
+G_NetWorkMng = nil;
+
+-- ʱ��������
+G_TimerMng = nil;
+
+-- ����������
+G_PanelMng = nil;
+
+-- ����������
+G_SceneMng = nil;
+
+-- ���ֹ�����
+G_MusicMng = nil;
+
+-- ������Ϣ
+G_UserInfo = nil;
+
+-- ����������
+G_BagMng = nil;
+
+-- ���ҽ�ɫ����
+G_ResourceMng = nil;
+
+-- GM������
+G_GMMng = nil;
+
+-- ����������
+G_MissionMng = nil;
+
+-- ʹ��ҩƷ������
+G_UseMedMng = nil;
+
+-- �������ƶ�������
+G_MoveCameraMng = nil;
+
+-- ��Ӱ����������
+G_MoviePlotMng = nil;
+
+-- ����������
+G_RewardMng = nil;
+
+-- �������
+G_ActivityMng = nil;
+
+--����������
+G_GuildMng=nil;
+
+-- Σ�ճ���boss������
+G_DangerSceneBossMng = nil;
+
+-- ���Ի����ù�����
+G_IndividuationMng = nil;
+
+-- ͼ��������
+G_AtlasMng = nil;
+
+-- ����������
+G_TeamMng = nil;
+
+-- ��ʼ��������
+G_GameMng = Ioo.GameManager;
+G_NetWorkMng = Ioo.NetworkManager;
+G_TimerMng = Ioo.TimerManager;
+G_PanelMng = Ioo.PanelManager;
+G_AtlasMng = G_PanelMng:GetUIAtlasManager();
+G_SceneMng = Ioo.SceneManager;
+G_MusicMng = Ioo.MusicManager;
+G_UserInfo = G_SceneMng.UserInfo; 
+G_BagMng = G_UserInfo.BagManager;
+G_ResourceMng = Ioo.ResourceManager;
+G_GMMng = G_UserInfo.GetGMManager;
+G_MissionMng = G_UserInfo.MissionManager;
+G_UseMedMng = G_UserInfo.UseMedManager;
+G_MoveCameraMng = G_UserInfo.GetMoveCameraManager;
+G_MoviePlotMng = G_UserInfo.GetMoviePlotManager;
+G_RewardMng = G_UserInfo.RewardManager;
+G_ActivityMng = G_UserInfo.ActivityManager;
+G_GuildMng=G_UserInfo.GuildManager;
+G_DangerSceneBossMng = G_UserInfo.DangerSceneBossMng;
+G_IndividuationMng = G_SceneMng.IndividuationMng;
+
+G_AuctionManager = G_UserInfo.AuctionManager;
+G_FashionManager = G_UserInfo.FashionManager;
+G_LifeSkillManager = G_UserInfo.LifeSkillManager;
+G_UIBuffManager = G_SceneMng.UIBuffManager;
+G_TeamMng = G_UserInfo.TeamManager;
+
+Platform = Constants.Platform;
+]]

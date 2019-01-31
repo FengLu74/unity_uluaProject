@@ -1,0 +1,102 @@
+﻿
+module("MatrixPanelProtocol", package.seeall)
+
+-------------------------------------------------------处理宝珠接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --角色上线接受阵法数据
+    network.Register(GMI_STOC_MATRIX_DATA, OnMatrixInit);    		-- 29873,
+    --阵法  1培养，2穿戴 ,3技能升级,4符文激活,5符文培养 返回
+    network.Register(GMI_STOC_SEND_CLIENT_MATRIX_PEIYANG, OnGodFoster);
+    -- 阵法穿戴返回
+    network.Register(GMI_STOC_SEND_CLIENT_MATRIX_USE,OnEquipMatrixReturn)
+    --技能，升级
+    network.Register(GMI_STOC_SEND_CLIENT_MATRIX_SKILL_LEVELUP, OnSkillLvlUp);
+    -- 符文操作返回操作
+    network.Register(GMI_STOC_SEND_CLIENT_RUNES_PEIYANG, OnRuneLvlUp);
+end
+-- 角色上线阵法数据
+function OnMatrixInit(protocolId, buffer)
+	MatrixPanelManager.ConstructData();
+	--阵法等级默认一级
+	local stage_lvl = buffer:ReadByte();
+	--阵法星级
+	local star_lvl = buffer:ReadByte();
+	-- 当前阵法id   1 - 12
+	local Matrix_id = buffer:ReadByte();   -- 1-12 
+	--当前阵法经验
+	local exp = buffer:ReadInt();
+	-- 符文页签开启需要的阵法等级
+	local davidNeedLvl = buffer:ReadInt();
+	--error("[阵法]当前阵法的阶数："..stage_lvl.." 阵法星级:"..star_lvl.." 阵法经验："..exp.." 当前使用的阵法特效id: "..Matrix_id.." 符文开启需要等级："..davidNeedLvl);
+	MatrixPanelManager.RefreshGodInfos(exp,star_lvl,stage_lvl,Matrix_id,davidNeedLvl);
+	--技能数据
+	local skillCount = buffer:ReadByte();
+	--error("[阵法]当前以及培养过的技能数："..skillCount);
+	for index=1,skillCount do
+		local ids = buffer:ReadUShort();
+		local tab = 
+		{
+			id = ids,
+			lvl = buffer:ReadUShort(),
+			index = ids / 1000,
+		};
+		MatrixPanelManager.inserSkillTab(tab);
+	end
+	MatrixPanelManager.pullSkillTab();
+	-- 星魂数据--
+	local davidsCount = buffer:ReadByte();
+	--error("[阵法]符文培养 数据长度："..davidsCount);
+	for i=1, davidsCount do
+		local types = buffer:ReadInt();
+		local level = buffer:ReadInt();
+		local star_lvl = buffer:ReadInt();
+		local exp =  buffer:ReadInt();
+		MatrixPanelManager.insertStarAttr(i,types,level,star_lvl,exp);
+	end
+	MatrixPanelManager.sortStarInfo();
+end
+---------------------------------------淬炼界面 start----------------------------------
+-- 阵法培养
+function OnGodFoster( protocolId, buffer)
+	--阵法等级
+	local stage_lvl = buffer:ReadByte();
+	--阵法星级
+	local star_lvl = buffer:ReadByte();
+	-- 阵法id
+	local Matrix_id = buffer:ReadByte();
+	-- 阵法经验
+	local exp = buffer:ReadInt();
+	--error("[阵法] 阵法培养 返回 阵法等级："..stage_lvl.." 阵法星级： "..star_lvl.."  阵法id"..Matrix_id);
+	MatrixPanelManager.RefreshGodInfos(exp,star_lvl,stage_lvl,Matrix_id);
+end
+-- 阵法穿戴返回
+function OnEquipMatrixReturn( protocolId, buffer)
+	OnGodFoster(protocolId,buffer);
+end
+-- 技能学习（）
+function OnSkillLvlUp(protocolId, buffer)
+	local ids = buffer:ReadUShort();
+	local tab = 
+	{
+		id = ids,
+		lvl = buffer:ReadUShort(),
+		index = ids / 1000,
+	};
+	--error("[阵法] 技能升级 返回 id："..tab.id.." 等级： "..tab.lvl.."  第几个："..tab.index);
+	MatrixPanelManager.RefreshPlayerSkillTab(tab);
+end
+
+-- 阵法星魂培养
+function OnRuneLvlUp(protocolId, buffer)
+	local table = 
+		{
+			types = buffer:ReadInt(),
+			level = buffer:ReadInt(),
+			star_lvl = buffer:ReadInt(),
+			exp =  buffer:ReadInt(),
+		};
+	MatrixPanelManager.RefreshStarInfos(table);
+end
+
+----------------------------------------技能界面 end---------------------------------

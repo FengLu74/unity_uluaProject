@@ -1,0 +1,343 @@
+﻿module("FightWinPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 货币Label路径
+local m_MoneyValueLabelPath = "Acquire/Money/Value";
+-- 经验Label路径
+local m_ExpValueLabelPath = "Acquire/Exp/Value";
+
+-- 倒计时显示文本
+local m_DownTimeLabel = "Personal/Label_Over";
+-----------------------------------------按钮路径--------------------------------------
+-- 个人确定按钮路径
+local m_PersonalConfirmButtonPath = "Personal/Button-QueRen";
+-- 组队去人按钮路径
+local m_TeamConfirmButtonPath = "Team/Button-QueRen";
+-- 组队界面添加好友1按钮路径
+local m_TeamFriendItem1ButtonPath = "Team/Friends/Grid/Item1/Button";
+-- 组队界面添加好友2按钮路径
+local m_TeamFriendItem2ButtonPath = "Team/Friends/Grid/Item2/Button";
+-- 组队界面添加好友3按钮路径
+local m_TeamFriendItem3ButtonPath = "Team/Friends/Grid/Item3/Button";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 货币Icon路径
+local m_MoneyIconPath = "Acquire/Money/Icon";
+-- 经验Icon路径
+local m_ExpIconPath = "Acquire/Exp/Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 个人胜利界面
+local m_PersonalViewPath = "Personal";
+-- 个人界面掉落物品
+local m_PersonalItemsPath = "Personal/DropView/Items";
+-- 个人界面无掉落
+local m_PersonalNothingPath = "Personal/DropView/Nothing";
+-- 个人界面掉落列表
+local m_PersonalDropItemListPath = "Personal/DropView/Items/Scroll View/Grid";
+
+-- 组队胜利界面
+local m_TeamViewPath = "Team";
+-- 组队界面添加好友1路径
+local m_TeamFriendItem1Path = "Team/Friends/Grid/Item1";
+-- 组队界面添加好友2路径
+local m_TeamFriendItem2Path = "Team/Friends/Grid/Item2";
+-- 组队界面添加好友3路径
+local m_TeamFriendItem3Path = "Team/Friends/Grid/Item3";
+-- 组队界面有掉落
+local m_TeamItemsPath = "Team/DropView/Items";
+-- 组队界面无掉落
+local m_TeamNothingPath = "Team/DropView/Nothing";
+-- 组队界面掉落列表
+local m_TeamDropItemListPath = "Team/DropView/Items/Scroll View/Grid";
+
+-- 无奖励提示信息
+local m_NotRewardLable = "/Label";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具奖励ITEM       
+local item = "Items1/Item";
+-----------------------------------引用的对象------------------------------------------
+-- 当前面板的对象
+local m_PanelObject = nil;
+-- 初始化失败默认情况
+local m_bCreateSuccess = false;
+-- 个人界面掉落列表
+local m_PersonalDropItemList = nil;
+-- 组队界面掉落列表
+local m_TeamDropItemList = nil;
+-- 组队界面添加好友1
+local m_TeamFriendItem1 = nil;
+-- 组队界面添加好友2
+local m_TeamFriendItem2 = nil;
+-- 组队界面添加好友3
+local m_TeamFriendItem3 = nil;
+-- 组队界面添加好友Item列表
+local m_TeamFriendItems = { };
+-- 当前需要显示的数据
+local m_currentSuccessData = nil;
+-- 当前副本的ID; 副本ID跟节ID相同
+local m_currentFuBenID = nil;
+-- 通过时间
+local m_passTimeCount = 0;
+-- 奖励数据
+local m_RewardData = nil;
+-- 当前得星的数量
+local m_starNum = nil;
+-- 当前得星的列表
+local m_starObj = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 银币id
+local m_coinBeginId = 10000;
+local m_coinEndId = 11000;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 传递参数
+function functionParameter(paraTable)
+    m_starNum = paraTable[1];
+    m_currentFuBenID = paraTable[2];
+    m_starObj = paraTable[3];
+    m_currentSuccessData = paraTable[4];
+    m_passTimeCount = paraTable[5];
+    m_RewardData = paraTable.RewardData;
+    if m_bCreateSuccess == true then
+        InitAllInfo();
+    end
+end
+-- 系统函数,对象创建成功后执行,面板中激活对象的方法必须放在这里面
+function Start()
+    InitAllInfo();
+    m_bCreateSuccess = true;
+end
+
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    CCommonTool.HandleMotionBlur(true);
+end
+
+function OnDisable()
+    CCommonTool.HandleMotionBlur(false);
+end
+
+-- 界面删除的时候调用
+function OnDestroy()
+    m_PanelObject = nil;
+    m_bCreateSuccess = false;
+    m_PersonalDropItemList = nil;
+    m_TeamDropItemList = nil;
+    m_TeamFriendItem1 = nil;
+    m_TeamFriendItem2 = nil;
+    m_TeamFriendItem3 = nil;
+    m_TeamFriendItems = { };
+    m_currentSuccessData = nil;
+    m_currentFuBenID = nil;
+    m_passTimeCount = 0;
+    m_starNum = nil;
+    m_starObj = nil;
+    m_RewardData = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化背包的所有数据信息
+function InitAllInfo()
+    -- 初始化管理器
+    InitObjects();
+    -- 初始化点击事件
+    InitOnClick();
+    -- 初始化游戏内容
+    InitContent();
+end
+
+-- 初始化管理器
+function InitObjects()
+    -- 面板对象
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL);
+    m_PersonalDropItemList = GetComponent(m_PanelObject, m_PersonalDropItemListPath, "UIListView");
+    m_TeamDropItemList = GetComponent(m_PanelObject, m_TeamDropItemListPath, "UIListView");
+
+    m_TeamFriendItem1 = child(m_PanelObject, m_TeamFriendItem1Path).gameObject;
+    m_TeamFriendItem2 = child(m_PanelObject, m_TeamFriendItem2Path).gameObject;
+    m_TeamFriendItem3 = child(m_PanelObject, m_TeamFriendItem3Path).gameObject;
+    m_TeamFriendItems = { m_TeamFriendItem1, m_TeamFriendItem2, m_TeamFriendItem3 };
+end
+
+-- 初始化物品点击事件点击事件信息
+function InitOnClick()
+    m_PersonalDropItemList:SetInitCallback(OnPersonalDropItemListInit);
+    m_TeamDropItemList:SetInitCallback(OnTeamDropItemListInit);
+    SetGameObjectEvent(m_PersonalConfirmButtonPath, OnConfirmButtonClick, m_PanelObject, nil);
+    SetGameObjectEvent(m_TeamConfirmButtonPath, OnConfirmButtonClick, m_PanelObject, nil);
+    AddTimerEvent("FightWinTimeCount", CCommonTool.GetDefineInfo(3015):GetIntContent(), FightWinTimeCountcallBackOver, ETimeShowType.TypeNumberSeven, FightWinTimeCountcallBack);
+end
+
+function FightWinTimeCountcallBack(time)
+    SetLabelContent(m_DownTimeLabel, "(" .. time .. ")", m_PanelObject);
+end
+
+function FightWinTimeCountcallBackOver()
+    OnConfirmButtonClick();
+end
+
+
+-- 初始化游戏内容
+function InitContent()
+    if m_currentFuBenID ~= nil then
+        local fubenData = CCommonTool.GetDungeonInfo(m_currentFuBenID);
+        -- 是否是组队（经策划确定临时只有这几个值）
+        local isTeam = DungeonManager.IsTeamDungeon(m_currentFuBenID);
+        local teamMemberCount = TeamManager.GetTeamMemberCount();
+        local isShowTeam = teamMemberCount > 1 and isTeam;
+        if isShowTeam == true then
+            SetTeamAddFriendInfo();
+        end
+        SetAcquireInfo(fubenData, isShowTeam);
+        -- 设置个人或组队的显示界面
+        SetGameObjectState(m_PersonalViewPath, isShowTeam == false, m_PanelObject);
+        SetGameObjectState(m_TeamViewPath, isShowTeam == true, m_PanelObject);
+        -- 设置掉落物品信息
+        SetDropViewInfo();
+    end
+end
+-- 设置获得物品信息
+function SetAcquireInfo(fubenData, isShowTeam)
+    local moneyLabelPath = string_format("Personal/{0}", m_MoneyValueLabelPath);
+    local expLabelPath = string_format("Personal/{0}", m_ExpValueLabelPath);
+    if isShowTeam == true then
+        moneyLabelPath = string_format("Team/{0}", m_MoneyValueLabelPath);
+        expLabelPath = string_format("Team/{0}", m_ExpValueLabelPath);
+    end
+    -- 设置金币图标
+    SetLabelContent(moneyLabelPath, m_RewardData.Money, m_PanelObject);
+    -- 设置经验的奖励
+    SetLabelContent(expLabelPath, m_RewardData.Exp, m_PanelObject);
+end
+
+-- 设置组队界面可加好友人物信息
+function SetTeamAddFriendInfo()
+    for index = 1, 3 do
+        local item = m_TeamFriendItems[index];
+        item:SetActive(false);
+    end
+    local teamMemberList = TeamManager.GetTeamMembersExceptSelf()
+    for i, mem in ipairs(teamMemberList) do
+        local item = m_TeamFriendItems[i];
+        item:SetActive(true);
+        SetLabelContent("Member/Name", mem.name, item);
+        SetProfessionIcon("Member/Icon", mem.proId, item);
+        SetLabelContent("Member/Level", mem.level, item);
+        SetGameObjectState("Member/Add", FriendsData.IsFriend(mem.id) == false, item);
+        if FriendsData.IsFriend(mem.id) == false then
+            SetGameObjectEvent("", function() OnTeamAddFriendClick(mem.id); end, item, nil);
+        else
+            SetGameObjectEvent("", function() OnTeamFriendItemButtonClick(mem.id); end, item, nil);
+        end
+    end
+end
+
+-- 设置掉落物品信息
+function SetDropViewInfo()
+    local itemCount = #m_currentSuccessData;
+
+    local isMainDungeon = false;
+    local txtContent = nil;
+    -- 判断当前副本id是不是35级之前的主线副本id任务
+--    for index = 1, #G_Main_DungeonId do
+--        local dungeonID = G_Main_DungeonId[index];
+--        if dungeonID == m_currentFuBenID then
+--            isMainDungeon = true;
+--            break;
+--        end
+--    end
+--    if isMainDungeon == true then
+--        txtContent = CCommonTool.GetTxtData(1614).m_str;
+--    else
+--        txtContent = CCommonTool.GetTxtData(251).m_str;
+--    end
+    txtContent = CCommonTool.GetTxtData(251).m_str;
+    if txtContent ~= nil then
+        SetLabelContent(m_PersonalNothingPath .. m_NotRewardLable, txtContent, m_PanelObject);
+        SetLabelContent(m_TeamNothingPath .. m_NotRewardLable, txtContent, m_PanelObject);
+    end
+
+
+    SetGameObjectState(m_PersonalItemsPath, itemCount > 0, m_PanelObject);
+    SetGameObjectState(m_PersonalNothingPath, itemCount <= 0, m_PanelObject);
+
+    SetGameObjectState(m_TeamItemsPath, itemCount > 0, m_PanelObject);
+    SetGameObjectState(m_TeamNothingPath, itemCount <= 0, m_PanelObject);
+    local activityID = G_SceneMng.ActivityID;
+
+    -- 猎魔大师活动结算要单独处理，不显示无奖励文本
+    if activityID == ENUM_AOT_ID.AOT_ID_DUNGEON_HUNT_ACTIVITY then
+        SetGameObjectState(m_TeamNothingPath, false, m_PanelObject);
+    end
+
+    if itemCount > 0 then
+        m_PersonalDropItemList:RemoveAll();
+        m_TeamDropItemList:RemoveAll();
+        for index = 1, itemCount do
+            local info = m_currentSuccessData[index];
+            local coinCount = 0;
+            if info.excelID >= m_coinBeginId and info.excelID <= m_coinEndId then
+                if m_currentFuBenID ~= nil then
+                    local fubenData = CCommonTool.GetDungeonInfo(m_currentFuBenID);
+                    coinCount = fubenData.Money;
+                end
+                SetLabelContent(string_format("Personal/{0}", m_MoneyValueLabelPath), coinCount + info.itemCount, m_PanelObject);
+                SetLabelContent(string_format("Team/{0}", m_MoneyValueLabelPath), coinCount + info.itemCount, m_PanelObject);
+            else
+                local data =
+                {
+                    Index = index;
+                    Info = m_currentSuccessData[index];
+                };
+                m_PersonalDropItemList:AddData(data);
+                m_TeamDropItemList:AddData(data);
+            end
+        end
+    end
+end
+
+-- 设置个人掉落物品列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnPersonalDropItemListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.Info.excelID;
+    local num = data.Info.itemCount;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 11, ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL, false, excelId);
+end
+
+-- 设置组队掉落物品列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnTeamDropItemListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.Info.excelID;
+    local num = data.Info.itemCount;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 11, ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL, false, excelId);
+end
+-- 添加好友按钮事件
+function OnTeamAddFriendClick(globalId)
+    FriendsProtocol.RequestApply(globalId);
+end
+-- 添加的玩家已是好友
+function OnTeamFriendItemButtonClick(globalId)
+    ShowSystemFlowTips(2904);
+end
+-- 确定按钮事件
+function OnConfirmButtonClick()
+    G_TimerMng:RemoveTimeTask("FightWinTimeCount");
+    closePanel(ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL);
+    if RollOverCardPanel.GetMaxRollTime() <= 0 then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+        buffer:WriteByte(0);
+        G_NetWorkMng:SendMessage(buffer);
+    else
+        error("创建翻拍界面");
+        createPanel(ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

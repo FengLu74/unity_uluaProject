@@ -1,0 +1,279 @@
+﻿require "Manager.TeamManager";
+
+module('TeamGoalPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamGoalPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 确定按钮
+local m_ConfirmButtonPath = "Content/ConfirmButton";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 目标分类列表
+local m_MenuListPath = "Content/MenuListPanel/MenuList";
+-- 目标列表
+local m_GoalListPath = "Content/GoalListPanel/GoalList";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 目标分类列表
+local m_MenuList = nil;
+-- 目标列表
+local m_GoalList = nil;
+-- 确定按钮
+local m_ConfirmButton = nil;
+
+local m_Callback = nil;
+local m_GoalDiffDict = nil;
+local m_TabIndex = 0;
+
+local m_CurrentGoalId = 2;
+local m_CurrentDiffIndex = 1;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_TabIndex = 0;
+    m_Callback = nil;
+    m_GoalDiffDict = nil;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_MenuList = nil;
+	m_GoalList = nil;
+	m_ConfirmButton = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_GOAL_PANEL);
+    m_MenuList = GetComponent(m_PanelObject, m_MenuListPath, "UIListView");
+    m_GoalList = GetComponent(m_PanelObject, m_GoalListPath, "UIListView");
+    m_ConfirmButton = child(m_PanelObject, m_ConfirmButtonPath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+    m_MenuList:SetInitCallback(OnMenuListViewInit);
+    m_MenuList:SetSelectedCallback(OnMenuListViewSelected);
+    m_GoalList:SetInitCallback(OnGoalListViewInit);
+    m_GoalList:SetClickCallback(OnGoalListViewClick);
+    UIEventListener.Get(m_ConfirmButton).onClick = LuaHelper.OnClick(OnConfirmButtonClick);
+    SetGameObjectEvent("CloseButton", OnCloseClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if panelParams ~= nil then
+        m_GoalDiffDict = panelParams.goalDiffDict or {};
+        m_TabIndex = panelParams.tabIndex;
+        m_Callback = panelParams.callback;
+        m_CurrentGoalId = panelParams.currentGoalId;
+        m_CurrentDiffIndex = panelParams.currentDiffIndex;
+        panelParams = nil;
+    else
+        m_TabIndex = 0;
+        local info = TeamManager.GetTeamGoalInfo(m_CurrentGoalId);
+        local tabId = info.TypeId;
+        for i, id in ipairs(TeamManager.goalTabIds) do
+            if id == tabId then
+                m_TabIndex = i - 1;
+                break;
+            end
+        end
+        m_GoalDiffDict = {};
+        SetSelectDiffIndex(m_CurrentGoalId, m_CurrentDiffIndex);
+    end
+    InitMemuList();
+end
+
+-- 初始化菜单列表
+function InitMemuList()
+    m_MenuList:RemoveAll();
+    local items = TeamManager.goalTabIds;
+    local count = #items;
+    for _, id in ipairs(items) do
+        m_MenuList:AddData(id);
+    end
+    if m_TabIndex < count then
+        m_MenuList:LookAt(m_TabIndex, true);
+    else
+        m_MenuList:LookAt(0, true);
+    end
+end
+
+-- 初始化目标列表
+-- @param tabId 标签页ID
+function InitGoalList(tabId)
+    local items = TeamManager.tabGoals[tabId] or {};
+    local level = G_UserInfo.RoleAttribute.Level;
+    m_GoalList:RemoveAll();
+    local count = 0;
+    local selectIndex = 0;
+    for _, info in ipairs(items) do
+        if level >= info.Level and (info.LevelMax == 0 or level < info.LevelMax) then
+            m_GoalList:AddData(info);
+            if info.Id == m_CurrentGoalId then
+                selectIndex = count;
+            end
+            count = count + 1;
+        end
+    end
+    --m_GoalList:LookAt(selectIndex, true);
+    m_GoalList:LookAt(0, true);
+end
+
+-- 获取默认选中的难度索引
+function GetLastSelectDiffIndex(goalId)
+    if m_GoalDiffDict[goalId] == nil then
+        return 1;
+    end
+    return m_GoalDiffDict[goalId];
+end
+
+-- 设置选中的难度索引
+function SetSelectDiffIndex(goalId, diffIndex)
+    m_GoalDiffDict[goalId] = diffIndex
+end
+
+function DiffToggle(go, diffIndex)
+    for i = 1, 3 do
+        SetGameObjectState(string_format("DiffBox/Diff{0}/Bg", i), diffIndex ~= i, go);
+        SetGameObjectState(string_format("DiffBox/Diff{0}/Toggle", i), diffIndex == i, go);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_GOAL_PANEL);
+end
+-- 菜单列表初始化事件
+function OnMenuListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local goalId = data;
+    local info = TeamManager.GetTeamGoalInfo(goalId);
+    SetLabelTextByID("Toggle/Label", info.NameId, go);
+    SetLabelTextByID("Background/Label", info.NameId, go);
+end
+
+-- 菜单列表选中事件
+function OnMenuListViewSelected(listView, dataIndex)
+    m_TabIndex = dataIndex;
+    local goalId = listView:GetData(dataIndex);
+    local info = TeamManager.GetTeamGoalInfo(goalId);
+    InitGoalList(info.TypeId);
+end
+
+-- 目标列表初始化事件
+function OnGoalListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local info = data;
+    local name = CCommonTool.GetTxtData(info.NameId).m_str;
+    SetLabelContent("Name", string_format("Lv.{0} {1}", info.Level, name), go);
+    SetLabelTextByID("Desc", info.DescId, go);
+    SetGameObjectState("Toggle", info.Id == m_CurrentGoalId, go);
+    if info.DiffVisible == 1 then
+        SetGameObjectState("DiffBox", true, go);
+        for i = 1, 3 do
+            local dungeonId = info["DungeonId"..i];
+            SetGameObjectState("DiffBox/Diff"..i, dungeonId > 0, go);
+        end
+        DiffToggle(go, GetLastSelectDiffIndex(info.Id));
+    else
+        SetGameObjectState("DiffBox", false, go);
+    end
+end
+
+-- 目标列表点击事件
+function OnGoalListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    m_CurrentGoalId = data.Id;
+    if go.name == "Diff1" then
+        SetSelectDiffIndex(data.Id, 1);
+        DiffToggle(cell.gameObject, 1);
+    elseif go.name == "Diff2" then
+        SetSelectDiffIndex(data.Id, 2);
+        DiffToggle(cell.gameObject, 2);
+    elseif go.name == "Diff3" then
+        SetSelectDiffIndex(data.Id, 3);
+        DiffToggle(cell.gameObject, 3);
+    end
+    m_GoalList:Refresh();
+end
+
+-- 确定按钮点击事件
+function OnConfirmButtonClick(gameObject)
+    m_Callback(m_CurrentGoalId, GetLastSelectDiffIndex(m_CurrentGoalId));
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_GOAL_PANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 选择组队目标
+function SelectTeamGoal(goalId, diffIndex, callback, causePanelId)
+    m_CurrentGoalId = goalId;
+    m_CurrentDiffIndex = diffIndex;
+    m_Callback = callback;
+    local info = TeamManager.GetTeamGoalInfo(goalId);
+    if info == nil then
+        error("team goal id not exist! id:" .. tostring(goalId));
+        return;
+    end
+    local panelId = ENUMPANELID.ENUM_PANEL_TEAM_GOAL_PANEL;
+    if IsOpenPanel(panelId) == 1 then
+        InitShow();
+    else
+        createPanel(panelId, causePanelId);
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    panelParams.tabIndex = m_TabIndex;
+    panelParams.callback = m_Callback;
+    panelParams.goalDiffDict = m_GoalDiffDict;
+    panelParams.currentGoalId = m_CurrentGoalId;
+    panelParams.currentDiffIndex = m_CurrentDiffIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    panelParams = paramTable;
+end

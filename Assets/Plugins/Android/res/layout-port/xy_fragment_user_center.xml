@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <include layout="@layout/xyw_fragment_navigation" />
+
+
+        <ScrollView
+            android:id="@+id/xy_agreement_body_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="10dp"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingTop="@dimen/xy_common_margin_15dip">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:text="@string/xy_user_center_username"
+                        android:textColor="@color/xy_color_c2"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_username"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/xy_color_c5"
+                        android:ellipsize="middle"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_flag"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:background="@color/xy_color_c4"
+                        android:gravity="center"
+                        android:textColor="#ffffff"
+                        android:paddingLeft="@dimen/xy_common_margin_5dip"
+                        android:paddingRight="@dimen/xy_common_margin_5dip"
+                        android:textSize="10sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_account_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="6dp"
+                        android:text="@string/xy_user_status_no_bind"
+                        android:gravity="center"
+                        android:textColor="@color/xy_color_button_positive_normal"  />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                    android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:text="@string/xy_user_center_form_phone"
+                        android:textColor="@color/xy_color_c2"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_phone_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:text="158***3333"
+                        android:textColor="@color/xy_color_c5"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_phone_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="6dp"
+                        android:text="@string/xy_user_status_bind"
+                        android:gravity="center"
+                        android:textColor="@color/xy_color_button_positive_normal"  />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                    android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:text="@string/xy_user_center_form_id"
+                        android:textColor="@color/xy_color_c2"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_id_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:text="510*********3333"
+                        android:textColor="@color/xy_color_c5"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/xy_user_center_id_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="6dp"
+                        android:text="@string/xy_user_status_bind"
+                        android:gravity="center"
+                        android:textColor="@color/xy_color_button_positive_normal" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/xy_user_center_bind_account"
+                    style="@style/xy.button.positive"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/xy_user_center_bind_account"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/xy_user_center_logout"
+                    style="@style/xy.button.positive"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                    android:layout_marginTop="13dip"
+                    android:layout_marginBottom="13dip"
+                    android:text="@string/xy_user_center_logout" />
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

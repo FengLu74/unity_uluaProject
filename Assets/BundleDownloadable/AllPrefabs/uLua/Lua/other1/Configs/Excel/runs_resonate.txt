@@ -1,0 +1,93 @@
+﻿--[[
+    field=ID, type=int, desc=主键ID
+    field=Type, type=byte, desc=符石共鸣等级
+    field=NameID, type=int, desc=名称文本ID
+    field=Attr1, type=int, desc=属性种类1 
+    field=AttrValue1, type=int, desc=属性值1
+    field=Attr2, type=int, desc=属性种类2
+    field=AttrValue2, type=int, desc=属性值2
+    field=Attr3, type=int, desc=属性种类3
+    field=AttrValue3, type=int, desc=属性值3
+    field=Attr4, type=int, desc=属性种类4
+    field=AttrValue4, type=int, desc=属性值4
+]]
+module("RunsResonateTable", package.seeall)
+local list={
+    {ID=1,Type=1,NameID=74241,Attr1=51,AttrValue1=55,Attr2=91,AttrValue2=55,Attr3=51,AttrValue3=55,Attr4=91,AttrValue4=55},
+    {ID=2,Type=2,NameID=74242,Attr1=51,AttrValue1=165,Attr2=91,AttrValue2=165,Attr3=51,AttrValue3=165,Attr4=91,AttrValue4=165},
+    {ID=3,Type=3,NameID=74243,Attr1=51,AttrValue1=315,Attr2=91,AttrValue2=315,Attr3=51,AttrValue3=315,Attr4=91,AttrValue4=315},
+    {ID=4,Type=4,NameID=74244,Attr1=51,AttrValue1=505,Attr2=91,AttrValue2=505,Attr3=51,AttrValue3=505,Attr4=91,AttrValue4=505},
+    {ID=5,Type=5,NameID=74245,Attr1=51,AttrValue1=740,Attr2=91,AttrValue2=740,Attr3=51,AttrValue3=740,Attr4=91,AttrValue4=740},
+    {ID=6,Type=6,NameID=74246,Attr1=51,AttrValue1=1000,Attr2=91,AttrValue2=1000,Attr3=51,AttrValue3=1000,Attr4=91,AttrValue4=1000},
+    {ID=7,Type=7,NameID=74247,Attr1=51,AttrValue1=1275,Attr2=91,AttrValue2=1275,Attr3=51,AttrValue3=1275,Attr4=91,AttrValue4=1275},
+    {ID=8,Type=8,NameID=74248,Attr1=51,AttrValue1=1575,Attr2=91,AttrValue2=1575,Attr3=51,AttrValue3=1575,Attr4=91,AttrValue4=1575},
+    {ID=9,Type=9,NameID=74249,Attr1=51,AttrValue1=1890,Attr2=91,AttrValue2=1890,Attr3=51,AttrValue3=1890,Attr4=91,AttrValue4=1890},
+    {ID=10,Type=10,NameID=74250,Attr1=51,AttrValue1=2210,Attr2=91,AttrValue2=2210,Attr3=51,AttrValue3=2210,Attr4=91,AttrValue4=2210}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10]};
+
+count = 10;
+Count = 10;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

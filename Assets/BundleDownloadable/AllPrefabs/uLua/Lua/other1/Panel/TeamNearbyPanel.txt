@@ -1,0 +1,263 @@
+﻿module('TeamNearbyPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamNearbyPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 刷新按钮
+local m_RefreshButtonPath = "RefreshButton";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 创建队伍按钮
+local m_CreateButtonPath = "CreateButton";
+-- 退出队伍
+local m_QuitButtonPath = "QuitButton";
+-- 一键申请按钮
+local m_AutoApplyButtonPath = "AutoApplyButton";
+-- 没有队伍对象
+local m_BlankPath = "Blank";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 队伍列表
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 队伍列表
+local m_List = nil;
+-- 创建按钮
+local m_CreateButton = nil;
+-- 退出队伍
+local m_QuitButton = nil;
+-- 一键申请按钮
+local m_AutoApplyButton = nil;
+-- 没有队伍对象
+local m_Blank = nil;
+-- 计时对象
+local m_TimerObject = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    TeamProtocol.RequestNearbyTeamList();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        TeamProtocol.RequestNearbyTeamList();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+	m_CreateButton = nil;
+    m_QuitButton = nil;
+	m_AutoApplyButton = nil;
+	m_Blank = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_CreateButton = child(m_PanelObject, m_CreateButtonPath).gameObject;
+    m_QuitButton = child(m_PanelObject, m_QuitButtonPath).gameObject;
+    m_AutoApplyButton = child(m_PanelObject, m_AutoApplyButtonPath).gameObject;
+    m_Blank = child(m_PanelObject, m_BlankPath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+    UIEventListener.Get(m_CreateButton).onClick = LuaHelper.OnClick(OnCreateButtonClick);
+    UIEventListener.Get(m_QuitButton).onClick = LuaHelper.OnClick(OnQuitButtonClick);
+    UIEventListener.Get(m_AutoApplyButton).onClick = LuaHelper.OnClick(OnAutoApplyButtonClick);
+    SetGameObjectEvent(m_RefreshButtonPath, OnRefreshButtonClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitList();
+    InitButtonState();
+    AddTimer();
+end
+
+function ClearTimer()
+    if m_TimerObject ~= nil then
+        Timer.Instance:StopTimer(m_TimerObject);
+        m_TimerObject = nil;
+    end
+end
+
+function AddTimer()
+    ClearTimer();
+    m_TimerObject = Timer.Instance:AddTimer(1, -1, OnTimer);
+end
+
+function OnTimer()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TEAMPANEL) == 1 then
+        m_List:Refresh();
+    end
+end
+
+-- 初始化列表
+function InitList()
+    m_List:RemoveAll();
+    local items = TeamManager.nearbyTeamList;
+    for i, item in ipairs(items) do
+        m_List:AddData(item);
+    end
+    m_Blank:SetActive(#items == 0);
+end
+
+-- 初始化按钮状态
+function InitButtonState()
+    if TeamManager.HasTeam() then
+        m_CreateButton:SetActive(false);
+        m_AutoApplyButton:SetActive(false);
+        m_QuitButton:SetActive(true);
+    else
+        m_CreateButton:SetActive(true);
+        m_AutoApplyButton:SetActive(true);
+        m_QuitButton:SetActive(false);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local teamData = data.teamData;
+    local goalInfo = TeamManager.GetTeamGoalInfo(teamData.goalId);
+    local hasTeam = TeamManager.HasTeam();
+    local applied = TeamManager.IsAppliedTeam(teamData.id);
+
+    SetLabelContent("Level", string_format("Lv.{0}", goalInfo and goalInfo.Level or 1), go);
+    SetLabelContent("Name", TeamManager.GetTeamGoalName(teamData.goalId, teamData.diffIndex), go);
+    SetGameObjectState("ApplyButton", not hasTeam and not applied, go);
+    SetGameObjectState("AppliedButton", not hasTeam and applied, go);
+
+    local proInfos = teamData.proInfos;
+    for i = 1, 4 do
+        local globalId = proInfos[i].globalId;
+        local matchProId = proInfos[i].proId;
+        local isMatchAll = matchProId == TeamManager.MATCH_ALL_PRO_ID;
+        local index = proInfos[i].index;
+        local member = data.members[i];
+        local hasMember = member ~= nil
+        local path = "Members/Member"..i;
+        local memGo = child(go, path).gameObject;
+        
+        SetGameObjectState("Toggle", hasMember, memGo);
+        SetGameObjectState("Level", hasMember, memGo);
+        SetGameObjectState("All", not hasMember and isMatchAll, memGo);
+        SetGameObjectState("Icon", hasMember or not isMatchAll, memGo);
+
+        if hasMember then
+            --error(SerializeTable(member));
+            SetProfessionIcon("Icon", member.profession, memGo);
+            SetLabelContent("Level", member.level, memGo);
+        else
+            if not isMatchAll then
+                SetProfessionIcon("Icon", matchProId, memGo);
+            end
+        end
+    end
+
+    local leaderInfo = data.leaderInfo;
+    SetGameObjectState("Leader", leaderInfo ~= nil, go);
+    if leaderInfo ~= nil then
+        SetLabelContent("Leader/Name", leaderInfo.name, go);
+        SetLabelContent("Leader/Level", leaderInfo.level, go);
+        local nameColor = "FDF5A0"
+        if FriendsData.IsFriend(leaderInfo.globalId) == true then
+            nameColor = "BFFF8B";
+        end
+        SetLabelColor("Leader/Name", nameColor, go);
+        -- 角色头像
+        local iconId =  CCommonTool.GetRoleDateInfo(leaderInfo.proId).HeadRes;
+        SetSpriteByAtlasID("Leader/Icon", iconId, go, true);
+        -- 阵营
+        SetGameObjectState("Leader/CampIcon", leaderInfo.campType > 0, go);
+        SetCampIcon("Leader/CampIcon", leaderInfo.campType, go);
+    end
+
+    SetLabelContent("MemberCount", data.memberCount .. "/4", go);
+end
+
+-- 队伍列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local teamData = data.teamData;
+    if go.name == "ApplyButton" then
+        TeamProtocol.RequestApplyTeam(teamData.leaderId);
+        TeamManager.UpdateAppliedTeamTime(teamData.id);
+        m_List:Refresh();
+    end
+end
+
+-- 创建队伍点击事件
+function OnCreateButtonClick(gameObject)
+    local goalData = TeamManager.teamHallGoalData;
+    TeamProtocol.RequestCreateTeam(goalData.goalId, goalData.diffIndex);
+    TeamPanel.OpenThisPanelByTag(3);
+end
+
+-- 一键申请点击事件
+function OnAutoApplyButtonClick(gameObject)
+    
+end
+
+-- 退出队伍
+function OnQuitButtonClick(gameObject)
+    TeamProtocol.RequestQuitTeam();
+end
+
+-- 刷新按钮
+function OnRefreshButtonClick(gameObject)
+    local hasTeam = TeamProtocol.RequestNearbyTeamList();
+    if not hasTeam then
+        InitShow();
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 加入队伍刷新界面
+-- 离开队伍刷新界面
+-- 接收附近队伍列表刷新界面
+function Refresh()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitShow();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return nil;
+end
+
+function SetJumpCloseData(paramTable)
+end

@@ -1,0 +1,83 @@
+﻿module("LimitTimeActMng", package.seeall)
+
+RankOpenInfoData =  nil;
+
+-- 角色列表
+players = nil;
+--排行榜总人数
+rankAllNum = 0;
+--自己的排名
+myRank = 0;
+--排行榜一级类型
+rankFirstType = nil;
+--排行榜二级类型
+rankSecendType = nil;
+--版本号
+rankVersion = 0;
+
+--战斗力提升榜相关数据
+RankFightPower = nil;
+--宠物战斗力榜相关数据
+RankPet = nil;
+--公会战斗力榜相关数据
+RankGuildPower = nil;
+--公会捐献榜相关数据
+RankGuildDonation = nil;
+--阵营杀敌榜相关数据
+RankCampKill = nil;
+
+-- 得到对应的排行榜的奖励信息
+function getRewardInfo(rankType)
+    local AllRewadData = CCommonTool.GetLimitTimeActInfo();
+    local RewadData = {};
+    for i = 0, AllRewadData.count - 1 do 
+        if AllRewadData[i].Key == rankType then 
+            table.insert(RewadData, AllRewadData[i]);
+        end
+    end
+    if RewadData ~= nil then 
+        table.sort(RewadData, function (a, b) return a.Id < b.Id end)
+    end
+    return RewadData;
+end
+
+-- 得到职业名称
+function getProfessionalName(Value)
+    local name = "";
+    if Value == PROFESSION_ID.ASSASSIN then
+        -- 刺客职业名字
+        name = CCommonTool.GetTxtData(13).m_str;
+    elseif Value == PROFESSION_ID.FEILIBA then
+        -- 法师职业名字
+        name = CCommonTool.GetTxtData(12).m_str;
+    elseif Value == PROFESSION_ID.LOLI then
+        -- 萝莉职业名字
+        name = CCommonTool.GetTxtData(14).m_str;
+    elseif Value == PROFESSION_ID.WARDRAGONWHITE then
+        -- 战士职业名字
+        name = CCommonTool.GetTxtData(11).m_str;
+    else
+        error(string_format("职业ID:{0}错误!!", data.Value1));
+    end
+    return name;
+end
+
+--清空排行榜数据
+function ClearRankData()
+    players = nil;
+    rankAllNum = 0;
+    myRank = 0;
+    rankFirstType = nil;
+    rankSecendType = nil;
+end
+
+-- 数据清理
+function ClearData()
+    RankOpenInfoData = nil;
+    players = nil;
+    RankFightPower = nil;
+    RankPet = nil;
+    RankGuildPower = nil;
+    RankGuildDonation = nil;
+    RankCampKill = nil;
+end

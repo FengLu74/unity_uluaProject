@@ -1,0 +1,1156 @@
+﻿module("AuctionBuy", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+--物品类型
+local m_ItemTypeLabelStr = "Left/FindItem/ItemType/Label";
+--子类型
+local m_SubTypeLabelStr = "Left/FindItem/SubType/Label";
+--品质
+local m_QualityLabelStr = "Left/FindItem/Quality/Label";
+--等级
+local m_LevelLabelStr = "Left/FindItem/Level/Label";
+--货币
+local m_CurrencyLabelStr = "Left/FindItem/Currency/Label";
+--最低价格
+local m_PriceLowLabelStr = "Left/FindItem/Price/Low/Label";
+--最高价格
+local m_PriceHighLabelStr = "Left/FindItem/Price/High/Label";
+--购买单价
+local m_BuyPopoverSinglePriceLabelStr = "Popover/Buy/SinglePrice/Label";
+--购买总价
+local m_BuyPopoverTotalPriceLabelStr = "Popover/Buy/TotalPrice/Label";
+--购买弹出框数量
+local m_BuyPopoverNumLabelStr = "Popover/Buy/Num/Button1/Label";
+-----------------------------------------按钮路径--------------------------------------
+--物品类型
+local m_ItemTypeButtonStr = "Left/FindItem/ItemType";
+--子类型
+local m_SubTypeButtonStr = "Left/FindItem/SubType";
+--品质
+local m_QualityButtonStr = "Left/FindItem/Quality";
+--等级
+local m_LevelButtonStr = "Left/FindItem/Level";
+--货币
+local m_CurrencyButtonStr = "Left/FindItem/Currency";
+--价格
+local m_PriceButtonStr = "Left/FindItem/Price";
+--最低价格
+local m_PriceLowButtonStr = "Left/FindItem/Price/Low/Bg1";
+--最高价格
+local m_PriceHighButtonStr = "Left/FindItem/Price/High/Bg1";
+--重置
+local m_RefreshButtonStr = "Left/FindItem/Refresh";
+--查找
+local m_FindButtonStr = "Left/FindItem/Find";
+--购买弹出框Item按钮
+local m_BuyPopoverItemButtonStr = "Popover/Buy/Head/Item";
+--购买弹出框关闭按钮
+local m_BuyPopoverCloseButtonStr = "Popover/Buy/Close";
+--购买弹出框数量
+local m_BuyPopoverNumButtonStr = "Popover/Buy/Num/Button1";
+--购买弹出框最大数量
+local m_BuyPopoverBigNumButtonStr = "Popover/Buy/Num/Button2";
+--购买弹出框购买事件
+local m_BuyPopoverBuyButtonStr = "Popover/Buy/Button";
+
+-----------------------------------------Sprite路径------------------------------------
+local m_SearchTextCloseButtonStr = "Popover/SearchText/Mask";
+local m_BuyCloseButtonStr = "Popover/Buy/Mask";
+--购买单价Icon
+local m_BuyPopoverSinglePriceIconStr = "Popover/Buy/SinglePrice/Icon/Sprite";
+--购买总价Icon
+local m_BuyPopoverTotalPriceIconStr = "Popover/Buy/TotalPrice/Icon/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+--购买物品
+local m_BuyLeftViewStr = "Left/FindItem";
+local m_BuyRightViewStr = "Right/BuyPropInfo";
+--搜索输入框
+local m_SearchInputStr = "Left/FindItem/Input";
+--搜索输入文本
+local m_SearchInputLabelStr = "Left/FindItem/Input/Label";
+--搜索弹出框
+local m_SearchTextPopoverStr =  "Popover/SearchText";
+--搜索弹出框Text列表
+local m_SearchTextPopoverListStr = "Popover/SearchText/Scroll View/Grid";
+--搜索的道具类型不存在
+local m_BuyPropNotListStr = "Right/BuyPropInfo/Inactive";
+--可购买物品列表
+local m_BuyPropListStr = "Right/BuyPropInfo/Scroll View/Grid";
+--购买物品
+local m_BuyPopoverItemStr = "Popover/Buy/Head";
+--购买弹出框
+local m_BuyPopoverStr = "Popover/Buy";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+--购买物品
+local m_BuyLeftView = nil;
+local m_BuyRightView = nil;
+--搜索输入框
+local m_SearchInput = nil;
+--搜索弹出框
+local m_SearchTextPopover = nil;
+--搜索弹出框Text列表
+local m_SearchTextPopoverList = nil;
+--物品类型
+local m_ItemMainIndex = -1;
+--子类型
+local m_ItemSubIndex = -1;
+--品质
+local m_QualityButton = nil;
+--等级
+local m_LevelButton = nil;
+--货币
+local m_CurrencyButton = nil;
+--价格
+local m_PriceButton = nil;
+--最低价格
+local m_PriceLowLabel = nil;
+local m_PriceLowNum = 0;
+--最高价格
+local m_PriceHighLabel = nil;
+local m_PriceHighNum = 0;
+--可购买物品列表
+local m_BuyPropList = nil;
+--购买弹出框
+local m_BuyPopover = nil;
+--购买物品
+local m_BuyPopoverItem = nil;
+--购买单价
+local m_BuyPopoverSinglePriceLabel = nil;
+local m_BuyPopoverSinglePrice = 0;
+--购买总价
+local m_BuyPopoverTotalPriceLabel = nil;
+local m_BuyPopoverTotalPrice = 0;
+--购买弹出框数量
+local m_BuyPopoverNumLabel = nil;
+local m_BuyPopoverNum = 0;
+--搜索主类型
+local m_SearchData = {};
+--搜索文本数据
+local m_SearchTextData = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-----------------------------------本lua文件自调用方法--------------------------------
+
+--初始化object对象
+function InitObjects(object)
+    m_panelObject = object;
+    --搜索输入框
+    m_SearchInput = GetComponent(m_panelObject, m_SearchInputStr, "UIInput");
+    --搜索弹出框
+    m_SearchTextPopover = child(m_panelObject, m_SearchTextPopoverStr).gameObject;
+    --搜索列表
+    m_SearchTextPopoverList = GetComponent(m_panelObject, m_SearchTextPopoverListStr, "UIListView");
+    --品质按钮
+    m_QualityButton = child(m_panelObject, m_QualityButtonStr).gameObject;
+    --等级按钮
+    m_LevelButton = child(m_panelObject, m_LevelButtonStr).gameObject;
+    --货币
+    m_CurrencyButton = child(m_panelObject, m_CurrencyButtonStr).gameObject;
+    --价格
+    m_PriceButton = child(m_panelObject, m_PriceButtonStr).gameObject;
+    --购买物品面板
+    m_BuyLeftView = child(m_panelObject, m_BuyLeftViewStr).gameObject;
+    m_BuyRightView = child(m_panelObject, m_BuyRightViewStr).gameObject;
+    --购买物品列表
+    m_BuyPropList = GetComponent(m_panelObject, m_BuyPropListStr, "UIListView");
+    --购买弹出框
+    m_BuyPopover = child(m_panelObject, m_BuyPopoverStr).gameObject;
+    --购买弹出框物品
+    m_BuyPopoverItem = child(m_panelObject, m_BuyPopoverItemStr).gameObject;
+    --购买弹出框物品单价
+    m_BuyPopoverSinglePriceLabel = GetComponent(m_panelObject, m_BuyPopoverSinglePriceLabelStr, "UILabel");
+    --购买弹出框物品总价
+    m_BuyPopoverTotalPriceLabel = GetComponent(m_panelObject, m_BuyPopoverTotalPriceLabelStr, "UILabel");
+    --购买弹出框数量
+    m_BuyPopoverNumLabel = GetComponent(m_panelObject, m_BuyPopoverNumLabelStr, "UILabel");
+    --价格设置
+    m_PriceLowLabel = GetComponent(m_panelObject, m_PriceLowLabelStr, "UILabel");
+    m_PriceHighLabel = GetComponent(m_panelObject, m_PriceHighLabelStr, "UILabel");
+end
+
+--初始化事件信息
+function InitEvents()
+    --搜索道具名称列表
+    m_SearchTextPopoverList:SetInitCallback(OnSearchTextPopoverListInit);
+    m_SearchTextPopoverList:SetClickCallback(OnSearchTextPopoverListClick);
+    --可以购买物品的列表
+    m_BuyPropList:SetInitCallback(OnBuyPropListInit);
+    m_BuyPropList:SetClickCallback(OnBuyPropListClick);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    --搜索关闭按钮
+    SetGameObjectEvent(m_SearchTextCloseButtonStr, OnSearchTextCloseButtonClick, m_panelObject);
+    --物品类型按钮事件
+    SetGameObjectEvent(m_ItemTypeButtonStr, OnItemTypeButtonClick, m_panelObject);
+    --子类型按钮事件
+    SetGameObjectEvent(m_SubTypeButtonStr, OnSubTypeButtonClick, m_panelObject);
+    --品质按钮事件
+    SetGameObjectEvent(m_QualityButtonStr, OnQualityButtonClick, m_panelObject);
+    --等级按钮事件
+    SetGameObjectEvent(m_LevelButtonStr, OnLevelButtonClick, m_panelObject);
+    if AuctionManager.CurrencyShowType == 2 then
+        SetGameObjectEvent(m_CurrencyButtonStr, OnCurrencyButtonClick, m_panelObject);
+    end
+    --货币按钮事件
+    --价格按钮事件
+    SetGameObjectEvent(m_PriceLowButtonStr, OnPriceLowButtonClick, m_panelObject);
+    SetGameObjectEvent(m_PriceHighButtonStr, OnPriceHighButtonClick, m_panelObject);
+    --重置按钮事件
+    SetGameObjectEvent(m_RefreshButtonStr, OnRefreshButtonClick, m_panelObject);
+    --查找按钮事件
+    SetGameObjectEvent(m_FindButtonStr, OnFindButtonClick, m_panelObject);
+    --购买弹出框关闭事件
+    SetGameObjectEvent(m_BuyPopoverCloseButtonStr, OnBuyPopoverCloseButtonClick, m_panelObject);
+    SetGameObjectEvent(m_BuyCloseButtonStr, OnBuyPopoverCloseButtonClick, m_panelObject);
+    --购买弹出框数量事件
+    SetGameObjectEvent(m_BuyPopoverNumButtonStr, OnBuyPopoverNumButtonClick, m_panelObject);
+    --购买弹出框最大数量事件
+    SetGameObjectEvent(m_BuyPopoverBigNumButtonStr, OnBuyPopoverBigNumButtonClick, m_panelObject);
+    --购买弹出框购买事件
+    SetGameObjectEvent(m_BuyPopoverBuyButtonStr, OnBuyPopoverBuyButtonClick, m_panelObject);
+    --购买物品的Item点击事件
+    SetGameObjectEvent(m_BuyPopoverItemButtonStr, OnBuyPopoverItemButtonClick, m_panelObject);
+
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitCurrencyText();
+    --初始化购买物品列表
+    InitHotSellItemList();
+    m_SearchInput.defaultText = GetTextToId(7004);
+    RefreshSearchData();
+end
+
+function InitCurrencyText()
+    if AuctionManager.CurrencyShowType == 1 then
+        SetLabelContent(m_CurrencyLabelStr, AuctionManager.CurrencyTexts[1], m_panelObject);
+        SetLabelColor(m_CurrencyLabelStr, "FFFFFF", m_panelObject);
+    end
+end
+
+--显示购买界面
+function Show()
+    m_BuyLeftView:SetActive(true);
+    m_BuyRightView:SetActive(true);
+end
+
+--关闭购买界面
+function Hide()
+    m_BuyLeftView:SetActive(false);
+    m_BuyRightView:SetActive(false);
+end
+
+local m_SearchSelect = false;
+--查询输入框事件
+--@param propTextInfos 可以显示的名字列表
+function OnSearchChange(propTextInfos)
+    if m_SearchSelect == false then
+        local data = 
+        {
+            ExcelIds = {};
+            Text = "";
+        };
+        m_SearchTextData = data;
+        m_SearchTextData.ExcelIds.Count = 0;
+        if propTextInfos ~= nil and propTextInfos.count > 0 then
+            TypeSearchClear();
+            m_SearchTextPopover:SetActive(true);
+            m_SearchTextPopoverList:RemoveAll();
+            for index = 1, propTextInfos.count do
+                local data = 
+                {
+                    ExcelIds = propTextInfos[index-1].ExcelIds;
+                    Text = propTextInfos[index-1].Text;
+                };
+                m_SearchTextPopoverList:AddData(data);
+            end
+            m_SearchTextPopoverList:LookAt(0,true);
+        else
+            m_SearchTextPopover:SetActive(false);
+        end
+    else
+        m_SearchSelect = false;
+    end
+end
+--搜索道具名称列表
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param data 列表Item数据信息
+function OnSearchTextPopoverListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local text = data.Text;
+    SetLabelContent("Label",text,item);
+end
+--设置搜索名称列表点击事件
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param go 列表Item对象
+function OnSearchTextPopoverListClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    m_SearchSelect = true;
+    m_SearchTextData = data;
+    m_SearchInput.value = data.Text;
+    m_SearchTextPopover:SetActive(false);
+end
+
+--购买热销物品列表
+function InitHotSellItemList()   
+    m_BuyPropList:RemoveAll();
+    if AuctionManager.HotSellItems ~= nil then 
+        for key, var in pairs(AuctionManager.HotSellItems) do
+            m_BuyPropList:AddData(var);
+        end
+        m_BuyPropList:LookAt(0,true);
+    end
+end
+--刷新热销列表
+function RefreshHotSellItemList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 1 then
+        InitHotSellItemList();
+    end
+end
+--查询后可购买的物品列表
+function InitBuyPropList()
+    local length = GetTableLength(AuctionManager.SearchItems);
+    SetGameObjectState(m_BuyPropNotListStr, length <= 0, m_panelObject);
+    m_BuyPropList:RemoveAll();
+    if length > 0 then
+        local searchItems = AuctionManager.GetSearchItems();
+        for key, var in pairs(searchItems) do
+            m_BuyPropList:AddData(var);
+        end 
+        m_BuyPropList:LookAt(0,true);
+    end
+end
+--刷新查询后可购买的物品列表
+function RefreshBuyPropList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 1 then
+        InitBuyPropList();
+    end
+end
+--设置购买列表显示信息
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param go 列表Item对象
+function OnBuyPropListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ExcelId;
+    local num = data.Num;
+    SetItemShowByExcelIDV04(item,"Prop",excelId,num,true,31,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    SetGameObjectState("Prop/Sprite_Suit", suitId > 0, item);
+    local starItemLevel = data.StarLevel; 
+    SetGameObjectState("Prop/Label-StarNum", false, item);
+    if starItemLevel > 0 then
+        SetGameObjectState("Prop/Label-StarNum", true, item);
+        SetLabelContent("Prop/Label-StarNum/Label", string_format("+{0}",starItemLevel), item);
+        SetGameObjectPos("Prop/Sprite_Suit", Vector3.New(16, -48, 0), item);
+    end
+    --类型
+    local itemType,itemConfig = AuctionManager.GetItemConfigToExcelId(excelId);
+    if itemConfig ~= nil then
+        local typeTxtId = 0;
+        if itemType == 3 then
+            typeTxtId = itemConfig.TypeTxt;
+        else
+            typeTxtId = itemConfig.TypeTxtID;
+        end
+        SetLabelTextByID("Type",typeTxtId,item);
+    end
+    local moneyType = data.MoneyType;
+    if moneyType == 1 then 
+        --非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        SetSpriteByAtlasID("Price/Icon", itemInfo.ImageSmallID, item);
+    else
+        --非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        SetSpriteByAtlasID("Price/Icon", itemInfo.ImageSmallID, item);
+    end
+    --单价
+    local price = data.Price;
+    SetLabelContent("Price/Num",price,item);
+end
+local m_BuyPropData = nil;
+--设置购买列表的点击事件
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param go 列表Item对象
+function OnBuyPropListClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Select" then
+        AuctionManager.Log("OnBuyPropListClick============="..cell.dataIndex);
+        m_BuyPropData = data;
+        BuyPropItemInfo(m_BuyPopoverItem,data);
+        m_BuyPopoverSinglePrice = data.Price;
+        m_BuyPopoverSinglePriceLabel.text = m_BuyPopoverSinglePrice;
+        m_BuyPopoverNum = 1;
+        m_BuyPopoverNumLabel.text = m_BuyPopoverNum;
+        m_BuyPopoverTotalPrice = m_BuyPopoverSinglePrice * m_BuyPopoverNum;
+        SetBuyPopoverTotalPrice();
+        SetBuyPopover(true);
+    end
+    if go.name == "Prop" then
+        local excelId = data.ExcelId;
+        local isRequest = AuctionManager.IsRequestItem(excelId);
+        if isRequest == true then
+            AuctionProtocol.RequestItemInfo(data.GlobalId);
+        else
+            OpenPropToolTips(excelId, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        end
+    end
+end
+--设置购买弹出框的显示状态
+--@param active 显示状态
+function SetBuyPopover(active)
+    m_BuyPopover:SetActive(active);
+end
+--设置购买物品信息
+--@param item 需要设置的Item对象
+--@param data 数据信息
+function BuyPropItemInfo(item,data)
+    local excelId = data.ExcelId;
+    AuctionManager.Log("BuyPropItemInfo excelId:"..excelId);
+    local qualityId = CCommonTool.GetAptitudeIDByExcelID(excelId);
+    AuctionManager.Log("BuyPropItemInfo qualityId:"..qualityId);
+    local qualityColorTop = AuctionManager.ItemQualityColorTop[qualityId];
+    local qualityColorBottom = AuctionManager.ItemQualityColorBottom[qualityId];
+    SetSpriteGradientColor("Sprite_ItemQuality", qualityColorTop, qualityColorBottom, item);
+    local qualityLightColor = AuctionManager.ItemQualityLightColor[qualityId];
+    SetSpriteColor("Sprite_Light", qualityLightColor, item);
+    SetItemShowByExcelIDV04(item,"Item",excelId,num,true,41,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    AuctionManager.Log("BuyPropItemInfo suitId:"..suitId);
+    SetGameObjectState("Item/Sprite_Suit", suitId > 0, item);
+    local starItemLevel = data.StarLevel; 
+    AuctionManager.Log("BuyPropItemInfo starItemLevel:"..starItemLevel);
+    SetGameObjectState("Item/Label_StarNum", starItemLevel > 0, item);
+    if starItemLevel > 0 then
+        SetLabelContent("Item/Label_StarNum", starItemLevel, item);
+        SetGameObjectPos("Item/Sprite_Suit", Vector3.New(16, -48, 0), item);
+    else
+        SetGameObjectPos("Item/Sprite_Suit", Vector3.New(46, -48, 0), item);
+    end
+    local tagType = CCommonTool.GetTagTypeByExcelID(excelId);
+    local isEquip = tagType == 1;
+    SetGameObjectState("Label_Part", isEquip == true, item);
+    SetGameObjectState("Label_FightValue", isEquip == true, item);
+    SetGameObjectState("Label_ItemType", isEquip == false, item);
+    if isEquip == true then
+        local equipInfo = CCommonTool.GetEquipInfo(excelId);
+        SetGameObjectState("Label_Level", equipInfo ~= nil, item);
+        if equipInfo ~= nil then
+            SetGameObjectState("Label_Level", equipInfo.NeedLv > 0, item);
+            SetLabelContent("Label_Level", string_format("Lv.{0}",equipInfo.NeedLv), item);
+            SetLabelTextByID("Label_Part", equipInfo.TypeTxtID, item);
+        end
+        SetGameObjectState("Label_FightValue", false, item);
+    else
+        local itemType,itemConfig = AuctionManager.GetItemConfigToExcelId(excelId);
+        SetGameObjectState("Label_Level", itemConfig ~= nil, item);
+        if itemConfig ~= nil then
+            local needLevel = 0;
+            local typeTxtId = 0;
+            if itemType == 3 then
+                needLevel = itemConfig.NeedLv;
+                typeTxtId = itemConfig.TypeTxt;
+            else
+                needLevel = itemConfig.NeedLevel;
+                typeTxtId = itemConfig.TypeTxtID;
+            end
+            SetGameObjectState("Label_Level", needLevel > 0, item);
+            SetLabelContent("Label_Level", string_format("Lv.{0}",needLevel), item);
+            SetLabelTextByID("Label_ItemType", typeTxtId, item);
+        end
+        --SetItemToolTipsEvent(item,"Item",ENUMPANELID.ENUM_PANEL_AUCTIONPANEL,false,excelId);
+    end
+    local moneyType = data.MoneyType;
+    if moneyType == 1 then 
+        --非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        if itemInfo ~= nil then
+            SetSpriteByAtlasID(m_BuyPopoverSinglePriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+            SetSpriteByAtlasID(m_BuyPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+        end
+    else
+        --非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        if itemInfo ~= nil then
+            SetSpriteByAtlasID(m_BuyPopoverSinglePriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+            SetSpriteByAtlasID(m_BuyPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+        end
+    end
+end
+
+--获取搜索数据
+function RefreshSearchData()
+    GetSearchQualitys();
+    GetSearchLevels();
+    GetSearchPrice();
+end
+--获取搜索子类型数据信息
+function GetSearchSubTypeData()
+    local subTypeInfos = AuctionManager.GetSubTypeInfos(m_ItemMainIndex);
+    local isSubType = subTypeInfos ~= nil;
+    if subTypeInfos ~= nil then
+        local count = subTypeInfos.Count;
+        if count == 1 then
+            m_ItemSubIndex = 1;
+            local subTypeInfo = subTypeInfos[0];
+            m_SearchData.SubType = subTypeInfo.Type;
+            local textId = subTypeInfo.TextId;
+            local menuText = GetTextToId(textId);
+            SetLabelContentAndColor(m_SubTypeLabelStr,menuText,"FFFFFF");
+        end
+    else
+        subTypeInfos = {};
+    end
+    return subTypeInfos,isSubType;
+end
+--获取搜索品质列表
+function GetSearchQualitys()
+--    error("m_ItemMainIndex==========="..m_ItemMainIndex);
+--    error("m_ItemSubIndex==========="..m_ItemSubIndex);
+    local qualitys = AuctionManager.GetQualitys(m_ItemMainIndex,m_ItemSubIndex);
+    isQuality = qualitys ~= nil; 
+    if qualitys == nil then
+        qualitys = {};
+    end
+    CCommonTool.SetGameObjectGrey(m_QualityButton, isQuality == false);
+    return qualitys,isQuality;
+end
+--获取搜索等级列表
+function GetSearchLevels()
+    local levels = AuctionManager.GetLevels(m_ItemMainIndex,m_ItemSubIndex);
+    local isLevel = levels ~= nil; 
+    if levels == nil then
+        levels = {};
+    end
+    CCommonTool.SetGameObjectGrey(m_LevelButton, isLevel == false);
+    return levels,isLevel;
+end
+--屏蔽金币选项
+function GetSearchPrice()
+    local isPrice = m_ItemMainIndex ~= nil and m_ItemMainIndex > 0;
+    CCommonTool.SetGameObjectGrey(m_CurrencyButton, isPrice == false);
+    CCommonTool.SetGameObjectGrey(m_PriceButton, isPrice == false); 
+    return isPrice;
+end
+--------------------------------------按钮事件方法------------------------------------
+--搜索列表关闭事件
+function OnSearchTextCloseButtonClick()
+    AuctionManager.Log("OnSearchTextCloseButtonClick");
+    m_SearchTextPopover:SetActive(false);
+end
+function OnItemTypeButtonClick()
+    AuctionManager.Log("OnItemTypeButtonClick");
+    local mainTypeInfos = G_AuctionManager:GetMainTypeInfos();
+    if mainTypeInfos ~= nil then
+        local menuTextInfos = {};
+        local count = mainTypeInfos.Count;
+        for index = 1, count do
+            local mainTypeInfo = mainTypeInfos[index-1];
+            local data =
+            {
+                Index = index;
+                Type = mainTypeInfo.Type;
+                TextId = mainTypeInfo.TextId;
+                Text = "";
+            };
+            table.insert(menuTextInfos, data);
+        end
+        AuctionSelectMenuPanel.Callback = OnMainTypeMenuCallback;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnMainTypeMenuCallback(data)
+    local menuIndex = data.Index;
+    local menuType = data.Type;
+    local menuText = data.Text;
+    m_ItemMainIndex = menuIndex;
+    AuctionManager.Log("OnMainTypeMenuCallback : "..m_ItemMainIndex);
+    m_SearchTextData = nil;
+    m_SearchData = {};
+    m_SearchData.MainType = menuType;
+    m_SearchData.SubType = nil;
+    m_SearchData.Level = nil;
+    m_SearchData.Quality = nil;
+    SetLabelContentAndColor(m_ItemTypeLabelStr,menuText,"FFFFFF");
+    SubTypeClear();
+    QualityClear();
+    LevelClear();
+    CurrencyClear();
+    PriceClear();
+    TextSearchClear();
+    GetSearchSubTypeData();
+    RefreshSearchData();
+end
+--是否选择主类型
+function IsSelectMainType()
+    if m_ItemMainIndex ~= nil and m_ItemMainIndex >= 0 then
+        return true;
+    else
+        ShowSystemFlowTips(7874);
+    end
+    return false;
+end
+--搜索子类型
+function OnSubTypeButtonClick()
+    AuctionManager.Log("OnSubTypeButtonClick");
+    AuctionManager.Log("m_ItemMainIndex : "..m_ItemMainIndex);
+    local selectMainType = IsSelectMainType();
+    if selectMainType == true then
+        local subTypeInfos = AuctionManager.GetSubTypeInfos(m_ItemMainIndex);
+        if subTypeInfos ~= nil then 
+            local count = subTypeInfos.Count;
+            if count > 0 then
+                local menuTextInfos = {};
+--                local data =
+--                {
+--                    Index = 0;
+--                    Type = 0;
+--                    TextId = 1582;
+--                    Text = "";
+--                };
+--                table.insert(menuTextInfos, data);
+                for index = 1, count do
+                    local subTypeInfo = subTypeInfos[index-1];
+                    local data =
+                    {
+                        Index = index;
+                        Type = subTypeInfo.Type;
+                        TextId = subTypeInfo.TextId;
+                        Text = "";
+                    };
+                    table.insert(menuTextInfos, data);
+                end
+                AuctionSelectMenuPanel.Callback = OnSubTypeMenuCallback;
+                createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+            end
+        end
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnSubTypeMenuCallback(data)
+    local menuIndex = data.Index;
+    local menuType = data.Type;
+    local menuText = data.Text;
+    m_ItemSubIndex = menuIndex;
+    m_SearchData.SubType = menuType;
+    m_SearchData.Level = nil;
+    m_SearchData.Quality = nil;
+    SetLabelContentAndColor(m_SubTypeLabelStr,menuText,"FFFFFF");
+    QualityClear();
+    LevelClear();
+    CurrencyClear();
+    PriceClear();
+    TextSearchClear();
+    RefreshSearchData();
+end
+--是否选择子类型
+function IsSelectSubType()
+    if m_ItemSubIndex ~= nil and m_ItemSubIndex >= 0 then
+        return true;
+    end
+    return false;
+end
+
+--搜索品质
+function OnQualityButtonClick()
+    AuctionManager.Log("OnQualityButtonClick");
+    local qualitys,isQuality = GetSearchQualitys();
+    if isQuality == true then
+        local menuTextInfos = {};
+--        local data =
+--        {
+--            Index = 0;
+--            Type = 0;
+--            TextId = 1582;
+--            Text = "";
+--        };
+--        table.insert(menuTextInfos, data);
+        local count = GetTableLength(qualitys);
+        for index = 1, count do
+            local data =
+            {
+                Index = index;
+                Type = qualitys[index - 1];
+                TextId = -1;
+                Text = AuctionManager.QualityTexts[qualitys[index - 1]];
+            };
+            table.insert(menuTextInfos, data);
+        end
+        AuctionSelectMenuPanel.Callback = OnQualityMenuCallback;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    else
+        AuctionManager.Log("OnQualityButtonClick不可点击！！！！");
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnQualityMenuCallback(data)
+    local menuIndex = data.Index;
+    local menuType = data.Type;
+    local menuText = data.Text;
+    m_SearchData.Quality = menuType;
+    SetLabelContentAndColor(m_QualityLabelStr,menuText,"FFFFFF");
+end
+--搜索等级
+function OnLevelButtonClick()
+    AuctionManager.Log("OnLevelButtonClick");
+    local levels,isLevel = GetSearchLevels();
+    if isLevel == true then
+        local menuTextInfos = {};
+--        local data =
+--        {
+--            Index = 0;
+--            Type = 0;
+--            TextId = 1582;
+--            Text = "";
+--        };
+--        table.insert(menuTextInfos, data);
+        local count = GetTableLength(levels);
+        for index = 1, count do
+            local data =
+            {
+                Index = index;
+                Type = levels[index-1];
+                TextId = -1;
+                Text = string_format("{0}{1}",levels[index-1],AuctionManager.MenuLevelText);
+            };
+            table.insert(menuTextInfos, data);
+        end
+        AuctionSelectMenuPanel.Callback = OnLevelMenuCallback;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    else
+        AuctionManager.Log("OnLevelButtonClick不可点击！！！！");
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnLevelMenuCallback(data)
+    local menuIndex = data.Index;
+    local menuType = data.Type;
+    local menuText = data.Text;
+    m_SearchData.Level = menuType;
+    SetLabelContentAndColor(m_LevelLabelStr,menuText,"FFFFFF");
+end
+--搜索货币
+function OnCurrencyButtonClick()
+    AuctionManager.Log("OnCurrencyButtonClick");
+    if m_ItemMainIndex ~= nil and m_ItemMainIndex >= 0 then
+        local menuTextInfos = {};
+        for index = 1, 2 do
+            local data =
+            {
+                Index = index;
+                Type = index;
+                TextId = -1;
+                Text = AuctionManager.CurrencyTexts[index];
+            };
+            table.insert(menuTextInfos, data);
+        end
+        AuctionSelectMenuPanel.Callback = OnCurrencyMenuCallback;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnCurrencyMenuCallback(data)
+    local menuIndex = data.Index;
+    local menuType = data.Type;
+    local menuText = data.Text;
+    m_SearchData.Currency = menuInfo;
+    SetLabelContent(m_CurrencyLabelStr, menuText, m_panelObject);
+    SetLabelColor(m_CurrencyLabelStr, "FFFFFF", m_panelObject);
+end
+--最低价格
+function OnPriceLowButtonClick()
+    AuctionManager.Log("OnPriceLowButtonClick");
+    if m_ItemMainIndex ~= nil and m_ItemMainIndex >= 0 then
+        local data = 
+        {
+            X = -360;
+            Y = -184;
+            Text = 0;
+        };
+        SmallKeyboardPanel.InputCallback = OnPriceLowNum;
+        SmallKeyboardPanel.ConfirmCallback = OnPriceLowNumConfirm;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    end
+end
+--小键盘数字按下回调
+--@param data 数据信息
+function OnPriceLowNum(data)
+    AuctionManager.Log("OnPriceLowNum");
+    if data ~= nil then
+        AuctionManager.Log("Num : "..data.Num);
+        m_PriceLowNum = data.Num;
+        SetLabelContentAndColor(m_PriceLowLabelStr,m_PriceLowNum,"FFFFFF");
+    end
+end
+--小键盘确定按钮回调
+function OnPriceLowNumConfirm()
+    AuctionManager.Log("OnPriceLowNumConfirm");
+    if m_PriceHighNum > 0 and m_PriceLowNum >  m_PriceHighNum then
+        local num = m_PriceLowNum;
+        m_PriceLowNum = m_PriceHighNum;
+        m_PriceHighNum = num;
+        SetLabelContentAndColor(m_PriceLowLabelStr,m_PriceLowNum,"FFFFFF");
+        SetLabelContentAndColor(m_PriceHighLabelStr,m_PriceHighNum,"FFFFFF");
+    else
+        SetLabelContentAndColor(m_PriceLowLabelStr,m_PriceLowNum,"FFFFFF");
+    end
+end
+--最高价格
+function OnPriceHighButtonClick()
+    AuctionManager.Log("OnPriceHighButtonClick");
+    if m_ItemMainIndex ~= nil and m_ItemMainIndex >= 0 then
+        local data = 
+        {
+            X = -360;
+            Y = -184;
+            Text = 0;
+        };
+        SmallKeyboardPanel.InputCallback = OnPriceHighNum;
+        SmallKeyboardPanel.ConfirmCallback = OnPriceHighNumConfirm;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    end
+end
+--小键盘数字按下回调
+--@param data 数据信息
+function OnPriceHighNum(data)
+    AuctionManager.Log("OnPriceHighNum");
+    if data ~= nil then
+        AuctionManager.Log("Num : "..data.Num);
+        m_PriceHighNum = data.Num;
+        SetLabelContentAndColor(m_PriceHighLabelStr,m_PriceHighNum,"FFFFFF");
+    end
+end
+--小键盘确定按钮回调
+function OnPriceHighNumConfirm()
+    AuctionManager.Log("OnPriceHighNumConfirm");
+    if m_PriceHighNum < m_PriceLowNum then
+        local num = m_PriceHighNum;
+        m_PriceHighNum = m_PriceLowNum;
+        m_PriceLowNum = num;
+        SetLabelContentAndColor(m_PriceLowLabelStr,m_PriceLowNum,"FFFFFF");
+        SetLabelContentAndColor(m_PriceHighLabelStr,m_PriceHighNum,"FFFFFF");
+    else
+        SetLabelContentAndColor(m_PriceHighLabelStr,m_PriceHighNum,"FFFFFF");
+    end
+end
+--重置
+function OnRefreshButtonClick()
+    AuctionManager.Log("OnRefreshButtonClick");
+    Clear();
+	--拍卖--重置按钮上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10002);
+	end
+end
+--清除搜索数据
+function Clear()
+    TextSearchClear();
+    TypeSearchClear();
+    RefreshSearchData();
+end
+--文本搜索清除数据
+function TextSearchClear()
+    m_SearchInput.value = "";
+end
+--类型搜索清除数据
+function TypeSearchClear()
+    AuctionManager.Log("TypeSearchClear");
+    MainTypeClear();
+    SubTypeClear();
+    QualityClear();
+    LevelClear();
+    CurrencyClear();
+    PriceClear();
+    m_SearchData = {};
+end
+function MainTypeClear()
+    m_ItemMainIndex = -1;
+    SetLabelContentAndColor(m_ItemTypeLabelStr,AuctionManager.PropTypeText,"FAEEAA");
+end
+function SubTypeClear()
+    m_ItemSubIndex = -1;
+    local subTypeText = AuctionManager.SubTypeText;
+    if m_ItemMainIndex == -1 then
+        subTypeText = AuctionManager.SubTypeText;
+    elseif m_ItemMainIndex <= 10 then
+        subTypeText = AuctionManager.SubTypeText1;
+    else
+        subTypeText = AuctionManager.SubTypeText2;
+    end
+    SetLabelContentAndColor(m_SubTypeLabelStr,subTypeText,"FAEEAA");
+end
+function QualityClear()
+    SetLabelContentAndColor(m_QualityLabelStr,AuctionManager.QualityText,"FAEEAA");
+end
+function LevelClear()
+    SetLabelContentAndColor(m_LevelLabelStr,AuctionManager.LevelText,"FAEEAA");
+end
+function CurrencyClear()
+    if AuctionManager.CurrencyShowType == 2 then
+        SetLabelContentAndColor(m_CurrencyLabelStr,AuctionManager.CurrencyText,"FAEEAA");
+    end
+end
+function PriceClear()
+    m_PriceHighNum = 0;
+    SetLabelContentAndColor(m_PriceLowLabelStr,AuctionManager.PriceLowText,"FAEEAA");
+    m_PriceHighNum = 0;
+    SetLabelContentAndColor(m_PriceHighLabelStr,AuctionManager.PriceHighText,"FAEEAA");
+end
+
+--搜索按钮事件
+local m_GoalItemInfo = nil;
+function OnFindButtonClick()
+    AuctionManager.Log("OnFindButtonClick");
+    if m_SearchTextData ~= nil then
+        AuctionManager.Log("OnFindButtonClick1");
+        local count = m_SearchTextData.ExcelIds.Count;
+        if count ~= nil and count > 0 then
+            local data = 
+            {
+                Type = 1;           --1准确查找2.模糊查找
+                Count = m_SearchTextData.ExcelIds.Count;
+                ItemData = m_SearchTextData.ExcelIds;
+                MoneyType = 0;      --金钱类型1.金币2.红钻
+                MoneyLimitMin = 0;
+                MoneyLimitMax = 0;
+            };
+            AuctionProtocol.RequestSearchItems(data);
+        else
+            ShowSystemFlowTips(3623);
+        end
+    else
+        if m_SearchData.MainType ~= nil then
+            local result = true;
+            if m_SearchData.MainType > 10 then --是否是装备
+                result = m_SearchData.SubType ~= nil;
+            end 
+            if result == true then
+                m_SearchData.Suit = 0;
+                m_GoalItemInfo = GetGoalItemInfo();
+                local itemData = 
+                {
+                    [0] = m_GoalItemInfo;
+                };
+                AuctionManager.Log("m_GoalItemInfo : "..m_GoalItemInfo);
+                local priceLowNum = m_PriceLowNum;
+                local priceHighNum = m_PriceHighNum;
+                if m_PriceLowNum > m_PriceHighNum then
+                    priceLowNum = m_PriceHighNum;
+                    priceHighNum = m_PriceLowNum;
+                end
+                local data = 
+                {
+                    Type = 2;                           --1准确查找2.模糊查找
+                    Count = 1;
+                    ItemData = itemData;
+                    MoneyType = m_SearchData.Currency;  --金钱类型1.金币2.红钻
+                    MoneyLimitMin = priceLowNum;
+                    MoneyLimitMax = priceHighNum;
+                };
+                AuctionProtocol.RequestSearchItems(data);
+            else
+                ShowSystemFlowTips(8007);
+            end
+        else
+            local data = 
+            {
+                Type = 0;                           --0.默认搜索1.准确查找2.模糊查找
+                Count = 0;
+                ItemData = nil;
+                MoneyType = 0;  --金钱类型1.金币2.红钻
+                MoneyLimitMin = 0;
+                MoneyLimitMax = 0;
+            };
+            AuctionProtocol.RequestSearchItems(data);
+        end
+    end
+	--拍卖--查找物品
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10001);
+	end
+end
+--通过数据组合获取服务用的物品信息
+function GetGoalItemInfo()
+    if m_SearchData.MainType ~= nil then
+        if m_SearchData.SubType == nil then
+            m_SearchData.SubType = 0;
+        end
+        if m_SearchData.Level == nil then
+            m_SearchData.Level = 0;
+        end
+        if m_SearchData.Suit == nil then
+            m_SearchData.Suit = 0;
+        end
+        if m_SearchData.Quality == nil then
+            m_SearchData.Quality = 0;
+        end
+        if m_SearchData.Currency == nil then
+            m_SearchData.Currency = 1;
+        end
+        local level = math.floor(m_SearchData.Level/10);
+        error(string_format("主类型：{0} 子类型：{1} 等级：{2} 套装：{3} 品质：{4}",m_SearchData.MainType,m_SearchData.SubType,m_SearchData.Level,m_SearchData.Suit,m_SearchData.Quality));
+        return m_SearchData.MainType * 100000 + m_SearchData.SubType * 10000 + level*100 + m_SearchData.Suit*10 + m_SearchData.Quality;
+    else
+        return nil;
+    end
+end
+--购买弹出框关闭事件
+function OnBuyPopoverCloseButtonClick()
+    SetBuyPopover(false);
+end
+--购买弹出框数量事件
+function OnBuyPopoverNumButtonClick()
+    local data = 
+    {
+        X = 0;
+        Y = 0;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnBuyPopoverNum;
+    SmallKeyboardPanel.ConfirmCallback = OnBuyPopoverNumConfirm;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+--小键盘数字按下回调
+function OnBuyPopoverNum(data)
+    AuctionManager.Log("OnBuyPopoverNum");
+    if data ~= nil then
+        AuctionManager.Log("Num : "..data.Num);
+        m_BuyPopoverNum = data.Num;
+        m_BuyPopoverNumLabel.text = m_BuyPopoverNum;
+        m_BuyPopoverTotalPrice = m_BuyPopoverSinglePrice * m_BuyPopoverNum;
+        SetBuyPopoverTotalPrice();
+    end
+end
+--设置购买总价
+function SetBuyPopoverTotalPrice()
+    local moneyType = m_BuyPropData.MoneyType;
+    local result = false;
+    if moneyType == 1 then
+        if G_UserInfo.NotBindCoin >= m_BuyPopoverTotalPrice then
+            result = true;
+        end
+    else
+        if G_UserInfo.NotBindDiamond >= m_BuyPopoverTotalPrice then
+            result = true;
+        end
+    end
+    if result == true then
+        SetLabelContentAndColor(m_BuyPopoverTotalPriceLabelStr,m_BuyPopoverTotalPrice,"FFFFFF");
+    else
+        SetLabelContentAndColor(m_BuyPopoverTotalPriceLabelStr,m_BuyPopoverTotalPrice,"FF0000");
+    end
+end
+
+--小键盘按下确定回调
+function OnBuyPopoverNumConfirm()
+    AuctionManager.Log("OnBuyPopoverNumConfirm");
+    if m_BuyPopoverNum <= 0 then
+        m_BuyPopoverNum = 1;
+    end
+    if m_BuyPopoverNum >= m_BuyPropData.Num then
+        m_BuyPopoverNum = m_BuyPropData.Num;
+    end
+    m_BuyPopoverNumLabel.text = m_BuyPopoverNum;
+    m_BuyPopoverTotalPrice = m_BuyPopoverSinglePrice * m_BuyPopoverNum;
+    SetBuyPopoverTotalPrice();
+end
+--购买弹出框最大数量事件
+function OnBuyPopoverBigNumButtonClick()
+    AuctionManager.Log("OnBuyPopoverBigNumButtonClick");
+    m_BuyPopoverNum = m_BuyPropData.Num;
+    AuctionManager.Log("m_BuyPopoverNum : "..m_BuyPopoverNum);
+    m_BuyPopoverNumLabel.text = m_BuyPopoverNum;
+    m_BuyPopoverTotalPrice = m_BuyPopoverSinglePrice * m_BuyPopoverNum;
+    SetBuyPopoverTotalPrice();
+end
+--购买弹出框购买事件
+function OnBuyPopoverBuyButtonClick()
+    AuctionManager.Log("OnBuyPopoverBuyButtonClick");
+    local moneyType = m_BuyPropData.MoneyType;
+    local price = m_BuyPopoverTotalPrice;
+    local result = false;
+    AuctionManager.Log("moneyType : "..moneyType);
+    if moneyType == 1 then
+        if G_UserInfo.NotBindCoin >= price then
+            result = true;
+        else
+            ShowSystemFlowTips(3630);
+        end
+    else
+        if G_UserInfo.NotBindDiamond >= price then
+            result = true;
+        else
+            ShowSystemFlowTips(3631);
+        end
+    end
+    if result == true then
+        local data =
+        {
+            GlobalId = m_BuyPropData.GlobalId;
+            Num = m_BuyPopoverNum;
+        };
+        AuctionProtocol.RequestBuyItem(data);
+    end
+end
+--购买物品的Item点击事件
+function OnBuyPopoverItemButtonClick()
+    if m_BuyPropData ~= nil then
+        local excelId = m_BuyPropData.ExcelId;
+        local isRequest = AuctionManager.IsRequestItem(excelId);
+        if isRequest == true then
+            AuctionProtocol.RequestItemInfo(m_BuyPropData.GlobalId);
+        else
+            OpenPropToolTips(excelId,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        end
+    end
+end
+--设置Label的文本内容和颜色
+function SetLabelContentAndColor(path,text,color)
+    SetLabelContent(path, text, m_panelObject);
+    SetLabelColor(path, color, m_panelObject);
+end
+--设置搜索
+function SetSearchData(excelId)
+    local nameId = CCommonTool.GetNameIDByExcelID(excelId);
+    local porpName = GetTextToId(nameId);
+    m_SearchInput.value = porpName;
+    m_SearchTextPopover:SetActive(false);
+    local excelIds = 
+    {
+        [0] = excelId;
+    };
+    local data = 
+    {
+        Type = 1;           --1准确查找2.模糊查找
+        Count = 1;
+        ItemData = excelIds;
+        MoneyType = 0;      --金钱类型1.金币2.红钻
+        MoneyLimitMin = 0;
+        MoneyLimitMax = 0;
+    };
+    AuctionProtocol.RequestSearchItems(data);
+    excelIds.Count = #excelIds;
+    local searchTextData =
+    {
+        ExcelIds = excelIds;
+        Text = "";
+    };
+    m_SearchTextData = searchTextData;
+end
+

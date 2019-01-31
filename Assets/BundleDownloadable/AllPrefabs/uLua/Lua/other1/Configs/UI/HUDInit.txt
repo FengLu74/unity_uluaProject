@@ -1,0 +1,101 @@
+﻿local UIHUDManager = UIHUDManager
+local pairs = pairs
+local require = require
+
+module("Configs.UI.HUDInit")
+
+function Init()
+    local FilePath = "AllPrefabs/UI/HUD/";
+    local DefaultLocator = "";
+    local CustomLocator = "";
+
+    local FileList =
+    {
+        "01_UIHUD_Monster_Normal",
+        "02_UIHUD_Monster_Elite",
+        "03_UIHUD_Player",
+        "04_UIHUD_Item"
+    };
+
+    UIHUDManager.Instance:SetFilePath(FilePath);
+    UIHUDManager.Instance:SetDefaultLocator(DefaultLocator);
+    UIHUDManager.Instance:SetCustomLocator(CustomLocator);
+
+    for _, fileName in pairs(FileList) do
+        UIHUDManager.Instance:AddHUD(fileName);
+    end
+
+    SetAllHUDPrefabName();
+end
+
+-- 设置HUD预设名称
+function SetAllHUDPrefabName()
+    --[[
+    void SetHUDPrefabName(类型, 级别, 阵营, 预设名称)
+        类型
+            CtMonster = 1,      // 邪恶怪物
+            CtNumen = 2,        // 侠客（召唤出来）
+            Ct_CAMION = 3,      // 护送Npc
+            CtPlayer = 10,      // 玩家
+            CtNpc = 11,         // 功能NPC
+            Ct_ITEMBOX = 12,    // 采集物
+            Ct_MonsterDoor = 41, // 怪物门特殊类型
+            CtItem = 50,        // 道具
+            CtBuild = 80,       // 建筑（箭塔）
+            CtOtherM = 100,     // 其他
+
+        级别
+            MonsterNormal = 1,  // 普通
+            MonsterBoss1  = 2,  // 精英
+            MonsterBoss2  = 3,  // Boss
+        阵营
+            Allied = 1,     // 友好
+            Opposed = 2,    // 敌对
+            Neutral = 3,    // 中立
+    --]]
+    local instance = UIHUDManager.Instance;
+    -- 对怪物类型设定头顶血条
+    for monsterType = 1, 3 do
+        if monsterType == 1 then
+            instance:SetHUDPrefabName(1, monsterType, "01_UIHUD_Monster_Normal");
+        elseif monsterType == 2 or monsterType == 3 then
+            instance:SetHUDPrefabName(1, monsterType, "02_UIHUD_Monster_Elite");
+        end
+    end
+    -- 对侠客类型设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(2, monsterType, "03_UIHUD_Player");
+    end
+    -- 对护送npc类型设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(3, monsterType, "03_UIHUD_Player");
+    end
+    -- 对玩家类型设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(10, monsterType, "03_UIHUD_Player");
+    end
+    -- 对功能Npc设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(11, monsterType, "01_UIHUD_Monster_Normal");
+    end
+    -- 对采集物设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(12, monsterType, "01_UIHUD_Monster_Normal");
+    end
+    -- 对怪物门设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(41, monsterType, "01_UIHUD_Monster_Normal");
+    end
+    -- 对道具设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(50, monsterType, "04_UIHUD_Item");
+    end
+    -- 对建筑设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(80, monsterType, "01_UIHUD_Monster_Normal");
+    end
+    -- 对其他设定头顶血条
+    for monsterType = 1, 3 do
+        instance:SetHUDPrefabName(100, monsterType, "01_UIHUD_Monster_Normal");
+    end
+end

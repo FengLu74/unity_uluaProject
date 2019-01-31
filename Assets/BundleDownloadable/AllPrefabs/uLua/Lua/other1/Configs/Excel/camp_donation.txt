@@ -1,0 +1,189 @@
+﻿--[[
+    field=Id, type=int, desc=玩家等级
+    field=DonationType, type=int, desc=捐献物类型
+    field=FoodNum, type=int, desc=(粮草)玩家每天可捐献次数
+    field=FoodMoneyType, type=byte, desc=(粮草)捐献所需货币类型:0不消耗，1红钻,2蓝钻,3金币,4银币
+    field=FoodMoneyValue, type=int, desc=(粮草)捐献所需货币数值
+    field=FoodCampMoney, type=int, desc=(粮草)捐献获得阵营贡献(货币)数量
+    field=FoodCreditExp, type=int, desc=(粮草)捐献获得军衔经验数量
+    field=IronGetValue1, type=int, desc=(粮草)捐献获得铁矿数量
+    field=FoodGetValue, type=int, desc=(粮草)捐献获得粮草数量
+    field=DonationType2, type=int, desc=捐献物类型
+    field=IronNum, type=int, desc=(铁矿)玩家每天可捐献次数
+    field=IronMoneyType, type=byte, desc=(铁矿)捐献所需货币类型:0不消耗，1红钻,2蓝钻,3金币,4银币
+    field=IronMoneyValue, type=int, desc=(铁矿)捐献所需货币数值
+    field=IronCampMoney, type=int, desc=(铁矿)捐献获得阵营贡献(货币)数量
+    field=IronCreditExp, type=int, desc=(铁矿)捐献获得军衔经验数量
+    field=IronGetValue, type=int, desc=(铁矿)捐献获得铁矿数量
+    field=FoodGetValue1, type=int, desc=(铁矿)捐献获得粮草数量
+]]
+module("CampDonationTable", package.seeall)
+local list={
+    {Id=1,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=2,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=3,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=4,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=5,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=6,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=7,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=8,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=9,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=10,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=100,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=200,IronGetValue=150,FoodGetValue1=180},
+    {Id=11,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=12,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=13,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=14,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=15,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=16,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=17,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=18,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=19,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=20,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=200,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=400,IronGetValue=150,FoodGetValue1=180},
+    {Id=21,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=22,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=23,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=24,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=25,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=26,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=27,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=28,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=29,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=30,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=300,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=600,IronGetValue=150,FoodGetValue1=180},
+    {Id=31,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=32,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=33,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=34,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=35,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=36,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=37,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=38,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=39,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=40,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=350,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=700,IronGetValue=150,FoodGetValue1=180},
+    {Id=41,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=42,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=43,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=44,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=45,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=46,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=47,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=48,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=49,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=50,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=400,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=800,IronGetValue=150,FoodGetValue1=180},
+    {Id=51,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=52,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=53,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=54,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=55,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=56,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=57,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=58,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=59,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=60,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=450,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=900,IronGetValue=150,FoodGetValue1=180},
+    {Id=61,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=62,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=63,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=64,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=65,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=66,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=67,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=68,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=69,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=70,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=500,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1000,IronGetValue=150,FoodGetValue1=180},
+    {Id=71,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=72,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=73,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=74,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=75,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=76,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=77,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=78,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=79,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=80,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=600,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1200,IronGetValue=150,FoodGetValue1=180},
+    {Id=81,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=82,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=83,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=84,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=85,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=86,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=87,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=88,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=89,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=90,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=91,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=92,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=93,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=94,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=95,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=96,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=97,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=98,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=99,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180},
+    {Id=100,DonationType=3,FoodNum=5,FoodMoneyType=4,FoodMoneyValue=50000,FoodCampMoney=50,FoodCreditExp=800,IronGetValue1=75,FoodGetValue=90,DonationType2=4,IronNum=5,IronMoneyType=2,IronMoneyValue=50,IronCampMoney=100,IronCreditExp=1600,IronGetValue=150,FoodGetValue1=180}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10],[11]=list[11],[12]=list[12],[13]=list[13],[14]=list[14],[15]=list[15],[16]=list[16],[17]=list[17],[18]=list[18],[19]=list[19],[20]=list[20],[21]=list[21],[22]=list[22],[23]=list[23],[24]=list[24],[25]=list[25],[26]=list[26],[27]=list[27],[28]=list[28],[29]=list[29],[30]=list[30],[31]=list[31],[32]=list[32],[33]=list[33],[34]=list[34],[35]=list[35],[36]=list[36],[37]=list[37],[38]=list[38],[39]=list[39],[40]=list[40],[41]=list[41],[42]=list[42],[43]=list[43],[44]=list[44],[45]=list[45],[46]=list[46],[47]=list[47],[48]=list[48],[49]=list[49],[50]=list[50],[51]=list[51],[52]=list[52],[53]=list[53],[54]=list[54],[55]=list[55],[56]=list[56],[57]=list[57],[58]=list[58],[59]=list[59],[60]=list[60],[61]=list[61],[62]=list[62],[63]=list[63],[64]=list[64],[65]=list[65],[66]=list[66],[67]=list[67],[68]=list[68],[69]=list[69],[70]=list[70],[71]=list[71],[72]=list[72],[73]=list[73],[74]=list[74],[75]=list[75],[76]=list[76],[77]=list[77],[78]=list[78],[79]=list[79],[80]=list[80],[81]=list[81],[82]=list[82],[83]=list[83],[84]=list[84],[85]=list[85],[86]=list[86],[87]=list[87],[88]=list[88],[89]=list[89],[90]=list[90],[91]=list[91],[92]=list[92],[93]=list[93],[94]=list[94],[95]=list[95],[96]=list[96],[97]=list[97],[98]=list[98],[99]=list[99],[100]=list[100]};
+
+count = 100;
+Count = 100;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

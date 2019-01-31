@@ -1,0 +1,148 @@
+﻿module("ResolveAndCombinePanel", package.seeall)
+
+require "Panel/ResolvePanel";
+require "Panel/CombinePanel";
+-- ��������
+local m_panelName = "ResolveAndCombinePanel";
+-- ������ʱ����ʾ������
+local m_activeContentStr = "/Active";
+-- δ������ʱ����ʾ������
+local m_deactiveContentStr = "/Deactive";
+-- ��ͼ��
+local m_lockIcon = "/Sprite_lock";
+-- ��ťͼ��
+local m_buttonIcon = "/Sprite_Icon";
+-- ����ͼ��
+local m_buttonTxt = "/Sprite_Txt";
+-- ��ť����
+local m_buttonName = "/Name";
+-----------------------------------���õĶ���------------------------------------------
+-- ��������
+local m_panelObject = nil;
+-- �����Ƿ���ʼ������
+local m_panelInitAlready = false;
+-- ���·�ѡ���ı�ǩ��1Ϊ�������ģ��������ң�
+local m_selectTagNum = 1;
+-- ��һ��ѡ���ı�ǩ
+local m_lastSelectTagNum = 1;
+-----------------------------------һЩд���Ĺ涨--------------------------------------
+-- toggles���ɵ�table����
+local m_toggleTable = {
+    [1] = { name = "Sprite-LeftDown/1Toggle_Resolve", panelName = "ResolvePanel", isFirstOpen = true, luaFileName = ResolvePanel },
+    [2] = { name = "Sprite-LeftDown/2Toggle_Combine", panelName = "CombinePanel", isFirstOpen = true, luaFileName = CombinePanel },
+};
+
+------------------------------------BaseLua���õ�ͬ������------------------------------
+-- ��ʼ�������ݷ���start������
+function Start()
+    -- ��ʼ��object����
+    InitObjects();
+    -- ��ʼ����������ʾ
+    InitPanelShow();
+    -- ��ʼ������������Ϣ
+    InitAllInfo();
+    -- ��ʼ�������¼�
+    InitOnClick();
+    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+    m_toggleTable[m_selectTagNum].luaFileName.Start();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+end
+
+function OnDisable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+end
+
+function OnDestroy()
+    for Index = 1, #m_toggleTable do
+        m_toggleTable[Index].luaFileName.OnDestroy();
+        m_toggleTable[Index].isFirstOpen = true;
+    end
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------��lua�ļ��Ե��÷���--------------------------------
+-- ��ʼ��object����
+function InitObjects()
+    -- ��������
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+end
+
+-- ��ʼ����������ʾ
+function InitPanelShow()
+    for Index = 1, #m_toggleTable do
+        local isShow = false;
+        local notShow = true;
+        if Index == m_selectTagNum then
+            isShow = true;
+            notShow = false;
+        end
+        SetGameObjectState(m_toggleTable[Index].name .. m_activeContentStr, isShow, m_panelObject);
+        SetGameObjectState(m_toggleTable[Index].panelName, isShow, m_panelObject);
+    end
+end
+
+-- ��ʼ���е���Ϣ
+function InitAllInfo()
+end
+
+-- ͨ��tag�Ĵ������������Լ�ִ��lua�߼�
+function OpenPanelByTag()
+    -- �����ݿ���
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. m_activeContentStr, true, m_panelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. m_deactiveContentStr, false, m_panelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_panelObject);
+    -- �����ݹر�
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. m_activeContentStr, false, m_panelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. m_deactiveContentStr, true, m_panelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_panelObject);
+    -- ִ�е�lua�߼�
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+end
+
+-- ��ʼ�������¼�
+function InitOnClick()
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent(m_toggleTable[Index].name, OnButtonClick, m_panelObject);
+    end
+end
+--------------------------------------��ť�¼�����------------------------------------
+-- �رհ�ť�¼�
+function OnCloseClick()
+    -- �رյ�ǰ����
+    closePanel(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+end
+
+--  �����¼�����
+function OnButtonClick(e)
+    local selectTagNum = tonumber(string.sub(e.name, 1, 1));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        OpenPanelByTag();
+    end
+end
+--------------------------�ⲿ���õ�(���ڲ�)���´˽�����Ϣ�ķ���----------------------
+-- �򿪴˽��沢��ͨ���������򿪵ڼ�����ǩҳ������
+function OpenThisPanelByTag(index, causePanelId)
+    if m_panelInitAlready == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL, causePanelId);
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end

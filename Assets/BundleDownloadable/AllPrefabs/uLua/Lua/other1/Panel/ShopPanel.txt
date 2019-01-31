@@ -1,0 +1,927 @@
+﻿module("ShopPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 右侧道具名称
+local m_RightItemNameStr = "Right/Label_Name";
+-- 右侧道具描述
+local m_RightItemDesStr = "Right/Label_Des";
+-- 是否有限购
+local m_RightIsLimitStr = "Right/Limit";
+-- 当前购买的数量
+local m_CurNumLabelStr = "Right/Label_CurNum";
+-- 当前消耗数量
+local m_CurCostLabelStr = "Right/Cost/Label_Num";
+-- 当前拥有数量
+local m_CurHaveLabelStr = "Right/Have/Label_Num";
+
+-- 当前需要达到的条件
+local m_CondtionDesStr = "Right/Condition/Label_Des";
+-- 当前拥有的数量
+local m_ConditionHaveStr = "Right/Condition/Label_CurHave";
+-- 右侧限购数量
+local m_RightLimitNumStr = "Right/Limit/Label_LimitNum";
+--右侧限购刷新提示
+local m_RightLimitRefreshStr = "Right/Limit/Label_Refresh";
+-----------------------------------------按钮路径--------------------------------------
+-- 减按钮
+local m_MinusButtonStr = "Right/Minus_Button";
+-- 加按钮
+local m_AddButtonStr = "Right/Add_Button";
+-- 数字按钮
+local m_NumButtonStr = "Right/Num_Button";
+-- 购买按钮
+local m_BuyButtonStr = "Right/Buy_Button";
+-- 货币获取
+local m_CoinGetWayStr = "Right/GetWay";
+-----------------------------------------Sprite路径------------------------------------
+-- 消耗图标
+local m_RightCostIconStr = "Right/Cost/Sprite_Icon";
+-- 拥有图标
+local m_RightHaveIconStr = "Right/Have/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 顶部商店标签
+local m_topShopTagCloneStr = "TopTags/UITable/Tag";
+-- 左侧克隆标签
+local m_leftTagCloneStr = "LeftTags/UITable/Tag";
+
+-- listView组件所在的位置
+local m_itemListViewCompStr = "ItemPanel/Grid";
+-- 右侧道具信息所在的位置
+local m_rightItemContentStr = "Right";
+-- 右侧道具购买条件所在的位置
+local m_rightConditionStr = "Right/Condition";
+-- 右侧限购的位置
+local m_rightLimit = "Right/Limit";
+----------------------------------通用的名称路径---------------------------------------
+-- 顶部激活
+local m_topActiveStr = "/Active";
+-- 顶部未激活
+local m_topDeactiveStr = "/Deactive";
+-- 顶部标签文本
+local m_topLabelStr = "/Label";
+
+-- 左侧激活
+local m_leftActiveStr = "/Sprite_Active";
+-- 左侧未激活
+local m_leftDeactiveStr = "/Sprite_Deactive";
+-- 顶部标签文本
+local m_leftLabelStr = "/Label_Name";
+
+-- 道具的位置
+local m_itemStr = "Item";
+-- 道具购买需要条件
+local m_ItemCondition = "Condition";
+-- 道具购买所需条件
+local m_ItemConditionLabelStr = "/Label";
+-- 道具购买花费
+local m_ItemCost = "Cost";
+-- 货币图标
+local m_ItemCostIconStr = "/Sprite";
+-- 花费数量
+local m_ItemCostNumStr = "/Label";
+-- 道具购买限制
+local m_ItemLimitNumStr = "Label_Limit";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 上方选择的是第几个
+m_topSelectTag = 1;
+local m_topSelectMax = 7;
+-- 左侧标签选择的是第几个
+m_leftSelectTag = 1;
+local m_leftSelectMax = 6;
+-- 中间道具选择的是第几个
+m_middleItemSelect = 1;
+-- 当前购买的数量
+local m_curBuyNums = 1;
+-- 商店数据
+local m_shopData = { };
+local m_shopTagData = { };
+local m_curShopTagData = { };
+local m_curAllItemsData = { };
+local m_curSelectItemData = nil;
+-- 当前拥有的货币数量
+local m_curHaveNum = 0;
+local m_curNeedCostNum = 0;
+-- 当前是否限购了
+local m_isLimited = false;
+-- 当前能够购买的数量
+local m_canBuyNums = 0;
+-- 是否是其他的跳转
+m_isOtherJump = false;
+-----------------------------------一些写死的规定--------------------------------------
+local ConditionType =
+{
+    None = 0,
+    RoleLevel = 1,
+    CultivateLevel = 2,
+    GuildContri = 3,
+    GuildStoreLevel = 4,
+    AllExploits = 5,
+    MilitaryRank = 6,
+    BattleFieldSeasonScore = 7,
+    BattleFieldRank = 8,
+    JoinGuildDays = 9,
+    StrongHoldLevel = 10,
+    AcuHonorValue = 11,
+}
+
+local BuyType =
+{
+    NotBindDiamond = 1,
+    BindDiamond = 2,
+    NotBindCoin = 3,
+    BindCoin = 4,
+    GuildContri = 5,
+    CampExploits = 6,
+    HountDemonItems = 7,
+    BattleFieldCoin = 8,
+    HonorValue = 9,
+    ArtifactValue = 10,
+}
+
+-- 够钱
+local m_CanBuyColor = "F3F1E4";
+-- 不够钱
+local m_CannotBuyColor = "D83232";
+-- 输入框最大值
+local m_MaxNum = 999999;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitData();
+    InitObjects();
+    InitEvents();
+    InitTagsLabel();
+    InitShowData();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    RankProtocol.RequestRank(RANK_TYPE.BATTLEFIELD, RANK_SECEND_TYPE.NONE);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHOP_OPENFRAME);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+    if m_bCreateSuccess then
+        InitShowData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHOP_OPENFRAME);
+    buffer:WriteByte(2);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_curAllItemsData = { };
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitData()
+
+end
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SHOP);
+    m_itemListViewComp = GetComponent(m_panelObject, m_itemListViewCompStr, "UIListView");
+end
+
+function InitEvents()
+    m_itemListViewComp:SetInitCallback(OnItemInit);
+    m_itemListViewComp:SetClickCallback(OnItemClick);
+end
+
+function InitShowData()
+    if not m_isOtherJump then
+        m_topSelectTag = 1;
+        m_leftSelectTag = 1;
+        m_middleItemSelect = 1;
+    else
+        m_isOtherJump = false;
+    end
+end
+
+function InitShow()
+    InitTopTagShow();
+    InitLeftTagShow();
+    InitLeftTagSelect();
+    InitItemsShow();
+    InitRightData();
+    InitRightShow();
+end
+
+function InitOnClick()
+    for Index = 1, m_topSelectMax do
+        SetGameObjectEvent(m_topShopTagCloneStr .. Index, OnTopTagClick, m_panelObject);
+    end
+    for Index = 1, m_leftSelectMax do
+        SetGameObjectEvent(m_leftTagCloneStr .. Index, OnLeftTagClick, m_panelObject);
+    end
+    SetGameObjectEvent(m_AddButtonStr, OnAddClick, m_panelObject);
+    SetGameObjectEvent(m_MinusButtonStr, OnMinusClick, m_panelObject);
+    SetGameObjectEvent(m_NumButtonStr, OnInputClick, m_panelObject);
+    SetGameObjectEvent(m_BuyButtonStr, OnBuyClick, m_panelObject);
+end
+
+function InitTagsLabel()
+    local count = 0;
+    local shopPanelData = ShopManager.ShopData[ShopManager.ShopBelongPanel.Score_ShopPanel];
+    m_shopData = { };
+    local listShopData = { };
+    for k, v in pairs(shopPanelData) do 
+		if (k ~= 1 and k ~= 2 and k ~= 3 and k ~= 4 and k ~= 5 and k ~= 6) then
+			count = count + 1;
+			listShopData[count] = { };
+			listShopData[count].ShopID = k;
+			listShopData[count].Data = v;
+			-- m_shopData[count] = v;
+		end
+    end
+    table.sort(listShopData, SortShopFunc);
+    for k, v in ipairs(listShopData) do
+        m_shopData[k] = v.Data;
+    end
+    for Index = 1, m_topSelectMax do
+        if Index <= #m_shopData then
+            if m_shopData[Index].NameTxtID == nil then
+                error("表中不存在此商店数据,商店ID::::");
+            else
+                SetLabelTextByID(m_topShopTagCloneStr .. Index .. m_topActiveStr .. m_topLabelStr, m_shopData[Index].NameTxtID, m_panelObject);
+                SetLabelTextByID(m_topShopTagCloneStr .. Index .. m_topDeactiveStr .. m_topLabelStr, m_shopData[Index].NameTxtID, m_panelObject);
+            end
+            SetGameObjectState(m_topShopTagCloneStr .. Index, true, m_panelObject);
+        else
+            SetGameObjectState(m_topShopTagCloneStr .. Index, false, m_panelObject);
+        end
+    end
+end
+
+function SortShopFunc(data1, data2)
+    return ShopManager.GetOrderByShopID(data1.ShopID) < ShopManager.GetOrderByShopID(data2.ShopID);
+end
+
+function InitTopTagShow()
+    if m_topSelectTag > #m_shopData then
+        error("上部标签超出了显示总个数:::" .. #m_shopData .. "当前想要选择的个数:::" .. m_topSelectTag);
+        m_topSelectTag = 1;
+    end
+    for Index = 1, #m_shopData do
+        if Index == m_topSelectTag then
+            SetGameObjectState(m_topShopTagCloneStr .. Index .. m_topActiveStr, true, m_panelObject);
+            SetGameObjectState(m_topShopTagCloneStr .. Index .. m_topDeactiveStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_topShopTagCloneStr .. Index .. m_topActiveStr, false, m_panelObject);
+            SetGameObjectState(m_topShopTagCloneStr .. Index .. m_topDeactiveStr, true, m_panelObject);
+        end
+    end
+end
+
+function InitLeftTagShow() 
+	--m_shopTagData = m_shopData[m_topSelectTag].AllTagsData;
+	m_shopTagData = { };
+	local indexT = 1;
+	-- 移除不含商品的标签
+	m_shopDateTemp = m_shopData[m_topSelectTag].AllTagsData;
+    for k, v in pairs(m_shopDateTemp) do 
+		if table.getn(m_shopDateTemp[k].AllShopItemsInfo)> 0 then 
+			m_shopTagData[indexT] = m_shopDateTemp[k];
+			indexT = indexT+1;
+		end
+	end
+    for Index = 1, m_leftSelectMax do
+        if Index <= #m_shopTagData then
+            SetLabelTextByID(m_leftTagCloneStr .. Index .. m_leftActiveStr .. m_leftLabelStr, m_shopTagData[Index].ShopInfo.TabName, m_panelObject);
+            SetLabelTextByID(m_leftTagCloneStr .. Index .. m_leftDeactiveStr .. m_leftLabelStr, m_shopTagData[Index].ShopInfo.TabName, m_panelObject);
+            -- 对据点页签单独处理
+            if Index == 4 and m_topSelectTag == 2 then
+                if GuildManager.GetStrongHoldLv() > 0 then
+                    SetGameObjectState(m_leftTagCloneStr .. Index, true, m_panelObject);
+                else
+                    SetGameObjectState(m_leftTagCloneStr .. Index, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_leftTagCloneStr .. Index, true, m_panelObject);
+            end
+        else
+            SetGameObjectState(m_leftTagCloneStr .. Index, false, m_panelObject);
+        end
+    end
+end
+
+function InitLeftTagSelect()
+    if m_leftSelectTag > #m_shopTagData then
+        error("左侧标签超出了显示总个数:::" .. #m_shopTagData .. "当前想要选择的个数:::" .. m_leftSelectTag);
+        m_leftSelectTag = 1;
+    end
+    m_curShopTagData = m_shopTagData[m_leftSelectTag];
+    local count = 0;
+    m_curAllItemsData = { };
+    for k, v in pairs(m_curShopTagData.AllShopItemsInfo) do
+        -- 如果当前选中的是据点商店,对数据做特殊处理
+        if m_leftSelectTag == 4 and m_topSelectTag == 2 and GuildManager.GetStrongHoldLv() > 0 then
+            local ownID = GuildManager.strongHoldInfo.ownID;
+            local t1, t2 = math.modf(v.TypeShow / 100);
+            if t1 > 0 then
+                if t1 == ownID then
+                    count = count + 1;
+                    m_curAllItemsData[count] = v;
+                end
+            else
+                count = count + 1;
+                m_curAllItemsData[count] = v;
+            end
+        else
+            count = count + 1;
+            m_curAllItemsData[count] = v;
+        end
+    end
+    for Index = 1, #m_shopTagData do
+        if Index == m_leftSelectTag then
+            SetGameObjectState(m_leftTagCloneStr .. Index .. m_leftActiveStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_leftTagCloneStr .. Index .. m_leftActiveStr, false, m_panelObject);
+        end
+    end
+end
+
+function InitItemsShow()
+    m_itemListViewComp:RemoveAll();
+    for Index = 1, #m_curAllItemsData do
+        m_itemListViewComp:AddData(m_curAllItemsData[Index]);
+        --error("[lua]  --->:m_curAllItemsData.BuyNum: "..m_curAllItemsData[Index].BuyValue.."Index:-->"..Index);
+        -- 如果商品列表选中索引>=10000表示跳转配置的是道具ID
+        if m_middleItemSelect >= 10000 and m_curAllItemsData[Index].ItemId == m_middleItemSelect then
+            m_middleItemSelect = Index;
+        end
+    end
+    m_itemListViewComp:LookAt(m_middleItemSelect - 1, true);
+end
+
+function InitRightData()
+    m_curBuyNums = 1;
+end
+
+function InitRightShow()
+    if #m_curAllItemsData <= 0 then
+        SetGameObjectState(m_rightItemContentStr, false, m_panelObject);
+        m_curSelectItemData = nil;
+        return;
+    end
+    SetGameObjectState(m_rightItemContentStr, true, m_panelObject);
+    if m_curAllItemsData[m_middleItemSelect] == nil then
+        error("中间道具的第" .. m_middleItemSelect .. "个不存在道具");
+        m_middleItemSelect = 1;
+    end
+    m_curSelectItemData = m_curAllItemsData[m_middleItemSelect];
+    local excelID = CCommonTool.GetProfessionItemId(m_curSelectItemData.ItemId);
+    SetLabelTextByID(m_RightItemNameStr, CCommonTool.GetNameIDByExcelID(excelID), m_panelObject);
+    SetLabelPinZhi(m_RightItemNameStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+    if CCommonTool.GetItemTypeByExcelIDLua(excelID) == ITEMTYPE.IT_Equip then
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo ~= nil then
+            local roleDataInfo = CCommonTool.GetRoleDateInfo(equipInfo.ProID);
+            local proName = "";
+            if equipInfo.ProID ~= 255 then
+                if roleDataInfo ~= nil then
+                    local textData = CCommonTool.GetTxtData(roleDataInfo.NameTxt);
+                    proName = textData.m_str;
+                end
+            end
+            local level = equipInfo.NeedLv;
+            local partName = "";
+            local partTextData = CCommonTool.GetTxtData(equipInfo.TypeTxtID);
+            if partTextData ~= nil then
+                partName = partTextData.m_str;
+            end
+            local desContent = "";
+            local desTextData = CCommonTool.GetTxtData(1552);
+            if desTextData ~= nil then
+                desContent = desTextData.m_str;
+            end
+            desContent = string_format(desContent, proName, level, partName);
+            SetLabelContent(m_RightItemDesStr, desContent, m_panelObject);
+        end
+    else
+        SetLabelTextByID(m_RightItemDesStr, CCommonTool.GetIntroIDByExcelID(excelID), m_panelObject);
+    end
+
+
+    local shopID = m_curShopTagData.ShopInfo.ShopId;
+    local itemLibrary = m_curShopTagData.ShopInfo.TabDate;
+    --error("[lua]-->shopID: "..shopID.."  itemLibrary--->: "..itemLibrary.." m_curSelectItemData.ItemId->>"..m_curSelectItemData.ItemId);
+    if m_curSelectItemData.BuyNum > 0 then
+        m_isLimited = true;
+        local buyNums = 0;
+        if ShopManager.ShopLimitData[shopID] ~= nil then
+            if ShopManager.ShopLimitData[shopID][itemLibrary] ~= nil then
+                if ShopManager.ShopLimitData[shopID][itemLibrary][m_curSelectItemData.ItemId] ~= nil then
+                    buyNums = ShopManager.ShopLimitData[shopID][itemLibrary][m_curSelectItemData.ItemId];
+                end
+            end
+        end
+        m_canBuyNums = m_curSelectItemData.BuyNum - buyNums;
+        SetLabelContent(m_RightLimitNumStr, m_canBuyNums .. "/" .. m_curSelectItemData.BuyNum, m_panelObject);
+        SetGameObjectState(m_rightLimit, true, m_panelObject);
+        SetLabelTextByID(m_RightLimitRefreshStr,9123,m_panelObject);
+    else
+        m_isLimited = false;
+        SetGameObjectState(m_rightLimit, false, m_panelObject);
+    end
+
+    local CoinExcelID = GetExcelIDbyBuyType(m_curSelectItemData.BuyType);
+    SetItemToolTipsEvent(m_panelObject, m_CoinGetWayStr, ENUMPANELID.ENUM_PANEL_SHOP, false, CoinExcelID);
+    local iteminfo = CCommonTool.GetItemInfo(CoinExcelID);
+    if iteminfo ~= nil then
+        SetSpriteByAtlasID(m_RightCostIconStr, iteminfo.ImageSmallID, m_panelObject);
+        SetSpriteByAtlasID(m_RightHaveIconStr, iteminfo.ImageSmallID, m_panelObject);
+    end
+
+    m_curHaveNum = GetCurHavebyBuyType(m_curSelectItemData.BuyType);
+    SetLabelContent(m_CurHaveLabelStr, m_curHaveNum, m_panelObject);
+    InitMoneyShow();
+
+    local isConditionOn = false;
+    local conditionContent = nil;
+    if m_curSelectItemData.TypeBuy == ConditionType.None then
+        isConditionOn = false;
+    elseif m_curSelectItemData.TypeBuy == ConditionType.RoleLevel then
+        if G_UserInfo.RoleAttribute.Level < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = G_UserInfo.RoleAttribute.Level;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.CultivateLevel then
+        if G_UserInfo.RoleAttribute.CultivateLv < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = G_UserInfo.RoleAttribute.CultivateLv;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.GuildContri then
+        if GuildManager.GetSelfContribution() < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = GuildManager.GetSelfContribution();
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.GuildStoreLevel then
+        if GuildManager.GetGuildShopLevel() < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = GuildManager.GetGuildShopLevel();
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.AllExploits then
+        if G_UserInfo.RoleAttribute.N64Exploits < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = G_UserInfo.RoleAttribute.N64Exploits;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.MilitaryRank then
+        if CampMilitaryRankPanel.GetCurMilitaryRankLevel() < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            local curLevel = CampMilitaryRankPanel.GetCurMilitaryRankLevel();
+            conditionContent = CampMilitaryRankPanel.GetNameByLevel(curLevel);
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.BattleFieldSeasonScore then
+        if BattleFieldManager.SeasonScore < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = BattleFieldManager.SeasonScore;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.BattleFieldRank then
+        if BattleFieldManager.SeasonRank <= 0 or BattleFieldManager.SeasonRank > m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = BattleFieldManager.SeasonRank;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.JoinGuildDays then
+        local days = GuildManager.GetJoinGuildDays(G_UserInfo.GlobalDBID);
+        if days <= 0 or days < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = days;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.StrongHoldLevel then
+        if GuildManager.GetStrongHoldLv() <= 0 or GuildManager.GetStrongHoldLv() < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = GuildManager.GetStrongHoldLv();
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.AcuHonorValue then
+        if G_UserInfo.RoleAttribute.HonourValue < m_curSelectItemData.TypeBuyNum then
+            isConditionOn = true;
+            conditionContent = G_UserInfo.RoleAttribute.HonourValue;
+        else
+            isConditionOn = false;
+        end
+    else
+        error("商店道具购买条件未设计:::" .. m_curSelectItemData.TypeBuy);
+    end
+
+    if isConditionOn then
+        local contact = "";
+        if m_curSelectItemData.TypeBuy == ConditionType.MilitaryRank then
+            contact = CampMilitaryRankPanel.GetNameByLevel(m_curSelectItemData.TypeShowNum);
+        else
+            contact = m_curSelectItemData.TypeBuyNum;
+        end
+        local showContent = string_format(CCommonTool.GetTxtData(m_curSelectItemData.TypeBuyTxt).m_str, contact);
+        SetGameObjectState(m_rightConditionStr, true, m_panelObject);
+        SetGameObjectState(m_BuyButtonStr, false, m_panelObject);
+        SetLabelContent(m_CondtionDesStr, showContent, m_panelObject);
+        local curHaveContent = string_format(CCommonTool.GetTxtData(m_curSelectItemData.PlayerTxt).m_str, conditionContent);
+        SetLabelContent(m_ConditionHaveStr, curHaveContent, m_panelObject);
+    else
+        SetGameObjectState(m_rightConditionStr, false, m_panelObject);
+        SetGameObjectState(m_BuyButtonStr, true, m_panelObject);
+    end
+end
+
+function InitMoneyShow()
+    SetLabelContent(m_CurNumLabelStr, m_curBuyNums, m_panelObject);
+    m_curNeedCostNum = m_curSelectItemData.BuyValue * m_curBuyNums;
+    if m_curHaveNum >= m_curNeedCostNum then
+        SetLabelColor(m_CurCostLabelStr, m_CanBuyColor, m_panelObject);
+    else
+        SetLabelColor(m_CurCostLabelStr, m_CannotBuyColor, m_panelObject);
+    end
+    SetLabelContent(m_CurCostLabelStr, m_curNeedCostNum, m_panelObject);
+end
+
+function OnItemInit(listView, cell, data)
+    local shopItemInfo = data;
+    local go = cell.gameObject;
+    local excelID = CCommonTool.GetProfessionItemId(shopItemInfo.ItemId);
+    SetItemShowByExcelIDV04(go, m_itemStr, excelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_SHOP);
+    SetItemToolTipsEvent(go, m_itemStr, ENUMPANELID.ENUM_PANEL_SHOP, false, excelID);
+    local shopID = m_curShopTagData.ShopInfo.ShopId;
+    local itemLibrary = m_curShopTagData.ShopInfo.TabDate;
+    if shopItemInfo.BuyNum > 0 then
+        local buyNums = 0;
+        if ShopManager.ShopLimitData[shopID] ~= nil then
+            if ShopManager.ShopLimitData[shopID][itemLibrary] ~= nil then
+                if ShopManager.ShopLimitData[shopID][itemLibrary][shopItemInfo.ItemId] ~= nil then
+                    buyNums = ShopManager.ShopLimitData[shopID][itemLibrary][shopItemInfo.ItemId];
+                end
+            end
+        end
+        local canBuyNum = shopItemInfo.BuyNum - buyNums;
+        SetLabelContent(m_ItemLimitNumStr, canBuyNum .. "/" .. shopItemInfo.BuyNum, go);
+        SetGameObjectState(m_ItemLimitNumStr, true, go);
+    else
+        SetGameObjectState(m_ItemLimitNumStr, false, go);
+    end
+    local isConditionOn = false;
+    -- 针对据点商店做特殊处理
+    local TypeShow = shopItemInfo.TypeShow;
+    if shopItemInfo.TypeShow > 100 then
+        local t1, t2 = math.modf(shopItemInfo.TypeShow / 100);
+        TypeShow = shopItemInfo.TypeShow - t1 * 100;
+    end
+    if TypeShow == ConditionType.None then
+        isConditionOn = false;
+    elseif TypeShow == ConditionType.RoleLevel then
+        if G_UserInfo.RoleAttribute.Level < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.CultivateLevel then
+        if G_UserInfo.RoleAttribute.CultivateLv < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.GuildContri then
+        if GuildManager.GetSelfContribution() < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.GuildStoreLevel then
+        if GuildManager.GetGuildShopLevel() < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.AllExploits then
+        if G_UserInfo.RoleAttribute.N64Exploits < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.MilitaryRank then
+        if CampMilitaryRankPanel.GetCurMilitaryRankLevel() < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.BattleFieldSeasonScore then
+        if BattleFieldManager.SeasonScore < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif m_curSelectItemData.TypeBuy == ConditionType.BattleFieldRank then
+        if BattleFieldManager.SeasonRank <= 0 or BattleFieldManager.SeasonRank > shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.JoinGuildDays then
+        local days = GuildManager.GetJoinGuildDays(G_UserInfo.GlobalDBID);
+        if days <= 0 or days < shopItemInfo.TypeBuyNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.StrongHoldLevel then
+        if GuildManager.GetStrongHoldLv() <= 0 or GuildManager.GetStrongHoldLv() < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    elseif TypeShow == ConditionType.AcuHonorValue then
+        if G_UserInfo.RoleAttribute.HonourValue < shopItemInfo.TypeShowNum then
+            isConditionOn = true;
+        else
+            isConditionOn = false;
+        end
+    else
+        error("商店道具购买条件未设计:::" .. shopItemInfo.TypeShow);
+    end
+
+    if isConditionOn then
+        local contact = "";
+        if TypeShow == ConditionType.MilitaryRank then
+            contact = CampMilitaryRankPanel.GetNameByLevel(shopItemInfo.TypeShowNum);
+        else
+            contact = shopItemInfo.TypeShowNum;
+        end
+        local showContent = string_format(CCommonTool.GetTxtData(shopItemInfo.TypeShowTxt).m_str, contact);
+        SetGameObjectState(m_ItemCondition, true, go);
+        SetGameObjectState(m_ItemCost, false, go);
+        SetLabelContent(m_ItemCondition .. m_ItemConditionLabelStr, showContent, go);
+    else
+        SetGameObjectState(m_ItemCondition, false, go);
+        SetGameObjectState(m_ItemCost, true, go);
+        local CoinExcelID = GetExcelIDbyBuyType(m_curSelectItemData.BuyType);
+        local iteminfo = CCommonTool.GetItemInfo(CoinExcelID);
+        if iteminfo ~= nil then
+            SetSpriteByAtlasID(m_ItemCost .. m_ItemCostIconStr, iteminfo.ImageSmallID, go, true);
+        end
+        SetLabelContent(m_ItemCost .. m_ItemCostNumStr, shopItemInfo.BuyValue, go);
+    end
+end
+
+-- 根据类型显示道具id
+function GetExcelIDbyBuyType(buyType)
+    if buyType == BuyType.NotBindDiamond then
+        return G_ItemToolTipDefine.NOTBINDDIAMOND;
+    elseif buyType == BuyType.BindDiamond then
+        return G_ItemToolTipDefine.BINDDIAMOND;
+    elseif buyType == BuyType.NotBindCoin then
+        return G_ItemToolTipDefine.NOTBINDMONEY;
+    elseif buyType == BuyType.BindCoin then
+        return G_ItemToolTipDefine.BINDMONEY;
+    elseif buyType == BuyType.GuildContri then
+        return G_ItemToolTipDefine.GUILD_CONTRIBUTION;
+    elseif buyType == BuyType.CampExploits then
+        return G_ItemToolTipDefine.CAMPEXPLOITS;
+    elseif buyType == BuyType.HountDemonItems then
+        return G_ItemToolTipDefine.HOUNTDEAMONITEM;
+    elseif buyType == BuyType.BattleFieldCoin then
+        return G_ItemToolTipDefine.BATTLEFIELDCOINITEM;
+    elseif buyType == BuyType.HonorValue then
+        return G_ItemToolTipDefine.HONORITEM;
+    elseif buyType == BuyType.ArtifactValue then
+        return G_ItemToolTipDefine.ARTIFACTIEM;
+    else
+        return 20000;
+    end
+end
+
+function GetCurHavebyBuyType(buyType)
+    if buyType == BuyType.NotBindDiamond then
+        return G_UserInfo.NotBindDiamond;
+    elseif buyType == BuyType.BindDiamond then
+        return G_UserInfo.BindDiamond;
+    elseif buyType == BuyType.NotBindCoin then
+        return G_UserInfo.NotBindCoin;
+    elseif buyType == BuyType.BindCoin then
+        return G_UserInfo.BindCoin;
+    elseif buyType == BuyType.GuildContri then
+        return GuildManager.GetSelfContribution();
+    elseif buyType == BuyType.CampExploits then
+        return G_UserInfo.RoleAttribute.N64Exploits;
+    elseif buyType == BuyType.HountDemonItems then
+        return G_UserInfo.RoleAttribute.HuntMagicMoney;
+    elseif buyType == BuyType.BattleFieldCoin then
+        return BattleFieldManager.BattleFieldMoney;
+    elseif buyType == BuyType.HonorValue then
+        return G_UserInfo.RoleAttribute.CurHonourValue;
+    elseif buyType == BuyType.ArtifactValue then
+        return G_UserInfo.RoleAttribute.GodNessTear;
+    else
+        return 0;
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnItemClick(listView, cell, go)
+    m_middleItemSelect = cell.dataIndex + 1;
+    InitRightShow();
+	--商店道具上报
+	if Constants.branch == "cn" then
+		local excelID = CCommonTool.GetProfessionItemId(m_curSelectItemData.ItemId);
+		if excelID>0 then
+			ReportManager.RequestReportPanel(excelID);
+		end
+	end
+end
+
+function OnTopTagClick(go)
+    local num = tonumber(string.sub(go.name, 4, string.len(go.name)));
+    if m_topSelectTag ~= num then
+        m_topSelectTag = num;
+        m_leftSelectTag = 1;
+        m_middleItemSelect = 1;
+        InitTopTagShow();
+        InitLeftTagShow();
+        InitLeftTagSelect();
+        InitItemsShow();
+        InitRightShow();
+    end
+end
+
+function OnLeftTagClick(go)
+    local num = tonumber(string.sub(go.name, 4, string.len(go.name)));
+    if m_leftSelectTag ~= num then
+        m_leftSelectTag = num;
+        m_middleItemSelect = 1;
+        InitTopTagShow();
+        InitLeftTagShow();
+        InitLeftTagSelect();
+        InitItemsShow();
+        InitRightShow();
+    end
+end
+
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_SHOP);
+end
+
+function OnAddClick()
+    -- 这里还需要看限购数量
+    if m_curBuyNums < m_MaxNum then
+        if m_isLimited then
+            if m_curBuyNums < m_canBuyNums then
+                m_curBuyNums = m_curBuyNums + 1;
+            end
+        else
+            m_curBuyNums = m_curBuyNums + 1;
+        end
+        InitMoneyShow();
+    end
+end
+
+function OnMinusClick()
+    if m_curBuyNums > 1 then
+        m_curBuyNums = m_curBuyNums - 1;
+        InitMoneyShow();
+    end
+end
+
+function OnInputClick()
+    local data =
+    {
+        X = 640;
+        Y = -100;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnSmallKeyboardNumClick;
+    SmallKeyboardPanel.ConfirmCallback = OnSmallKeyboardConfirmClick;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL, data, ENUMPANELID.ENUM_PANEL_SHOP);
+end
+
+-- 小键盘数字按下回调
+-- @param data 数据信息
+function OnSmallKeyboardNumClick(data)
+    if data ~= nil then
+        m_curBuyNums = data.Num;
+        if m_curBuyNums < 1 then
+            m_curBuyNums = 1;
+        elseif m_isLimited then
+            if m_curBuyNums > m_canBuyNums then
+                m_curBuyNums = m_canBuyNums;
+            end
+        elseif m_curBuyNums > m_MaxNum then
+            m_curBuyNums = m_MaxNum;
+        end
+        InitMoneyShow();
+    end
+end
+
+-- 小键盘确定按钮回调
+function OnSmallKeyboardConfirmClick()
+
+end
+
+function OnBuyClick()
+    local buyType = m_curSelectItemData.BuyType;
+    local moneyType = nil;
+    if buyType == BuyType.NotBindDiamond then
+        moneyType = MONEY_NEW_TYPE.NOTBIND_DIAMOND;
+    elseif buyType == BuyType.BindDiamond then
+        moneyType = MONEY_NEW_TYPE.BIND_DIAMOND;
+    elseif buyType == BuyType.NotBindCoin then
+        moneyType = MONEY_NEW_TYPE.NOTBIND_COIN;
+    elseif buyType == BuyType.BindCoin then
+        moneyType = MONEY_NEW_TYPE.BIND_COIN;
+    end
+    if moneyType == nil then
+        if m_curHaveNum < m_curNeedCostNum then
+            ShowSystemFlowTips(2791);
+        else
+            OnExchangeMoneyCallBack();
+        end
+    else
+        if MoneyExchangePanel.CheckIsEnoughMoney(moneyType, math.abs(m_curNeedCostNum), ENUMPANELID.ENUM_PANEL_SHOP, OnExchangeMoneyCallBack) then
+            OnExchangeMoneyCallBack();
+        else
+            -- ShowSystemFlowTips(2791);
+        end
+    end
+end
+
+function OnExchangeMoneyCallBack()
+    local shopInfo = m_curShopTagData.ShopInfo;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHOP_BUYDEAL);
+    --error("[lua]..->".."shopInfo.ShopId:"..shopInfo.ShopId.."->:shopInfo.TabId-:"..shopInfo.TabId.."m_curSelectItemData.Id:"..m_curSelectItemData.Id.."--m_curSelectItemData.ItemId"..m_curSelectItemData.ItemId);
+    buffer:WriteInt(shopInfo.ShopId);
+    buffer:WriteInt(shopInfo.TabId);
+    buffer:WriteInt(m_curSelectItemData.Id);
+    buffer:WriteInt(m_curSelectItemData.ItemId);
+    buffer:WriteInt(m_curBuyNums);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function BuyResultReturn()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SHOP) == 1 then
+        m_itemListViewComp:Refresh();
+        InitRightData();
+        InitRightShow();
+    end
+end
+
+function RefreshOnMidnight()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SHOP) == 1 then
+        m_itemListViewComp:Refresh();
+        InitRightData();
+        InitRightShow();
+    end
+end
+
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SHOP) == 1 then
+        InitRightShow();
+    end
+end
+
+function OnBattleFieldRankRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SHOP) == 1 and m_bCreateSuccess then
+        m_itemListViewComp:Refresh();
+        InitRightShow();
+    end
+end
+
+function OnBattleFieldSeasonScoreRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SHOP) == 1 and m_bCreateSuccess then
+        m_itemListViewComp:Refresh();
+        InitRightShow();
+    end
+end
+
+function OnHonorChangeRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SHOP) == 1 and m_bCreateSuccess then
+        m_itemListViewComp:Refresh();
+        InitRightShow();
+    end
+end

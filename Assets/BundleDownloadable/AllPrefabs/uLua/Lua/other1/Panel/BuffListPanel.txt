@@ -1,0 +1,337 @@
+﻿module("BuffListPanel", package.seeall)
+
+--面板对象
+local m_PanelObject = nil;
+
+--主角Buff的Item列表
+local m_PlayerBuffViewPath = "LeftTop/Player/BuffItems/Grid";
+local m_PlayerBuffView = nil;
+local m_PlayerBuffItems = {};
+local m_PlayerBuffItemTimeEvents = {};
+local m_PlayerBuffInfos = {};
+local m_PlayerBuffBrowseButtonPath = "LeftTop/Player/BuffItems/Mask";
+local m_PlayerBuffBrowseButton = nil;
+
+--其它玩家BuffItem列表
+local m_OtherPlayerBuffViewPath = "MiddleBottom/TargetHud/BuffItems/Grid";
+local m_OtherPlayerBuffView = nil;
+local m_OtherPlayerBuffItems = {};
+local m_OtherPlayerBuffItemTimeEvents = {};
+local m_OtherPlayerBuffInfos = {};
+local m_OtherPlayerBuffBrowseButtonPath = "MiddleBottom/TargetHud/BuffItems/Mask";
+local m_OtherPlayerBuffBrowseButton = nil;
+
+--Boss的BuffItem列表
+local m_BossBuffViewPath = "MiddleTop/BossHud/BuffItems/Grid";
+local m_BossBuffView = nil;
+local m_BossBuffItems = {};
+local m_BossBuffItemTimeEvents = {};
+local m_BossBuffInfos = {};
+local m_BossBuffBrowseButtonPath = "MiddleTop/BossHud/BuffItems/Mask";
+local m_BossBuffBrowseButton = nil;
+
+function Start()
+    -- 初始化主界面的objs
+    InitObjects();
+    -- 初始化主界面所有信息
+    InitShow();
+    -- 初始化按钮点击事件
+    InitOnClick();
+    m_CreateSuccess = true;
+end
+
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+
+    m_PlayerBuffView = nil;
+    m_PlayerBuffItems = {};
+    m_PlayerBuffItemTimeEvents = {};
+    m_PlayerBuffInfos = {};
+
+    m_OtherPlayerBuffView = nil;
+    m_OtherBuffItems = {};
+    for key, var in pairs(m_PlayerBuffItemTimeEvents) do
+        G_TimerMng:RemoveTimeTask(var);
+    end
+    m_OtherPlayerBuffItemTimeEvents = {};
+    m_OtherPlayerBuffInfos = {};
+
+    m_BossBuffView = nil;
+    m_BossBuffItems = {};
+    m_BossBuffItemTimeEvents = {};
+    m_BossBuffInfos = {};
+end
+
+
+--初始化object对象
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_PlayerBuffView = GetComponent(m_PanelObject,m_PlayerBuffViewPath,"UIGrid");
+    for index = 1, 7 do
+        local itemPath = string_format("{0}/Item{1}",m_PlayerBuffViewPath,index);
+        m_PlayerBuffItems[index] = child(m_PanelObject, itemPath).gameObject;
+    end
+    m_PlayerBuffBrowseButton = child(m_PanelObject, m_PlayerBuffBrowseButtonPath).gameObject;
+
+    m_OtherPlayerBuffView = GetComponent(m_PanelObject,m_OtherPlayerBuffViewPath,"UIGrid");
+    for index = 1, 7 do
+        local itemPath = string_format("{0}/Item{1}",m_OtherPlayerBuffViewPath,index);
+        m_OtherPlayerBuffItems[index] = child(m_PanelObject, itemPath).gameObject;
+    end
+    m_OtherPlayerBuffBrowseButton = child(m_PanelObject, m_OtherPlayerBuffBrowseButtonPath).gameObject;
+
+    m_BossBuffView = GetComponent(m_PanelObject,m_BossBuffViewPath,"UIGrid");
+    for index = 1, 7 do
+        local itemPath = string_format("{0}/Item{1}",m_BossBuffViewPath,index);
+        m_BossBuffItems[index] = child(m_PanelObject, itemPath).gameObject;
+    end
+    m_BossBuffBrowseButton = child(m_PanelObject, m_BossBuffBrowseButtonPath).gameObject;
+end
+
+-- 初始化显示信息
+function InitShow()
+    for index = 1,7 do
+        local playerItemPath = string_format("{0}/Item{1}",m_PlayerBuffViewPath,index);
+        SetGameObjectState(playerItemPath,false,m_PanelObject);
+        local otherPlayerItemPath = string_format("{0}/Item{1}",m_OtherPlayerBuffViewPath,index);
+        SetGameObjectState(otherPlayerItemPath,false,m_PanelObject);
+        local bossItemPath = string_format("{0}/Item{1}",m_BossBuffViewPath,index);
+        SetGameObjectState(bossItemPath,false,m_PanelObject);
+    end
+    G_UIBuffManager:UpdateBuffInfos(G_UserInfo.RoleAttribute.CRID);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    UIEventListener.Get(m_PlayerBuffBrowseButton).onClick = LuaHelper.OnClick(OnPlayerBuffBrowseButtonClick);
+    UIEventListener.Get(m_OtherPlayerBuffBrowseButton).onClick = LuaHelper.OnClick(OnOtherPlayerBuffBrowseButtonClick);
+    UIEventListener.Get(m_BossBuffBrowseButton).onClick = LuaHelper.OnClick(OnBossBuffBrowseButtonClick);
+end
+
+-- 设置玩家Buff信息
+-- @param buffInfos buff信息
+function SetPlayerBuffData(buffInfos)
+    for key, var in pairs(m_PlayerBuffItemTimeEvents) do
+        G_TimerMng:RemoveTimeTask(var);
+    end
+    m_PlayerBuffItemTimeEvent = {};
+    m_PlayerBuffInfos = {};
+    local count = buffInfos.count;
+    for index = 1,7 do
+        local itemPath = string_format("{0}/Item{1}",m_PlayerBuffViewPath,index);
+        SetGameObjectState(itemPath,index <= count,m_PanelObject);
+        if index <= count then
+            local data = 
+            {
+                Index = index;
+                Info = buffInfos[index - 1];
+            };
+            local item = m_PlayerBuffItems[index];
+            if item ~= nil then
+                local buffInfo = G_UIBuffManager:GetBuffInfo(data.Info.BuffId);
+                if buffInfo ~= nil then
+                    if buffInfo.BuffIcon ~= nil then
+                        SetSpriteByAtlasID("IconBg/Icon", buffInfo.BuffIcon, item);
+                        SetSpriteWidth("IconBg/Icon",44,item);
+                        SetSpriteHeight("IconBg/Icon",44,item);
+                    end
+                end
+                if data.Info.Time > 0 then
+                    local time = math.floor(data.Info.Time - G_TimerMng:GetCurrentSeconds());
+                    local eventName = "PlayerBuffItem"..data.Index;
+                    table.insert(m_PlayerBuffItemTimeEvents,eventName);
+                    AddTimerEvent(eventName, time, PlayerBuffTimeBackOver, ETimeShowType.TypeNumberFour, PlayerBuffTimeCallBack,data);
+                end
+                m_PlayerBuffInfos[index] = buffInfos[index - 1];
+            end
+        end
+    end
+    if m_PlayerBuffView ~= nil then
+        m_PlayerBuffView:Reposition();
+    end
+end
+
+--主角Buff预览
+function OnPlayerBuffBrowseButtonClick(gameObject)
+    error("OnPlayerBuffBrowseButtonClick");
+    local length = GetTableLength(m_PlayerBuffInfos);
+    if length > 0 then
+        local data = 
+        {
+            x = -650;
+            y = 160;
+            BuffInfos = m_PlayerBuffInfos;
+        };
+        createPanelExx(ENUMPANELID.ENUM_PANEL_BUFFBROWSE,data);
+    end
+end
+
+--时间监听回调
+--@param timeTxt 时间字符串
+function PlayerBuffTimeCallBack(timeTxt)
+    
+end
+--时间监听结束回调
+--@param data buff数据信息
+function PlayerBuffTimeBackOver(data)
+    --error("ThewTimeBackOver : "..data.Index);
+    if data ~= nil then
+        local eventName = "PlayerBuffItem"..data.Index;
+        G_TimerMng:RemoveTimeTask(eventName);
+        local CRID = data.Info.CRID;
+        local buffId = data.Info.BuffId;
+        G_UIBuffManager:RemoveBuffInfo(CRID,buffId);
+    end
+end
+
+-- 设置其它玩家Buff信息
+-- @param buffInfos buff信息
+function SetOtherPlayerBuffData(buffInfos)
+    for key, var in pairs(m_OtherPlayerBuffItemTimeEvents) do
+        G_TimerMng:RemoveTimeTask(var);
+    end
+    m_OtherPlayerBuffItemTimeEvents = {};
+    m_OtherPlayerBuffInfos = {};
+    local count = buffInfos.count;
+    for index = 1,7 do
+        local itemPath = string_format("{0}/Item{1}",m_OtherPlayerBuffViewPath,index);
+        SetGameObjectState(itemPath,index <= count,m_PanelObject);
+        if index <= count then
+            local data = 
+            {
+                Index = index;
+                Info = buffInfos[index - 1];
+            };
+            local item = m_OtherPlayerBuffItems[index];
+            if item ~= nil then
+                local buffInfo = G_UIBuffManager:GetBuffInfo(data.Info.BuffId);
+                if buffInfo ~= nil then
+                    SetSpriteByAtlasID("IconBg/Icon", buffInfo.BuffIcon, item);
+                    SetSpriteWidth("IconBg/Icon",44,item);
+                    SetSpriteHeight("IconBg/Icon",44,item);
+                end
+                if data.Info.Time > 0 then
+                    local time = math.floor(data.Info.Time - G_TimerMng:GetCurrentSeconds());
+                    local eventName = "OtherPlayerBuffItem"..data.Index;
+                    m_OtherPlayerBuffItemTimeEvents[data.Index] = eventName;
+                    AddTimerEvent(eventName, time, OtherPlayerBuffTimeBackOver, ETimeShowType.TypeNumberFour, OtherPlayerBuffTimeCallBack,data);
+                end
+                m_OtherPlayerBuffInfos[index] = buffInfos[index - 1];
+            end
+        end
+    end
+    m_OtherPlayerBuffView:Reposition();
+end
+
+--其它玩家Buff预览
+function OnOtherPlayerBuffBrowseButtonClick(gameObject)
+    error("OnOtherPlayerBuffBrowseButtonClick");
+    local length = GetTableLength(m_OtherPlayerBuffInfos);
+    if length > 0 then
+        local data = 
+        {
+            x = -60;
+            y = 150;
+            BuffInfos = m_OtherPlayerBuffInfos;
+        };
+        createPanelExx(ENUMPANELID.ENUM_PANEL_BUFFBROWSE,data);
+    end
+end
+
+--时间监听回调
+--@param timeTxt 时间字符串
+function OtherPlayerBuffTimeCallBack(timeTxt)
+    
+end
+--时间监听结束回调
+--@param data buff数据信息
+function OtherPlayerBuffTimeBackOver(data)
+    error("OtherPlayerBuffTimeBackOver : "..data.Index);
+    local eventName = "OtherPlayerBuffItem"..data.Index;
+    G_TimerMng:RemoveTimeTask(eventName);
+    local CRID = data.Info.CRID;
+    local buffId = data.Info.BuffId;
+    G_UIBuffManager:RemoveBuffInfo(CRID,buffId);
+end
+
+
+-- 设置Boss的Buff信息
+-- @param buffInfos buff信息
+function SetBossBuffData(buffInfos)
+    for key, var in pairs(m_BossBuffItemTimeEvents) do
+        G_TimerMng:RemoveTimeTask(var);
+    end
+    m_BossBuffItemTimeEvents = {};
+    m_BossBuffInfos = {};
+    local count = buffInfos.count;
+    for index = 1,7 do
+        local itemPath = string_format("{0}/Item{1}",m_BossBuffViewPath,index);
+        SetGameObjectState(itemPath,index <= count,m_PanelObject);
+        if index <= count then
+            local data = 
+            {
+                Index = index;
+                Info = buffInfos[index - 1];
+            };
+            local item = m_BossBuffItems[index];
+            if item ~= nil then
+                local buffInfo = G_UIBuffManager:GetBuffInfo(data.Info.BuffId);
+                if buffInfo ~= nil then
+                    SetSpriteByAtlasID("IconBg/Icon", buffInfo.BuffIcon, item);
+                    SetSpriteWidth("IconBg/Icon",44,item);
+                    SetSpriteHeight("IconBg/Icon",44,item);
+                end
+                if data.Info.Time > 0 then
+                    local time = math.floor(data.Info.Time - G_TimerMng:GetCurrentSeconds());
+                    local eventName = "BossBuffItem"..data.Index;
+                    m_BossBuffItemTimeEvents[data.Index] = eventName;
+                    AddTimerEvent(eventName, time, BossBuffTimeBackOver, ETimeShowType.TypeNumberFour, BossBuffTimeCallBack,data);
+                end
+                m_BossBuffInfos[index] = buffInfos[index - 1];
+            end
+        end
+    end
+end
+
+--Boss的Buff预览
+function OnBossBuffBrowseButtonClick(gameObject)
+    error("OnBossBuffBrowseButtonClick");
+    local length = GetTableLength(m_BossBuffInfos);
+    if length > 0 then
+        local data = 
+        {
+            x = 0;
+            y = 90;
+            BuffInfos = m_BossBuffInfos;
+        };
+        createPanelExx(ENUMPANELID.ENUM_PANEL_BUFFBROWSE,data);
+    end
+end
+
+--时间监听回调
+--@param timeTxt 时间字符串
+function BossBuffTimeCallBack(timeTxt)
+    
+end
+--时间监听结束回调
+--@param data buff数据信息
+function BossBuffTimeBackOver(data)
+    error("BossBuffTimeBackOver : "..data.Index);
+    local eventName = "BossBuffItem"..data.Index;
+    G_TimerMng:RemoveTimeTask(eventName);
+    local CRID = data.Info.CRID;
+    local buffId = data.Info.BuffId;
+    G_UIBuffManager:RemoveBuffInfo(CRID,buffId);
+end
+

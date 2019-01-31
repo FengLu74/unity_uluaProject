@@ -1,0 +1,283 @@
+﻿module('VipShowPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'VipShowPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_SubCardInfoPath = "Sub_CardInfo";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 权限卡列表
+local m_GridVipCardPath = "Sub_VipCard/Grid";
+-- 特权描述列表
+local m_GridPrivilegePath = "Sub_CardInfo/Sub_Privilege/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+local m_GridVipCard = nil;
+local m_GridPrivilege = nil;
+
+-- 默认选择的特权卡
+local m_CurSelectCard = 1;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+    for i=2,3 do
+        G_TimerMng:RemoveTimeTask("VipCardTime"..i);
+    end
+
+end
+
+function OnDestroy()
+    for i=2,3 do
+        G_TimerMng:RemoveTimeTask("VipCardTime"..i);
+    end
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_GridVipCard = nil;
+	m_GridPrivilege = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_VIP);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_GridVipCard = GetComponent(m_PanelObject, m_GridVipCardPath, "UIListView");
+    m_GridPrivilege = GetComponent(m_PanelObject, m_GridPrivilegePath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_GridVipCard:SetInitCallback(OnGridVipCardViewInit);
+    m_GridVipCard:SetClickCallback(OnGridVipCardViewClick);
+    m_GridPrivilege:SetInitCallback(OnGridPrivilegeViewInit);
+    m_GridPrivilege:SetClickCallback(OnGridPrivilegeViewClick);
+
+    SetGameObjectEvent(m_SubCardInfoPath.."/btn_BuyCard", OnBuyCardClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local vipCardData = VIPCardTable.GetAll();
+    if vipCardData == nil then return end
+    m_GridVipCard:RemoveAll();
+    for i,v in pairs(vipCardData) do
+        m_GridVipCard:AddData(v);
+    end
+    m_GridVipCard:SetSelect(m_CurSelectCard - 1, true);
+    -- 初始化尊享卡特权描述
+    local textData = GetVipPrivilege(m_CurSelectCard);
+    m_GridPrivilege:RemoveAll();
+    for i,v in pairs(textData) do
+        m_GridPrivilege:AddData(v);
+    end
+    local timeNum = 0;
+    for i,v in pairs(VipManager.VipCardTimeInfo) do
+        if v.cardID == m_CurSelectCard then 
+            timeNum = v.timeNum;
+            break;
+        end
+    end
+    SetGameObjectState(m_SubCardInfoPath.."/btn_BuyCard", timeNum >= 0 , m_PanelObject);
+    if timeNum == 0 then
+        SetLabelContent(m_SubCardInfoPath.."/btn_BuyCard/lb_Name", GetTextToId(162956), m_PanelObject);
+    else
+        timeNum = timeNum - G_TimerMng:GetCurrentSeconds();
+        if timeNum > 0 then 
+            SetLabelContent(m_SubCardInfoPath.."/btn_BuyCard/lb_Name", GetTextToId(162964), m_PanelObject);
+        else
+            SetLabelContent(m_SubCardInfoPath.."/btn_BuyCard/lb_Name", GetTextToId(162956), m_PanelObject);
+        end
+    end
+    local vipCardData = VIPCardTable.Get(m_CurSelectCard);
+    SetLabelContent(m_SubCardInfoPath.."/lb_Content", GetTextToId(162907 + m_CurSelectCard - 1), m_PanelObject);
+    SetSpriteByAtlasID(m_SubCardInfoPath.."/sp_Show", vipCardData.ItemId2, m_PanelObject, true);
+    SetLabelContent(m_SubCardInfoPath.."/lb_Content1", GetTextToId(162910 + m_CurSelectCard - 1), m_PanelObject);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 权限卡显示
+function OnGridVipCardViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetSpriteByAtlasID("Sprite_Icon", data.ItemId1, go, true);
+    SetLabelContent("lb_Name", GetTextToId(data.VIPCardTxt), go);
+    local serverData = VipManager.VipCardTimeInfo[data.VIPCardID];
+    if serverData == nil then
+        return;
+    end
+    if data.VIPCardID == 1 then
+        if serverData.timeNum == 0 then
+            SetLabelContent("lb_CostNum", GetTextToId(2702), go);
+        else
+            SetLabelContent("lb_CostNum", GetTextToId(1600), go);
+        end
+    else
+
+        if serverData.timeNum <= 0 then
+            SetLabelContent("lb_CostNum", data.CostGold..GetTextToId(2703), go);
+        else
+            local timeNum1 = serverData.timeNum - G_TimerMng:GetCurrentSeconds();
+            if timeNum1 >0 then
+                AddTimerEvent("VipCardTime"..data.VIPCardID, timeNum1, callBackOverFunc, ETimeShowType.TypeNumberEleven, updateCallBackFunc, nil, data.VIPCardID, nil, 2);
+            else
+                SetLabelContent("lb_CostNum", data.CostGold..GetTextToId(2703), go);
+            end
+        end
+    end
+
+
+    --[[local timeNum = 0;
+    for i,v in pairs(VipManager.VipCardTimeInfo) do
+        if v.cardID == data.VIPCardID then 
+            timeNum = v.timeNum;
+            break;
+        end
+    end
+    if timeNum > 0 then 
+        timeNum = timeNum - G_TimerMng:GetCurrentSeconds();
+        if timeNum > 0 then 
+            AddTimerEvent("VipCardTime"..data.VIPCardID, timeNum, callBackOverFunc, ETimeShowType.TypeNumberEleven, updateCallBackFunc, nil, data.VIPCardID, nil, 2);
+        else
+            SetLabelContent("lb_TimeNum", "", go);
+        end
+    elseif timeNum < 0 then 
+        SetLabelContent("lb_TimeNum", GetTextToId(1471), go);
+    else
+        SetLabelContent("lb_TimeNum", "", go);
+    end]]
+end
+
+function callBackOverFunc()
+    VipPanel.RefreshVipPanel();
+end
+
+function updateCallBackFunc(timeText, num)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_VIP) == 1 and m_PanelObject.activeSelf ~= nil and m_PanelObject.activeSelf == true then 
+        SetLabelContent(m_GridVipCardPath.."/_Content/Cell_"..(num -1).."/lb_CostNum", GetTextToId(162951)..timeText, m_PanelObject)
+    end
+end
+
+-- 权限卡点击
+function OnGridVipCardViewClick(listView, cell, go)
+    local index = cell.dataIndex;
+    local textData = GetVipPrivilege(index + 1);
+    m_GridPrivilege:RemoveAll();
+    for i,v in pairs(textData) do
+        m_GridPrivilege:AddData(v);
+    end
+    m_CurSelectCard = index + 1;
+    local timeNum = 0;
+    for i,v in pairs(VipManager.VipCardTimeInfo) do
+        if v.cardID == m_CurSelectCard then 
+            timeNum = v.timeNum;
+            break;
+        end
+    end
+    SetGameObjectState(m_SubCardInfoPath.."/btn_BuyCard", timeNum >= 0 , m_PanelObject);
+    if timeNum == 0 then
+        SetLabelContent(m_SubCardInfoPath.."/btn_BuyCard/lb_Name", GetTextToId(162956), m_PanelObject);
+    else
+        timeNum = timeNum - G_TimerMng:GetCurrentSeconds();
+        if timeNum > 0 then 
+            SetLabelContent(m_SubCardInfoPath.."/btn_BuyCard/lb_Name", GetTextToId(162964), m_PanelObject);
+        else
+            SetLabelContent(m_SubCardInfoPath.."/btn_BuyCard/lb_Name", GetTextToId(162956), m_PanelObject);
+        end
+    end
+    SetLabelContent(m_SubCardInfoPath.."/lb_Content", GetTextToId(162907 + index), m_PanelObject);
+    local vipCardData = VIPCardTable.Get(index + 1);
+    SetSpriteByAtlasID(m_SubCardInfoPath.."/sp_Show", vipCardData.ItemId2, m_PanelObject, true);
+    SetLabelContent(m_SubCardInfoPath.."/lb_Content1", GetTextToId(162910 + index), m_PanelObject);
+end
+
+-- 特权描述显示
+function OnGridPrivilegeViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Label", GetTextToId(data.TextID), go);
+end
+
+function OnGridPrivilegeViewClick(listView, cell, go)
+    
+end
+
+function OnBuyCardClick()
+    --ParameterToMessageTextBox.OnBuyVipCard(m_CurSelectCard);
+    if m_CurSelectCard == 1 then
+        -- 跳轉 商城
+        StorePanel.OpenPanelRecharge(); --打开充值面板
+    else
+        -- 跳轉 sdk充值
+        local curServerCardInfo = VipManager.VipCardTimeInfo[m_CurSelectCard];
+        if curServerCardInfo == nil then
+            error("[vip 購買card error]..current select cardID:"..m_CurSelectCard);
+            return;
+        end
+        local productId = curServerCardInfo.ProductID;
+        if productId < 0 then
+            error("[vip productId error]..current item productId"..productId);
+            return;
+        end
+        if Platform == "editor" or Constants.IsExaminePkg == true then
+            local currentSecond = G_TimerMng:GetCurrentSeconds();
+            local id = string_format("{0}{1}",productId,string.format("%014d", currentSecond));
+            ChargeProtocol.RequestAsycPayment(id);
+        elseif CSDKManager.sdkName == "xiyou" then
+            ChargeProtocol.RequestGetCNOrderId(productId);
+        else
+            error("[vip界面購買] 平台錯誤！！！！，無法購買");
+        end
+    end
+end
+-- 購買vip卡
+function BuyCard()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    error("m_CurSelectCardm_CurSelectCardm_CurSelectCard:::"..m_CurSelectCard);
+    --VipProtocol.RequestBuyVipCard(m_CurSelectCard);
+    -- 更改為華為 rmb 購買 
+    -- Unity中或提审包充值, 直接给奖励
+   
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 获得特权卡对应的特权描述
+function GetVipPrivilege(vipCardId)
+    local allPrivilegeData = VIPPrivilegeTable.GetAll();
+    local tempTable = {};
+    for i,v in pairs(allPrivilegeData) do
+        if v.NeedVIPCardID == vipCardId and v.IsClientShow == 1 then  
+            table.insert(tempTable, v);
+        end
+    end
+    if #tempTable > 1 then 
+        table.sort(tempTable,function (a,b) return a.Pos < b.Pos end);
+    end
+    return tempTable;
+end
+

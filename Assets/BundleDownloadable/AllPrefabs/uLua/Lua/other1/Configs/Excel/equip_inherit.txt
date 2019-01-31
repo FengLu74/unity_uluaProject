@@ -1,0 +1,95 @@
+﻿--[[
+    field=MainLevelID, type=int, desc=主装备十位
+    field=CostLevelID0, type=int, desc=消耗装备1级
+    field=CostLevelID1, type=int, desc=消耗装备10级
+    field=CostLevelID2, type=int, desc=消耗装备20级
+    field=CostLevelID3, type=int, desc=消耗装备30级
+    field=CostLevelID4, type=int, desc=消耗装备40级
+    field=CostLevelID5, type=int, desc=消耗装备50级
+    field=CostLevelID6, type=int, desc=消耗装备60级
+    field=CostLevelID7, type=int, desc=消耗装备70级
+    field=CostLevelID8, type=int, desc=消耗装备80级
+    field=CostLevelID9, type=int, desc=消耗装备90级
+    field=CostLevelID10, type=int, desc=消耗装备100级
+]]
+module("EquipInheritTable", package.seeall)
+local list={
+    {MainLevelID=0,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=0,CostLevelID6=0,CostLevelID7=0,CostLevelID8=0,CostLevelID9=0,CostLevelID10=0},
+    {MainLevelID=1,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=0,CostLevelID6=0,CostLevelID7=0,CostLevelID8=0,CostLevelID9=0,CostLevelID10=0},
+    {MainLevelID=2,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=0,CostLevelID6=0,CostLevelID7=0,CostLevelID8=0,CostLevelID9=0,CostLevelID10=0},
+    {MainLevelID=3,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=0,CostLevelID6=0,CostLevelID7=0,CostLevelID8=0,CostLevelID9=0,CostLevelID10=0},
+    {MainLevelID=4,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=0,CostLevelID6=0,CostLevelID7=0,CostLevelID8=0,CostLevelID9=0,CostLevelID10=0},
+    {MainLevelID=5,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=20,CostLevelID6=16,CostLevelID7=12,CostLevelID8=8,CostLevelID9=8,CostLevelID10=4},
+    {MainLevelID=6,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=30,CostLevelID6=24,CostLevelID7=18,CostLevelID8=12,CostLevelID9=12,CostLevelID10=6},
+    {MainLevelID=7,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=40,CostLevelID6=32,CostLevelID7=24,CostLevelID8=16,CostLevelID9=16,CostLevelID10=8},
+    {MainLevelID=8,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=60,CostLevelID6=48,CostLevelID7=36,CostLevelID8=24,CostLevelID9=24,CostLevelID10=12},
+    {MainLevelID=9,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=70,CostLevelID6=56,CostLevelID7=42,CostLevelID8=28,CostLevelID9=28,CostLevelID10=14},
+    {MainLevelID=10,CostLevelID0=0,CostLevelID1=0,CostLevelID2=0,CostLevelID3=0,CostLevelID4=0,CostLevelID5=150,CostLevelID6=120,CostLevelID7=90,CostLevelID8=60,CostLevelID9=60,CostLevelID10=30}
+};
+local map = {[0]=list[1],[1]=list[2],[2]=list[3],[3]=list[4],[4]=list[5],[5]=list[6],[6]=list[7],[7]=list[8],[8]=list[9],[9]=list[10],[10]=list[11]};
+
+count = 11;
+Count = 11;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

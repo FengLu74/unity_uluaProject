@@ -1,0 +1,1244 @@
+﻿module("RidePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 下方骑乘时增加的属性文本
+local m_onMountAddAttrNameStr = "Middle/Bottom/MoveSpeed/Label_Name";
+-- 下方骑乘时增加的属性数值
+local m_onMountAddAttrValueStr = "Middle/Bottom/MoveSpeed/Label_Value";
+
+-- 马的名称
+local m_MountNameStr = "Right/Top/Label_Name";
+---- 多少阶骑乘
+--local m_MountCanRideLevelStr = "Right/Top/Label_CanRide";
+-- 多少阶
+local m_MountLevelStr = "Right/Top/Label_Level";
+-----------------------------------------按钮路径--------------------------------------
+-- 骑乘按钮所在的路径
+local m_rideButtonObjStr = "Middle/Button_Ride";
+-- 激活按钮所在的路径
+local m_activeButtonObjStr = "Right/Bottom/NotMaxLevel/NeedActive/Button_Active";
+-- 培养1次按钮所在的路径
+local m_fosterButtonObjStr = "Right/Bottom/NotMaxLevel/NeedFoster/Button_FosterOnce";
+-- 培养10次按钮所在的路径
+local m_fosterTenButtonObjStr = "Right/Bottom/NotMaxLevel/NeedFoster/Button_FosterTenth";
+-- 进阶按钮所在的路径
+local m_levelUpButtonObjStr = "Right/Bottom/NotMaxLevel/NeedLevelUp/Button_LevelUp";
+-- 收集属性按钮所在的路径
+local m_collectAttrStr = "Left/Button_Collect";
+-- 收集界面关闭按钮所在的路径
+local m_closeCollectPanelStr = "MountsCollectPanel/Close_Button";
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧UIScrollView组件所在的位置
+local m_leftUIListViewCompStr = "Left/Mounts/Grid";
+
+-- 右侧上部坐骑激活的位置
+local m_RightTopMountActiveStr = "Right/Top/Active";
+-- 右侧上部坐骑未激活的位置
+local m_RightTopMountNotActiveStr = "Right/Top/NotActive";
+
+-- 基础属性所在的位置
+local m_baseAttrStr = "Right/Middle/FosterAttrs/";
+-- 特殊属性所在的位置
+local m_speacialAttrStr = "Right/Middle/SpecificAttrs/";
+
+-- 进阶条件所在的位置
+local m_levelUpStr = "Right/Bottom/NotMaxLevel/NeedLevelUp";
+-- 培养条件所在的位置
+local m_FosterStr = "Right/Bottom/NotMaxLevel/NeedFoster";
+-- 激活条件所在的位置
+local m_ActiveStr = "Right/Bottom/NotMaxLevel/NeedActive";
+-- 满阶所在的位置
+local m_FullLevelStr = "Right/Bottom/MaxLevel";
+-- 不满阶所在的位置
+local m_NotFullLevelStr = "Right/Bottom/NotMaxLevel";
+
+-- 道具的UITable的组件
+local m_itemsUITableCompStr = "Right/Bottom/NotMaxLevel/Items";
+----------------------------------通用的名称路径---------------------------------------
+-- 坐骑图标
+local m_MountIconStr = "Sprite_Icon";
+-- 坐骑品质
+local m_MountQualityStr = "Sprite_Quality";
+-- 坐骑品质2
+local m_MountApptitudeStr = "Sprite_Apptitude";
+-- 坐骑是否正在骑乘
+local m_MountStateLabelStr = "Sprite_State";
+-- 坐骑当前阶数
+local m_MountLevelLabelStr = "Label_Level";
+-- 坐骑是否已经激活
+local m_MountIsActiveStr = "Sprite_Mask";
+-- 坐骑是否可激活
+local m_MountCanAcitveStr = "Label_CanActive";
+-- 坐骑红点
+local m_MountRedHintStr = "Sprite_RedHint";
+
+-- 属性文本
+local m_AttrNameStr = "/Label_Attr";
+-- 属性值所在的位置
+local m_AttrValueStr = "/Label_Num";
+
+-- 等级格子所在的位置
+local m_LevelGridStr = "Right/Top/Active/Progress/Sprite";
+
+-- 属性解锁的位置
+local m_AttrActiveStr = "/Active";
+-- 属性未解锁的位置
+local m_AttrNotActiveStr = "/NotActive";
+-- 多少阶解锁所在的位置
+local m_ActiveLevelStr = "/Label";
+-- 当前属性值所在的位置
+local m_CurAttrValueStr = "/Label_CurValue";
+
+-- 有下一级的位置
+local m_AttrHasNextLevelStr = "/Add";
+-- 上箭头所在的位置
+local m_UpArrowStr = "/Sprite";
+-- 下一级属性值所在的位置
+local m_NextLevelAttrValueStr = "/Label_NextValue";
+-- 下一级属性值所在的位置
+local m_NextLevelAttrAddValueStr = "/Label_AddValue";
+
+-- 特性{0}所在的位置
+local m_SpecialIndexLabelStr = "/Label";
+
+-- 右侧上方激活文本所在的位置
+local m_baseAttrActiveObjStr = "/Label_ActiveCondition/Label";
+-- 右侧上方多少级激活文本所在的位置
+local m_baseAttrActiveLevelStr = "/Label_ActiveCondition";
+
+-- 右侧下方道具所在的位置
+local m_itemPositionStr = "Right/Bottom/NotMaxLevel/Items/Item";
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+
+-- 坐骑收集面板
+local m_collectMountsPanelStr = "MountsCollectPanel";
+-- 收集界面右侧坐骑UIListView组件所在的位置
+local m_collectUIListViewCompStr = "MountsCollectPanel/ItemPanel/Grid";
+
+-- 坐骑战斗力位置
+local m_mountFightValueStr = "FightValue";
+-- 战斗力文本位置
+local m_FightValueNumStr = "/Label_FightValue";
+
+-- 属性table位置
+local m_AttrTableStr = "MountsCollectPanel/AttrsTable";
+-- 属性位置
+local m_AttrIndexStr = "/Attr";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左侧UIListView组件
+local m_leftUIListViewComp = nil;
+-- 左侧选择的是第几个
+local m_leftSelect = 1;
+-- 左侧显示的坐骑数据的table(key:从上向下第几个，value：mount表行数据)
+local m_showMountTable = { };
+-- 骑乘按钮
+local m_rideButtonObj = nil;
+-- 道具的UITable的组件
+local m_itemsUITableComp = nil;
+-- 当前的点按钮的状态(false:条件不足，true:条件ok)
+local m_clickButtonState = true;
+-- 货币是否满足
+local m_CoinIsEnough = true;
+--道具是否满足
+local m_MatIsEnough = true;
+--道具excelid 
+local m_ItemDataId = -1;
+-- 显示道具的table
+local m_showItemTable = { };
+-- 激活按钮
+local m_activeButtonObj = nil;
+-- 培养1次按钮
+local m_fosterButtonObj = nil;
+-- 培养10次按钮
+local m_fosterTenButtonObj = nil;
+-- 进阶按钮
+local m_levelUpButtonObj = nil;
+
+-- 收集界面右侧坐骑UIListView组件
+local m_collectUIListViewComp = nil;
+
+-- 是否打开了收集属性界面
+local m_isCollectMountsPanelOpen = false;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+--基础属性拓展到5条
+local baseAttrNum=5;
+-----------------------------------一些写死的规定--------------------------------------
+local ENUM_MOUNT_STATE =
+{
+    ACTIVE = -1,
+    NOTACTIVE = 0,
+    CANFOSTER = 1,
+    CANLEVELUP = 2,
+    LEVELMAX = 3,
+}
+
+--local CollectAttrs = 
+--{[1] = 141,[2] = 11,[3] = 21,[4] = 31,[5] = 41,[6] = 51,[7] = 71,[8] = 91,[9] = 61}
+local CollectAttrs = 
+{[1] = 141,[2] = 11,[3] = 21,[4] = 31,[5] = 41,[6] = 51,[7] = 71,[8] = 51,[9] = 91}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_showMountTable = { };
+    m_leftSelect = 1;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_leftUIListViewComp = nil;
+    m_rideButtonObj = nil;
+    m_itemsUITableComp = nil;
+    m_clickButtonState = true;
+    m_showItemTable = { };
+    m_activeButtonObj = nil;
+    m_fosterButtonObj = nil;
+    m_fosterTenButtonObj = nil;
+    m_levelUpButtonObj = nil;
+    m_isCollectMountsPanelOpen = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+    m_collectUIListViewComp = GetComponent(m_panelObject, m_collectUIListViewCompStr, "UIListView");
+    m_rideButtonObj = child(m_panelObject, m_rideButtonObjStr).gameObject;
+    m_itemsUITableComp = GetComponent(m_panelObject, m_itemsUITableCompStr, "UITable");
+    m_activeButtonObj = child(m_panelObject, m_activeButtonObjStr).gameObject;
+    m_fosterButtonObj = child(m_panelObject, m_fosterButtonObjStr).gameObject;
+    m_fosterTenButtonObj = child(m_panelObject, m_fosterTenButtonObjStr).gameObject;
+    m_levelUpButtonObj = child(m_panelObject, m_levelUpButtonObjStr).gameObject;
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnMountCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnMountCloneClick);
+    m_collectUIListViewComp:SetInitCallback(OnCollectMountCloneInit);
+    m_collectUIListViewComp:SetClickCallback(OnCollectMountCloneClick);
+end
+
+-- 初始化显示
+function InitShow()
+    if InitLeftContent() == false then
+        return false;
+    end
+    if InitRightContent() == false then
+        return false;
+    end
+    if m_isJumpPanelSave then
+        m_isCollectMountsPanelOpen = m_JumpPanelParamsTable[2];
+    end
+    if m_isCollectMountsPanelOpen then
+        OnCollectClick();
+    else
+        OnCloseCollectPanelClick();
+    end
+    m_isJumpPanelSave = false;
+end
+
+-- 初始化左侧的显示
+function InitLeftContent()
+    m_showMountTable = { };
+    if #LogicData_MountsTable <= 0 then
+        error("出错:没有任何的坐骑数据可以显示");
+        return false;
+    end
+    local count = 0;
+    for Index = 1, #LogicData_MountsTable do
+        local mountDataInfo = LogicData_MountsTable[Index];
+        table.insert(m_showMountTable, mountDataInfo);
+    end
+    if #m_showMountTable == 0 then
+        error("没有一个满足条件显示的坐骑，如果测试请让策划告知解锁条件");
+        return false;
+    end
+    table.sort(m_showMountTable,SortFunc);
+    m_leftUIListViewComp:RemoveAll();
+    for Index = 1, #m_showMountTable do
+        m_leftUIListViewComp:AddData(m_showMountTable[Index]);
+    end
+    InitLeftSelect();
+    Hide3DModel();
+    LoadModel(m_showMountTable[m_leftSelect].Modelres);
+end
+
+function SortFunc(data1,data2)
+    local noactive = ENUM_MOUNT_STATE.NOTACTIVE;
+    local mountState1, canActive1 = GetMountStateAndActive(data1);
+    local mountState2, canActive2 = GetMountStateAndActive(data2);
+
+    if mountState1 == noactive and mountState2 ~= noactive then
+        return false;
+    elseif mountState1 ~= noactive and mountState2 == noactive then
+        return true;
+    elseif canActive1 ~= canActive2 then
+        return canActive1;
+    else
+        return data1.ShowValue > data2.ShowValue;
+    end
+end
+
+function InitLeftSelect()
+    if m_isJumpPanelSave then
+        m_leftSelect = m_JumpPanelParamsTable[1];
+        local selectId = m_JumpPanelParamsTable[3];
+        if selectId ~= nil and selectId > 0 then
+            for Index = 1,#m_showMountTable do
+                if m_showMountTable[Index].Id == selectId then
+                    m_leftSelect = Index;
+                    break;
+                end
+            end
+        end
+    else
+        m_leftSelect = 1;
+        for Index = 1,#m_showMountTable do
+            if m_showMountTable[Index].Id == G_UserInfo.RoleAttribute.MountID then
+                m_leftSelect = Index;
+                break;
+            end
+        end
+    end
+    m_leftUIListViewComp:LookAt(m_leftSelect - 1,true);
+end
+
+-- 左侧坐骑初始化
+function OnMountCloneInit(listView, cell, data)
+    local mountDataInfo = data;
+    local go = cell.gameObject;
+    local playerMountData = LogicData_RideData[mountDataInfo.Id];
+    SetSpriteByAtlasID(m_MountIconStr,mountDataInfo.IconID,go);
+    SetSpriteApptitudeV04(m_MountQualityStr,mountDataInfo.QualityID,go);
+    SetSpriteApptitude2V04(m_MountApptitudeStr,mountDataInfo.QualityID,go);
+    if mountDataInfo.Id == G_UserInfo.RoleAttribute.MountID then
+        SetGameObjectState(m_MountStateLabelStr,true,go);
+    else
+        SetGameObjectState(m_MountStateLabelStr,false,go);
+    end
+    if playerMountData ~= nil then
+        --SetGameObjectState(m_MountLevelLabelStr,true,go);
+        SetGameObjectState(m_MountIsActiveStr,false,go);
+        --SetLabelContent(m_MountLevelLabelStr,string_format(GetTextToId(8040),playerMountData.level),go);
+    else
+        --SetGameObjectState(m_MountLevelLabelStr,false,go);
+        SetGameObjectState(m_MountIsActiveStr,true,go);
+    end
+    --[[
+    local curLevel = 0;
+    local mountAttrData = CCommonTool.GetMountsAttrInfo(mountDataInfo.Id);
+    if playerMountData ~= nil then
+        curLevel = playerMountData.level;
+    end
+    local mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    else
+        for Index = 1, 3 do
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+            if curLevel >= activeLevel then
+                if playerMountData.attrTable[Index] < 10 then
+                    mountState = ENUM_MOUNT_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if mountState ~= ENUM_MOUNT_STATE.CANFOSTER then
+            if curLevel >= mountDataInfo.NumMax then
+                mountState = ENUM_MOUNT_STATE.LEVELMAX;
+            else
+                mountState = ENUM_MOUNT_STATE.CANLEVELUP;
+            end
+        end
+    end
+    local canActive = true;
+    if mountState == ENUM_MOUNT_STATE.NOTACTIVE then
+        if mountDataInfo.Type == 1 then
+            if mountDataInfo.Key3 > 0 then
+                if G_UserInfo.BindCoin < mountDataInfo.Key3 then
+                    canActive = false;
+                end
+            end
+            if mountDataInfo.Key1 > 0 and mountDataInfo.Key2 > 0 then
+                local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountDataInfo.Key1);
+                if hasNum < mountDataInfo.Key2 then
+                    canActive = false;
+                end
+            end
+        else
+            error("this get ride condition does not design by GameDesigner SongBo");
+            canActive = false;
+        end
+    else
+        canActive = false;
+    end
+    ]]
+    local mountState, canActive = GetMountStateAndActive(mountDataInfo);
+    SetGameObjectState(m_MountCanAcitveStr,canActive,go);
+    SetGameObjectState(m_MountRedHintStr,IsCanOperate(mountDataInfo),go);
+end
+
+function GetMountStateAndActive(mountDataInfo)
+    local curLevel = 0;
+    local playerMountData = LogicData_RideData[mountDataInfo.Id];
+    --local mountAttrData = CCommonTool.GetMountsAttrInfo(mountDataInfo.Id);
+    local mountAttrData=nil;
+    if playerMountData ~= nil then
+        curLevel = playerMountData.level;
+        mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+curLevel);  --国服改为主键id=id+当前阶数
+    else
+        mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+1); 
+    end
+    local mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    else
+        for Index = 1, baseAttrNum do
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+            if curLevel >= activeLevel then
+                if playerMountData.attrTable[Index] < 10 then
+                    mountState = ENUM_MOUNT_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if mountState ~= ENUM_MOUNT_STATE.CANFOSTER then
+            if curLevel >= mountDataInfo.NumMax then
+                mountState = ENUM_MOUNT_STATE.LEVELMAX;
+            else
+                mountState = ENUM_MOUNT_STATE.CANLEVELUP;
+            end
+        end
+    end
+    local canActive = true;
+    if mountState == ENUM_MOUNT_STATE.NOTACTIVE then
+        if mountDataInfo.Type == 1 then
+            if mountDataInfo.Key3 > 0 then
+                if G_UserInfo.BindCoin < mountDataInfo.Key3 then
+                    canActive = false;
+                end
+            end
+            if mountDataInfo.Key1 > 0 and mountDataInfo.Key2 > 0 then
+                local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountDataInfo.Key1);
+                if hasNum < mountDataInfo.Key2 then
+                    canActive = false;
+                end
+            end
+        else
+            error("this get ride condition does not design by GameDesigner SongBo");
+            canActive = false;
+        end
+    else
+        canActive = false;
+    end
+    return mountState, canActive;
+end
+
+-- 初始化右侧的显示
+function InitRightContent()
+    local mountDataInfo = m_showMountTable[m_leftSelect];
+    local playerMountData = LogicData_RideData[mountDataInfo.Id];
+    --local mountAttrData = CCommonTool.GetMountsAttrInfo(mountDataInfo.Id);
+    -- 初始化中间上面的阶数显示
+    local curLevel = 0;
+    local mountAttrData=nil;
+    if playerMountData ~= nil then
+        curLevel = playerMountData.level;
+        mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+curLevel);
+    else
+        playerMountData = { };
+        playerMountData.level = 0;
+        playerMountData.attrTable = { };
+        for Index = 1, baseAttrNum do
+            playerMountData.attrTable[Index] = 0;
+        end
+        mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+1);
+    end
+    local mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    else
+        for Index = 1, baseAttrNum do
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+            if curLevel >= activeLevel then
+                if playerMountData.attrTable[Index] < 10 then
+                    mountState = ENUM_MOUNT_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if mountState ~= ENUM_MOUNT_STATE.CANFOSTER then
+            if curLevel >= mountDataInfo.NumMax then
+                mountState = ENUM_MOUNT_STATE.LEVELMAX;
+            else
+                mountState = ENUM_MOUNT_STATE.CANLEVELUP;
+            end
+        end
+    end
+    -- 初始化骑乘按钮的状态
+    if curLevel >= mountDataInfo.NumRide then
+        CCommonTool.SetGameObjectGrey(m_rideButtonObj, false);
+    else
+        CCommonTool.SetGameObjectGrey(m_rideButtonObj, true);
+    end
+    -- 初始化右部分上方的情况
+    SetLabelTextByID(m_MountNameStr,mountDataInfo.Name,m_panelObject);
+    -- SetLabelContent(m_MountCanRideLevelStr,string_format(GetTextToId(1073),mountDataInfo.NumRide),m_panelObject);
+    local attrInfo = CCommonTool.GetAttrIndexInfo(mountDataInfo.RideNum);
+    local valuePercent = attrInfo.Ratio * mountDataInfo.Speed;
+    local numShow = string.format("%1d", valuePercent * 100);
+    SetLabelTextByID(m_RightTopMountNotActiveStr..m_AttrNameStr, attrInfo.TextID, m_panelObject);
+    SetLabelContent(m_RightTopMountNotActiveStr..m_AttrValueStr, "+" .. numShow .. "%", m_panelObject);
+    if mountState == ENUM_MOUNT_STATE.NOTACTIVE then
+        SetLabelTextByID(m_MountLevelStr,905,m_panelObject);
+        local fightValue = 0;
+        SetLabelContent(m_RightTopMountActiveStr..m_FightValueNumStr,"+"..fightValue,m_panelObject);
+        for i = 1, 10 do
+            SetGameObjectState(m_LevelGridStr .. i, false, m_panelObject);
+        end
+    else
+        SetLabelContent(m_MountLevelStr,string_format(GetTextToId(8040),playerMountData.level),m_panelObject);
+        local fightValue = CalcMountFightValue(mountDataInfo);
+        SetLabelContent(m_RightTopMountActiveStr..m_FightValueNumStr,"+"..fightValue,m_panelObject);
+        for i = 1, playerMountData.attrTable[1] do
+            SetGameObjectState(m_LevelGridStr .. i, true, m_panelObject);
+        end
+        for i = playerMountData.attrTable[1] + 1, 10 do
+            SetGameObjectState(m_LevelGridStr .. i, false, m_panelObject);
+        end
+    end
+    for Index = 1, baseAttrNum do
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+        SetLabelContent(m_baseAttrStr .. Index .. m_AttrNameStr, CCommonTool.GetAttrNameByAttrID(AttrIndex), m_panelObject);
+        if curLevel < activeLevel then
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr, false, m_panelObject);
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrNotActiveStr, true, m_panelObject);
+            SetLabelContent(m_baseAttrStr .. Index .. m_AttrNotActiveStr .. m_ActiveLevelStr,string_format(GetTextToId(1074),activeLevel),m_panelObject);
+            SetLabelColor(m_baseAttrStr .. Index .. m_AttrNameStr, "807F7E", m_panelObject);
+        else
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr, true, m_panelObject);
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrNotActiveStr, false, m_panelObject);
+            SetLabelColor(m_baseAttrStr .. Index .. m_AttrNameStr, "FFFED6", m_panelObject);
+            local value =((curLevel - activeLevel) * 10 + playerMountData.attrTable[Index]) * AttrSingleValue;
+            local nextValue = value + AttrSingleValue;
+            local attrInfo = CCommonTool.GetAttrIndexInfo(AttrIndex);
+            if attrInfo.Ratio < 1 then
+                local valuePercent = attrInfo.Ratio * value;
+                local nextValuePercent = attrInfo.Ratio * nextValue;
+                value = string.format("%1d", valuePercent * 100).."%";
+                nextValue = string.format("%1d", nextValuePercent * 100).."%";
+            end
+            SetLabelContent(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_CurAttrValueStr, value, m_panelObject);
+            if mountState == ENUM_MOUNT_STATE.LEVELMAX then
+                SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr, false, m_panelObject);
+            else
+                SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr, true, m_panelObject);
+                SetLabelContent(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrValueStr, nextValue, m_panelObject);
+                if mountState == ENUM_MOUNT_STATE.CANLEVELUP then
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_UpArrowStr, false, m_panelObject);
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrAddValueStr, false, m_panelObject);
+                else
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_UpArrowStr, true, m_panelObject);
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrAddValueStr, true, m_panelObject);
+                    SetLabelContent(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrAddValueStr, AttrSingleValue, m_panelObject);
+                end
+            end
+        end
+    end
+    -- 初始化右部分中间的情况
+    for Index = 1, 4 do
+        SetLabelContent(m_speacialAttrStr .. Index .. m_SpecialIndexLabelStr,string_format(GetTextToId(1075),Index),m_panelObject);
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrSpecialValueByIndex(Index, mountAttrData);
+        if activeLevel == 255 then
+            SetGameObjectState(m_speacialAttrStr .. Index, false, m_panelObject);
+        else
+            SetGameObjectState(m_speacialAttrStr .. Index, true, m_panelObject);
+            SetLabelContent(m_speacialAttrStr .. Index .. m_AttrNameStr, CCommonTool.GetAttrNameByAttrID(AttrIndex), m_panelObject);
+            local attrInfo = CCommonTool.GetAttrIndexInfo(AttrIndex);
+            if attrInfo.Ratio < 1 then
+                local valuePercent = attrInfo.Ratio * AttrSingleValue;
+                AttrSingleValue = string.format("%1d", valuePercent * 100).."%";
+            end
+            SetLabelContent(m_speacialAttrStr .. Index .. m_CurAttrValueStr, "+"..AttrSingleValue, m_panelObject);
+            SetLabelContent(m_speacialAttrStr .. Index .. m_AttrNotActiveStr .. m_ActiveLevelStr,string_format(GetTextToId(1074),activeLevel),m_panelObject);
+            if curLevel < activeLevel then
+                SetLabelColor(m_speacialAttrStr .. Index .. m_SpecialIndexLabelStr, "807F7E", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_AttrNameStr, "807F7E", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_CurAttrValueStr, "807F7E", m_panelObject);
+                SetGameObjectState(m_speacialAttrStr .. Index .. m_AttrNotActiveStr, true, m_panelObject);
+            else
+                SetLabelColor(m_speacialAttrStr .. Index .. m_SpecialIndexLabelStr, "FFEE78", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_AttrNameStr, "FFEE78", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_CurAttrValueStr, "A0A9B5", m_panelObject);
+                SetGameObjectState(m_speacialAttrStr .. Index .. m_AttrNotActiveStr, false, m_panelObject);
+            end
+        end
+    end
+
+
+    -- 初始化激活的条件
+    m_showItemTable = { };
+    if mountState == ENUM_MOUNT_STATE.NOTACTIVE then
+        SetGameObjectState(m_NotFullLevelStr, true, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_ActiveStr, true, m_panelObject);
+        SetGameObjectState(m_FosterStr, false, m_panelObject);
+        SetGameObjectState(m_levelUpStr, false, m_panelObject);
+        if mountDataInfo.Type == 1 then
+            if mountDataInfo.Key3 > 0 then
+                local itemTable = { };
+                itemTable.excelID = G_ItemToolTipDefine.BINDMONEY;
+                itemTable.Type = 1;
+                itemTable.Num = mountDataInfo.Key3;
+                table.insert(m_showItemTable, itemTable);
+            end
+            if mountDataInfo.Key1 > 0 and mountDataInfo.Key2 > 0 then
+                local itemTable = { };
+                itemTable.excelID = mountDataInfo.Key1;
+                itemTable.Type = 0;
+                itemTable.Num = mountDataInfo.Key2;
+                table.insert(m_showItemTable, itemTable);
+            end
+            ShowItem(m_showItemTable);
+        else
+            error("this get ride condition does not design by GameDesigner SongBo");
+            return false;
+        end
+        if m_clickButtonState then
+            CCommonTool.SetGameObjectGrey(m_activeButtonObj, false);
+        else
+            CCommonTool.SetGameObjectGrey(m_activeButtonObj, true);
+        end
+    elseif mountState == ENUM_MOUNT_STATE.CANLEVELUP then
+        local mountFosterInfo = CCommonTool.GetMountsFosterInfo(mountDataInfo.Id + curLevel);
+        SetGameObjectState(m_NotFullLevelStr, true, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_FosterStr, false, m_panelObject);
+        SetGameObjectState(m_levelUpStr, true, m_panelObject);
+        if mountFosterInfo.UpgradeGold > 0 then
+            local itemTable = { };
+            itemTable.excelID = G_ItemToolTipDefine.BINDMONEY;
+            itemTable.Type = 1;
+            itemTable.Num = mountFosterInfo.UpgradeGold;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if mountFosterInfo.UpgradeItem1 > 0 and mountFosterInfo.UpgradeItem1Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = mountFosterInfo.UpgradeItem1;
+            itemTable.Type = 0;
+            itemTable.Num = mountFosterInfo.UpgradeItem1Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if mountFosterInfo.UpgradeItem2 > 0 and mountFosterInfo.UpgradeItem2Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = mountFosterInfo.UpgradeItem2;
+            itemTable.Type = 0;
+            itemTable.Num = mountFosterInfo.UpgradeItem2Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        ShowItem(m_showItemTable);
+        if m_clickButtonState then
+            CCommonTool.SetGameObjectGrey(m_levelUpButtonObj, false);
+        else
+            CCommonTool.SetGameObjectGrey(m_levelUpButtonObj, true);
+        end
+        -- 如果是培养
+    elseif mountState == ENUM_MOUNT_STATE.CANFOSTER then
+        local mountFosterInfo = CCommonTool.GetMountsFosterInfo(mountDataInfo.Id + curLevel);
+        SetGameObjectState(m_NotFullLevelStr, true, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_FosterStr, true, m_panelObject);
+        SetGameObjectState(m_levelUpStr, false, m_panelObject);
+        if mountFosterInfo.GroomGold > 0 then
+            local itemTable = { };
+            itemTable.excelID = G_ItemToolTipDefine.BINDMONEY;
+            itemTable.Type = 1;
+            itemTable.Num = mountFosterInfo.GroomGold;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if mountFosterInfo.GroomItem1 > 0 and mountFosterInfo.GroomItem1Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = mountFosterInfo.GroomItem1;
+            itemTable.Type = 0;
+            itemTable.Num = mountFosterInfo.GroomItem1Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if mountFosterInfo.GroomItem2 > 0 and mountFosterInfo.GroomItem2Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = mountFosterInfo.GroomItem2;
+            itemTable.Type = 0;
+            itemTable.Num = mountFosterInfo.GroomItem2Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        ShowItem(m_showItemTable);
+        if m_clickButtonState then
+            CCommonTool.SetGameObjectGrey(m_fosterButtonObj, false);
+            CCommonTool.SetGameObjectGrey(m_fosterTenButtonObj, false);
+        else
+            CCommonTool.SetGameObjectGrey(m_fosterButtonObj, true);
+            CCommonTool.SetGameObjectGrey(m_fosterTenButtonObj, true);
+        end
+    else
+        SetGameObjectState(m_NotFullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, true, m_panelObject);
+    end
+end
+
+-- 根据索引值得到基础属性信息
+function GetLvAttridAttrValueByIndex(Index, mountAttrData)
+    if Index == 1 then
+        return mountAttrData.ActivateAttr1, mountAttrData.TypeAttr1, mountAttrData.ValueAttr1;
+    elseif Index == 2 then
+        return mountAttrData.ActivateAttr2, mountAttrData.TypeAttr2, mountAttrData.ValueAttr2;
+    elseif Index == 3 then
+        return mountAttrData.ActivateAttr3, mountAttrData.TypeAttr3, mountAttrData.ValueAttr3;
+    elseif Index == 4 then
+        return mountAttrData.ActivateAttr4, mountAttrData.TypeAttr4, mountAttrData.ValueAttr4;
+    elseif Index == 5 then
+        return mountAttrData.ActivateAttr5, mountAttrData.TypeAttr5, mountAttrData.ValueAttr5;
+    else
+        return -1, -1, -1;
+    end
+end
+
+-- 根据索引值得到特殊属性信息
+function GetLvAttridAttrSpecialValueByIndex(Index, mountAttrData)
+    if Index == 1 then
+        return mountAttrData.ActivateSenior1, mountAttrData.TypeSenior1, mountAttrData.ValueSenior1;
+    elseif Index == 2 then
+        return mountAttrData.ActivateSenior2, mountAttrData.TypeSenior2, mountAttrData.ValueSenior2;
+    elseif Index == 3 then
+        return mountAttrData.ActivateSenior3, mountAttrData.TypeSenior3, mountAttrData.ValueSenior3;
+    elseif Index == 4 then
+        return mountAttrData.ActivateSenior4, mountAttrData.TypeSenior4, mountAttrData.ValueSenior4;
+    else
+        return -1, -1, -1;
+    end
+end
+
+-- 需要道具的展示
+function ShowItem(itemTable)
+    m_clickButtonState = true;
+    for Index = 1, #itemTable do
+        SetSpriteApptitudeV04(m_itemPositionStr .. Index .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_itemPositionStr .. Index .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteByAtlasID(m_itemPositionStr .. Index .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(itemTable[Index].excelID), m_panelObject, true);
+        SetItemToolTipsEvent(m_panelObject, m_itemPositionStr .. Index, ENUMPANELID.ENUM_PANEL_RIDEPANEL, false, itemTable[Index].excelID);
+        if itemTable[Index].Type == 1 then
+            SetLabelContent(m_itemPositionStr .. Index .. m_itemNumStr, itemTable[Index].Num, m_panelObject);
+            SetGameObjectState(m_itemPositionStr .. Index .. m_itemGetsWay, false, m_panelObject);
+            if G_UserInfo.BindCoin < itemTable[Index].Num then
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                m_clickButtonState = false;
+				m_CoinIsEnough = false;
+            else
+				m_CoinIsEnough = true;
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+            end
+        elseif itemTable[Index].Type == 0 then
+            local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable[Index].excelID);
+			m_ItemDataId = itemTable[Index].excelID;
+            SetLabelContent(m_itemPositionStr .. Index .. m_itemNumStr, hasNum .. "/" .. itemTable[Index].Num, m_panelObject);
+            if hasNum >= itemTable[Index].Num then
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+                SetGameObjectState(m_itemPositionStr .. Index .. m_itemGetsWay, false, m_panelObject);
+				m_MatIsEnough = true;
+            else
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                SetGameObjectState(m_itemPositionStr .. Index .. m_itemGetsWay, true, m_panelObject);
+                m_clickButtonState = false;
+				m_MatIsEnough = false;
+            end
+        end
+        SetGameObjectState(m_itemPositionStr .. Index, true, m_panelObject);
+        SetItemToolTipsEvent(m_panelObject, m_itemPositionStr .. Index, ENUMPANELID.ENUM_PANEL_RIDEPANEL, false, itemTable[Index].excelID);
+    end
+    for Index = #itemTable + 1, 3 do
+        SetGameObjectState(m_itemPositionStr .. Index, false, m_panelObject);
+    end
+    m_itemsUITableComp:Reposition();
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_rideButtonObjStr, SetMountIDClick, m_panelObject);
+    SetGameObjectEvent(m_activeButtonObjStr, ActiveMountClick, m_panelObject);
+    SetGameObjectEvent(m_fosterButtonObjStr, FosterOnceMountClick, m_panelObject);
+    SetGameObjectEvent(m_fosterTenButtonObjStr, FosterTenMountClick, m_panelObject);
+    SetGameObjectEvent(m_levelUpButtonObjStr, LevelUpMountClick, m_panelObject);
+    SetGameObjectEvent(m_collectAttrStr,OnCollectClick,m_panelObject);
+    SetGameObjectEvent(m_closeCollectPanelStr,OnCloseCollectPanelClick,m_panelObject);
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_itemPositionStr .. Index .. m_itemGetsWay, OnItemGetWayClick, m_panelObject);
+    end
+end
+
+function LoadModel(modelID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+    buffer:WriteInt(modelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 删除boss3d模型
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+end
+
+function InitMountsCollectPanel()
+    m_collectUIListViewComp:RemoveAll();
+    local hasCount = 0;
+    local AttrTable = {};
+    for Index = 1,#CollectAttrs do
+        AttrTable[CollectAttrs[Index]] = 0;
+    end
+    
+    for Index = 1, #m_showMountTable do
+        local mountDataInfo = m_showMountTable[Index];
+        m_collectUIListViewComp:AddData(mountDataInfo);
+        local playerMountData = LogicData_RideData[mountDataInfo.Id];
+        if playerMountData ~= nil then
+            hasCount = hasCount + 1;
+            local curLevel = playerMountData.level;
+            --local mountAttrData = CCommonTool.GetMountsAttrInfo(mountDataInfo.Id);
+            error("mountID="..mountDataInfo.Id+curLevel);
+            local mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+curLevel);
+            for Index = 1,baseAttrNum do
+                local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+                if curLevel >= activeLevel then
+                    local value =((curLevel - activeLevel) * 10 + playerMountData.attrTable[Index]) * AttrSingleValue;
+                    AddFightValueTable(AttrTable,AttrIndex,value);
+                end
+            end
+        end
+    end
+
+    for Index = 1,#CollectAttrs do
+        local value = AttrTable[CollectAttrs[Index]];
+        local attrIndex = CollectAttrs[Index];
+        SetLabelContent(m_AttrTableStr..m_AttrIndexStr..Index..m_AttrNameStr,CCommonTool.GetAttrNameByAttrID(attrIndex),m_panelObject);
+        SetLabelContent(m_AttrTableStr..m_AttrIndexStr..Index..m_AttrValueStr,value,m_panelObject);
+        if value == 0 then
+            SetGameObjectState(m_AttrTableStr..m_AttrIndexStr..Index,false,m_panelObject);
+        else
+            SetGameObjectState(m_AttrTableStr..m_AttrIndexStr..Index,true,m_panelObject);
+        end
+    end
+    RepositionUITableComp(m_AttrTableStr,m_panelObject);
+    SetLabelContent(m_collectMountsPanelStr..m_AttrValueStr,hasCount.."/"..#m_showMountTable,m_panelObject);
+end
+
+-- 右侧坐骑信息初始化
+function OnCollectMountCloneInit(listView, cell, data)
+    local mountDataInfo = data;
+    local go = cell.gameObject;
+    local playerMountData = LogicData_RideData[mountDataInfo.Id];
+    SetSpriteByAtlasID(m_MountIconStr,mountDataInfo.IconID,go);
+    SetSpriteApptitudeV04(m_MountQualityStr,mountDataInfo.QualityID,go);
+    if playerMountData ~= nil then
+        SetGameObjectState(m_MountLevelLabelStr,true,go);
+        SetGameObjectState(m_MountIsActiveStr,false,go);
+        SetGameObjectState(m_mountFightValueStr,true,go);
+        SetLabelContent(m_MountLevelLabelStr,string_format(GetTextToId(8040),playerMountData.level),go);
+        local fightValue = CalcMountFightValue(mountDataInfo);
+        SetLabelContent(m_mountFightValueStr..m_FightValueNumStr,"+"..fightValue,go);
+    else
+        SetGameObjectState(m_MountLevelLabelStr,false,go);
+        SetGameObjectState(m_MountIsActiveStr,true,go);
+        SetGameObjectState(m_mountFightValueStr,false,go);
+    end
+end
+
+function CalcMountFightValue(mountDataInfo)
+    local playerMountData = LogicData_RideData[mountDataInfo.Id];
+    if playerMountData == nil then
+        return 0;
+    end
+    local fightTable = {};
+    local curLevel = playerMountData.level;
+    --local mountAttrData = CCommonTool.GetMountsAttrInfo(mountDataInfo.Id);
+    local mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+curLevel);
+    for Index = 1,baseAttrNum do
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+        if curLevel >= activeLevel then
+            local value =((curLevel - activeLevel) * 10 + playerMountData.attrTable[Index]) * AttrSingleValue;
+            AddFightValueTable(fightTable,AttrIndex,value);
+        end
+    end
+    for Index = 1, 4 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrSpecialValueByIndex(Index, mountAttrData);
+        if curLevel >= activeLevel then
+            AddFightValueTable(fightTable,AttrIndex,AttrSingleValue);
+        end
+    end
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, false) + 0.5);
+    return curFightValue;
+end
+
+-- 对战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击坐骑
+function OnMountCloneClick(listView, cell, go)
+    local mountInfo = listView:GetData(cell.dataIndex);
+    if mountInfo == m_showMountTable[m_leftSelect] then
+        return;
+    else
+        m_leftSelect = cell.dataIndex + 1;
+        Hide3DModel();
+        LoadModel(m_showMountTable[m_leftSelect].Modelres);
+        InitRightContent();
+    end
+     ReportManager.RequestReportPanel(10306);
+end
+
+-- 点击坐骑
+function OnCollectMountCloneClick(listView, cell, go)
+    m_leftSelect = cell.dataIndex + 1;
+    m_leftUIListViewComp:LookAt(m_leftSelect - 1,true);
+    Hide3DModel();
+    LoadModel(m_showMountTable[m_leftSelect].Modelres);
+    InitRightContent();
+    OnCloseCollectPanelClick();
+end
+
+function OnCloseClick()
+    if m_isCollectMountsPanelOpen then
+        OnCloseCollectPanelClick();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+end
+
+function SetMountIDClick(e)
+    if G_UserInfo.RoleAttribute.MountID == m_showMountTable[m_leftSelect].Id then
+        ShowSystemFlowTips(5120);
+        G_MusicMng:OnLoadMusic(4011);
+    else
+        if LogicData_RideData[m_showMountTable[m_leftSelect].Id] == nil then
+            ShowSystemFlowTips(5132);
+            G_MusicMng:OnLoadMusic(4011);
+        else
+            if LogicData_RideData[m_showMountTable[m_leftSelect].Id].level >= m_showMountTable[m_leftSelect].NumRide then
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_SETRIDEPANELMOUNTID);
+                buffer:WriteInt(m_showMountTable[m_leftSelect].Id);
+                G_NetWorkMng:SendMessage(buffer);
+                G_MusicMng:OnLoadMusic(4010);
+            else
+                ShowSystemFlowTips(5132);
+                G_MusicMng:OnLoadMusic(4011);
+            end
+        end
+    end
+end
+
+function ActiveMountClick(e)
+    if m_clickButtonState then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_ACTIVEMOUNT);
+        buffer:WriteInt(m_showMountTable[m_leftSelect].Id);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+        ShowSystemFlowTips(5121);
+        G_MusicMng:OnLoadMusic(4011);
+    end
+    error("坐骑激活点击："..m_showMountTable[m_leftSelect].Id);
+    ReportManager.RequestReportPanel(10305);
+end
+--检查是那种情况不满足
+function CheckConditionIsEnough()
+	if m_CoinIsEnough ~=true then
+		log("银币不足，跳转到货币兑换界面");
+        MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+		return;
+	end
+	if m_MatIsEnough ~=true then
+		log("材料不足，跳转到材料快捷购买界面");
+        if m_ItemDataId>0 and  CCommonTool.GetQuickToBuyByExcelID(m_ItemDataId)~=nil then
+            
+            MaterialExchangePanel.ShowPanel(m_ItemDataId,ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+			
+            return;       
+        end  
+	end
+	
+	ShowSystemFlowTips(5126);
+    G_MusicMng:OnLoadMusic(4011);
+end
+
+function FosterOnceMountClick(e)
+    if m_clickButtonState then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_FOSTERMOUNT);
+        buffer:WriteInt(m_showMountTable[m_leftSelect].Id);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+		CheckConditionIsEnough();
+        
+    end
+end
+
+function FosterTenMountClick(e)
+    if m_clickButtonState then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_FOSTERMOUNTTENTIMES);
+        buffer:WriteInt(m_showMountTable[m_leftSelect].Id);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+		CheckConditionIsEnough();
+        --ShowSystemFlowTips(5126);
+        --G_MusicMng:OnLoadMusic(4011);
+    end
+end
+
+function LevelUpMountClick(e)
+    if m_clickButtonState then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_MOUNTLEVELUP);
+        buffer:WriteInt(m_showMountTable[m_leftSelect].Id);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+		CheckConditionIsEnough();
+        --ShowSystemFlowTips(5133);
+        --G_MusicMng:OnLoadMusic(4011);
+    end
+end
+
+function OnItemGetWayClick(e)
+    local selectTag = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    GetWayPanel.Show(m_showItemTable[selectTag].excelID,ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+end
+
+function OnCollectClick(e)
+    m_isCollectMountsPanelOpen = true;
+    SetGameObjectState(m_collectMountsPanelStr,m_isCollectMountsPanelOpen,m_panelObject);
+    InitMountsCollectPanel();
+
+    ReportManager.RequestReportPanel(10307);
+end
+
+function OnCloseCollectPanelClick()
+    m_isCollectMountsPanelOpen = false;
+    SetGameObjectState(m_collectMountsPanelStr,m_isCollectMountsPanelOpen,m_panelObject);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 处理Mounts表
+function DealTableData()
+    local mountsTable = CCommonTool.GetAllMountsInfo();
+    for Index = 1, mountsTable.Count do
+        table.insert(LogicData_MountsTable, mountsTable[Index - 1]);
+    end
+end
+
+-- 绑定金钱改变
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RIDEPANEL) == 1 then
+        InitRightContent();
+    end
+end
+
+-- 刷新界面显示
+function MsgReturn(bActive)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RIDEPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitRightContent();
+		if bActive == 1 then
+			ShowOffPanel.ShowGetModel(m_showMountTable[m_leftSelect].Modelres, GetTextToId(m_showMountTable[m_leftSelect].Name));
+		end
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.INTERFACE_ROLE_RIDE,RidePanel.IsShowRedHintRide());
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_leftSelect;
+    jumpParamsTable[2] = m_isCollectMountsPanelOpen;
+    if m_showMountTable[m_leftSelect] ~= nil then
+        jumpParamsTable[3] = m_showMountTable[m_leftSelect].Id;
+    end
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+-- 是否坐骑界面可操作
+function IsShowRedHintRide()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RIDE) then
+        return false;
+    end
+    for Index = 1, #LogicData_MountsTable do
+        local mountDataInfo = LogicData_MountsTable[Index];
+        if IsCanOperate(mountDataInfo) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可操作
+function IsCanOperate(mountDataInfo)
+    local playerMountData = LogicData_RideData[mountDataInfo.Id];
+    --local mountAttrData = CCommonTool.GetMountsAttrInfo(mountDataInfo.Id);
+    -- 初始化中间上面的阶数显示
+    local curLevel = 0;
+    local mountAttrData=nil;
+    if playerMountData ~= nil then
+        curLevel = playerMountData.level;
+        mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+curLevel);
+    else
+        playerMountData = { };
+        playerMountData.level = 0;
+        playerMountData.attrTable = { };
+        for Index = 1, 5 do
+            playerMountData.attrTable[Index] = 0;
+        end
+        mountAttrData=MountsAttrTable.Get(mountDataInfo.Id+1);
+    end
+    local mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        mountState = ENUM_MOUNT_STATE.NOTACTIVE;
+    else
+        for Index = 1, baseAttrNum do
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, mountAttrData);
+            if curLevel >= activeLevel then
+                if playerMountData.attrTable[Index] < 10 then
+                    mountState = ENUM_MOUNT_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if mountState ~= ENUM_MOUNT_STATE.CANFOSTER then
+            if curLevel >= mountDataInfo.NumMax then
+                mountState = ENUM_MOUNT_STATE.LEVELMAX;
+            else
+                mountState = ENUM_MOUNT_STATE.CANLEVELUP;
+            end
+        end
+    end
+    local canOperate = false;
+    if mountState == ENUM_MOUNT_STATE.NOTACTIVE then
+        canOperate = IsCanActive(mountDataInfo);
+    elseif mountState == ENUM_MOUNT_STATE.CANFOSTER then
+        canOperate = IsCanFoster(mountDataInfo,curLevel);
+    elseif mountState == ENUM_MOUNT_STATE.CANLEVELUP then
+        canOperate = IsCanLevelUp(mountDataInfo,curLevel);
+    elseif mountState == ENUM_MOUNT_STATE.LEVELMAX then
+        canOperate = false;
+    end
+    return canOperate;
+end
+
+function IsCanActive(mountDataInfo)
+    if mountDataInfo.Type == 1 then
+        if mountDataInfo.Key3 > 0 then
+            if G_UserInfo.BindCoin < mountDataInfo.Key3 then
+                return false;
+            end
+        else
+        end
+        if mountDataInfo.Key1 > 0 and mountDataInfo.Key2 > 0 then
+            local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountDataInfo.Key1);
+            if hasNum < mountDataInfo.Key2 then
+                return false;
+            end
+        end
+    else
+        error("this get ride condition does not design by GameDesigner SongBo");
+        return false;
+    end
+    return true;
+end
+
+function IsCanFoster(mountDataInfo,curLevel)
+    local mountFosterInfo = CCommonTool.GetMountsFosterInfo(mountDataInfo.Id + curLevel);
+    if mountFosterInfo.GroomGold > 0 then
+        if G_UserInfo.BindCoin < mountFosterInfo.GroomGold then
+            return false;
+        end
+    end
+    if mountFosterInfo.GroomItem1 > 0 and mountFosterInfo.GroomItem1Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountFosterInfo.GroomItem1);
+        if hasNum < mountFosterInfo.GroomItem1Num then
+            return false;
+        end
+    end
+    if mountFosterInfo.GroomItem2 > 0 and mountFosterInfo.GroomItem2Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountFosterInfo.GroomItem2);
+        if hasNum < mountFosterInfo.GroomItem2Num then
+            return false;
+        end
+    end
+    return true;
+end
+
+function IsCanLevelUp(mountDataInfo,curLevel)
+    local mountFosterInfo = CCommonTool.GetMountsFosterInfo(mountDataInfo.Id + curLevel);
+    if mountFosterInfo.UpgradeGold > 0 then
+        if G_UserInfo.BindCoin < mountFosterInfo.UpgradeGold then
+            return false;
+        end
+    end
+    if mountFosterInfo.UpgradeItem1 > 0 and mountFosterInfo.UpgradeItem1Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountFosterInfo.UpgradeItem1);
+        if hasNum < mountFosterInfo.UpgradeItem1Num then
+            return false;
+        end
+    end
+    if mountFosterInfo.UpgradeItem2 > 0 and mountFosterInfo.UpgradeItem2Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, mountFosterInfo.UpgradeItem2);
+        if hasNum < mountFosterInfo.UpgradeItem2Num then
+            return false;
+        end
+    end
+    return true;
+end

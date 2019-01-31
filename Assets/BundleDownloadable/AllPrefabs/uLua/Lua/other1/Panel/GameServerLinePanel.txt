@@ -1,0 +1,142 @@
+﻿module('GameServerLinePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GameServerLinePanel';
+---------------------------------------label路径---------------------------------------
+-- 当前线路
+local m_LabelCurrentLinePath = "Label_CurrentLine";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonPath = "Close_Button";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "ScrollView/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+-- 当前线路
+local m_LabelCurrentLine = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local m_PanelId = ENUMPANELID.ENUM_PANEL_GS_LINE;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+	m_LabelCurrentLine = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(m_PanelId);
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_LabelCurrentLine = GetComponent(m_PanelObject, m_LabelCurrentLinePath, "UILabel");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_CloseButtonPath, OnCloseButtonClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local sceneId = G_SceneMng.SceneID;
+    local info = SceneProtocol.gsLineInfo;
+    local items = info.list;
+    local dict = info.dict;
+    local currentId = info.currentGSID;
+    m_List:RemoveAll();
+    for i, v in ipairs(items) do
+        if v.scenes[sceneId] == true then
+            m_List:AddData(v);
+        end
+    end
+    if currentId > 0 then
+        local text = CCommonTool.GetTxtData(9095).m_str;
+        text = string_format(text, dict[currentId].gsName);
+        m_LabelCurrentLine.text = text;
+    else
+        m_LabelCurrentLine.text = "";
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(m_PanelId);
+end
+
+-- 关闭按钮
+function OnCloseButtonClick(gameObject)
+    OnCloseClick();
+end
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local info = SceneProtocol.gsLineInfo;
+    local state = info.states[data.gsid];
+    SetGameObjectState("state1", state == 1, go);
+    SetGameObjectState("state2", state == 2, go);
+    SetGameObjectState("state4", state == 4, go);
+    SetGameObjectState("state8", state == 8, go);
+    SetLabelContent("Label-Name", data.gsName, go);
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local info = SceneProtocol.gsLineInfo;
+    local currentId = info.currentGSID;
+    if data.gsid ~= currentId then
+        SceneProtocol.RequestChangeGS(data.gsid);
+    else
+        error("点击的是当前线路");
+        ShowSystemFlowTips(5801);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(m_PanelId) == 1 then
+        InitShow();
+    end
+end

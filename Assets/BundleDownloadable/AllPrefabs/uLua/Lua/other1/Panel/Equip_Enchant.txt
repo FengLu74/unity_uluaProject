@@ -1,0 +1,1721 @@
+﻿module("Equip_Enchant", package.seeall)
+---- 面板名称
+local m_panelTag = "";
+---------------------------------------label路径---------------------------------------
+-- 中间上部装备星级所在的位置
+local m_MiddleTopEquipStarLabelStr = "EnchantPanel/Middle/Top/Item/HasItem/Label_StarNum";
+-- 中间上部当前附魔等级文本
+local m_MiddleTopEnchantLevelStr = "EnchantPanel/Middle/Top/EnchantLevel/Label_CurLevel";
+
+-- 附魔经验面板装备星级所在的位置
+local m_GetExpPanelEquipStarLabelStr = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/Label_StarNum";
+-- 附魔经验面板当前放上去的道具数量
+local m_GetExpPanelItemsNumStr = "EnchantPanel/GetEnchantExpPanel/AddItem/Label";
+-- 附魔经验面板当前等级位置
+local m_GetExpPanelCurEnchantLevelStr = "EnchantPanel/GetEnchantExpPanel/EnchantLevel/Level/Label_CurLevel";
+-- 附魔经验面板最大等级位置
+local m_GetExpPanelMaxEnchantLevelStr = "EnchantPanel/GetEnchantExpPanel/EnchantLevel/Level/Label_MaxLevel";
+
+-- 附魔经验面板经验位置
+local m_GetExpPanelCurEnchantExpStr = "EnchantPanel/GetEnchantExpPanel/EnchantLevel/Exp/Label_CurExp";
+-- 附魔经验面板最大经验位置
+local m_GetExpPanelMaxEnchantExpStr = "EnchantPanel/GetEnchantExpPanel/EnchantLevel/Exp/Label_MaxExp";
+
+-- 消息提示标题
+local m_MessageTitle = "MessagePanel/Label-Title";
+-- 消息提示文本
+local m_MessageContent = "MessagePanel/Label-Content";
+-- 开孔消耗银币数
+local m_CostNum = "MessagePanel/CostContent/Label_CostBindCoin";
+-- 玩家持有银币数
+local m_PlayerHaveNum = "MessagePanel/CostContent/Label_HasBindCoin";
+-----------------------------------------按钮路径--------------------------------------
+-- 打开养成界面按钮
+local m_OpenGetExpPanelButtonStr = "EnchantPanel/Middle/Bottom/NotMaxLevel/GetExp_Button";
+-- 养成按钮
+local m_GetExpButtonStr = "EnchantPanel/GetEnchantExpPanel/GetExp_Button";
+-- 关闭养成界面按钮
+local m_CloseGetExpPanelButtonStr = "EnchantPanel/GetEnchantExpPanel/Close_Button";
+
+-- 消息提示确定按钮
+local m_MessagComfirmButtonStr = "MessagePanel/Button-QueDing";
+-- 消息提示取消按钮
+local m_MessagCloseButtonStr = "MessagePanel/Button-FanHui";
+
+-- 系统说明按钮
+local m_SystemExlpainStr = "EnchantPanel/Middle/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 中间上部装备部位图标信息
+local m_MiddleTopEquipPosIconStr = "EnchantPanel/Middle/Top/Item/NoItem/Sprite_Pos";
+
+-- 中间上部装备图标信息
+local m_MiddleTopEquipIconStr = "EnchantPanel/Middle/Top/Item/HasItem/Sprite_Icon";
+-- 中间上部品质图标信息
+local m_MiddleTopEquipApptitudeStr = "EnchantPanel/Middle/Top/Item/HasItem/Sprite_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopEquipApptitude3Str = "EnchantPanel/Middle/Top/Item/HasItem/Sprite_Apptitude2";
+-- 中间上部装备图标信息
+local m_MiddleTopEquipApptitude2Str = "EnchantPanel/Middle/Top/Item/HasItem/Sprite_Equip_Apptitude";
+local m_MiddleTopEquipStep2Str = "EnchantPanel/Middle/Top/Item/HasItem/lb_Equip_Apptitude";
+
+-- -- 中间上部装备套装信息
+local m_MiddleTopEquipSuitStr = "EnchantPanel/Middle/Top/Item/HasItem/Sprite_Suit";
+
+-- 附魔吃经验界面装备部位图标信息
+local m_GetExpPanelEquipPosIconStr = "EnchantPanel/GetEnchantExpPanel/Equip/NoItem/Sprite_Pos";
+-- 附魔吃经验界面装备图标信息
+local m_GetExpPanelEquipIconStr = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/Sprite_Icon";
+-- 附魔吃经验界面品质图标信息
+local m_GetExpPanelEquipApptitudeStr = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/Sprite_Apptitude";
+-- 附魔吃经验界面装备图标信息
+local m_GetExpPanelEquipApptitude2Str = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/Sprite_Equip_Apptitude";
+local m_GetExpPanelEquipStep2Str = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/lb_Equip_Apptitude";
+-- 附魔吃经验界面品质图标信息
+local m_GetExpPanelEquipApptitude3Str = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/Sprite_Apptitude2";
+-- 附魔吃经验界面装备套装图标
+local m_GetExpPanelEquipSuitStr = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem/Sprite_Suit";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧装备的listView组件所在的位置
+local m_leftEquipListViewCompStr = "EnchantPanel/Left/ItemPanel/Grid";
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewCompStr = "EnchantPanel/Right/ItemPanel/Grid";
+-- 中间装备的信息
+local m_MiddleContentStr = "EnchantPanel/Middle";
+
+-- 中间上部有装备的显示
+local m_MiddleTopHasEquipContentStr = "EnchantPanel/Middle/Top/Item/HasItem";
+-- 中间上部没有装备的显示
+local m_MiddleTopNoEquipContentStr = "EnchantPanel/Middle/Top/Item/NoItem";
+
+-- 中间附魔经验UIProgressBar组件所在的位置
+local m_enchantExpProBarCompStr = "EnchantPanel/Middle/Top/EnchantLevel/ProBar";
+
+-- 中间下部未达最大附魔等级所在的位置
+local m_MiddleBottomNotMaxEnchantLevelStr = "EnchantPanel/Middle/Bottom/NotMaxLevel";
+-- 中间下部达到最大附魔等级所在的位置
+local m_MiddleBottomMaxEnchantLevelStr = "EnchantPanel/Middle/Bottom/MaxLevel";
+
+-- 中间下部孔位信息所在的位置
+local m_middleBottomHoleInfoStr = "EnchantPanel/Middle/Bottom";
+
+-- 中间选中框对象Transform所在的位置
+local m_middleHoleSelectTransStr = "EnchantPanel/Middle/Bottom/EnchantHoles/Sprite_Select";
+
+-- 附魔吃经验界面所在的位置
+local m_EnchantGetExpPanelStr = "EnchantPanel/GetEnchantExpPanel";
+
+-- 附魔吃经验界面有装备的显示
+local m_GetExpPanelHasEquipContentStr = "EnchantPanel/GetEnchantExpPanel/Equip/HasItem";
+-- 附魔吃经验界面没有装备的显示
+local m_GetExpPanelNoEquipContentStr = "EnchantPanel/GetEnchantExpPanel/Equip/NoItem";
+
+-- 附魔吃经验界面要吃的道具有道具的显示
+local m_GetExpPanelHasAddItemContentStr = "EnchantPanel/GetEnchantExpPanel/AddItem/HasItem";
+-- 附魔吃经验界面要吃的道具，没有道具的显示
+local m_GetExpPanelNoAddItemContentStr = "EnchantPanel/GetEnchantExpPanel/AddItem/NoItem";
+
+-- 附魔吃经验界面当前经验进度
+local m_GetExpPanelCurExpProStr = "EnchantPanel/GetEnchantExpPanel/EnchantLevel/ProBar_CurExp";
+-- 附魔吃经验界面将要到的经验进度
+local m_GetExpPanelAddExpProStr = "EnchantPanel/GetEnchantExpPanel/EnchantLevel/ProBar_AddExp";
+-- 附魔吃经验消耗所在的位置
+local m_CostMoneyStr = "EnchantPanel/GetEnchantExpPanel/GetExp_Button/UITable/Coin";
+-- 货币图标
+local m_MoneyIconStr = "/Sprite";
+-- 货币数量
+local m_MoneyCountStr = "/Label_Num";
+
+-- 养成界面UITable组件所在的位置
+local m_GetExpPanelUITableCompStr = "EnchantPanel/GetEnchantExpPanel/GetExp_Button/UITable";
+-- 养成界面右侧UIListView组件所在的位置
+local m_GetExpPanelRightItemListViewCompStr = "EnchantPanel/GetEnchantExpPanel/ItemPanel/Grid";
+
+-- 附魔点击特效位置
+local m_EquipClickEffStr = "EnchantPanel/Middle/Top/Effect_Click";
+-- 附魔栏位1特效位置
+local m_EquipEnchant1EffStr = "EnchantPanel/Middle/Bottom/Effect_Enchant1";
+-- 附魔栏位2特效位置
+local m_EquipEnchant2EffStr = "EnchantPanel/Middle/Bottom/Effect_Enchant2";
+-- 附魔栏位3特效位置
+local m_EquipEnchant3EffStr = "EnchantPanel/Middle/Bottom/Effect_Enchant3";
+
+-- 消息提示面板
+local m_MessagePanel = "MessagePanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 左侧装备下有装备的路径
+local m_hasEquipStr = "HasItem";
+-- 左侧装备下没有装备的路径
+local m_noEquipStr = "NoItem";
+-- 装备部位图片的路径
+local m_noEquipPosSpriteStr = "NoItem/Sprite_Pos";
+-- 装备名称文本的路径
+local m_EquipNameLabelStr = "Label_Name";
+-- 左侧装备红点
+local m_EquipRedHintStr = "Sprite_RedHint";
+
+-- 装备图标
+local m_EquipIconSpriteStr = "HasItem/Sprite_Icon";
+-- 装备品质图标
+local m_EquipApptitudeSpriteStr = "HasItem/Sprite_Apptitude";
+local m_EquipAppTitude2SpriteStr = "HasItem/Sprite_Apptitude2";
+-- 装备品质图标
+local m_EquipApptitudeSprite2Str = "HasItem/Sprite_Equip_Apptitude";
+local m_EquipStep2Str = "HasItem/lb_Equip_Apptitude";
+-- 装备星级所在的位置
+local m_EquipStarLabelStr = "HasItem/Label_StarNum";
+local m_EquipStarAddStr = "HasItem/Label_StarNum/Label";
+-- 套装
+local m_EquipSuitStr = "HasItem/Sprite_Suit";
+
+-- 装备附魔位置
+local m_EquipEnchantStr = "Enchants/Enchant";
+-- 装备附魔图片位置
+local m_EquipHasEnchantStr = "/Sprite";
+
+-- 中间下部孔位所在的位置
+local m_HolesStr = "/EnchantHoles/EnchantHole";
+-- 中间孔位红点
+local m_HoleRedHintStr = "/Sprite_RedHint";
+
+-- 孔位开着
+local m_HoleOpen = "/Open";
+-- 孔位关着
+local m_HoleClosed = "/Closed";
+
+-- 孔位有附魔
+local m_HoleHasEnchant = "/HasEnchant";
+-- 孔位未附魔
+local m_HoleNoEnchant = "/NoEnchant";
+-- 孔位可开启
+local m_HoleCanOpen = "/CanOpen";
+-- 孔位未解锁
+local m_HoleCannotOpen = "/CannotOpen";
+
+-- 孔位有附魔图片
+local m_HoleHasEnchantIcon = "/Sprite";
+-- 孔位有附魔属性文本
+local m_HoleHasEnchantAttrName = "/Label_AttrName";
+-- 孔位有附魔属性值
+local m_HoleHasEnchantAttrValue = "/Label_Value";
+-- 孔位有附魔附加属性值
+local m_HoleHasEnchantAddAttrValue = "/Label_AddValue";
+
+-- 孔位无附魔属性文本
+local m_HoleNoEnchantAttrName = "/Label_AttrName";
+
+-- 孔位xx级解锁文本
+local m_HoleUnlockLabel = "/Label";
+
+-- 右侧道具位置
+local m_RightItemStr = "Item";
+-- 右侧道具数量所在的位置
+local m_RightItemNumLabelStr = "/Label_Num";
+-- 右侧道具属性文本所在的位置
+local m_RightItemAttrNameLabelStr = "Label_AttrName";
+-- 右侧道具属性文本所在的位置
+local m_RightItemAttrValueLabelStr = "Label_AttrValue";
+-- 道具获取按钮上文本所在的位置
+local m_RightItemGetButtonStr = "Button/GetButton";
+-- 道具使用按钮上文本所在的位置
+local m_RightItemSetButtonStr = "Button/SetButton";
+-- 道具按钮上文本所在的位置
+local m_RightItemButtonLabelStr = "Button/Label";
+-- 右侧道具加号
+local m_RightItemAddStr = "/Sprite_Mask";
+
+-- 道具在要吃的道具中的位置
+local m_ItemSelectedStr = "Selected";
+
+-- 孔位锁头所在的位置
+local m_HoleLockStr = "/Sprite_Lock";
+-- 精炼等级加号的位置
+local m_StarUpLevelAdd = "/Label";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 左侧装备的listView组件
+local m_leftEquipListViewComp = nil;
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewComp = nil;
+-- 左侧装备选择的是第几个(0~9)
+local m_leftEquipSelect = 0;
+-- 当前点击的是第几个孔(1~3,0代表没有选中)
+local m_curHoleSelect = 0;
+-- 中间附魔经验UIProgressBar组件所在的位置
+local m_enchantExpProBarComp = nil;
+-- 中间选中框对象Transform
+local m_middleHoleSelectTrans = nil;
+-- 最近一次的点击的是第几个孔
+local m_lastClickHoleSelect = 0;
+
+-- 当前要吃的道具(key:添加的次序（1~10），value：table（ItemAttr,ItemNum,CRID）)
+local m_CurGetExpItemsTable = { };
+-- 当前等待要吃的道具
+local m_CurWaitGetExpItem = nil;
+
+-- 养成界面UITable组件
+local m_GetExpPanelUITableComp = nil;
+-- 养成界面右侧UIListView组件所在的位置
+local m_GetExpPanelRightItemListViewComp = nil;
+
+-- 当前剩余可放经验
+local m_LeftExp = 0;
+-- 是否金钱足够
+local m_isHaveEnoughMoney = 0;
+-- 当前可升到的最大等级
+local m_curLevelMaxEnchantLevel = 0;
+
+-- 当前需要选中的精炼的道具
+local m_SelectedItem = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 附魔开孔消耗界面是否开启
+local m_isHoleCostPanelOpen = false;
+-- 附魔养成界面是否开启
+local m_IsGetEnchantExpPanelOpen = false;
+
+-- 附魔点击特效
+local m_EquipClickEff = nil;
+-- 附魔栏位1特效位置
+local m_EquipEnchant1Eff = nil;
+-- 附魔栏位2特效位置
+local m_EquipEnchant2Eff = nil;
+-- 附魔栏位3特效位置
+local m_EquipEnchant3Eff = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 左侧装备显示次序对应装备枚举
+local m_EquipsMatchEnum =
+{
+    [1] = EquipType.ET_Arm,
+    [2] = EquipType.ET_Necklace,
+    [3] = EquipType.ET_Earing,
+    [4] = EquipType.ET_Ring,
+    [5] = EquipType.ET_Dress,
+    [6] = EquipType.ET_Helmet,
+    [7] = EquipType.ET_Cuirass,
+    [8] = EquipType.ET_Leg_Guard,
+    [9] = EquipType.ET_Pants,
+    [10] = EquipType.ET_Shoes,
+    [11] = EquipType.ET_Bracelet,
+    [12] = EquipType.ET_Juju,
+}
+
+-- 左侧附魔品质颜色
+local m_LeftEquipEnchantColor =
+{
+    [1] = 157;
+    [2] = 158;
+    [3] = 159;
+    [4] = 160;
+    [5] = 161;
+    [6] = 162;
+}
+
+-- 吃经验最多放上去的道具数量
+local m_MaxPutItemsCount = 10;
+
+-- 当前经验的文本颜色
+m_curExpLabelColor = "[FFD087]";
+-- 加的经验的文本颜色
+m_AddExpLabelColor = "[A0F35A]";
+
+-- 够养成的颜色
+local m_CanGetExpColor = "[FFFFFF]";
+-- 不够养成的颜色
+local m_CannotGetExpColor = "[D83232]";
+
+-- 开孔消耗足够
+local m_CanOpenHole = "FFFFFF";
+-- 开孔消耗不足
+local m_NotCanOpenHole = "FF0000";
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitEffectsShow();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitData();
+        InitEffectsShow();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_leftEquipListViewComp = nil;
+    m_RightItemListViewComp = nil;
+    m_leftEquipSelect = 0;
+    m_curHoleSelect = 0;
+    m_DealWaitItem = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftEquipSelect = m_JumpPanelParamsTable[1];
+        m_curHoleSelect = m_JumpPanelParamsTable[2];
+        if m_JumpPanelParamsTable[3] then
+            ShowOpenHoleCostPanel(m_JumpPanelParamsTable[4]);
+        end
+        m_IsGetEnchantExpPanelOpen = m_JumpPanelParamsTable[5];
+        m_isJumpPanelSave = false;
+    else
+        m_leftEquipSelect = 0;
+        m_curHoleSelect = 0;
+        m_IsGetEnchantExpPanelOpen = false;
+    end
+end
+
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    m_leftEquipListViewComp = GetComponent(m_panelObject, m_leftEquipListViewCompStr, "UIListView");
+    m_RightItemListViewComp = GetComponent(m_panelObject, m_RightItemListViewCompStr, "UIListView");
+    m_enchantExpProBarComp = GetComponent(m_panelObject, m_enchantExpProBarCompStr, "UIProgressBar");
+    m_middleHoleSelectTrans = child(m_panelObject, m_middleHoleSelectTransStr);
+    m_GetExpPanelUITableComp = GetComponent(m_panelObject, m_GetExpPanelUITableCompStr, "UITable")
+    m_GetExpPanelRightItemListViewComp = GetComponent(m_panelObject, m_GetExpPanelRightItemListViewCompStr, "UIListView");
+    m_EquipClickEff = child(m_panelObject, m_EquipClickEffStr).gameObject;
+    m_EquipEnchant1Eff = child(m_panelObject, m_EquipEnchant1EffStr).gameObject;
+    m_EquipEnchant2Eff = child(m_panelObject, m_EquipEnchant2EffStr).gameObject;
+    m_EquipEnchant3Eff = child(m_panelObject, m_EquipEnchant3EffStr).gameObject;
+end
+
+-- 初始化事件
+function InitEvents()
+    m_leftEquipListViewComp:SetInitCallback(OnEquipCloneInit);
+    m_leftEquipListViewComp:SetClickCallback(OnEquipCloneClick);
+    m_RightItemListViewComp:SetInitCallback(OnNeedItemCloneInit);
+    m_RightItemListViewComp:SetClickCallback(OnNeedItemClick);
+    m_GetExpPanelRightItemListViewComp:SetInitCallback(OnEnchantItemCloneInit);
+    m_GetExpPanelRightItemListViewComp:SetClickCallback(OnEnchantItemClick);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_middleBottomHoleInfoStr .. m_HolesStr .. Index, OnHoleClick, m_panelObject);
+    end
+    SetGameObjectEvent(m_OpenGetExpPanelButtonStr, OnOpenGetExpPanelClick, m_panelObject);
+    SetGameObjectEvent(m_GetExpButtonStr, OnGetExpClick, m_panelObject);
+    SetGameObjectEvent(m_CloseGetExpPanelButtonStr, OnCloseGetExpPanelClick, m_panelObject);
+    SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_panelObject);
+end
+
+function InitEffectsShow()
+    m_EquipClickEff:SetActive(false);
+    m_EquipEnchant1Eff:SetActive(false);
+    m_EquipEnchant2Eff:SetActive(false);
+    m_EquipEnchant3Eff:SetActive(false);
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetGameObjectState(m_EnchantGetExpPanelStr, m_IsGetEnchantExpPanelOpen, m_panelObject);
+    InitLeft();
+    InitMiddle();
+    InitRight();
+    if m_IsGetEnchantExpPanelOpen then
+        m_CurGetExpItemsTable = { };
+        m_CurWaitGetExpItem = nil;
+        InitGetExpPanelShow();
+    end
+end
+
+-- 初始化左侧的显示
+function InitLeft()
+    m_leftEquipListViewComp:RemoveAll();
+    if m_leftEquipSelect >= #m_EquipsMatchEnum then
+        m_leftEquipSelect = 0;
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    for k, v in ipairs(m_EquipsMatchEnum) do
+         if myLv < NewEquipOpenLv and k > 10 then  
+            error("装备未到开启等级");
+        else
+            m_leftEquipListViewComp:AddData(k);
+            if m_SelectedItem and G_BagMng:GetEquipUse():GetEquipByEquipType(v) == m_SelectedItem then
+                m_leftEquipSelect = k - 1;
+                m_SelectedItem = nil;
+            end
+        end
+    end
+    m_leftEquipListViewComp:LookAt(m_leftEquipSelect, true);
+end
+
+-- 初始化中间的显示
+function InitMiddle()
+    if m_EquipsMatchEnum[m_leftEquipSelect + 1] ~= nil then
+        SetGameObjectState(m_MiddleContentStr, true, m_panelObject);
+        InitMiddleTopContent();
+        InitMiddleBottomContent();
+    else
+        error("m_EquipsMatchEnum的table中不存在:::" ..(m_leftEquipSelect + 1));
+        SetGameObjectState(m_MiddleContentStr, false, m_panelObject);
+    end
+end
+
+-- 初始化中间上方的内容
+function InitMiddleTopContent()
+    local equipType = m_EquipsMatchEnum[m_leftEquipSelect + 1];
+    local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    if itemAttr == nil then
+        SetGameObjectState(m_MiddleTopHasEquipContentStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleTopNoEquipContentStr, true, m_panelObject);
+        SetEquipPosSpriteByEquipType(m_MiddleTopEquipPosIconStr, equipType, true, m_panelObject);
+    else
+        SetGameObjectState(m_MiddleTopHasEquipContentStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleTopNoEquipContentStr, false, m_panelObject);
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_MiddleTopEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+        SetSpriteApptitudeV04(m_MiddleTopEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_MiddleTopEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--        SetSpriteEquipApptitudeV04(m_MiddleTopEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetGameObjectState(m_MiddleTopEquipApptitude2Str, false, m_panelObject);
+        SetLabelContent(m_MiddleTopEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+        SetLabelColor(m_MiddleTopEquipStep2Str, "91e464", m_panelObject);
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_MiddleTopEquipSuitStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_MiddleTopEquipSuitStr, false, m_panelObject);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_MiddleTopEquipStarLabelStr, false, m_panelObject);
+            SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+        else
+            SetGameObjectState(m_MiddleTopEquipStarLabelStr, true, m_panelObject);
+            SetLabelContent(m_MiddleTopEquipStarLabelStr, itemAttr.StarItemLevel, m_panelObject);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_MiddleTopEquipStarLabelStr .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+            else
+                SetGameObjectPos(m_MiddleTopEquipStarLabelStr .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+            end
+        end
+    end
+
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then  
+        singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+    end
+    local curLevelTxtInfo = CCommonTool.GetTxtData(939);
+    if curLevelTxtInfo ~= nil then
+        local content = string_format(curLevelTxtInfo.m_str, singleEquipEnchantData.EnchantLevel);
+        SetLabelContent(m_MiddleTopEnchantLevelStr, content, m_panelObject);
+    else
+        error("文本表不存在ID为939的文本信息");
+    end
+    local enchantLevelInfo = CCommonTool.GetCenchantLevelInfo(singleEquipEnchantData.EnchantLevel);
+    if enchantLevelInfo ~= nil then
+        m_enchantExpProBarComp.value = singleEquipEnchantData.EnchantExp / enchantLevelInfo.NextExp;
+    else
+        error("enchant_level表中不存在主键ID为" .. singleEquipEnchantData.EnchantLevel .. "的数据");
+    end
+end
+
+-- 初始化中间下方的内容
+function InitMiddleBottomContent()
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then  
+        singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+    end
+    local enchantLevel = singleEquipEnchantData.EnchantLevel;
+    if enchantLevel >= EnchantGetExpMaxLevel then
+        SetGameObjectState(m_MiddleBottomMaxEnchantLevelStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleBottomNotMaxEnchantLevelStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_MiddleBottomMaxEnchantLevelStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleBottomNotMaxEnchantLevelStr, true, m_panelObject);
+    end
+    if singleEquipEnchantData == nil then
+        error("不存在的单个装备附魔信息，左侧选择的次序为第" ..(m_leftEquipSelect + 1));
+        return;
+    end
+    local enchantHolesDataTable = singleEquipEnchantData.EnchantHolesDataTable;
+    if enchantHolesDataTable == nil then
+        error("不存在的单个装备附魔的孔位信息，左侧选择的次序为第" ..(m_leftEquipSelect + 1));
+        return;
+    end
+    local apptitudeID;
+    local path;
+    local enchantLevelInfo;
+    local enchantHoleInfo;
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    local baseValue;
+    for Index = 1, 3 do
+        apptitudeID = enchantHolesDataTable[Index];
+        path = m_middleBottomHoleInfoStr .. m_HolesStr .. Index;
+        enchantLevelInfo = CCommonTool.GetCenchantLevelInfo(enchantLevel);
+        if m_leftEquipSelect >= 10 then 
+            enchantHoleInfo = CCommonTool.GetCenchatHoleInfo((m_leftEquipSelect + 2) * 10 + Index);
+        else
+            enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(m_leftEquipSelect * 10 + Index);
+        end
+        if enchantHoleInfo == nil then
+            error("enchant_hole表中不存在数据" ..(m_leftEquipSelect * 10 + Index));
+            return;
+        end
+        if enchantLevelInfo == nil then
+            error("enchant_level表中不存在数据" ..(enchantLevel));
+            return;
+        end
+        if apptitudeID == nil then
+            error("enchantHolesDataTable表中不存在数据" .. Index);
+            return;
+        end
+        local isCanOperate = IsCanEnchantHoleOperate(enchantLevel, Index, m_leftEquipSelect, enchantHolesDataTable);
+        SetGameObjectState(path .. m_HoleRedHintStr, isCanOperate, m_panelObject);
+        local tweenRotComp = GetComponent(m_panelObject, path .. m_HoleClosed .. m_HoleLockStr, "TweenRotation");
+        if apptitudeID < 0 then
+            SetGameObjectState(path .. m_HoleOpen, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleClosed, true, m_panelObject);
+            if playerLevel < enchantHoleInfo.Level then
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCanOpen, false, m_panelObject);
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCannotOpen, true, m_panelObject);
+                local curLevelTxtInfo = CCommonTool.GetTxtData(880);
+                if curLevelTxtInfo ~= nil then
+                    local content = string_format(curLevelTxtInfo.m_str, enchantHoleInfo.Level);
+                    SetLabelContent(path .. m_HoleClosed .. m_HoleCannotOpen .. m_HoleUnlockLabel, content, m_panelObject);
+                else
+                    error("文本表不存在ID为880的文本信息");
+                end
+            else
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCanOpen, true, m_panelObject);
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCannotOpen, false, m_panelObject);
+            end
+            if tweenRotComp ~= nil then
+                tweenRotComp.enabled = isCanOperate;
+            end
+        elseif apptitudeID == 0 then
+            SetGameObjectState(path .. m_HoleOpen, true, m_panelObject);
+            SetGameObjectState(path .. m_HoleClosed, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleNoEnchant, true, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleHasEnchant, false, m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleNoEnchant .. m_HoleNoEnchantAttrName, CCommonTool.GetAttrNameByAttrID(enchantHoleInfo.Attr), m_panelObject);
+        else
+            if m_leftEquipSelect >= 10 then 
+                baseValue = CCommonTool.GetValueInCenchatLevelInfo(0, (m_leftEquipSelect + 2) * 3 + Index + 2);
+                curLevelValue = CCommonTool.GetValueInCenchatLevelInfo(enchantLevel, (m_leftEquipSelect + 2) * 3 + Index + 2);
+            else
+                baseValue = CCommonTool.GetValueInCenchatLevelInfo(0, m_leftEquipSelect * 3 + Index + 2);
+                curLevelValue = CCommonTool.GetValueInCenchatLevelInfo(enchantLevel, m_leftEquipSelect * 3 + Index + 2);
+            end
+            if baseValue == nil then
+                error("enchant_Level表中不存在列数" ..(m_leftEquipSelect * 3 + Index + 2))
+                return;
+            end
+            if curLevelValue == nil then
+                error("enchant_Level表中不存在列数" ..(m_leftEquipSelect * 3 + Index + 2))
+                return;
+            end
+            if EnchantAttrRatio[apptitudeID] == nil then
+                error("EnchantAttrRatio中不存在数据" .. apptitudeID)
+                return;
+            end
+            baseValue = baseValue * EnchantAttrRatio[apptitudeID];
+            local addValue = curLevelValue * EnchantAttrRatio[apptitudeID] - baseValue;
+            SetGameObjectState(path .. m_HoleOpen, true, m_panelObject);
+            SetGameObjectState(path .. m_HoleClosed, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleNoEnchant, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleHasEnchant, true, m_panelObject);
+            SetEnchantSpriteByQuality(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantIcon, apptitudeID, m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantAttrName, CCommonTool.GetAttrNameByAttrID(enchantHoleInfo.Attr), m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantAttrValue, GetAttrIndexValue(enchantHoleInfo.Attr, baseValue), m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantAddAttrValue, "+" .. GetAttrIndexValue(enchantHoleInfo.Attr, addValue), m_panelObject);
+        end
+    end
+    if m_curHoleSelect >= 1 and m_curHoleSelect <= 3 then
+        apptitudeID = enchantHolesDataTable[m_curHoleSelect];
+        if apptitudeID < 0 then
+            m_curHoleSelect = 0;
+        end
+    end
+    if m_curHoleSelect == 0 then
+        for Index = 1, 3 do
+            apptitudeID = enchantHolesDataTable[Index];
+            if apptitudeID >= 0 then
+                m_curHoleSelect = Index;
+                break;
+            end
+        end
+    end
+    if m_curHoleSelect == 0 then
+        SetGameObjectState(m_middleHoleSelectTransStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_middleHoleSelectTransStr, true, m_panelObject);
+        m_middleHoleSelectTrans.localPosition = child(m_panelObject, m_middleBottomHoleInfoStr .. m_HolesStr .. m_curHoleSelect).localPosition;
+    end
+end
+
+-- 初始化右侧的消耗显示
+function InitRight()
+    m_RightItemListViewComp:RemoveAll();
+    local itemExcelID;
+    if m_curHoleSelect > 0 then
+        for Index = 1, 5 do
+            if m_leftEquipSelect >= 10 then 
+                itemExcelID = CCommonTool.GetValueInCenchatNeedInfo(m_leftEquipSelect + 3, Index);
+            else
+                itemExcelID = CCommonTool.GetValueInCenchatNeedInfo(m_leftEquipSelect + 1, Index);
+            end
+            if itemExcelID ~= nil and itemExcelID > 0 then
+                m_RightItemListViewComp:AddData(itemExcelID);
+            end
+        end
+    end
+    m_RightItemListViewComp:LookAt(-1, false);
+end
+
+-- 左侧装备信息初始化
+function OnEquipCloneInit(listView, cell, data)
+    local posOrder = data;
+    local equipType = m_EquipsMatchEnum[posOrder];
+    local go = cell.gameObject;
+    local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    local posName = "";
+    local posTxtInfo = CCommonTool.GetTxtData(10028 + equipType);
+    if posOrder > 10 then 
+        posTxtInfo = CCommonTool.GetTxtData(10153 + posOrder - 10);
+    end
+    if posTxtInfo ~= nil then
+        posName = posTxtInfo.m_str;
+    else
+        error("装备附魔系统:::" ..(10028 + equipType) .. "文本不存在");
+    end
+    local posNameInfo = CCommonTool.GetTxtData(862);
+    if posNameInfo ~= nil then
+        posName = posName .. posNameInfo.m_str;
+    else
+        error("装备附魔系统:::|栏位|文本不存在");
+    end
+    SetLabelContent(m_EquipNameLabelStr, posName, go);
+    SetLabelPinZhi(m_EquipNameLabelStr, 1, go);
+    if itemAttr == nil then
+        SetGameObjectState(m_hasEquipStr, false, go);
+        SetGameObjectState(m_noEquipStr, true, go);
+        SetEquipPosSpriteByEquipType(m_noEquipPosSpriteStr, equipType, true, go);
+    else
+        SetGameObjectState(m_hasEquipStr, true, go);
+        SetGameObjectState(m_noEquipStr, false, go);
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_EquipIconSpriteStr, CCommonTool.GetImageIDByExcelID(excelID), go, true);
+        SetSpriteApptitudeV04(m_EquipApptitudeSpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetSpriteApptitude2V04(m_EquipAppTitude2SpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+--        SetSpriteEquipApptitudeV04(m_EquipApptitudeSprite2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetGameObjectState(m_EquipApptitudeSprite2Str, false, go);
+        SetLabelContent(m_EquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), go);
+        SetLabelColor(m_EquipStep2Str, "91e464", go);
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_EquipSuitStr, true, go);
+        else
+            SetGameObjectState(m_EquipSuitStr, false, go);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_EquipStarLabelStr, false, go);
+            SetGameObjectPos(m_EquipSuitStr, Vector3.New(-85, -48, 0), go);
+        else
+            SetGameObjectState(m_EquipStarLabelStr, true, go);
+            SetLabelContent(m_EquipStarLabelStr, itemAttr.StarItemLevel, go);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_EquipStarAddStr, Vector3.New(-14, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-109, -48, 0), go);
+            else
+                SetGameObjectPos(m_EquipStarAddStr, Vector3.New(-25, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-120, -48, 0), go);
+            end
+        end
+        SetItemIconEffect(go, m_EquipIconSpriteStr, excelID, 11);
+    end
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[posOrder].EnchantHolesDataTable;
+    if posOrder > 10 then  
+        singleEquipEnchantData = enchantData[posOrder + 2].EnchantHolesDataTable;
+    end
+    for Index = 1, 3 do
+        if singleEquipEnchantData[Index] ~= nil then
+            if singleEquipEnchantData[Index] > 0 then
+                SetGameObjectState(m_EquipEnchantStr .. Index .. m_EquipHasEnchantStr, true, go);
+                if m_LeftEquipEnchantColor[singleEquipEnchantData[Index]] ~= nil then
+                    SetSpriteByAtlasID(m_EquipEnchantStr .. Index .. m_EquipHasEnchantStr, m_LeftEquipEnchantColor[singleEquipEnchantData[Index]], go);
+                end
+            else
+                SetGameObjectState(m_EquipEnchantStr .. Index .. m_EquipHasEnchantStr, false, go);
+            end
+        else
+            error("singleEquipEnchantData中不存在key值为" .. Index);
+            SetGameObjectState(m_EquipEnchantStr .. Index, false, go);
+        end
+    end
+    SetGameObjectState(m_EquipRedHintStr, IsCanEquipEnchantOperate(posOrder - 1), go);
+end
+
+-- 右侧道具初始化
+function OnNeedItemCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local excelID = data;
+    local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelID);
+    SetItemShowByExcelIDV04(go, m_RightItemStr, excelID, itemNum, true, 11, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    SetLabelContent(m_RightItemStr .. m_RightItemNumLabelStr, itemNum, go);
+    if itemNum > 0 then
+        SetGameObjectState(m_RightItemStr .. m_RightItemNumLabelStr, true, go);
+        SetGameObjectState(m_RightItemStr .. m_RightItemAddStr, false, go);
+    else
+        SetGameObjectState(m_RightItemStr .. m_RightItemNumLabelStr, false, go);
+        SetGameObjectState(m_RightItemStr .. m_RightItemAddStr, true, go);
+    end
+    local itemInfo = CCommonTool.GetItemInfo(excelID);
+    local apptitudeID = itemInfo.AptitudeID;
+    local attrValueRatio = EnchantAttrRatio[apptitudeID];
+    local enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(m_leftEquipSelect * 10 + m_curHoleSelect);
+    local attrValue = CCommonTool.GetValueInCenchatLevelInfo(0, m_leftEquipSelect * 3 + m_curHoleSelect + 2);
+    if m_leftEquipSelect >= 10 then 
+        enchantHoleInfo = CCommonTool.GetCenchatHoleInfo((m_leftEquipSelect + 2) * 10 + m_curHoleSelect);
+        attrValue = CCommonTool.GetValueInCenchatLevelInfo(0, (m_leftEquipSelect + 2) * 3 + m_curHoleSelect + 2);
+    end
+
+    if attrValueRatio == nil then
+        return;
+    end
+    if enchantHoleInfo == nil then
+        return;
+    end
+    if attrValue == nil then
+        return;
+    end
+    local attrName = "";
+    if itemInfo ~= nil then
+        attrName = CCommonTool.GetAttrNameByAttrID(enchantHoleInfo.Attr);
+        SetLabelContent(m_RightItemAttrNameLabelStr, attrName, go);
+    end
+    local attrValueStr = GetAttrIndexValue(enchantHoleInfo.Attr, attrValue * attrValueRatio);
+    SetLabelContent(m_RightItemAttrValueLabelStr, "+" .. attrValueStr, go);
+    if itemNum == 0 then
+        SetGameObjectState(m_RightItemSetButtonStr, true, go);
+        SetGameObjectState(m_RightItemGetButtonStr, false, go);
+        SetLabelTextByID(m_RightItemButtonLabelStr, 923, go);
+    else
+        SetGameObjectState(m_RightItemSetButtonStr, false, go);
+        SetGameObjectState(m_RightItemGetButtonStr, true, go);
+        SetLabelTextByID(m_RightItemButtonLabelStr, 170, go);
+    end
+end
+
+-- 开孔消耗弹板打开
+function ShowOpenHoleCostPanel(holeSelect)
+    m_isHoleCostPanelOpen = true;
+    m_lastClickHoleSelect = holeSelect;
+    local enchantOpenKeyID =(m_leftEquipSelect) * 10 + holeSelect;
+    if m_leftEquipSelect >= 10 then 
+        enchantOpenKeyID =(m_leftEquipSelect + 2) * 10 + holeSelect;
+    end
+    local enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(enchantOpenKeyID);
+    if enchantHoleInfo == nil then
+        error("enchant_hole表中不存在主键ID为" .. enchantOpenKeyID .. "的表信息");
+        return;
+    end
+    local needMoney = enchantHoleInfo.MoneyNum;
+    SetGameObjectState(m_MessagePanel, true, m_panelObject);
+    -- 标题
+    SetLabelContent(m_MessageTitle, CCommonTool.GetTxtData(1553).m_str, m_panelObject);
+    -- 文本内容
+    SetLabelContent(m_MessageContent, CCommonTool.GetTxtData(1555).m_str, m_panelObject);
+    -- 消耗银币
+    SetLabelContent(m_CostNum, needMoney, m_panelObject);
+    -- 持有银币
+    SetLabelContent(m_PlayerHaveNum, G_UserInfo.BindCoin, m_panelObject);
+    if G_UserInfo.BindCoin < needMoney then
+        SetLabelColor(m_PlayerHaveNum, m_NotCanOpenHole, m_panelObject);
+    else
+        SetLabelColor(m_PlayerHaveNum, m_CanOpenHole, m_panelObject);
+    end
+
+    SetGameObjectEvent(m_MessagCloseButtonStr, OpenHoleCostPanelClose, m_panelObject);
+    SetGameObjectEvent(m_MessagComfirmButtonStr, OnOpenHoleClick, m_panelObject);
+end
+
+function OpenHoleCostPanelClose()
+    SetGameObjectState(m_MessagePanel, false, m_panelObject);
+    m_isHoleCostPanelOpen = false;
+end
+
+-- 获取通过attrIndex表配置的参数获取增加角色的属性值,加法直接返回值，乘法计算百分比
+-- 计算百分比时浮点数取小数点后两位，整数取整
+function GetAttrIndexValue(attrIndex, attrValue)
+    local m_attrIndexData = CCommonTool.GetAttrIndexInfo(attrIndex);
+    local m_attrValue = 0;
+    if m_attrIndexData == nil then
+        error("附魔：attrIndex配置错误:" .. attrIndex);
+    else
+        m_attrValue = attrValue * m_attrIndexData.Ratio;
+        if m_attrIndexData.Ratio >= 1 then
+            local m_formatNum = string.format("%1d", m_attrValue);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum;
+            else
+                m_attrValue = string.format("%1d", m_attrValue);
+            end
+        end
+        if m_attrIndexData.Ratio < 1 then
+            local m_formatNum = string.format("%0.1f", m_attrValue * 100);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum .. "%";
+            else
+                m_attrValue = string.format("%1d", m_attrValue * 100) .. "%";
+            end
+        end
+    end
+    return m_attrValue;
+end
+
+-- 初始化附魔吃经验界面
+function InitGetExpPanelShow()
+    InitGetExpPanelCurEquip();
+    InitGetExpPanelAddItem();
+    InitGetExpPanelAttr();
+    InitGetExpPanelLevelPro();
+    InitGetExpPanelRightItemPanel();
+end
+
+function InitGetExpPanelCurEquip()
+    local equipType = m_EquipsMatchEnum[m_leftEquipSelect + 1];
+    local itemAttr = G_BagMng:GetEquipUse():GetEquipByEquipType(equipType);
+    if itemAttr == nil then
+        SetGameObjectState(m_GetExpPanelHasEquipContentStr, false, m_panelObject);
+        SetGameObjectState(m_GetExpPanelNoEquipContentStr, true, m_panelObject);
+        SetEquipPosSpriteByEquipType(m_GetExpPanelEquipPosIconStr, equipType, true, m_panelObject);
+    else
+        SetGameObjectState(m_GetExpPanelHasEquipContentStr, true, m_panelObject);
+        SetGameObjectState(m_GetExpPanelNoEquipContentStr, false, m_panelObject);
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_GetExpPanelEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+        SetSpriteApptitudeV04(m_GetExpPanelEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--        SetSpriteEquipApptitudeV04(m_GetExpPanelEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetGameObjectState(m_GetExpPanelEquipApptitude2Str, false, m_panelObject);
+        SetLabelContent(m_GetExpPanelEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+        SetLabelColor(m_GetExpPanelEquipStep2Str, "91e464", m_panelObject);
+        SetSpriteApptitude2V04(m_GetExpPanelEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_GetExpPanelEquipSuitStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_GetExpPanelEquipSuitStr, false, m_panelObject);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_GetExpPanelEquipStarLabelStr, false, m_panelObject);
+            SetGameObjectPos(m_GetExpPanelEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+        else
+            SetGameObjectState(m_GetExpPanelEquipStarLabelStr, true, m_panelObject);
+            SetLabelContent(m_GetExpPanelEquipStarLabelStr, itemAttr.StarItemLevel, m_panelObject);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_GetExpPanelEquipStarLabelStr .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                SetGameObjectPos(m_GetExpPanelEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+            else
+                SetGameObjectPos(m_GetExpPanelEquipStarLabelStr .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                SetGameObjectPos(m_GetExpPanelEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+            end
+        end
+    end
+end
+
+function InitGetExpPanelAddItem()
+    local curItemsCount = #m_CurGetExpItemsTable;
+    if curItemsCount <= 0 then
+        SetGameObjectState(m_GetExpPanelHasAddItemContentStr, false, m_panelObject);
+        SetGameObjectState(m_GetExpPanelNoAddItemContentStr, true, m_panelObject);
+    else
+        local itemAttr = m_CurGetExpItemsTable[curItemsCount].ItemAttr;
+        local itemNum = m_CurGetExpItemsTable[curItemsCount].ItemNum;
+        SetGameObjectState(m_GetExpPanelHasAddItemContentStr, true, m_panelObject);
+        SetGameObjectState(m_GetExpPanelNoAddItemContentStr, false, m_panelObject);
+        SetItemShowByExcelIDV04(m_panelObject, m_GetExpPanelHasAddItemContentStr, itemAttr.ExcelID, itemNum, false, 21, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        SetLabelContent(m_GetExpPanelHasAddItemContentStr .. m_RightItemNumLabelStr, itemNum, m_panelObject);
+        SetGameObjectState(m_GetExpPanelHasAddItemContentStr .. m_RightItemNumLabelStr, true, m_panelObject);
+    end
+    SetLabelContent(m_GetExpPanelItemsNumStr, curItemsCount .. "/" .. m_MaxPutItemsCount, m_panelObject);
+end
+
+function InitGetExpPanelAttr()
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then  
+        singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+    end
+    local enchantLevel = singleEquipEnchantData.EnchantLevel;
+    if singleEquipEnchantData == nil then
+        return;
+    end
+    local enchantHolesDataTable = singleEquipEnchantData.EnchantHolesDataTable;
+    if enchantHolesDataTable == nil then
+        return;
+    end
+    local apptitudeID;
+    local path;
+    local enchantLevelInfo;
+    local enchantHoleInfo;
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    local baseValue;
+    for Index = 1, 3 do
+        apptitudeID = enchantHolesDataTable[Index];
+        path = m_EnchantGetExpPanelStr .. m_HolesStr .. Index;
+        enchantLevelInfo = CCommonTool.GetCenchantLevelInfo(enchantLevel); 
+        if m_leftEquipSelect >= 10 then 
+            enchantHoleInfo = CCommonTool.GetCenchatHoleInfo((m_leftEquipSelect + 2) * 10 + Index);
+        else
+            enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(m_leftEquipSelect * 10 + Index);
+        end
+        if enchantHoleInfo == nil then
+            return;
+        end
+        if enchantLevelInfo == nil then
+            return;
+        end
+        if apptitudeID == nil then
+            return;
+        end
+        if apptitudeID < 0 then
+            SetGameObjectState(path .. m_HoleOpen, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleClosed, true, m_panelObject);
+            if playerLevel < enchantHoleInfo.Level then
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCanOpen, false, m_panelObject);
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCannotOpen, true, m_panelObject);
+            else
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCanOpen, true, m_panelObject);
+                SetGameObjectState(path .. m_HoleClosed .. m_HoleCannotOpen, false, m_panelObject);
+            end
+        elseif apptitudeID == 0 then
+            SetGameObjectState(path .. m_HoleOpen, true, m_panelObject);
+            SetGameObjectState(path .. m_HoleClosed, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleNoEnchant, true, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleHasEnchant, false, m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleNoEnchant .. m_HoleNoEnchantAttrName, CCommonTool.GetAttrNameByAttrID(enchantHoleInfo.Attr), m_panelObject);
+        else
+            if m_leftEquipSelect >= 10 then 
+                baseValue = CCommonTool.GetValueInCenchatLevelInfo(0, (m_leftEquipSelect + 2) * 3 + Index + 2);
+                curLevelValue = CCommonTool.GetValueInCenchatLevelInfo(enchantLevel, (m_leftEquipSelect + 2) * 3 + Index + 2);
+            else
+                baseValue = CCommonTool.GetValueInCenchatLevelInfo(0, m_leftEquipSelect * 3 + Index + 2);
+                curLevelValue = CCommonTool.GetValueInCenchatLevelInfo(enchantLevel, m_leftEquipSelect * 3 + Index + 2);
+            end
+            if baseValue == nil then
+                return;
+            end
+            if curLevelValue == nil then
+                return;
+            end
+            if EnchantAttrRatio[apptitudeID] == nil then
+                return;
+            end
+            baseValue = baseValue * EnchantAttrRatio[apptitudeID];
+            local addValue = curLevelValue * EnchantAttrRatio[apptitudeID] - baseValue;
+            SetGameObjectState(path .. m_HoleOpen, true, m_panelObject);
+            SetGameObjectState(path .. m_HoleClosed, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleNoEnchant, false, m_panelObject);
+            SetGameObjectState(path .. m_HoleOpen .. m_HoleHasEnchant, true, m_panelObject);
+            SetEnchantSpriteByQuality(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantIcon, apptitudeID, m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantAttrName, CCommonTool.GetAttrNameByAttrID(enchantHoleInfo.Attr), m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantAttrValue, GetAttrIndexValue(enchantHoleInfo.Attr, baseValue), m_panelObject);
+            SetLabelContent(path .. m_HoleOpen .. m_HoleHasEnchant .. m_HoleHasEnchantAddAttrValue, "+" .. GetAttrIndexValue(enchantHoleInfo.Attr, addValue), m_panelObject);
+        end
+    end
+end
+
+function InitGetExpPanelLevelPro()
+    local indexLevel = #CanEnchantExpLevelChunk;
+    if indexLevel <= 0 then
+        return;
+    end
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    for Index = 1, #CanEnchantExpLevelChunk do
+        if playerLevel <= CanEnchantExpLevelChunk[Index] then
+            indexLevel = Index;
+            break;
+        end
+    end
+    m_curLevelMaxEnchantLevel = EnchantExpMaxLevelChunk[indexLevel];
+    if m_curLevelMaxEnchantLevel > EnchantGetExpMaxLevel then
+        m_curLevelMaxEnchantLevel = EnchantGetExpMaxLevel;
+    end
+    SetLabelContent(m_GetExpPanelMaxEnchantLevelStr, m_curLevelMaxEnchantLevel, m_panelObject);
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then  
+        singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+    end
+    local enchantLevel = singleEquipEnchantData.EnchantLevel;
+    SetLabelContent(m_GetExpPanelCurEnchantLevelStr, enchantLevel, m_panelObject);
+
+    local curExp = singleEquipEnchantData.EnchantExp;
+    local enchantLevelInfo = CCommonTool.GetCenchantLevelInfo(enchantLevel);
+    local maxExp = enchantLevelInfo.NextExp;
+    local addExp = 0;
+    local curItemsCount = #m_CurGetExpItemsTable;
+    local excelID;
+    local costMoney = 0;
+    for Index = 1, curItemsCount do
+        excelID = m_CurGetExpItemsTable[Index].ItemAttr.ExcelID;
+        local itemInfo = CCommonTool.GetItemInfo(excelID);
+        if itemInfo == nil then
+            return;
+        end
+        addExp = addExp + itemInfo.ExpNum * m_CurGetExpItemsTable[Index].ItemNum;
+        if EnchantGetExpCostMoney[itemInfo.AptitudeID] == nil then
+            return;
+        end
+        costMoney = costMoney + EnchantGetExpCostMoney[itemInfo.AptitudeID] * m_CurGetExpItemsTable[Index].ItemNum;
+    end
+    if addExp == 0 then
+        SetLabelContent(m_GetExpPanelCurEnchantExpStr, m_curExpLabelColor .. curExp .. "[-]", m_panelObject);
+    else
+        SetLabelContent(m_GetExpPanelCurEnchantExpStr, m_curExpLabelColor .. curExp .. "[-]" .. m_AddExpLabelColor .. "+" .. addExp .. "[-]", m_panelObject);
+    end
+    SetLabelContent(m_GetExpPanelMaxEnchantExpStr, maxExp, m_panelObject);
+    local curPercent = curExp / maxExp;
+    local addPercent =(curExp + addExp) / maxExp;
+    m_LeftExp = maxExp -(curExp + addExp);
+    SetSpriteFillAmount(m_GetExpPanelCurExpProStr, curPercent, m_panelObject);
+    SetSpriteFillAmount(m_GetExpPanelAddExpProStr, addPercent, m_panelObject);
+
+    SetSpriteByAtlasID(m_CostMoneyStr .. m_MoneyIconStr, CCommonTool.GetImageIDByExcelID(G_ItemToolTipDefine.BINDMONEY), m_panelObject, true);
+    local curMoney = G_UserInfo.BindCoin;
+    if costMoney == 0 then
+        SetGameObjectState(m_CostMoneyStr, false, m_panelObject);
+        m_isHaveEnoughMoney = 0;
+    else
+        SetGameObjectState(m_CostMoneyStr, true, m_panelObject);
+        m_isHaveEnoughMoney = costMoney;
+        if costMoney <= curMoney then
+            SetLabelContent(m_CostMoneyStr .. m_MoneyCountStr, m_CanGetExpColor .. costMoney, m_panelObject);
+        else
+            SetLabelContent(m_CostMoneyStr .. m_MoneyCountStr, m_CannotGetExpColor .. costMoney, m_panelObject);
+        end
+    end
+
+    m_GetExpPanelUITableComp:Reposition();
+end
+
+function InitGetExpPanelRightItemPanel()
+    m_GetExpPanelRightItemListViewComp:RemoveAll();
+    local itemList = G_BagMng:GetEnchantItemsWithEnchant();
+    for Index = 1, itemList.Count do
+        m_GetExpPanelRightItemListViewComp:AddData(itemList[Index - 1]);
+    end
+    m_GetExpPanelRightItemListViewComp:LookAt(-1, false);
+end
+
+function OnEnchantItemCloneInit(listView, cell, data)
+    local itemAttr = data;
+    local go = child(cell.gameObject, m_RightItemStr).gameObject;
+    SetItemShowByExcelIDV04(go, m_RightItemStr, itemAttr.ExcelID, itemAttr.ItemNum, false, 31, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    local isSelected = false;
+
+    for k, v in pairs(m_CurGetExpItemsTable) do
+        if v.ItemAttr == itemAttr then
+            isSelected = true;
+            break;
+        end
+    end
+    SetGameObjectState(m_ItemSelectedStr, isSelected, go);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击装备
+function OnEquipCloneClick(listView, cell, go)
+    error("点击装备");
+    local data = listView:GetData(cell.dataIndex);
+    if m_leftEquipSelect == data - 1 then
+        return;
+    else
+        m_leftEquipSelect = data - 1;
+        m_curHoleSelect = 0;
+        InitMiddle();
+        InitRight();
+    end
+    --锻造-附魔上报
+	if Constants.branch == "cn" then
+		local button_id = 10228+tonumber(cell.dataIndex);
+		ReportManager.RequestReportPanel(button_id);
+	end
+end
+
+-- 点击道具
+function OnNeedItemClick(listView, cell, go)
+    error("点击道具::");
+    local excelID = listView:GetData(cell.dataIndex);
+    if go.name == "Item" then
+        GetWayPanel.Show(excelID, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        return;
+    elseif go.name ~= "Button" then
+        return;
+    end
+    local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelID);
+    local itemInfo = CCommonTool.GetItemInfo(excelID);
+    if itemInfo == nil then
+        return;
+    end
+    if itemNum == 0 then
+        GetWayPanel.Show(excelID, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    else
+        local enchantData = EquipMng.EnchantData;
+        local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+        if m_leftEquipSelect >= 10 then  
+            singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+        end
+        if singleEquipEnchantData == nil then
+            return;
+        end
+        local enchantHolesDataTable = singleEquipEnchantData.EnchantHolesDataTable;
+        if enchantHolesDataTable == nil then
+            return;
+        end
+        local apptitudeID = enchantHolesDataTable[m_curHoleSelect];
+        if itemInfo.AptitudeID <= apptitudeID then
+            log("附魔品质没有当前的高");
+            ShowSystemFlowTips(7452);
+            return;
+        end
+        if not EquipMng.CanClickEquipEnchantEnchantButton then
+            log("正在等待服务器附魔操作返回的消息，无法继续点击")
+            ShowSystemFlowTips(7453);
+            return;
+        end
+        if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+            log("装备附魔系统还没解锁");
+            ShowSystemFlowTips(7454);
+            return;
+        end
+        if G_UserInfo:GetCurPlayer() == nil then
+            log("主角不存在无法操作");
+            ShowSystemFlowTips(7455);
+            return;
+        end
+        if not G_UserInfo:GetCurPlayer().IsAlive then
+            log("主角死亡无法操作");
+            ShowSystemFlowTips(7456);
+            return;
+        end
+        EquipMng.CanClickEquipEnchantEnchantButton = false;
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ENCHANT_ENCHANT);
+        if m_leftEquipSelect >= 10 then 
+            buffer:WriteByte(m_leftEquipSelect + 3);
+        else
+            buffer:WriteByte(m_leftEquipSelect + 1);
+        end
+        buffer:WriteByte(m_curHoleSelect);
+        buffer:WriteInt(excelID);
+        G_NetWorkMng:SendMessage(buffer);
+        m_EquipClickEff:SetActive(false);
+        m_EquipClickEff:SetActive(true);
+        local enchantEff = nil;
+        if m_curHoleSelect == 1 then
+            enchantEff = m_EquipEnchant1Eff;
+        elseif m_curHoleSelect == 2 then
+            enchantEff = m_EquipEnchant2Eff;
+        elseif m_curHoleSelect == 3 then
+            enchantEff = m_EquipEnchant3Eff;
+        end
+        if enchantEff ~= nil then
+            enchantEff:SetActive(false);
+            enchantEff:SetActive(true);
+        end
+    end
+end
+
+-- 点击中间的孔位
+function OnHoleClick(e)
+    local holeSelect = tonumber(string.sub(e.name, 12, string.len(e.name)));
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then  
+        singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+    end
+    if singleEquipEnchantData == nil then
+        return;
+    end
+    local enchantHolesDataTable = singleEquipEnchantData.EnchantHolesDataTable;
+    if enchantHolesDataTable == nil then
+        return;
+    end
+    local apptitudeID = enchantHolesDataTable[holeSelect];
+    if apptitudeID < 0 then
+        local enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(m_leftEquipSelect * 10 + holeSelect);
+        if m_leftEquipSelect >= 10 then 
+            enchantHoleInfo = CCommonTool.GetCenchatHoleInfo((m_leftEquipSelect + 2) * 10 + holeSelect);
+        end
+        local playerLevel = G_UserInfo.RoleAttribute.Level;
+        if playerLevel < enchantHoleInfo.Level then
+            log("未达到等级，此孔位无法点击")
+            ShowSystemFlowTips(7457);
+        else
+            ShowOpenHoleCostPanel(holeSelect);
+        end
+    else
+        if m_curHoleSelect ~= holeSelect then
+            m_curHoleSelect = holeSelect;
+            SetGameObjectState(m_middleHoleSelectTransStr, true, m_panelObject);
+            m_middleHoleSelectTrans.localPosition = child(m_panelObject, m_middleBottomHoleInfoStr .. m_HolesStr .. m_curHoleSelect).localPosition;
+            InitRight();
+        end
+    end
+end
+
+-- 开孔点击
+function OnOpenHoleClick()
+    SetGameObjectState(m_MessagePanel, false, m_panelObject);
+    m_isHoleCostPanelOpen = false;
+    local enchantOpenKeyID =(m_leftEquipSelect) * 10 + m_lastClickHoleSelect;
+    if m_leftEquipSelect >= 10 then 
+        enchantOpenKeyID =(m_leftEquipSelect + 2) * 10 + m_lastClickHoleSelect;
+    end
+    local enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(enchantOpenKeyID);
+    if enchantHoleInfo == nil then
+        error("enchant_hole表中不存在主键ID为" .. enchantOpenKeyID .. "的表信息");
+        return;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+        log("装备附魔系统还没解锁");
+        ShowSystemFlowTips(7459);
+        return;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        log("主角不存在无法进行开孔操作");
+        ShowSystemFlowTips(7460);
+        return;
+    end
+    if not G_UserInfo:GetCurPlayer().IsAlive then
+        log("主角死亡无法进行开孔操作");
+        ShowSystemFlowTips(7461);
+        return;
+    end
+    local needMoney = enchantHoleInfo.MoneyNum;
+    if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(needMoney), ENUMPANELID.ENUM_PANEL_EQUIPPANEL, OnExchangeMoneyCallBack) then
+        log("绑定银币不够，无法开孔");
+        -- ShowSystemFlowTips(7458);
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ENCHANT_OPENHOLE);
+    if m_leftEquipSelect >=10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    buffer:WriteByte(m_lastClickHoleSelect);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ENCHANT_OPENHOLE);
+    if m_leftEquipSelect >=10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    buffer:WriteByte(m_lastClickHoleSelect);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 打开附魔吃经验界面
+function OnOpenGetExpPanelClick()
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+    if m_leftEquipSelect >= 10 then  
+        singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+    end
+    local enchantHolesDataTable = singleEquipEnchantData.EnchantHolesDataTable;
+    local isHaveEnchant = false;
+    for Index = 1, 3 do
+        if enchantHolesDataTable[Index] ~= nil then
+            if enchantHolesDataTable[Index] > 0 then
+                isHaveEnchant = true;
+                break;
+            end
+        end
+    end
+    if not isHaveEnchant then
+        ShowSystemFlowTips(7470);
+        return;
+    end
+    local itemList = G_BagMng:GetEnchantItemsWithEnchant();
+    if itemList.Count <= 0 then
+        ShowSystemFlowTips(2625);
+        return;
+    end
+    m_IsGetEnchantExpPanelOpen = true;
+    SetGameObjectState(m_EnchantGetExpPanelStr, m_IsGetEnchantExpPanelOpen, m_panelObject);
+    m_CurGetExpItemsTable = { };
+    m_CurWaitGetExpItem = nil;
+    InitGetExpPanelShow();
+end
+
+function OnGetExpClick()
+    if not EquipMng.CanClickEquipGetExpButton then
+        log("正在等待服务器附魔养成操作返回的消息，无法继续点击")
+        ShowSystemFlowTips(7462);
+        return;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+        log("装备附魔系统还没解锁");
+        ShowSystemFlowTips(7463);
+        return;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        log("主角不存在无法附魔养成操作");
+        ShowSystemFlowTips(7464);
+        return;
+    end
+    if not G_UserInfo:GetCurPlayer().IsAlive then
+        log("主角死亡无法附魔养成操作");
+        ShowSystemFlowTips(7465);
+        return;
+    end
+    if #m_CurGetExpItemsTable <= 0 then
+        log("道具数量为0，无法附魔养成操作");
+        ShowSystemFlowTips(7466);
+        return;
+    end
+    if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_isHaveEnoughMoney), ENUMPANELID.ENUM_PANEL_EQUIPPANEL, OnExchangeGetExpMoneyCallBack) then
+        log("银币不足，无法附魔养成操作");
+        -- ShowSystemFlowTips(7467);
+        return;
+    end
+    EquipMng.CanClickEquipGetExpButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ENCHANT_GETEXP);
+    if m_leftEquipSelect >=10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    local itemCount = #m_CurGetExpItemsTable;
+    buffer:WriteByte(itemCount);
+    for Index = 1, itemCount do
+        buffer:WriteUInt(m_CurGetExpItemsTable[Index].CRID);
+        buffer:WriteUInt(m_CurGetExpItemsTable[Index].ItemNum);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeGetExpMoneyCallBack()
+    EquipMng.CanClickEquipGetExpButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ENCHANT_GETEXP);
+    if m_leftEquipSelect >=10 then 
+        buffer:WriteByte(m_leftEquipSelect + 3);
+    else
+        buffer:WriteByte(m_leftEquipSelect + 1);
+    end
+    local itemCount = #m_CurGetExpItemsTable;
+    buffer:WriteByte(itemCount);
+    for Index = 1, itemCount do
+        buffer:WriteUInt(m_CurGetExpItemsTable[Index].CRID);
+        buffer:WriteUInt(m_CurGetExpItemsTable[Index].ItemNum);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnCloseGetExpPanelClick()
+    m_IsGetEnchantExpPanelOpen = false;
+    m_DealWaitItem = false;
+    SetGameObjectState(m_EnchantGetExpPanelStr, m_IsGetEnchantExpPanelOpen, m_panelObject);
+end
+
+function OnEnchantItemClick(listView, cell, go)
+    if go.name ~= "Item" then
+        return;
+    end
+    local itemAttr = listView:GetData(cell.dataIndex);
+    local isSelected = false;
+    local selectIndex = -1;
+    for k, v in pairs(m_CurGetExpItemsTable) do
+        if v.ItemAttr == itemAttr then
+            isSelected = true;
+            selectIndex = k;
+            break;
+        end
+    end
+    if isSelected then
+        table.remove(m_CurGetExpItemsTable, selectIndex);
+        InitGetExpPanelAddItem();
+        InitGetExpPanelLevelPro();
+        SetGameObjectState(m_ItemSelectedStr, false, go);
+    else
+        local enchantData = EquipMng.EnchantData;
+        local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+        if m_leftEquipSelect >= 10 then  
+            singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+        end
+        local enchantLevel = singleEquipEnchantData.EnchantLevel;
+        if m_curLevelMaxEnchantLevel <= enchantLevel then
+            log("已经最高级了，无法继续升级了");
+            ShowSystemFlowTips(7468);
+            return;
+        end
+        if #m_CurGetExpItemsTable >= m_MaxPutItemsCount then
+            log("无法继续放上道具了");
+            ShowSystemFlowTips(7471);
+            return;
+        end
+        if m_LeftExp <= 0 then
+            log("已经能够升一级了，无法点击");
+            ShowSystemFlowTips(7469);
+            return;
+        else
+            SetGameObjectState(m_ItemSelectedStr, true, go);
+            local getExpItemTable = { };
+            getExpItemTable.ItemAttr = itemAttr;
+            getExpItemTable.CRID = itemAttr.CRID;
+            local excelID = itemAttr.ExcelID;
+            local itemInfo = CCommonTool.GetItemInfo(excelID);
+            if itemInfo == nil then
+                return;
+            end
+            local needNum = math.ceil(m_LeftExp / itemInfo.ExpNum);
+            if needNum >= itemAttr.ItemNum then
+                getExpItemTable.ItemNum = itemAttr.ItemNum;
+                m_CurWaitGetExpItem = nil;
+            else
+                getExpItemTable.ItemNum = needNum;
+                m_CurWaitGetExpItem = itemAttr;
+            end
+            table.insert(m_CurGetExpItemsTable, getExpItemTable);
+            InitGetExpPanelAddItem();
+            InitGetExpPanelLevelPro();
+        end
+    end
+end
+
+function DealWaitItem()
+    if m_CurWaitGetExpItem ~= nil then
+        local enchantData = EquipMng.EnchantData;
+        local singleEquipEnchantData = enchantData[m_leftEquipSelect + 1];
+        if m_leftEquipSelect >= 10 then  
+            singleEquipEnchantData = enchantData[m_leftEquipSelect + 3];
+        end
+        local enchantLevel = singleEquipEnchantData.EnchantLevel;
+        if m_curLevelMaxEnchantLevel <= enchantLevel then
+            m_CurWaitGetExpItem = nil;
+            return;
+        end
+        if #m_CurGetExpItemsTable >= m_MaxPutItemsCount then
+            m_CurWaitGetExpItem = nil;
+            return;
+        end
+        if m_LeftExp <= 0 then
+            m_CurWaitGetExpItem = nil;
+            return;
+        else
+            local getExpItemTable = { };
+            getExpItemTable.ItemAttr = m_CurWaitGetExpItem;
+            getExpItemTable.CRID = m_CurWaitGetExpItem.CRID;
+            local excelID = m_CurWaitGetExpItem.ExcelID;
+            local itemInfo = CCommonTool.GetItemInfo(excelID);
+            if itemInfo == nil then
+                return;
+            end
+            local needNum = math.ceil(m_LeftExp / itemInfo.ExpNum);
+            if needNum >= m_CurWaitGetExpItem.ItemNum then
+                getExpItemTable.ItemNum = m_CurWaitGetExpItem.ItemNum;
+                m_CurWaitGetExpItem = nil;
+            else
+                getExpItemTable.ItemNum = needNum;
+                m_CurWaitGetExpItem = m_CurWaitGetExpItem;
+            end
+            table.insert(m_CurGetExpItemsTable, getExpItemTable);
+            InitGetExpPanelAddItem();
+            InitGetExpPanelLevelPro();
+        end
+    end
+end
+
+-- 系统说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_EQUIPPANEL, 3);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SuccessOpenHoleRefreshPanel(partPos, holePos)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        if m_leftEquipSelect == partPos - 1 then
+            m_curHoleSelect = holePos;
+            InitMiddle();
+            InitRight();
+        else
+            InitMiddle();
+        end
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+end
+
+function SuccessEnchantRefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        m_RightItemListViewComp:Refresh();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+end
+
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        InitGetExpPanelLevelPro();
+    end
+end
+
+function GetExpRefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        InitMiddle();
+        m_RightItemListViewComp:Refresh();
+        m_CurGetExpItemsTable = { };
+        InitGetExpPanelLevelPro();
+        DealWaitItem();
+        InitGetExpPanelShow();
+    end
+end
+
+-- 打开附魔界面并选中道具
+function SelectItem(itemAttr)
+    m_SelectedItem = itemAttr;
+    EquipPanel.OpenThisPanelByTag(3);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_leftEquipSelect;
+    jumpParamsTable[2] = m_curHoleSelect;
+    jumpParamsTable[3] = m_isHoleCostPanelOpen;
+    jumpParamsTable[4] = m_lastClickHoleSelect;
+    jumpParamsTable[5] = m_IsGetEnchantExpPanelOpen;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+-- 是否进行附魔按钮的红点显示
+function IsShowRedHintEquipEnchant()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+        return false;
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    local num = #m_EquipsMatchEnum;
+    if myLv < NewEquipOpenLv then
+        num = num - 2;
+    end
+    for Index = 1, num do
+        if IsCanEquipEnchantOperate(Index - 1) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可以进行附魔操作
+function IsCanEquipEnchantOperate(leftSelect)
+    local enchantData = EquipMng.EnchantData;
+    local singleEquipEnchantData = enchantData[leftSelect + 1];
+    if leftSelect >= 10 then  
+        singleEquipEnchantData = enchantData[leftSelect + 3];
+    end
+    local enchantLevel = singleEquipEnchantData.EnchantLevel;
+    if singleEquipEnchantData == nil then
+        error("不存在的单个装备附魔信息，左侧选择的次序为第" ..(leftSelect + 1));
+        return false;
+    end
+    local enchantHolesDataTable = singleEquipEnchantData.EnchantHolesDataTable;
+    if enchantHolesDataTable == nil then
+        error("不存在的单个装备附魔的孔位信息，左侧选择的次序为第" ..(leftSelect + 1));
+        return false;
+    end
+    for Index = 1, 3 do
+        if IsCanEnchantHoleOperate(enchantLevel, Index, leftSelect, enchantHolesDataTable) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可以对孔位进行操作
+function IsCanEnchantHoleOperate(enchantLevel, Index, leftSelect, enchantHolesDataTable)
+    local apptitudeID = enchantHolesDataTable[Index];
+    enchantLevelInfo = CCommonTool.GetCenchantLevelInfo(enchantLevel);
+    if leftSelect >= 10 then 
+        enchantHoleInfo = CCommonTool.GetCenchatHoleInfo((leftSelect + 2) * 10 + Index);
+    else
+        enchantHoleInfo = CCommonTool.GetCenchatHoleInfo(leftSelect * 10 + Index);
+    end
+    if enchantHoleInfo == nil then
+        error("enchant_hole表中不存在数据" ..(leftSelect * 10 + Index));
+        return false;
+    end
+    if enchantLevelInfo == nil then
+        error("enchant_level表中不存在数据" ..(enchantLevel));
+        return false;
+    end
+    if apptitudeID == nil then
+        error("enchantHolesDataTable表中不存在数据" .. Index);
+        return false;
+    end
+    if apptitudeID < 0 then
+        local needMoney = enchantHoleInfo.MoneyNum;
+        if G_UserInfo.RoleAttribute.Level < enchantHoleInfo.Level then
+            return false;
+        end
+        if G_UserInfo.BindCoin < needMoney then
+            return false;
+        end
+        return true;
+    else
+        for i = 1, 5 do
+            local itemExcelID = CCommonTool.GetValueInCenchatNeedInfo(leftSelect + 1, i);
+            if leftSelect >= 10 then
+                itemExcelID = CCommonTool.GetValueInCenchatNeedInfo(leftSelect + 3, i);
+            end
+            if itemExcelID ~= nil and itemExcelID > 0 then
+                local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemExcelID);
+                if hasNum > 0 then
+                    local itemInfo = CCommonTool.GetItemInfo(itemExcelID);
+                    if itemInfo.AptitudeID > apptitudeID then
+                        return true;
+                    end
+                end
+            end
+        end
+    end
+    return false;
+end

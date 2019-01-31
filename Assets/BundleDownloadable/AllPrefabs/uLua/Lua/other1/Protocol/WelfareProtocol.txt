@@ -1,0 +1,46 @@
+﻿module("WelfareProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 服务器向客户端发送福利界面开启关闭信息
+    network.Register(GMI_STOC_SEND_WELFARESYS_OPEN_INFO, OnWelfareOpenInfo);
+end
+
+--服务器向客户端发送福利界面开启关闭信息
+function OnWelfareOpenInfo(protocolId, buffer)
+    --error("OnWelfareOpenInfo protocolId : "..protocolId);
+    local version = buffer:ReadInt();
+    WelfareManager.WelfareVersion = version;
+    --error("OnWelfareOpenInfo version : "..version);
+    local count = buffer:ReadByte();
+    for index = 1 , count do
+        local id = buffer:ReadInt();
+        --error("OnWelfareOpenInfo id : "..id);
+        local open = buffer:ReadByte();
+        --error("OnWelfareOpenInfo open : "..open);
+        local data = 
+        {
+            Type = id;
+            IsOpen = open == 1;
+        }
+        WelfareManager.WelfareSignDatas[id] = data;
+    end
+    WelfarePanel.RefreshMainMenu();
+    SecondWelfarePanel.RefreshMainMenu();
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+-------------------------------------------------------处理协议请求 START-----------------------------------------------------
+--客户端打开福利面板请求数据
+function RequestWelfarePanelData()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_WELFARE_INFO);
+    local version = WelfareManager.WelfareVersion;
+    --error("RequestWelfarePanelData version : "..version);
+    buffer:WriteInt(version);
+    local thirtyDayIndex = ThirtyDayPickManager.ThirtyDayIndex;
+    --error("RequestWelfarePanelData thirtyDayIndex : "..thirtyDayIndex);
+    buffer:WriteInt(thirtyDayIndex);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

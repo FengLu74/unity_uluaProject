@@ -1,0 +1,1236 @@
+﻿module("JewelPanel", package.seeall)
+-- 当前所在面板名字-------------------------------------宝珠界面------------------------------------------------------
+local m_PanelName = "JewePanel"; 
+
+---------------------------------------label路径--------------------------------------------------------------------
+--中部宝珠名称
+local m_middleJeweNameStr = "MiddleContent/Top_Name";
+--中部宝珠阶数
+local m_middleJeweLvlStr = "MiddleContent/Top_Lvl";
+-- 中部宝珠icon
+local m_middleJeweIconStr = "MiddleContent/jew_Icon";
+--中部左按钮
+local m_middleLeftBtnStr = "MiddleContent/jew_1";
+--中部右按钮
+local m_middleRightBtnStr = "MiddleContent/jew_0";
+-- 专属技能icon
+--
+local m_selectXXStrOwn =  "MiddleContent/Own/Item0";
+local m_selectXXStrAdd =  "MiddleContent/Add/Skills/Item";
+--
+local m_middleOwenIconStr = "MiddleContent/Own/Item1/Sprite_Icon";
+local m_middleOwenIcon2Str = "MiddleContent/Own/Item0";
+--附加技能
+local m_middleAddComp = "MiddleContent/Add/Skills";
+-- --------------------------right foster培养----------------------
+-- 战斗力
+local m_ rightFosterFightStr = "RightContent/Foster/Middle/top/FightValue"
+-- 右侧星星
+local m_rightStarTransStr = "RightContent/Foster/Middle/top/starTran";
+-- 消耗道具comp
+local m_rightCostItemCompStr = "RightContent/Foster/Bottom/NotMaxLevel/Items";
+-- 进度条
+local m_rightProcessStr = "RightContent/Foster/Bottom/NotMaxLevel/Progress/Sprite1";
+--
+local m_rightProcess2Str = "RightContent/Foster/Bottom/NotMaxLevel/Progress/process";
+----------------------------right skill own----------------------------
+--技能名称
+local m_rightSkillNameStr = "RightContent/Skill/Own/top/skillName";
+-- 技能等级
+local m_rightSkillLvlStr = "RightContent/Skill/Own/top/skillLvl";
+-- 技能描述
+local m_rightSkillDesStr = "RightContent/Skill/Own/middle/skillDes";
+-- 下届效果
+local m_rightNextSkillDesStr = "RightContent/Skill/Own/bottom/next_des";
+--
+local m_skillFosterStr = "RightContent/Skill/Add/bottom/Items/Item";
+--
+local m_rightOwnStr = "RightContent/Skill/Own";
+--
+local m_rightAddStr = "RightContent/Skill/Add";
+----------------------------right skill add----------------------------
+--技能名称
+local m_rightSkillNameStr2 = "RightContent/Skill/Add/top/skillName";
+--技能等级
+local m_rightSkillLvlStr2 = "RightContent/Skill/Add/top/skillLvl";
+--技能描述1
+local m_rightSkillDes1 = "RightContent/Skill/Add/middle/skillDes";
+--技能描述2
+local m_rightSkillDes2 = "RightContent/Skill/Add/middle/next_SkillDes";
+-- 学习消耗
+local m_rightStudyNeed = "RightContent/Skill/Add/bottom/Study_Need";
+--学习要求
+--
+local m_middleLockStr = "MiddleContent/lock";
+--
+local m_cuiLianStr = "RightContent/Foster/Bottom/NeedBreach";
+local m_notMaxLvlStr = "RightContent/Foster/Bottom/NotMaxLevel";
+local m_lvlUpStr = "RightContent/Foster/Bottom/LvlUpButton";
+local m_maxLvlStr = "RightContent/Foster/Bottom/MaxLevel";
+-----------------------------------------按钮路径------------------------------------------------------------------
+-- 左侧按钮
+local m_leftBtnStr = "LeftContent/Grid/MenuItem";
+-- 淬炼按钮
+local m_rightFosterBtnStr = "RightContent/Foster/Bottom/NeedBreach/Button_Breach";
+-- 升阶按钮
+local m_rightLvlUpBtnStr = "RightContent/Foster/Bottom/LvlUpButton/Button_Breach";
+-- 学习按钮
+local m_rightStudySkillStr = "RightContent/Skill/Add/bottom/Button_Study";
+--
+local  m_rightStudyLabSkillStr= "RightContent/Skill/Add/bottom/Button_Study/Label";
+--
+local m_rightNextSkillDesSBStr = "RightContent/Skill/Own/bottom/next_title";
+local m_rightXXXXXstr = "RightContent/Skill/Own/EquiPrompt";
+
+local m_rightAddSbStr = "RightContent/Skill/Add/EquiPrompt";
+local m_rightAddSb2Str = "RightContent/Skill/Add/bottom";
+----------------------------------------公共路径-------------------------------------------------------------------
+--亮
+local m_leftBtnMingStr = "/Toggle";
+--红点
+local m_redHintStr = "/Sprite_RedHint";
+-- 属性相关
+local m_rightAttrStr = "RightContent/Foster/Middle/Attrs";
+--属性图标
+local m_rightAttrSprStr = "/Attr_Sprite";
+--属性名称
+local m_rightAttrNameStr = "/Attr_Name";
+-- 属性值
+local m_rightAttrValueStr = "/Attr_Value";
+-- 淬炼界面
+local m_fosterObjStr = "RightContent/Foster";
+-- 技能界面
+local m_skillObjStr = "RightContent/Skill";
+--
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+--
+local m_rightNotActive = "RightContent/Skill/Add/top/skillActive";
+--
+--local m_middleSprSelectStr = "MiddleContent/Sprite_Select";
+----------------------------------gameobject所在的路径--------------------------------------------------------------
+
+-----------------------------------引用的对象---------------------------------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 淬炼界面
+local m_FonsterObj = nil;
+--技能界面
+local m_SkillObj = nil;
+-- 宝珠总表cfg
+local m_JeweTotalCfg = nil;
+--宝珠技能表cfg
+local m_JeweSkillCfg = nil;
+-- 宝珠培养表
+local m_JeweFosterCfg = nil; 
+-- 左侧按钮选择第几个 默认选中第一个
+local m_leftBtnIndex = 1;
+-- 中部选中的第几个技能 （默认为1 第一个附加技能，0 为专属技能）
+local m_middleSkillIndex = -1;
+-- 中部展示的第几个宝珠（如果解锁则默认展示最高的，没有则展示第一个）
+local m_middleJeweIndex = -1;
+-- 货币是否满足
+local m_CoinIsEnough = true;
+--道具是否满足
+local m_MatIsEnough = false;
+-- 技能书是否满足
+local m_SkillItemEnough = false;
+--升级技能是否满足阶数
+local m_isSkillOpenLvl = false;
+--消耗comp
+local m_rightCostTableComp = nil;
+--
+local mSKillCostTable = nil;
+--
+local m_CanSkillOpenLvl = -1;
+--
+local m_rightCostItemTable = nil;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 战力达到一千
+local m_FightValue1 = 1000;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+local LeftTableType = 
+{
+    FOSTER = 1, 
+    SKILL = 2,
+}
+------------------------------------BaseLua调用的同名方法-----------------------------------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitShow();
+    end
+end
+
+function OnDisable()
+   -- 左侧按钮选择第几个 默认选中第一个
+     m_leftBtnIndex = 1;
+    -- 中部选中的第几个技能 （默认为1 第一个附加技能，0 为专属技能）
+     m_middleSkillIndex = -1;
+    -- 中部展示的第几个宝珠（如果解锁则默认展示最高的，没有则展示第一个）
+     m_middleJeweIndex = -1;
+    -- 货币是否满足
+     m_CoinIsEnough = true;
+    --道具是否满足
+     m_MatIsEnough = false;
+    -- 技能书是否满足
+     m_SkillItemEnough = false;
+    --升级技能是否满足阶数
+     m_isSkillOpenLvl = false;
+    --消耗comp
+     --m_rightCostTableComp = nil;
+     mSKillCostTable = nil;
+     m_CanSkillOpenLvl = -1;
+     m_rightCostItemTable = nil;
+
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+-- 面板是否初始化完成
+    m_panelInitAlready = false;
+    --table
+    m_JeweTotalCfg = nil;
+    m_JeweFosterCfg = nil;
+    m_JeweSkillCfg = nil ;
+     m_FonsterObj = nil;
+    --技能界面
+     m_SkillObj = nil;
+    -- 左侧按钮选择第几个 默认选中第一个
+     m_leftBtnIndex = 1;
+    -- 中部选中的第几个技能 （默认为1 第一个附加技能，0 为专属技能）
+     m_middleSkillIndex = -1;
+    -- 中部展示的第几个宝珠（如果解锁则默认展示最高的，没有则展示第一个）
+     m_middleJeweIndex = -1;
+    -- 货币是否满足
+     m_CoinIsEnough = true;
+    --道具是否满足
+     m_MatIsEnough = false;
+    -- 技能书是否满足
+     m_SkillItemEnough = false;
+    --升级技能是否满足阶数
+     m_isSkillOpenLvl = false;
+    --消耗comp
+     m_rightCostTableComp = nil;
+     mSKillCostTable = nil;
+     m_CanSkillOpenLvl = -1;
+     m_rightCostItemTable = nil;
+
+
+end
+-- object
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_JEWEPANEL);
+    m_FonsterObj = child(m_panelObject,m_fosterObjStr).gameObject;
+    m_SkillObj = child(m_panelObject,m_skillObjStr).gameObject;
+    -- 消耗道具
+    m_rightCostTableComp = GetComponent(m_panelObject,m_rightCostItemCompStr, "UITable");
+    
+    --默认设置obj == false
+    m_FonsterObj:SetActive(false);
+    m_SkillObj:SetActive(false);
+end
+-- 事件
+function InitEvents()
+    
+    -- 左侧按钮的点击事件（淬炼，技能）
+    for index=1,2 do
+        SetGameObjectEvent(m_leftBtnStr..index,OnLeftBtnsClick,m_panelObject);
+    end
+    -- 中部 切换宝珠点击事件
+    SetGameObjectEvent(m_middleLeftBtnStr,OnMiddleSwiftBtnClick,m_panelObject);
+    SetGameObjectEvent(m_middleRightBtnStr,OnMiddleSwiftBtnClick,m_panelObject);
+    --淬炼按钮事件
+    SetGameObjectEvent(m_rightFosterBtnStr,OnFosterClick,m_panelObject);
+    -- 进阶按钮事件
+    SetGameObjectEvent(m_rightLvlUpBtnStr,OnJeweLvlUp,m_panelObject);
+    -- 学习技能按钮事件
+    SetGameObjectEvent(m_rightStudySkillStr,OnStudySkill,m_panelObject);
+    
+    --淬炼界面消耗道具加号点击事件
+    for i=1,3 do
+        SetGameObjectEvent(m_rightCostItemCompStr .."/Item".. i .. m_itemGetsWay, OnItemGetWayClick, m_panelObject);
+    end
+    -- 技能界面 消耗道具加号事件
+    for index=1,1 do
+        SetGameObjectEvent(m_skillFosterStr .. index .. m_itemGetsWay, skillItemGetWay, m_panelObject);
+    end
+end
+-- 技能界面道具消耗 + 号
+function skillItemGetWay(e)
+    if mSKillCostTable ~=nil then
+       GetWayPanel.Show(mSKillCostTable[1].excelID,ENUMPANELID.ENUM_PANEL_JEWEPANEL); 
+    end
+end
+--淬炼界面道具消耗 + 号
+function OnItemGetWayClick(e)
+    --error("点击道具获取途径按钮！！！！！！！！！！！！"..e.transform.parent.name);
+    local selectTag = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    if m_rightCostItemTable[selectTag] ~=nil then
+        local state  =  GetCurStageState();
+        local t_index = state == 0 and selectTag or selectTag+3; 
+        GetWayPanel.Show(m_rightCostItemTable[t_index].excelID,ENUMPANELID.ENUM_PANEL_JEWEPANEL);
+    end
+    
+end
+-- show
+function InitShow()
+    LeftContent();
+    MiddleContent();
+    RightContent();
+end
+function LeftContent()
+    --获取client 3个配置表
+    if m_JeweTotalCfg ==nil or #m_JeweTotalCfg <=0 then
+        m_JeweTotalCfg,m_JeweSkillCfg,m_JeweFosterCfg = GetTotalCfg();
+    end
+    if m_JeweTotalCfg ==nil or #m_JeweTotalCfg <=0 then
+        error("[lua] 宝珠配置表有误，请核查配置表，或检查读表代码")
+        return ;
+    end
+    --error("宝珠总表长度--> "..#m_JeweTotalCfg);
+     if m_isJumpPanelSave == true then
+
+        m_leftBtnIndex = m_JumpPanelParamsTable[1];  -- 左侧按钮
+        m_middleJeweIndex = m_JumpPanelParamsTable[2];
+        m_middleSkillIndex = m_JumpPanelParamsTable[3];
+
+        m_isJumpPanelSave = false;
+    else
+        -- 默认显示淬炼界面
+        --m_leftBtnIndex = LeftTableType.FOSTER;
+        --宝珠默认选中解锁最高阶的，若都没解锁默认第一个
+        if m_middleJeweIndex <= 0 then
+            local stage_lvl,star_lvl = JewelPanelManager.GetCurPlayerJeweInfo();
+            m_middleJeweIndex = (stage_lvl<=0 and 1 ) or stage_lvl ;
+        else 
+            local stage_lvl,star_lvl = JewelPanelManager.GetCurPlayerJeweInfo();
+            if stage_lvl >= m_middleJeweIndex then
+                m_middleJeweIndex = stage_lvl;
+            end
+        end
+        if m_middleSkillIndex <=0 then
+            m_middleSkillIndex = 1;
+        end
+    end
+    -- 变换按钮亮暗
+    SwiftBtnToggle();
+end
+
+--- 点击 专属，附加技能 事件
+function SetSkillItemOnClick(e)
+    if  m_leftBtnIndex == 1 then
+        return;
+    end
+    --設置選擇位置
+
+    -- 技能面板
+    SetRightSkillInfos(e.name);
+end
+---
+function MiddleContent()
+    local curJeweCfg = m_JeweTotalCfg[m_middleJeweIndex];
+    if curJeweCfg == nil then
+        error("宝珠系统序号为："..m_middleJeweIndex.." 对应的宝珠策划表数据为空！！！");
+        return;
+    end
+    -- 设置宝珠名字
+    SetLabelContent(m_middleJeweNameStr,GetTextToId(curJeweCfg.Name),m_panelObject);
+    -- 设置宝珠阶段数 
+    SetLabelContent(m_middleJeweLvlStr,string_format(GetTextToId(9232),m_middleJeweIndex),m_panelObject);
+    --设置宝珠图标
+    SetSpriteByAtlasID(m_middleJeweIconStr,curJeweCfg.IconID,m_panelObject,true);
+    -- 设置宝珠特效
+    --
+    if m_middleJeweIndex == 1 then
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_middleLeftBtnStr).gameObject,true);
+    else
+         CCommonTool.SetGameObjectGrey(child(m_panelObject,m_middleLeftBtnStr).gameObject,false);
+    end
+    if m_middleJeweIndex == #m_JeweTotalCfg then 
+        CCommonTool.SetGameObjectGrey(child(m_panelObject,m_middleRightBtnStr).gameObject,true);
+    else
+         CCommonTool.SetGameObjectGrey(child(m_panelObject,m_middleRightBtnStr).gameObject,false);
+    end
+
+    --设置宝珠专属
+    local skillMainInfo = CCommonTool.GetSkillMainData(curJeweCfg.SkillID);
+
+    if skillMainInfo ~= nil then
+        local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+        if skillDataInfo ~= nil then
+            SetSpriteByAtlasID(m_middleOwenIcon2Str.."/Sprite_Icon", skillDataInfo.Icon, m_panelObject);
+            local go = child(m_panelObject,m_middleOwenIcon2Str).gameObject;
+            if m_leftBtnIndex == 1 then
+
+                TipsManager.SkillTips(go, curJeweCfg.SkillID, skillMainInfo.SonSkill0, 0, true);
+            else
+                local tipTool = GetComponent(m_panelObject,m_middleOwenIcon2Str, "CUITooltip");
+                if tipTool ~= nil then
+                    destroy(tipTool);
+                end
+                SetGameObjectEvent(m_middleOwenIcon2Str,SetSkillItemOnClick,m_panelObject);
+            end
+        end
+    end
+    --4个附加技能
+    local skill_tables = GetSkillCfgs();--GetCurStageSkillInfos();
+    local playerSkillInfos = JewelPanelManager.GetJeweSkillInfos();
+    for index=1,#skill_tables do
+        local skillMainInfo = CCommonTool.GetSkillMainData(JewelSkillTable.Get(skill_tables[index]).SkillId);
+        if skillMainInfo ~= nil then
+            local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+            if skillDataInfo ~= nil then
+                --error("JewelSkillTable.Get(skill_tables[index]).IconId==："..JewelSkillTable.Get(skill_tables[index]).IconID);
+                SetSpriteByAtlasID(m_middleAddComp.."/Item"..index.."/Sprite_Icon", JewelSkillTable.Get(skill_tables[index]).IconID, m_panelObject);
+                local go = child(m_panelObject,m_middleAddComp.."/Item"..index).gameObject;
+               -- error("该技能id： "..JewelSkillTable.Get(skill_tables[index]).SkillId.." 子技能id ："..skillMainInfo.SonSkill0);
+                if m_leftBtnIndex == 1 then
+                    TipsManager.SkillTips(go, JewelSkillTable.Get(skill_tables[index]).SkillId, skillMainInfo.SonSkill0, 0, true);
+                else
+                    local tipTool = GetComponent(m_panelObject,m_middleAddComp.."/Item"..index, "CUITooltip");
+                    if tipTool ~= nil then
+                        destroy(tipTool);
+                    end
+                    SetGameObjectEvent(m_middleAddComp.."/Item"..index,SetSkillItemOnClick,m_panelObject);
+                end
+            end
+        end
+        if playerSkillInfos ~=nil and playerSkillInfos[index].SkillLvl >0 then
+            --已经解锁
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_middleAddComp.."/Item"..index.."/Sprite_Icon").gameObject, false);
+        else
+            --未解锁
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_middleAddComp.."/Item"..index.."/Sprite_Icon").gameObject, true);
+        end
+    end    --m_middleLockStr
+    local curStage =  JewelPanelManager.GetCurPlayerJeweInfo();
+    local islock = curStage < m_middleJeweIndex and true or false;
+    --锁
+    SetGameObjectState(m_middleLockStr,islock,m_panelObject);
+
+end
+function funcTips(go)
+    --error("m_leftBtnIndexm_leftBtnIndexm_leftBtnIndex::"..m_leftBtnIndex);
+    if m_leftBtnIndex == LeftTableType.FOSTER then       
+        return true;
+
+    elseif m_leftBtnIndex == LeftTableType.SKILL then
+        -- 技能界面
+        SetRightSkillInfos(go.name)
+        --做一些操作
+        return false;
+    end
+    return false;
+end
+
+function RightContent()
+    --error("dssssssssssssssssssssss::"..m_leftBtnIndex);
+    SetSelectPositon(-1);
+    --SetGameObjectState(m_middleSprSelectStr,false,m_panelObject);
+    if m_leftBtnIndex == LeftTableType.FOSTER then
+        -- 淬炼界面
+        m_FonsterObj:SetActive(true);
+        m_SkillObj:SetActive(false);
+        --设置星
+        local stage_lvl,star_lvl,exp = JewelPanelManager.GetCurPlayerJeweInfo();
+        for i=1,10 do
+            if star_lvl>=i then
+                SetGameObjectState(m_rightStarTransStr.."/Sprite"..i,true,m_panelObject);
+                SetGameObjectState(m_rightStarTransStr.."/Sprite"..i.."_",false,m_panelObject);
+            
+            else
+                SetGameObjectState(m_rightStarTransStr.."/Sprite"..i.."_",true,m_panelObject);
+                SetGameObjectState(m_rightStarTransStr.."/Sprite"..i,false,m_panelObject);
+            end
+        end
+        --设置属性table
+        local attr_table , cost_table = GetCurJeweCfgAttr();
+        --计算战斗力
+        local fight_value  = CalcFightValue(attr_table,star_lvl);
+        OnNumberShow(rightFosterFightStr,fight_value);
+        --
+        m_rightCostItemTable = cost_table;
+        for index =1,#attr_table do
+            SetSpriteByAtlasID(m_rightAttrStr.."/"..index.."/Attr_Sprite", attr_table[index].picture_id, m_panelObject, true);
+            -- 设置属性名称
+            SetLabelContent(m_rightAttrStr.."/"..index.."/Attr_Name",CCommonTool.GetAttrNameByAttrID(attr_table[index].attrId),m_panelObject);
+            -- 设置属性值 = value * star_lvl
+            OnNumberShow(m_rightAttrStr.."/"..index.."/Attr_Value",attr_table[index].attrValue);
+            --SetLabelContent(m_rightAttrStr.."/"..index.."/Attr_Value",attr_table[index].attrValue,m_panelObject);
+        end
+        local state  =  GetCurStageState();
+        --error("statestatestatestatestatestatestatestatestate:"..state);
+        if state == 2 then
+            SetGameObjectState(m_cuiLianStr,false,m_panelObject);
+            SetGameObjectState(m_notMaxLvlStr,false,m_panelObject);
+            SetGameObjectState(m_lvlUpStr,false,m_panelObject);
+            SetGameObjectState(m_maxLvlStr,true,m_panelObject);
+        elseif state == 1 then
+            SetGameObjectState(m_cuiLianStr,false,m_panelObject);
+            SetGameObjectState(m_notMaxLvlStr,true,m_panelObject);
+            SetGameObjectState(m_lvlUpStr,true,m_panelObject);
+            SetGameObjectState(m_maxLvlStr,false,m_panelObject);
+        elseif state == 0 then
+            SetGameObjectState(m_cuiLianStr,true,m_panelObject);
+            SetGameObjectState(m_notMaxLvlStr,true,m_panelObject);
+            SetGameObjectState(m_lvlUpStr,false,m_panelObject);
+            SetGameObjectState(m_maxLvlStr,false,m_panelObject);
+        end
+        if state >= 2 then   -- 全满 不显示培养控件
+            return;
+        end
+        --设置消耗品,前三为淬炼，后三为进阶
+        local index1 = state == 1 and 4 or 1;
+        local length = state == 1 and #cost_table or #cost_table- 3;
+        local X_I = 1 ;
+        for Index = index1,length do
+
+            if cost_table[Index].Num <= 0 --[[and cost_table[Index].excelID <=0]] then
+                SetGameObjectState(m_rightCostItemCompStr.."/Item" .. X_I,false,m_panelObject);
+            else
+                SetSpriteApptitudeV04(m_rightCostItemCompStr.."/Item" .. X_I .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(cost_table[Index].excelID), m_panelObject);
+                SetSpriteApptitude2V04(m_rightCostItemCompStr.."/Item".. X_I .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(cost_table[Index].excelID), m_panelObject);
+                SetSpriteByAtlasID(m_rightCostItemCompStr.."/Item" .. X_I .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(cost_table[Index].excelID), m_panelObject, true);
+                SetItemToolTipsEvent(m_panelObject, m_rightCostItemCompStr .."/Item".. X_I, ENUMPANELID.ENUM_PANEL_JEWEPANEL, false, cost_table[Index].excelID);
+                local itemAttr = ItemAttribute.New(cost_table[Index].excelID);
+                SetLabelContent(m_rightCostItemCompStr.."/Item" .. X_I.."/Label_Name",itemAttr:GetItemName(),m_panelObject);
+                SetGameObjectState(m_rightCostItemCompStr.."/Item" .. X_I,true,m_panelObject);
+                if cost_table[Index].Type == 1 then
+                    SetLabelContent(m_rightCostItemCompStr.."/Item" .. X_I .. m_itemNumStr, cost_table[Index].Num, m_panelObject);
+                    if G_UserInfo.BindCoin < cost_table[Index].Num then
+                        SetLabelColor(m_rightCostItemCompStr.."/Item" .. X_I .. m_itemNumStr, "D83232", m_panelObject);
+                        SetGameObjectState(m_rightCostItemCompStr .."/Item".. X_I .. m_itemGetsWay, false, m_panelObject);
+                        m_CoinIsEnough = false;
+                    else
+                        m_CoinIsEnough = true;
+                        SetLabelColor(m_rightCostItemCompStr .."/Item".. X_I .. m_itemNumStr, "B2B2B2FF", m_panelObject);
+                        SetGameObjectState(m_rightCostItemCompStr .."/Item".. X_I .. m_itemGetsWay, false, m_panelObject);
+                    end
+                elseif cost_table[Index].Type == 0 then
+                    local hasNum = GetBindAndNotNumById(cost_table[Index].excelID);
+                    m_ItemDataId = cost_table[Index].excelID;
+                    SetLabelContent(m_rightCostItemCompStr .."/Item".. X_I .. m_itemNumStr, hasNum .. "/" .. cost_table[Index].Num, m_panelObject);
+                    if hasNum >= cost_table[Index].Num then
+                        SetLabelColor(m_rightCostItemCompStr .."/Item".. X_I .. m_itemNumStr, "B2B2B2FF", m_panelObject);
+                        SetGameObjectState(m_rightCostItemCompStr .."/Item".. X_I .. m_itemGetsWay, false, m_panelObject);
+                        m_MatIsEnough = true;
+                    else
+                        SetLabelColor(m_rightCostItemCompStr .."/Item".. X_I .. m_itemNumStr, "D83232", m_panelObject);
+                        SetGameObjectState(m_rightCostItemCompStr .."/Item".. X_I .. m_itemGetsWay, true, m_panelObject);
+                        m_MatIsEnough = false;
+                    end
+                end
+            end
+           
+            X_I = X_I+1;
+        end
+        m_rightCostTableComp:Reposition();
+        --设置经验条
+        --error("stage_lvlstage_lvlstage_lvlstage_lvlstage_lvlstage_lvl:"..stage_lvl);
+        local curAdvanceCfg = m_JeweFosterCfg[stage_lvl];
+        local totalexp = curAdvanceCfg.IntenMaxExp;
+        SetLabelContent(m_rightProcess2Str,string_format(GetTextToId(9188),exp,totalexp),m_panelObject);
+        SetSpriteFillAmount(m_rightProcessStr,exp / totalexp,m_panelObject);              
+       
+       
+    elseif m_leftBtnIndex == LeftTableType.SKILL then
+        -- 技能界面
+        m_FonsterObj:SetActive(false);
+        m_SkillObj:SetActive(true);
+        --error("11123333333333333333333333333");
+        SetRightSkillInfos();
+
+    end
+     --淬炼按钮显示红点
+     local canshow1 = FosterCanShowRed();
+    SetGameObjectState(m_leftBtnStr..LeftTableType.FOSTER..m_redHintStr,canshow1,m_panelObject);
+    --技能页签显示红点
+    local canshow2 = SkillCostShowRed();
+    SetGameObjectState(m_leftBtnStr..LeftTableType.SKILL..m_redHintStr,canshow2,m_panelObject);
+end
+
+---------------------------------------------------------
+function CalcFightValue(attr_table,star_lvl)
+    local  fightTable = {};
+    local stage_lvl,star_lvl,exp = JewelPanelManager.GetCurPlayerJeweInfo();
+    for index=1,# attr_table do
+
+        AddFightValueTable(fightTable,attr_table[index].attrId,attr_table[index].attrValue);
+
+    end
+    --屬性的战力
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, false) + 0.5);
+    --主技能战力
+    local ownSkillValue = 0;
+    for index=1,stage_lvl do
+        local curmaincfg  = JewelMainTable.Get(index);
+        ownSkillValue = ownSkillValue+ curmaincfg.Skill;
+    end
+    --附加技能战力
+    local addSkillValue = 0;
+    local playSkillTable = GetSkillCfgs();
+    for i=1, #playSkillTable do
+        addSkillValue = addSkillValue + JewelSkillTable.Get(playSkillTable[i]).Fight;
+    end
+    return curFightValue + ownSkillValue + addSkillValue;
+end
+-- 战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end
+-- 数字显示方式
+function OnNumberShow(path, num)
+    local value1 = nil;
+    local value2 = nil;
+    local value = nil;
+    num = tonumber(num);
+    if num >= m_FightValue1 then
+        value1 = math.floor(num / m_FightValue1);
+        value2 = num - value1 * m_FightValue1;
+        if value1 >= m_FightValue1 then
+            local value3 = math.floor(value1 / m_FightValue1);
+            local value4 = value1 - value3 * m_FightValue1;
+            if OnValueShow(value4) == 0 then
+                value = value3 .. "," .. "000";
+            else
+                value = value3 .. "," .. OnValueShow(value4);
+            end
+        else
+            value = value1;
+        end
+        if OnValueShow(value2) == 0 then
+            SetLabelContent(path, value .. "," .. "000", m_panelObject);
+        else
+            SetLabelContent(path, value .. "," .. OnValueShow(value2), m_panelObject);
+        end
+    else
+        SetLabelContent(path, num, m_panelObject);
+    end
+end
+
+function OnValueShow(value)
+    local num = nil;
+    if value >= 100 then
+        num = value;
+    elseif value >= 10 then
+        num = "0" .. value;
+    elseif value >= 1 then
+        num = "00" .. value;
+    else
+        num = 0;
+    end
+    return num;
+end
+------------------------------------------------
+function NumberToString(number)
+    if math.floor(number) < number then
+        return string.format("%0.1f", number);
+    else
+        return string.format("%d", number);
+    end
+end
+
+function SetSelectPositon(index)
+    --Setposition();--SetGameObjectState(,false,m_panelObject);
+    --SetGameObjectPos(m_middleSprSelectStr,Vector3.New(142, m_transform.localPosition.y, 0),m_panelObject);
+    for i=0,4 do
+        if i == 0 then
+            SetGameObjectState(m_selectXXStrOwn.."/Sprite_Select",index==i,m_panelObject);
+        else
+            SetGameObjectState(m_selectXXStrAdd..i.."/Sprite_Select",index==i,m_panelObject);
+        end
+    end
+end
+
+--设置右侧技能界面
+function SetRightSkillInfos(e)
+
+    if e ~= nil then
+        local selectTag = tonumber(string.sub(e, 5, string.len(e)));
+        m_middleSkillIndex = selectTag
+    end
+    SetSelectPositon(m_middleSkillIndex);
+    local stage_lvl,star_lvl,exp = JewelPanelManager.GetCurPlayerJeweInfo();
+
+    local isOwn = m_middleSkillIndex <= 0 ;
+    SetGameObjectState(m_rightOwnStr,isOwn ,m_panelObject);
+    SetGameObjectState(m_rightAddStr,isOwn == false,m_panelObject);
+
+    local t_skillInfos = GetSkillCfgs();
+    local ids = t_skillInfos[m_middleSkillIndex]
+    local curSkillCfg = JewelSkillTable.Get(ids)--m_JeweSkillCfg[ids];
+
+    if isOwn then   -- 专属技能稍后
+        --設置特效位置
+        local curJeweCfg = m_JeweTotalCfg[m_middleJeweIndex];
+        local skillId = curJeweCfg.SkillID;
+        local skillMainInfo = CCommonTool.GetSkillMainData(skillId);
+        if skillMainInfo ~= nil then
+            local skillDataInfo = CCommonTool.GetSkillDateByIndex(tonumber(skillMainInfo.SonSkill0));
+            if skillDataInfo ~= nil then
+                --技能名称
+                local txts = CCommonTool.GetSkillNameData(skillMainInfo.SonSkill0).SkillName;
+                SetLabelContent(m_rightSkillNameStr,GetTextToId(txts),m_panelObject);
+                
+            end
+             --专属技能描述
+            local skilldata = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+            --error("tonumber(skilldata.DamageId1)"..tonumber(skilldata.DamageId1))
+            local info = CCommonTool.GetSkillDataDamageData(tonumber(skilldata.DamageId1))
+
+            --local info = CCommonTool.GetSkillDataDamageData(skillMainInfo.SonSkill0)
+            if info ~= nil then
+                local desc_info1 = CCommonTool.GetSkillNameData(skillMainInfo.SonSkill0)
+                local desc1 = CCommonTool.GetTxtData(desc_info1.Describe).m_str;
+                --error("info.AtkRatioinfo.AtkRatioinfo.AtkRatio  ::"..info.AtkRatio.." info");
+                desc = string_format(desc1,math.floor(info.AtkRatio*100));
+                --[[desc = string_format(
+                    desc, 
+                    NumberToString(info.AtkRatio ), 
+                    --NumberToString(info.Att2Fixed + (curJeweCfg.QualityID - 1) * info.Att2Up), 
+                    --NumberToString(info.Att3Fixed + (curJeweCfg.QualityID - 1) * info.Att3Up)
+                );]]
+                SetLabelContent(m_rightSkillDesStr,desc,m_panelObject);
+                if curJeweCfg.QualityID < 10 then -- 未满级
+                    SetGameObjectState(m_rightXXXXXstr,false,m_panelObject);
+                    SetGameObjectState(m_rightNextSkillDesStr,true,m_panelObject);
+                    SetGameObjectState(m_rightNextSkillDesSBStr,true,m_panelObject);
+
+                    local curJeweCfg1 = m_JeweTotalCfg[m_middleJeweIndex+1];
+                    local skillId1 = curJeweCfg1.SkillID;
+                    local skillMainInfo1 = CCommonTool.GetSkillMainData(skillId1);
+                    if skillMainInfo1~=nil then
+                        local skilldata = CCommonTool.GetSkillDateByIndex(skillMainInfo1.SonSkill0);
+                        local info1 = CCommonTool.GetSkillDataDamageData(tonumber(skilldata.DamageId1))
+
+                        local desc_info2 = CCommonTool.GetSkillNameData(skillMainInfo1.SonSkill0)
+                        local desc2 = CCommonTool.GetTxtData(desc_info2.Describe).m_str;
+
+                        
+                        desc2 = string_format(desc2,math.floor(info1.AtkRatio*100));
+                            
+                        SetLabelContent(m_rightNextSkillDesStr,desc2,m_panelObject);  
+                    end
+
+                else
+                    SetGameObjectState(m_rightXXXXXstr,true,m_panelObject);
+                    SetGameObjectState(m_rightNextSkillDesStr,false,m_panelObject);
+                    SetGameObjectState(m_rightNextSkillDesSBStr,false,m_panelObject);
+                end
+            end
+
+        end
+    else
+        -- m_middleSkillIndex 一定是 >=1 <=4
+       
+        --设置名称
+        SetLabelContent(m_rightSkillNameStr2,GetTextToId(curSkillCfg.Name),m_panelObject);
+        --设置等级
+        SetLabelContent(m_rightSkillLvlStr2,GetTextToId(9131)..curSkillCfg.Lv,m_panelObject);
+        --描述1
+        local buffInfo = CCommonTool.GetBuffInfoById(curSkillCfg.BuffId);
+        local txt1 = GetTextToId(curSkillCfg.Describe);
+        local valuess1 = (buffInfo.Mod1Num+buffInfo.Mod1UpGet*curSkillCfg.Lv);
+    
+        SetLabelContent(m_rightSkillDes1,string_format(txt1,valuess1),m_panelObject);
+        --下阶描述
+        if curSkillCfg.Lv < curSkillCfg.MaxLv then
+            SetGameObjectState(m_rightSkillDes2,true,m_panelObject);
+            local next_txt1 =  GetTextToId(curSkillCfg.UpDescribe);
+
+            local valuess2 = buffInfo.Mod1Num+buffInfo.Mod1UpGet*(curSkillCfg.Lv+1);
+            
+            SetLabelContent(m_rightSkillDes2,string_format(next_txt1,valuess2),m_panelObject);
+        else
+            SetGameObjectState(m_rightSkillDes2,false,m_panelObject);
+        end
+        if curSkillCfg.Lv >= curSkillCfg.MaxLv then
+            SetGameObjectState(m_rightAddSbStr,true,m_panelObject);
+            SetGameObjectState(m_rightAddSb2Str,false,m_panelObject);
+
+            SetGameObjectState(m_rightNotActive,false,m_panelObject);
+            SetGameObjectState(m_rightSkillLvlStr2,true,m_panelObject);
+
+        else
+            SetGameObjectState(m_rightAddSbStr,false,m_panelObject);
+            SetGameObjectState(m_rightAddSb2Str,true,m_panelObject);
+                --设置消耗
+            local cost_table = GetSkillLvlUpTable();
+            mSKillCostTable = cost_table;
+            for Index=1,1 do
+                --
+                local itemAttr = ItemAttribute.New(cost_table[Index].excelID);
+                SetLabelContent(m_skillFosterStr ..Index.."/Label_Name",itemAttr:GetItemName(),m_panelObject);
+
+                SetSpriteApptitudeV04(m_skillFosterStr ..Index.. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(cost_table[Index].excelID), m_panelObject);
+                SetSpriteApptitude2V04(m_skillFosterStr ..Index .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(cost_table[Index].excelID), m_panelObject);
+                SetSpriteByAtlasID(m_skillFosterStr ..Index .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(cost_table[Index].excelID), m_panelObject, true);
+                SetItemToolTipsEvent(m_panelObject, m_skillFosterStr ..Index, ENUMPANELID.ENUM_PANEL_JEWEPANEL, false, cost_table[Index].excelID);
+
+                if cost_table[Index].Type == 0 then
+                    local hasNum = GetBindAndNotNumById(cost_table[Index].excelID);
+                     SetLabelContent(m_skillFosterStr ..Index .. m_itemNumStr, hasNum.."/"..cost_table[Index].Num, m_panelObject);
+                    if hasNum < cost_table[Index].Num then
+                        SetLabelColor(m_skillFosterStr ..Index .. m_itemNumStr, "D83232", m_panelObject);
+                        SetGameObjectState(m_skillFosterStr ..Index .. m_itemGetsWay, false, m_panelObject);
+                        m_SkillItemEnough = false;
+                    else
+                        m_SkillItemEnough = true;
+                        SetLabelColor(m_skillFosterStr ..Index .. m_itemNumStr, "B2B2B2FF", m_panelObject);
+                        SetGameObjectState(m_skillFosterStr ..Index .. m_itemGetsWay, false, m_panelObject);
+                    end
+                end
+            end
+            --设置是否能够学习
+            --error("stage_lvlstage_lvlstage_lvl::"..stage_lvl);
+            m_isSkillOpenLvl = curSkillCfg.OpenLevel >stage_lvl;
+            m_CanSkillOpenLvl = curSkillCfg.OpenLevel;
+            SetGameObjectState(m_rightStudyNeed,m_isSkillOpenLvl,m_panelObject); 
+            --error(curSkillCfg.Lv);
+            SetGameObjectState(m_rightNotActive,curSkillCfg.Lv<=0,m_panelObject);
+            SetGameObjectState(m_rightSkillLvlStr2,curSkillCfg.Lv>0,m_panelObject);
+            local txt_id = 0;
+            if curSkillCfg.Lv >0 then
+                txt_id = GetTextToId(9248);
+            else
+                txt_id = GetTextToId(1304);
+            end
+
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_rightStudySkillStr).gameObject,m_isSkillOpenLvl);
+
+            SetLabelContent(m_rightStudyLabSkillStr,txt_id,m_panelObject);
+            SetLabelContent(m_rightStudyNeed,string_format(GetTextToId(9239),curSkillCfg.OpenLevel),m_panelObject);
+            --然后判断是否能够点击
+        end       
+    end
+end
+
+-- 得到技能页签升级技能消耗的 table
+function GetSkillLvlUpTable()
+    local cost_table = {}
+    local t_skillInfos = GetSkillCfgs();
+    local curSkillCfg = JewelSkillTable.Get(t_skillInfos[m_middleSkillIndex]);
+    for index=1,1 do
+        
+        cost_table[index] = {};
+        cost_table[index].excelID = curSkillCfg.NeedId;
+        cost_table[index].Type = 0;   -- 0是
+        cost_table[index].Num =  curSkillCfg.NeedNum;
+    end
+    --error("cost_tablecost_tablecost_table:"..cost_table[1].excelID);
+    return cost_table;
+end
+    
+--得到当前阶技能配置
+function GetSkillCfgs()
+    
+    local skill_tables = GetCurSkillTables()--GetCurStageSkillInfos();
+    local playerSkillInfos = JewelPanelManager.GetJeweSkillInfos();
+    local t_skillInfos = {};
+    for index=1,#skill_tables do
+        if playerSkillInfos[index] ~= nil then
+            table.insert(t_skillInfos,skill_tables[index]+playerSkillInfos[index].SkillLvl)
+        else
+            table.insert(t_skillInfos,skill_tables[index]+0);
+        end
+        --error("t_skillInfos[index]==::"..t_skillInfos[index]);
+    end
+    return t_skillInfos;
+end
+
+-- 转换绑定非绑定
+function GetBindAndNotNumById(unBind_id)
+    local unBind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, unBind_id);
+    local bind_Id = WrapBindExceId(unBind_id);
+    local bind_Num  = 0;
+    if bind_Id >0 then
+      bind_Num  = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bind_Id);
+    end
+    
+    return unBind_Num+bind_Num;
+end
+--根据得到非绑定id 得到绑定id
+function WrapBindExceId(unBind_id)
+    local num = -1;
+    local  datas = CCommonTool.GetTradableInfo(unBind_id);
+    if datas ~=nil then
+        num =   datas.UntradableItemID; -- 绑定id
+    else
+        --error("非绑定id："..unBind_id.." 得到不对应的绑定id");
+    end   
+    return num
+end
+--得到当前阶状态
+function GetCurStageState()
+    local stage_lvl,star_lvl,exp = JewelPanelManager.GetCurPlayerJeweInfo();
+    if m_JeweFosterCfg ==nil or m_JeweTotalCfg == nil or m_JeweSkillCfg == nil then
+        m_JeweTotalCfg,m_JeweSkillCfg,m_JeweFosterCfg = GetTotalCfg();
+    end
+    --error(" m_JeweFosterCfg[stage_lvl]; m_JeweFosterCfg[stage_lvl]; m_JeweFosterCfg[stage_lvl]：："..stage_lvl);
+    local curAdvanceCfg = m_JeweFosterCfg[stage_lvl];
+    local isMaxStar  = star_lvl >=10 and true or false;
+    local isMaxStage = stage_lvl >= #m_JeweTotalCfg and true or false;
+    local isMaxExp = exp >= curAdvanceCfg.IntenMaxExp and true or false;
+    local state = -1;
+    if isMaxStar and isMaxExp  then -- 满星满经验
+        state = 1; -- 进阶
+    elseif isMaxStar  and isMaxStage then
+        state = 2; -- 全部满
+    else
+        state = 0; -- 淬炼
+    end
+    return state;
+    
+end
+-- 得到宝珠总配置表
+function GetTotalCfg()
+    local total_table = JewelMainTable.GetAll();
+    local skill_table = JewelSkillTable.GetAll();
+    local advance_table = JewelAdvanceTable.GetAll();
+    return total_table,skill_table,advance_table;
+end
+-- 得到该阶对应的4个附加技能id
+function GetCurStageSkillInfos(curJeweCfg)
+    local skills = {};
+    for index=1,4 do
+        table.insert(skills,JewelSkillTable.Get(index*1000).SkillId);
+    end
+    return skills;
+end
+function GetCurSkillTables()
+     local skills = {};
+    for index=1,4 do
+        table.insert(skills,JewelSkillTable.Get(index*1000).Id);
+    end
+    return skills;
+end
+function GetBeforeStateValue(stage_lvl,index)
+    local totalValue = 0;
+    for i=1, stage_lvl - 1 do
+        if index == 1 then
+            totalValue = totalValue + JewelMainTable.Get(i).TypeAttr1 +( JewelMainTable.Get(i).ValueAttr1*10 );
+        elseif index == 2 then
+            totalValue = totalValue + JewelMainTable.Get(i).TypeAttr2 +( JewelMainTable.Get(i).ValueAttr2*10 );
+        elseif index == 3 then
+            totalValue = totalValue + JewelMainTable.Get(i).TypeAttr3 +( JewelMainTable.Get(i).ValueAttr3*10 );
+        elseif index == 4 then
+            totalValue = totalValue + JewelMainTable.Get(i).TypeAttr4 +( JewelMainTable.Get(i).ValueAttr4*10 );
+        elseif index == 5 then
+            totalValue = totalValue + JewelMainTable.Get(i).TypeAttr5 +( JewelMainTable.Get(i).ValueAttr5*10 );
+        end
+
+    end
+    return totalValue;
+end
+-- 得到当前配置的属性组，消耗组
+function GetCurJeweCfgAttr()
+    local stage_lvl,star_lvl = JewelPanelManager.GetCurPlayerJeweInfo();
+    local curJeweCfg = JewelMainTable.Get(stage_lvl);--m_JeweTotalCfg[stage_lvl];
+    local curAdvanceCfg = JewelAdvanceTable.Get(stage_lvl);--m_JeweFosterCfg[stage_lvl];
+    local attr_table = {};
+    local cost_table = {};
+    if curJeweCfg ~= nil and curAdvanceCfg ~= nil  then
+        --暂定为5条属性
+        for i=1,5 do
+            attr_table[i] = {};
+            if i == 1 then
+                attr_table[i].attrId = curJeweCfg.ActivateAttr1;
+                attr_table[i].attrValue = curJeweCfg.TypeAttr1+(curJeweCfg.ValueAttr1*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+                attr_table[i].attrAdd =  curJeweCfg.ValueAttr1;
+                attr_table[i].picture_id = curJeweCfg.PicAttr1;
+            elseif i ==2 then
+                attr_table[i].attrId = curJeweCfg.EffectTxtId;
+                attr_table[i].attrValue =  curJeweCfg.TypeAttr2+(curJeweCfg.ValueAttr2*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+                attr_table[i].attrAdd =  curJeweCfg.ValueAttr2;
+                attr_table[i].picture_id = curJeweCfg.PicAttr2;
+            elseif i ==3 then
+                attr_table[i].attrId = curJeweCfg.ActivateAttr3;
+                attr_table[i].attrValue = curJeweCfg.TypeAttr3+(curJeweCfg.ValueAttr3*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+                attr_table[i].attrAdd =  curJeweCfg.ValueAttr3;
+                attr_table[i].picture_id = curJeweCfg.PicAttr3;
+            elseif i == 4 then
+                attr_table[i].attrId = curJeweCfg.ActivateAttr4;
+                attr_table[i].attrValue = curJeweCfg.TypeAttr4+(curJeweCfg.ValueAttr4*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+                attr_table[i].attrAdd =  curJeweCfg.ValueAttr4;
+                attr_table[i].picture_id = curJeweCfg.PicAttr4;
+            elseif i == 5 then
+                attr_table[i].attrId = curJeweCfg.ActivateAttr5;
+                attr_table[i].attrValue = curJeweCfg.TypeAttr4+(curJeweCfg.ValueAttr4*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+                attr_table[i].attrAdd =  curJeweCfg.ValueAttr5;
+                attr_table[i].picture_id = curJeweCfg.PicAttr5;
+            end
+        end
+        --消耗table，淬炼+进阶 = 6条
+        for index=1,6 do
+            cost_table[index] = {};
+
+            if index == 1 then
+               
+                cost_table[index].excelID = G_ItemToolTipDefine.BINDMONEY;
+                cost_table[index].Type = 1;   -- 0是
+                cost_table[index].Num =  curAdvanceCfg.IntenMoneyNeed;
+            elseif index ==2 then
+                cost_table[index].excelID = curAdvanceCfg.IntenItem2ID;
+                cost_table[index].Type = 0;   -- 0是
+                cost_table[index].Num =  curAdvanceCfg.IntenItem2Num;
+            elseif index ==3 then
+                cost_table[index].excelID = curAdvanceCfg.IntenItem1ID;
+                cost_table[index].Type = 0;   -- 0是
+                cost_table[index].Num =  curAdvanceCfg.IntenItem1Num;
+            elseif index == 4 then
+                
+                cost_table[index].excelID = G_ItemToolTipDefine.BINDMONEY;
+                cost_table[index].Type = 1;   -- 0是
+                cost_table[index].Num =  curAdvanceCfg.AdvanNeedMoney;
+            elseif index == 5 then
+                cost_table[index].excelID = curAdvanceCfg.AdvanItem2ID;
+                cost_table[index].Type = 0;   -- 0是
+                cost_table[index].Num =  curAdvanceCfg.AdvanItem2IDNum;
+            elseif index == 6 then
+                cost_table[index].excelID = curAdvanceCfg.AdvanItem1ID;
+                cost_table[index].Type = 0;   -- 0是
+                cost_table[index].Num =  curAdvanceCfg.AdvanItem1IDNum;
+
+            end
+        end
+    end
+
+    return attr_table,cost_table; 
+end
+--技能页签是否能显示小红点
+function SkillCostShowRed()
+    local t_skillInfos = GetSkillCfgs();
+    local stage_lvl = JewelPanelManager.GetCurPlayerJeweInfo();
+    local canShow = false;
+    for index=1,#t_skillInfos do
+        --error("技能页签是否能显示小红点 index:"..t_skillInfos[index]);
+        local curskillInfo = JewelSkillTable.Get(t_skillInfos[index]);
+        if curskillInfo ~=nil then
+            if stage_lvl >= curskillInfo.OpenLevel and curskillInfo.Lv < curskillInfo.MaxLv then
+                local have_num = GetBindAndNotNumById(curskillInfo.NeedId);
+                if have_num >= curskillInfo.NeedNum then
+                    canShow = true;
+                    break;
+                end
+            end
+        end
+    end
+
+    return canShow;
+end
+
+----------------------------------------点击事件---start--------------------------------------------
+--点击专属，附加技能事件
+--[[function OnClickSkillIcon(e)
+    
+end]]
+-- 左侧按钮点击事件
+function OnLeftBtnsClick(e)
+    local index = tonumber(string.sub(e.name,9,string.len(e.name)));
+    if index == m_leftBtnIndex then
+       -- error("lua 宝珠 左侧点击的按钮未发生变化！！！ ");
+        --return;
+    end
+    --error("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj::"..index);
+    m_leftBtnIndex = index;
+    SwiftBtnToggle();
+end
+function SwiftBtnToggle()
+    for index=1,2 do
+        if m_leftBtnIndex == index then
+            SetGameObjectState(m_leftBtnStr..index.."/Toggle",true,m_panelObject);
+        else
+            SetGameObjectState(m_leftBtnStr..index.."/Toggle",false,m_panelObject);
+        end
+    end
+    MiddleContent();
+    RightContent();
+end
+-- 中部左，右侧切换按钮
+function OnMiddleSwiftBtnClick(e)
+    --tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    local index = tonumber(string.sub(e.name,5,string.len(e.name)));
+    local stage_lvl = JewelPanelManager.GetCurPlayerJeweInfo();
+    if index == 1 then -- left          --
+        if m_middleJeweIndex <= 1 then
+            --ShowSystemFlowTips(9643);
+            --error("不能查看前一阶宝珠信息,本阶为第一个宝珠");
+            return;
+        end
+        m_middleJeweIndex = m_middleJeweIndex - 1;
+    elseif index == 0 then -- right
+        if m_middleJeweIndex >= #m_JeweTotalCfg then
+            --ShowSystemFlowTips(9644);
+            --error("不能查看下一阶宝珠信息,本阶为最后一个宝珠");
+            return;
+        elseif m_middleJeweIndex >= stage_lvl+1 then 
+            --ShowSystemFlowTips(9645);
+          --  error("只能查看本阶未解锁宝珠信息");
+            return;
+        end
+         m_middleJeweIndex = m_middleJeweIndex + 1;
+    end
+    
+    MiddleContent();
+    RightContent();
+end
+-- 淬炼界面- 淬炼按钮事件
+function OnFosterClick()
+     if m_CoinIsEnough == false or m_MatIsEnough ==false then
+        ShowSystemFlowTips(9639);
+        error("宝珠的金钱或材料不足！");
+        return;
+    end
+     local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ORB_UPGRADE_STARS);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+-- 淬炼界面 - 升阶按钮事件
+function OnJeweLvlUp()
+     if m_CoinIsEnough == false or m_MatIsEnough ==false then
+        ShowSystemFlowTips(9639);
+        error("宝珠的金钱或材料不足！");
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ORB_UPGRADE_STAGE);
+    G_NetWorkMng:SendMessage(buffer);
+    error("dadsadadsa");
+    G_MusicMng:OnLoadMusic(4010);
+end
+-- 技能界面 - 学习技能
+function OnStudySkill()
+    if m_SkillItemEnough == false then
+        ShowSystemFlowTips(9640);
+        error("技能书不足");
+        return;
+    end
+    if m_isSkillOpenLvl == true then
+        --error("该技能要求的阶数不符！！！");  --m_CanSkillOpenLvl
+        --ShowSystemFlowTips(9646,nil,{m_CanSkillOpenLvl});
+        --ShowSystemFlowTips(9646);
+        return;
+    end
+    --error("m_middleSkillIndex-1=="..m_middleSkillIndex-1);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ORB_UPGRADE_SKILL);
+    buffer:WriteByte(m_middleSkillIndex-1);
+    --buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+
+----------------------------------------点击事件---end--------------------------------------------
+
+function FosterCanShowRed()
+    local attr_table , cost_table = GetCurJeweCfgAttr();
+        local canFonster = true;
+        local state = GetCurStageState();
+        if state == 2 then
+            return false;
+        end
+        local index1 = state == 1 and 4 or 1;
+        local length = state == 1 and #cost_table or #cost_table- 3;
+       
+        for index=index1,length do
+            if cost_table[index].Num >0 then
+                if cost_table[index].Type == 1 then
+                    if  G_UserInfo.BindCoin < cost_table[index].Num then
+                        canFonster =  false;
+                        break;
+                    end
+                elseif cost_table[index].Type == 0 then
+                    local hasNum = GetBindAndNotNumById(cost_table[index].excelID);
+                    if hasNum < cost_table[index].Num then
+                        canFonster = false;
+                        break;
+                    end
+                end
+            end
+            
+        end
+     return canFonster;
+end
+
+-- 左侧是否显示小红点
+function LeftBtnCanShowRedHint(left_index)
+    if left_index == LeftTableType.FOSTER then -- 淬炼界面红点
+
+        return FosterCanShowRed();
+        
+    elseif left_index == LeftTableType.SKILL then   -- 技能界面
+        --return false;
+        return SkillCostShowRed();
+    end
+end
+----------------------------------------------外部调用方法----------------------------------------------------
+--刷新界面
+function RefreshJewePanel()
+     if IsOpenPanel(ENUMPANELID.ENUM_PANEL_JEWEPANEL) == 1 then
+        LeftContent();     
+    end
+end
+-- 主界面抽屉宝珠图标是否显示小红点
+function CanShowRedHint()
+    
+    -- 是否开启
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_JEWE) == false then
+        return false;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_JEWEPANEL) == 1 then 
+         LeftContent();     
+    end
+    local show = false;
+    for index=1,2 do
+        if LeftBtnCanShowRedHint(index) == true then
+            show =true;
+            break;
+        end
+    end
+    return show;
+end
+-- 关闭按钮事件
+function OnCloseClick(e)
+    closePanel(ENUMPANELID.ENUM_PANEL_JEWEPANEL);
+end
+-- 跳转界面获取数据
+function GetJumpCloseData()
+
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_leftBtnIndex;  
+    jumpParamsTable[2] = m_middleJeweIndex;
+    jumpParamsTable[3] = m_middleSkillIndex;
+
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

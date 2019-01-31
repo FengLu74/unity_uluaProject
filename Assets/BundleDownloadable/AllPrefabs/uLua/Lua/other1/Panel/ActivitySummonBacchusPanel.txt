@@ -1,0 +1,299 @@
+﻿module('ActivitySummonBacchusPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivitySummonBacchusPanel';
+---------------------------------------label路径---------------------------------------
+-- 饮酒值
+local m_LbNumDataPath = "Sub_Content/lb_NumData";
+-- 公会资金
+local m_guildMoneyPath = "Sub_Content/lb_JoinRewardData";
+-- 饮酒说明
+local m_LbExplainPath = "Sub_Explain/lb_Explain";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 饮酒值进度条
+local m_spFillPath = "Sub_Content/sp_Fill";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 参与奖励路径
+local m_SubJoinRewardsPath = "Sub_Content/Sub_JoinRewards";
+-- 活动说明路径
+local m_subExplainPath = "Sub_Explain";
+-- 道具路径
+local m_itemStr = "Item";
+----------------------------------通用的名称路径---------------------------------------
+-- 加注释
+local m_BtnSummonPath = "Sub_Content/btn_Summon";
+-- 加注释
+local m_BtnExplainPath = "Sub_Content/btn_Explain";
+-- boss列表路径
+local m_UIGridPath = "Sub_BossList/UIGrid";
+-- 奖励列表路径
+local m_RewardListPath = "Sub_Content/Sub_JoinRewards/UIGrid";
+
+-- 关闭按钮
+local m_BtnClosePath = "Sub_Content/btn_Close";
+local m_RewardMaskPath = "Sub_Explain/RewardMask";
+-- 说明列表路径
+local m_ExplainListPath = "Sub_Explain/Sub_Content/UIGrid";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 召唤酒神按钮
+local m_BtnSummon = nil;
+-- 活动说明按钮
+local m_BtnExplain = nil;
+-- 确定按钮
+-- local m_BtnConfirm = nil;
+-- 关闭按钮
+local m_BtnClose = nil;
+-- boss列表
+local m_UIGrid = nil;
+-- 奖励列表
+local m_RewardList = nil;
+-- 说明列表
+local m_ExplainList = nil;
+-- 公会等级
+local m_activityLv = nil;
+-- 当前选择boss索引
+local m_selectBossIndex = nil;
+-- 当前选择boss数据
+local bossData = nil;
+-- 当前饮酒值是否足够
+local isWineEnough = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_BtnSummon = nil;
+    m_BtnExplain = nil;
+    m_BtnClose = nil;
+    m_UIGrid = nil;
+    m_RewardList = nil;
+    m_ExplainList = nil;
+    m_activityLv = nil;
+    m_selectBossIndex = nil;
+    bossData = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SUMMON_BACCHUS_PANEL);
+    m_BtnSummon = child(m_PanelObject, m_BtnSummonPath).gameObject;
+    m_BtnExplain = child(m_PanelObject, m_BtnExplainPath).gameObject;
+    m_BtnClose = child(m_PanelObject, m_BtnClosePath).gameObject;
+    m_UIGrid = GetComponent(m_PanelObject, m_UIGridPath, "UIListView");
+    m_RewardList = GetComponent(m_PanelObject, m_RewardListPath, "UIListView");
+    m_ExplainList = GetComponent(m_PanelObject, m_ExplainListPath, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_BtnSummon.gameObject).onClick = LuaHelper.OnClick(OnBtnSummonClick);
+    UIEventListener.Get(m_BtnExplain.gameObject).onClick = LuaHelper.OnClick(OnBtnExplainClick);
+    UIEventListener.Get(m_BtnClose.gameObject).onClick = LuaHelper.OnClick(OnCLoseClick);
+    SetGameObjectEvent(m_RewardMaskPath, OnBtnConfirmClick, m_PanelObject);
+    m_UIGrid:SetInitCallback(OnUIGridViewInit);
+    m_UIGrid:SetClickCallback(OnUIGridViewClick);
+    m_RewardList:SetInitCallback(OnRewardListViewInit);
+    m_RewardList:SetClickCallback(OnRewardListViewClick);
+    m_ExplainList:SetInitCallback(OnExplainListViewInit);
+    m_ExplainList:SetClickCallback(OnExplainListViewClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_selectBossIndex = 0;
+    m_activityLv = GuildManager.myGuild.level;
+    -- 显示Boss列表
+    --    bossData = WineBossManager.getWineBossData(m_activityLv);
+    bossData = getWineBossData(m_activityLv);
+    m_UIGrid:RemoveAll();
+    for i, value in pairs(bossData) do
+        local data = value[i];
+        m_UIGrid:AddData(data);
+        m_UIGrid:LookAt(m_selectBossIndex, true);
+        if i == m_selectBossIndex + 1 then
+            OnRefreshRewards(m_selectBossIndex);
+            -- 发送饮酒经验请求
+            GuildProtocol.RequestGetWineExp();
+        end
+    end
+end
+
+-- 奖励显示
+function OnRefreshRewards()
+    -- 设置公会资金
+    SetLabelContent(m_guildMoneyPath, bossData[m_selectBossIndex + 1][4], m_PanelObject);
+    -- 设置参与奖励
+    --    SetItemShowByExcelIDV04(m_PanelObject, m_SubJoinRewardsPath.."/Item1", bossData[(m_selectBossIndex + 1)][3], 1, false);
+    -- 获得奖励道具信息
+    m_RewardList:RemoveAll();
+    local items = { };
+    local rewards = CCommonTool.GetRewardInfoByIndex(bossData[(m_selectBossIndex + 1)][3]);
+    if rewards == nil then return end
+    local list = rewards:GetAllItem();
+    local count = list.count;
+    for i = 1, count do
+        local itemData = list[i - 1];
+        local excelId = itemData.ExcelID;
+        if itemData.ItemDealType == 3 then
+            excelId = 10000;
+        elseif itemData.ItemDealType == 4 then
+            excelId = G_ItemToolTipDefine.BINDDIAMOND;
+        elseif itemData.ItemDealType == 5 then
+            excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+        end
+        table.insert(items, { excelId = excelId, num = itemData.ItemNum });
+    end
+
+    for i, value in pairs(items) do
+        m_RewardList:AddData(value);
+    end
+end
+
+-- 请求开启酒神活动
+function RequestStartWineBoss(id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_REQUEST_OPEN_WINEGODATY);
+    buffer:WriteInt(id);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 得到当前公会等级的boss数据
+function getWineBossData(id)
+    local m_dataCur = CCommonTool.GetUnionWineBossIndex(id);
+    if m_dataCur == nil then return end
+    local m_table = { };
+    for i = 1, 5 do
+        local tableTemp = { };
+        table.insert(tableTemp, 1, m_dataCur["BossId" .. i]);
+        table.insert(tableTemp, 2, m_dataCur["WineCost" .. i]);
+        table.insert(tableTemp, 3, m_dataCur["RewardId" .. i]);
+        table.insert(tableTemp, 4, m_dataCur["RewardMoney" .. i]);
+        table.insert(m_table, i, tableTemp);
+    end
+    return m_table;
+end
+------------------------------------------事件方法------------------------------------
+
+-- 请求召唤boss
+function OnBtnSummonClick(gameObject)
+    local selfrank = GuildManager.GetSelfInfo().rankLevel;
+    if selfrank > E_GUILD_RANKLEVEL.VICE_LEADER then
+        ShowSystemFlowTips(6082);
+    else
+        if isWineEnough == nil then GuildProtocol.RequestGetWineExp(); end
+        if isWineEnough then
+            local id = bossData[(m_selectBossIndex + 1)][1];
+            RequestStartWineBoss(id);
+            closePanel(ENUMPANELID.ENUM_PANEL_SUMMON_BACCHUS_PANEL);
+        else
+            ShowSystemFlowTips(6083);
+        end
+    end
+end
+
+-- 活动说明按钮
+function OnBtnExplainClick(gameObject)
+    SetGameObjectState(m_subExplainPath, true, m_PanelObject);
+
+    local table_explain = {
+        [1] = { titleID = 162403, textID = 162404 },
+        [2] = { titleID = 162401, textID = 162402 },
+    };
+    m_ExplainList:RemoveAll();
+    for i, value in pairs(table_explain) do
+        local data = value;
+        m_ExplainList:AddData(data);
+    end
+
+end
+
+-- 确定按钮
+function OnBtnConfirmClick(gameObject)
+    SetGameObjectState(m_subExplainPath, false, m_PanelObject);
+end
+
+-- 关闭按钮
+function OnCLoseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_SUMMON_BACCHUS_PANEL);
+end
+
+-- boss列表初始化
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local spriteStr = "UI_HDJM_TuBiao_KuLouTou_00" .. cell.dataIndex + 1;
+    SetSpriteContent("sp_Icon", "Activity01AtlasV04", spriteStr, go, true);
+end
+
+-- boss列表点击
+function OnUIGridViewClick(listView, cell, go)
+    local go = cell.gameObject;
+    m_selectBossIndex = cell.dataIndex;
+    OnRefreshRewards();
+    -- 发送饮酒经验请求
+    GuildProtocol.RequestGetWineExp();
+end
+
+-- 奖励列表显示
+function OnRewardListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local id = cell.dataIndex;
+    SetItemShowByExcelIDV04(go, m_itemStr, data.excelId, tostring(data.num), false, 11, ENUMPANELID.ENUM_PANEL_SUMMON_BACCHUS_PANEL);
+    SetItemToolTipsEvent(go, "", ENUMPANELID.ENUM_PANEL_SUMMON_BACCHUS_PANEL, false, data.excelId);
+end
+
+-- 奖励列表点击
+function OnRewardListViewClick(listView, cell, data)
+
+end
+
+-- 说明列表显示
+function OnExplainListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelTextByID("Label_Title", data.titleID, go);
+    SetLabelTextByID("Label_Content", data.textID, go);
+end
+
+-- 说明列表点击
+function OnExplainListViewClick(listView, cell, data)
+
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 设置饮酒经验值
+function OnSetWinExp(exp)
+    local allExp = bossData[(m_selectBossIndex + 1)][2];
+    if exp < allExp then
+        SetLabelContent(m_LbNumDataPath, "[FF0000]" .. exp .. "[-]" .. "/" .. allExp, m_PanelObject);
+        isWineEnough = false;
+    else
+        SetLabelContent(m_LbNumDataPath, exp .. "/" .. allExp, m_PanelObject);
+        isWineEnough = true;
+    end
+    local amount = exp / allExp;
+    SetSpriteFillAmountTwo(m_spFillPath, amount, m_PanelObject);
+end

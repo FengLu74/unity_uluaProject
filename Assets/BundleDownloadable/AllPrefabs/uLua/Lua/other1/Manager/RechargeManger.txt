@@ -1,0 +1,67 @@
+﻿module("RechargeManger", package.seeall)
+
+-- 充值返回字典
+rechargeDict = nil;
+-- 充值返回列表
+rechargeTable = { };
+-- 内容列表
+contentTable = { };
+-- 活动开始时间
+beginTime = 0;
+-- 结束时间
+endTime = 0;
+-- 领取状态
+rewardState = nil;
+-- 总的充值经验数
+allGetExp = 0;
+-- 活动结束
+actEnd = false;
+
+-------------------------------- 每日充值相关 --------------------------------
+-- 每日充值返回列表
+dailyRechargeTable = {};
+-- 每日充值活动开始时间
+dailyBeginTime = 0;
+-- 每日充值结束时间
+dailyEndTime = 0;
+-- 每日充值领取状态
+dailyRewardState = nil;
+-- 每日充值总的充值经验数
+dailyAllGetExp = 0;
+
+
+-- 获取信息
+function GetMember(ranklId)
+    if rechargeDict then
+        return rechargeDict[ranklId];
+    end
+    return nil;
+end
+
+-- 通用标签获取list数据
+function GetListByTabIndex(tabIndex)
+    return rechargeTable;
+end
+
+-- 清空数据
+function ClearRechargeData()
+    rechargeDict = nil;
+    rechargeTable = { };
+    contentTable = {};
+end
+-- 数据清理
+function ClearData()
+    rechargeDict = nil;
+    rechargeTable = { };
+    beginTime = 0;
+    endTime = 0;
+    rewardState = nil;
+    allGetExp = 0;
+    contentTable = {};
+
+    dailyRechargeTable = {};
+    dailyBeginTime = 0;
+    dailyEndTime = 0;
+    dailyRewardState = nil;
+    dailyAllGetExp = 0;
+end

@@ -1,0 +1,383 @@
+﻿module("OpenUIByEnum", package.seeall)
+
+local ENUMUINUM =
+{
+    REWARDPANEL_ONLOGIN = 1516,
+    -- 福利界面登录
+    REWARDPANEL_ONLINE = 1517,
+    -- 福利界面在线
+    REWARDPANEL_LEVEL = 1518,
+    -- 福利界面等级
+    REWARDPANEL_OFFLINE = 1519,
+    -- 福利界面道具兑换
+    REWARDPANEL_EXCHANGE = 1520,
+
+    EQUIPPANEL_FORCE = 1146,
+    -- 装备界面强化
+    EQUIPPANEL_STARUP = 1147,
+    -- 装备界面精炼
+    EQUIPPANEL_ENCHANT = 1148,
+    -- 装备界面附魔
+    EQUIPPANEL_GEM = 1149,
+    -- 装备界面符石
+    EQUIPPANEL_RANDEFF = 1145,
+    -- 装备界面洗练
+
+    SKILLBEYOND3DPANEL_CONFIG = 1156,
+    -- 技能界面-配置标签
+    SKILLBEYOND3DPANEL_LEVELUP = 1157,
+    -- 技能界面-升级标签
+    SKILLBEYOND3DPANEL_TALENT = 1158,
+    -- 技能界面-天赋标签
+
+    MISSIONBEYOND3DPANEL_TASK = 1186,
+    -- 任务界面任务
+    MISSIONBEYOND3DPANEL_ACHIEVE = 1187,
+    -- 任务界面成就
+
+    CAMPBEYOND3DPANEL_CAMP = 1476,
+    -- 阵营界面阵营
+    CAMPBEYOND3DPANEL_GOD = 1477,
+    -- 阵营界面神位
+    CAMPBEYOND3DPANEL_MILITARY = 1478,
+    -- 阵营界面军需
+    CAMPBEYOND3DPANEL_WAR = 1479,
+    -- 阵营界面战争
+
+    --    STOREPANEL_RED_HOT = 1560,
+    --    -- 商城红钻热销
+    --    STOREPANEL_RED_ITEM = 1561,
+    --    -- 商城红钻道具
+    --    STOREPANEL_RED_STONE = 1562,
+    --    -- 商城红钻宝石
+    --    STOREPANEL_RED_CONSUME = 1563,
+    --    -- 商城红钻消耗
+    --    STOREPANEL_RED_FASHION = 1564,
+    --    -- 商城红钻时装
+
+    --    STOREPANEL_BLUE_HOT = 1565,
+    --    -- 商城蓝钻热销
+    --    STOREPANEL_BLUE_ITEM = 1566,
+    --    -- 商城蓝钻道具
+    --    STOREPANEL_BLUE_STONE = 1567,
+    --    -- 商城蓝钻宝石
+    --    STOREPANEL_BLUE_CONSUME = 1568,
+    --    -- 商城蓝钻消耗
+    --    STOREPANEL_BLUE_FASHION = 1569,
+    --    -- 商城蓝钻时装
+
+    RESOLVEANDCOMBINEPANEL_RESOLVE = 1641,
+    -- 分解合成界面中的宠物界面
+    RESOLVEANDCOMBINEPANEL_RESOLVE_PET = 16412,
+    -- 分解合成界面中的神器界面
+    RESOLVEANDCOMBINEPANEL_ARTIFACT = 16413,
+    -- 分解合成界面中的分解宠物界面
+    RESOLVEANDCOMBINEPANEL_COMBINE = 1642,
+    -- 分解合成界面中的合成界面
+
+    GUILDPANEL_INFO = 1551,
+    -- 公会信息
+    GUILDPANEL_MEMBER = 1552,
+    -- 公会成员
+    GUILDPANEL_AFFAIR = 1553,
+    -- 公会内政
+    GUILDPANEL_WELFARE = 1554,
+    -- 公会福利
+    GUILDPANEL_ACTIVITY = 1555,
+    -- 公会活动
+
+    WONDERMEETPANEL_GETCOIN = 1781,
+    -- 奇遇界面炼金术
+
+    ACTIVITY_PANEL_DAILY = 1521,
+    -- 活动界面-日常页签
+    ACTIVITY_PANEL_GUILD = 1522,
+    -- 活动界面-公会页签
+    ACTIVITY_PANEL_WORLDBOSS = 1523,
+    -- 活动界面-世界BOSS页签
+    ACTIVITY_PANEL_CAMP = 1525,
+    -- 活动界面-阵营活动页签
+
+    LIFESKILL_MAKE_2_1 = 1921,
+    -- 生活技能-锻造
+    LIFESKILL_MAKE_2_2 = 1922,
+    -- 生活技能-缝纫
+    LIFESKILL_MAKE_2_3 = 1923,
+    -- 生活技能-制药
+    LIFESKILL_MAKE_2_4 = 1924,
+    -- 生活技能-烹饪
+    LIFESKILL_MAKE_2_5 = 1925,
+    -- 生活技能-驯兽
+    LIFESKILL_MAKE_2_6 = 1926,
+    -- 生活技能-工艺除魔
+    LIFESKILL_MAKE_2_7 = 1927,
+    -- 生活技能-防具除魔
+
+    SHOP_PANEL_GOLD = 2051,
+    -- 银币商店
+    SHOP_PANEL_GUILD = 2052,
+    -- 公会商店
+    SHOP_PANEL_CAMP = 2053,
+    -- 阵营商店
+    SHOP_PANEL_FIGHT = 2054,
+    -- 竞技商店
+    SHOP_PANEL_HUNT = 2055,
+    -- 猎魔商店
+    SHOP_PANEL_RIDER= 2056,
+    -- 骑士商店
+    SHOP_PANEL_ARTIFACT = 2057,
+    -- 神器商店
+    -- 宠物十连抽界面
+    TREAUSE_PANEL_GETREWARD = 2011;
+    -- 神器十连抽界面
+    ARTIFACTLOTTERY_PANEL = 2012;
+
+    LIMIT_MYFIGHTPOWER = 3001;
+    -- 我的战力
+    LIMIT_MYPET = 3002;
+    -- 宠物战力
+    LIMIT_GUILDPOWER = 3003;
+    -- 公会战力
+    LIMIT_GUILDDONATION = 3004;
+    -- 公会捐献
+    LIMIT_CAMPKILL = 3005;
+    -- 阵营杀敌
+};
+
+function OpenUIByEnum(UIEnum, causePanelId)
+    if UIEnum == ENUMUINUM.REWARDPANEL_ONLOGIN then
+        WelfareManager.OpenWelfarePanel(WelfareType.WT_SevenDayLogin, causePanelId);
+    elseif UIEnum == ENUMUINUM.REWARDPANEL_ONLINE then
+        WelfareManager.OpenWelfarePanel(WelfareType.WT_OnlineTime, causePanelId);
+    elseif UIEnum == ENUMUINUM.REWARDPANEL_LEVEL then
+        WelfareManager.OpenWelfarePanel(WelfareType.WT_Levelup, causePanelId);
+    elseif UIEnum == ENUMUINUM.REWARDPANEL_OFFLINE then
+        WelfareManager.OpenWelfarePanel(WelfareType.WT_Offline, causePanelId);
+    elseif UIEnum == ENUMUINUM.REWARDPANEL_EXCHANGE then
+        WelfareManager.OpenWelfarePanel(WelfareType.WT_Exchange, causePanelId);
+
+    elseif UIEnum == ENUMUINUM.EQUIPPANEL_FORCE then
+        EquipPanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.EQUIPPANEL_STARUP then
+        EQUIPPANEL.OpenThisPanelByTag(5, causePanelId);
+    elseif UIEnum == ENUMUINUM.EQUIPPANEL_ENCHANT then
+        EQUIPPANEL.OpenThisPanelByTag(3, causePanelId);
+    elseif UIEnum == ENUMUINUM.EQUIPPANEL_GEM then
+        EQUIPPANEL.OpenThisPanelByTag(2, causePanelId);
+    elseif UIEnum == ENUMUINUM.EQUIPPANEL_RANDEFF then
+        EQUIPPANEL.OpenThisPanelByTag(4, causePanelId);
+
+    elseif UIEnum == ENUMUINUM.SKILLBEYOND3DPANEL_CONFIG then
+        SkillBeyond3DPanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.SKILLBEYOND3DPANEL_LEVELUP then
+        SkillBeyond3DPanel.OpenThisPanelByTag(2, causePanelId);
+    elseif UIEnum == ENUMUINUM.SKILLBEYOND3DPANEL_TALENT then
+        SkillBeyond3DPanel.OpenThisPanelByTag(3, causePanelId);
+
+    elseif UIEnum == ENUMUINUM.MISSIONBEYOND3DPANEL_TASK then
+        -- MissionBeyond3DPanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.MISSIONBEYOND3DPANEL_ACHIEVE then
+        -- MissionBeyond3DPanel.OpenThisPanelByTag(2, causePanelId);
+
+    elseif UIEnum == ENUMUINUM.CAMPBEYOND3DPANEL_CAMP then
+        -- CampBeyond3DPanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.CAMPBEYOND3DPANEL_GOD then
+        -- CampBeyond3DPanel.OpenThisPanelByTag(2, causePanelId);
+    elseif UIEnum == ENUMUINUM.CAMPBEYOND3DPANEL_MILITARY then
+        -- CampBeyond3DPanel.OpenThisPanelByTag(3, causePanelId);
+    elseif UIEnum == ENUMUINUM.CAMPBEYOND3DPANEL_WAR then
+        -- CampBeyond3DPanel.OpenThisPanelByTag(4, causePanelId);
+
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_RED_HOT then
+        --        StorePanel.OpenPanel(0, 0, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_RED_ITEM then
+        --        StorePanel.OpenPanel(0, 1, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_RED_STONE then
+        --        StorePanel.OpenPanel(0, 2, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_RED_CONSUME then
+        --        StorePanel.OpenPanel(0, 3, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_RED_FASHION then
+        --        StorePanel.OpenPanel(0, 4, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_BLUE_HOT then
+        --        StorePanel.OpenPanel(0, 0, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_BLUE_ITEM then
+        --        StorePanel.OpenPanel(1, 1, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_BLUE_STONE then
+        --        StorePanel.OpenPanel(2, 2, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_BLUE_CONSUME then
+        --        StorePanel.OpenPanel(3, 3, 0);
+        --    elseif UIEnum == ENUMUINUM.STOREPANEL_BLUE_FASHION then
+        --        StorePanel.OpenPanel(3, 3, 0);
+
+    elseif UIEnum == ENUMUINUM.RESOLVEANDCOMBINEPANEL_RESOLVE then
+        ResolveAndCombinePanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.RESOLVEANDCOMBINEPANEL_RESOLVE_PET then
+        ResolvePanel.OpenResolvePanelByTag(1, 2, causePanelId);
+    elseif UIEnum == ENUMUINUM.RESOLVEANDCOMBINEPANEL_ARTIFACT then
+        ResolvePanel.OpenResolvePanelByTag(1, 3, causePanelId);
+    elseif UIEnum == ENUMUINUM.RESOLVEANDCOMBINEPANEL_COMBINE then
+        ResolveAndCombinePanel.OpenThisPanelByTag(2, causePanelId);
+    elseif UIEnum == ENUMUINUM.GUILDPANEL_INFO then
+        GuildBeyond3DPanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.GUILDPANEL_MEMBER then
+        GuildBeyond3DPanel.OpenThisPanelByTag(2, causePanelId);
+    elseif UIEnum == ENUMUINUM.GUILDPANEL_AFFAIR then
+        GuildBeyond3DPanel.OpenThisPanelByTag(3, causePanelId);
+    elseif UIEnum == ENUMUINUM.GUILDPANEL_WELFARE then
+        GuildBeyond3DPanel.OpenThisPanelByTag(4, causePanelId);
+    elseif UIEnum == ENUMUINUM.GUILDPANEL_ACTIVITY then
+        GuildBeyond3DPanel.OpenThisPanelByTag(5, causePanelId);
+
+    elseif UIEnum == ENUMUINUM.WONDERMEETPANEL_GETCOIN then
+        -- WonderMeetPanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.ACTIVITY_PANEL_DAILY then
+        ActivityPanel.OpenThisPanelByTag(1, causePanelId);
+        -- 活动界面-日常页签
+    elseif UIEnum == ENUMUINUM.ACTIVITY_PANEL_GUILD then
+        ActivityPanel.OpenThisPanelByTag(2, causePanelId);
+        -- 活动界面-公会页签
+    elseif UIEnum == ENUMUINUM.ACTIVITY_PANEL_WORLDBOSS then
+        ActivityPanel.OpenThisPanelByTag(3, causePanelId);
+        -- 活动界面-世界BOSS页签
+    elseif UIEnum == ENUMUINUM.ACTIVITY_PANEL_CAMP then
+        ActivityPanel.OpenThisPanelByTag(5, causePanelId);
+        -- 活动界面-阵营活动页签
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_1 then
+        -- 生活技能-锻造
+        LifeSkillPanel.Open(2, 1, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_2 then
+        -- 生活技能-缝纫
+        LifeSkillPanel.Open(2, 2, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_3 then
+        -- 生活技能-制药
+        LifeSkillPanel.Open(2, 3, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_4 then
+        -- 生活技能-烹饪
+        LifeSkillPanel.Open(2, 4, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_5 then
+        -- 生活技能-驯兽
+        LifeSkillPanel.Open(2, 5, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_6 then
+        -- 生活技能-工艺除魔
+        LifeSkillPanel.Open(2, 6, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIFESKILL_MAKE_2_7 then
+        -- 生活技能-防具除魔
+        LifeSkillPanel.Open(2, 7, causePanelId);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_GOLD then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.CoinShop);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_GUILD then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.GuildShop);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_CAMP then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.CampShop);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_FIGHT then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.BattleShop);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_HUNT then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.HountDemonShop);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_RIDER then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.HonorShop);
+    elseif UIEnum == ENUMUINUM.SHOP_PANEL_ARTIFACT then
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.ArtifactShop);
+    elseif UIEnum == ENUMUINUM.TREAUSE_PANEL_GETREWARD then
+        -- 宠物十连抽界面
+        GetTreaurePanel.OpenThisPanelByTag(1, causePanelId);
+    elseif UIEnum == ENUMUINUM.ARTIFACTLOTTERY_PANEL then
+        -- 神器十连抽界面
+        GetTreaurePanel.OpenThisPanelByTag(2, causePanelId);
+    elseif UIEnum == ENUMUINUM.LIMIT_MYFIGHTPOWER then
+        LimitTimeActPanel.OnGetWayOpen(RANK_TYPE.E_RANKTYPE_LIMIT_FIGHT_RISE);
+    elseif UIEnum == ENUMUINUM.LIMIT_MYPET then
+        LimitTimeActPanel.OnGetWayOpen(RANK_TYPE.E_RANKTYPE_LIMIT_PETFIGHTABILITY);
+    elseif UIEnum == ENUMUINUM.LIMIT_GUILDPOWER then
+        LimitTimeActPanel.OnGetWayOpen(RANK_TYPE.E_RANKTYPE_LIMIT_GANG_XIGUAN);
+    elseif UIEnum == ENUMUINUM.LIMIT_GUILDDONATION then
+        LimitTimeActPanel.OnGetWayOpen(RANK_TYPE.E_RANKTYPE_LIMIT_CORPS_ADDMONEY);
+    elseif UIEnum == ENUMUINUM.LIMIT_CAMPKILL then
+        LimitTimeActPanel.OnGetWayOpen(RANK_TYPE.E_RANKTYPE_LIMIT_UNION_SD);
+    else
+        createPanel(UIEnum, causePanelId);
+    end
+end
+
+-- 参过参数跳转界面
+-- 格式:  类型_参数
+--      类型:1界面 2带页签界面(约定ID) 3剧情副本弹框 4拍卖行 5阵营界面 6跳转商店界面 7商城 8竞技场界面 9暂时没用 10活动通用弹框 11打开神之试炼相关活动
+--      例如:
+--          1_101   --> 打开101界面
+--          2_1512  --> 打开151界面的第二个页签
+--          3_10002 --> 打开剧情副本ID为10002的界面
+--          4_10100 --> 跳转到拍卖行 10100为道具ID
+--          5_1     --> 打开加入阵营界面
+--          6_10_2_3--> 跳转到商店ID号为10的商店界面,左侧页签为第二个，中间为第三个道具
+--          7_1_1_1 --> 跳转到商城左侧主菜单类型为1的界面（参照枚举MainMenuType）,上侧子菜单类型为1（参照不同子菜单类型对应的不同枚举ID），中间为第1个道具
+--          8_1201  --> 打开竞技场界面，后面的为活动ID
+--          10_101  --> 打开活动通用弹框面板, 101为Activity_General表ID
+--          11_901  --> 打开神之试炼相关活动(11_901 神之试炼 11_2101宝珠副本 11_2201魔神副本 11_2301宠物副本  11_2401坐骑副本)
+function OpenByParam(paramValue, causePanelId)
+    print("OpenByParam:", "  ", paramValue);
+    local params = { };
+    for d in string.gmatch(paramValue, "%d+") do
+        table.insert(params, tonumber(d));
+    end
+    if #params < 2 then
+        return;
+    end
+    local openType = params[1];
+    if openType == 1 then
+        -- 直接打开界面
+        createPanel(params[2], causePanelId);
+    elseif openType == 2 then
+        -- 带页签界面
+        OpenUIByEnum(params[2], causePanelId);
+    elseif openType == 3 then
+        -- 3副本详情
+        OpenDungeonSoloPanel(params[2], causePanelId);
+    elseif openType == 4 then
+        -- 拍卖行
+        AuctionPanel.OpenFindItem(params[2], causePanelId);
+    elseif openType == 5 then
+        -- 加入阵营界面
+        JoinCampPanel.OnGetRecommendCamp(causePanelId);
+    elseif openType == 6 then
+        -- 跳转到商店
+        ShopManager.OpenShopPanelWithTag(params[2], params[3], params[4]);
+    elseif openType == 7 then
+        -- 跳转商城
+        -- params[4] >= 10000表示配置的是道具ID, <10000表示列表索引
+        StorePanel.OpenPanel(params[2], params[3], params[4] >= 10000 and params[4] or (params[4] - 1));
+    elseif openType == 8 then
+        -- 打开竞技场界面
+        BattlePanel.OpenPanel(params[2], causePanelId);
+    elseif openType == 9 then
+        -- 暂时没用
+    elseif openType == 10 then
+        ActivityGeneralPanel.Show(params[2], causePanelId);
+        -- 活动通用弹框
+    elseif openType == 11 then
+        ActivityStairPanel.Open(params[2], causePanelId);   --suyun弹出无尽天梯面板
+    end
+end
+
+-- 打开剧情本界面
+function OpenDungeonSoloPanel(dungeonId)
+    local info = DungeonManager.GetDungeonInfo(dungeonId);
+    if info == nil then return; end
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local level = info.Level;
+    if userLevel < level then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_DUNGEON_UNCLOCK_CHAPTER);
+        return;
+    end
+    DungeonSoloPanel.Show(dungeonId);
+end
+
+-- 点击升级任务的追踪的执行
+function OpenByLevelUpMission()
+    local percent = G_UserInfo.RoleAttribute:GetCurExpPercent();
+    if percent > 1 then
+        createPanel(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL);
+    else
+        if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_ACTIVITY) then
+            createPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+        end
+    end
+end

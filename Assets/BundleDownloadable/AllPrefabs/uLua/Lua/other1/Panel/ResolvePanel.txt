@@ -1,0 +1,1843 @@
+﻿module("ResolvePanel", package.seeall)
+-- 面板名称
+local m_panelName = "ResolvePanel";
+---------------------------------------label路径---------------------------------------
+-- 分解材料提示
+local m_ResolveTitle = "Sprite_Right/Label";
+-- 分解装备得到金钱提示
+local m_ResolveMoenyTitle = "Sprite_Right/Label_Money";
+-- 分解后得到金钱显示
+local m_ResolveMoenyShow = "Sprite_ResolveResult/Item/Label_Num";
+-- 分解返还文字描述
+local m_probability = "Sprite_Right/Sub_Return/Label_Probability";
+local m_lableReturn = "/Label_Return";
+-- 分解返还数量
+local m_returnNum = "/Label_Num";
+-- 神器碎片数量
+local m_LabelCurNumStr = "Sub_NumTips/Sub_Num/Label_CurNum";
+-----------------------------------------Sprite路径------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-- 一键放入绿色装备及以下按钮
+local m_buttonGreen = "ButtonPanel/Buttons/Button_Green";
+-- 一键放入蓝色装备及以下按钮
+local m_buttonBlue = "ButtonPanel/Buttons/Button_Blue";
+-- 分解按钮
+local m_buttonResolve = "ButtonPanel/Buttons/Button_Resolve";
+-- 分解取消按钮
+local m_buttonResolveCancel = "Sprite_Title/Button_ReCancel";
+-- 分解确认按钮
+local m_buttonResolveAffrim = "Sprite_Title/Button_ReAffirm";
+-- 分解结果界面关闭按钮
+local m_buttonResultClose = "Sprite_ResolveResult/Button_Close";
+-- 选择神器碎片数量按钮
+local m_ArtifactNumBtnStr = "Sub_NumTips/Sub_Num/Num_Button";
+-- 最大按钮
+local m_BtnMostStr = "Sub_NumTips/Sub_Num/btn_Most";
+-- 选择神器碎片数量tips取消按钮
+local m_BtnCancelStr = "Sub_NumTips/btn_Cancel";
+-- 选择神器碎片数量tips确定按钮
+local m_BtnConfirmStr = "Sub_NumTips/btn_Confirm";
+----------------------------------通用的名称路径---------------------------------------
+-- 背包装备道具所在位置
+local m_itemObjectNameStr = "Sprite_Left/ItemPanel/UIGrid/Item";
+-- 背包装备面板所在位置
+local m_itemObjPanelStr = "Sprite_Left/ItemPanel";
+-- 装备名称位置
+local m_EquipNameStr = "/Label_Name";
+-- 品质位置
+local m_pinZhiStr1 = "/Sprite_PinZhi";
+-- 分解装备品质
+local m_PinZhiStr = "/Sprite_PinZhiYanSe";
+-- 装备强化等级位置
+local m_EquipStengthStr = "/Label_Stength";
+-- 装备选中图标所在位置
+local m_EquipSelectStr = "/Sprite_Select";
+-- 装备要求等级
+local m_equipLevel = "/Label_Level";
+-- 装备星级
+local m_starNum = "/Label_StarNum";
+-- 加号
+local m_signAdd = "/Label_Sign";
+-- 显示此道具是套装道具
+local m_spriteSuit = "/Sprite_Suit";
+-- 道具是否可拍卖
+local m_itemAuction = "/Sprite_Auction";
+-- 图标位置
+local m_iconStr = "/Sprite_DaoJuTuBiao";
+-- 返回结果数量图标位置
+local m_resultCount = "/Label_Num";
+-- 装备的星星所在的位置
+local m_equipStarsStr = "/Stars/Star";
+-- 星星的空位置
+local m_starEmptyStr = "/BG";
+-- 星星的位置
+local m_starStr = "/Star";
+-- 背包装备面板显示
+local m_itemShow = "/Item";
+-- 分解结果道具所在位置
+local m_returnItemObjStr = "Sprite_ResolveResult/ItemPanel/UIGrid/Item";
+-- 选择神器碎片弹板所选item
+local m_SelArtifactItemStr = "Sub_NumTips/Sub_Cost/Item";
+-- 装备栏选择分解tag
+local m_resolveTag1 = "Sub_Tag/Tag1";
+local m_resolveTag2 = "Sub_Tag/Tag2";
+local m_resolveTag3 = "Sub_Tag/Tag3";
+----------------------------------gameobject所在的路径---------------------------------
+-- 单个道具所在的位置
+local m_itemObjectStr = "Sprite_Left/ItemPanel/Item";
+-- grid所在的位置
+local m_gridObjectStr = "Sprite_Left/ItemPanel/UIGrid";
+-- 右侧装备道具所在的位置
+local m_equipRight = "Sprite_Right/Item";
+-- 返还道具所在位置
+local m_resolveReturnStr = "Sprite_Right/Sub_Return/Item";
+-- 分解返还材料道具所在的位置
+local m_resultItem = "Sprite_ResolveResult/ItemPanel/Item";
+-- 提示界面
+local m_panelTitle = "Sprite_Title";
+-- 分解结果界面
+local m_panelResult = "Sprite_ResolveResult";
+-- 分解结果界面道具grid所在位置
+local m_returnObjectStr = "Sprite_ResolveResult/ItemPanel/UIGrid";
+-- 无装备显示
+local m_noEquipStr = "Sprite_Left/BlankListHint";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 单个装备的对象
+local m_itemObject = nil;
+-- grid对象
+local m_gridObject = nil;
+-- 左侧点击的道具顺序数(0代表没有点击)
+local m_leftClickNum = 0;
+-- 左侧点击道具的crid
+local m_leftClickCrid = nil;
+-- 选中图标所在的位置
+local m_leftClickObject = nil;
+-- 当前面板所有装备
+local listEquip = nil;
+-- 當前面板的所有寵物
+local m_PetList = nil;
+-- 当前面板的所有神器碎片
+local m_ArtifactList = nil;
+-- 当前面板显示的装备
+local m_bagEquipTable = { };
+-- 当前面板显示的寵物
+local m_PetTable = {};
+-- 当前面板显示的神器碎片
+local m_ArtifactTable = {};
+-- 右侧要分解装备CRID
+local m_equipResolveTable = { };
+-- 右侧要分解装备所在分解栏的位置
+local m_resolveIndexTable = { };
+-- 右侧点击的是第几个装备,0为未点击
+local m_equipSelect = 0;
+-- 是否在初始化过后1s内
+local m_isIniting = false;
+-- 是否在这1s内还有数据传送过来
+local m_hasInfo = false;
+-- 装备分解添加类型 0:无选择 1:选中分解装备点击 2:绿色按钮点击 3:蓝色按钮点击 4：取消分解装备点击
+local m_eventType = 0;
+-- 分解固定产出金币
+local m_equipMoney = 0;
+-- 分解结果获得金币
+local m_resultMoney = 0;
+-- 分解装备所得返还表
+local m_resolveReturn = { };
+-- 服务器发来的返还物品数量
+local m_stocReturnNum = 0;
+-- 分解结果对象
+local m_resultItemObj = nil;
+-- 分解结果grid
+local m_returnObject = nil;
+-- 当前选择分解类型  Equip:1,Pet:2,Artifact:3  默认选择装备
+local m_CurResolveType = 1;
+-- 当前点击的神器碎片数量
+local m_CurClickArtifactItems = 1;
+-- 要分解的神器碎片表
+local m_ResolveArtifactTable = {};
+------------------------------------一些写死的规定-------------------------------------
+-- 左侧背包装备栏固定显示个数
+local m_leftIndex = 5;
+-- 通用装备职业id
+local m_commonProId = 255;
+-- 分解类型
+local ENUM_RESOLVE_TYPE = { Equip = 1, Pet = 2, Artifact = 3,};
+-- 神器碎片分解最大值
+local m_ArtifactResolveMax = 99;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在star方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitEvents();
+    -- 处理3d场景逻辑
+    ----Init3dScene();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 面板初始化完毕
+    m_panelInitAlready = true;
+    -- 初始化按钮信息
+    InitOnClick();
+end
+function OnEnable()
+    if m_panelInitAlready == true then
+        m_equipSelect = 0;
+        m_leftClickNum = 0;
+        m_leftClickCrid = nil;
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+function OnDisable()
+    m_equipResolveTable = { };
+    m_resolveIndexTable = { };
+    m_ResolveArtifactTable = {};
+    m_resolveReturn = { };
+    m_equipMoney = 0;
+    m_resultMoney = 0
+    m_eventType = 0;
+end
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_itemObject = nil;
+    m_gridObject = nil;
+    m_leftClickNum = 0;
+    m_leftClickCrid = nil;
+    m_leftClickObject = nil;
+    listEquip = nil;
+    m_equipResolveTable = { };
+    m_bagEquipTable = { };
+    m_PetTable = {};
+    m_ArtifactTable = {};
+    m_ArtifactList = nil;
+    m_resolveIndexTable = { };
+    m_ResolveArtifactTable = {};
+    m_equipSelect = 0;
+    m_isIniting = false;
+    m_eventType = 0
+    m_equipMoney = 0;
+    m_resultMoney = 0;
+    m_resolveReturn = { };
+    m_returnObject = nil;
+    m_resultItemObj = nil;
+    m_PetList = nil;
+    m_CurClickArtifactItems = 1;
+    m_ResolveArtifactTable = {};
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+    m_panelObject = child(m_panelObject, m_panelName).gameObject;
+    -- 左侧单个道具对象
+    m_itemObject = child(m_panelObject, m_itemObjectStr).gameObject;
+    -- grid对象
+    m_gridObject = GetComponent(m_panelObject, m_gridObjectStr, "UIGrid");
+    -- 分解结果界面道具对象
+    m_resultItemObj = child(m_panelObject, m_resultItem).gameObject;
+    -- grid对象
+    m_returnObject = GetComponent(m_panelObject, m_returnObjectStr, "UIGrid");
+end
+
+function InitEvents()
+    SetGameObjectEvent(m_resolveTag1, OnResolveTag1Click, m_panelObject);
+    SetGameObjectEvent(m_resolveTag2, OnResolveTag2Click, m_panelObject);
+    SetGameObjectEvent(m_resolveTag3, OnResolveTag3Click, m_panelObject);
+    SetGameObjectEvent(m_ArtifactNumBtnStr, OnArtifactNumBtnClick, m_panelObject);
+    SetGameObjectEvent(m_BtnMostStr, OnBtnMostClick, m_panelObject);
+    SetGameObjectEvent(m_BtnCancelStr, OnBtnCancelClick, m_panelObject);
+    SetGameObjectEvent(m_BtnConfirmStr, OnBtnConfirmClick, m_panelObject);
+    
+end
+
+function InitAllInfo()
+    if #_G.LogicData_ResolveData >0 then
+        m_CurResolveType = _G.LogicData_ResolveData[2];
+    end
+    SetGameObjectState(m_panelResult, false, m_panelObject);
+    InitResolveReturn();
+    -- 分解界面背包装备的列表
+    ShowEquipTableInit();
+    ShowPetTableInit();
+    ShowArtifactTableInit();
+    -- 初始化右侧装备信息面板
+    InitLeftEquipInfo();
+    -- 初始化左侧分解栏界面
+    InitRightEquipInfo();
+    -- 初始化页签
+    InitResolveTag();
+end
+
+function InitResolveTag()
+    SetGameObjectState(m_resolveTag1.."/Active", m_CurResolveType == ENUM_RESOLVE_TYPE.Equip, m_panelObject);
+    SetGameObjectState(m_resolveTag1.."/Deactive", m_CurResolveType ~= ENUM_RESOLVE_TYPE.Equip, m_panelObject);
+    SetGameObjectState(m_resolveTag2.."/Active", m_CurResolveType == ENUM_RESOLVE_TYPE.Pet, m_panelObject);
+    SetGameObjectState(m_resolveTag2.."/Deactive", m_CurResolveType ~= ENUM_RESOLVE_TYPE.Pet, m_panelObject);
+    SetGameObjectState(m_resolveTag3.."/Active", m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact, m_panelObject);
+    SetGameObjectState(m_resolveTag3.."/Deactive", m_CurResolveType ~= ENUM_RESOLVE_TYPE.Artifact, m_panelObject);
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+        SetLabelContent(m_buttonGreen.."/Label", GetTextToId(620), m_panelObject);
+        SetLabelContent(m_buttonBlue.."/Label", GetTextToId(619), m_panelObject);
+        SetLabelContent(m_ResolveTitle, GetTextToId(1182), m_panelObject);
+        SetLabelContent(m_noEquipStr.."/Label", GetTextToId(1203), m_panelObject);
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+        SetLabelContent(m_buttonGreen.."/Label", GetTextToId(171110), m_panelObject);
+        SetLabelContent(m_buttonBlue.."/Label", GetTextToId(171111), m_panelObject);
+        SetLabelContent(m_ResolveTitle, GetTextToId(171113), m_panelObject);
+        SetLabelContent(m_noEquipStr.."/Label", GetTextToId(171114), m_panelObject);
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+        SetLabelContent(m_buttonGreen.."/Label", GetTextToId(1717), m_panelObject);
+        SetLabelContent(m_buttonBlue.."/Label", GetTextToId(1718), m_panelObject);
+        SetLabelContent(m_ResolveTitle, GetTextToId(1714), m_panelObject);
+        SetLabelContent(m_noEquipStr.."/Label", GetTextToId(1715), m_panelObject);
+    end
+end
+
+-- 初始化右侧装备信息面板
+function InitLeftEquipInfo()
+    local startCount = 0;
+    -- 面板格子实例数量
+    local BagCount = m_gridObject:GetChildList().count;
+    -- 背包装备数
+    local EquipCount = listEquip.count;
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+        EquipCount = m_PetList.count;
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+        EquipCount = #m_ArtifactTable;
+    end
+    -- prefab是增加还是减少
+    if BagCount > EquipCount and BagCount > m_leftIndex then
+        for Index = m_leftIndex + 1, BagCount do
+            SetGameObjectState(m_itemObjectNameStr .. Index, false, m_panelObject);
+        end
+    else
+        startCount = BagCount + 1;
+    end
+    if startCount > 0 then
+        -- 需要实例化的对象数量
+        local creatCount = 0;
+        if EquipCount < m_leftIndex then
+            creatCount = m_leftIndex;
+        else
+            creatCount = EquipCount;
+        end
+        for Index = startCount, creatCount do
+            local item = newobject(m_itemObject);
+            item.transform.parent = m_gridObject.transform;
+            item.name = "Item" .. Index;
+            item.transform.localScale = Vector3.one;
+            item:SetActive(true);
+            SetGameObjectState(m_itemObjectNameStr .. Index, true, m_panelObject);
+        end
+        if EquipCount < m_leftIndex then
+            for Index = EquipCount + 1, m_leftIndex do
+                SetGameObjectState(m_itemObjectNameStr .. Index, false, m_panelObject);
+            end
+        end
+        m_gridObject:Reposition();
+    end
+    if EquipCount == 0 then
+        SetGameObjectState(m_noEquipStr, true, m_panelObject);
+        for Index = EquipCount + 1, m_leftIndex do
+            SetGameObjectState(m_itemObjectNameStr .. Index, false, m_panelObject);
+        end
+    else
+        SetGameObjectState(m_noEquipStr, false, m_panelObject);
+    end
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+        for Index = 1, EquipCount do
+            if m_bagEquipTable[Index] ~= nil then
+                local itemCreat = m_itemObjectNameStr .. Index;
+                local itemStr = itemCreat .. m_itemShow;
+                local excelID = m_bagEquipTable[Index].ExcelID;
+                local itemAttr = m_bagEquipTable[Index];
+                local forceLevel = itemAttr.LevelupItemLevel;
+                local equipInfo = itemAttr:GetEquipInfo();
+                SetGameObjectState(itemStr, true, m_panelObject);
+                SetGameObjectState(itemStr .. m_equipLevel, true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_Content", true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_ArtifactValue", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_ArtifactValueName", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_FightValue", true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_FightValueName", true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_Other", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_LvDown", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_FightUp", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_Suit", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_Auction", false, m_panelObject);
+                SetGameObjectPos(itemStr .. m_EquipNameStr, Vector3.New(-51, 49, 0), m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, itemStr, excelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                if m_bagEquipTable[Index]:GetEquipInfo().ProID == G_UserInfo.RoleAttribute.ProID or m_bagEquipTable[Index]:GetEquipInfo().ProID == m_commonProId then
+                    if m_bagEquipTable[Index]:GetEquipInfo().NeedLv > G_UserInfo.RoleAttribute.Level then
+                        SetGameObjectState(itemStr .. "/Sprite_LvDown", true, m_panelObject);
+                    else
+                        -- 穿戴的同类型装备信息
+                        local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(m_bagEquipTable[Index]:GetEquipType());
+                        if ItemInfo == nil then
+                            SetGameObjectState(itemStr .. "/Sprite_FightUp", true, m_panelObject);
+                        else
+                            local equipedFightValue = Equip_StarUp.CaculateStarUpFightValue(ItemInfo, false) + Equip_Force.CaculateEquipForceFightValue(ItemInfo, false);
+                            local notEquipedFightValue = Equip_StarUp.CaculateStarUpFightValue(m_bagEquipTable[Index], false) + Equip_Force.CaculateEquipForceFightValue(m_bagEquipTable[Index], false);
+                            if notEquipedFightValue > equipedFightValue then
+                                SetGameObjectState(itemStr .. "/Sprite_FightUp", true, m_panelObject);
+                            end
+                        end
+                    end
+                else
+                    SetGameObjectState(itemStr .. "/Sprite_Other", true, m_panelObject);
+                end
+                --            SetLabelContent(itemStr .. m_EquipStengthStr, forceLevel, m_panelObject);
+                SetLabelContent(itemStr .. m_equipLevel, equipInfo.NeedLv, m_panelObject);
+                local curFightValue = Equip_StarUp.CaculateStarUpFightValue(itemAttr, false, false) + Equip_Force.CaculateEquipForceFightValue(itemAttr, false, false);
+                SetLabelContent(itemStr .. "/Label_FightValue", curFightValue, m_panelObject);
+                if itemAttr.StarItemLevel ~= 0 then
+                    SetGameObjectState(itemStr .. m_starNum, true, m_panelObject);
+                    SetGameObjectState(itemStr .. m_signAdd, true, m_panelObject);
+                    SetLabelContent(itemStr .. m_starNum, itemAttr.StarItemLevel, m_panelObject);
+                    local m_lbSign = child(m_panelObject, itemStr .. m_signAdd).gameObject;
+                    local vec_x = 0;
+                    if itemAttr.StarItemLevel < 10 then
+                        vec_x = -114;
+                    else
+                        vec_x = -125;
+                    end
+                    SetGameObjectPos(itemStr .. m_spriteSuit, Vector3.New(vec_x, -44, 0), m_panelObject);
+                else
+                    SetGameObjectState(itemStr .. m_starNum, false, m_panelObject);
+                    SetGameObjectState(itemStr .. m_signAdd, false, m_panelObject);
+                    SetGameObjectPos(itemStr .. m_spriteSuit, Vector3.New(-80, -44, 0), m_panelObject);
+                end
+                -- 是否为套装
+                if itemAttr:GetEquipInfo().SuitID > 0 then
+                    SetGameObjectState(itemStr .. m_spriteSuit, true, m_panelObject);
+                else
+                    SetGameObjectState(itemStr .. m_spriteSuit, false, m_panelObject);
+                end
+                -- 是否可拍卖
+                local itemType = m_bagEquipTable[Index]:GetTagType();
+                local itemInfo = nil;
+                if itemType == ITEMTAGTYPE.TT_None then
+                    itemInfo = nil
+                elseif itemType == ITEMTAGTYPE.TT_Equip then
+                    itemInfo = CCommonTool.GetEquipInfo(excelID);
+                else
+                    itemInfo = CCommonTool.GetItemInfo(excelID);
+                end
+                if itemInfo ~= nil then
+                    if itemInfo.IsAuction > 0 then
+                        SetGameObjectState(itemStr .. m_itemAuction, true, m_panelObject);
+                    else
+                        SetGameObjectState(itemStr .. m_itemAuction, false, m_panelObject);
+                    end
+                else
+                    SetGameObjectState(itemStr .. m_itemAuction, false, m_panelObject);
+                end
+                if equipInfo.NeedLv > G_UserInfo.RoleAttribute.Level then
+                    SetLabelColor(itemStr .. m_equipLevel, "FF0000", m_panelObject);
+                    SetLabelColor(itemStr .. "/Label_Content", "FF0000", m_panelObject);
+                else
+                    SetLabelColor(itemStr .. m_equipLevel, "CBD0D9", m_panelObject);
+                    SetLabelColor(itemStr .. "/Label_Content", "CBD0D9", m_panelObject);
+                end
+                SetGameObjectState(itemStr .. m_EquipSelectStr, false, m_panelObject);
+
+                SetGameObjectState(itemCreat, true, m_panelObject);
+                -- 设置道具按钮的点击事件
+                SetGameObjectEvent(itemCreat, OnItemClick, m_panelObject);
+            else
+                SetGameObjectState(itemCreat, false, m_panelObject);
+            end
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+        for Index = 1, EquipCount do
+            local itemCreat = m_itemObjectNameStr .. Index;
+            SetGameObjectState(itemCreat, true, m_panelObject);
+            if m_PetTable[Index] ~= nil then
+                local itemStr = itemCreat .. m_itemShow;
+                local itemPetAttr = m_PetTable[Index].ItemAttr;
+                local starNum = itemPetAttr.AllPetAttribute.PetStar;
+                SetGameObjectState(itemStr .. "/Sprite_Suit", starNum > 0, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_Sign", starNum > 0, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_StarNum", starNum > 0, m_panelObject);
+                if starNum > 0 then 
+                    SetLabelContent(itemStr .. "/Label_StarNum", starNum, m_panelObject);
+                end
+                local excelID = itemPetAttr.ExcelID;
+                SetGameObjectState(itemStr, true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_ArtifactValue", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_ArtifactValueName", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_FightValue", true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_FightValueName", true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_Other", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_LvDown", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_FightUp", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_Auction", false, m_panelObject);
+                SetGameObjectState(itemStr .. m_equipLevel, true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_Content", true, m_panelObject);
+                SetGameObjectPos(itemStr .. m_EquipNameStr, Vector3.New(-51, 49, 0), m_panelObject);
+                SetLabelContent(itemStr .. m_equipLevel, itemPetAttr.AllPetAttribute.PetLevel, m_panelObject);
+                SetLabelColor(itemStr .. m_equipLevel, "CBD0D9", m_panelObject);
+                SetLabelColor(itemStr .. "/Label_Content", "CBD0D9", m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, itemStr, excelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetLabelContent(itemStr .. "/Label_FightValue", m_PetTable[Index].FightValue, m_panelObject);
+                SetGameObjectState(itemStr .. m_EquipSelectStr, false, m_panelObject);
+                SetGameObjectEvent(itemCreat, OnItemClick, m_panelObject);
+            else
+                SetGameObjectState(itemCreat, false, m_panelObject);
+            end
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then 
+        for Index = 1, EquipCount do
+            local itemCreat = m_itemObjectNameStr .. Index;
+            SetGameObjectState(itemCreat, true, m_panelObject);
+            if m_ArtifactTable[Index] ~= nil then
+                local itemStr = itemCreat .. m_itemShow;
+                local itemPetAttr = m_ArtifactTable[Index].ItemAttr;
+                local excelID = itemPetAttr.ExcelID;
+                local itemInfo = CCommonTool.GetItemInfo(excelID);
+                SetGameObjectState(itemStr, true, m_panelObject);
+                if itemInfo ~= nil then
+                    if itemInfo.IsAuction > 0 then
+                        SetGameObjectState(itemStr .. m_itemAuction, true, m_panelObject);
+                    else
+                        SetGameObjectState(itemStr .. m_itemAuction, false, m_panelObject);
+                    end
+                else
+                    SetGameObjectState(itemStr .. m_itemAuction, false, m_panelObject);
+                end
+                SetGameObjectState(itemStr .. "/Sprite_Suit", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_Sign", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_StarNum", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_Other", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_LvDown", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Sprite_FightUp", false, m_panelObject);
+                SetGameObjectState(itemStr .. m_equipLevel, false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_Content", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_FightValue", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_FightValueName", false, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_ArtifactValue", true, m_panelObject);
+                SetGameObjectState(itemStr .. "/Label_ArtifactValueName", true, m_panelObject);
+                SetGameObjectPos(itemStr .. m_EquipNameStr, Vector3.New(-51, 32, 0), m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, itemStr, excelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetLabelContent(itemStr .. "/Label_ArtifactValue", m_ArtifactTable[Index].num, m_panelObject);
+                SetGameObjectState(itemStr .. m_EquipSelectStr, false, m_panelObject);
+                SetGameObjectEvent(itemCreat, OnItemClick, m_panelObject);
+            else
+                SetGameObjectState(itemCreat, false, m_panelObject);
+            end
+        end
+    end
+    if EquipCount < m_leftIndex then
+        for Index = EquipCount + 1, m_leftIndex do
+            SetGameObjectState(m_itemObjectNameStr .. Index, false, m_panelObject);
+        end
+    end
+    m_isIniting = true;
+end
+-- 初始化左侧10件装备的信息
+function InitRightEquipInfo() 
+    AddResolveEquipByBag();
+    if #m_resolveIndexTable == 0 then
+        SetGameObjectState(m_ResolveTitle, true, m_panelObject);
+    end
+    if m_eventType == 0 then
+        for Index = 1, 10 do
+            SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+        end
+    elseif m_eventType == 1 then
+        SetGameObjectState(m_itemObjectNameStr .. m_leftClickNum .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+        local ItemInfo = G_BagMng:GetGoodsItem(m_leftClickCrid);
+        if ItemInfo == nil then return end
+        for Index = 1, 10 do
+            -- 分解栏是否有装备
+            local isHave = false;
+            for i = 1, 10 do
+                if m_resolveIndexTable[i] ~= nil and Index == m_resolveIndexTable[i] then
+                    isHave = true;
+                end
+            end
+            if isHave == false then
+                if m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then 
+                    local itemPetAttr = m_PetTable[m_leftClickNum].ItemAttr;
+                    table.insert(m_equipResolveTable, Index, itemPetAttr.CRID);
+                    table.insert(m_resolveIndexTable, Index, Index);
+                    local starNum = itemPetAttr.AllPetAttribute.PetStar;
+                    SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, starNum>0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_signAdd, starNum>0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_starNum, starNum>0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                    if starNum > 0 then 
+                        SetLabelContent(m_equipRight .. Index .. m_starNum, starNum, m_panelObject);
+                    end
+                    SetItemShowByExcelIDV04(m_panelObject, m_equipRight .. Index, itemPetAttr.ExcelID, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                    SetGameObjectEvent(m_equipRight .. Index, RightEquipClick, m_panelObject);
+                    ShowResolvePet(itemPetAttr, true); 
+                    return; 
+                end
+                if m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+                    --m_ResolveArtifactTable = {};
+                    local itemAttr = m_ArtifactTable[m_leftClickNum].ItemAttr;
+                    table.insert(m_equipResolveTable, Index, itemAttr.CRID);
+                    table.insert(m_resolveIndexTable, Index, Index);
+                    local tempTable = { excelID = itemAttr.ExcelID, num = m_CurClickArtifactItems};
+                    table.insert(m_ResolveArtifactTable, Index, tempTable);
+                    
+                    SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, false, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_signAdd, false, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_starNum, false, m_panelObject);
+                    local itemInfo = CCommonTool.GetItemInfo(itemAttr.ExcelID);
+                    if itemInfo ~= nil then
+                        if itemInfo.IsAuction > 0 then
+                            SetGameObjectState(m_equipRight .. Index .. m_itemAuction, true, m_panelObject);
+                        else
+                            SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                    end
+                    SetItemShowByExcelIDV04(m_panelObject, m_equipRight .. Index, itemAttr.ExcelID, m_CurClickArtifactItems, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                    SetGameObjectEvent(m_equipRight .. Index, RightEquipClick, m_panelObject);
+                    ShowResolveArtifact(itemAttr, true, Index); 
+                    return;
+                end
+                table.insert(m_equipResolveTable, Index, ItemInfo.CRID);
+                table.insert(m_resolveIndexTable, Index, Index);
+                SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_equipRight .. Index, ItemInfo.ExcelID, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                if ItemInfo.StarItemLevel ~= 0 then
+                    SetGameObjectState(m_equipRight .. Index .. m_starNum, true, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_signAdd, true, m_panelObject);
+                    SetLabelContent(m_equipRight .. Index .. m_starNum, ItemInfo.StarItemLevel, m_panelObject);
+                    local m_lbSign = child(m_panelObject, m_equipRight .. Index .. m_signAdd).gameObject;
+                    local vec_x = 0;
+                    if ItemInfo.StarItemLevel < 10 then
+                        vec_x = -114;
+                    else
+                        vec_x = -125;
+                    end
+                    SetGameObjectPos(m_equipRight .. Index .. m_spriteSuit, Vector3.New(vec_x, -44, 0), m_panelObject);
+                else
+                    SetGameObjectState(m_equipRight .. Index .. m_starNum, false, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_signAdd, false, m_panelObject);
+                    SetGameObjectPos(m_equipRight .. Index .. m_spriteSuit, Vector3.New(-80, -44, 0), m_panelObject);
+                end
+                SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                -- 是否为套装
+                if ItemInfo:GetEquipInfo().SuitID > 0 then
+                    SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, true, m_panelObject);
+                else
+                    SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, false, m_panelObject);
+                end
+
+                SetGameObjectEvent(m_equipRight .. Index, RightEquipClick, m_panelObject);
+                SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                break;
+            end 
+        end
+        m_equipMoney = ItemInfo:GetEquipInfo().Value + m_equipMoney;
+        ShowResolveItem(ItemInfo, m_equipMoney, true);
+        --        SetGameObjectState(m_ResolveTitle, false, m_panelObject);
+    elseif m_eventType == 2 then
+        AddResolveEquip(2);
+    elseif m_eventType == 3 then
+        AddResolveEquip(3);
+    elseif m_eventType == 4 then
+        for Index = 1, #m_equipResolveTable do
+            if m_equipResolveTable[Index] ~= nil then
+                if m_equipResolveTable[Index] == m_leftClickCrid then
+                    local ItemInfo = G_BagMng:GetGoodsItem(m_leftClickCrid);
+                    SetGameObjectState(m_equipRight .. m_resolveIndexTable[Index], false, m_panelObject);
+                    table.remove(m_equipResolveTable, Index);
+                    table.remove(m_resolveIndexTable, Index);
+                    if ItemInfo == nil then return end
+                    if m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+                        local itemAttr = nil;
+                         for Index = 1, #m_ArtifactTable do
+                            if m_ArtifactTable[Index].ItemAttr.CRID == m_leftClickCrid then
+                                itemAttr = m_ArtifactTable[Index].ItemAttr;
+                                break;
+                            end
+                        end
+                        ShowResolveArtifact(itemAttr, false, Index);
+                    end
+                    if m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+                        local itemPetAttr = nil;
+                         for Index = 1, m_PetList.count do
+                            if m_PetList[Index - 1].CRID == m_leftClickCrid then
+                                itemPetAttr = m_PetList[Index - 1];
+                                break;
+                            end
+                        end
+                        ShowResolvePet(itemPetAttr, false);
+                    end
+                    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+                        m_equipMoney = m_equipMoney - ItemInfo:GetEquipInfo().Value;
+                        ShowResolveItem(ItemInfo, m_equipMoney, false);
+                        --                    SetLabelContent(m_ResolveMoenyTitle, m_equipMoney, m_panelObject);
+                    end
+                    break;
+                end
+            end
+        end
+        if #m_resolveIndexTable == 0 then
+            SetGameObjectState(m_ResolveTitle, true, m_panelObject);
+        end
+    end
+end
+-- 一键分解向分解栏添加装备
+function AddResolveEquip(e)
+    -- 符合要求的装备数量
+    local itemIndex = 1;
+    m_equipResolveTable = { };
+    m_resolveIndexTable = { };
+    m_ResolveArtifactTable = { };
+    m_equipMoney = 0;
+    for Index = 1, 10 do
+        -- 分解栏是否有数据
+        local isHave = false;
+        if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then 
+            for index = itemIndex, #m_bagEquipTable do
+                if m_bagEquipTable[index]:GetEquipInfo().AptitudeID <= e then
+                    local ItemInfo = m_bagEquipTable[index];
+                    table.insert(m_equipResolveTable, Index, ItemInfo.CRID);
+                    table.insert(m_resolveIndexTable, Index, Index);
+                    SetItemShowByExcelIDV04(m_panelObject, m_equipRight .. Index, ItemInfo.ExcelID, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+
+                    SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                    SetGameObjectState(m_itemObjectNameStr .. index .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+                    SetLabelContent(m_itemObjectNameStr .. Index .. m_itemShow .. "/Label_ArtifactValue", 0, m_panelObject);
+                    SetGameObjectEvent(m_equipRight .. Index, RightEquipClick, m_panelObject);
+                    if ItemInfo.StarItemLevel ~= 0 then
+                        SetGameObjectState(m_equipRight .. Index .. m_starNum, true, m_panelObject);
+                        SetGameObjectState(m_equipRight .. Index .. m_signAdd, true, m_panelObject);
+                        SetLabelContent(m_equipRight .. Index .. m_starNum, ItemInfo.StarItemLevel, m_panelObject);
+                        local m_lbSign = child(m_panelObject, m_equipRight .. Index .. m_signAdd).gameObject;
+                        local vec_x = 0;
+                        if ItemInfo.StarItemLevel < 10 then
+                            vec_x = -114;
+                        else
+                            vec_x = -125;
+                        end
+                        SetGameObjectPos(m_equipRight .. Index .. m_spriteSuit, Vector3.New(vec_x, -44, 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_equipRight .. Index .. m_starNum, false, m_panelObject);
+                        SetGameObjectState(m_equipRight .. Index .. m_signAdd, false, m_panelObject);
+                        SetGameObjectPos(m_equipRight .. Index .. m_spriteSuit, Vector3.New(-80, -44, 0), m_panelObject);
+                    end
+                    -- 是否为套装
+                    if ItemInfo:GetEquipInfo().SuitID > 0 then
+                        SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, true, m_panelObject);
+                    else
+                        SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, false, m_panelObject);
+                    end
+                    SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                    isHave = true;
+                    m_equipMoney = ItemInfo:GetEquipInfo().Value + m_equipMoney;
+                    ShowResolveItem(ItemInfo, m_equipMoney, true);
+                    itemIndex = index + 1;
+                    break;
+                end
+            end  
+        elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then 
+            for index = itemIndex, #m_PetTable do 
+                local itemPetAttr = m_PetTable[index].ItemAttr;
+                local starNum = itemPetAttr.AllPetAttribute.PetStar;
+                local excelID = itemPetAttr.ExcelID;
+                local aptitude = CCommonTool.GetAptitudeIDByExcelID(excelID);
+                if aptitude == e and starNum <= 3 then 
+                    table.insert(m_equipResolveTable, Index, itemPetAttr.CRID);
+                    table.insert(m_resolveIndexTable, Index, Index);
+                    SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                    SetGameObjectState(m_itemObjectNameStr .. index .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_starNum, starNum>0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_signAdd, starNum>0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, starNum>0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                    if starNum > 0 then 
+                        SetLabelContent(m_equipRight .. Index .. m_starNum, starNum, m_panelObject);
+                    end
+                    SetItemShowByExcelIDV04(m_panelObject, m_equipRight .. Index, itemPetAttr.ExcelID, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                    SetGameObjectEvent(m_equipRight .. Index, RightEquipClick, m_panelObject);
+                    isHave = true;
+                    ShowResolvePet(itemPetAttr, true);
+                    itemIndex = index + 1;
+                    break;
+                end
+            end
+        elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+            for index = itemIndex, #m_ArtifactTable do 
+                local itemAttr = m_ArtifactTable[index].ItemAttr;
+                local excelID = itemAttr.ExcelID;
+                local aptitude = CCommonTool.GetAptitudeIDByExcelID(excelID);
+                if aptitude <= e then 
+                    table.insert(m_equipResolveTable, Index, itemAttr.CRID);
+                    table.insert(m_resolveIndexTable, Index, Index);
+                    local tempTable = { excelID = itemAttr.ExcelID, num = m_ArtifactTable[index].num};
+                    table.insert(m_ResolveArtifactTable, Index, tempTable);
+                    SetGameObjectState(m_equipRight .. Index, true, m_panelObject);
+                    local itemInfo = CCommonTool.GetItemInfo(itemAttr.ExcelID);
+                    if itemInfo ~= nil then
+                        if itemInfo.IsAuction > 0 then
+                            SetGameObjectState(m_equipRight .. Index .. m_itemAuction, true, m_panelObject);
+                        else
+                            SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(m_equipRight .. Index .. m_itemAuction, false, m_panelObject);
+                    end
+                    SetGameObjectState(m_itemObjectNameStr .. index .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+                    SetLabelContent(m_itemObjectNameStr .. Index .. m_itemShow .. "/Label_ArtifactValue", 0, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_starNum, false, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_signAdd, false, m_panelObject);
+                    SetGameObjectState(m_equipRight .. Index .. m_spriteSuit, false, m_panelObject);
+                    SetItemShowByExcelIDV04(m_panelObject, m_equipRight .. Index, itemAttr.ExcelID, m_ArtifactTable[index].num, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                    SetGameObjectEvent(m_equipRight .. Index, RightEquipClick, m_panelObject);
+                    isHave = true;
+                    ShowResolveArtifact(itemAttr, true, Index);
+                    itemIndex = index + 1;
+                    break;
+                end
+            end
+            
+        end
+        if isHave == false then
+            SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+            SetGameObjectEvent(strPath, Kong, m_panelObject);
+        end
+    end
+    if #m_equipResolveTable <= 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILL_NOT_CANPUTINEQUIP);
+        SetGameObjectState(m_ResolveTitle, true, m_panelObject);
+    else
+        --        SetGameObjectState(m_ResolveTitle, false, m_panelObject);
+    end
+end
+
+-- 初始化返还显示
+function InitResolveReturn()
+    if #m_resolveIndexTable == 0 then
+        m_resolveReturn = { };
+        for Index = 1, 5 do
+            SetGameObjectState(m_resolveReturnStr .. Index, false, m_panelObject);
+        end
+        for i = 1, 5 do
+            SetGameObjectState(m_probability .. i , false, m_panelObject);
+        end
+    end
+end
+
+-- 分解装备返还物品显示
+function ShowResolveItem(ItemInfo, m_equipMoney, isadd)
+    InitResolveReturn();
+    if #m_resolveIndexTable ~= 0 then
+        SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr ..1, G_ItemToolTipDefine.BINDMONEY, m_equipMoney, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+        SetGameObjectState(m_resolveReturnStr .. 1, true, m_panelObject);
+        SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. 1, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+        for i = 1, 4 do
+            SetGameObjectState(m_probability .. i + 1, true, m_panelObject);
+        end
+    end
+    local itemID = ItemInfo:GetEquipInfo().sortStar;
+    local returnID = itemID * 100 + ItemInfo.StarItemLevel;
+    local tableReturn = CCommonTool.GetResolveBackInfo(returnID);
+    if tableReturn == nil then return end
+    local returnItem1Id = tableReturn.Item1Id;
+    local resolveReturn = nil;
+    if returnItem1Id ~= 0 then
+        resolveReturn = {
+            item1id = tableReturn.Item1Id,
+            item1num = tableReturn.Item1Num,
+        };
+    end
+    -- 添加或删除分解装备
+    if isadd then
+        if #m_resolveReturn == 0 and resolveReturn ~= nil then
+            table.insert(m_resolveReturn, 1, resolveReturn);
+        else
+            if resolveReturn ~= nil then
+                for i = 1, #m_resolveReturn do
+                    if resolveReturn.item1id == m_resolveReturn[i].item1id then
+                        m_resolveReturn[i].item1num = m_resolveReturn[i].item1num + resolveReturn.item1num;
+                        break;
+                    else
+                        table.insert(m_resolveReturn, #m_resolveReturn + 1, resolveReturn);
+                        break;
+                    end
+                end
+            end
+        end
+    else
+        if #m_resolveReturn ~= 0 and resolveReturn ~= nil then
+            for i = 1, #m_resolveReturn do
+                if resolveReturn.item1id == m_resolveReturn[i].item1id then
+                    m_resolveReturn[i].item1num = m_resolveReturn[i].item1num - resolveReturn.item1num;
+                end
+            end
+            for i = #m_resolveReturn,1, -1 do
+                 if m_resolveReturn[i].item1num == 0 then
+                    table.remove(m_resolveReturn, i);
+                end
+            end
+           
+        end
+    end
+
+    -- 分解返还固定只显示五个
+    if #m_resolveReturn == 0 then
+        for Index = 2, 5 do
+            SetGameObjectState(m_resolveReturnStr .. Index, false, m_panelObject);
+        end
+    else
+        if #m_resolveReturn >= 4 then
+            for i = 1, 4 do
+                SetGameObjectState(m_resolveReturnStr .. i + 1, true, m_panelObject);
+                SetGameObjectState(m_probability .. i + 1, false, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr .. i + 1, m_resolveReturn[i].item1id, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetGameObjectState(m_resolveReturnStr .. i + 1 .. m_returnNum, true, m_panelObject);
+                SetLabelContent(m_resolveReturnStr .. i + 1 .. m_returnNum, m_resolveReturn[i].item1num, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. i + 1, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, m_resolveReturn[i].item1id);
+            end
+        else
+            for i = 1, #m_resolveReturn do
+                SetGameObjectState(m_resolveReturnStr .. i + 1, true, m_panelObject);
+                SetGameObjectState(m_probability .. i + 1, false, m_panelObject);
+                SetGameObjectState(m_resolveReturnStr .. i + 1 .. m_lableReturn, false, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr .. i + 1, m_resolveReturn[i].item1id, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetGameObjectState(m_resolveReturnStr .. i + 1 .. m_returnNum, true, m_panelObject);
+                SetLabelContent(m_resolveReturnStr .. i + 1 .. m_returnNum, m_resolveReturn[i].item1num, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. i + 1, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, m_resolveReturn[i].item1id);
+            end
+            for i = #m_resolveReturn + 1, 4 do
+                SetGameObjectState(m_resolveReturnStr .. i + 1, false, m_panelObject);
+                SetGameObjectState(m_probability .. i + 1, true, m_panelObject);
+                SetGameObjectState(m_resolveReturnStr .. i + 1 .. m_lableReturn, true, m_panelObject);
+            end
+        end
+    end
+end
+-- 分解宠物返还物品显示
+function ShowResolvePet(itemPetAttr, isAdd)
+    InitResolveReturn();
+    if #m_resolveIndexTable ~= 0 then
+        for i = 1, 5 do
+            SetGameObjectState(m_probability .. i, true, m_panelObject);
+        end 
+    end
+    local starNum = itemPetAttr.AllPetAttribute.PetStar;
+    local excelId = PetDecomposeGetExcelIDByStar[starNum + 1];
+    local resolveReturn = nil;
+    if excelId > 0 then
+        resolveReturn = {
+            excelId = excelId,
+            num = 1,
+        };
+    end
+    if isAdd then
+        local isNew = true;
+        if #m_resolveReturn == 0 and resolveReturn ~= nil then
+            table.insert(m_resolveReturn, 1, resolveReturn);
+        else
+            if resolveReturn ~= nil then
+                for i = 1, #m_resolveReturn do
+                    if resolveReturn.excelId == m_resolveReturn[i].excelId then
+                        m_resolveReturn[i].num = m_resolveReturn[i].num + resolveReturn.num;
+                        isNew = false;
+                        break;
+                    end
+                end
+                if isNew then 
+                    table.insert(m_resolveReturn, #m_resolveReturn + 1, resolveReturn);
+                end
+            end
+        end
+    else
+         if #m_resolveReturn ~= 0 and resolveReturn ~= nil then
+            for i = 1, #m_resolveReturn do
+                local num = #m_resolveReturn;
+                if  m_resolveReturn[i] and resolveReturn.excelId == m_resolveReturn[i].excelId then
+                    m_resolveReturn[i].num = m_resolveReturn[i].num - resolveReturn.num;
+                end
+                
+            end
+            for i = #m_resolveReturn,1, -1 do
+                if m_resolveReturn[i].num <= 0 then
+                    table.remove(m_resolveReturn, i);
+                end
+            end
+        end
+    end
+    -- 分解返还固定只显示五个
+    if #m_resolveReturn == 0 then
+        for Index = 1, 5 do
+            SetGameObjectState(m_resolveReturnStr .. Index, false, m_panelObject);
+        end
+    else
+        if #m_resolveReturn >= 5 then
+            for i = 1, 4 do
+                SetGameObjectState(m_resolveReturnStr .. i, true, m_panelObject);
+                SetGameObjectState(m_probability .. i, false, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr .. i + 1, m_resolveReturn[i].excelId, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_returnNum, true, m_panelObject);
+                SetLabelContent(m_resolveReturnStr .. i .. m_returnNum, m_resolveReturn[i].num, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. i + 1, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, m_resolveReturn[i].excelId);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_lableReturn, true, m_panelObject);
+            end
+            SetGameObjectState(m_resolveReturnStr .. 5, false, m_panelObject);
+            SetGameObjectState(m_probability .. 5, true, m_panelObject);
+            SetGameObjectState(m_resolveReturnStr .. 5 .. m_lableReturn, true, m_panelObject);
+        else
+            for i = 1, #m_resolveReturn do
+                SetGameObjectState(m_resolveReturnStr .. i, true, m_panelObject);
+                SetGameObjectState(m_probability .. i, false, m_panelObject);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_lableReturn, true, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr .. i, m_resolveReturn[i].excelId, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_returnNum, true, m_panelObject);
+                SetLabelContent(m_resolveReturnStr .. i .. m_returnNum, m_resolveReturn[i].num, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. i, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, m_resolveReturn[i].excelId);
+            end
+            for i = #m_resolveReturn + 1, 5 do
+                SetGameObjectState(m_resolveReturnStr .. i, false, m_panelObject);
+                SetGameObjectState(m_probability .. i, true, m_panelObject);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_lableReturn, false, m_panelObject);
+            end
+        end
+    end
+end
+-- 分解神器碎片返还
+function ShowResolveArtifact(itemPetAttr, isAdd, Index)
+    InitResolveReturn();
+    if #m_resolveIndexTable ~= 0 then
+        for i = 1, 5 do
+            SetGameObjectState(m_probability .. i, true, m_panelObject);
+        end 
+    end
+    local excelId = itemPetAttr.ExcelID;
+    local returnNum = GetArtifactReturn(excelId);
+    local returnData = ArtifactResolveReturn[returnNum];
+    local resolveReturn = nil;
+    if excelId > 0 then
+        resolveReturn = {
+            excelId = returnData.itemId,
+            num = returnData.num * m_ResolveArtifactTable[Index].num,
+        };
+    end
+    if isAdd then
+        local isNew = true;
+        if #m_resolveReturn == 0 and resolveReturn ~= nil then
+            table.insert(m_resolveReturn, 1, resolveReturn);
+        else
+            if resolveReturn ~= nil then
+                for i = 1, #m_resolveReturn do
+                    if resolveReturn.excelId == m_resolveReturn[i].excelId then
+                        m_resolveReturn[i].num = m_resolveReturn[i].num + resolveReturn.num;
+                        isNew = false;
+                        break;
+                    end
+                end
+                if isNew then 
+                    table.insert(m_resolveReturn, #m_resolveReturn + 1, resolveReturn);
+                end
+            end
+        end
+    else
+         if #m_resolveReturn ~= 0 and resolveReturn ~= nil then
+            for i = 1, #m_resolveReturn do
+                local num = #m_resolveReturn;
+                if  m_resolveReturn[i] and resolveReturn.excelId == m_resolveReturn[i].excelId then
+                    m_resolveReturn[i].num = m_resolveReturn[i].num - resolveReturn.num;
+                end
+            end
+            for i = #m_resolveReturn,1, -1 do
+                if m_resolveReturn[i].num <= 0 then
+                    table.remove(m_resolveReturn, i);
+                end
+            end
+        end
+        table.remove(m_ResolveArtifactTable, Index);
+    end
+    -- 分解返还固定只显示五个
+    if #m_resolveReturn == 0 then
+        for Index = 1, 5 do
+            SetGameObjectState(m_resolveReturnStr .. Index, false, m_panelObject);
+        end
+    else
+        if #m_resolveReturn >= 5 then
+            for i = 1, 4 do
+                SetGameObjectState(m_resolveReturnStr .. i, true, m_panelObject);
+                SetGameObjectState(m_probability .. i, false, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr .. i + 1, m_resolveReturn[i].excelId, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_returnNum, true, m_panelObject);
+                SetLabelContent(m_resolveReturnStr .. i .. m_returnNum, m_resolveReturn[i].num, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. i + 1, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, m_resolveReturn[i].excelId);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_lableReturn, true, m_panelObject);
+            end
+            SetGameObjectState(m_resolveReturnStr .. 5, false, m_panelObject);
+            SetGameObjectState(m_probability .. 5, true, m_panelObject);
+            SetGameObjectState(m_resolveReturnStr .. 5 .. m_lableReturn, true, m_panelObject);
+        else
+            for i = 1, #m_resolveReturn do
+                SetGameObjectState(m_resolveReturnStr .. i, true, m_panelObject);
+                SetGameObjectState(m_probability .. i, false, m_panelObject);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_lableReturn, true, m_panelObject);
+                SetItemShowByExcelIDV04(m_panelObject, m_resolveReturnStr .. i, m_resolveReturn[i].excelId, 1, false, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_returnNum, true, m_panelObject);
+                SetLabelContent(m_resolveReturnStr .. i .. m_returnNum, m_resolveReturn[i].num, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_resolveReturnStr .. i, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, m_resolveReturn[i].excelId);
+            end
+            for i = #m_resolveReturn + 1, 5 do
+                SetGameObjectState(m_resolveReturnStr .. i, false, m_panelObject);
+                SetGameObjectState(m_probability .. i, true, m_panelObject);
+                SetGameObjectState(m_resolveReturnStr .. i .. m_lableReturn, false, m_panelObject);
+            end
+        end
+    end
+end
+
+-- 分解界面背包装备的列表
+function ShowEquipTableInit()
+    -- 排序规则
+    G_BagMng:ClearSortType();
+    G_BagMng:SetSortType(ESortType.TypeQualityAscend);
+    G_BagMng:SetSortType(ESortType.TypeEquipNeedLevel);
+    G_BagMng:SetSortType(ESortType.TypeEquipStar);
+    G_BagMng:SetSortType(ESortType.TypeEquipForce);
+    G_BagMng:SetSortType(ESortType.TypeNone);
+    -- 背包装备道具信息
+    m_bagEquipTable = { };
+    if G_BagMng then 
+        listEquip = G_BagMng:GetGoodsByItemTagType(ITEMTAGTYPE.TT_Equip);
+        for Index = 1, listEquip.count do
+            local itemAttr = listEquip[Index - 1];
+            table.insert(m_bagEquipTable, Index, itemAttr);
+        end
+    end
+end
+
+-- 分解界面宠物列表
+function ShowPetTableInit()
+    m_PetList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+    m_PetTable = {};
+    for Index = 1, m_PetList.Count do
+        local petInfoTable = {};
+        if not PetManager.PetIsInCombine(m_PetList[Index - 1]) then
+            petInfoTable.ItemAttr = m_PetList[Index - 1];
+            petInfoTable.FightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_PetList[Index - 1],1) + 0.5);
+            table.insert(m_PetTable,petInfoTable);
+        end
+    end
+    if PetManager.m_yIsSetPetOut then 
+        for Index = 1, #m_PetTable do 
+            if PetManager.m_yPetPanelPos == m_PetTable[Index].ItemAttr.PakID then
+                table.remove(m_PetTable, Index);
+                break;
+            end
+        end
+    end
+    table.sort(m_PetTable,function(a, b)
+        return a.FightValue > b.FightValue
+    end );
+end
+
+-- 分解界面神器碎片列表
+function ShowArtifactTableInit()
+    m_ArtifactList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+    m_ArtifactTable = {};
+    for Index = 1, m_ArtifactList.Count do
+        local itemExcelID = m_ArtifactList[Index-1].ExcelID;
+        if itemExcelID > 21400 and itemExcelID < 21801 then 
+            local ItemNum = m_ArtifactList[Index-1].ItemNum;
+            if ItemNum > 0 then 
+                if #m_ArtifactTable > 0 then 
+                    local isHave = false;
+                    for i,v in pairs(m_ArtifactTable) do 
+                        if v.ItemAttr.ExcelID == itemExcelID then 
+                            v.num = v.num + ItemNum;
+                            isHave = true;
+                            break;
+                        end
+                    end 
+                    if isHave == false then
+                        local tempTable = {};
+                        tempTable.ItemAttr = m_ArtifactList[Index-1];
+                        tempTable.num = ItemNum;
+                        table.insert(m_ArtifactTable, tempTable);
+                    end   
+                else
+                    local tempTable = {};
+                    tempTable.ItemAttr = m_ArtifactList[Index-1];
+                    tempTable.num = ItemNum;
+                    table.insert(m_ArtifactTable, tempTable);
+                end
+            end
+        end
+    end
+    table.sort(m_ArtifactTable, function(a,b)
+        return a.ItemAttr.ExcelID < b.ItemAttr.ExcelID
+    end);
+    local tempTable = {};
+    local Index = 0;
+    local allArtifactInfo = CCommonTool.GetAllArtifactInfo();
+    for i = 0, allArtifactInfo.Count - 1 do
+        local fragmentTable = {
+                                [1] = allArtifactInfo[i].Fragment1ID,
+                                [2] = allArtifactInfo[i].Fragment2ID,
+                                [3] = allArtifactInfo[i].Fragment3ID,
+                                [4] = allArtifactInfo[i].Fragment4ID,
+                                [5] = allArtifactInfo[i].Fragment5ID,
+                                [6] = allArtifactInfo[i].Fragment6ID,
+                             };
+        for index = 1, 6 do
+            local artifactFragmentInfo = CCommonTool.GetArtifactFragmentInfo(fragmentTable[index]);
+            local excelID = artifactFragmentInfo.RelatedItemID;
+            tradableInfo = CCommonTool.GetTradableInfo(excelID)
+            local UntradableExcelID = tradableInfo.UntradableItemID;
+            for j, v in pairs(m_ArtifactTable) do
+                if excelID == v.ItemAttr.ExcelID then 
+                    table.insert(tempTable, Index + 1, v);
+                    Index = Index + 1;
+                end
+                if UntradableExcelID == v.ItemAttr.ExcelID then 
+                    table.insert(tempTable, Index + 1, v);
+                    Index = Index + 1;
+                    break;
+                end
+            end
+        end
+    end
+    m_ArtifactTable = tempTable;
+end
+
+-- 按钮点击事件
+function InitOnClick()
+    -- 一键分解绿色及以下装备按钮点击事件
+    SetGameObjectEvent(m_buttonGreen, OnGreenButtonClick, m_panelObject);
+    -- 一键分解蓝色及以下装备按钮点击事件
+    SetGameObjectEvent(m_buttonBlue, OnBlueButtonClick, m_panelObject);
+    -- 分解按钮点击事件
+    SetGameObjectEvent(m_buttonResolve, OnResolveButtonClick, m_panelObject);
+    -- 提示界面取消按钮点击事件
+    SetGameObjectEvent(m_buttonResolveCancel, OnResolveCancelButtonClick, m_panelObject);
+    -- 提示界面分解按钮点击事件
+    SetGameObjectEvent(m_buttonResolveAffrim, OnTitleResolveButtonClick, m_panelObject);
+    -- 分解结果界面关闭按钮点击事件
+    SetGameObjectEvent(m_buttonResultClose, OnResultCloseButtonClick, m_panelObject);
+end
+
+-- 检测是否已被选中
+function CheckIsSeleck(num)
+    -- 装备是否已被选中
+    local isSelect = false;
+    for Index = 1, 10 do
+        if m_leftClickCrid == m_equipResolveTable[Index] then
+            isSelect = true;
+            m_eventType = 4;
+            SetGameObjectState(m_itemObjectNameStr .. num .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+            if m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then 
+                SetLabelContent(m_itemObjectNameStr .. num .. m_itemShow .. "/Label_ArtifactValue", m_ArtifactTable[num].num, m_panelObject);
+            end
+            InitRightEquipInfo();
+            break;
+        end
+    end
+    if #m_equipResolveTable == 10 then
+        print("分解栏已满");
+        return;
+    end
+    if isSelect == false then
+        if m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then 
+            if m_ArtifactTable[m_leftClickNum].num <= 1 then 
+                m_CurClickArtifactItems = 1;
+                OnBtnConfirmClick();
+            else
+                OnArtifactItemClick();
+            end
+        else
+            m_eventType = 1;
+            SetGameObjectState(m_itemObjectNameStr .. num .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+            InitRightEquipInfo();
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 开启分解界面事件
+function OnPackageOpen()
+    createPanel(ENUMPANELID.ENUM_PANEL_RESOLVEPANEL);
+end
+-- 关闭界面按钮事件
+function OnCloseClick()
+    -- 关闭分解界面
+    closePanel(ENUMPANELID.ENUM_PANEL_RESOLVEPANEL);
+end
+-- 点击背包装备按钮事件
+function OnItemClick(e)
+    local num = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    m_leftClickNum = num;
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then  
+        m_leftClickCrid = listEquip[m_leftClickNum - 1].CRID;
+    end
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then 
+        m_leftClickCrid = m_PetTable[m_leftClickNum].ItemAttr.CRID;
+    end
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+        m_leftClickCrid = m_ArtifactTable[m_leftClickNum].ItemAttr.CRID;
+    end
+    CheckIsSeleck(num);
+end
+-- 点击装备栏神器碎片按钮事件
+function OnArtifactItemClick()
+    SetGameObjectState("Sub_NumTips", true, m_panelObject);
+    local costExcelID = m_ArtifactTable[m_leftClickNum].ItemAttr.ExcelID;
+    local num = m_ArtifactTable[m_leftClickNum].num;
+    local itemInfo = CCommonTool.GetItemInfo(costExcelID);
+    if itemInfo ~= nil then
+        if itemInfo.IsAuction > 0 then
+            SetGameObjectState(m_SelArtifactItemStr .. m_itemAuction, true, m_panelObject);
+        else
+            SetGameObjectState(m_SelArtifactItemStr .. m_itemAuction, false, m_panelObject);
+        end
+    else
+        SetGameObjectState(m_SelArtifactItemStr .. m_itemAuction, false, m_panelObject);
+    end
+    SetItemShowByExcelIDV04(m_panelObject, m_SelArtifactItemStr, costExcelID, num, true, 16, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL);
+    SetItemToolTipsEvent(m_panelObject, m_SelArtifactItemStr, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, costExcelID);
+    m_CurClickArtifactItems = m_ArtifactTable[m_leftClickNum].num;
+    if m_CurClickArtifactItems > m_ArtifactResolveMax then
+        m_CurClickArtifactItems = m_ArtifactResolveMax;
+    end
+    SetLabelContent(m_LabelCurNumStr, m_CurClickArtifactItems, m_panelObject);
+end
+-- 显示小键盘按钮
+function OnArtifactNumBtnClick()
+    local data =
+    {
+        X = 0;
+        Y = -20;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnSmallKeyboardNumClick;
+    SmallKeyboardPanel.ConfirmCallback = OnSmallKeyboardConfirmClick;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL, data, ENUMPANELID.ENUM_PANEL_SHOP);
+end
+-- 小键盘数字按下回调
+-- @param data 数据信息
+function OnSmallKeyboardNumClick(data)
+    if data ~= nil then
+        m_CurClickArtifactItems = data.Num;
+        if m_CurClickArtifactItems < 1 then
+            m_CurClickArtifactItems = 1;
+        elseif m_CurClickArtifactItems > m_ArtifactTable[m_leftClickNum].num then
+            m_CurClickArtifactItems = m_ArtifactTable[m_leftClickNum].num;
+        end
+        if m_CurClickArtifactItems > m_ArtifactResolveMax then
+            m_CurClickArtifactItems = m_ArtifactResolveMax;
+        end
+        SetLabelContent(m_LabelCurNumStr, m_CurClickArtifactItems, m_panelObject);
+    end
+end
+
+-- 小键盘确定按钮回调
+function OnSmallKeyboardConfirmClick()
+
+end
+-- 最大按钮点击
+function OnBtnMostClick()
+    local data = 
+        {
+            Num = m_ArtifactTable[m_leftClickNum].num;
+            Text = 0;
+        };
+    OnSmallKeyboardNumClick(data);
+end
+-- 关闭神器碎片数量tips
+function OnBtnCancelClick()
+    SetGameObjectState("Sub_NumTips", false, m_panelObject);
+end
+-- 神器碎片数量tips确定按钮
+function OnBtnConfirmClick()
+    SetGameObjectState("Sub_NumTips", false, m_panelObject);
+    m_eventType = 1;
+    InitRightEquipInfo();
+    local itemCreat = m_itemObjectNameStr .. m_leftClickNum;
+    SetGameObjectState(itemCreat .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+    SetLabelContent(itemCreat.. m_itemShow .. "/Label_ArtifactValue", m_ArtifactTable[m_leftClickNum].num - m_CurClickArtifactItems, m_panelObject);
+end
+-- 分解栏装备点击事件
+function RightEquipClick(e)
+    local num = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    for index = 1, #m_resolveIndexTable do
+        if m_resolveIndexTable[index] == num then
+            num = index;
+        end
+    end
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+        for Index = 1, listEquip.count do
+            if listEquip[Index - 1].CRID == m_equipResolveTable[num] then
+                m_eventType = 4;
+                m_leftClickCrid = listEquip[Index - 1].CRID;
+                SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+                InitRightEquipInfo();
+                break;
+            end
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then 
+        for Index = 1, #m_PetTable do
+            if m_PetTable[Index].ItemAttr.CRID == m_equipResolveTable[num] then
+                m_eventType = 4;
+                m_leftClickCrid = m_PetTable[Index].ItemAttr.CRID;
+                SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+                InitRightEquipInfo();
+                break;
+            end
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then 
+        for Index = 1, #m_ArtifactTable do
+            if m_ArtifactTable[Index].ItemAttr.CRID == m_equipResolveTable[num] then
+                m_eventType = 4;
+                m_leftClickCrid = m_ArtifactTable[Index].ItemAttr.CRID;
+                SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+                SetLabelContent(m_itemObjectNameStr .. Index .. m_itemShow .. "/Label_ArtifactValue", m_ArtifactTable[Index].num, m_panelObject);
+                InitRightEquipInfo();
+                break;
+            end
+        end
+    end 
+end
+-- 一键分解绿色及以下装备按钮点击事件
+function OnGreenButtonClick()
+    m_resolveIndexTable = { };
+    InitResolveReturn();
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+        for Index = 1, listEquip.Count do
+            SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+        for Index = 1, m_PetList.Count do
+            SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+        for Index = 1, #m_ArtifactTable do
+            SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+        end
+    end
+    m_eventType = 2;
+    m_leftClickCrid = 0;
+    InitRightEquipInfo();
+end
+-- 一键分解蓝色及以下装备按钮点击事件
+function OnBlueButtonClick()
+    m_resolveIndexTable = { };
+    InitResolveReturn();
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+        for Index = 1, listEquip.Count do
+            SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+        for Index = 1, m_PetList.Count do
+            SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+        for Index = 1, #m_ArtifactTable do
+            SetGameObjectState(m_itemObjectNameStr .. Index .. m_itemShow .. m_EquipSelectStr, false, m_panelObject);
+        end
+    end
+    m_eventType = 3;
+    m_leftClickCrid = 0;
+    InitRightEquipInfo();
+end
+-- 点击空事件
+function Kong()
+    OnItemInfoCloseClick();
+end
+-- 点击分解按钮事件
+function OnResolveButtonClick()
+    if #m_equipResolveTable > 0 then
+        -- 是否有稀有装备
+        local isHave = false;
+        if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then 
+            for Index = 1, #m_equipResolveTable do
+                local equipInfo = G_BagMng:GetGoodsItem(m_equipResolveTable[Index]):GetEquipInfo();
+                if equipInfo then
+                    if equipInfo.AptitudeID > 3 then
+                        SetGameObjectState(m_panelTitle, true, m_panelObject);
+                        SetLabelContent(m_panelTitle.."/Others/Label", GetTextToId(621), m_panelObject);
+                        isHave = true;
+                        break;
+                    end
+                end
+            end
+        elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+            for Index = 1, #m_equipResolveTable do
+                local ItemInfo = nil;
+                local aptitude = nil;
+                local isVariety = nil;
+                local petATT =  nil;
+                local hasNum = false;
+                local starNum = 1;
+                for index = 1, #m_PetTable do
+                    if m_PetTable[index].ItemAttr.CRID == m_equipResolveTable[Index] then 
+                        ItemInfo = G_BagMng:GetGoodsItem(m_PetTable[index].ItemAttr.CRID);
+                        petATT = m_PetTable[index].ItemAttr.AllPetAttribute;
+                        starNum = petATT.PetStar;
+                        aptitude = CCommonTool.GetAptitudeIDByExcelID(ItemInfo.ExcelID);
+                        isVariety = CCommonTool.GetPetMainInfo(ItemInfo.ExcelID).IsVariety;
+                        for i = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+                            local curNum = petATT.PetAddQualityUseItemInfo[i - 1];
+                            if curNum > 0 then
+                                hasNum = true;
+                            end
+                        end 
+                    end
+                end
+                if ItemInfo ~= nil then 
+                    if aptitude >= 4 or isVariety == 1 or starNum >= 4 or hasNum then 
+                        isHave = true;
+                        SetGameObjectState(m_panelTitle, true, m_panelObject);
+                        SetLabelContent(m_panelTitle.."/Others/Label", GetTextToId(171112), m_panelObject);
+                        break;
+                    end
+                end
+            end
+        elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+            for Index = 1, #m_equipResolveTable do
+                local ItemInfo = nil;
+                local aptitude = nil;
+                local itemATT =  nil;
+                for index = 1, #m_ArtifactTable do
+                    if m_ArtifactTable[index].ItemAttr.CRID == m_equipResolveTable[Index] then 
+                        ItemInfo = G_BagMng:GetGoodsItem(m_ArtifactTable[index].ItemAttr.CRID);
+                        itemATT = m_ArtifactTable[index].ItemAttr.AllPetAttribute;
+                        aptitude = CCommonTool.GetAptitudeIDByExcelID(ItemInfo.ExcelID);
+                        if aptitude > 3 then 
+                            isHave = true;
+                            SetGameObjectState(m_panelTitle, true, m_panelObject);
+                            SetLabelContent(m_panelTitle.."/Others/Label", GetTextToId(1719), m_panelObject);
+                        end
+                        break;
+                    end
+                end
+                if isHave == true then 
+                    break;
+                end
+            end
+        end
+        if isHave == false then
+            OnTitleResolveButtonClick();
+        end
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILL_NOT_PUTINEQUIP);
+    end
+end
+
+-- 提示界面分解按钮点击事件
+function OnTitleResolveButtonClick()
+    SendResolveMessage(m_equipResolveTable);
+    SetGameObjectState(m_panelTitle, false, m_panelObject);
+end
+-- 提示界面分解取消按钮
+function OnResolveCancelButtonClick()
+    SetGameObjectState(m_panelTitle, false, m_panelObject);
+end
+-- 分解结果关闭事件
+function OnResultCloseButtonClick()
+    SetGameObjectState(m_panelResult, false, m_panelObject);
+    SetGameObjectState(m_ResolveTitle, true, m_panelObject);
+end
+-- 向服务器发送分解装备消息
+function SendResolveMessage(e)
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then
+        for Index = 1, 10 do
+            if m_equipResolveTable[Index] ~= nil then
+                local ItemInfo = G_BagMng:GetGoodsItem(m_equipResolveTable[Index]);
+                if ItemInfo == nil then return end
+                -- 装备本身返回金钱
+                local equipMoney = ItemInfo:GetEquipInfo().Value;
+                -- 升星返回金钱
+                local ResolveBackInfo = CCommonTool.GetResolveBackInfo(ItemInfo:GetEquipInfo().SortStar * 100 + ItemInfo.StarItemLevel);
+                local starMoney = 0;
+                if ResolveBackInfo ~= nil then
+                    starMoney = ResolveBackInfo.MoneyNum;
+                else
+                    error("装备对应星级返回金钱信息未找到:::" .. ItemInfo:GetEquipInfo().SortStar);
+                end
+                -- 强化返回金钱
+                local EquipForceNeed = CCommonTool.GetEquipForceNeed(ItemInfo.LevelupItemLevel);
+                if EquipForceNeed == nil then return end
+                local froceMoney = EquipForceNeed.MaxMoneyCount;
+                -- 当前装备返回总钱数
+                local resolveMoney = equipMoney + starMoney + froceMoney;
+                m_resultMoney = m_resultMoney + resolveMoney;
+            end
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(CMI_CTOS_LGS_RESOLVE_ITEM_ID_LIST);
+        buffer:WriteByte(#e);
+        for Index = 1, 10 do
+            if e[Index] ~= nil then
+                buffer:WriteInt(e[Index]);
+            end
+        end
+        G_NetWorkMng:SendMessage(buffer);
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Pet then
+        if m_equipResolveTable ~= nil then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+            buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_DECOMPOSE);
+            buffer:WriteByte(#m_equipResolveTable);
+            for i,v in pairs(m_equipResolveTable) do
+                buffer:WriteInt(v);
+            end
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    elseif m_CurResolveType == ENUM_RESOLVE_TYPE.Artifact then
+        if #m_ResolveArtifactTable ~= nil then 
+            local cridCount = 0;
+            local tempTable = {};
+            for i,v in pairs(m_ResolveArtifactTable) do
+                local list = G_BagMng:GetCombineItemList(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, v.excelID, v.num);
+                cridCount = tonumber(list.count) + cridCount;
+                table.insert(tempTable, list);
+            end
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_RESOLVE_SQ_ID_LIST);
+            buffer:WriteByte(cridCount);
+            for i,value in pairs(tempTable) do
+                for count = 1, value.count do
+                    item = value[count - 1];
+                    buffer:WriteInt(tonumber(item.CRID));
+                    buffer:WriteInt(tonumber(item.UserNum));
+                end
+            end
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    end
+end
+
+-- 装备页签点击
+function OnResolveTag1Click(e)
+    if m_CurResolveType ~= ENUM_RESOLVE_TYPE.Equip then
+        m_CurResolveType = ENUM_RESOLVE_TYPE.Equip;
+        InitResolveTag(); 
+        InitLeftEquipInfo();
+        m_equipResolveTable = { };
+        m_resolveIndexTable = { };
+        m_resolveReturn = { };
+        m_equipMoney = 0;
+        m_resultMoney = 0;
+        InitResolveReturn();
+        for Index = 1, 10 do
+            SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+        end
+        ShowEquipTableInit();
+    end
+end
+
+-- 宠物页签点击
+function OnResolveTag2Click(e)
+    if m_CurResolveType ~= ENUM_RESOLVE_TYPE.Pet then
+        m_CurResolveType = ENUM_RESOLVE_TYPE.Pet;
+        InitResolveTag();
+        InitLeftEquipInfo();
+        m_equipResolveTable = { };
+        m_resolveIndexTable = { };
+        m_resolveReturn = { };
+        m_equipMoney = 0;
+        m_resultMoney = 0;
+        InitResolveReturn();
+        for Index = 1, 10 do
+            SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+        end
+        local panelObj = GetComponent(m_panelObject, m_itemObjPanelStr, "UIPanel");
+        panelObj.gameObject.transform.localPosition = Vector3.New(262, 74, 0);
+        panelObj.clipOffset = Vector2.New(0, 3);
+        ShowPetTableInit();
+    end
+end
+
+-- 神器碎片页签点击
+function OnResolveTag3Click(e)
+    if m_CurResolveType ~= ENUM_RESOLVE_TYPE.Artifact then
+        m_CurResolveType = ENUM_RESOLVE_TYPE.Artifact;
+        InitResolveTag();
+        InitLeftEquipInfo();
+        m_equipResolveTable = { };
+        m_resolveIndexTable = { };
+        m_resolveReturn = { };
+        m_equipMoney = 0;
+        m_resultMoney = 0;
+        InitResolveReturn();
+        for Index = 1, 10 do
+            SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+        end
+        local panelObj = GetComponent(m_panelObject, m_itemObjPanelStr, "UIPanel");
+        panelObj.gameObject.transform.localPosition = Vector3.New(262, 74, 0);
+        panelObj.clipOffset = Vector2.New(0, 3);
+        ShowArtifactTableInit();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 外部调用更新界面的方法
+function InitAllInfoOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RESOLVEPANEL) == 1 then
+        InitAllInfo();
+    end
+end
+-- 分解成功分解结果显示界面
+function ResultBack(table)
+    local panelObj = GetComponent(m_panelObject, m_itemObjPanelStr, "UIPanel");
+    panelObj.gameObject.transform.localPosition = Vector3.New(262, 74, 0);
+    panelObj.clipOffset = Vector2.New(0, 3);
+    SetGameObjectState(m_panelResult, true, m_panelObject);
+    -- 面板格子实例数量
+    local BagCount = m_returnObject:GetChildList().count
+    -- 需要实例化的对象数量
+    local creatCount = 0;
+    if m_CurResolveType ~= ENUM_RESOLVE_TYPE.Equip then 
+        if BagCount < #table then
+            for Index = BagCount + 1, #table do
+                local item = newobject(m_resultItemObj);
+                item.transform.parent = m_returnObject.transform;
+                item.name = "Item" .. Index;
+                item.transform.localScale = Vector3.one;
+                item:SetActive(true);
+                SetGameObjectState(m_returnItemObjStr .. Index, true, m_panelObject);
+            end
+        elseif BagCount > #table then
+            for Index = #table + 1, BagCount do
+                SetGameObjectState(m_returnItemObjStr .. Index, false, m_panelObject);
+            end
+        end
+    else
+        if BagCount < #table + 1 then
+            for Index = BagCount + 1, #table + 1 do
+                local item = newobject(m_resultItemObj);
+                item.transform.parent = m_returnObject.transform;
+                item.name = "Item" .. Index;
+                item.transform.localScale = Vector3.one;
+                item:SetActive(true);
+                SetGameObjectState(m_returnItemObjStr .. Index, true, m_panelObject);
+            end
+        elseif BagCount > #table + 1 then
+            for Index = #table + 2, BagCount do
+                SetGameObjectState(m_returnItemObjStr .. Index, false, m_panelObject);
+            end
+        end
+    end
+    m_returnObject:Reposition();
+    if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then 
+        SetGameObjectState(m_returnItemObjStr .. 1, true, m_panelObject);
+        SetItemShowByExcelIDV04(m_panelObject, m_returnItemObjStr .. 1, G_ItemToolTipDefine.BINDMONEY, 1, false, 16, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+        SetGameObjectState(m_returnItemObjStr .. 1 .. m_resultCount, true, m_panelObject);
+        SetLabelContent(m_returnItemObjStr .. 1 .. m_resultCount, m_resultMoney, m_panelObject);
+        SetItemToolTipsEvent(m_panelObject, m_returnItemObjStr .. 1, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+    end
+    if #table ~= 0 then
+        m_stocReturnNum = #table
+        for Index = 1, #table do
+            local index = Index;
+            if m_CurResolveType == ENUM_RESOLVE_TYPE.Equip then index = Index + 1; end
+            SetGameObjectState(m_returnItemObjStr .. index, true, m_panelObject);
+            if m_CurResolveType ~= ENUM_RESOLVE_TYPE.Equip then 
+                SetItemShowByExcelIDV04(m_panelObject, m_returnItemObjStr .. index, table[index].ExcelID, 1, false, 16, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetItemToolTipsEvent(m_panelObject, m_returnItemObjStr .. index, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, table[index].ExcelID);
+            else
+                SetItemShowByExcelIDV04(m_panelObject, m_returnItemObjStr .. index, table[Index].ExcelID, 1, false, 16, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+                SetItemToolTipsEvent(m_panelObject, m_returnItemObjStr .. index, ENUMPANELID.ENUM_PANEL_RESOLVEPANEL, false, table[Index].ExcelID);
+            end
+            SetGameObjectState(m_returnItemObjStr .. index .. m_resultCount, true, m_panelObject);
+            SetLabelContent(m_returnItemObjStr .. index .. m_resultCount, table[Index].ItemNum, m_panelObject);
+            
+        end
+    end
+    -- 分解成功清除一些存储信息
+    m_equipResolveTable = { };
+    m_resolveIndexTable = { };
+    m_resolveReturn = { };
+    m_equipMoney = 0;
+    m_resultMoney = 0;
+    m_CurClickArtifactItems = 1;
+    m_ResolveArtifactTable = {};
+    ShowEquipTableInit();
+    ShowPetTableInit();
+    ShowArtifactTableInit();
+    InitLeftEquipInfo();
+    InitResolveReturn();
+    for Index = 1, 10 do
+        SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+    end
+end
+
+-- 将背包界面选中的装备添加到分解栏
+function AddResolveEquipByBag()
+    if #_G.LogicData_ResolveData >0 then
+        m_CurResolveType = _G.LogicData_ResolveData[2];
+        if m_CurResolveType == 1 then
+            local num = nil;
+            local data = _G.LogicData_ResolveData[1];
+            if data == nil then return end
+            for Index = 1, listEquip.count do
+                local itemAttr = listEquip[Index - 1];
+                if itemAttr.CRID == data.CRID then
+                    num = Index;
+                    break;
+                end
+            end
+            m_leftClickNum = num;
+            m_leftClickCrid = listEquip[m_leftClickNum - 1].CRID;
+            m_eventType = 1;
+            if m_panelInitAlready == true then
+                SetGameObjectState(m_itemObjectNameStr .. num .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+                for Index = 1, 10 do
+                    SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+                end
+            end
+        elseif m_CurResolveType == 3 then
+            local num = nil;
+            local data = _G.LogicData_ResolveData[1];
+            if data == nil then return end
+            for Index = 1, #m_ArtifactTable do
+                local itemAttr = m_ArtifactTable[Index].ItemAttr;
+                if itemAttr.ExcelID == data.ExcelID then
+                    num = Index;
+                    break;
+                end
+            end
+            m_leftClickNum = num;
+            m_leftClickCrid = m_ArtifactTable[m_leftClickNum].ItemAttr.CRID;
+            m_eventType = 1;
+            if m_panelInitAlready == true then
+                SetGameObjectState(m_itemObjectNameStr .. num .. m_itemShow .. m_EquipSelectStr, true, m_panelObject);
+                for Index = 1, 10 do
+                    SetGameObjectState(m_equipRight .. Index, false, m_panelObject);
+                end
+            end
+        end
+    end
+    _G.LogicData_ResolveData = {};
+end
+
+-- 打开分解界面及某页签
+function OpenResolvePanelByTag(MainTag, SecondTag, causePanelId)
+    m_CurResolveType = SecondTag;
+    ResolveAndCombinePanel.OpenThisPanelByTag(MainTag, causePanelId);
+end
+
+-- 获得分解神器碎片固定返还
+function GetArtifactReturn(ExcelID)
+    if ExcelID > 21400 and ExcelID < 21420 then 
+        return 1;
+    elseif ExcelID > 21420 and ExcelID < 21440 then 
+        return 2;
+    elseif ExcelID > 21440 and ExcelID < 21460 then 
+        return 3;
+    elseif ExcelID > 21460 and ExcelID < 21480 then 
+        return 4;
+    elseif ExcelID > 21480 and ExcelID < 21500 then 
+        return 5;
+    end
+    return 1;
+end

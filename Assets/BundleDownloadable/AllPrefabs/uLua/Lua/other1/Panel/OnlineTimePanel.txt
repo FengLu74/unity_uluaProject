@@ -1,0 +1,271 @@
+﻿module("OnlineTimePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 在线时间
+local m_onLineTime = "Sprite/Time_Num";
+-----------------------------------------Sprite路径------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 在线时间Item
+local m_onLineTimeItem = "Times/Time";
+-- 奖励item
+local m_itemIcon = "Times/Icons/Icon";
+-- 奖励已领取显示
+local m_rewGetAccpted = "/Sprite_Get";
+-- 选中状态
+local m_selectState = "/Sprite_Select";
+-- 在线奖励道具图标
+local m_rewardItemIcon = "/Sprite-DaoJuTuBiao";
+-- 道具数量
+local m_itemCount = "/Label-Num";
+-- 道具背景
+local m_itemSprie = "/Item/Sprite2";
+-- 道具名字
+local m_itemName = "/Label-Name";
+-- 时间
+local m_itemTime = "/OnTime/Label";
+local m_onTime = "/OnTime";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前领取的状态
+local m_onlineGetState = nil;
+-- 选中的是第几个奖励
+local m_selectOrder = nil;
+-- 选中的框框
+-- local m_SpriteSelectObj = nil;
+-- 当前选中的在线的数据
+local m_RewardOlInfo = nil;
+------------------------------------写死的规定----------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    ValidatePanel();
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化数据
+    InitData();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化点击事件
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("CurPlayerOnLineTime");
+end
+
+function OnDestroy()
+    m_panelInitAlready = false;
+    m_panelObject = nil;
+    m_RewardOlInfo = nil;
+    m_selectOrder = nil
+    m_onlineGetState = nil
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_ONLINE_TIME_PANEL);
+end
+
+-- 初始化数据
+function InitData()
+    m_onlineGetState = G_RewardMng:GetState(G_RewardMng.OnlineRewardGetState, 6);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitTimesContent();
+    AutoSetOnlineTimeSelect();
+    InitButtonState();
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    for Index = 1, 6 do
+        SetGameObjectEvent(m_onLineTimeItem .. Index, OnTimeButtonClick, m_panelObject);
+    end
+end
+
+-- 初始化6次时间领取的奖励信息
+function InitTimesContent()
+    local rewardOlData = nil;
+    local textContent = CCommonTool.GetTxtData(8041).m_str;
+    for index = 1, 6 do
+        rewardOlData = CCommonTool.GetRewardOl(index);
+        local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardOlData.RewordId);
+        if rewardInfo ~= nil then
+            local list = rewardInfo:GetAllItem();
+            local count = list.count;
+            local itemData = nil;
+            itemData = list[0];
+            if itemData.ItemDealType == 3 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+            elseif itemData.ItemDealType == 4 then
+                itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+            -- 道具的品质颜色
+            local pinZhiNum = CCommonTool.GetAptitudeIDByExcelID(itemData.ExcelID);
+            -- 道具图标
+            SetSpriteByAtlasID(m_itemIcon .. index .. m_rewardItemIcon, CCommonTool.GetImageIDByExcelID(m_itemExcelID), m_panelObject, true);
+            -- 道具 名字 数量
+            -- 道具名字
+            local itemName = GetTextToId(CCommonTool.GetNameIDByExcelID(itemData.ExcelID));
+            SetLabelContent(m_itemIcon .. index .. m_itemCount, itemData.ItemNum, m_panelObject);
+            SetLabelContent(m_itemIcon .. index .. m_itemName, itemName, m_panelObject);
+            -- 道具品质颜色
+            SetLabelPinZhi(m_itemIcon .. index .. m_itemName, pinZhiNum, m_panelObject);
+            SetGameObjectState(m_onLineTimeItem .. index .. m_itemSprie, false, m_panelObject);
+            -- 领取奖励的在线时间
+            SetLabelContent(m_onLineTimeItem .. index .. m_itemTime, string_format(textContent, math.floor(rewardOlData.GetValue / 60)), m_panelObject);
+            SetGameObjectState(m_onLineTimeItem .. index .. m_selectState, false, m_panelObject);
+            if m_onlineGetState[index - 1] == 1 then
+                SetGameObjectState(m_itemIcon .. index .. m_rewGetAccpted, true, m_panelObject);
+            else
+                SetGameObjectState(m_itemIcon .. index .. m_rewGetAccpted, false, m_panelObject);
+            end
+            local rewardTime = math.floor(rewardOlData.GetValue / 60);
+            local curOnlineTime = G_TimerMng:GetCurrentSeconds() - G_RewardMng.ServerSendOnlineTime + G_RewardMng.OnlineTime;
+            local onLineTime = math.floor(curOnlineTime / 60);
+            if onLineTime < 0 then
+                onLineTime = 0;
+            end
+        end
+    end
+end
+
+-- 自动选择第几个在线时间数据
+function AutoSetOnlineTimeSelect()
+    for Index = 1, 6 do
+        if m_onlineGetState[Index - 1] == 0 then
+            m_selectOrder = Index;
+            return;
+        end
+    end
+    m_selectOrder = 6;
+end
+
+-- 初始化按钮的状态
+function InitButtonState()
+    local curOnlineTime = G_TimerMng:GetCurrentSeconds() - G_RewardMng.ServerSendOnlineTime + G_RewardMng.OnlineTime;
+    local onLineTime = math.floor(curOnlineTime / 60);
+    if onLineTime < 0 then
+        onLineTime = 0;
+    end
+    local selectIndex = 0;
+    SetLabelContent(m_onLineTime, onLineTime, m_panelObject);
+    for index = 1, 6 do
+        SetGameObjectState(m_onLineTimeItem .. index .. m_selectState, false, m_panelObject);
+        rewardOlData = CCommonTool.GetRewardOl(index);
+        if rewardOlData ~= nil then
+            local rewardTime = math.floor(rewardOlData.GetValue / 60);
+            if onLineTime >= rewardTime and m_onlineGetState[index - 1] == 0 then
+                selectIndex = index;
+                break;
+            end
+        end
+    end
+    if selectIndex > 0 then
+        SetGameObjectState(m_onLineTimeItem .. selectIndex .. m_selectState, true, m_panelObject);
+        SetGameObjectState(m_onLineTimeItem .. selectIndex .. m_itemSprie, false, m_panelObject);
+    end
+    G_TimerMng:RemoveTimeTask("CurPlayerOnLineTime");
+    AddTimerEvent("CurPlayerOnLineTime", 24 * 3600, OnLineTimeOver, ETimeShowType.TypeNumberOne, OnLineTimeUpdate);
+end
+
+function OnLineTimeUpdate(time)
+    local curOnlineTime = G_TimerMng:GetCurrentSeconds() - G_RewardMng.ServerSendOnlineTime + G_RewardMng.OnlineTime;
+    local onLineTime = math.floor(curOnlineTime / 60);
+    if onLineTime < 0 then
+        onLineTime = 0;
+    end
+    SetLabelContent(m_onLineTime, onLineTime, m_panelObject);
+end
+
+function OnLineTimeOver()
+
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 点击第几个奖励按钮
+function OnTimeButtonClick(e)
+    local num = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    if m_selectOrder ~= num then
+        m_selectOrder = num;
+    end
+    local curOnlineTime = G_TimerMng:GetCurrentSeconds() - G_RewardMng.ServerSendOnlineTime + G_RewardMng.OnlineTime;
+    local onLineTime = math.floor(curOnlineTime / 60);
+    rewardOlData = CCommonTool.GetRewardOl(m_selectOrder);
+    if rewardOlData ~= nil then
+        local rewardTime = math.floor(rewardOlData.GetValue / 60);
+        if m_onlineGetState[m_selectOrder - 1] == 0 and onLineTime >= rewardTime then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_REQUEST_SIGNINREWARD_OL);
+            buffer:WriteByte(m_selectOrder);
+            G_NetWorkMng:SendMessage(buffer);
+            G_MusicMng:OnLoadMusic(4436)
+        elseif onLineTime < rewardTime and m_onlineGetState[m_selectOrder - 1] == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_NOTENOUGH_ONLINETIME);
+            G_MusicMng:OnLoadMusic(4435)
+        end
+    end
+	--福利-在线奖励上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10015);
+	end
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+--检测界面是否需要开启
+function ValidatePanel()
+    local data = 
+    {
+        PanelId = ENUMPANELID.ENUM_ONLINE_TIME_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel",data);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function InitInfoOut()
+    if m_panelInitAlready then
+        -- 初始化数据
+        InitData();
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+
+function TimeOverRedHintCheck()
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLINE, OnlineTimePanel.IsShowRedHintOnLine());
+end
+
+function IsShowRedHintOnLine()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        return false;
+    end
+    if not G_RewardMng:IsCanShowOnlineRedHint() then
+        return false;
+    end
+    return true;
+end

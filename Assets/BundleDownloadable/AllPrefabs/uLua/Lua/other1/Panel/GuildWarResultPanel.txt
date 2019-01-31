@@ -1,0 +1,81 @@
+﻿module('GuildWarResultPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildWarResultPanel';
+---------------------------------------label路径---------------------------------------
+-- 加注释
+local m_NamePath = "Content/Name";
+-- 加注释
+local m_LbTimePath = "Content/lb_Time";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    G_TimerMng:RemoveTimeTask("BanquetBonus");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_WAR_RESULT_PANEL);
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    AddTimerEvent("WarOver", 10, CallBackOver, ETimeShowType.TypeNumberSeven, updateCallBack);
+end
+
+------------------------------------------事件方法------------------------------------
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function CallBackOver()
+    GuildProtocol.RequestLeaveScene();
+    G_TimerMng:RemoveTimeTask("BanquetBonus");
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_RESULT_PANEL);
+end
+
+function updateCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_RESULT_PANEL) == 1 then
+        SetLabelContent(m_LbTimePath, string_format(GetTextToId(861),timeTxt), m_PanelObject);
+    end
+end

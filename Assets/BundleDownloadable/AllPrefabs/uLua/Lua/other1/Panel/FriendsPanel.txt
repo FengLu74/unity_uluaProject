@@ -1,0 +1,486 @@
+﻿require "Panel/FriendsAddPanel";
+require "Panel/FriendsApplyPanel";
+require "Panel/FriendsChatPanel";
+require "Panel/FriendsRecentPanel";
+require "Panel/FriendsListPanel";
+require "Panel/FriendsGiftPanel";
+require "Panel/FriendsEnemyPanel";
+require "Panel/FriendsBlackPanel";
+
+module("FriendsPanel", package.seeall)
+
+-----------------------------------对象路径------------------------------------------
+
+local m_ChatPanelPath = "ChatPanel"
+
+-----------------------------------一些写死的规定--------------------------------------
+
+--最近标签
+TAB_RECENT = 1;
+--好友标签
+TAB_FRIEND = 2;
+--礼物标签
+TAB_GIFT = 3;
+--仇人
+TAB_ENEMY = 4;
+--黑名单
+TAB_BLACK = 5;
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左下方选择的标签（1为最左侧的，依次向右）
+local m_selectTagNum = TAB_FRIEND;
+-- 上一次选择的标签
+local m_lastSelectTagNum = TAB_FRIEND;
+
+local m_requestedList = {};
+
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = "Tab1", panelName = "RecentPanel", isFirstOpen = true, luaFileName = FriendsRecentPanel, listType=FriendsData.LIST_TYPE_RECENT }, 
+    [2] = { name = "Tab2", panelName = "ListPanel", isFirstOpen = true, luaFileName = FriendsListPanel, listType=FriendsData.LIST_TYPE_FRIEND }, 
+    [3] = { name = "Tab3", panelName = "GiftPanel", isFirstOpen = true, luaFileName = FriendsGiftPanel, listType=FriendsData.LIST_TYPE_GIFT},
+    [4] = { name = "Tab4", panelName = "EnemyPanel", isFirstOpen = true, luaFileName = FriendsEnemyPanel, listType=FriendsData.LIST_TYPE_ENEMY }, 
+    [5] = { name = "Tab5", panelName = "BlackPanel", isFirstOpen = true, luaFileName = FriendsBlackPanel, listType=FriendsData.LIST_TYPE_BLACK }
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+
+function Start()
+--    FriendsData.InitTestData();
+--    FriendsData.SyncLocalRecentList(FriendsData.recentList);
+    InitObjects();
+    InitPanelShow();
+    InitTabEvent();
+    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+    m_toggleTable[m_selectTagNum].luaFileName.Start();
+    RequestList();
+    --[[
+    if Constants.branch == "cn" then
+        -- CN分支隐藏仇人标签
+        local tab4 = child(m_panelObject, "Left/Tab4");
+        tab4.gameObject:SetActive(false);
+        local tab5 = child(m_panelObject, "Left/Tab5");
+        tab5.localPosition = tab4.localPosition;
+    end
+    ]]
+    m_panelInitAlready = true;    
+end
+
+function OnEnable()
+    if true == m_panelInitAlready then
+        InitPanelShow();
+        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+        RequestList();
+    end
+end
+
+function OnDisable()
+    --关闭好友界面时保存最近联系人数据和聊天记录
+    FriendsData.SaveContent();
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    m_requestedList = {};
+end
+
+function OnDestroy()
+    m_selectObject = nil;
+    for Index = 1, #m_toggleTable do
+        m_toggleTable[Index].luaFileName.OnDestroy();
+        m_toggleTable[Index].isFirstOpen = true;
+    end
+    m_selectTagNum = TAB_FRIEND;
+    m_lastSelectTagNum = TAB_FRIEND;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    FriendsChatPanel.OnDestroy();
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    local chatGameObject = child(m_panelObject, m_ChatPanelPath).gameObject;
+    FriendsChatPanel.InitPanel(chatGameObject);
+    FriendsChatPanel.HidePanel();
+end
+
+-- 初始化界面的显示
+function InitPanelShow()
+    for Index = 1, #m_toggleTable do
+        SetButtonActiveState(Index, Index == m_selectTagNum)
+    end
+end
+
+function SetButtonActiveState(Index, actived)
+    local tabParent = child(m_panelObject, "Left").gameObject;
+    SetGameObjectState(m_toggleTable[Index].name.."/Select", actived, tabParent);
+    SetGameObjectState(m_toggleTable[Index].name.."/Normal", not actived, tabParent);
+    SetGameObjectState(m_toggleTable[Index].panelName, actived, m_panelObject);
+end
+
+function OpenPanelByTag()
+    SetButtonActiveState(m_lastSelectTagNum, false);
+    SetButtonActiveState(m_selectTagNum, true);
+    -- 执行的lua逻辑
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+    RequestList();
+end
+
+function InitTabEvent()
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent("Left/" .. m_toggleTable[Index].name, OnTabClick, m_panelObject);
+    end
+end
+
+function RequestList()
+    if not m_requestedList[m_selectTagNum] then
+        m_requestedList[m_selectTagNum] = true;
+        FriendsProtocol.RequestListData(m_toggleTable[m_selectTagNum].listType);
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+function OnTabClick(e)
+    local currentName = e.name;
+    local selectTagNum = tonumber(string.sub(currentName, 4));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        OpenPanelByTag();
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index)
+    createPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    if m_panelInitAlready == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+    else
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+function GetCurrentTagNum()
+    return m_selectTagNum
+end
+
+function SetFriendBaseInfo(cell, data, showRelation, showFight, isChangName)
+    local isUseGrey = false;
+    if data == nil then error("好友数据为空"); return end
+    if m_selectTagNum == TAB_RECENT or m_selectTagNum == TAB_FRIEND or m_selectTagNum == TAB_ENEMY then
+        isUseGrey = true;
+    end
+    if data.name then 
+        SetLabelContent("Name", data.name, cell);  --名字
+    else
+        SetLabelContent("Name", "", cell);  --名字
+    end
+--    local name = child(cell,"Name");
+--    if isUseGrey then
+--        CCommonTool.SetGameObjectGrey(name.gameObject, data.onlineState ~= 1);
+--    end
+    --关系
+    if showRelation then
+        local relation = FriendsData.GetRelation(data.guid);
+        local relationGo = child(cell, "Relation");
+        if relation == FriendsData.RELATION_ENEMY then
+            SetLabelTextByID("Relation", 8876, cell);
+        elseif relation == FriendsData.RELATION_FRIEND then
+            SetLabelTextByID("Relation", 8875, cell);
+        elseif relation == FriendsData.RELATION_STRANGER then
+            SetLabelTextByID("Relation", 8874, cell);
+        end
+--        if isUseGrey then
+--            CCommonTool.SetGameObjectGrey(relationGo.gameObject, data.onlineState ~= 1);
+--        end
+    end
+    -- 角色头像
+    if data.headIcon then 
+        SetSpriteByAtlasID("HeadIcon", data.headIcon, cell, true);
+    end
+    local headIcon = child(cell, "HeadIcon");
+    if isUseGrey then
+        CCommonTool.SetGameObjectGrey(headIcon.gameObject, data.onlineState ~= 1);
+    end
+    --等级
+    local label = child(cell, "Level");
+    if label ~= nil and data.level then
+        SetLabelContent("Level", "Lv."..data.level, cell); 
+--        if isUseGrey then
+--            CCommonTool.SetGameObjectGrey(label.gameObject, data.onlineState ~= 1);
+--        end
+    end
+    -- 等级底框
+--    local levelBg = child(cell, "Level/Bg");
+--    if levelBg ~= nil then
+--        if isUseGrey then
+--            CCommonTool.SetGameObjectGrey(levelBg.gameObject, data.onlineState ~= 1);
+--        end
+--    end
+    --战力
+    if showFight then
+        local label = child(cell, "FightPower");
+        if label ~= nil and data.fightPower then
+            SetLabelContent("FightPower",string_format(--[[战力: {0}]]GetTextToId(1144),data.fightPower), cell);
+--            if isUseGrey then
+--                CCommonTool.SetGameObjectGrey(label.gameObject, data.onlineState ~= 1);
+--            end
+        end
+    end
+    -- 阵营
+--    local camp = child(cell, "UnionIcon");
+--    if camp ~= nil then
+--        if isUseGrey then
+--            CCommonTool.SetGameObjectGrey(camp.gameObject, data.onlineState ~= 1);
+--        end
+--    end
+    local name = child(cell,"Name");
+    if data.unionId ~= nil and data.unionId > 0 then
+        SetCampIcon("UnionIcon", data.unionId, cell, true);
+        if isChangName then 
+            SetGameObjectPos("Name", Vector3.New(-88, name.transform.localPosition.y, 0),cell);
+        end
+    else
+        SetGameObjectState("UnionIcon", false, cell);
+        if isChangName then 
+            SetGameObjectPos("Name", Vector3.New(-138,name.transform.localPosition.y, 0),cell);
+        end
+    end
+end
+
+--服务器返回列表数据, 刷新界面
+function RefreshList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 then
+        if m_selectTagNum == TAB_RECENT then
+            FriendsRecentPanel.InitList();
+        elseif m_selectTagNum == TAB_FRIEND then
+            FriendsListPanel.InitList();
+        elseif m_selectTagNum == TAB_ENEMY then
+            FriendsEnemyPanel.InitList();
+        elseif m_selectTagNum == TAB_BLACK then
+            FriendsBlackPanel.InitList();
+        elseif m_selectTagNum == TAB_GIFT then
+            FriendsGiftPanel.InitList();
+        end
+    end
+end
+
+-- 实时刷新好友,仇人状态
+function RefreshFriendsState()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 then
+        if m_selectTagNum == TAB_RECENT then
+            FriendsRecentPanel.InitList();
+        elseif m_selectTagNum == TAB_FRIEND then
+            FriendsListPanel.InitList();
+        elseif m_selectTagNum == TAB_ENEMY then
+            FriendsEnemyPanel.InitList();
+        end
+    end
+end
+
+--刷新好友系统红点
+function RefreshRedHint()
+    -- 最近页签
+    RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_RECENT,FriendsRecentPanel.IsShowRedHint());
+    -- 好友页签
+    RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND,FriendsListPanel.IsShowRedHint());
+    -- 仇人页签
+    RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_ENEMY,FriendsEnemyPanel.IsShowRedHint());
+    -- 礼物页签
+    RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_GIFT,FriendsGiftPanel.IsShowRedHint());
+end
+
+
+--通过查找申请添加好友
+function OnAddFriendBySearch()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local data = FriendsData.searchResult;
+    if data then 
+        FriendsProtocol.RequestApply(data.guid);
+    end
+end
+
+--通过查找拉黑
+function OnBlackFriendBySearch()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local data = FriendsData.searchResult;
+    if data then
+        local result = FriendsProtocol.RequestBlackFriend(data.guid);
+        if result then
+            FriendsData.BlackFriend(data);
+            FriendsChatPanel.HidePanel();
+            RefreshList();
+            RefreshRedHint();
+        end
+    end
+end
+
+--删除好友
+function OnDeleteFriendBySearch()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local data = FriendsData.searchResult;
+    if data then 
+        FriendsProtocol.RequestDeleteFriend(data.guid);
+        local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_FRIEND);
+        local Index = nil;
+        for i, v in ipairs(dataList) do
+            if data.guid == v.guid then
+                Index = i - 1;
+            end
+        end
+        if m_selectTagNum == TAB_FRIEND then
+            FriendsListPanel.RemoveFriend(Index);
+        end
+        FriendsData.DeleteFriend(data.guid);
+        RefreshRedHint();
+    end
+end
+
+--刷新推荐列表
+function RefreshRecommendList()
+    if m_panelInitAlready == true and m_selectTagNum == TAB_FRIEND then
+        local addPanel = child(m_panelObject, "ListPanel/AddPanel").gameObject;
+        if addPanel.activeInHierarchy then
+            FriendsAddPanel.Refresh();
+        end
+    end
+end
+
+--刷新申请列表
+function RefreshApplyList()
+    if m_panelInitAlready == true and m_selectTagNum == TAB_FRIEND then
+        local applyPanel = child(m_panelObject, "ListPanel/ApplyPanel").gameObject;
+        if applyPanel.activeInHierarchy then
+            FriendsApplyPanel.Refresh();
+        end
+    end
+end
+
+--刷新申请按钮红点
+function RefreshApplyReadHint()
+    if m_panelInitAlready == true and m_selectTagNum == TAB_FRIEND then
+        FriendsListPanel.IsShowApplyRedHint();
+    end
+end
+
+--当有好友添加时
+function OnAddFriend()
+    if m_panelInitAlready == true and m_selectTagNum > 0 and m_selectTagNum ~= TAB_Black then
+        RefreshRecommendList();
+        RefreshApplyList();
+        RefreshList();
+        RefreshRedHint();
+    end
+end
+
+--通过下拉菜单选择私聊
+function ShowChatByMenu(data)
+    FriendsData.AddRecent(data);
+    local relation = FriendsData.GetRelation(data.guid);
+    if relation == FriendsData.RELATION_FRIEND then
+        FriendsListPanel.selectId = data.guid;
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 and m_selectTagNum == TAB_FRIEND then
+            FriendsListPanel.InitList();
+        else
+            OpenThisPanelByTag(TAB_FRIEND);
+        end
+    else
+        FriendsRecentPanel.selectId = data.guid;
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 and m_selectTagNum == TAB_RECENT then
+            FriendsRecentPanel.InitList();
+        else
+            OpenThisPanelByTag(TAB_RECENT);
+        end
+    end
+end
+
+--当有好友/仇人有添加/删除/更新操作时刷新好友列表
+function RefreshFriendsList()
+    RefreshList();
+end
+
+--服务器返回仇人击杀记录后刷新界面
+function RefreshEnemyPanel(guid)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 then
+        if m_selectTagNum == TAB_ENEMY then
+            if guid and FriendsEnemyPanel.selectId == guid then
+                FriendsData.ClearEnemyRedHint(guid);
+                RefreshRedHint();
+            end
+            RefreshList();
+        end
+    end
+end
+
+--服务器返回聊天信息后刷新界面
+function OnReceiveChatMessage(guid)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 then
+        if m_selectTagNum == TAB_FRIEND or m_selectTagNum == TAB_RECENT then
+            if guid and FriendsChatPanel.selectId == guid then
+                FriendsData.ClearChatRedHint(guid);
+                RefreshRedHint();
+            end
+            RefreshList();
+        end
+    end
+end
+
+--关闭界面
+function OnCloseClick()
+    if FriendsChatPanel.m_FacePanelIsOpen then
+        FriendsChatPanel.OnFacePanelClose();
+        return;
+    end
+    if m_selectTagNum == 2 then
+        if FriendsAddPanel.m_FriendsPanelIsOpen then
+            FriendsAddPanel.Hide();
+            return;
+        end
+        if FriendsApplyPanel.m_FriendsPanelIsOpen then
+            FriendsApplyPanel.Hide();
+            return;
+        end
+        if FriendsListPanel.m_FriendlinessInfoIsOpen then
+            FriendsListPanel.OnFriendlinessMaskClick();
+            return;
+        end
+    end
+    if m_selectTagNum == 4 then
+        if FriendsEnemyPanel.m_DeclarePanelIsOpen then
+            FriendsEnemyPanel.OnDeclareCloseClick();
+            return;
+        end
+        if FriendsEnemyPanel.m_FightConfirmBoxIsOpen then
+            FriendsEnemyPanel.OnFightCancelClick();
+            return;
+        end
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+end
+
+-- 打开申请好友界面
+function OpenFriendsApplyPanel()
+    OpenThisPanelByTag(TAB_FRIEND);
+    FriendsListPanel.OpenApplyPanel();
+end
+
+-- 赠送礼物之后刷新礼物状态
+function RefreshGift()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL) == 1 and m_selectTagNum == TAB_FRIEND then
+        FriendsListPanel.RefreshGiftState();
+    end
+end

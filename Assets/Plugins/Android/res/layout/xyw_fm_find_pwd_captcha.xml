@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="250dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <include layout="@layout/xyw_fragment_navigation" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/xy_common_margin_10dip"
+            android:orientation="vertical"
+            android:paddingBottom="8dp"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:paddingTop="8dp">
+
+
+            <EditText
+                android:id="@+id/xy_find_pwd_form_phone_or_mail"
+                style="@style/xy.edit.text.phone"
+                android:layout_width="match_parent"
+                android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                android:drawableLeft="@drawable/xyw_iphone_icon"
+                android:imeOptions="actionDone"
+                android:drawablePadding="4dp"
+                android:textColor="@color/xy_color_button_positive_normal"
+                android:textSize="@dimen/xy_font_size_middle" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                android:layout_marginTop="@dimen/xy_common_margin_10dip">
+
+
+
+                <EditText
+                    android:id="@+id/xy_find_pwd_captcha"
+                    style="@style/xy.edit.text.captcha"
+                    android:layout_width="0dip"
+                    android:layout_weight="2"
+                    android:drawableLeft="@drawable/xy_ic_sms"
+                    android:drawablePadding="4dp" />
+
+                <Button
+                    android:id="@+id/xy_find_pwd_send_sms"
+                    style="@style/xy.button.border"
+                    android:layout_width="0dip"
+                    android:layout_height="@dimen/xy_common_small_btn_height"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="@dimen/xy_common_margin_5dip"
+                    android:text="@string/xy_sms_captcha_request" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/xy_find_pwd_next_step"
+                style="@style/xy.button.positive"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                android:text="@string/xy_next_step" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

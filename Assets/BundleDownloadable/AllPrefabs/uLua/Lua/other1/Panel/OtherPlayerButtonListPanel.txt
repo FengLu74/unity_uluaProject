@@ -1,0 +1,282 @@
+﻿module("OtherPlayerButtonListPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+
+-----------------------------------------Sprite路径------------------------------------
+-- 显示的整体uisprite所在的位置
+local m_UISpriteStr = "Background/Bg";
+----------------------------------gameobject所在的路径---------------------------------
+
+
+----------------------------------通用的名称路径---------------------------------------
+
+
+-----------------------------------------按钮路径--------------------------------------
+-- 查看
+local detailBtnName = "Button_Detail";
+-- 私聊
+local chatBtnName = "Button_Chat";
+-- 加入黑名单
+local blackBtnName = "Button_Black";
+-- 添加好友
+local addFriendBtnName = "Button_AddFriend";
+-- 申请公会
+local inviteGuildBtnName = "Button_ApplyGuild";
+-- 加入公会
+local joinGuildBtnName = "Button_JoinGuild";
+-- 邀请组队
+local inviteTeamBtnName = "Button_InviteTeam";
+-- 删除好友
+local deleteFriendBtnName = "Button_DeleteFriend";
+-- 删除仇人
+
+local deleteEnemyBtnName = "Button_DeleteEnemy";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 所有按钮所在的路径
+local contentBox = nil;
+-- gird对象
+local grid = nil;
+-- 数据
+local data = nil;
+-- 是否创建完成
+local m_createSuccess = false;
+local m_UISprite = nil;
+-----------------------------------一些写死的规定--------------------------------------
+--------------------------外部调用的(或内部)更新此界面信息的方法-------------------------
+-- 设置数据
+function SetData(guid, name, level, profession, guildId, onlineState)
+    data = {
+        guid = guid,
+        level = level,
+        profession = profession,
+        name = name,
+        guildId = guildId,
+        crid = 0,
+        teamId = 0
+    };
+    if profession > 0 then
+        data.headIcon = CCommonTool.GetRoleDateInfo(profession).HeadRes;
+    end
+    if onlineState ~= nil then 
+        data.onlineState = onlineState;
+    else
+        data.onlineState = nil;
+    end
+end
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_OTHERPLAYERBUTTONLISTPANEL);
+    contentBox = child(m_panelObject, "Content").gameObject;
+    grid = GetComponent(contentBox, "Grid", "UIGrid");
+    -- 显示的整体uisprite所在的位置
+    m_UISprite = GetComponent(m_panelObject, m_UISpriteStr, "UISprite");
+    InitEvents();
+    InitBaseInfo();
+    InitButtonList();
+    m_createSuccess = true;
+end
+
+function OnEnable()
+    if m_createSuccess then
+        InitBaseInfo();
+        InitButtonList();
+    end
+end
+
+function OnDestroy()
+    data = nil;
+    m_panelObject = nil;
+    contentBox = nil;
+    grid = nil;
+    m_createSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitBaseInfo()
+    local go = child(m_panelObject, "Content/Info").gameObject;
+    -- 名字
+    SetLabelContent("Name", data.name, go);
+    -- 角色头像
+    SetSpriteByAtlasID("Icon", data.headIcon, go, true);
+    -- 等级
+    SetLabelContent("Level", data.level, go);
+    -- 阵营(没有数据 隐藏)
+    SetGameObjectState("CampIcon", false, go);
+    local guildInfo = GuildManager.GetGuildNameLevelAndFlag(data.guildId);
+    SetGameObjectState("Guild", guildInfo ~= nil, go);
+    if guildInfo ~= nil then
+        SetLabelContent("Guild/Name", guildInfo[1], go);
+        SetLabelContent("Guild/FlagName", guildInfo[2], go);
+        local info = CCommonTool.GetGuildInfoByIndex(guildInfo[3]);
+        SetSpriteByAtlasID("Guild/Icon", info.FlagIconBig, go, true);
+    end
+end
+
+function InitEvents()
+    local buttonNames = {
+        detailBtnName,
+        chatBtnName,
+        blackBtnName,
+        addFriendBtnName,
+        inviteGuildBtnName,
+        joinGuildBtnName,
+        inviteTeamBtnName,
+        deleteFriendBtnName,
+        deleteEnemyBtnName
+    };
+    for i, btnName in ipairs(buttonNames) do
+        SetGameObjectState(btnName, false, grid.gameObject);
+        SetGameObjectEvent(btnName, OnButtonClick, grid.gameObject);
+    end
+    SetGameObjectEvent("ZheZhao", OnCloseClick, m_panelObject);
+end
+
+function InitButtonList()
+    local t = grid.transform;
+    local count = t.childCount;
+    for i = 0, count-1 do
+        t:GetChild(i).gameObject:SetActive(false);
+    end
+    local btnNames = { };
+    local relation = FriendsData.GetRelation(data.guid);
+    if relation == FriendsData.RELATION_FRIEND then
+        -- 好友关系
+        table.insert(btnNames, detailBtnName);
+        -- 查看
+        table.insert(btnNames, chatBtnName);
+        -- 私聊
+        table.insert(btnNames, deleteFriendBtnName);
+        -- 删除好友
+        if TeamManager.IsTeammate(data.guid) ~= true then
+            table.insert(btnNames, inviteTeamBtnName);
+        end
+        AddGuild(btnNames);
+        table.insert(btnNames, blackBtnName);
+        -- 加入黑名单
+    elseif relation == FriendsData.RELATION_ENEMY then
+        -- 仇人关系
+        table.insert(btnNames, detailBtnName);
+        -- 查看
+        table.insert(btnNames, chatBtnName);
+        -- 私聊
+        table.insert(btnNames, deleteEnemyBtnName);
+        -- 删除仇人
+        if TeamManager.IsTeammate(data.guid) ~= true then
+            table.insert(btnNames, inviteTeamBtnName);
+        end
+        AddGuild(btnNames);
+        table.insert(btnNames, blackBtnName);
+        -- 加入黑名单
+    elseif relation == FriendsData.RELATION_STRANGER then
+        -- 陌生人
+        table.insert(btnNames, detailBtnName);
+        -- 查看
+        table.insert(btnNames, chatBtnName);
+        -- 私聊
+        table.insert(btnNames, addFriendBtnName);
+        -- 添加好友
+        if TeamManager.IsTeammate(data.guid) ~= true then
+            table.insert(btnNames, inviteTeamBtnName);
+        end
+        AddGuild(btnNames);
+        table.insert(btnNames, blackBtnName);
+        -- 加入黑名单
+    end
+
+    count = 0;
+    for i, btnName in ipairs(btnNames) do
+        local btn = child(grid.gameObject, btnName);
+        btn.gameObject:SetActive(true);
+        count = count + 1;
+    end
+    grid:Reposition();
+    m_UISprite.height = math.ceil(count / 2) * 70 + 164;
+end
+
+function AddGuild(btnNames)
+    if GuildManager.guildId > 0 then
+        table.insert(btnNames, inviteGuildBtnName);
+    else
+        table.insert(btnNames, joinGuildBtnName);
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick(go)
+    closePanel(ENUMPANELID.ENUM_PANEL_OTHERPLAYERBUTTONLISTPANEL);
+end
+
+function OnButtonClick(go)
+    if go.name == detailBtnName then
+        -- 查看
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_GET_OTHERPLAYER_STATE);
+        buffer:WriteInt(data.guid);
+        G_NetWorkMng:SendMessage(buffer);
+    elseif go.name == chatBtnName then
+        -- 聊天
+        local relation = FriendsData.GetRelation(data.guid);
+        if relation == FriendsData.RELATION_FRIEND then
+            FriendsPanel.ShowChatByMenu(data);
+            OnCloseClick(nil);
+            return;
+        end
+        FriendsProtocol.RequestSearch(data.name, 3);
+    elseif go.name == blackBtnName then
+        -- 黑名单
+        -- 先查找好友信息, 然后弹框确认, 确认后发送拉黑协议,
+        -- 最后把查找的数据入进黑名单列表
+        FriendsProtocol.RequestSearch(data.name, 2);
+    elseif go.name == addFriendBtnName then
+        -- 添加好友
+        FriendsProtocol.RequestApply(data.guid);
+    elseif go.name == inviteGuildBtnName then
+        if data.onlineState ~= nil then 
+            if data.onlineState == 0 then 
+                ShowSystemFlowTips(2607);
+                OnCloseClick(nil);
+                return;
+            end 
+        end
+        -- 邀请公会
+        if GuildManager.HasPermission(E_GUILD_PERMISSION.INVITE_JOIN_IN) then
+            GuildProtocol.RequestInviteJoin(data.guid);
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        end
+    elseif go.name == joinGuildBtnName then
+        -- 加入公会
+        GuildProtocol.RequestJoinGuildByGlobalId(data.guid);
+    elseif go.name == inviteTeamBtnName then
+        if data.onlineState ~= nil then 
+            if data.onlineState == 0 then 
+                ShowSystemFlowTips(2607);
+                OnCloseClick(nil);
+                return;
+            end
+        end
+        -- 邀请组队
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM);
+        if G_UserInfo.RoleAttribute.TeamID == 0 then
+            buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_APPLY);
+        else
+            buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_INVITE);
+        end
+        buffer:WriteInt(-1);
+        buffer:WriteUInt(data.guid);
+        G_NetWorkMng:SendMessage(buffer);
+    elseif go.name == deleteFriendBtnName then
+        -- 删除好友
+        FriendsData.searchResult = data;
+        ParameterToMessageTextBox.DeleteFriend(data.name);
+    elseif go.name == deleteEnemyBtnName then
+        -- 删除仇人
+        FriendsProtocol.RequestDeleteEnemy(data.guid);
+        FriendsData.DeleteEnemy(data.guid);
+        FriendsPanel.RefreshFriendsList();
+    end
+    OnCloseClick(nil);
+end

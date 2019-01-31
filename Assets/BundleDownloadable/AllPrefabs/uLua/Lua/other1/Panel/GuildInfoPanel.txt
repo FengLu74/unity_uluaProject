@@ -1,0 +1,543 @@
+﻿module('GuildInfoPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildInfoPanel';
+---------------------------------------label路径---------------------------------------
+-- 公会名称
+local m_GuildNamePath = "Content_Left/GuildName";
+-- 公会等级
+local m_GuildLevelPath = "Content_Left/GuildLevel";
+-- 公会旌旗
+local m_GuildFlagPath = "Content_Left/GuildFlag";
+-- 公会战胜利次数
+local m_GuildWarWinCountPath = "Content_Left/GuildWarWinCount";
+-- 公会战失败次数
+local m_GuildWarFailCountPath = "Content_Left/GuildWarFailCount";
+-- 公会人数
+local m_GuildMemberCountPath = "Content_Left/GuildMemberCount";
+-- 公会每日维护资金
+local m_GuildMaintainMoneyPath = "Content_Left/GuildMaintainMoney";
+-- 所属阵营
+local m_GuildCampPath = "Content_Left/GuildCamp";
+-- 会长
+local m_GuildLeaderPath = "Content_Left/GuildLeader";
+-- 公会资金
+local m_GuildFundPath = "Content_Left/GuildFund";
+-- 公会木材
+local m_GuildWoodPath = "Content_Left/GuildWood";
+-- 同盟公会
+local m_GuildFriendPath = "Content_Left/GuildFriend";
+-- 敌队公会
+local m_GuildEnemyPath = "Content_Left/GuildEnemy";
+-- 公会公告
+local m_GuildNoticePath = "Content_Left/Notice/GuildNotice";
+-- 公会排名
+local m_GuildRankPath = "Content_Right/MiddleButtons/Button_GuildRank/GuildRank";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 公会战
+local m_ButtonGuildWarPath = "Content_Right/MiddleButtons/Button_GuildWar";
+-- 公会排名
+local m_ButtonGuildRankPath = "Content_Right/MiddleButtons/Button_GuildRank";
+-- 公会捐献
+local m_ButtonDonatePath = "Content_Right/MiddleButtons/Button_Donate";
+-- 活动1
+local m_ButtonActivity1Path = "Content_Right/MiddleButtons/Button_Activity1";
+-- 活动2
+local m_ButtonActivity2Path = "Content_Right/MiddleButtons/Button_Activity2";
+-- 公会管理
+local m_ButtonManagerPath = "Content_Right/BottomButtons/Button_Manager";
+-- 公会商店
+local m_ButtonShopPath = "Content_Right/BottomButtons/Button_Shop";
+-- 捐献排行
+local m_ButtonContributionRankPath = "Content_Right/BottomButtons/Button_ContributionRank";
+-- 每日俸禄
+local m_ButtonRewardPath = "Content_Right/BottomButtons/Button_Reward";
+-- 返回驻地
+local m_ButtonBackStationPath = "Content_Right/BottomButtons/Button_BackStation";
+-- 领地战前往战场按钮
+local m_ButtonWarPath = "Content_Right/Activity/Button_War";
+-- 据点详情界面按钮
+local m_ButtonStrongHoldPath = "Content_Right/Activity/btn_OpenStrongHoldInfo";
+-- 据点详情界面关闭按钮
+local m_ButtonStrongHoldClosePath = "GuildStrongHoldInfo/btn_Close";
+-----------------------------------------Sprite路径------------------------------------
+
+-- 公会旌旗图标
+local m_GuildFlagIconPath = "Content_Left/GuildFlag/Background/Sprite_Flag";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 右上活动信息
+local m_ActivityPath = "Content_Right/Activity/";
+-- 据点产出
+local m_StrongHoldProductPath = "GuildStrongHoldInfo/Sub_Content/"
+
+----------------------------------通用的名称路径---------------------------------------
+-- 领地战据点详情路径
+local m_StrongHoldPath = "GuildStrongHoldInfo";
+-- 据点内容
+local m_StrongHoldContentPath = "GuildStrongHoldInfo/Sub_StrongHold/";
+-- 据点商店商品列表 
+local m_ShopListStr = "GuildStrongHoldInfo/Sub_Content/Sub_Shop/Sub_Reward/UIGrid";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 公会名称
+local m_GuildName = nil;
+-- 公会等级
+local m_GuildLevel = nil;
+-- 公会旌旗
+local m_GuildFlag = nil;
+-- 公会战胜利次数
+local m_GuildWarWinCount = nil;
+-- 公会战失败次数
+local m_GuildWarFailCount = nil;
+-- 公会人数
+local m_GuildMemberCount = nil;
+-- 公会每日维护资金
+local m_GuildMaintainMoney = nil;
+-- 所属阵营
+local m_GuildCamp = nil;
+-- 会长
+local m_GuildLeader = nil;
+-- 公会资金
+local m_GuildFund = nil;
+-- 公会木材
+local m_GuildWood = nil;
+-- 同盟公会
+local m_GuildFriend = nil;
+-- 敌队公会
+local m_GuildEnemy = nil;
+-- 公会排行Label
+local m_GuildRank = nil;
+-- 公会公告
+local m_GuildNotice = nil;
+-- 右上活动信息
+local m_Activity = nil;
+
+-- 两个活动数据
+local actDatas = nil;
+-- 据点商店商品列表
+local m_ShopList = nil;
+-----------------------------------一些写死的规定--------------------------------------
+local weekKoera = {[1] = 131, [2] = 132, [3] = 133, [4] = 134, [5] = 135, [6] = 136, [7] = 137};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_GuildName = nil;
+	m_GuildLevel = nil;
+	m_GuildFlag = nil;
+	m_GuildWarWinCount = nil;
+	m_GuildWarFailCount = nil;
+	m_GuildMemberCount = nil;
+    m_GuildMaintainMoney = nil;
+	m_GuildCamp = nil;
+	m_GuildLeader = nil;
+	m_GuildFund = nil;
+	m_GuildWood = nil;
+	m_GuildFriend = nil;
+	m_GuildEnemy = nil;
+	m_GuildNotice = nil;
+	m_Activity = nil;
+    m_GuildRank = nil;
+
+    actDatas = nil;
+    m_ShopList = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_GuildName = GetComponent(m_PanelObject, m_GuildNamePath, "UILabel");
+    m_GuildLevel = GetComponent(m_PanelObject, m_GuildLevelPath, "UILabel");
+    m_GuildFlag = GetComponent(m_PanelObject, m_GuildFlagPath, "UILabel");
+    m_GuildWarWinCount = GetComponent(m_PanelObject, m_GuildWarWinCountPath, "UILabel");
+    m_GuildWarFailCount = GetComponent(m_PanelObject, m_GuildWarFailCountPath, "UILabel");
+    m_GuildMemberCount = GetComponent(m_PanelObject, m_GuildMemberCountPath, "UILabel");
+    m_GuildMaintainMoney = GetComponent(m_PanelObject, m_GuildMaintainMoneyPath, "UILabel");
+    m_GuildCamp = GetComponent(m_PanelObject, m_GuildCampPath, "UILabel");
+    m_GuildLeader = GetComponent(m_PanelObject, m_GuildLeaderPath, "UILabel");
+    m_GuildFund = GetComponent(m_PanelObject, m_GuildFundPath, "UILabel");
+    m_GuildWood = GetComponent(m_PanelObject, m_GuildWoodPath, "UILabel");
+    m_GuildFriend = GetComponent(m_PanelObject, m_GuildFriendPath, "UILabel");
+    m_GuildEnemy = GetComponent(m_PanelObject, m_GuildEnemyPath, "UILabel");
+    m_GuildNotice = GetComponent(m_PanelObject, m_GuildNoticePath, "UILabel");
+--    m_Activity = child(m_PanelObject, m_ActivityPath).gameObject;
+    m_GuildRank = GetComponent(m_PanelObject, m_GuildRankPath, "UILabel");
+    m_ShopList = GetComponent(m_PanelObject, m_ShopListStr, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonGuildWarPath, OnButtonGuildWarClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonGuildRankPath, OnButtonGuildRankClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonDonatePath, OnButtonDonateClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonActivity1Path, OnButtonActivity1Click, m_PanelObject);
+	SetGameObjectEvent(m_ButtonActivity2Path, OnButtonActivity2Click, m_PanelObject);
+	SetGameObjectEvent(m_ButtonManagerPath, OnButtonManagerClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonShopPath, OnButtonShopClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonContributionRankPath, OnButtonContributionRankClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonRewardPath, OnButtonRewardClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonBackStationPath, OnButtonBackStationClick, m_PanelObject);
+    SetGameObjectEvent(m_ButtonWarPath, OnButtonWarClick, m_PanelObject);
+    SetGameObjectEvent(m_ButtonStrongHoldPath, OnnStrongHoldClick, m_PanelObject); 
+    SetGameObjectEvent(m_ButtonStrongHoldClosePath, OnnStrongHoldCloseClick, m_PanelObject);
+    m_ShopList:SetInitCallback(OnShopListInit);
+    m_ShopList:SetClickCallback(OnShopListClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitGuildInfo();
+    InitNotice();
+    InitGuildActivities();
+    InitStrongHoldInfo();
+end
+
+-- 初始化公会基本信息
+function InitGuildInfo()
+    GuildProtocol.RequestAutionState();
+    
+    local guild = GuildManager.myGuild;
+    m_GuildName.text = guild.name;
+    m_GuildLevel.text = string_format("Lv.{0}",guild.level);
+    m_GuildFlag.text = guild.nickName;
+    local info = CCommonTool.GetGuildInfoByIndex(guild.level);
+    SetSpriteByAtlasID(m_GuildFlagIconPath, info.FlagIconBig, m_PanelObject, true);
+    m_GuildWarWinCount.text = string_format(--[[[fff4aa]{0}[-]胜]]CCommonTool.GetTxtData(1179).m_str, 0);
+    m_GuildWarFailCount.text = string_format(--[[{0}负]]CCommonTool.GetTxtData(1180).m_str, 0);
+    m_GuildMemberCount.text = guild.memberCount .. "/" .. guild.maxMemberCount;
+    m_GuildLeader.text = guild.leaderName;
+    if guild.money > GuildManager.GetGuildMoneyWarnValue() then
+        m_GuildFund.text = guild.money;
+        m_GuildMaintainMoney.text = GuildManager.GetGuildMaintainMoney();
+    else
+        m_GuildFund.text = "[FF0000]" .. guild.money;
+        m_GuildMaintainMoney.text = "[FF0000]" .. GuildManager.GetGuildMaintainMoney();
+    end
+    m_GuildWood.text = guild.guildWoodCount;
+    m_GuildFriend.text = --[[无]]CCommonTool.GetTxtData(8126).m_str;
+    m_GuildEnemy.text = --[[无]]CCommonTool.GetTxtData(8126).m_str;
+    if guild.fightPowerRank== nil or guild.fightPowerRank == 0 then
+        m_GuildRank.text = --[[未上榜]]CCommonTool.GetTxtData(614).m_str;
+        m_GuildRank.fontSize = 30;
+    else
+        m_GuildRank.text = guild.fightPowerRank;
+        m_GuildRank.fontSize = 80;
+    end
+    -- 所属阵营
+    local campType = G_UserInfo.RoleAttribute.JoinCampType
+    if campType == JOINCAMPENUM.UNION then
+        m_GuildCamp.text = CCommonTool.GetTxtData(52001).m_str;
+    elseif campType == JOINCAMPENUM.TRIBE then
+        m_GuildCamp.text = CCommonTool.GetTxtData(52002).m_str;
+    end
+end
+
+-- 公告信息
+function InitNotice()
+    local content = nil;
+    if GuildManager.guildNotice then
+        content = GuildManager.guildNotice.content;
+    end
+    if content == nil then
+        local noticeId = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_DEFAULT_NOTICE):GetIntContent();
+        content = CCommonTool.GetTxtData(noticeId).m_str;
+    end
+    m_GuildNotice.text = content;
+end
+
+-- 公会活动
+function InitGuildActivities()
+    local paths = {m_ButtonActivity1Path, m_ButtonActivity2Path};
+    local items = ActivityManager.GetActivityList(2);
+    actDatas = {};
+    for i, path in ipairs(paths) do
+        local data = items[i];
+        SetGameObjectState(path, data ~= nil, m_PanelObject);
+        if data ~= nil then
+            actDatas[i] = data;
+            local info = data.info;
+            SetLabelTextByID(path.."/Name", info.Name, m_PanelObject);
+            SetGameObjectState(path.."/Passed", data.passed, m_PanelObject);
+            local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(data.id);
+            if maxTimes > 0 then
+                SetLabelContent(path.."/Times", string_format(--[[次数:{0}/{1}]]CCommonTool.GetTxtData(895).m_str, usedTimes, maxTimes), m_PanelObject);
+            else
+                SetLabelContent(path.."/Times", --[[次数:不限]]CCommonTool.GetTxtData(1137).m_str, m_PanelObject);
+            end
+        end
+    end
+end
+
+-- 公会据点信息
+function InitStrongHoldInfo()
+    if GuildManager.strongHoldInfo == nil then return end
+    local data = GuildManager.strongHoldInfo;
+    SetGameObjectState(m_ActivityPath.."ActivityDesc2", data.ownID > 0, m_PanelObject);
+    SetGameObjectState(m_ActivityPath.."btn_OpenStrongHoldInfo", data.ownID > 0, m_PanelObject);
+    if data.ownID > 0 then
+        SetLabelTextByID(m_ActivityPath.."ActivityName", 163248, m_PanelObject);
+        SetLabelTextByID(m_ActivityPath.."ActivityDesc2",CCommonTool.GetActivityWarInfoIndex(data.ownID).NameID, m_PanelObject);
+    else
+        SetLabelTextByID(m_ActivityPath.."ActivityName", 163247, m_PanelObject);
+    end
+    SetLabelTextByID(m_ActivityPath.."ActivityDesc", 163249, m_PanelObject);
+    local weekNum = weekKoera[data.week];
+    local timeStr = ActivityManager.TimeToStringRange(data.beginTime,data.endTime);
+    local timeDesc = "";
+    if data.state then
+        if data.state == 1 then
+            timeDesc = string_format(GetTextToId(163250), GetTextToId(weekNum), timeStr);
+        elseif data.state == 2 then
+            timeDesc = string_format(GetTextToId(163251), GetTextToId(weekNum), timeStr);
+        end
+        SetLabelContent(m_ActivityPath.."ActivityTime", timeDesc, m_PanelObject);
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 公会战按钮点击事件
+function OnButtonGuildWarClick(gameObject)
+    ShowSystemFlowTips(106);
+end
+
+-- 公会排名按钮点击事件
+function OnButtonGuildRankClick(gameObject)
+    RankPanel.OpenRankPanel(RANK_TYPE.GUILDRANK, 0);
+end
+
+-- 公会捐献按钮点击事件
+function OnButtonDonateClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_DONATION, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+end
+
+-- 活动1点击事件
+function OnButtonActivity1Click(gameObject)
+    --ShowSystemFlowTips(106);
+    local data = actDatas[1];
+    local panelId = ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL;
+    ActivityManager.Jump(data.id, panelId, function(jumpType, success) 
+        if success == true  then
+            if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+                closePanel(panelId);
+            end
+        end
+    end);
+    --[[
+    local result, jumpType = ActivityManager.Jump(data.id, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    if result then
+        error("jumpType::"..jumpType);
+        if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+            closePanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+        end
+    end
+    ]]
+end
+
+-- 活动2点击事件
+function OnButtonActivity2Click(gameObject)
+    --ShowSystemFlowTips(106);
+    local data = actDatas[2];
+    local panelId = ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL;
+    ActivityManager.Jump(data.id, panelId, function(jumpType, success) 
+        if success == true  then
+            if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+                closePanel(panelId);
+            end
+        end
+    end);
+    --[[
+    local result, jumpType = ActivityManager.Jump(data.id, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    if result then
+        if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+            closePanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+        end
+    end
+    ]]
+end
+
+-- 公会管理按钮点击事件
+function OnButtonManagerClick(gameObject)
+    -- 这里用的编辑宣言的权限判断
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.EDIT_NOTICE) then
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+end
+
+-- 公会商店按钮点击事件
+function OnButtonShopClick(gameObject)
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.GuildShop);
+end
+
+-- 捐献排名按钮点击事件
+function OnButtonContributionRankClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_RANK, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+end
+
+-- 每日俸禄按钮点击事件
+function OnButtonRewardClick(gameObject)
+    local data = GuildManager.GetSelfInfo();
+    if data ~= nil then
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_REWARD, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    else
+        error("Data Exception: 未收到公会成员列表数据!");
+    end
+end
+
+-- 返回驻地按钮点击事件
+function OnButtonBackStationClick(gameObject)
+    GuildProtocol.RequestBackStation();
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+end
+
+-- 前往战场
+function OnButtonWarClick(gameObject)
+    for i,v in pairs(_G.LogicData_TipsTable) do
+        if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_WAR then
+            table.remove(_G.LogicData_TipsTable, i);
+        end
+    end
+    
+    GuildProtocol.RequestEnterScene();
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+end
+
+-- 打开据点详情界面
+function OnnStrongHoldClick(gameObject)
+    OnShowStrongHold();
+end
+-- 关闭据点详情界面
+function OnnStrongHoldCloseClick(gameObject)
+    SetGameObjectState(m_StrongHoldPath, false, m_PanelObject);
+end
+-- 据点商店初始化
+function OnShopListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.excelId;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, 1, false, 11, ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL, false, excelId);
+end
+
+function OnShopListClick(listView, cell, go)
+
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+            InitGuildInfo();
+        end
+    end
+end
+
+-- 更新公会基本信息
+function RefreshGuildInfo()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+            InitGuildInfo();
+        end
+    end
+end
+
+-- 更新公告
+function UpdateNotice()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+            InitNotice();
+        end
+    end
+end
+
+-- 更新领地战按钮状态 
+function UpdateAuctionState(state)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+--            SetGameObjectState(m_ButtonAuctionPath, state == 1, m_PanelObject);
+            SetGameObjectState(m_ButtonWarPath, state == 2, m_PanelObject);
+        end
+    end
+end
+
+-- 打开据点详情界面
+function OnShowStrongHold()
+    SetGameObjectState(m_StrongHoldPath, true, m_PanelObject);
+    local data = GuildManager.strongHoldInfo;
+    local sceneData = CCommonTool.GetActivityWarInfoIndex(data.ownID);
+    -- 据点信息
+    SetLabelTextByID(m_StrongHoldContentPath.."lb_Name",sceneData.NameID, m_PanelObject);
+    SetLabelContent(m_StrongHoldContentPath.."lb_LV", string_format(GetTextToId(163364), data.ownSceneLv), m_PanelObject);
+    local index = data.ownID - 62;
+    if index <= 5 and index > 1  then 
+        SetSpriteContent(m_StrongHoldContentPath.."sp_Bg", "Activity01AtlasV04", "UI_HDJM_DiTu_00"..index - 1, m_PanelObject, true);
+    else
+        SetSpriteContent(m_StrongHoldContentPath.."sp_Bg", "Activity01AtlasV04", "UI_HD_DiTu_101", m_PanelObject, true);
+    end
+    -- 据点产出信息
+    local rewardID = sceneData.OutputId;
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID); 
+    if rewardInfo ~= nil then
+        local list = rewardInfo:GetAllItem();
+        local count = list.Count;
+        for i = 1, count do
+            local itemData = list[i - 1];
+            if i == 1 then
+                SetLabelContent(m_StrongHoldProductPath.."Sub_Gold/lb_GoldNum", math.floor(itemData.ItemNum*data.ownProductC), m_PanelObject);
+            else
+                SetLabelContent(m_StrongHoldProductPath.."Sub_Wood/lb_WoodNum", math.floor(itemData.ItemNum*data.ownProductC), m_PanelObject);
+            end
+        end
+    end
+    local t1,t2 = math.modf(data.ownSceneLv/2);
+    if t2 <= 0 then 
+        SetSpriteContent(m_StrongHoldProductPath.."Sub_Diifficult/sp_Icon", "Activity01AtlasV04", "UI_HD_XS_PinZhi_00"..t1, m_PanelObject, true); 
+    else
+        SetSpriteContent(m_StrongHoldProductPath.."Sub_Diifficult/sp_Icon", "Activity01AtlasV04", "UI_HD_XS_PinZhi_00"..t1+1, m_PanelObject, true);
+    end
+    SetGameObjectState(m_StrongHoldProductPath.."Sub_Diifficult/sp_Icon/sp_Add", t2 <= 0, m_PanelObject);
+    -- 据点商店
+    local itemStr = ShopItem[data.ownID][1][data.ownSceneLv];
+    local strList = string.split(itemStr, ",");
+    local itemTable = {};
+    for i = 1, #strList do
+        local excelId = tonumber(strList[i]);
+        if excelId > 0 then
+            if excelId >= 200000 and excelId <= 210000 then 
+                local proId = G_UserInfo.RoleAttribute.ProID;
+                local data = CCommonTool.GetProfessionRewardInfo(excelId);
+                local str = tostring("Profession"..proId.."Id");
+                excelId = data[str];
+            end
+            table.insert(itemTable, { excelId = excelId });
+        end
+    end
+    m_ShopList:RemoveAll();
+    for i, v in pairs(itemTable) do
+        m_ShopList:AddData(v);
+    end
+end

@@ -1,0 +1,507 @@
+﻿module("PetLevelUpPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前宠物等级
+local m_PetLevelStr = "Label_Level";
+-- 当前宠物经验
+local m_PetExpStr = "Label_Exp";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 升一级
+local m_ButtonOneLevelStr = "Button_LevelUp";
+-- 升至最高
+local m_ButtonTopLevelStr = "Button_UseAll";
+-----------------------------------------Sprite路径------------------------------------
+-- 宠物图标
+local m_PetIconStr = "PetItem/Sprite_Icon";
+-- 宠物品质
+local m_PetQualityStr = "PetItem/Sprite_Quality";
+----------------------------------gameobject所在的路径---------------------------------
+-- 当前宠物经验条
+local m_PetExpProStr = "ExpProgress";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具路径
+local m_ItemStr = "ItemTable/Item";
+-- 道具图标
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具品质
+local m_QualityStr = "/Sprite_Quality";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+-- 道具遮罩
+local m_ItemMaskStr = "/Sprite_Mask";
+-- 加号
+local m_ItemAddStr = "/Label_Add";
+-- 道具使用按钮
+local m_ItemButtonUseStr = "/Button_Use";
+-- 道具等级
+local m_ItemLevelUseStr = "/Label_Level";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+local m_EatIndex = -1;
+local MIN_SAVVYVALUE = 10
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL);
+end
+
+function InitEvents()
+end
+
+-- 初始化显示
+function InitShow()
+    InitStaticShow();
+    InitDynamicShow();
+end
+
+function InitStaticShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    SetSpriteByAtlasID(m_PetIconStr, m_CurSelectPet:GetImageIdById(), m_panelObject);
+    SetSpriteApptitudeV04(m_PetQualityStr, m_CurSelectPet:GetAptitudeID(), m_panelObject);
+    for Index = 1,#PetAddExpExcelIDChunk do
+        SetSpriteByAtlasID(m_ItemStr..Index ..m_ItemIconStr, CCommonTool.GetImageIDByExcelID(PetAddExpExcelIDChunk[Index]), m_panelObject);
+        SetSpriteApptitudeV04(m_ItemStr..Index ..m_QualityStr, CCommonTool.GetAptitudeIDByExcelID(PetAddExpExcelIDChunk[Index]), m_panelObject);
+    end
+end
+
+function InitDynamicShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    SetLabelContent(m_PetLevelStr, "Lv." .. petATT.PetLevel, m_panelObject);
+    local curExp = petATT.PetExp - CCommonTool.GetEXPIndexInfo(petATT.PetLevel - 1).PetNeedExp;
+    local maxExp = CCommonTool.GetEXPIndexInfo(petATT.PetLevel).PetNeedExp - CCommonTool.GetEXPIndexInfo(petATT.PetLevel - 1).PetNeedExp;
+    SetSpriteFillAmount(m_PetExpProStr, curExp / maxExp, m_panelObject);
+    SetLabelContent(m_PetExpStr, curExp .. "/" .. maxExp, m_panelObject);
+
+    local haveNum;
+    local itemNeedLv;
+    for Index = 1,#PetAddExpExcelIDChunk do
+        haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetAddExpExcelIDChunk[Index]);
+        if haveNum > 0 then
+            SetLabelContent(m_ItemStr..Index .. m_ItemNumStr,haveNum,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index .. m_ItemMaskStr,false,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index .. m_ItemAddStr,false,m_panelObject);
+        else
+            SetLabelContent(m_ItemStr..Index .. m_ItemNumStr,"",m_panelObject);
+            SetGameObjectState(m_ItemStr..Index .. m_ItemMaskStr,true,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index .. m_ItemAddStr,true,m_panelObject);
+        end
+        itemNeedLv = CCommonTool.GetItemInfo(PetAddExpExcelIDChunk[Index]).NeedLevel;
+        if petATT.PetLevel >= itemNeedLv then
+            SetGameObjectState(m_ItemStr..Index..m_ItemButtonUseStr,true,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index..m_ItemLevelUseStr,false,m_panelObject);
+        else
+            SetGameObjectState(m_ItemStr..Index..m_ItemButtonUseStr,false,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index..m_ItemLevelUseStr,true,m_panelObject);
+            SetLabelContent(m_ItemStr..Index..m_ItemLevelUseStr,"Lv."..itemNeedLv,m_panelObject);
+        end
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr, OnCloseClick, m_panelObject);
+    for Index = 1,#PetAddExpExcelIDChunk do
+        SetItemToolTipsEvent(m_panelObject, m_ItemStr..Index..m_ItemIconStr, ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL, false, PetAddExpExcelIDChunk[Index]);
+        SetGameObjectEvent(m_ItemStr..Index..m_ItemMaskStr,OnGetWayClick,m_panelObject);
+        SetGameObjectEvent(m_ItemStr..Index..m_ItemButtonUseStr,OnButtonUseClick,m_panelObject);
+    end
+    SetGameObjectEvent(m_ButtonOneLevelStr,OnClickOneLevel,m_panelObject);
+    SetGameObjectEvent(m_ButtonTopLevelStr,OnClickTopLevel,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL);
+end
+
+function OnGetWayClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    GetWayPanel.Show(PetAddExpExcelIDChunk[selectIndex],ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL);
+end
+
+function OnButtonUseClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    local haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetAddExpExcelIDChunk[selectIndex]);
+    m_EatIndex = selectIndex;
+    if haveNum <= 0 then
+        ShowSystemFlowTips(7810);
+        log("没有道具无法使用经验药")
+    else
+        local maxLevel = CheckMaxLevel();
+        if m_CurSelectPet == nil then
+            return;
+        end
+        local petATT = m_CurSelectPet.AllPetAttribute;
+        if petATT == nil then
+            return;
+        end
+        if petATT.PetLevel >= maxLevel then
+            log("宠物已经达到能达到的最大等级了");
+            if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+                if petATT.PetLevel >= G_UserInfo.UnlockLevel then
+                    ShowSystemFlowTips(7865);
+                elseif petATT.PetLevel >= G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel then
+                    ShowSystemFlowTips(7866,nil,{PetMaxOverPlayerLevel});
+                elseif petATT.PetLevel >= PetChildMaxLevel then
+                    ShowSystemFlowTips(7867);
+                end
+            else
+                if petATT.PetLevel >= G_UserInfo.UnlockLevel then
+                    ShowSystemFlowTips(7865);
+                elseif petATT.PetLevel >= G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel then
+                    ShowSystemFlowTips(7866,nil,{PetMaxOverPlayerLevel});
+                end
+            end
+        else
+            if petATT.SavvyNum < MIN_SAVVYVALUE and petATT.PetState == PET_ENUM.PET_STATE_CHILD  then
+                ShowTipsBySavvyValue(1);
+            else
+                SendRequestUseClick();
+            end
+        end
+    end
+end
+
+function SendRequestUseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_EAT_EXPITEM);
+    buffer:WriteInt(m_CurSelectPet.PakID);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    for Index = 1,3 do
+        if m_EatIndex == Index then
+            buffer:WriteInt(1);
+        else
+            buffer:WriteInt(0);
+        end
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+-- 前往训练
+function GoToPractice()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    closePanel(ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL);
+    -- 打开提升悟性面板
+    PetSavvyPanel.m_CurSelectPet = m_CurSelectPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL,ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL)
+end
+-- 判定当前宠物悟性值是否大于10
+function ShowTipsBySavvyValue(click_type)
+
+    local tempTable = { };
+    local lvl_Function = nil;
+    if click_type ==1 then
+        lvl_Function = SendRequestUseClick;
+    elseif click_type ==2 then
+        lvl_Function = OnClickLvlOneTime;
+    elseif click_type ==3 then
+        lvl_Function = OnClickLvlTenTime;
+    end
+    if lvl_Function==nil then
+        return;
+    end
+    local txt_Content = string.gsub(GetTextToId(170990), "\\n", "\n");
+    
+    table.insert(tempTable, 1, GetTextToId(949));
+    table.insert(tempTable, 2, txt_Content);
+    table.insert(tempTable, 3, GoToPractice);
+    table.insert(tempTable, 4, GetTextToId(170992));--前往训练
+    table.insert(tempTable, 5, lvl_Function);
+    table.insert(tempTable, 6, GetTextToId(170993)); -- 继续喂食
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnClickOneLevel()
+    local maxLevel = CheckMaxLevel();
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    if petATT.PetLevel >= maxLevel then
+        log("宠物已经达到能达到的最大等级了");
+        if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            if petATT.PetLevel >= G_UserInfo.UnlockLevel then
+                ShowSystemFlowTips(7865);
+            elseif petATT.PetLevel >= G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel then
+                ShowSystemFlowTips(7866,nil,{PetMaxOverPlayerLevel});
+            elseif petATT.PetLevel >= PetChildMaxLevel then
+                ShowSystemFlowTips(7867);
+            end
+        else
+            if petATT.PetLevel >= G_UserInfo.UnlockLevel then
+                ShowSystemFlowTips(7865);
+            elseif petATT.PetLevel >= G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel then
+                ShowSystemFlowTips(7866,nil,{PetMaxOverPlayerLevel});
+            end
+        end
+    else
+        local needNumsTable = CalculateNeedNumsByLevel(petATT.PetLevel + 1);
+        local hasItem = false;
+        for Index = 1,3 do
+            if needNumsTable[Index] ~= 0 then
+                hasItem = true;
+                break;
+            end
+        end
+        if not hasItem then
+            
+            local is_Return  = CanQuickBuyMat();
+            if is_Return then
+                return;
+            else
+                log("没有道具无法使用经验药");
+                ShowSystemFlowTips(7810);
+            end
+            return;
+        end
+        if petATT.SavvyNum < MIN_SAVVYVALUE and petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            ShowTipsBySavvyValue(2);
+        else
+            OnClickLvlOneTime();
+        end
+
+       --[[ local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_EAT_EXPITEM);
+        buffer:WriteInt(m_CurSelectPet.PakID);
+        buffer:WriteInt(m_CurSelectPet.CRID);
+        for Index = 1,3 do
+            buffer:WriteInt(needNumsTable[Index]);
+        end
+        G_NetWorkMng:SendMessage(buffer);]]
+    end
+end
+-- 升级一次请求callback
+function OnClickLvlOneTime()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    local needNumsTable = CalculateNeedNumsByLevel(petATT.PetLevel + 1);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_EAT_EXPITEM);
+    buffer:WriteInt(m_CurSelectPet.PakID);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    for Index = 1,3 do
+        buffer:WriteInt(needNumsTable[Index]);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+-- 升级10次请求callback
+function OnClickLvlTenTime()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local maxLevel = CheckMaxLevel();
+    local needNumsTable = CalculateNeedNumsByLevel(maxLevel);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_EAT_EXPITEM);
+    buffer:WriteInt(m_CurSelectPet.PakID);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    for Index = 1,3 do
+        buffer:WriteInt(needNumsTable[Index]);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+
+end
+--判断是否有可快捷购买道具
+function CanQuickBuyMat()
+    local can_Return = false;
+    local item_Datas = {};
+    local petATT = nil;
+    if m_CurSelectPet~=nil then
+        petATT = m_CurSelectPet.AllPetAttribute;
+    else
+        return;
+    end
+    
+    for Index=1,#PetAddExpExcelIDChunk do
+        local itemInfo = CCommonTool.GetItemInfo(PetAddExpExcelIDChunk[Index]);
+        local itemNeedLv = itemInfo.NeedLevel;
+        if petATT.PetLevel >= itemNeedLv then
+            local haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetAddExpExcelIDChunk[Index]);
+            if haveNum<=0 then
+                table.insert(item_Datas, PetAddExpExcelIDChunk[Index]);
+            end
+        end
+    end
+    if #item_Datas < 0 or #item_Datas == 0 then
+        return can_Return;
+    end
+    for i=1,# item_Datas do
+        if item_Datas[i]>0 and CCommonTool.GetQuickToBuyByExcelID(item_Datas[i])~=nil then
+            can_Return = true;
+            break;
+        end
+    end
+    --得到权重值最大的一个
+    table.sort(item_Datas);
+     MaterialExchangePanel.ShowPanel(item_Datas[#item_Datas],ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL)
+     return can_Return;
+end
+
+
+function OnClickTopLevel()
+    local maxLevel = CheckMaxLevel();
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    if petATT.PetLevel >= maxLevel then
+        log("宠物已经达到能达到的最大等级了");
+        if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            if petATT.PetLevel >= G_UserInfo.UnlockLevel then
+                ShowSystemFlowTips(7865);
+            elseif petATT.PetLevel >= G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel then
+                ShowSystemFlowTips(7866,nil,{PetMaxOverPlayerLevel});
+            elseif petATT.PetLevel >= PetChildMaxLevel then
+                ShowSystemFlowTips(7867);
+            end
+        else
+            if petATT.PetLevel >= G_UserInfo.UnlockLevel then
+                ShowSystemFlowTips(7865);
+            elseif petATT.PetLevel >= G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel then
+                ShowSystemFlowTips(7866,nil,{PetMaxOverPlayerLevel});
+            end
+        end
+    else
+        local needNumsTable = CalculateNeedNumsByLevel(maxLevel);
+        local hasItem = false;
+        for Index = 1,3 do
+            if needNumsTable[Index] ~= 0 then
+                hasItem = true;
+                break;
+            end
+        end
+        if not hasItem then
+            local is_Return  = CanQuickBuyMat();
+            if is_Return then
+                return;
+            else
+                log("没有道具无法使用经验药");
+                ShowSystemFlowTips(7810);
+            end
+            return;
+        end
+        if petATT.SavvyNum < MIN_SAVVYVALUE and petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            ShowTipsBySavvyValue(3);
+        else
+            OnClickLvlTenTime();
+        end
+        --local buffer = ByteBuffer.New();
+        --[[buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_EAT_EXPITEM);
+        buffer:WriteInt(m_CurSelectPet.PakID);
+        buffer:WriteInt(m_CurSelectPet.CRID);
+        for Index = 1,3 do
+            buffer:WriteInt(needNumsTable[Index]);
+        end
+        G_NetWorkMng:SendMessage(buffer);]]
+    end
+end
+
+function CheckMaxLevel()
+    if m_CurSelectPet == nil then
+        return 0;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return 0;
+    end
+    if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+        return math.min(G_UserInfo.UnlockLevel,G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel,PetChildMaxLevel);
+    else
+        return math.min(G_UserInfo.UnlockLevel,G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel);
+    end
+end
+
+function CalculateNeedNumsByLevel(needLevel)
+    local resultTable = {0,0,0}
+    if m_CurSelectPet == nil then
+        return resultTable;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return resultTable;
+    end
+    if petATT.PetLevel >= needLevel then
+        log("宠物等级高于想要达到的等级")
+        return resultTable;
+    end
+    local needExp = CCommonTool.GetEXPIndexInfo(needLevel - 1).PetNeedExp - petATT.PetExp;
+    local itemInfo = nil;
+    local singleItemExp = 0;
+    local haveNum = 0;
+    local itemNeedLv = 0;
+    for Index = #PetAddExpExcelIDChunk,1,-1 do
+        itemInfo = CCommonTool.GetItemInfo(PetAddExpExcelIDChunk[Index]);
+        singleItemExp = itemInfo.ExpNum;
+        itemNeedLv = itemInfo.NeedLevel;
+        if petATT.PetLevel >= itemNeedLv then
+            local haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetAddExpExcelIDChunk[Index]);
+            if singleItemExp == 0 then
+                error("道具表ID为"..PetAddExpExcelIDChunk[Index].."获得的经验为0,是错误的");
+                return resultTable;
+            end
+            if needExp > haveNum * singleItemExp then
+                resultTable[Index] = haveNum;
+                needExp = needExp - haveNum * singleItemExp;
+            else
+                resultTable[Index] = math.ceil(needExp/singleItemExp);
+                return resultTable;
+            end
+        end
+    end
+    return resultTable;
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 界面操作，一个是出战的宠物得经验的
+function OnRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL) == 1 then
+        InitDynamicShow();
+    end
+end

@@ -1,0 +1,410 @@
+﻿module("DungeonProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 同步所有副本章节信息
+    --network.Register(GMI_STOC_ALL_DUN_CHAPTER_INFO, UpdateAllStoryDungeon);
+    -- 同步单个章节副本信息
+    --network.Register(GMI_STOC_SINGLE_DUNGEON_INFO, UpdateStoryDungeon);
+    -- 同步剧情副本领取宝箱状态信息
+    --network.Register(GMI_STOC_CHAPTER_CHEST_REWARD_INFO, OnDungeonBoxInfo);
+    -- 章节副本通关奖励信息
+    network.Register(GMI_STOC_DUNGEON_SUCCESS_INFO, OnUpdateDungeonInfo);
+    -- 副本失败的消息弹出失败面板
+    network.Register(GMI_STOC_DUNGEON_FAILURE_INFO, OnDungeonFail);
+    -- 完成一个副本目标的消息
+    network.Register(GMI_STOC_DUN_REACH_GOALS, OnDungeonCompleteTarget);
+    -- 扫荡十次或多次
+    --network.Register(GMI_STOC_SWEEP_TIMES_BOSS_DUNG_INFO, OnDungeonFightComplete);
+    -- 更新Boss副本进入次数信息
+    network.Register(GMI_STOC_LGS_BOSS_TEAM_ENTER_TIMES_CHANGE, UpdateBossDungeonTimes);
+    -- 更新Boss副本购买次数信息
+    --network.Register(GMI_STOC_LGS_BOSS_TEAM_BUY_TIMES_CHANGE, UpdateBossDungeonBuyInfo);
+    -- 服务器通知打开剧情面板
+    network.Register(GMI_STOC_CHAPTER_THREE_DIALOEG, OnServerOpenPlotPanel);
+    -- 副本类型为清剿的服务器发送打掉怪物数量的协议
+    network.Register(GMI_STOC_DUNGEON_LEFT_MONSTER_NUM, GetDungeonMonstersNum);
+    -- 翻牌信息确认返回
+    network.Register(GMI_STOC_DUNGEON_CARD_AFFIRM, ConfirmRollOverCard);
+    -- 玩家的体力更新
+    --network.Register(GMI_STOC_THEW_CHANGE, OnEnergyChanged);
+    --network.Register(GMI_STOC_SINGLE_BOSS_DUNG_INFO, );
+
+    -- 同步副本伤害统计显示
+    network.Register(GMI_STOC_FB_DAMAGE_SHOW, OnSyncDungeonDamage);
+end
+
+-- 同步所有副本章节信息
+--function UpdateAllStoryDungeon(protocolId, buffer)
+--    DungeonManager.UpdateAllStoryDungeon(buffer);
+--end
+
+-- 同步单个章节副本信息
+--function UpdateStoryDungeon(protocolId, buffer)
+--    DungeonManager.UpdateStoryDungeon(buffer);
+--end
+
+-- 同步剧情副本领取宝箱状态信息
+--function OnDungeonBoxInfo(protocolId, buffer)
+--    DungeonManager.UpdateBoxRewards(buffer);
+--    -- 更新UI显示
+--    DungeonSoloPanel.OnUpdateRewardsPanel();
+--end
+
+-- 更新Boss副本进入次数信息
+function UpdateBossDungeonTimes(protocolId, buffer)
+    DungeonManager.UpdateBossDungeonTimes(buffer);
+end
+
+-- 更新Boss副本购买次数信息
+--function UpdateBossDungeonBuyInfo(protocolId, buffer)
+--    DungeonManager.UpdateBossDungeonBuyInfo(buffer);
+--end
+
+-- 当前副本是否正在播剧情
+local m_currentIsPlayPlot = false;
+-- 副本奖励
+local ItemInfoTable = { };
+-- 章节副本通关奖励信息
+function OnUpdateDungeonInfo(protocolId, buffer)
+    local step = 0;
+    ItemInfoTable = { };
+    local starNum = buffer:ReadByte();
+    -- 副本得星的数量
+    local fuBenID = buffer:ReadInt();
+    -- 副本ID
+    local starObj = { };
+    -- 存储得星了列表，如果值为0表示没有打死该怪物，1为打死了该怪物
+    starObj.star1 = buffer:ReadByte();
+    starObj.star2 = buffer:ReadByte();
+    starObj.star3 = buffer:ReadByte();
+    -- 获得奖励道具的长度
+    size = buffer:ReadByte();
+    -- 奖励的道具数量的长度
+    local reward = { };
+    -- 奖励道具列表
+    local list = { };
+    for index = 1, size do
+        local obj = { };
+        obj.excelID = buffer:ReadInt();
+        -- 道具的EXCELID
+        obj.itemCount = buffer:ReadInt();
+        -- 道具的数量
+        table.insert(list, obj);
+    end
+    -- 通关时间
+    local passTiem = buffer:ReadInt();
+    -- 通过事件 如果为0表示剧情，否则表示Boos本时间
+    table.insert(reward, 1, starNum);
+    table.insert(reward, 2, fuBenID);
+    table.insert(reward, 3, starObj);
+    table.insert(reward, 4, list);
+    table.insert(reward, 5, passTiem);
+    -- error("通关时间=="..passTiem)
+    _G.LogicData_PassDungeon = reward;
+    step = buffer:ReadByte();
+    for index = 1, 21 do
+        ItemInfoTable[index] = buffer:ReadInt();
+    end
+
+    local nGetExp = buffer:ReadInt();
+    local nGetMoney = buffer:ReadInt();
+    error("nGetExp"..nGetExp .. "nGetMoney"..nGetMoney);
+    local data = 
+    {
+        Exp = nGetExp;
+        Money = nGetMoney;
+    }
+    _G.LogicData_PassDungeon.RewardData = data;
+    local dungeonInfo = CCommonTool.GetDungeonInfo(fuBenID);
+    if dungeonInfo.ChapterWinId ~= 0 then
+        m_currentIsPlayPlot = true;
+        local buffer = ByteBuffer.New();
+        buffer:WriteInt(dungeonInfo.ChapterWinId);
+        LuaEventDispatcher.TriggerByteBufferEvent(MoviePlotEvent.Awake,buffer);
+    else
+        OnPlayPlotCompleteCallBack();
+    end
+end
+
+-- 服务器通知打开剧情面板
+function OnServerOpenPlotPanel(protocolId, buffer)
+end
+
+function OnPlotEnd()
+    if m_currentIsPlayPlot == true then
+        m_currentIsPlayPlot = false;
+        OnPlayPlotCompleteCallBack();
+    end
+end
+
+function OnPlayPlotCompleteCallBack()
+    RollOverCardPanel.SetTable(ItemInfoTable);
+    OnOpenFightWinPanel();
+end
+
+-- 打开副本结算面板
+function OnOpenFightWinPanel()
+    error("副本结算面板："..G_TimerMng:GetCurrentTime():ToString());
+    local activityID = G_SceneMng.ActivityID;
+    -- 猎魔大师活动结算要单独处理,跳过倒计时过程直接弹出胜利界面
+    if activityID == ENUM_AOT_ID.AOT_ID_DUNGEON_HUNT_ACTIVITY then
+        createPanelExx(ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL, _G.LogicData_PassDungeon);
+    else
+        Main_MiddleTop.DugeonCountDown();
+    end
+end
+
+-- 副本失败的消息弹出失败面板
+function OnDungeonFail(protocolId, buffer)
+    -- 弹出失败面板
+    createPanel(ENUMPANELID.ENUM_PANEL_FIGHTFAILPANEL);
+end
+
+-- 完成一个副本目标的消息
+function OnDungeonCompleteTarget(protocolId, buffer)
+    -- Main.DungeonGetStar(buffer); -- 屏蔽此功能 2017年5月8日15:30:28
+end
+
+-- 扫荡十次或多次
+--function OnDungeonFightComplete(protocolId, buffer)
+--    -- error("OnDungeonFightComplete")
+--    local fuBenID = buffer:ReadInt();
+--    local size = buffer:ReadByte();
+--    local tab = { };
+--    local itemList = { };
+--    local fightSweepItemList = { };
+
+--    local excelid = nil;
+--    local countNum = nil;
+
+--    for index = 1, size do
+--        -- 扫荡的翻牌奖励
+--        local fightSweepItem = { };
+--        fightSweepItem.excelid = buffer:ReadInt();
+--        fightSweepItem.countNum = buffer:ReadInt();
+--        -- error("excelid::::" .. fightSweepItem.excelid);
+--        -- error("countNum::::" .. fightSweepItem.countNum);
+--        table.insert(fightSweepItemList, index, fightSweepItem);
+--        local itemCount = buffer:ReadByte();
+--        local list = { };
+--        for count = 1, itemCount do
+--            local obj = { };
+--            obj.itemID = buffer:ReadInt();
+--            obj.itemNum = buffer:ReadInt();
+--            table.insert(list, count, obj);
+--        end
+--        table.insert(itemList, index, list);
+--    end
+--    table.insert(tab, 1, fuBenID);
+--    table.insert(tab, 2, itemList);
+--    table.insert(tab, 3, fightSweepItemList);
+--    -- 打开UI
+--    createPanelExx(ENUMPANELID.ENUM_PANEL_FIGHTSWEEPPANEL, tab);
+--end
+
+-- 副本类型为清剿的服务器发送打掉怪物数量的协议
+function GetDungeonMonstersNum(protocolId, buffer)
+   --  local MonsterNums = buffer:ReadByte();
+   --  Main.SetDungeonMonsterNum(MonsterNums);-- 屏蔽2017年5月8日15:35:00
+end
+
+-- 翻牌信息确认返回
+function ConfirmRollOverCard(protocolId, buffer)
+    local retCode = buffer:ReadInt();
+    -- error("retCode:::"..retCode);
+    if retCode == 0 then
+        RollOverCardPanel.DealMessage();
+    elseif retCode == 1 then
+        error("钱不够");
+    elseif retCode == 2 then
+        error("添加背包失败");
+    elseif retCode == 3 then
+        error("次数不够");
+    end
+    local step = buffer:ReadInt();
+    -- error("step:::"..step);
+end
+
+---- 玩家的体力更新
+--function OnEnergyChanged(protocolId, buffer)
+--    DungeonBossPanel.OnEnergyChanged();
+--end
+
+-- 同步副本伤害统计显示
+function OnSyncDungeonDamage(protocolId, buffer)
+    local count = buffer:ReadShort();
+    local players = {};
+    for i = 1, count do
+        local p = {};
+        p.id = buffer:ReadInt();            -- GlobalID
+        p.proId = buffer:ReadByte();        -- 职业ID
+        p.name = buffer:ReadStringByByte(); -- 玩家名称
+        p.cureValue = buffer:ReadFloat();   -- 治疗总值
+        p.attackValue = buffer:ReadFloat(); -- 攻击总值
+        p.hurtValue = buffer:ReadFloat();   -- 伤害总值
+        table.insert(players, p);
+    end
+    DungeonStatPanel.OnSyncDamage(players);
+end
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 上次催促队长时间
+local m_lastUrgeTime = 0;
+
+-- 请求进入副本
+-- @param1 dungeonId 副本ID
+function RequestEnterDungeon(dungeonId)
+    --[[
+    error(string_format("请求进入副本的ID:{0}", dungeonId));
+    local info = DungeonManager.GetDungeonInfo(dungeonId);
+    if info == nil then
+        error(string_format("请求进入副本的ID:{0}不存在!", dungeonId));
+        return;
+    end
+    local dungeonType = info.DungeonType;
+    if dungeonType == DUNGEON_TYPE.BOSS then
+        -- 判断魔王本次数
+        local remainTimes, usedTimes, maxTimes = DungeonManager.GetBossDungeonTimesInfo();
+        if remainTimes == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_DUNGEON_BOSS_TIMES_OVER);
+            return;
+        end
+    end
+
+    -- 服务器的副本是活动, 如果有数据, 则使用服务器的等级
+    local activity = ActivityManager.GetActivity(dungeonId);
+    local level = 0;
+    local teamNum = 0;
+    if activity ~= nil then
+        level = activity.openLevel;
+        teamNum = activity.teamNum;
+    else
+        level = info.Level;
+    end
+    if level > G_UserInfo.RoleAttribute.Level then
+        --当前副本未解锁
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_DUNGEON_UNCLOCK_CHAPTER);
+        return;
+    end
+
+    if teamNum > 0 then
+    	local teamData = TeamManager.teamData;
+        local isLeader = TeamManager.IsLeader();
+        local hasTeam = TeamManager.HasTeam();
+        local memberCount = TeamManager.GetTeamMemberCount();
+        if not hasTeam then
+            error("没有队伍!");
+            ShowSystemFlowTips(3758);
+            return;
+        end
+        if not isLeader then 
+            -- 队员催促队长进入副本
+            local now = os.time();
+            local cdTime = CCommonTool.GetDefineInfo(3006):GetIntContent();
+            if now >= m_lastUrgeTime + cdTime then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_PROMPT_ENTER);
+                m_lastUrgeTime = now;
+                -- 发送催促队长协议
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_TEAM_MEMBER_ASK_LEADER_ENTER_FB);
+                buffer:WriteByte(0);
+                G_NetWorkMng:SendMessage(buffer);
+            else
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_PROMPT_ENTER_CD);
+            end
+            return;
+        else
+            if teamNum > memberCount then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_MEMBER_LACK, nil, {teamNum});
+                return;
+            end
+        end
+    end
+    ]]
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_ENTEY_INFO);
+    buffer:WriteInt(dungeonId);
+    G_NetWorkMng:SendMessage(buffer);
+    error(string_format("已发送进入副本协议! 副本ID:{0}", dungeonId));
+end
+-- BossLobby请求进入副本
+-- @param1 dungeonId 副本ID
+function RequestEnterDungeonInBossLobby(dungeonId,index)
+    error(string_format("BossLobby请求进入副本的ID:{0}", dungeonId));
+    local info = DungeonManager.GetDungeonInfo(dungeonId);
+    if info == nil then
+        error(string_format("请求进入副本的ID:{0}不存在!", dungeonId));
+        return;
+    end
+    local dungeonType = info.DungeonType;
+    if dungeonType == DUNGEON_TYPE.BOSS then
+        -- 判断魔王本次数
+        local remainTimes, usedTimes, maxTimes = DungeonManager.GetEquipBossDungeonTimesInfo(dungeonId);
+        if remainTimes == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_DUNGEON_BOSS_TIMES_OVER);
+            return;
+        end
+    end
+
+    -- 服务器的副本是活动, 如果有数据, 则使用服务器的等级
+    local info = DungeonManager.GetBossLobbyBossByID(dungeonId);
+    local level=0
+    if info ~= nil then
+        level = info.Level;
+    else
+        level =220;
+    end
+    if level > G_UserInfo.RoleAttribute.Level then
+        --当前副本未解锁
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_DUNGEON_UNCLOCK_CHAPTER);
+        return;
+    end
+    local senddungeonId=0;
+    if dungeonId>=6000 and dungeonId<6100 then
+        senddungeonId=6001;
+    elseif dungeonId>=6100 and dungeonId<6200 then
+        senddungeonId=6101;
+    elseif dungeonId>=6200 and dungeonId<6300 then
+        senddungeonId=6201;
+    elseif dungeonId>=6300 and dungeonId<6400 then
+        senddungeonId=6301;
+    elseif dungeonId>=6400 and dungeonId<6500 then
+        senddungeonId=6401;
+    else
+        error("boss大厅单人装备boss活动ID未定义！=-->"..dungeonId);
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_ENTEY_INFO);
+    buffer:WriteInt(senddungeonId);
+    --buffer:WriteInt(level);
+    buffer:WriteInt(index);
+    G_NetWorkMng:SendMessage(buffer);
+    error(string_format("BossLobby已发送进入副本协议! 副本ID:{0}**level={1}", senddungeonId,level));
+end
+
+-- 请求退出副本
+function RequestLeaveDungeon(num)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+    if num then 
+        buffer:WriteByte(num);
+    else
+        buffer:WriteByte(0);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 客户端请求副本伤害统计
+function RequestSyncDungeonDamage()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASK_FB_DAMAGE_SHOW);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

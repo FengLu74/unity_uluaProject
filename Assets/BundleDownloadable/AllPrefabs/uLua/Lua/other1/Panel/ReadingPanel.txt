@@ -1,0 +1,129 @@
+﻿module("ReadingPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+
+----------------------------------通用的名称路径---------------------------------------
+
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 标题的文本ID
+local m_tittleID = nil;
+-- 内容的文本ID
+local m_contentID = nil;
+-- 是否创建完成
+local m_createSuccess = false;
+local m_musicID = 4300;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_createSuccess = true;
+end
+
+function OnEnable()
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_createSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_READINGPANEL);
+    
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    if m_missionID ~= nil then
+        SetGameObjectState("Erase",true,m_panelObject);
+        SetGameObjectState("Guide",true,m_panelObject);
+        SetGameObjectEvent("ZheZhao",Kong,m_panelObject);
+        local boxCollider = GetComponent(m_panelObject,"Erase","BoxCollider");
+        boxCollider.enabled = true;
+        SetGameObjectEvent("Erase",OnPressErase,m_panelObject,Button_Delegate.onPress);
+        SetLabelTextByID("Label",8047,m_panelObject);
+        CCommonTool.SetEraseProgressCallBack(m_panelObject,EraseCallBack,0.3,true);
+    else
+        SetGameObjectState("Erase",false,m_panelObject);
+        SetGameObjectState("Guide",false,m_panelObject);
+        SetGameObjectEvent("ZheZhao",OnCloseClick,m_panelObject);
+        SetLabelTextByID("Label",8046,m_panelObject);
+        CCommonTool.SetEraseProgressCallBack(m_panelObject,EraseCallBack,0.3,false);
+    end
+    SetLabelTextByID("Label_Tittle",m_tittleID,m_panelObject);
+    SetLabelTextByID("Label_Content",m_contentID,m_panelObject);
+    G_MusicMng:OnLoadMusic(m_musicID);
+end
+
+-- 擦除时候达到百分比的回调
+function EraseCallBack()
+    SetGameObjectEvent("ZheZhao",OnCloseClick,m_panelObject);
+    SetLabelTextByID("Label",8046,m_panelObject);
+    CCommonTool.SetEraseProgressCallBack(m_panelObject,EraseCallBack,0.1,false);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭界面按钮事件
+function OnCloseClick()
+    -- 关闭界面
+    OnSendMessage();
+    closePanel(ENUMPANELID.ENUM_PANEL_READINGPANEL);
+end
+-- 发送关闭面板消息
+function OnSendMessage()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PANELSTATE);
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_READINGPANEL);
+    buffer:WriteByte(0);
+    buffer:WriteInt(-1);
+    G_NetWorkMng:SendMessage(buffer);
+    if m_missionID ~= nil then
+        local buffer2 = ByteBuffer.New();
+        buffer2:WriteUShort(GMI_CTOS_LGS_SPECIAL_PANEL_COMPLETE);
+        buffer2:WriteInt(m_missionID);
+        G_NetWorkMng:SendMessage(buffer2);
+    end
+end
+-- 点击空事件
+function Kong()
+    
+end
+
+-- 按下erase事件
+function OnPressErase(e,state)
+    if state then
+        SetLabelTextByID("Label",8045,m_panelObject);
+        SetGameObjectState("Guide",false,m_panelObject);
+        local boxCollider = GetComponent(m_panelObject,"Erase","BoxCollider");
+        boxCollider.enabled = false;
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function functionParameter(paraTable)
+    m_tittleID = paraTable[1];
+    m_contentID = paraTable[2];
+    m_missionID = paraTable[3];
+    if m_createSuccess then
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end

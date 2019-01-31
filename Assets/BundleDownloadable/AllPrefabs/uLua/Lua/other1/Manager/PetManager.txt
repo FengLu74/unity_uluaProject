@@ -1,0 +1,577 @@
+﻿module("PetManager", package.seeall)
+
+-- 当前是否设置了宠物出战
+m_yIsSetPetOut = false;
+-- 设置出战的宠物在宠物面板的位置
+m_yPetPanelPos = 0;
+-- 当前场景中宠物的CRID
+m_dwPetCridInScene = 0;
+-- 宠物技能表数据
+m_AllPetSkillTableInfo = nil;
+-- 玩家下次可点击出战按钮的时间
+m_nNextCanClickOutButtonTime = 0;
+-- 是否设置了优先出战第一只宠物
+m_yIsPriorFirst = false;
+
+-- 宠物合体的数据
+m_aPetCombineData = {};
+
+-- 宠物小队列表
+m_aPetTeamData = {};
+
+-- 宠物出战时间
+m_aPetFightTimeData = {};
+
+function GetCurOutPetFightAbility()
+    if m_yIsSetPetOut then
+        local petList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+        for Index = 1, petList.Count do
+            if petList[Index - 1].PakID == m_yPetPanelPos then
+                return math.floor(CalcFightAbilityMng.CalcPetFightAbility(petList[Index - 1],1) + 0.5);
+            end
+        end
+    end
+    return 0;
+end
+
+function AddPetExp(petCrid, addExp, petLevel)
+    local petItem = G_BagMng:GetGoodsItem(petCrid);
+    if petItem ~= nil then
+        local petATT = petItem.AllPetAttribute;
+        if petATT ~= nil then
+            petATT.PetExp = petATT.PetExp + addExp;
+            if petATT.PetLevel == petLevel then
+                return false;
+            else
+                petATT.PetLevel = petLevel;
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+function ClearPetCrid()
+    m_dwPetCridInScene = 0;
+end
+--宠物的CRID
+function IsSamePet(petCRID)
+    if petCRID == m_dwPetCridInScene then
+        return true;
+    else
+        return false;
+    end
+end
+-- 读表
+function DealTableData()
+    m_AllPetSkillTableInfo = CCommonTool.GetAllPetLearnSkillInfo();
+end
+
+function FindLearnSkillInfoBySkillID(skillID)
+    for Index = 1,m_AllPetSkillTableInfo.Count do
+        if m_AllPetSkillTableInfo[Index - 1].SkillID == skillID then
+            return m_AllPetSkillTableInfo[Index - 1];
+        end
+    end
+    return nil;
+end
+
+-- 将petItem的数据放到CLGPerson类中
+function ChangePetItemIntoCLGPerson(petItem,qualityState,isCurStar)
+    if isCurStar == nil then
+        isCurStar = true;
+    end
+    personClass = CLGPerson.New();
+    if petItem == nil then
+        return personClass,0;
+    end
+    local petATT = petItem.AllPetAttribute;
+    if petATT == nil then
+        return personClass,0;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(petItem.ExcelID);
+    if petMainInfo == nil then
+        return personClass,0;
+    end
+    local petAttrInfo = CCommonTool.GetPetAttrInfo(petMainInfo.RoleAttrID);
+    if petAttrInfo == nil then
+        return personClass,0;
+    end
+    local petStarQualityInfo = CCommonTool.GetPetStarQualityInfo(petMainInfo.StarToQualityID);
+    if petStarQualityInfo == nil then
+        return personClass,0;
+    end
+    local starNum = 0;
+    if isCurStar == true then
+        starNum = petATT.PetStar;
+    else
+        starNum = petATT.PetStar + 1;
+    end
+    local starPercentValue = CCommonTool.GetValueInPetStarQualityInfo(petMainInfo.StarToQualityID,starNum);
+    if starPercentValue == nil then
+        return personClass,0;
+    end
+    local fData = 0;
+    local fRatio = 0;
+    local fStarPercent = starPercentValue/100;
+    local fQualityNum = 0;
+    local attrIndex = 0;
+    personClass.nPlayerLevel = petATT.PetLevel;
+    -- 生命
+    fData = petAttrInfo.HpBasic;
+    fRatio = petAttrInfo.HpRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[1]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[0].QualityCur + petATT.PetQualityInfo[0].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[0].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[0].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_HP_BASICS,fData);
+    -- 魔法
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_MP_BASICS,100);
+    -- 外攻
+    fData = petAttrInfo.ApBasic;
+    fRatio = petAttrInfo.ApRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[2]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[1].QualityCur + petATT.PetQualityInfo[1].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[1].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[1].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_AP_BASICS,fData);
+    -- 内攻
+    fData = petAttrInfo.MapBasic;
+    fRatio = petAttrInfo.MapRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[3]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[1].QualityCur + petATT.PetQualityInfo[1].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[1].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[1].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_MAP_BASICS,fData);
+    -- 外防
+    fData = petAttrInfo.DpBaisc;
+    fRatio = petAttrInfo.DpRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[5]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[2].QualityCur + petATT.PetQualityInfo[2].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[2].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[2].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DP_BASICS,fData);
+    -- 内防
+    fData = petAttrInfo.MdpBaisc;
+    fRatio = petAttrInfo.MdpRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[6]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[2].QualityCur + petATT.PetQualityInfo[2].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[2].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[2].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_MDP_BASICS,fData);
+    -- 暴击
+    fData = petAttrInfo.AcBasic;
+    fRatio = petAttrInfo.AcRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[7]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[3].QualityCur + petATT.PetQualityInfo[3].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[3].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[3].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_AC_BASICS,fData);
+    -- 闪避
+    fData = petAttrInfo.DhBasic;
+    fRatio = petAttrInfo.DhRatio;
+    attrIndex = 61;
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[4].QualityCur + petATT.PetQualityInfo[4].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[4].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[4].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DH_BASICS,fData);
+    -- 命中
+    fData = petAttrInfo.AhBasic;
+    fRatio = petAttrInfo.AhRatio;
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[8]):GetIntContent();
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[4].QualityCur + petATT.PetQualityInfo[4].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[4].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[4].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_AH_BASICS,fData);
+    -- 暴伤
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_CH_BASICS,petAttrInfo.ChBasics);
+    -- 韧性
+    fData = petAttrInfo.DcBasic;
+    fRatio = petAttrInfo.DcRatio;
+    attrIndex = 91;
+    if qualityState == 1 then
+        fQualityNum = petATT.PetQualityInfo[0].QualityCur + petATT.PetQualityInfo[0].QualityMin;
+    elseif qualityState == 2 then
+        fQualityNum = petATT.PetQualityInfo[0].QualityMin;
+    else
+        fQualityNum = petATT.PetQualityInfo[0].QualityMinNotSaved;
+    end
+	fData = fData + fQualityNum *(fRatio / 10000) * (petATT.PetLevel - 1) * fStarPercent;
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DC_BASICS,fData);
+    -- 吸血
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_SB_BASICS,petAttrInfo.SbBasics);
+    -- 穿透
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_PT_BASICS,petAttrInfo.PtBasics);
+    -- 冰攻
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_ICE_HURT_BASICS,petAttrInfo.IceAtk);
+    -- 火攻
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_FIRE_HURT_BASICS,petAttrInfo.FireAtk);
+    -- 雷攻
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_THUNDER_HURT_BASICS,petAttrInfo.ThunderAtk);
+    -- 风攻
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_WIND_HURT_BASICS,petAttrInfo.WindAtk);
+    -- 光攻
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_LIGHT_HURT_BASICS,petAttrInfo.LightAtk);
+    -- 暗攻
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DARK_HURT_BASICS,petAttrInfo.DarkAtk);
+    -- 冰抗
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_ICE_ANT_BASICS,petAttrInfo.IceDef);
+    -- 火抗
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_FIRE_ANT_BASICS,petAttrInfo.FireDef);
+    -- 雷抗
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_THUNDER_ANT_BASICS,petAttrInfo.ThunderDef);
+    -- 风抗
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_WIND_ANT_BASICS,petAttrInfo.WindDef);
+    -- 光抗
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_LIGHT_ANT_BASICS,petAttrInfo.LightDef);
+    -- 暗抗
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DARK_ANT_BASICS,petAttrInfo.DarkDef);
+    -- 眩晕强度
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_XUANYUN_QD,petAttrInfo.VertigoStrength);
+    -- 减速强度
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_JIANSU_QD,petAttrInfo.DecelerationStrength);
+    -- 定身强度
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DINGSHEN_QD,petAttrInfo.FixedStrength);
+    -- 沉默强度
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_CHENMO_QD,petAttrInfo.SilentStrength);
+    -- 中毒强度
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_ZHONGDU_QD,petAttrInfo.WeakStrength);
+    -- 眩晕抗性
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_XUANYUN_KX,petAttrInfo.VertigoResistance);
+    -- 减速抗性
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_JIANSU_KX,petAttrInfo.DecelerationResistance);
+    -- 定身抗性
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_DINGSHEN_KX,petAttrInfo.FixedResistance);
+    -- 沉默抗性
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_CHENMO_KX,petAttrInfo.SilentResistance);
+    -- 中毒抗性
+    personClass:SetFloat(ENUM_LGS_PERSON_ATT_TYPE.szLG_ATT_ZHONGDU_KX,petAttrInfo.WeakResistance);
+
+    -- 计算技能的
+    local initiativeSkillNums = 0;
+    local skillID;
+    local skillMainInfo;
+    local skillDataInfo;
+    local skillDmgData;
+    local skillRatio;
+    local learnSkillInfo;
+    local skillCharacter;
+    local stateIndex;
+    for Index = 1, PET_ENUM.PET_ALL_SKILL_NUM do
+        skillID = petATT.PetAllSkillInfo[Index - 1].SkillID;
+        if skillID ~= 0 then
+            skillMainInfo = CCommonTool.GetSkillMainData(skillID);
+            if skillMainInfo ~= nil then
+                if skillMainInfo.SkillType ~= ENUM_SKILL_TYPE_PHONE.SKILL_TYPE_PHONE_PASSIVITY then
+                    initiativeSkillNums = initiativeSkillNums + 1;
+                else
+                    skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                    if skillDataInfo ~= nil then
+                        skillDmgData = CCommonTool.GetSkillDataDamageData(skillDataInfo.DamageId1);
+                        if petATT.PetAllSkillInfo[Index - 1].SkillType == PET_ENUM.PET_SKILLTYPE_TALENT then
+                            skillRatio = 1;
+                        else
+                            learnSkillInfo = FindLearnSkillInfoBySkillID(skillID);
+                            if learnSkillInfo == nil then
+                                error("在宠物技能学习表中找不到技能::"..skillID);
+                                skillRatio = 1;
+                            else
+                                skillCharacter = learnSkillInfo.SkillCharacter;
+                                skillRatio = 1;
+                            end
+                        end
+                        personClass:AddSkillSubEffect(skillDmgData.Attribute1Att,skillDmgData.Value1Att,skillRatio);
+                    end
+                end
+            end
+        end
+    end
+
+    return personClass,initiativeSkillNums;
+end
+
+-- 请求宠物排行榜中的详细信息
+function RequestPetRankInfo(petUniqueID,petMasterGlobalID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_REQUEST_RANKINFO);
+    buffer:WriteInt64(petUniqueID);
+    buffer:WriteInt(petMasterGlobalID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 获得当前玩家最大宠物战斗力
+function GetMaxPetFightAbility()
+    local petList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+    local curMaxFightValue = 0;
+    local FightValue = 0;
+    if petList.Count <= 0 then
+        return curMaxFightValue;
+    else
+        for Index = 1, petList.Count do
+            if Index > PET_ENUM.PET_PANEL_MAX_NUM then
+                break;
+            end
+            FightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(petList[Index - 1],1) + 0.5);
+            if curMaxFightValue < FightValue then
+                curMaxFightValue = FightValue;
+            end
+        end
+    end
+    return curMaxFightValue;
+end
+
+-- 是否显示宠物红点
+function IsShowRedHintPet()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_PET) then
+        return false;
+    end
+    local petList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+    for Index = 1, petList.Count do
+        if IsShowRedHintSingle(petList[Index - 1]) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否显示单个宠物红点
+function IsShowRedHintSingle(petItem)
+    if PetCanUseLevelUpItem(petItem) then
+        return true;
+    end
+    if PetCanIntimateUp(petItem) then
+        return true;
+    end
+    if PetCanSavvyUp(petItem) then
+        return true;
+    end
+    if PetCanQualityAdd(petItem) then
+        return true;
+    end
+    return false;
+end
+
+-- 宠物是否可升级
+function PetCanUseLevelUpItem(petItem)
+    if petItem == nil then
+        return false;
+    end
+    local petATT = petItem.AllPetAttribute;
+    if petATT == nil then
+        return false;
+    end
+    local maxLevel = 0;
+    if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+        maxLevel = math.min(G_UserInfo.UnlockLevel,G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel,PetChildMaxLevel);
+    else
+        maxLevel = math.min(G_UserInfo.UnlockLevel,G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel);
+    end
+    if petATT.PetLevel >= maxLevel then
+        return false;
+    end
+    local itemInfo;
+    local itemNeedLv;
+    local haveNum;
+    for Index = 1,#PetAddExpExcelIDChunk do
+        itemInfo = CCommonTool.GetItemInfo(PetAddExpExcelIDChunk[Index]);
+        itemNeedLv = itemInfo.NeedLevel;
+        if petATT.PetLevel >= itemNeedLv then
+            haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetAddExpExcelIDChunk[Index]);
+            if haveNum > 0 then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+-- 宠物是否可提升亲密度
+function PetCanIntimateUp(petItem)
+    if petItem == nil then
+        return false;
+    end
+    local petATT = petItem.AllPetAttribute;
+    if petATT == nil then
+        return false;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(petItem.ExcelID);
+    if petMainInfo == nil then
+        return false;
+    end
+    local excelID;
+    showItemsTable = {};
+    if petATT.PetState == PET_ENUM.PET_STATE_ADULT then
+        return false;
+    end
+    if petATT.PetIntimateNum >= petMainInfo.IntimateMaxNum then
+        return false;
+    end
+    local haveNum;
+    for Index = 1,PET_ENUM.PET_INTIMATE_ITEM_NUM do
+        excelID = CCommonTool.GetValueInPetIntimateInfo(petMainInfo.IntimateID,Index);
+        if excelID == nil then
+            excelID = 0;
+        end
+        haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelID);
+        if haveNum > 0 then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 宠物是否可提升悟性
+function PetCanSavvyUp(petItem)
+    if petItem == nil then
+        return false;
+    end
+    local petATT = petItem.AllPetAttribute;
+    if petATT == nil then
+        return false;
+    end
+    if petATT.PetState == PET_ENUM.PET_STATE_ADULT then
+        return false;
+    end
+    if petATT.SavvyNum >= PET_ENUM.PET_SAVVY_MAXNUM then
+        return false;
+    end
+    local haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetSavvyNeedExcelID);
+    if haveNum > 0 then
+        return true;
+    end
+    return false;
+end
+
+-- 宠物是否可资质提升
+function PetCanQualityAdd(petItem)
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_QUALITYADD) == false then 
+        return false;
+    end
+    if petItem == nil then
+        return false;
+    end
+    local petATT = petItem.AllPetAttribute;
+    if petATT == nil then
+        return false;
+    end
+    if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+        return false;
+    end
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curQualityValue;
+    local maxQualityValue;
+    local hasNum;
+    for Index = 1,PET_ENUM.PET_ALL_QUALITY_NUM do
+        curQualityValue = petQualityInfo[Index - 1].QualityMin + petQualityInfo[Index - 1].QualityCur;
+        maxQualityValue = petQualityInfo[Index - 1].QualityMax;
+        if curQualityValue < maxQualityValue then
+            local curValueInt = math.floor(curQualityValue/100);
+            local remainValue = math.fmod(curQualityValue,100);
+            local nID = (remainValue == 0 and curValueInt or curValueInt + 1);
+            local minValue;
+            local maxValue;
+            local tempValue;
+            for useItemIndex = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+                hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetQualityFosterNeedItemsChunk[useItemIndex]);
+                if hasNum > 0 then
+                    tempValue = CCommonTool.GetValueInPetQualityInfo(nID,1 + 2*(useItemIndex - 1));
+                    if tempValue == nil then
+                        minValue = 0;
+                    else
+                        minValue = tempValue;
+                    end
+                    tempValue = CCommonTool.GetValueInPetQualityInfo(nID,2 + 2*(useItemIndex - 1));
+                    if tempValue == nil then
+                        maxValue = 0;
+                    else
+                        maxValue = tempValue;
+                    end
+                    if minValue ~= maxValue and minValue ~= 0 then
+                        return true;
+                    end
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 得到最大宠物技能瓶
+function GetMaxPetSkillLockItems(skillCount)
+    if skillCount == nil then
+        return 0;
+    end
+    if skillCount < 5 then
+        return 0;
+    elseif skillCount < 9 then
+        return 1;
+    else
+        return 2;
+    end
+    return 0;
+end
+
+-- 当前宠物是否合体中
+function PetIsInCombine(itemAttr)
+    if itemAttr == nil then
+        return false;
+    end
+    for Index = 1,PET_ENUM.PET_COMBINE_SLOT_NUM do
+        if itemAttr.PakID == PetManager.m_aPetCombineData[Index] then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 获取宠物出战时间
+function GetPetFightTime(posId)
+    if posId ~= nil and m_aPetFightTimeData ~= nil then
+        return m_aPetFightTimeData[posId] or 0;
+    end
+    return 0;
+end

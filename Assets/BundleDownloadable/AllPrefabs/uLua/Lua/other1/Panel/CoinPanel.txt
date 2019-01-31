@@ -1,0 +1,290 @@
+﻿module("CoinPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前货币界面所指向的界面ID
+local m_currentpanelID = nil;
+-- 当前货币界面所应该显示的货币类型
+local m_coinPanelType = nil;
+-- 转换成对应类型的货币的table结构
+local m_coinBinaryTable = nil;
+-- 当前正在显示的货币的类型表结构
+local m_currentShowTable = nil;
+-----------------------------------一些写死的规定--------------------------------------
+local ENUM_COINTYPE = {
+    -- 第一位为钻石(非绑定)
+    [1] = { IconID = 601 },
+    -- 第二位为钻石（绑定）
+    [2] = { IconID = 605 },
+    -- 第三位为金币（非绑定）
+    [3] = { IconID = 604 },
+    -- 第四位为强化石（绑定）
+    [4] = { IconID = 600 },
+    -- 第五位为体力
+    [5] = { IconID = 602 },
+    -- 第六位为功勋
+    [6] = { IconID = 611 },
+    -- 第七位为公会贡献度
+    [7] = { IconID = 612 },
+    -- 第八位为公会资金
+    [8] = { IconID = 614 },
+};
+
+-- 三种体力药水 ItemID
+local thewLocationTable = {[1] = 25100,[2] = 25101,[3] = 25102};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    SetGameObjectEvent("Sprite-BG/Button-Close", OnCloseClick, m_panelObject);
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        -- 初始化界面所有信息
+        InitAllInfo();
+        SetGameObjectEvent("Sprite-BG/Button-Close", OnCloseClick, m_panelObject);
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_currentpanelID = nil;
+    m_coinPanelType = nil;
+    m_coinBinaryTable = nil;
+    m_currentShowTable = nil;
+    m_panelObject = nil;
+    m_energyBuyObj = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_COINPANEL);
+    -- 体力购买显示面板对象
+    m_energyBuyObj = child(m_panelObject, m_AddShowStr).gameObject;
+    local backLabelTrans = child(m_panelObject, "Sprite-BG/Button-Close/Label");
+    if backLabelTrans ~= nil then 
+        -- 区域Id (中国大陆1 韩国2 台湾3)
+        if Constants.RegionalId == 2 then
+            -- 韩文的返回文本左移处理
+            backLabelTrans.localPosition = Vector3.New(-25, -1, 0);
+        end
+    end
+end
+-- 初始化界面所有信息
+function InitAllInfo()
+    if m_currentpanelID == nil or m_coinPanelType == nil then
+        error("data not init should not create coinPanel");
+        return;
+    end
+    m_coinBinaryTable = { };
+    m_currentShowTable = { };
+    caculateBinary(m_coinPanelType, m_coinBinaryTable, 1);
+    local order = 0;
+    for index = 1, #m_coinBinaryTable do
+        if m_coinBinaryTable[index] == 1 then
+            order = order + 1;
+            table.insert(m_currentShowTable, order, index);
+            InitShowCoinType(index, order);
+            if order == 4 then
+                -- 默认只显示3个left，middle，right
+                break;
+            end
+        end
+    end
+    RefreshContent();
+end
+
+function RefreshContent()
+    for index = 1, #m_currentShowTable do
+        InitShowCoinContent(m_currentShowTable[index], index);
+        SetGameObjectState("Sprite-BG/" .. tostring(index), true, m_panelObject);
+    end
+    for index = #m_currentShowTable + 1, 4 do
+        SetGameObjectState("Sprite-BG/" .. tostring(index), false, m_panelObject);
+    end
+end
+
+-- 根据type的数值将其转换为二进制存成table
+function caculateBinary(num, resultTable, count)
+    local mod = math.fmod(num, 2);
+    local times = math.floor(num / 2);
+    table.insert(resultTable, count, mod);
+    if times > 0 then
+        caculateBinary(times, resultTable, count + 1);
+    else
+        return resultTable;
+    end
+end
+
+-- 初始化货币类型的显示，orderNum为1表示最右边，2为中间，3为左方，4为最左方
+function InitShowCoinType(coinType, orderNum)
+    local str = GetStrByOrderNum(orderNum);
+    local spriteIconStr = str .. "/Sprite-Icon";
+    SetSpriteByAtlasID(spriteIconStr, ENUM_COINTYPE[coinType].IconID, m_panelObject);
+    SetButtonEventByType(coinType, orderNum);
+end
+
+-- 初始化每个内容的显示
+function SetButtonEventByType(coinType, orderNum)
+    local str = GetStrByOrderNum(orderNum);
+    local buttonStr = str .. "/Button";
+    if coinType == 1 then
+        SetGameObjectEvent(buttonStr, OnAddNotBindDiamond, m_panelObject);
+    elseif coinType == 2 then
+        SetGameObjectEvent(buttonStr, OnAddBindDiamond, m_panelObject);
+    elseif coinType == 3 then
+        SetGameObjectEvent(buttonStr, OnAddNotBindCoin, m_panelObject);
+    elseif coinType == 4 then
+        SetGameObjectEvent(buttonStr, OnAddBindCoin, m_panelObject);
+    elseif coinType == 5 then
+        SetGameObjectEvent(buttonStr, OnAddThew, m_panelObject);
+    elseif coinType == 6 then
+        SetGameObjectEvent(buttonStr, OnAddExploits, m_panelObject);
+    elseif coinType == 7 then
+        SetGameObjectEvent(buttonStr, OnAddContribution, m_panelObject);
+        SetGameObjectEvent(str, OnAddContribution, m_panelObject);
+    end
+end
+
+-- 初始化每个内容的显示
+function InitShowCoinContent(coinType, orderNum)
+    local str = GetStrByOrderNum(orderNum);
+    local contentStr = str .. "/Label";
+    if coinType == 1 then
+         SetLabelContent(contentStr, G_UserInfo.NotBindDiamond, m_panelObject);
+    elseif coinType == 2 then
+            SetLabelContent(contentStr, G_UserInfo.BindDiamond, m_panelObject);
+    elseif coinType == 3 then
+        if G_UserInfo.NotBindCoin >= 100000 then
+            local moneyValue = math.floor(G_UserInfo.NotBindCoin / 10000);
+            SetLabelContent(contentStr, moneyValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+        else
+            SetLabelContent(contentStr, G_UserInfo.NotBindCoin, m_panelObject);
+        end
+    elseif coinType == 4 then
+        if G_UserInfo.BindCoin >= 100000 then
+            local moneyValue = math.floor(G_UserInfo.BindCoin / 10000);
+            SetLabelContent(contentStr, moneyValue .. CCommonTool.GetTxtData(8968).m_str, m_panelObject);
+        else
+            SetLabelContent(contentStr, G_UserInfo.BindCoin, m_panelObject);
+        end
+    elseif coinType == 5 then
+        local MaxThewNum = CCommonTool.GetEXPIndexInfo(G_UserInfo.RoleAttribute.Level).PhsicalMax;
+        local strThew = G_UserInfo.RoleAttribute.Thew; --.. "/" .. MaxThewNum;
+        SetLabelContent(contentStr, strThew, m_panelObject);
+    elseif coinType == 6 then
+        SetLabelContent(contentStr, G_UserInfo.RoleAttribute.N64Exploits, m_panelObject);
+    elseif coinType == 7 then
+        SetLabelContent(contentStr, GuildManager.GetSelfContribution(), m_panelObject);
+    end
+end
+
+-- 根据次序得到要访问的路径
+function GetStrByOrderNum(orderNum)
+    local str = "Sprite-BG/" .. orderNum;
+    return str;
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnAddNotBindDiamond()
+    GetWayPanel.Show(G_ItemToolTipDefine.NOTBINDDIAMOND, m_currentpanelID);
+    --ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_NOTMADE);
+    --TODO: temp
+    --createPanel(ENUMPANELID.ENUM_PANEL_CHARGE);
+end
+
+function OnAddBindDiamond()
+    GetWayPanel.Show(G_ItemToolTipDefine.BINDDIAMOND, m_currentpanelID);
+    -- ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_NOTMADE);
+end
+
+function OnAddNotBindCoin()
+    GetWayPanel.Show(G_ItemToolTipDefine.NOTBINDMONEY, m_currentpanelID);
+    --MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY,false,nil,m_currentpanelID);
+end
+
+function OnAddBindCoin()
+    -- OpenUIByEnum.OpenByParam("2_1781");
+    MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY,false,nil,m_currentpanelID);
+end
+function OnAddThew()
+--    local tempTable = {};
+--    -- 获得所有的背包数据, 将符合条件的物品放到临时表里（此处仅做体力药水的处理）
+--    local listBag = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+--    for i = 1, listBag.count do
+--        local excelID = listBag[i - 1].ExcelID;
+--        local itemType = CCommonTool.GetItemTypeByExcelID(excelID);
+--        if ITEMTYPE[tostring(itemType)] == ITEMTYPE.IT_Prop then
+--            for k,value in pairs(thewLocationTable) do 
+--                if excelID == value then
+--                    table.insert(tempTable, listBag[i - 1]);
+--                end
+--            end  
+--        end     
+--    end
+--    if #tempTable == 0 then 
+--        createPanel(ENUMPANELID.ENUM_PANEL_ADD_THEW_PANEL); 
+--    else
+--        table.sort(tempTable,function(a, b) return CCommonTool.GetItemInfo(a.ExcelID).ItemID < CCommonTool.GetItemInfo(b.ExcelID).ItemID end)
+--        -- 设置跳转到背包界面的参数，此处默认[2] = 0，即跳到背包界面的全部页签
+--        local jumpParamsTable = {[1] = 0,[2] = 0,[3] = tempTable[#tempTable].PakID,[4] = 0,[5] = false,[6] = 0};
+
+--        BagPanel.SetJumpCloseData(jumpParamsTable);
+--        createPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL);
+--    end
+
+    GetWayPanel.Show(G_ItemToolTipDefine.THEW, m_currentpanelID);
+end
+
+function OnAddExploits()
+    GetWayPanel.Show(G_ItemToolTipDefine.CAMPEXPLOITS, m_currentpanelID);
+end
+
+function OnAddContribution()
+    GetWayPanel.Show(G_ItemToolTipDefine.GUILD_CONTRIBUTION, m_currentpanelID);
+end
+
+function OnCloseClick()
+    local obj = G_PanelMng:GetPanel(m_currentpanelID);
+    local panel = nil;
+    if obj ~= nil then
+        panel = _G[string.gsub(obj.name, "%((.-)%)", "")];
+    else
+        error("coinPanel InitClickEvent error:: no panel obj found which panel ID is :::" .. m_currentpanelID);
+    end
+    if type(panel) == "table" and type(panel.OnCloseClick) == "function" then
+        panel.OnCloseClick();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function CreateCoinPanelByPanelID(panelID, showCoinPanelType)
+    m_currentpanelID = panelID;
+    m_coinPanelType = showCoinPanelType;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_COINPANEL) == 1 then
+        InitAllInfo();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_COINPANEL);
+    end
+end
+
+function RefreshContentOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_COINPANEL) == 1 then
+        RefreshContent();
+    end
+end

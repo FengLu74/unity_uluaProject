@@ -1,0 +1,343 @@
+﻿module("FriendsEnemyPanel", package.seeall)
+
+-- 面板对象
+local m_panelObject = nil;
+-----------------------------------------------label路径--------------------------------------------
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+-----------------------------------------------button路径--------------------------------------------
+
+-------------------------------------------通用的名称路径----------------------------------------------
+--战力路径
+local m_FightPowerPath = "InfoBox/FightPower";
+--仇恨值路径
+local m_HateValuePath = "InfoBox/HateValue";
+--帮会路径
+local m_GuildNamePath = "InfoBox/GuildName";
+--当前位置路径
+local m_PositionPath = "InfoBox/Position";
+--宣言面板路径
+local m_DeclarePath = "Declare";
+--前往复仇路径
+local m_FightButtonPath = "Bottom/FightButton";
+--宣言按钮路径
+local m_DeclareButtonPath = "Bottom/DeclareButton";
+--私聊按钮路径
+local m_ChatButtonPath = "Bottom/ChatButton";
+--宣言确定按钮路径
+local m_ConfirmButtonPath = "Declare/Content/ConfirmButton";
+--宣言取消按钮路径
+local m_DeclareCloseButtonPath = "Declare/Content/CloseButton";
+local m_DeclareCloseButtonTopPath = "Declare/Content/CloseButtonTop";
+--宣言输入框路径
+local m_InputFieldPath = "Declare/Content/InputField";
+
+--前往复仇确认框
+local m_FightConfirmBoxPath = "FightConfirmBox";
+
+local m_FightCancelPath = "FightConfirmBox/Button-Cancel";
+local m_FightConfirmPath = "FightConfirmBox/Button-Confirm";
+local m_CostPath = "FightConfirmBox/CostNeed/CoinCost/Label_Num";
+
+
+local m_listViewStr = "ScrollView/Grid";
+--好友列表空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+--好友列表背景
+local m_BgListPath = "bg_List";
+--好友列表未选择时提示对象的路径
+local m_NonSelectBoxPath = "NonSelectBox";
+-- 击杀记录
+local m_killListViewStr = "KillScrollView/Grid"
+local m_contentStr = "Content";
+----------------------------------------gameobject所在的路径---------------------------------------
+
+--------------------------------------------引用的对象-------------------------------------------------
+local m_listView = nil;
+local m_killListView = nil;
+local m_currentEnemy = nil;
+local m_contentObject = nil;
+
+-- 红色
+local m_redColor = "EF3E26";
+-- 正常色
+local m_whiteColor = "C8C7A9";
+--前往复仇public_data表id
+local costId = 3562;
+
+selectId = 0;
+
+-- 复仇宣言界面是否开启
+m_DeclarePanelIsOpen = false;
+-- 前往复仇界面是否开启
+m_FightConfirmBoxIsOpen = false;
+
+-- 选中仇人的在线状态 0：不在线 1：在线
+local enemyState = 0;
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+function Start()
+    InitObjects();
+    InitOnClick();
+    InitList();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitList();
+    end
+end
+
+function OnDisable()
+    m_currentEnemy = nil;
+    selectId = 0;
+    m_listView:RemoveAll();
+    enemyState = 0
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_listView = nil;
+    m_killListView = nil;
+    m_contentObject = nil;
+    m_panelInitAlready = false;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    m_panelObject = child(m_panelObject, "EnemyPanel").gameObject;
+    m_contentObject = child(m_panelObject, m_contentStr).gameObject;
+    m_listView = GetComponent(m_panelObject, m_listViewStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+
+    m_killListView = GetComponent(m_contentObject, m_killListViewStr, "UIListView");
+    m_killListView:SetInitCallback(OnKillListViewInit);
+    m_killListView:SetClickCallback(OnKillListViewClick);
+
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_FightButtonPath, OnFightClick, m_contentObject, nil); --前往复仇
+    SetGameObjectEvent(m_DeclareButtonPath, OnDeclareClick, m_contentObject, nil);  --复仇宣言
+    SetGameObjectEvent(m_ChatButtonPath, OnChatClick, m_contentObject, nil);    --私聊
+    SetGameObjectEvent(m_ConfirmButtonPath, OnDeclareConfirmClick, m_contentObject, nil); --复仇宣言保存
+    SetGameObjectEvent(m_DeclareCloseButtonPath, OnDeclareCloseClick, m_contentObject, nil); -- 复仇宣言关闭
+    SetGameObjectEvent(m_FightCancelPath, OnFightCancelClick, m_contentObject, nil); --前往复仇取消
+    SetGameObjectEvent(m_FightConfirmPath, OnFightConfirmClick, m_contentObject, nil); --前往复仇确认
+end
+
+function InitList()
+    m_listView:RemoveAll();
+    local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_ENEMY);
+    local lookAtIndex = -1;
+    local currentData = nil;
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+        if data.guid == selectId then
+            lookAtIndex = i - 1;
+            m_currentEnemy = data;
+        end
+    end
+    if lookAtIndex >= 0 then
+        m_listView:LookAt(lookAtIndex, true);
+        InitHateInfo();
+    else
+        selectId = 0;
+    end
+
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, m_panelObject);
+--    SetGameObjectState(m_BgListPath, #dataList == 0, m_panelObject);
+    SetGameObjectState(m_NonSelectBoxPath, true, m_panelObject);
+    SetGameObjectState(m_contentStr, false, m_panelObject);
+    SetLabelContent("ScrollView/CountLabel", #dataList .. "/" .. FriendsData.MAX_COUNT_ENEMY, m_panelObject);
+
+    m_DeclarePanelIsOpen = false;
+    SetGameObjectState(m_DeclarePath, m_DeclarePanelIsOpen, m_contentObject);
+    m_FightConfirmBoxIsOpen = false;
+    SetGameObjectState(m_FightConfirmBoxPath, m_FightConfirmBoxIsOpen, m_contentObject);
+    if CCommonTool.GetDefineInfo(costId) then 
+        local goldCost = CCommonTool.GetDefineInfo(costId):GetIntContent();
+        SetLabelContent(m_CostPath, goldCost, m_contentObject);
+        if goldCost > G_UserInfo.BindDiamond then
+            SetLabelColor(m_CostPath, m_redColor, m_contentObject);
+        else
+            SetLabelColor(m_CostPath, m_whiteColor, m_contentObject);
+        end
+    end
+end
+
+function InitHateInfo()
+    local enemyData = m_currentEnemy;
+    FriendsData.ClearEnemyRedHint(enemyData.guid);
+    RedHintMng.SetRedHintState(CREDHINTENUM.FRIEND_ENEMY,FriendsEnemyPanel.IsShowRedHint());
+    local cell = m_listView:GetCellByData(enemyData);
+    if cell then SetGameObjectState("RedHint", false, cell.gameObject); end
+--    G_RedHintMng:StartTrigRedHint(CREDHINTENUM.FRIEND_ENEMY);
+
+    local hateData = FriendsData.GetHateRecord(enemyData.guid);
+    m_contentObject = child(m_panelObject, m_contentStr).gameObject;
+    --复仇记录
+    SetLabelContent(m_FightPowerPath, GetTextToId(8917) .. hateData.fightPower, m_contentObject);
+    SetLabelContent(m_HateValuePath, GetTextToId(8916) .. hateData.hateValue, m_contentObject);
+    if hateData.guildId > 0 then
+        SetLabelContent(m_GuildNamePath, GetTextToId(8915) .. hateData.guildName, m_contentObject);
+    else
+        SetLabelTextByID(m_GuildNamePath, 8914, m_contentObject);
+    end
+    if hateData.sceneId >= 0 then
+        if CCommonTool.GetMapdateInfo(hateData.sceneId) then
+            local nameId = CCommonTool.GetMapdateInfo(hateData.sceneId).SceneName;
+            SetLabelContent(m_PositionPath, GetTextToId(8913) .. GetTextToId(nameId), m_contentObject);
+        end
+    else
+        SetLabelTextByID(m_PositionPath, 8912, m_contentObject);
+    end
+
+    m_killListView:RemoveAll();
+    local records = hateData.records;
+    print("records = ",SerializeTable(records));
+    for i, data in ipairs(records) do
+        local isEnemyRecord = data.recordType == 1;
+        if isEnemyRecord then
+            m_killListView:AddData(data, "enemy");
+        else
+            m_killListView:AddData(data, "self");
+        end
+    end
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local redHintVisible = FriendsData.IsNewEnemy(data.guid);
+    SetGameObjectState("RedHint", redHintVisible, cell);
+    FriendsPanel.SetFriendBaseInfo(go, data, false, false, true);
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Hot_Head" then
+        ParameterToMessageTextBox.OpenOtherButtonListPanel(data.guid, data.name, data.level, data.profession, data.guildId, data.onlineState);
+    elseif go.name == "Hot_Menu" then
+        SetGameObjectState(m_NonSelectBoxPath, false, m_panelObject);
+        SetGameObjectState(m_contentStr, true, m_panelObject);
+        m_currentEnemy = data;
+        selectId = data.guid;
+        m_listView:SetSelect(cell.dataIndex, true);
+        if data.onlineState == 1 then 
+            error("请求仇人信息");
+            enemyState = 1;
+            FriendsProtocol.RequestEnemyInfo(data.guid);
+            return;
+        end
+        InitHateInfo();
+    end
+end
+
+function OnKillListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local isEnemyRecord = data.recordType == 1;
+    SetLabelContent("Time", os.date("%Y-%m-%d %H:%M", data.time), go);
+    if CCommonTool.GetMapdateInfo(data.sceneId) then
+        local nameId = CCommonTool.GetMapdateInfo(data.sceneId).SceneName;
+        local desc = nil;
+        if isEnemyRecord then
+            desc = string.format(GetTextToId(8911), GetTextToId(nameId), data.posX, data.posZ);
+        else
+            desc = string.format(GetTextToId(8910), GetTextToId(nameId), data.posX, data.posZ);
+        end
+        SetLabelContent("Desc", desc, go);
+    end
+end
+
+function OnKillListViewClick(listView, cell, go)
+    
+end
+
+--前往复仇
+function OnFightClick()
+    m_FightConfirmBoxIsOpen = true;
+    SetGameObjectState(m_FightConfirmBoxPath, m_FightConfirmBoxIsOpen, m_contentObject);
+end
+
+--复仇宣言
+function OnDeclareClick()
+    m_DeclarePanelIsOpen = true;
+    SetGameObjectState(m_DeclarePath, m_DeclarePanelIsOpen, m_contentObject);
+    local inputField = GetComponent(m_contentObject, m_InputFieldPath, "UIInput");
+    inputField.value = "";
+    inputField.defaultText = GetTextToId(1522);
+    inputField.value = FriendsData.GetDeclareValue();
+end
+
+--私聊
+function OnChatClick()
+    --加入到最近列表中, 然后切换到最近标签, 选中该好友
+    FriendsData.AddRecent(m_currentEnemy);
+    FriendsRecentPanel.selectId = m_currentEnemy.guid;
+    FriendsPanel.OpenThisPanelByTag(FriendsPanel.TAB_RECENT);
+end
+
+--保存复仇宣言
+function OnDeclareConfirmClick(go)
+    local inputField = GetComponent(m_contentObject, m_InputFieldPath, "UIInput");
+    if inputField.value ~= FriendsData.GetDeclareValue() then
+        FriendsData.SetDeclareValue(inputField.value);
+        FriendsProtocol.RequestSaveDeclare(inputField.value);
+    end
+    m_DeclarePanelIsOpen = false;
+    SetGameObjectState(m_DeclarePath, m_DeclarePanelIsOpen, m_contentObject);
+end
+
+function OnDeclareCloseClick(go)
+    local inputField = GetComponent(m_contentObject, m_InputFieldPath, "UIInput");
+    inputField.value = "";
+    m_DeclarePanelIsOpen = false;
+    SetGameObjectState(m_DeclarePath, m_DeclarePanelIsOpen, m_contentObject);
+end
+
+--前往复仇取消
+function OnFightCancelClick(go)
+    m_FightConfirmBoxIsOpen = false;
+    SetGameObjectState(m_FightConfirmBoxPath, m_FightConfirmBoxIsOpen, m_contentObject);
+end
+
+--前往复仇确认
+function OnFightConfirmClick(go)
+    if CCommonTool.GetDefineInfo(costId) then
+        local goldCost = CCommonTool.GetDefineInfo(costId):GetIntContent();
+        if goldCost > G_UserInfo.BindDiamond then
+            ShowSystemFlowTips(2923);
+            return;
+        end
+    end
+    m_FightConfirmBoxIsOpen = false;
+    SetGameObjectState(m_FightConfirmBoxPath, m_FightConfirmBoxIsOpen, m_contentObject);
+    if enemyState == 1 then 
+        JumpManager.EnemyTransfer(m_currentEnemy.guid ,function(jumpType, isSuccess)
+            if isSuccess == true then 
+--                FriendsProtocol.RequestEnemyTrans(m_currentEnemy.guid); 
+                    FriendsPanel.OnCloseClick();
+            end
+        end);
+    else
+        ShowSystemFlowTips(2922);
+    end
+end
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+-- 显示页签红点
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_FRIEND) then
+        return false;
+    end
+    if FriendsData.HasNewEnemy() then return true end;
+    return false;
+end

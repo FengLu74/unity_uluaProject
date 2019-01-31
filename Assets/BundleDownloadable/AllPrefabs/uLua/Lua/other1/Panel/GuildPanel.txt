@@ -1,0 +1,620 @@
+﻿module("GuildPanel", package.seeall)
+-- 面板对象
+local m_PanelObject = nil;
+-----------------------------------------------label路径--------------------------------------------
+
+-- 公会宣言
+local m_GuildDeclarationPath = "Content_RightInfo/Sprite_Declaration/Label_Declaration";
+-- 创建公会名称输入框
+local m_InputCreatePath = "Content_CreatePanel/Input_Create";
+-- 创建公会旌旗输入框
+local m_InputFlagPath = "Content_CreatePanel/Input_Flag";
+-- 查询公会输入框
+local m_SearchInputPath = "Content_RightInfo/Input_Search";
+-- 创建公会消耗
+local m_CreateCostPath = "Content_CreatePanel/Label_Cost/Label_Content";
+-- 右侧公会名称
+local m_GuildNamePath = "Content_RightInfo/Label_GuildName";
+-- 右侧公会旌旗
+local m_GuildFlagPath = "Content_RightInfo/Label_Flag";
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+--  右侧公会旌旗图标
+local m_GuildFlagIconPath = "Content_RightInfo/Label_Flag/Sprite_Flag";
+-- 创建公会界面-旌旗图标
+local m_CreatePanelFlagIconPath = "Content_CreatePanel/Label_Flag/Sprite_Flag";
+-- 创建公会消耗图标
+local m_CreateCostIconPath = "Content_CreatePanel/Label_Cost/Sprite_Icon";
+
+-----------------------------------------------button路径--------------------------------------------
+
+-- 查询公会按钮路径
+local m_SearchButtonPath = "Content_RightInfo/Button_Search";
+-- 创建公会按钮路径
+local m_CreateButtonPath = "Content_RightInfo/Button_SetUp";
+-- 申请加入按钮路径
+local m_ApplyButtonPath = "Content_RightInfo/Button_JoinIn";
+-- 撤销申请按钮路径
+local m_CancleButtonPath = "Content_RightInfo/Button_Cancle";
+-- 创建公会面板-关闭按钮路径
+local m_CreatePanelCreateButtonPath = "Content_CreatePanel/Button_SetUp";
+-- 创建公会面板-创建按钮路径
+local m_CreatePanelCloseBtnPath = "Content_CreatePanel/Button_Close";
+-- 创建公会面板-取消按钮路径
+local m_CreatePanelCancleBtnPath = "Content_CreatePanel/Button_Cancle";
+-- 创建公会界面-旌旗文本
+local m_CreatePanelFlagLabelPath = "Content_CreatePanel/Label_Flag";
+
+-------------------------------------------通用的名称路径-----------------------------------------------
+
+-- 公会名称
+local m_CellGuildNamePath = "Label_GuildName";
+-- 公会等级
+local m_CellLevelPath = "Label_Level";
+-- 会长名称
+local m_CellLeaderNamePath = "Label_Name";
+-- 公会人数
+local m_CellMemberCountPath = "Label_Count";
+-- 申请状态
+local m_CellApplyPath = "Sprite_JoinIn";
+-- UIListView组件
+local m_ListViewPath = "Content_GuildList/GuildList/Grid";
+-- 创建公会消耗道具Grid
+local m_ItemsPath = "Content_CreatePanel/Items";
+-- 消耗道具1
+local m_Item1Path = "Content_CreatePanel/Items/Item1";
+-- 消耗道具2
+local m_Item2Path = "Content_CreatePanel/Items/Item2";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+-- 创建公会面板对象
+local m_CreatePanelPath = "Content_CreatePanel";
+
+-----------------------------------引用的对象------------------------------------------
+-- 创建公会名称输入框对象
+local m_CreateGuildInput = nil;
+-- 创建公旌旗称输入框对象
+local m_FlagInput = nil;
+-- UIListView组件
+local m_ListView = nil;
+-- 面板是否初始化完成
+local m_CreateSuccess = false;
+-- 列表数据源 1公会列表 2查找结果
+local m_ListDataType = 1;
+-- 所有公会数据
+local m_Guilds = nil;
+-- 所有公会字典
+local m_GuildDict = nil;
+-- 创建公会面板是否开启
+local m_CreatePanelIsOpen = false;
+-- 创建公会消耗道具Grid
+local m_Items = nil;
+-----------------------------------------------BaseLua调用的同名方法--------------------------------------------
+
+function Start()
+    InitObjects();
+    InitOnClick();
+    InitShow();
+    GuildProtocol.RequestGuildList();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess == true then
+        InitShow();
+        GuildProtocol.RequestGuildList();
+    end
+end
+
+function OnDisable()
+    GuildManager.ClearGuilds();
+    m_MaxGuildCount = 0;
+    m_ListDataType = 1;
+    m_Guilds = nil;
+    m_GuildDict = nil;
+end
+
+function OnDestroy()
+    m_CreateSuccess = false;
+    m_PanelObject = nil;
+    m_CreateGuildInput = nil;
+    m_CreateGuildInput = nil;
+    m_FlagInput = nil;
+    m_ListView = nil;
+    m_Items = nil;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+    m_CreateGuildInput = GetComponent(m_PanelObject, m_InputCreatePath, "UIInput");
+    m_FlagInput = GetComponent(m_PanelObject, m_InputFlagPath, "UIInput");
+    m_CreatePanelIsOpen = false;
+    SetGameObjectState(m_CreatePanelPath, m_CreatePanelIsOpen, m_PanelObject);
+    m_ListView = GetComponent(m_PanelObject, m_ListViewPath, "UIListView");
+    m_ListView:SetInitCallback(OnListViewInit);
+    m_ListView:SetSelectedCallback(OnListViewSelected);
+    m_ListView:SetDownScrollCallback(OnListViewDownScroll);
+
+    SetGameObjectState(m_InputCreatePath .. "/Label_Hint", false, m_PanelObject);
+    SetGameObjectState(m_InputFlagPath .. "/Label_Hint", false, m_PanelObject);
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+
+    local info = CCommonTool.GetGuildInfoByIndex(1);
+    SetSpriteByAtlasID(m_CreatePanelFlagIconPath, info.FlagIconBig, m_PanelObject, true);
+    SetLabelContent(m_GuildFlagPath, "", m_PanelObject);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CreateButtonPath, OnOpenCreatePanel, m_PanelObject);
+    SetGameObjectEvent(m_CreatePanelCreateButtonPath, OnGuildCreate, m_PanelObject);
+    -- SetGameObjectEvent(m_CreatePanelCancleBtnPath, OnGuildCancle, m_PanelObject);
+    SetGameObjectEvent(m_CreatePanelCloseBtnPath, OnGuildClose, m_PanelObject);
+    SetGameObjectEvent(m_ApplyButtonPath, OnGuildJoin, m_PanelObject);
+    SetGameObjectEvent(m_CancleButtonPath, OnGuildJoinCancle, m_PanelObject);
+    SetGameObjectEvent(m_SearchButtonPath, OnSearchGuild, m_PanelObject);
+    EventDelegate.Add(m_FlagInput.onChange, EventDelegate.New(OnFlagInputChange));
+
+end
+
+function InitShow()
+    SetGameObjectState(m_ApplyButtonPath, false, m_PanelObject);
+    SetGameObjectState(m_CancleButtonPath, false, m_PanelObject);
+    InitList();
+end
+
+-- 初始化数据
+function InitList()
+    local guilds = GuildManager.guilds or { };
+    if m_Guilds ~= nil then
+        local showCount = #m_Guilds;
+        local totalCount = #guilds;
+        if showCount < totalCount then
+            for i = showCount + 1, totalCount do
+                local data = guilds[i];
+                if m_GuildDict[data.id] ~= true then
+                    table.insert(m_Guilds, data);
+                    m_GuildDict[data.id] = true;
+                    m_ListView:AddData(data);
+                end
+            end
+        end
+        if m_ListView.selectedIndex < 0 then
+            m_ListView:LookAt(0, true);
+        end
+    else
+        m_Guilds = guilds;
+        m_GuildDict = { };
+        for _, data in ipairs(guilds) do
+            m_GuildDict[data.id] = true;
+        end
+        InitListViewData(m_Guilds, true, 0);
+    end
+    m_ListDataType = 1;
+    SetInputContent(m_SearchInputPath, "", m_PanelObject);
+end
+
+
+function InitListViewData(guilds, removeAll, lookAtIndex)
+    if removeAll == true then
+        m_ListView:RemoveAll();
+    end
+    for _, data in ipairs(guilds) do
+        m_ListView:AddData(data);
+    end
+    if lookAtIndex >= 0 then
+        m_ListView:LookAt(lookAtIndex, true);
+    end
+    error("lookAtIndex" .. tostring(lookAtIndex));
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local guildId = data.guildId;
+    -- 根据公会等级获取相关公会信息
+    SetLabelContent(m_CellGuildNamePath, data.guildName, go);
+    SetLabelContent(m_CellLevelPath, data.level, go);
+    SetLabelContent(m_CellLeaderNamePath, data.creatorName, go);
+    SetGameObjectState(m_CellApplyPath, GuildManager.IsApplied(guildId), go);
+    local buildingType = GUILD_BUILDING_TYPE.INTERIOR;
+    local building = CCommonTool.GetGuildBuildingInfo(buildingType * 100 + data.affairsLevel);
+    SetLabelContent(m_CellMemberCountPath, data.memberCount .. "/" .. building.Num, go);
+end
+
+function OnListViewSelected(listView, dataIndex)
+    local data = listView:GetData(dataIndex);
+    SetCurrentGuild(data);
+end
+
+-- 滑动到最后请求下一页数据
+function OnListViewDownScroll(listView)
+    if m_ListDataType == 1 then
+        local receivedCount = #m_Guilds;
+        if GuildManager.guildMaxCount > receivedCount then
+            local lastGuildId = m_Guilds[receivedCount].guildId;
+            GuildProtocol.RequestGuildList(lastGuildId, receivedCount);
+        end
+    end
+end
+
+-- 初始化右侧公会信息
+function SetCurrentGuild(data)
+    if data == nil then
+        SetGameObjectState(m_ApplyButtonPath, false, m_PanelObject);
+        SetGameObjectState(m_CancleButtonPath, false, m_PanelObject);
+        return;
+    end
+    if data.announce == "" then
+        local declarationId = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_DEFAULT_DECLARATION):GetIntContent();
+        SetLabelTextByID(m_GuildDeclarationPath, declarationId, m_PanelObject);
+    else
+        SetLabelContent(m_GuildDeclarationPath, data.announce, m_PanelObject);
+    end
+
+    SetLabelContent(m_GuildNamePath, data.name, m_PanelObject);
+    SetLabelContent(m_GuildFlagPath, data.flagName, m_PanelObject);
+    local info = CCommonTool.GetGuildInfoByIndex(data.level);
+    SetSpriteByAtlasID(m_GuildFlagIconPath, info.FlagIconBig, m_PanelObject, true);
+    local applied = GuildManager.IsApplied(data.guildId);
+    SetGameObjectState(m_ApplyButtonPath, not applied, m_PanelObject);
+    SetGameObjectState(m_CancleButtonPath, applied, m_PanelObject);
+end
+
+function SetApprovalIconVisible(item, isVisible)
+    local icon = child(item, m_CellApplyPath).gameObject;
+    icon:SetActive(isVisible);
+end
+
+function GetCosData()
+    local moneyType = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_TYPE):GetIntContent();
+    local moneyCostCount = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_RESOURCE):GetIntContent();
+    local moneyItemId = 0;
+    local playerMoneyCount = 0;
+    local moneyExchangeType = 0;
+
+    if moneyType == 1 then
+        moneyItemId = G_ItemToolTipDefine.BINDMONEY;
+        playerMoneyCount = G_UserInfo.BindCoin;
+    elseif moneyType == 2 then
+        moneyItemId = G_ItemToolTipDefine.NOTBINDMONEY;
+        playerMoneyCount = G_UserInfo.NotBindCoin;
+    elseif moneyType == 3 then
+        moneyItemId = G_ItemToolTipDefine.BINDDIAMOND;
+        playerMoneyCount = G_UserInfo.BindDiamond;
+    elseif moneyType == 4 then
+        moneyItemId = G_ItemToolTipDefine.NOTBINDDIAMOND;
+        playerMoneyCount = G_UserInfo.NotBindDiamond;
+    else
+        error("公会创建货币消耗类型错误, public_data:3618");
+    end
+
+    local items = { };
+    if moneyItemId > 0 and moneyCostCount > 0 then
+        table.insert(items, { excelId = moneyItemId, num = moneyCostCount, hasNum = playerMoneyCount, isMoney = true, moneyType = moneyType });
+    end
+
+    local costItemId = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_ITEM_ID):GetIntContent();
+    local costItemCount = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_ITEM_COUNT):GetIntContent();
+    local hasItemCount = 0;
+    if costItemId > 0 and costItemCount > 0 then
+        hasItemCount = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costItemId);
+        table.insert(items, { excelId = costItemId, num = costItemCount, hasNum = hasItemCount, isMoney = false });
+    end
+    return items;
+end
+
+----------------------------------事件处理--------------------------------------
+
+-- 创建公会按钮事件-<主界面>
+function OnOpenCreatePanel()
+    local costItems = GetCosData();
+    local paths = { m_Item1Path, m_Item2Path };
+    for i = 1, 2 do
+        local path = paths[i];
+        if i <= #costItems then
+            local itemData = costItems[i];
+            local hasNum = itemData.hasNum;
+            local num = itemData.num;
+            -- SetItemShowByExcelIDV04(m_PanelObject, path, itemData.excelId, itemData.num, false, 25, ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+            SetSpriteByAtlasID(path .. "/Sprite_Icon", CCommonTool.GetImageIDByExcelID(itemData.excelId), m_PanelObject, true);
+            -- 设置图标特效
+            --            SetGameObjectState(path.."/Sprite_Less", hasNum < num, m_PanelObject);
+            --            if hasNum >= num then
+            --                SetItemToolTipsEvent(child(m_PanelObject, path).gameObject, "", ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL,false,itemData.excelId);
+            --            elseif itemData.isMoney == true then
+            --                SetMoneyItemClick(path, itemData.moneyType);
+            --            else
+            --                SetGameObjectEvent(path, function() GetWayPanel.Show(itemData.excelId, ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL); end, m_PanelObject);
+            --            end
+            if itemData.isMoney == true then
+                if hasNum >= num then
+                    SetLabelContent(path .. "/Label_Num", num, m_PanelObject);
+                else
+                    SetLabelContent(path .. "/Label_Num", string_format("[FF0000]{0}[-]", num), m_PanelObject);
+                end
+            else
+                if hasNum >= num then
+                    SetLabelContent(path .. "/Label_Num", string_format("[FFFFFF]{0}/{1}[-]", hasNum, num), m_PanelObject);
+                else
+                    SetLabelContent(path .. "/Label_Num", string_format("[FF0000]{0}/{1}[-]", hasNum, num), m_PanelObject);
+                end
+            end
+            SetGameObjectState(path, true, m_PanelObject);
+        else
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+
+    OnFlagInputChange();
+    m_CreatePanelIsOpen = true;
+    SetGameObjectState(m_CreatePanelPath, m_CreatePanelIsOpen, m_PanelObject);
+end
+
+function SetMoneyItemClick(path, moneyType)
+    local panelId = ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL;
+    if moneyType == 1 then
+        SetGameObjectEvent(path, function() MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, panelId); end, m_PanelObject);
+    elseif moneyType == 2 then
+        --SetGameObjectEvent(path, function() MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY, false, nil, panelId); end, m_PanelObject);
+        GetWayPanel.Show(G_ItemToolTipDefine.NOTBINDMONEY, ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+    elseif moneyType == 3 then
+        SetGameObjectEvent(path, function() MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_DIAMOND, false, nil, panelId); end, m_PanelObject);
+    elseif moneyType == 4 then
+        SetGameObjectEvent(path, function() error("打开充值界面") end, m_PanelObject);
+    end
+end
+
+-- 创建公会按钮事件-<创建面板界面>
+function OnGuildCreate(e)
+    SetLabelContent(m_InputCreatePath .. "/Label_Hint", "", m_PanelObject);
+    SetLabelContent(m_InputFlagPath .. "/Label_Hint", "", m_PanelObject);
+
+    local guildName = m_CreateGuildInput.value;
+    -- 去除名字中的空格,2017年9月15日11:00:05，应王龙嘉要求屏蔽去掉空格
+    guildName = System.String.New(guildName);
+    --guildName = guildName:Trim();
+    local flagName = m_FlagInput.value;
+    flagName = System.String.New(flagName);
+    local guildNameIsValid = CheckGuildName(guildName, true);
+    local flagNameIsValid = CheckFlagName(flagName, guildNameIsValid);
+    if guildNameIsValid and flagNameIsValid then
+        local costItemId = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_ITEM_ID):GetIntContent();
+        local costItemCount = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_ITEM_COUNT):GetIntContent();
+        local hasItemCount = 0;
+        if costItemId > 0 and costItemCount > 0 then
+            hasItemCount = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costItemId);
+            if costItemCount > hasItemCount then
+                local itemInfo = CCommonTool.GetItemInfo(costItemId);
+                if itemInfo ~= nil then
+                    ShowSystemFlowTips(2599, nil, { CCommonTool.GetTxtData(itemInfo.NameTextID).m_str });
+                end
+                return;
+            end
+        end
+
+        -- 1银币 2金币 3蓝钻 4红钻
+        local costType = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_TYPE):GetIntContent();
+        local moneyType = MONEY_NEW_TYPE.BIND_COIN;
+        if costType == 2 then
+            moneyType = MONEY_NEW_TYPE.NOTBIND_COIN;
+        elseif costType == 3 then
+            moneyType = MONEY_NEW_TYPE.BIND_DIAMOND;
+        elseif costType == 4 then
+            moneyType = MONEY_NEW_TYPE.NOTBIND_DIAMOND;
+        end
+        -- 创建公会所需钻石消耗
+        local costNum = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_CREATED_COST_RESOURCE):GetIntContent();
+        local panelId = ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL;
+        if MoneyExchangePanel.CheckIsEnoughMoney(moneyType, costNum, panelId, GuildProtocol.RequestCreateGuild, guildName, flagName) then
+            GuildProtocol.RequestCreateGuild(guildName, flagName);
+        else
+            --ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_DIAMOND_SHORTAGE);
+        end
+    end
+    ReportManager.RequestReportPanel(10323);
+end
+
+function CheckGuildName(name, showErrorTips)
+    if string.find(tostring(name), "%s") ~= nil then
+        if showErrorTips == true then ShowSystemFlowTips(9003); end
+        return false;
+    end
+    if GuildManager.IsExistGuildName(name) == true then
+        -- 公会已存在
+        if showErrorTips == true then ShowSystemFlowTips(3950); end
+        SetGameObjectState(m_InputCreatePath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputCreatePath .. "/Label_Hint", CCommonTool.GetTxtData(102288).m_str, m_PanelObject);
+        return false;
+    end
+    -- 最小字符数
+    local minCharLimited = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_NAME_MIN_CHAR_LIMITED):GetIntContent();
+    -- 最大字符数
+    local maxCharLimited = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_NAME_MAX_CHAR_LIMITED):GetIntContent();
+    if strlen(CCommonTool.IsLegitimacyByText(name, ENUM_SHILED_AREA.GUILD)) > 0 then
+        -- 字符非法
+        if showErrorTips == true then ShowSystemFlowTips(3953); end
+        SetGameObjectState(m_InputCreatePath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputCreatePath .. "/Label_Hint", CCommonTool.GetTxtData(102291).m_str, m_PanelObject);
+        return false;
+    elseif name.Length < minCharLimited then
+        if showErrorTips == true then ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_MIN_LIMITED, nil, { minCharLimited }); end
+        SetGameObjectState(m_InputCreatePath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputCreatePath .. "/Label_Hint", string_format(
+            --[[ 名称最少{0}个字符 ]]
+            CCommonTool.GetTxtData(1134).m_str, minCharLimited), m_PanelObject);
+        return false;
+    elseif name.Length > maxCharLimited then
+        if showErrorTips == true then ShowSystemFlowTips(3952); end
+        SetGameObjectState(m_InputCreatePath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputCreatePath .. "/Label_Hint", CCommonTool.GetTxtData(102290).m_str, m_PanelObject);
+        return false;
+    else
+        return true;
+    end
+end
+
+function CheckFlagName(name, showErrorTips)
+    if string.find(tostring(name), "%s") ~= nil then
+        if showErrorTips == true then ShowSystemFlowTips(9004); end
+        return false;
+    end
+    if strlen(CCommonTool.IsLegitimacyByText(name, ENUM_SHILED_AREA.GUILD)) > 0 then
+        -- 字符非法
+        if showErrorTips == true then ShowSystemFlowTips(3954); end
+        SetGameObjectState(m_InputFlagPath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputFlagPath .. "/Label_Hint", CCommonTool.GetTxtData(102292).m_str, m_PanelObject);
+        return false;
+    end
+
+    local len = Util.GetStringWidth(name);
+    if len == 0 then
+        if showErrorTips == true then ShowSystemFlowTips(3955); end
+        SetGameObjectState(m_InputFlagPath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputFlagPath .. "/Label_Hint", CCommonTool.GetTxtData(102285).m_str, m_PanelObject);
+        return false;
+    end
+
+    if len > 2 then
+        if showErrorTips == true then ShowSystemFlowTips(3951); end
+        SetGameObjectState(m_InputFlagPath .. "/Label_Hint", true, m_PanelObject);
+        SetLabelContent(m_InputFlagPath .. "/Label_Hint", CCommonTool.GetTxtData(102289).m_str, m_PanelObject);
+        return false;
+    end
+    return true;
+end
+
+-- 取消创建按钮事件-<创建面板界面>
+function OnGuildCancle(e)
+    m_CreatePanelIsOpen = false;
+    SetGameObjectState(m_CreatePanelPath, m_CreatePanelIsOpen, m_PanelObject);
+    SetInputContent(m_InputCreatePath, "", m_PanelObject);
+end
+
+-- 关闭按钮事件-<创建面板界面>
+function OnGuildClose(e)
+    m_CreatePanelIsOpen = false;
+    SetGameObjectState(m_CreatePanelPath, m_CreatePanelIsOpen, m_PanelObject);
+end
+
+--- 返回按钮事件<主界面>
+function OnCloseClick()
+    if m_CreatePanelIsOpen then
+        OnGuildClose();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+    SetInputContent(m_InputCreatePath, "", m_PanelObject);
+end
+
+-- 申请加入事件
+function OnGuildJoin(e)
+    local data = m_ListView:GetData(m_ListView.selectedIndex);
+    if data == nil then
+        return
+    end
+    local guildId = data.guildId;
+    GuildProtocol.RequestJoinGuild(guildId);
+    --[[
+    local peopleNum = data.memberCount;
+    local level = data.level;
+    local buildingType = GUILD_BUILDING_TYPE.INTERIOR;
+    local building = CCommonTool.GetGuildBuildingInfo(buildingType * 100 + data.affairsLevel);
+    if building ~= nil then
+        if peopleNum == building.Num then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_APPROVAL_COUNT_FILLED);
+        else
+            GuildProtocol.RequestJoinGuild(guildId);
+        end
+    else
+        error("帮会：通过帮会名称查找帮会ID出错，这个函数就不应该存在");
+    end
+    ]]
+    ReportManager.RequestReportPanel(10322);
+end
+
+-- 撤销申请事件
+function OnGuildJoinCancle()
+    local selectIndex = m_ListView.selectedIndex;
+    local data = m_ListView:GetData(selectIndex);
+    local guildId = data.guildId;
+    GuildManager.RemoveApplyRecord(guildId);
+    m_ListView:Refresh();
+    SetCurrentGuild(data);
+    GuildProtocol.RequestCancelJoin(guildId);
+end
+
+-- 查询公会按钮点击事件
+function OnSearchGuild()
+    local searchStr = GetInputContent(m_SearchInputPath, m_PanelObject);
+    if string.len(searchStr) == 0 then
+        if m_ListDataType ~= 1 then
+            InitList();
+        end
+        -- ShowSystemFlowTips("请输入要查询的公会名称", 1);
+        return;
+    end
+
+    local guildIds = GuildManager.SearchGuilds(searchStr);
+    if #guildIds > 0 then
+        GuildProtocol.RequestFindGuilds(guildIds);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_QUERY_FAILED);
+    end
+end
+
+function OnFlagInputChange()
+    SetLabelContent(m_CreatePanelFlagLabelPath, m_FlagInput.value, m_PanelObject);
+end
+
+------------------------------------------外部调用(或内部)此界面信息的方法--------------------------------------------------
+
+-- 公会创建成功后自动打开公会成员界面
+function CreateGuildCallBack()
+    m_CreatePanelIsOpen = false;
+    SetGameObjectState(m_CreatePanelPath, m_CreatePanelIsOpen, m_PanelObject);
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+end
+
+-- 外部调用更新公会列表的方法
+function InitAllInfoOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL) == 1 then
+        InitList();
+    end
+end
+
+-- 申请按钮状态显示
+function SetApprovalBtnState()
+
+end
+
+-- 查找返回
+function OnSearchBack(guilds)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL) == 1 then
+        m_ListDataType = 2;
+        InitListViewData(guilds, true, 0);
+        m_Guilds = nil;
+    end
+end
+
+-- 申请加入公会返回结果
+function OnApplyBack(records)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL) == 1 then
+        m_ListView:Refresh();
+        local data = m_ListView:GetData(m_ListView.selectedIndex);
+        SetCurrentGuild(data);
+    end
+end
+
+-- 申请公会被拒绝
+function OnRefushJoin(guildId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL) == 1 then
+        m_ListView:Refresh();
+        local data = m_ListView:GetData(m_ListView.selectedIndex);
+        SetCurrentGuild(data);
+    end
+end
+

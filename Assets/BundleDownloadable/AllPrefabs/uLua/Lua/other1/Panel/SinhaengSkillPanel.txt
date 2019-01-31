@@ -1,0 +1,277 @@
+﻿
+module("SinhaengSkillPanel", package.seeall)
+
+-------------------------------------神行内容界面界面------------------------------------------------------
+--panel
+local m_panelStr1 = "SinhaengSkillPanel";
+-- 技能名称
+local m_skillStr = "Skill/top/skillName";
+-- 技能等级
+local m_skillLvlStr = "Skill/top/skillLvl";
+-- 技能激活
+local m_skillActiveStr = "Skill/top/skillActive";
+-- 该阶效果
+local m_skillDesStr = "Skill/middle/skillDes";
+-- 下阶效果
+local m_skillNextDesStr = "Skill/bottom/next_SkillDes";
+-- 消耗道具
+local m_skillCostStr = "Skill/bottom/Items";
+-- 激活条件
+local m_activeCondStr = "Skill/bottom/Study_Need";
+-- 按钮文字
+local m_btnLabStr = "Skill/bottom/Button_Study/Label";
+----------------------------btn----------------------------------
+--按钮
+local m_btnStr = "Skill/bottom/Button_Study";
+--底部
+local m_Bottom = "Skill/bottom";
+-- 满级
+local m_Max = "Skill/MaxLvl";
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+-----------------------------------引用的对象---------------------------------------------------------------------
+local curSkillCostTab = nil;
+-- 道具是否足够
+local m_CoinIsEnough = false;
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+--选中的技能index
+local m_curSkillIndex = 1;
+
+local tabIndex = 2;
+------------------------------------BaseLua调用的同名方法-----------------------------------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_curSkillIndex = 1;
+    m_CoinIsEnough  = false;
+    curSkillCostTab = nil
+    if m_panelObject~=nil then
+        --m_panelObject:SetActive(false);
+        SetGameObjectState(m_panelStr1,false,m_panelObject);
+    end
+end
+
+function OnDestroy()
+    curSkillCostTab = nil;
+    m_CoinIsEnough  = false;
+    m_curSkillIndex = 1;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-- object
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_SINHAENGPANEL);--技能界面
+    --m_panelObject = child(m_panelObject,m_PanelStr1).gameObject;
+end
+-- 事件
+function InitEvents()  
+   SetGameObjectEvent(m_panelStr1.."/"..m_btnStr,OnLvlSkillClick,m_panelObject);
+end
+-- 升级技能
+function OnLvlSkillClick()
+    if m_CoinIsEnough == false then
+        -- 消耗品不足
+        ShowSystemFlowTips(9771);
+        return;
+    end
+    local player_skillTab = SinhaengPanelManager.getPlayerSkillData();
+    if player_skillTab[m_curSkillIndex] == nil then
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SINHAENG_OPER);
+    buffer:WriteByte(4);
+    buffer:WriteInt(player_skillTab[m_curSkillIndex].index*1000);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+-- show
+function InitShow()
+    SetGameObjectState(m_panelStr1,true,m_panelObject);
+-- 设置名称，等级
+    if m_curSkillIndex <=0 then
+        error("[神行]技能index 错误！！！");
+        return;
+    end
+    local player_skillTab = SinhaengPanel.getPlayerSkillTab();
+    if player_skillTab[m_curSkillIndex] == nil then
+        return;
+    end
+    --local INDEX = player_skillTab[m_curSkillIndex].skillIndex;
+    local curSkillCfg = SinhaengSkillTable.Get(player_skillTab[m_curSkillIndex].skillIndex);
+    if curSkillCfg == nil then
+        return;
+    end
+    --SinhaengSkillTable.Get(player_skillTab[m_curSkillIndex].skillIndex) == nil and player_skillTab[m_curSkillIndex].skillIndex or player_skillTab[m_curSkillIndex]-1;
+    
+    local txtName = GetTextToId(curSkillCfg.Name);
+    SetLabelContent(m_panelStr1.."/"..m_skillStr,txtName,m_panelObject);
+    local s_state = player_skillTab[m_curSkillIndex].lvl ;
+    if s_state == 0 then           ---  0 级
+        SetGameObjectState(m_panelStr1.."/"..m_skillActiveStr,true,m_panelObject);
+        SetGameObjectState(m_panelStr1.."/"..m_skillLvlStr,false,m_panelObject);
+        SetLabelContent(m_panelStr1.."/"..m_btnLabStr,GetTextToId(1304),m_panelObject);
+    else
+        SetGameObjectState(m_panelStr1.."/"..m_skillActiveStr,false,m_panelObject);
+        SetGameObjectState(m_panelStr1.."/"..m_skillLvlStr,true,m_panelObject);
+        SetLabelContent(m_panelStr1.."/"..m_skillLvlStr,GetTextToId(9131)..curSkillCfg.Lv,m_panelObject);
+        SetLabelContent(m_panelStr1.."/"..m_btnLabStr,GetTextToId(9248),m_panelObject);
+    end
+    --当前des，
+    --local skilldata = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+    --local info = CCommonTool.GetSkillDataDamageData(tonumber(skilldata.DamageId1));
+
+    local buffInfo = CCommonTool.GetBuffInfoById(curSkillCfg.BuffId);
+    local txt1 = GetTextToId(curSkillCfg.Describe);
+    local radio1 = buffInfo.HitOdds+curSkillCfg.SkillLevel;
+    local valuess1 = (buffInfo.Mod1Num+buffInfo.Mod1UpGet*curSkillCfg.Lv);
+    SetLabelContent(m_panelStr1.."/"..m_skillDesStr,string_format(txt1,radio1,valuess1),m_panelObject);
+    if s_state == 10 then
+        SetGameObjectState(m_panelStr1.."/"..m_Bottom,false,m_panelObject);
+        SetGameObjectState(m_panelStr1.."/"..m_Max,true,m_panelObject);
+    else
+        SetGameObjectState(m_panelStr1.."/"..m_Bottom,true,m_panelObject);
+        SetGameObjectState(m_panelStr1.."/"..m_Max,false,m_panelObject);
+        --下阶des
+        local next_curSkillCfg = SinhaengSkillTable.Get(curSkillCfg.Id+1);
+        if next_curSkillCfg == nil then
+            return;
+        end
+        buffInfo = CCommonTool.GetBuffInfoById(next_curSkillCfg.BuffId);
+        txt1 = GetTextToId(next_curSkillCfg.Describe);
+        radio1 = buffInfo.HitOdds+next_curSkillCfg.SkillLevel;
+        valuess1 = (buffInfo.Mod1Num+buffInfo.Mod1UpGet*next_curSkillCfg.Lv);
+        SetLabelContent(m_panelStr1.."/"..m_skillNextDesStr,string_format(txt1,radio1,valuess1),m_panelObject);
+     -- 设置消耗道具
+        local cost_table = getSkillCostTab(curSkillCfg);
+        curSkillCostTab = cost_table;
+        for X_I=1,#cost_table do
+            SetSpriteApptitudeV04(m_panelStr1.."/"..m_skillCostStr.."/Item" .. X_I .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(cost_table[X_I].excelId), m_panelObject);
+            SetSpriteApptitude2V04(m_panelStr1.."/"..m_skillCostStr.."/Item".. X_I .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(cost_table[X_I].excelId), m_panelObject);
+            SetSpriteByAtlasID(m_panelStr1.."/"..m_skillCostStr.."/Item" .. X_I .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(cost_table[X_I].excelId), m_panelObject, true);
+            SetItemToolTipsEvent(m_panelObject, m_panelStr1.."/"..m_skillCostStr .."/Item".. X_I, ENUMPANELID.ENUM_SINHAENGPANEL, false, cost_table[X_I].excelId);
+            local exxid = cost_table[X_I].excelId;
+            local itemAttr = ItemAttribute.New(exxid);
+            SetLabelContent(m_panelStr1.."/"..m_skillCostStr.."/Item" .. X_I.."/Label_Name",itemAttr:GetItemName(),m_panelObject);
+            SetGameObjectState(m_panelStr1.."/"..m_skillCostStr.."/Item" .. X_I,true,m_panelObject);
+            if cost_table[X_I].Type == 1 then
+                local hasNum = GetBindAndNotNumById(cost_table[X_I].excelId);
+                SetLabelContent(m_panelStr1.."/"..m_skillCostStr .."/Item".. X_I .. m_itemNumStr, hasNum .. "/" .. cost_table[X_I].Num, m_panelObject);
+                if hasNum < cost_table[X_I].Num then
+                    SetLabelColor(m_panelStr1.."/"..m_skillCostStr.."/Item" .. X_I .. m_itemNumStr, "D83232", m_panelObject);
+                    SetGameObjectState(m_panelStr1.."/"..m_skillCostStr .."/Item".. X_I .. m_itemGetsWay, true, m_panelObject);
+                    SetGameObjectEvent(m_panelStr1.."/"..m_skillCostStr .."/Item".. X_I .. m_itemGetsWay,GetItemWayClick,m_panelObject);
+                    m_CoinIsEnough = false;
+                else
+                    m_CoinIsEnough = true;
+                    SetLabelColor(m_panelStr1.."/"..m_skillCostStr .."/Item".. X_I .. m_itemNumStr, "B2B2B2FF", m_panelObject);
+                    SetGameObjectState(m_panelStr1.."/"..m_skillCostStr .."/Item".. X_I .. m_itemGetsWay, false, m_panelObject);
+                end
+            end
+        end
+    end
+    --设置激活条件
+    local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+    if stage_lvl /2 >= m_curSkillIndex then
+        SetGameObjectState(m_panelStr1.."/"..m_activeCondStr,false,m_panelObject);  
+    else
+        SetGameObjectState(m_panelStr1.."/"..m_activeCondStr,true,m_panelObject);
+        SetLabelContent(m_panelStr1.."/"..m_activeCondStr,string_format(GetTextToId(9324),m_curSkillIndex*2),m_panelObject);
+    end
+    -- 设置小红点显示
+    SinhaengPanel.SetLeftTabRedShow(tabIndex,skillCanShowRed());
+end
+--- 得到道具途径click
+function GetItemWayClick(e)
+    local Index = string.sub(e.transform.name, 5, string.len(e.transform.name));
+    if curSkillCostTab[Index] ~=nil then
+        GetWayPanel.Show(curSkillCostTab[Index].excelID,ENUMPANELID.ENUM_SINHAENGPANEL);
+    end
+end
+-- 技能页签是否可以显示小红点
+function skillCanShowRed()
+    local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+    for i=1,6 do
+        local state = SinhaengPanel.getPlayerSkillState(stage_lvl,i);
+        --error("i=="..i.."state::"..state);
+        if state == 2 then
+            return true;
+        end
+    end
+    return false;
+end
+-- 得到技能消耗table
+function getSkillCostTab(curSkillCfg)
+    local player_skillTab = SinhaengPanel.getPlayerSkillTab();
+    if player_skillTab[m_curSkillIndex] == nil then
+        return;
+    end
+    if player_skillTab[m_curSkillIndex].lvl >0 then
+        curSkillCfg = SinhaengSkillTable.Get(player_skillTab[m_curSkillIndex].skillIndex+1);
+    end
+    local costtable = {};
+    for i=1,1 do
+        costtable[i] = {}
+        costtable[i].Type = 1;
+        costtable[i].excelId = curSkillCfg.NeedId;
+        costtable[i].Num = curSkillCfg.NeedNum ;
+    end
+    --error("长度：："..#costtable.."costtable[1].excelId"..costtable[1].excelId);
+    return costtable;
+end
+-- 跳转界面获取数据
+function GetJumpCloseData()
+
+    local panelParams = {};
+    panelParams.tabIndex = tabIndex;
+    panelParams.skillIndex = m_curSkillIndex;
+    return panelParams;
+end
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_JumpPanelParamsTable = paramTable;
+    if m_JumpPanelParamsTable == nil then
+        return;
+    end
+    m_curSkillIndex = m_JumpPanelParamsTable.skillIndex;
+end
+------------------------------------------------------------------------外部调用---------------------------------------------
+function setSkillIndex(index)
+    if index == nil then
+        return m_curSkillIndex;
+    end
+    m_curSkillIndex = index;
+    InitShow();
+end
+function SetThisSkillIndex(index)
+    if index ~= nil then
+        m_curSkillIndex = index;
+    end
+end
+

@@ -1,0 +1,650 @@
+﻿module('GetStrongPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GetStrongPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_BtnClosePath = "Sub_Content/btn_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 顶部信息路径
+local m_SubInfoPath = "Sub_Title/Sub_Info";
+-- 变强路径
+local m_SubStrengthenPath = "Sub_Strengthen";
+-- 活动路径
+local m_SubActivityPath = "Sub_Activity";
+----------------------------------通用的名称路径---------------------------------------
+-- 左侧页签列表
+local m_LeftTagListPath = "Sub_LeftTag/UIGrid";
+-- 变强列表
+local m_StrengthenListPath = "Sub_Strengthen/UIGrid";
+-- 活动列表
+local m_ActivityListPath = "Sub_Activity/UIGrid";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 左侧页签列表
+local m_LeftTagList = nil;
+-- 变强列表
+local m_StrengthenList = nil;
+-- 活动列表
+local m_ActivityList = nil;
+-- 变强表
+local stongTable = {};
+-- 自己的数据
+local myData = nil; 
+-- 选中的页签（默认选中：1）
+local m_SelectTagID = 1;
+-----------------------------------一些写死的规定--------------------------------------
+local PET_ACT_ID = 1101;
+--只对装备显示页签起作用
+local nameTable = { [1] = 2109, [2] = 2110, [3] = 2191, [4] = 2192, [5] = 2111, [6] = 2193, [7] = 2112, [8] = 2194, [9] = 2195 };
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    ActivityProtocol.RequestActivitysLimitTime();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitData();
+        InitShow();
+        ActivityProtocol.RequestActivitysLimitTime();
+    end
+end
+
+function OnDisable()
+    ActivityManager.ClearLimitTime();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_LeftTagList = nil;
+	m_StrengthenList = nil;
+	m_ActivityList = nil;
+    myData = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    m_LeftTagList = GetComponent(m_PanelObject, m_LeftTagListPath, "UIListView");
+    m_StrengthenList = GetComponent(m_PanelObject, m_StrengthenListPath, "UIListView");
+    m_ActivityList = GetComponent(m_PanelObject, m_ActivityListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_BtnClosePath, OnCloseClick, m_PanelObject);
+    m_LeftTagList:SetInitCallback(OnLeftTagListInit);
+    m_LeftTagList:SetClickCallback(OnLeftTagListClick);
+    m_StrengthenList:SetInitCallback(OnStrengthenListInit);
+    m_StrengthenList:SetClickCallback(OnStrengthenListClick);
+    m_ActivityList:SetInitCallback(OnActivityListInit);
+    m_ActivityList:SetClickCallback(OnActivityListClick);
+
+end
+-- 初始化变强数据
+function InitData() 
+    -- 可变强的功能太多且评定规则不一样无法统一配表，现写在一个定死的lua表结构里，有后续变强功能再添加或删除
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    --myData = CCommonTool.GetStrongerByIndex(myLv);
+    myData=StrongerTable.Get(myLv);
+    stongTable = {
+        [1] = {nameID = 2101, textID = 2101, sortID = 1, equipQuality = myData.Quality, equipLevel = myData.Level, standard = 10 }, -- 装备
+        [2] = {nameID = 2102, textID = 2113, sortID = 2, forcelv = myData.EquipforceLv, standard = myData.Equipforce}, -- 强化
+        [3] = {nameID = 2103, textID = 2114, sortID = 3, gemLv = myData.GemLv, standard = myData.GemStandard}, -- 宝石
+        [4] = {nameID = 2104, textID = 2115, sortID = 4, enchantQuality = myData.EnchantQuality, enchantLv = myData.Enchant, standard = myData.EnchantStandard}, -- 附魔
+        [5] = {nameID = 2105, textID = 2116, sortID = 5, makeLV = myData.MakeLV, standard = myData.MakeStandard}, -- 精炼
+        [6] = {nameID = 2106, textID = 2117, sortID = 6, skillNum = myData.SkillNum, skillLv = myData.SkillLv, standard = myData.SkillStandard}, -- 技能
+        [7] = {nameID = 2107, textID = 2118, sortID = 7, standard = myData.PetFightvalue}, -- 宠物
+        [8] = {nameID = 2108, textID = 2119, sortID = 8, mountNum = myData.MountNum, mounts = myData.Mounts, standard = myData.MountStandard}, -- 坐骑
+        [9] = {nameID = 2196, textID = 2197, sortID = 9, standard = myData.Artifact}, -- 神器
+        [10] ={nameID = 2198, textID = 2199, sortID = 10, standard = myData.Heraldry}, -- 阵营纹章
+        [11] ={nameID = 2921, textID = 2922, sortID = 11, standard = myData.Wing},      --神翼标准分	
+        [12] ={nameID = 2923, textID = 2924, sortID = 12, standard = myData.Genie},     --神将标准分
+        [13] ={nameID = 2925, textID = 2926, sortID = 13, standard = myData.Jewel},     --宝珠标准分	
+        [14] ={nameID = 2927, textID = 2928, sortID = 14, standard = myData.Sinhaeng},  --神行标准分	
+        [15] ={nameID = 2929, textID = 2930, sortID = 15, standard = myData.Matrix},    --法阵标准分
+
+    }
+    local equopScore, forceScore, gemScore, enchantScore, makeScore, skillScore, petScore, mountScore, artifactScore, campSealScore,wingScore,genieScore,jewelScore,sinhaengScore,matrixScore = 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+    
+    --1. 计算装备品质对应文本ID
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    if myLv > 0 and myLv < 10 then 
+        stongTable[1].textID  = nameTable[1];
+    else
+        local num1,num2 = math.modf(myLv / 10);
+        if num1 < #nameTable then
+            stongTable[1].textID  = nameTable[num1 + 1];
+        else
+            stongTable[1].textID  = nameTable[#nameTable];
+        end
+    end
+--    stongTable[1].textID = 2107 + stongTable[1].equipQuality;
+    -- 计算装备相关得分
+    for Index = 1, EquipType.ET_EquipCount do
+        local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(Index - 1);
+        if ItemInfo ~= nil then 
+            local curEquipInfo = ItemInfo:GetEquipInfo();
+            local aptitudeID = curEquipInfo.AptitudeID;
+            if aptitudeID >= stongTable[1].equipQuality and curEquipInfo.NeedLv >= stongTable[1].equipLevel then 
+                equopScore = equopScore + 1;
+            end  
+            -- 精炼
+            if ItemInfo.StarItemLevel > 0 then
+                if ItemInfo.StarItemLevel < 4 then
+                    makeScore = makeScore + ItemInfo.StarItemLevel * 100;
+                else
+                    makeScore = makeScore + ItemInfo.StarItemLevel * 50 + 300;
+                end
+            end
+        end
+    end
+    --2.计算强化相关得分
+    local  curEquipNum=10;           --12：当前装备穴位有12件  ,10，11，索引被占用只能单写12，13
+    for i = 0, curEquipNum-1 do 
+       local forceData = EquipMng.EquipForceData[i]; 
+       -- 强化总等级
+        if forceData > 0 then 
+            forceScore = forceScore + forceData;
+        end
+    end 
+    if EquipMng.EquipForceData[12]>0 then
+        forceScore = forceScore + EquipMng.EquipForceData[12];
+    end
+    if EquipMng.EquipForceData[13]>0 then
+        forceScore = forceScore + EquipMng.EquipForceData[13];
+    end
+    -- 强化得分
+    forceScore = forceScore * curEquipNum;
+    --3.计算符石相关得分
+    for i = 1, 10 do
+        local gemNum = EquipMng.GetGemAllNumByLv(i);
+        gemScore = gemScore + gemNum * (20 * i - 10);
+    end
+    --4.计算附魔相关得分
+    for i = 2, 5 do
+        local enchantAllLv = EquipMng.GetEnchantAllLvByIndex(i);
+        enchantScore = enchantScore + enchantAllLv * i;
+    end
+    --5.计算技能相关得分
+    local skills = nil;
+    -- 基础技能得分
+    skills = SkillManager.generalSkillInfos;
+    for _, skill in ipairs(skills) do
+        local skillID = skill.id;
+        if SkillManager.IsLockedSkill(skillID) == false then
+            local playerSkill = SkillManager.GetPlayerSkill(skillID);
+            local level = playerSkill.level;
+            skillScore = skillScore + level * 10;
+        end
+    end
+    --6.计算天赋相关得分
+    skills = SkillManager.talentSkillInfos;
+    for _, skill in ipairs(skills) do
+        local skillID = skill.id;
+        if SkillManager.IsLockedSkill(skillID) == false then
+            local playerSkill = SkillManager.GetPlayerSkill(skillID);
+            local level = playerSkill.level;
+            skillScore = skillScore + level * 10;
+        end
+    end
+    --7.计算宠物相关得分
+    petScore = PetManager.GetCurOutPetFightAbility();
+    --8.计算坐骑相关得分
+    local mountsTable = CCommonTool.GetAllMountsInfo();
+    for Index = 1, mountsTable.Count do
+        local mountDataInfo = mountsTable[Index - 1];
+        local playerMountData = LogicData_RideData[mountDataInfo.Id];
+        if playerMountData ~= nil then
+            mountScore = mountScore + playerMountData.level * 100;
+        end
+    end
+    --9.计算神器相关得分
+    artifactScore = ArtifactPanel.GetArtifactScore();
+    --10.计算阵营纹章相关得分
+    campSealScore = CampSealManager.GetCampSealScore();
+    --11.计算神翼相关得分
+    wingScore=WingPanelManager.GetScore();
+    --12.计算神将相关得分
+    genieScore=GodShapeShiftManager.GetScore();
+    --13.计算宝珠相关得分
+    jewelScore=JewelPanelManager.GetScore();
+    --14.计算神行相关得分
+    sinhaengScore=SinhaengPanelManager.GetScore();
+    --15.计算法阵相关得分
+    matrixScore=MatrixPanelManager.GetScore();
+
+    -- 填入各项分数
+    stongTable[1].Score  = equopScore;
+    stongTable[2].Score  = forceScore;
+    stongTable[3].Score  = gemScore;
+    stongTable[4].Score  = enchantScore;
+    stongTable[5].Score  = makeScore;
+    stongTable[6].Score  = skillScore;
+    stongTable[7].Score  = petScore;
+    stongTable[8].Score  = mountScore;
+    stongTable[9].Score  = artifactScore;
+    stongTable[10].Score  = campSealScore;
+    stongTable[11].Score  = wingScore;
+    stongTable[12].Score  = genieScore;
+    stongTable[13].Score  = jewelScore;
+    stongTable[14].Score  = sinhaengScore;
+    stongTable[15].Score  = matrixScore;
+
+    -- 填入跳转函数
+    stongTable[1].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[2].JumpFunc = function()
+        EquipPanel.OpenThisPanelByTag(1,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[3].JumpFunc = function()
+        EquipPanel.OpenThisPanelByTag(2,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[4].JumpFunc = function()
+        EquipPanel.OpenThisPanelByTag(3,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[5].JumpFunc = function()
+        EquipPanel.OpenThisPanelByTag(5,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[6].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[7].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_PETPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[8].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_RIDEPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[9].JumpFunc = function()
+        if GetWayPanel.IsSystemUnlock(CSYSTEMENUM.SYSTEM_ARTIFACT) then
+            createPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+        end
+    end
+    stongTable[10].JumpFunc = function()
+        local paramTable = { };
+        paramTable.tabIndex = 3;
+        CampBeyond3DPanel.SetJumpCloseData(paramTable);
+    end
+    stongTable[11].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[12].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[13].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_PANEL_JEWEPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[14].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_SINHAENGPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    stongTable[15].JumpFunc = function()
+        createPanel(ENUMPANELID.ENUM_MatrixPANEL,ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+    -- 表排序
+    local tempTable = {};
+    for i,v in pairs(stongTable) do
+        table.insert(tempTable, i);
+    end
+    table.sort(tempTable ,function(a, b)
+        return a < b;
+    end);
+    local  temp = {};
+    for i, v in pairs(tempTable) do
+        table.insert(temp, v, stongTable[v]);
+    end
+    stongTable = temp;
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitUserInfo();
+    InitLeftTag();
+    InitStrongInfo();
+end
+
+-- 初始化主角信息
+function InitUserInfo()
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    SetLabelContent(m_SubInfoPath.."/lb_LVNum",myLv,m_PanelObject);
+    SetLabelContent(m_SubInfoPath.."/lb_MyFightNum", math.floor(G_UserInfo.RoleAttribute.BattlePower), m_PanelObject);
+    if myData == nil then return end
+    local myPower = G_UserInfo.RoleAttribute.BattlePower;
+    local standardPower = myData.FightValue;
+    local powerLv = GetPowerLv(myPower, standardPower);
+    if powerLv then 
+        local spStr = "UI_HD_XS_PinZhi_00"..powerLv;
+        SetSpriteContent(m_SubInfoPath.."/sp_Grade", "Activity01AtlasV04", spStr, m_PanelObject, true);
+    end
+    SetLabelContent(m_SubInfoPath.."/lb_StandardFightNum",standardPower,m_PanelObject);
+end
+
+-- 变强列表显示
+function InitStrongInfo()
+    SetGameObjectState(m_SubStrengthenPath, true, m_PanelObject);
+    SetGameObjectState(m_SubActivityPath, false, m_PanelObject);
+    m_StrengthenList:RemoveAll();
+    for i,v in pairs(stongTable) do
+        if v.standard > 0 then 
+            m_StrengthenList:AddData(v);
+        end
+    end
+end
+
+-- 变强页签列表显示
+function InitLeftTag()
+    local tagTable = CCommonTool.GetStrongerDivisionInfo();
+    local showTagTable = {};
+    for i = 0,tagTable.Count - 1 do
+        if tagTable[i].DivisionID == 1 then 
+            table.insert(showTagTable, 1, tagTable[i]);
+        else
+            local m1,m2 = math.modf(tagTable[i].DivisionID/10)
+            if m2 == 0 then
+                table.insert(showTagTable, tagTable[i]);
+            end
+        end
+    end
+    if #showTagTable > 0 then 
+        m_LeftTagList:RemoveAll();
+        for i,v in pairs(showTagTable) do
+            m_LeftTagList:AddData(v);
+        end
+        m_SelectTagID = 1;
+        m_LeftTagList:LookAt(0, true);  
+    end
+end
+
+-- 得到某一页签下面的所有活动并显示
+function ShowAllActivities(tagID)
+    SetGameObjectState(m_SubStrengthenPath, false, m_PanelObject);
+    SetGameObjectState(m_SubActivityPath, true, m_PanelObject);
+    local activityTable = CCommonTool.GetStrongerActivityInfo();
+    local showActivityTable = {};
+    for i = 1, activityTable.Count do
+        local data = activityTable[i - 1];
+        local textID = GetActivityTextID(data, tagID);
+        local temp = {};
+        if textID ~= nil then
+            if data.Activity > 0 then 
+                if ActivityManager.GetActivityVisible(data.Activity) then
+                    local activityData = CCommonTool.GetStrongerActivityByIndex(data.Id);
+                    local starNums = GetActivityStarNum(activityData);
+                    temp.Id = data.Id;
+                    temp.textID = textID;
+                    temp.starNums = starNums;
+                    table.insert(showActivityTable, temp);
+                end
+            else
+                local activityData = CCommonTool.GetStrongerActivityByIndex(data.Id);
+                local starNums = GetActivityStarNum(activityData);
+                temp.Id = data.Id;
+                temp.textID = textID;
+                temp.starNums = starNums;
+                table.insert(showActivityTable, temp);
+            end
+        end
+    end
+
+    if #showActivityTable > 0 then
+        m_ActivityList:RemoveAll();
+        table.sort(showActivityTable, sortFunc);
+        for i, v in ipairs(showActivityTable) do 
+            m_ActivityList:AddData(v);
+        end
+    end
+end
+function sortFunc(a,b)
+    if a.starNums == b.starNums then
+        return a.Id < b.Id;
+    end
+    return a.starNums > b.starNums;
+end
+-- 得到该活动对应的说明文本
+function GetActivityTextID(data, id)
+    local textID = nil;
+    if id == data.Division1 then 
+        textID = data.TXT1;
+    elseif id == data.Division2 then 
+        textID = data.TXT2;
+    elseif id == data.Division3 then 
+        textID = data.TXT3;
+    elseif id == data.Division4 then 
+        textID = data.TXT4;
+    elseif id == data.Division5 then 
+        textID = data.TXT5;
+    end
+    return textID;
+end
+
+-- 得到某活动的推荐星级
+function GetActivityStarNum(activityData)
+    local starNums = 0;
+    local level = G_UserInfo.RoleAttribute.Level;
+    local section = activityData.FeaturedLvl1;
+    local npcId1, npcId2 = GetParams(section);
+    if level <= npcId2 then 
+        starNums = activityData.Star1;
+    elseif level > npcId2 then
+        section = activityData.FeaturedLvl2;
+        npcId1, npcId2 = GetParams(section);
+        if level <= npcId2 then 
+            starNums = activityData.Star2;
+        else
+            starNums = activityData.Star3;
+        end
+    end
+
+    return tonumber(starNums);
+end
+-- 分割字符串
+function GetParams(str)
+    local params = string_split(str, "-");
+    local npcId1 = tonumber(params[1]) or 0;
+    local npcId2 = tonumber(params[2]) or 0;
+    return npcId1, npcId2;
+end
+
+-- 得到当前战力等级
+function GetPowerLv(value1, value2)
+    local value = value1 / value2;
+    local lv = nil;
+    if value > 0 and value < 0.3 then
+        lv = 1;
+    elseif value >= 0.3 and value < 0.5 then
+        lv = 2;
+    elseif value >= 0.5 and value < 0.7 then
+        lv = 3;
+    elseif value >= 0.7 and value < 0.9 then
+        lv = 4;
+    elseif value >= 0.9 then
+        lv = 5;
+    end
+    return lv; 
+end
+------------------------------------------事件方法------------------------------------
+
+-- 关闭界面
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_GET_STRONG_PANEL);
+end
+
+-- 左侧页签列表初始化
+function OnLeftTagListInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Background/Label", GetTextToId(data.DivisionTXT), go);
+    SetLabelContent("Toggle/Label", GetTextToId(data.DivisionTXT), go);
+
+end
+
+-- 左侧页签列表点击
+function OnLeftTagListClick(listView, cell, go)
+    if cell.dataIndex + 1 == m_SelectTagID then return; end
+    local data = listView:GetData(cell.dataIndex);
+    if data.DivisionID == 1 then 
+        InitStrongInfo();
+    else
+        ShowAllActivities(data.DivisionID);
+    end
+    m_SelectTagID = cell.dataIndex + 1;
+end
+
+-- 变强列表初始化
+function OnStrengthenListInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = cell.dataIndex;
+    SetLabelContent("lb_Name", GetTextToId(data.nameID), go);
+    SetLabelContent("lb_Grade", GetTextToId(data.textID), go);
+    local m_ProgressBar = GetComponent(go, "ProgressBar", "UIProgressBar");
+    local value = data.Score / data.standard;
+    local color = "[FFFFFF]";
+    if value >= 1 then 
+        value = 1; 
+    else
+        color = "[FF0000]";    
+    end
+    m_ProgressBar.value = value; 
+    local dataStr = data.Score.."/"..color..data.standard.."[-]";
+    SetLabelContent("lb_Data", dataStr, go);
+    if data.sortID == 1 and data.equipQuality then 
+        SetLabelPinZhi("lb_Grade", data.equipQuality, go);
+    else
+        SetLabelPinZhi("lb_Grade", 1, go);
+    end
+end
+
+-- 变强列表点击
+function OnStrengthenListClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "btn_Jump" then 
+--        closePanel(ENUMPANELID.ENUM_GET_STRONG_PANEL);
+        data.JumpFunc();
+    end
+end
+
+-- 活动列表初始化
+function OnActivityListInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetGameObjectState("btn_Jump", true, go);
+    SetGameObjectState("btn_End", false, go);
+
+    local activityData = CCommonTool.GetStrongerActivityByIndex(data.Id);
+    if activityData == nil then return end
+    local activityID = activityData.Activity;
+    SetGameObjectState("lb_Data", activityID > 0, go);
+    SetGameObjectState("lb_Time", activityID > 0, go);
+    -- 根据活动id判断该次要显示的是不是活动
+    if activityID > 0 then 
+        local dataFromService = ActivityManager.GetActivity(activityID);
+        local info = dataFromService.info;
+        SetSpriteByAtlasID("sp_Icon", info.Icon, go);
+        SetLabelTextByID("lb_Name", info.Name, go);
+        local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(dataFromService.id);
+        if maxTimes > 0 then
+    --        SetLabelContent("lb_Data", string_format(--[[次数:{0}/{1}]]CCommonTool.GetTxtData(895).m_str, usedTimes, maxTimes), go);
+            SetLabelContent("lb_Data", usedTimes.."/"..maxTimes, go);
+            if usedTimes == maxTimes then 
+                SetGameObjectState("btn_Jump", false, go);
+                SetGameObjectState("btn_End", true, go);
+            else
+                SetGameObjectState("btn_Jump", true, go);
+                SetGameObjectState("btn_End", false, go);
+            end
+        else
+            SetLabelContent("lb_Data", CCommonTool.GetTxtData(162013).m_str, go);
+        end
+        
+        local time = ActivityManager.GetCurrentOpenTime(activityID);
+        if time == GetTextToId(900) then 
+            time = "";
+        end
+        SetLabelContent("lb_Time", time, go);
+        -- 限时活动 特殊处理   
+        if dataFromService.isServerLimit == true then
+            SetLabelContent("lb_Data", "", go);
+            SetLabelContent("lb_Time", "", go);
+            if dataFromService.limitEndTime > 0 then
+                SetLabelContent("lb_Time", string_format(--[[剩余时间: {0}分钟]]CCommonTool.GetTxtData(1544).m_str, dataFromService.remainLimitMinute), go);
+            end
+        end
+    else
+        SetSpriteByAtlasID("sp_Icon", activityData.Icon, go);
+        SetLabelTextByID("lb_Name", activityData.Name, go);
+    end
+    if data.textID > 0 then
+        SetLabelContent("lb_Content", GetTextToId(data.textID), go);
+    else
+        SetLabelContent("lb_Content", "", go);
+    end
+    local starNums = data.starNums;
+    for i = starNums + 1, 5 do
+        if i>5 then
+            error("the max star num is five,please confirm ");
+        else
+            SetGameObjectState("Stars/Sprite_"..i, false, go);
+        end
+    end
+    for i = 1, starNums do
+        if i>5 then
+            error("the max star num is five,please confirm ");
+        else
+            SetGameObjectState("Stars/Sprite_"..i, true, go);
+        end
+    end
+end
+
+-- 活动列表点击
+function OnActivityListClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local activityData = CCommonTool.GetStrongerActivityByIndex(data.Id);
+    if activityData == nil then return end
+    local activityID = activityData.Activity;
+    if go.name == "btn_Jump" then 
+        if activityID > 0 then 
+            local activitydata = CCommonTool.GetActivityListDataInfo(activityID);
+            local activityState = ActivityManager.GetActivityState(activityID);
+            if activitydata.IsLimit == 1 then 
+                if activityState ~= ACTIVITY_STATE.OPENING  then
+                    ShowSystemFlowTips(2778);
+                    return;
+                end
+            end
+            ActivityManager.Jump(activityID);
+        else
+            -- 通用的跳转方法，暂时隐藏，等表配好之后再测试
+            OpenUIByEnum.OpenByParam(activityData.JumpValue, ENUMPANELID.ENUM_GET_STRONG_PANEL);
+        end
+        closePanel(ENUMPANELID.ENUM_GET_STRONG_PANEL);
+    end
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function CanShowRedHint()
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    --local myData = CCommonTool.GetStrongerByIndex(myLv);
+    myData=StrongerTable.Get(myLv);
+    if myData == nil then
+        return false;
+    end
+    local standardPower = myData.FightValue;
+    local curFightValue = math.floor(G_UserInfo.RoleAttribute.BattlePower);
+    --error("standardPower: "..standardPower.." curFightValue: "..curFightValue);
+    return standardPower > curFightValue;
+
+end

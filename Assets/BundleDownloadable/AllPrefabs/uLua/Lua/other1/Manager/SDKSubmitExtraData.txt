@@ -1,0 +1,110 @@
+﻿module("SDKSubmitExtraData", package.seeall)
+
+function Init()
+    Event.Add("submitExtraData", OnSubmitExtraData);
+end
+
+-- SDK数据上报
+function OnSubmitExtraData(eventname, name, typeId, params)
+    local sdkName = CSDKManager.sdkName;
+    if sdkName == "xiyou" then
+        if name == "firstInGame" or name == "createRole" or name == "levelup" or name == "exit" or name == "firstCreateRole" then
+            local jsonValue = GetXiYouExtraData(name, typeId)
+            --error(jsonValue);
+            CSDKManager.Call("submitExtraData", jsonValue, function() end);
+        end
+    end
+end
+
+function GetXiYouExtraData(name, typeId)
+    local server = _G.currentServer or {};
+    local jsonData = {};
+    jsonData["dataType"] = typeId;
+    jsonData["serverId"] = server.serverId or 0;
+    jsonData["serverName"] = server.serverName or "无";
+    if G_UserInfo == nil or G_UserInfo.RoleAttribute == nil then
+        jsonData["roleId"] = 0;
+        jsonData["roleName"] = "无";
+        jsonData["roleLevel"] =0;
+        jsonData["moneyNum"] = 0;
+        jsonData["professionId"] = 0;
+        jsonData["profession"] = "无";
+        jsonData["power"] = 0;
+        jsonData["gender"] = "无";
+        jsonData["vip"] = "0";
+        jsonData["partyId"] = 0;
+        jsonData["partyName"] = "无";
+        jsonData["partyRoleId"] = "0";
+        jsonData["partyRoleName"] = "无";
+        jsonData["friendList"] = "无";
+        jsonData["roleCTime"] = 0;
+        jsonData["roleLevelIMTime"] = 0;
+    else
+        local roleAttribute = G_UserInfo.RoleAttribute;
+        jsonData["roleId"] = G_UserInfo.GlobalDBID;
+        jsonData["roleName"] = roleAttribute.Name or "无";
+        jsonData["roleLevel"] = roleAttribute.Level;
+        jsonData["moneyNum"] = G_UserInfo.NotBindDiamond;
+        jsonData["professionId"] = G_UserInfo.RoleAttribute.ProID;
+        jsonData["profession"] = GetProName(G_UserInfo.RoleAttribute.ProID);
+        if not jsonData["profession"] or #jsonData["profession"] == 0 then
+            jsonData["profession"] = "无";
+        end
+        jsonData["power"] = tostring(math.floor(G_UserInfo.RoleAttribute.BattlePower));
+        jsonData["gender"] = "无";
+        jsonData["vip"] = tostring(roleAttribute.VipLv);
+        local guildId = roleAttribute.GuildId;
+        jsonData["partyId"] = guildId <= 0 and 0 or guildId;
+        if guildId > 0 then
+            jsonData["partyName"] = tostring(GuildManager.GetGuildName(roleAttribute.GuildId));
+            local mem = GuildManager.GetSelfInfo();
+            if mem ~= nil then
+                jsonData["partyRoleId"] = tostring(mem.rankLevel + 1);
+                jsonData["partyRoleName"] = GuildManager.GetJobTitleName(mem.rankLevel, mem.kindredType);
+            else
+                jsonData["partyRoleId"] = "0";
+                jsonData["partyRoleName"] = "无";
+            end
+        else
+            jsonData["partyName"] = "无";
+            jsonData["partyRoleId"] = "0";
+            jsonData["partyRoleName"] = "无";
+        end
+        local friendCount = #FriendsData.friendList;
+        if friendCount > 0 then
+            local str = "[";
+            for i, f in ipairs(FriendsData.friendList) do
+                str = str .. string_format("{\"roleid\":{0},\"intimacy\":\"{1}\",\"nexusid\":\"0\",\"nexusname\":\"无\"}", f.guid, f.friendliness);
+                if i ~= friendCount then
+                    str = str .. ",";
+                end
+            end
+            str = str .. "]";
+            jsonData["friendList"] = str;
+        else
+            jsonData["friendList"] = "无";
+        end
+        jsonData["roleCTime"] = 0;
+        if _G.roleListInfo ~= nil then
+            for _, roleInfo in pairs(_G.roleListInfo) do
+                if roleInfo.RoleID == G_UserInfo.GlobalDBID then
+                    jsonData["roleCTime"] = roleInfo.CreateTime;
+                    break;
+                end
+            end
+        end
+        jsonData["roleLevelIMTime"] = roleAttribute.LastLevelUpTime;
+    end
+    return json.encode(jsonData);
+end
+
+function GetProName(proId)
+    local info = CCommonTool.GetRoleDateInfo(proId);
+    if info ~= nil then
+        local textId = info.NameTxt;
+        return CCommonTool.GetTxtData(textId).m_str;
+    end
+    return "";
+end
+
+Init();

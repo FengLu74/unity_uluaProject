@@ -1,0 +1,175 @@
+﻿module("PetSavvyPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前宠物悟性
+local m_PetSavvyStr = "Label_Savvy";
+-- 悟性提升的成功率
+local m_PetProStr = "Label_Pro";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 升一级
+local m_ButtonOneLevelStr = "Button_LevelUp";
+-----------------------------------------Sprite路径------------------------------------
+-- 宠物图标
+local m_PetIconStr = "PetItem/Sprite_Icon";
+-- 宠物品质
+local m_PetQualityStr = "PetItem/Sprite_Quality";
+----------------------------------gameobject所在的路径---------------------------------
+-- 当前宠物经验条
+local m_PetExpProStr = "ExpProgress";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具路径
+local m_ItemStr = "ItemTable/Item";
+-- 道具图标
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具品质
+local m_QualityStr = "/Sprite_Quality";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+-- 道具遮罩
+local m_ItemMaskStr = "/Sprite_Mask";
+-- 加号
+local m_ItemAddStr = "/Label_Add";
+-- 道具使用按钮
+local m_ItemButtonUseStr = "/Button_Use";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL);
+end
+
+function InitEvents()
+end
+
+-- 初始化显示
+function InitShow()
+    InitStaticShow();
+    InitDynamicShow();
+end
+
+function InitStaticShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    SetSpriteByAtlasID(m_PetIconStr, m_CurSelectPet:GetImageIdById(), m_panelObject);
+    SetSpriteApptitudeV04(m_PetQualityStr, m_CurSelectPet:GetAptitudeID(), m_panelObject);
+    SetSpriteByAtlasID(m_ItemStr..1 ..m_ItemIconStr, CCommonTool.GetImageIDByExcelID(PetSavvyNeedExcelID), m_panelObject);
+    SetSpriteApptitudeV04(m_ItemStr..1 ..m_QualityStr, CCommonTool.GetAptitudeIDByExcelID(PetSavvyNeedExcelID), m_panelObject);
+end
+
+function InitDynamicShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    SetLabelContent(m_PetSavvyStr, petATT.SavvyNum .. "/" .. PET_ENUM.PET_SAVVY_MAXNUM, m_panelObject);
+    local haveNum;
+    for Index = 1,1 do
+        haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetSavvyNeedExcelID);
+        if haveNum > 0 then
+            SetGameObjectState(m_ItemStr..Index .. m_ItemMaskStr,false,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index .. m_ItemAddStr,false,m_panelObject);
+        else
+            SetGameObjectState(m_ItemStr..Index .. m_ItemMaskStr,true,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index .. m_ItemAddStr,true,m_panelObject);
+        end
+        SetLabelContent(m_ItemStr..Index .. m_ItemNumStr,haveNum .. "/1",m_panelObject);
+    end
+    for Index = 1,#PetSavvyProValueChunk do
+        if petATT.SavvyNum <= Index * PET_ENUM.PET_SAVVY_NUM_PER_COLUMN then
+            local quality = m_CurSelectPet:GetAptitudeID();
+            local pro = math.floor(PetSavvyProValueChunk[Index] * PetSavvyProQualityRatioChunk[quality] / 100);
+            SetLabelContent(m_PetProStr,pro.."%",m_panelObject);
+            break;
+        end
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr, OnCloseClick, m_panelObject);
+    for Index = 1,1 do
+        SetItemToolTipsEvent(m_panelObject, m_ItemStr..Index..m_ItemIconStr, ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL, false, PetSavvyNeedExcelID);
+        SetGameObjectEvent(m_ItemStr..Index..m_ItemMaskStr,OnGetWayClick,m_panelObject);
+    end
+    SetGameObjectEvent(m_ButtonOneLevelStr,OnClickOneLevel,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL);
+end
+
+function OnGetWayClick(e)
+    GetWayPanel.Show(PetSavvyNeedExcelID,ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL);
+end
+
+function OnClickOneLevel()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    if petATT.SavvyNum >= PET_ENUM.PET_SAVVY_MAXNUM then
+        log("已经到最大值了，无法继续升了")
+        ShowSystemFlowTips(7815);
+        return;
+    end
+    if G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetSavvyNeedExcelID) <= 0 then
+        if PetSavvyNeedExcelID> 0 and CCommonTool.GetQuickToBuyByExcelID(PetSavvyNeedExcelID)~=nil then
+            MaterialExchangePanel.ShowPanel(PetSavvyNeedExcelID,ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL)  
+            return;
+        else
+             ShowSystemFlowTips(441);
+            return;
+        end
+
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_ADD_SAVVY);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 界面操作，一个是出战的宠物得经验的
+function OnRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL) == 1 then
+        InitDynamicShow();
+    end
+end

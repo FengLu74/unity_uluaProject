@@ -1,0 +1,110 @@
+﻿--[[
+    field=Viplevel, type=int, desc=VIP等级
+    field=NeedExp, type=int, desc=到达等级所需经验值
+    field=Item1, type=int, desc=VIP道具1ID
+    field=IyemNum1, type=int, desc=VIP道具1个数
+    field=Item2, type=int, desc=VIP道具2ID
+    field=IyemNum2, type=int, desc=VIP道具2个数
+    field=Item3, type=int, desc=VIP道具3ID
+    field=IyemNum3, type=int, desc=VIP道具3个数
+    field=Item4, type=int, desc=VIP道具4ID
+    field=IyemNum4, type=int, desc=VIP道具4个数
+    field=Item5, type=int, desc=VIP道具5ID
+    field=IyemNum5, type=int, desc=VIP道具5个数
+    field=Item6, type=int, desc=VIP道具6ID
+    field=IyemNum6, type=int, desc=VIP道具6个数
+    field=EveryDayItem1, type=int, desc=VIP每日道具
+    field=EveryDayItemNum1, type=int, desc=VIP每日道具个数
+    field=EveryDayItem2, type=int, desc=VIP每日道具
+    field=EveryDayItemNum2, type=int, desc=VIP每日道具个数
+    field=PraiseID, type=int, desc=称号ID
+    field=ItemId1, type=int, desc=图标id1
+    field=TextID, type=int, desc=描述id
+]]
+module("VIPLevelTable", package.seeall)
+local list={
+    {Viplevel=1,NeedExp=10,Item1=27024,IyemNum1=1,Item2=22001,IyemNum2=15,Item3=20100,IyemNum3=20,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27022,EveryDayItemNum1=3,EveryDayItem2=12000,EveryDayItemNum2=20,PraiseID=20001,ItemId1=9100,TextID=162914},
+    {Viplevel=2,NeedExp=100,Item1=27024,IyemNum1=3,Item2=22001,IyemNum2=40,Item3=20100,IyemNum3=60,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27022,EveryDayItemNum1=5,EveryDayItem2=12000,EveryDayItemNum2=30,PraiseID=20002,ItemId1=9101,TextID=162915},
+    {Viplevel=3,NeedExp=300,Item1=27024,IyemNum1=8,Item2=20000,IyemNum2=30,Item3=22101,IyemNum3=20,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=1,EveryDayItem2=12000,EveryDayItemNum2=60,PraiseID=20003,ItemId1=9102,TextID=162916},
+    {Viplevel=4,NeedExp=500,Item1=20722,IyemNum1=20,Item2=30401,IyemNum2=1,Item3=30701,IyemNum3=1,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=2,EveryDayItem2=12000,EveryDayItemNum2=100,PraiseID=20004,ItemId1=9103,TextID=162917},
+    {Viplevel=5,NeedExp=880,Item1=20703,IyemNum1=20,Item2=22101,IyemNum2=2,Item3=22101,IyemNum3=80,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=3,EveryDayItem2=12000,EveryDayItemNum2=150,PraiseID=20005,ItemId1=9104,TextID=162918},
+    {Viplevel=6,NeedExp=1280,Item1=22204,IyemNum1=100,Item2=20000,IyemNum2=50,Item3=20000,IyemNum3=50,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=4,EveryDayItem2=12000,EveryDayItemNum2=200,PraiseID=20006,ItemId1=9105,TextID=162919},
+    {Viplevel=7,NeedExp=1980,Item1=21310,IyemNum1=30,Item2=21310,IyemNum2=30,Item3=21310,IyemNum3=30,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=5,EveryDayItem2=12000,EveryDayItemNum2=250,PraiseID=-1,ItemId1=9106,TextID=162920},
+    {Viplevel=8,NeedExp=3280,Item1=20100,IyemNum1=180,Item2=20400,IyemNum2=50,Item3=20400,IyemNum3=50,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=6,EveryDayItem2=12000,EveryDayItemNum2=300,PraiseID=20007,ItemId1=9107,TextID=162921},
+    {Viplevel=9,NeedExp=6480,Item1=30004,IyemNum1=1,Item2=30104,IyemNum2=1,Item3=30604,IyemNum3=1,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=7,EveryDayItem2=12000,EveryDayItemNum2=350,PraiseID=-1,ItemId1=9108,TextID=162922},
+    {Viplevel=10,NeedExp=10000,Item1=20400,IyemNum1=80,Item2=20400,IyemNum2=80,Item3=20400,IyemNum3=80,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=400,PraiseID=20008,ItemId1=9109,TextID=162923},
+    {Viplevel=11,NeedExp=15000,Item1=22212,IyemNum1=100,Item2=30405,IyemNum2=1,Item3=30605,IyemNum3=1,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=450,PraiseID=20009,ItemId1=9110,TextID=162924},
+    {Viplevel=12,NeedExp=30000,Item1=20400,IyemNum1=120,Item2=20400,IyemNum2=120,Item3=20400,IyemNum3=120,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=500,PraiseID=20010,ItemId1=9111,TextID=162925},
+    {Viplevel=13,NeedExp=50000,Item1=20501,IyemNum1=50,Item2=20501,IyemNum2=50,Item3=20501,IyemNum3=50,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=550,PraiseID=-1,ItemId1=9111,TextID=162925},
+    {Viplevel=14,NeedExp=100000,Item1=30006,IyemNum1=2,Item2=30106,IyemNum2=2,Item3=30806,IyemNum3=2,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=600,PraiseID=-1,ItemId1=9111,TextID=162925},
+    {Viplevel=15,NeedExp=200000,Item1=20400,IyemNum1=300,Item2=20400,IyemNum2=300,Item3=20400,IyemNum3=300,Item4=-1,IyemNum4=-1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=650,PraiseID=-1,ItemId1=9111,TextID=162925},
+    {Viplevel=16,NeedExp=300000,Item1=30008,IyemNum1=1,Item2=30108,IyemNum2=1,Item3=30408,IyemNum3=1,Item4=30508,IyemNum4=1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=700,PraiseID=-1,ItemId1=9111,TextID=162925},
+    {Viplevel=17,NeedExp=500000,Item1=30008,IyemNum1=1,Item2=30108,IyemNum2=1,Item3=30408,IyemNum3=1,Item4=30508,IyemNum4=1,Item5=-1,IyemNum5=-1,Item6=-1,IyemNum6=-1,EveryDayItem1=27024,EveryDayItemNum1=8,EveryDayItem2=12000,EveryDayItemNum2=750,PraiseID=-1,ItemId1=9111,TextID=162925}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10],[11]=list[11],[12]=list[12],[13]=list[13],[14]=list[14],[15]=list[15],[16]=list[16],[17]=list[17]};
+
+count = 17;
+Count = 17;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

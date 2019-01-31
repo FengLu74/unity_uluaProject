@@ -1,0 +1,238 @@
+﻿module('SkillBeyond3DPanel', package.seeall)
+
+require "Panel.SkillConfigPanel";
+require "Panel.SkillLevelupPanel";
+require "Panel.SkillTalentPanel";
+
+-- 当前所在面板名字
+local m_PanelName = 'SkillBeyond3DPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 技能配置标签
+local m_MenuItem1Path = "Menu/Grid/MenuItem1";
+-- 技能升级标签
+local m_MenuItem2Path = "Menu/Grid/MenuItem2";
+-- 天赋加点标签
+local m_MenuItem3Path = "Menu/Grid/MenuItem3";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 技能配置面板
+local m_SkillConfigPanelPath = "SkillConfigPanel";
+-- 技能升级面板
+local m_SkillLevelupPanelPath = "SkillLevelupPanel";
+-- 天赋加点标签
+local m_SkillTalentPanelPath = "SkillTalentPanel";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 技能配置标签
+local m_MenuItem1 = nil;
+-- 技能升级标签
+local m_MenuItem2 = nil;
+-- 天赋加点标签
+local m_MenuItem3 = nil;
+-- 技能配置面板
+local m_SkillConfigPanel = nil;
+-- 技能升级面板
+local m_SkillLevelupPanel = nil;
+-- 天赋加点标签
+local m_SkillTalentPanel = nil;
+-- 选中的标签
+local m_selectTagNum = 1;
+-- 上一次选择标签
+local m_lastSelectTagNum = 1;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = m_MenuItem2Path, panelName = m_SkillLevelupPanelPath, isFirstOpen = true, luaFileName = SkillLevelupPanel },
+    [2] = { name = m_MenuItem3Path, panelName = m_SkillTalentPanelPath, isFirstOpen = true, luaFileName = SkillTalentPanel },
+    [3] = { name = m_MenuItem1Path, panelName = m_SkillConfigPanelPath, isFirstOpen = true, luaFileName = SkillConfigPanel }
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = 1;
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    SkillManager.ClearNewUnlockedTalents();
+end
+
+function OnDestroy()
+    for Index = 1, #m_toggleTable do
+        if m_toggleTable[Index].luaFileName ~= nil then
+            m_toggleTable[Index].luaFileName.OnDestroy();
+            m_toggleTable[Index].isFirstOpen = true;
+        end
+    end
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_MenuItem1 = nil;
+	m_MenuItem2 = nil;
+	m_MenuItem3 = nil;
+	m_SkillConfigPanel = nil;
+	m_SkillLevelupPanel = nil;
+	m_SkillTalentPanel = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+    m_MenuItem1 = child(m_PanelObject, m_MenuItem1Path).gameObject;
+    m_MenuItem2 = child(m_PanelObject, m_MenuItem2Path).gameObject;
+    m_MenuItem3 = child(m_PanelObject, m_MenuItem3Path).gameObject;
+    m_SkillConfigPanel = child(m_PanelObject, m_SkillConfigPanelPath).gameObject;
+    m_SkillLevelupPanel = child(m_PanelObject, m_SkillLevelupPanelPath).gameObject;
+    m_SkillTalentPanel = child(m_PanelObject, m_SkillTalentPanelPath).gameObject;
+    m_SkillConfigPanel:SetActive(false);
+    m_SkillLevelupPanel:SetActive(false);
+    m_SkillTalentPanel:SetActive(false);
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_MenuItem1).onClick = LuaHelper.OnClick(OnMenuItem1Click);
+    UIEventListener.Get(m_MenuItem2).onClick = LuaHelper.OnClick(OnMenuItem2Click);
+    UIEventListener.Get(m_MenuItem3).onClick = LuaHelper.OnClick(OnMenuItem3Click);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetGameObjectState(m_MenuItem1Path, SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILLTALENT), m_PanelObject);
+    SetGameObjectState(m_MenuItem3Path, SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SKILLTALENT), m_PanelObject);
+    OpenPanelByTag();
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Toggle", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_PanelObject);
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Toggle", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_PanelObject);
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 技能配置标签点击事件
+function OnMenuItem1Click(gameObject)
+    OnTabClick(3);
+end
+
+-- 技能升级标签点击事件
+function OnMenuItem2Click(gameObject)
+    OnTabClick(1);
+end
+
+-- 技能加点标签点击事件
+function OnMenuItem3Click(gameObject)
+    OnTabClick(2);
+end
+
+function OnTabClick(index)
+    if m_selectTagNum ~= index then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+-- 关闭界面事件
+function OnCloseClick()
+    if m_selectTagNum == 2 then
+        if SkillTalentPanel.m_TalentInfoPanelIsOpen then
+           SkillTalentPanel.OnTalentBackButtonClick();
+           return;
+        end
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index, causePanelId)
+    if m_CreateSuccess == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL, causePanelId);
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    local tabIndex = m_selectTagNum;
+    panelParams.tabIndex = tabIndex;
+    if tabIndex == 1 then
+        -- 升级
+        panelParams.data = SkillLevelupPanel.GetJumpCloseData();
+    elseif tabIndex == 2 then
+        -- 天赋
+        panelParams.data = SkillTalentPanel.GetJumpCloseData();
+    elseif tabIndex == 3 then
+        -- 配置
+        panelParams.data = SkillConfigPanel.GetJumpCloseData();
+    end
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    local tabIndex = panelParams.tabIndex;
+    if tabIndex == 1 then
+        -- 升级
+         SkillLevelupPanel.SetJumpCloseData(panelParams.data);
+    elseif tabIndex == 2 then
+        -- 天赋
+        SkillTalentPanel.SetJumpCloseData(panelParams.data);
+    elseif tabIndex == 3 then
+        -- 配置
+        SkillConfigPanel.SetJumpCloseData(panelParams.data);
+    end
+    OpenThisPanelByTag(panelParams.tabIndex);
+end

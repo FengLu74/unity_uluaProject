@@ -1,0 +1,351 @@
+﻿module("AuctionManager", package.seeall)
+
+--拍卖行税率
+AuctionTaxRate = 0.1;
+--当前可上架的物品最大数
+PutawayMax = 10;
+--热销推荐道具
+HotSellItems = {};
+--当前正出售的道具
+CurSellItems = {};
+--搜索获取的物品列表
+SearchItems = {};
+--当前道具行情
+CurItemMarket = {};
+--道具上架单价系数
+PriceCoef = 1;
+--菜单选项文字
+MainMenuTexts ={};
+--货币选择文本列表
+CurrencyTexts = {};
+--物品品质文本列表
+QualityTexts = {};
+--物品类型文本列表
+PropTypeTexts = {};
+
+--物品类型
+PropTypeText = nil;
+--子类型 
+SubTypeText = nil;
+SubTypeText1 = nil;
+SubTypeText2 = nil;
+--品质 
+QualityText = nil;
+--等级 
+LevelText = nil;
+--货币 
+CurrencyText = nil;
+--最低价格  
+PriceLowText = nil;
+--最高价格
+PriceHighText = nil;
+--物品等级文本
+MenuLevelText = nil;
+-- 货币类型1.金币2.金币和钻石
+CurrencyShowType = 1;
+
+-- 6种品质的渐变颜色
+ItemQualityColorTop =
+{
+    [1] = "68655DE6",
+    [2] = "466F39E6",
+    [3] = "343F78E6",
+    [4] = "5E317AE6",
+    [5] = "7E5A26E6",
+    [6] = "751313E6",
+}
+
+-- 6种品质的渐变颜色
+ItemQualityColorBottom =
+{
+    [1] = "68655D00",
+    [2] = "466F3900",
+    [3] = "343F7800",
+    [4] = "5E317A00",
+    [5] = "7E5A2600",
+    [6] = "75131300",
+}
+
+-- 6种品质的点光颜色
+ItemQualityLightColor = 
+{
+    [1] = "cdcecc",
+    [2] = "94df82",
+    [3] = "81d4ff",
+    [4] = "b681ff",
+    [5] = "ffe981",
+    [6] = "ff8181",
+}
+
+--加载文字
+function LoadTexts()
+    --菜单选项文字
+    MainMenuTexts=
+    {
+        [1] = GetTextToId(7000);--"购买物品";
+        [2] = GetTextToId(7001);--"出售物品";
+    };
+    --货币选择文本列表
+    CurrencyTexts = 
+    {
+        [1] = GetTextToId(7043);--"金币";
+        [2] = GetTextToId(7044);--"红钻";
+    };
+    --物品品质文本列表
+    QualityTexts = 
+    {
+        [0] = GetTextToId(139);--"全部";
+        [1] = GetTextToId(7036);--"白色";
+        [2] = GetTextToId(7037);--"绿色";
+        [3] = GetTextToId(7038);--"蓝色";
+        [4] = GetTextToId(7039);--"紫色";
+        [5] = GetTextToId(7040);--"橙色";
+        [6] = GetTextToId(7041);--"红色";
+    };
+    --物品类型文本列表
+    PropTypeTexts  =
+    {
+        [0] = "";
+        [1] = GetTextToId(141);--"装备";
+        [2] = GetTextToId(105002);--"符石";
+        [3] = GetTextToId(105001);--"道具";
+    };
+    PropTypeText = GetTextToId(7005);   --"物品类型";
+    SubTypeText = GetTextToId(7006);    --"子类型";
+    SubTypeText1 = GetTextToId(392);
+    SubTypeText2 = GetTextToId(1569);
+    QualityText = GetTextToId(7007);    --"品质";
+    LevelText = GetTextToId(7008);      --"等级";
+    CurrencyText = GetTextToId(7009);   --"货币";
+    PriceLowText = GetTextToId(7010);   --"最低价格";
+    PriceHighText = GetTextToId(7011);  --"最高价格";
+    --物品菜单等级文本
+    MenuLevelText = GetTextToId(7042);--"级";
+    PriceCoef = CCommonTool.GetDefineInfo(6100):GetFloatContent();
+end
+
+--本功能的输出
+function Log(text)
+    Util.LuaLog(text);
+end
+
+-- 当前正出售的道具
+function GetSellItems()
+    return GetSortList(CurSellItems);
+end
+
+-- 获取搜索获取的物品列表
+function GetSearchItems()
+    return GetSortList(SearchItems);
+end
+
+-- 当前道具行情
+function GetItemMarket()
+    return GetSortList(CurItemMarket);
+end
+
+--转换排序Table
+function GetSortList(customList)
+    local sortList = {};
+    for key, var in pairs(customList) do
+        table.insert(sortList,var);
+    end
+    table.sort(sortList,function (x,y) return x.Index < y.Index end);
+    return sortList;
+end
+
+--获取主类型对应的数据信息
+function GetMainTypeInfos()
+    return G_AuctionManager:GetMainTypeInfos();
+end
+
+--获取主类型对应的子类型列表
+--@param mainType 主类型
+function GetSubTypeInfos(mainType)
+    if mainType ~= nil and mainType >= 0 then
+        return G_AuctionManager:GetSubTypeInfos(mainType);
+    end
+    return nil;
+end
+
+--获取主类型
+--@param mainIndex 主类型指针第一位从1开始
+function GetMainType(mainIndex)
+    if mainIndex ~= nil and mainIndex > 0 then
+        local mainTypeInfos = GetMainTypeInfos();
+        if mainTypeInfos ~= nil then
+            local count = mainTypeInfos.Count;
+            if count >= mainIndex then
+                return mainTypeInfos[mainIndex - 1].Type;
+            end
+        end
+    end
+    return -1;
+end
+
+--获取子类型
+--@param mainType 主类型
+--@param subIndex 子类型指针第一位从1开始
+function GetSubType(mainType,subIndex)
+    if mainType ~= nil and mainType >= 0 and subIndex ~= nil and subIndex >= 0  then
+        local subTypeInfos = GetSubTypeInfos(mainType);
+        local count = subTypeInfos.Count;
+        if count >= subIndex then
+            return subTypeInfos[subIndex - 1].Type;
+        end 
+    end
+    return -1;
+end
+--获取品质列表
+--@param mainIndex 主类型指针第一位从1开始
+--@param subIndex 子类型指针第一位从1开始
+function GetQualitys(mainIndex,subIndex)
+    if mainIndex ~= nil and mainIndex > 0 then
+       if subIndex ~= nil  and subIndex > 0  then
+            local mainType = GetMainType(mainIndex);
+            error("mainType : "..mainType);
+            local subType = GetSubType(mainType,subIndex);
+            error("subType : "..subType);
+            if mainType > -1 and subType > -1 then
+                local oldQualitys = G_AuctionManager:GetQualitys(mainType,subType)
+                local count = oldQualitys.Count;
+                if count > 0 then
+                    local qualitys = {};
+                    for i = 1, count do
+                        qualitys[i-1] = oldQualitys[i-1];
+                    end
+                    return qualitys;
+                end
+            end
+       else
+            local qualitys = {};
+            if mainIndex >=1 and mainIndex <= 10 then--策划需求如果是装备显示4、5品质
+                qualitys = 
+                {
+                    [0] = 4;
+                    [1] = 5;
+                };
+            else
+                qualitys = 
+                {
+                    [0] = 1;
+                    [1] = 2;
+                    [2] = 3;
+                    [3] = 4;
+                    [4] = 5;
+                    [5] = 6;
+                };
+            end
+            return qualitys;
+       end
+    end
+    return nil;
+end
+--获取等级列表
+--@param mainIndex 主类型指针第一位从1开始
+--@param subIndex 子类型指针第一位从1开始
+function GetLevels(mainIndex,subIndex)
+    if mainIndex ~= nil and mainIndex > 0  then
+       if subIndex ~= nil and subIndex > 0  then
+            local mainType = GetMainType(mainIndex);
+            local subType = GetSubType(mainType,subIndex);
+            if mainType > -1 and subType > -1 then
+                local oldlevels = G_AuctionManager:GetLevels(mainType,subType);
+                local count = oldlevels.Count;
+                if count > 0 then
+                    local levels = {};
+                    for i = 1, count do
+                        levels[i-1] = oldlevels[i-1];
+                    end
+                    return levels;
+                end
+            end
+       else
+            local levels = 
+            {
+                [0] = 20;
+                [1] = 30;
+                [2] = 40;
+                [3] = 50;
+                [4] = 60;
+                [5] = 70;
+                [6] = 80;
+            };
+            return levels;
+       end
+    end
+    return nil;
+end
+
+--判断是否可获取服务器数据信息
+function IsRequestItem(excelId)
+    local tagType = CCommonTool.GetTagTypeByExcelID(excelId);
+    if tagType == 1 then
+        return true;
+    end
+    if excelId >= 100000 and excelId <= 110000 then
+        return true;
+    end
+    return false;
+end
+
+-- 根据道具id获取道具或者装备的Config
+function GetItemConfigToExcelId(excelId)
+    local itemType = 0;
+    local itemConfig = nil;
+    if excelId >= 1000000 and excelId <= 3199999 then
+        -- 装备
+        itemType = 1;
+        itemConfig = CCommonTool.GetEquipInfo(excelId);
+    elseif excelId >= 10000 and excelId <= 99999 then
+        -- 道具
+        itemType = 2;
+        itemConfig = CCommonTool.GetItemInfo(excelId);
+    elseif excelId >= 100000 and excelId <= 110000 then
+        -- 宠物
+        itemType = 3;
+        itemConfig = CCommonTool.GetPetMainInfo(excelId);
+    end
+    return itemType,itemConfig;
+end
+
+--清除数据信息
+function Clear()
+    --拍卖行税率
+    AuctionTaxRate = 0.1;
+    --当前可上架的物品最大数
+    PutawayMax = 10;
+    --热销推荐道具
+    HotSellItems = {};
+    --当前正出售的道具
+    CurSellItems = {};
+    --搜索获取的物品列表
+    SearchItems = {};
+    --当前道具行情
+    CurItemMarket = {};
+
+    --菜单选项文字
+    MainMenuTexts ={};
+    --货币选择文本列表
+    CurrencyTexts = {};
+    --物品品质文本列表
+    QualityTexts = {};
+    --物品类型文本列表
+    PropTypeTexts = {};
+    --物品类型
+    PropTypeText = nil;
+    --子类型 
+    SubTypeText = nil;
+    --品质 
+    QualityText = nil;
+    --等级 
+    LevelText = nil;
+    --货币 
+    CurrencyText = nil;
+    --最低价格  
+    PriceLowText = nil;
+    --最高价格
+    PriceHighText = nil;
+    --物品等级文本
+    MenuLevelText = nil;
+end

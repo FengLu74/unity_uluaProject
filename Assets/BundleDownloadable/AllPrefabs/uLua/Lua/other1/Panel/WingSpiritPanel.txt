@@ -1,0 +1,775 @@
+﻿module("WingSpiritPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 生命lable
+local m_RightAttrNameStr = "/attr_name";
+-- 属性数值label
+local m_RightAttrValueStr = "/attr_value";
+-- 属性等级
+local m_RightAttrLvlStr = "/attr_lvl"
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseBtnStr = "Close_Button";
+-- 共鸣按钮
+local m_ResonateBtnStr = "Right/Sprite-BiaoTi";
+-- 问好按钮
+local m_ExplainBtnStr = "Button_Explain";
+-- 右侧属性条目
+local m_RightAttrStr = "Right/Total/Sprite";
+--总属性
+local m_RightTotalAttrStr = "Right/Total";
+--
+local m_LeftAttr = "Bg2_wing/ItemPict";
+--特效
+local m_LeftAttrEffects = "Bg2_wing/ItemPict/effects";
+----------------------------------------公共路径---------------------------------------
+-- 共鸣界面路径
+local m_ResonatePanelStr  = "ResonatePanel";
+-- 共鸣界面关闭按钮
+local m_ResonatePanelClose1Str = "ResonatePanel/Close_Shade";
+-- 
+local m_ResonatePanelClose2Str = "ResonatePanel/Button_Close";
+-- 共鸣界面共鸣等级要求
+local m_ResonateLabelNameStr = "/Label_Name";
+-- 共鸣界面共鸣条件
+local m_ResonateLabelCaNameStr = "/Label_Condi";
+-- 共鸣当前公共路径
+local m_ResonateCurAttrStr = "ResonatePanel/CurLevel/Attr";
+-- 
+local m_ResonateasAttrStr = "ResonatePanel/CurLevel";
+-- 共鸣下一级公共路径
+local m_ResonateNextAttrStr = "ResonatePanel/NextLevel/Attr";
+--
+local m_ResonateNextAttr2Str = "ResonatePanel/NextLevel";
+-- 
+local m_ResonateMaxAttrStr = "ResonatePanel/MaxLevel";
+-- 共鸣界面属性名称
+--local m_ResonateAttrNameStr = "/Label_Name";
+-- 共鸣界面属性值
+local m_ResonateAttrValueStr = "/Label_Value";
+--
+local m_FostPanel = "FostPanel";
+-- 化灵图片
+local m_SpiritSpriteStr = "FostPanel/Top/attr_sprite";
+-- 化灵属性名称
+local m_SpiritAttrName = "FostPanel/Top/attr_name";
+-- 化灵属性当前等级
+local m_SpiritCurAttrName = "FostPanel/Top/cur_attr";
+-- 化灵属性下一值
+local m_SpiritNextAttrName = "FostPanel/Top/next_attr";
+--
+local m_SpiritAttr_lvl = "/attr_lvl";
+--
+local m_SpiritAttr_value = "/attr_value";
+--
+local m_Spirits1ProcessStr = "FostPanel/Top/Progress";
+--进度条sprite
+local m_SpiritProcessSpr = "FostPanel/Top/Progress/Sprite1";
+-- 进度条label
+local m_SpiritProcessLab = "FostPanel/Top/Progress/process";
+--uitable组件
+local m_SpiritTableStr = "FostPanel/Mid/Items";
+--
+local m_SpiritTopLvlStr = "FostPanel/Bottom/Button_Max";
+--
+local m_SpiritLevelUpStr = "FostPanel/Bottom/Button_LevelUp";
+--
+local m_notMaxLvlItems2Str = "FostPanel/Mid/Items/Item";
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+--
+local m_ItemsUITableCompStr = "FostPanel/Mid/Items";
+-- 道具的获取方式
+local m_item2SpiritStr = "Bg2_wing";
+-- 
+local m_ItemSelectStr = "/Selected";
+
+local m_SpiritArrowStr = "FostPanel/Top/next_attr";
+
+local m_SpiritMaxLvl = "FostPanel/MaxLevel";
+
+local m_SpiritItemStr = "FostPanel/Mid";
+
+local m_SpiritButtonStr = "FostPanel/Bottom";
+--
+local m_attr_NameValueStr = "FostPanel/Top/attr_NameValue";
+--
+local m_itemNumStr2 = "/Label_Num2";
+--
+local m_UpSpriteStr = "FostPanel/Top/next_attr/Sprite2";
+--
+local m_UpAddValueStr = "FostPanel/Top/next_attr/attr_AddValue";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+ -- 化灵共鸣 object
+local m_m_ResonatePanel = nil;
+-- 化灵培养 object
+local m_SpiritAttr = nil ;
+-- 
+local m_isJumpPanelSave = false;
+--
+local m_JumpPanelParamsTable = {};
+--特效对象
+local m_effect = nil;
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+local attr_table = nil;
+local m_itemsUITableComp = nil;
+-- 化灵培养第几个道具excelid
+local m_SpiritItemIndex = -1;
+-- loca
+local m_SpiritCostIndex = -1;
+-- 化灵培养消耗道具table
+local m_SpiritItemTable = nil;
+-- 當前選中的屬性類型
+local m_CurAttrType = -1;
+--左侧5个按钮的index
+local Left_BtnIndex = -1;
+-- 当前选中的消耗品是否足够
+local m_SpiritCostEnought = false;
+-- 当前展示的是总属性，还是化灵培养,1-总属性，2-化灵属性
+local m_RightShowType = 1
+--
+local LastResonateLVL = -1
+------------------------------------BaseLua调用的同名方法------------------------------
+
+function Start()
+--    InitObjects();
+--    InitEvents();
+--    InitShow();
+--    m_panelInitAlready = true;
+end
+function OnEnable()
+--    if m_panelInitAlready then
+--        InitShow();
+--    end
+end
+function OnDisable()
+    m_RightShowType = 1;
+    m_SpiritCostIndex = -1;
+    attr_table = nil;
+    m_SpiritItemIndex = -1;
+    m_SpiritItemTable = nil;
+    m_CurAttrType = -1;
+    Left_BtnIndex = -1;
+    LastResonateLVL = -1;
+    m_SpiritCostEnought = false;
+    m_RightShowType =1;
+    LastResonateLVL = -1;
+end
+function OnDestroy()
+   m_panelObject = nil;
+   m_panelInitAlready = false;
+   m_RightShowType = 1;
+   m_SpiritCostIndex = -1;
+   attr_table = nil;
+   m_SpiritItemIndex = -1;
+   m_SpiritItemTable = nil;
+    m_CurAttrType = -1;
+    Left_BtnIndex = -1;
+    LastResonateLVL = -1;
+    m_SpiritCostEnought = false;
+    m_RightShowType =1;
+    LastResonateLVL = -1;
+end
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_WINGSPIRITPANEL);
+    -- 化灵共鸣
+    m_m_ResonatePanel = child(m_panelObject, m_ResonatePanelStr).gameObject;
+    -- 化灵培养
+    m_SpiritAttr = child(m_panelObject, m_FostPanel).gameObject;
+    --error("m_ItemsUITableCompStr   "..m_ItemsUITableCompStr);
+    m_itemsUITableComp = GetComponent(m_panelObject,m_ItemsUITableCompStr, "UITable");
+    m_effect  = child(m_panelObject,m_LeftAttrEffects).gameObject;
+end
+function InitEvents()
+    -- 关闭按钮
+    SetGameObjectEvent(m_CloseBtnStr,closeSpiritPanel,m_panelObject);
+    -- 点击共鸣按钮
+    SetGameObjectEvent(m_ResonateBtnStr,ShowResonatePanel,m_panelObject);
+    -- 点击问号按钮
+    SetGameObjectEvent(m_ExplainBtnStr,ShowExplainPanel,m_panelObject);
+     
+    SetGameObjectEvent(m_ResonatePanelClose2Str,CloseREsonatePanel,m_panelObject);
+    SetGameObjectEvent(m_ResonatePanelClose1Str,CloseREsonatePanel,m_panelObject);
+    --一键提升
+    SetGameObjectEvent(m_SpiritTopLvlStr,SpiritFosterMaxLvl,m_panelObject);
+    --化灵提升
+    SetGameObjectEvent(m_SpiritLevelUpStr,SpiritLevelUp,m_panelObject);
+    -- 关闭化灵提升面板
+    SetGameObjectEvent(m_item2SpiritStr,CloseSpiritLvlUp,m_panelObject);
+    -- 三种消耗道具
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, OnItemGetWayClick, m_panelObject);
+    end
+
+end
+
+function InitShow()
+    
+    InitLeftShow();
+    if m_isJumpPanelSave == true then
+        m_RightShowType = m_JumpPanelParamsTable[1] ;
+        Left_BtnIndex = m_JumpPanelParamsTable[2];
+        --m_SpiritCostIndex = jumpParamsTable[3]  ;
+        if m_RightShowType == 2 then  -- 显示化灵属性
+            ShowSpiritPanel(Left_BtnIndex);
+        else
+            InitRightShow();
+        end
+        
+        m_isJumpPanelSave = false;
+    else
+        --InitRightShow();
+        Left_BtnIndex = 1;
+        m_RightShowType = 2;
+        ShowSpiritPanel(Left_BtnIndex);
+    end
+    LastResonateLVL = GetResonateLvl();
+end
+
+function OnItemGetWayClick(e)
+    local selectTag = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    local m_ItemDataId = m_SpiritItemTable[selectTag].excelID;
+    GetWayPanel.Show(m_ItemDataId,ENUMPANELID.ENUM_PANEL_WINGPANEL);
+    SetCostItemIndex(e.transform.parent);
+end
+
+function InitLeftShow()
+    attr_table =  WingPanelManager.GetAttrTableByRoleID()
+    if attr_table ==nil or #attr_table <=0 then
+        error("得不到配置表SpiritTable.lua数据2");
+        return;
+    end
+    for index=1,#attr_table do  
+        SetSpriteByAtlasID(m_LeftAttr .."/" .. index, attr_table[index].ItemId, m_panelObject, true);
+        SetGameObjectEvent(m_LeftAttr .."/" ..index,OnClickLeftAttr,m_panelObject);
+    end
+end
+
+function InitRightShow()
+    m_effect:SetActive(false);
+    m_SpiritAttr:SetActive(false);
+    SetGameObjectState(m_RightTotalAttrStr,m_RightShowType==1,m_panelObject);
+    attr_table = WingPanelManager.GetAttrTableByRoleID();
+    if attr_table ==nil or #attr_table <=0 then
+        error("得不到配置表SpiritTable.lua数据1");
+        return;
+    end
+    --local player_table = WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo;
+    for index=1,#attr_table do  
+        -- 显示图标
+        SetSpriteByAtlasID(m_RightAttrStr .. index, attr_table[index].ItemId, m_panelObject, true);
+
+        SetLabelContent(m_RightAttrStr .. index ..m_RightAttrNameStr, CCommonTool.GetAttrNameByAttrID(attr_table[index].Id), m_panelObject);
+
+        local lvl,exp =  WingPanelManager.GetAttrLvlAndExpByAttrId(attr_table[index].Id);
+        local txt = string_format(GetTextToId(9184),lvl)
+        SetLabelContent(m_RightAttrStr .. index ..m_RightAttrLvlStr, txt, m_panelObject);
+        -- 属性值
+        local value = WingPanelManager.GetAttrValueAndExpTwo(attr_table[index].Id,lvl);
+
+        SetLabelContent(m_RightAttrStr .. index ..m_RightAttrValueStr, value, m_panelObject);
+    end
+end
+-- 显示化灵培养界面
+
+function ShowSpiritPanel(index)
+    SetGameObjectState(m_RightTotalAttrStr,m_RightShowType==1,m_panelObject);
+    local attr_tab = WingPanelManager.GetAttrTableByRoleID();
+    local attr_data = attr_tab[index];
+    if attr_data ==nil then
+        return;
+    end
+    
+    local m_transform = child(m_panelObject,m_LeftAttr .."/" .. index).gameObject.transform;
+
+    SetGameObjectPos(m_LeftAttrEffects,Vector3.New(m_transform.localPosition.x, m_transform.localPosition.y, 0),m_panelObject);
+
+    m_effect:SetActive(true);
+    m_CurAttrType = attr_data.Id;
+    m_SpiritAttr:SetActive(true);
+    SetGameObjectState(m_RightTotalAttrStr,false,m_panelObject);   
+    SetSpriteByAtlasID(m_SpiritSpriteStr, attr_data.ItemId, m_panelObject, true);
+    -- xxx化灵
+    local txt_Attr = CCommonTool.GetAttrNameByAttrID(attr_data.Id);
+    SetLabelContent(m_SpiritAttrName,txt_Attr, m_panelObject);
+    -- xxx值
+    local txt_Value = string_format(GetTextToId(9197),CCommonTool.GetAttrNameByAttrID(attr_data.Id));
+    SetLabelContent(m_attr_NameValueStr,txt_Value, m_panelObject);
+    -- 培养等级，拥有的经验
+
+    local attr_lvl ,attr_exp = WingPanelManager.GetAttrLvlAndExpByAttrId(attr_data.Id);
+    -- 属性值，进下一级所需经验
+    
+    local attr_value,next_exp = WingPanelManager.GetAttrValueAndExp(attr_data.Id,attr_lvl);
+    local attr_AddValues = WingPanelManager.GetAddAttrValue(attr_data.Id,attr_lvl);
+    -- 绿色增加多少值
+    if attr_AddValues>0 then
+        SetLabelContent(m_UpAddValueStr,attr_AddValues,m_panelObject);
+    end
+    if attr_lvl == 0  then
+
+        SetLabelContent(m_SpiritCurAttrName .. m_RightAttrLvlStr, string_format(GetTextToId(9184),0), m_panelObject);
+        SetLabelContent(m_SpiritCurAttrName .. m_RightAttrValueStr, 0, m_panelObject);
+
+        --
+        SetLabelContent(m_SpiritNextAttrName .. m_RightAttrLvlStr, string_format(GetTextToId(9184),1), m_panelObject);
+        SetLabelContent(m_SpiritNextAttrName .. m_RightAttrValueStr, attr_value, m_panelObject);
+
+        SetGameObjectState(m_SpiritArrowStr,true,m_panelObject);
+
+        SetGameObjectState(m_SpiritItemStr,true,m_panelObject);
+        SetGameObjectState(m_SpiritButtonStr,true,m_panelObject);
+        SetGameObjectState(m_SpiritMaxLvl,false,m_panelObject);
+
+        SetGameObjectState(m_Spirits1ProcessStr,true,m_panelObject);
+        SetGameObjectState(m_UpAddValueStr,true,m_panelObject);
+        SetGameObjectState(m_UpSpriteStr,true,m_panelObject);
+        SetGameObjectPos(m_attr_NameValueStr,Vector3.New(-510.5999, -96, 0),m_panelObject);
+        SetGameObjectPos(m_SpiritCurAttrName .. m_RightAttrValueStr,Vector3.New(-384.3, 150, 0),m_panelObject);
+    else 
+
+        SetLabelContent(m_SpiritCurAttrName .. m_RightAttrLvlStr, string_format(GetTextToId(9184),attr_lvl), m_panelObject);
+        SetLabelContent(m_SpiritCurAttrName .. m_RightAttrValueStr, attr_value, m_panelObject);
+        if attr_lvl == 100  then
+             --隐藏箭头，下级，道具，按钮等
+            SetGameObjectState(m_SpiritArrowStr,false,m_panelObject);
+            SetGameObjectState(m_SpiritItemStr,false,m_panelObject);
+            SetGameObjectState(m_SpiritButtonStr,false,m_panelObject);
+            SetGameObjectState(m_SpiritMaxLvl,true,m_panelObject);
+            SetGameObjectState(m_Spirits1ProcessStr,false,m_panelObject);
+
+            SetGameObjectState(m_UpSpriteStr,false,m_panelObject);
+            SetGameObjectState(m_UpAddValueStr,false,m_panelObject);
+            --SetGameObjectPos("Sub_StrongholdInfo", Vector3.New(-1115, 0, 0), m_PanelObject);
+            SetGameObjectPos(m_attr_NameValueStr,Vector3.New(-348.9, -96, 0),m_panelObject);
+            SetGameObjectPos(m_SpiritCurAttrName .. m_RightAttrValueStr,Vector3.New(-222.6001, 150, 0),m_panelObject);
+        else
+            SetGameObjectState(m_SpiritArrowStr,true,m_panelObject);
+
+            SetGameObjectState(m_SpiritItemStr,true,m_panelObject);
+            SetGameObjectState(m_SpiritButtonStr,true,m_panelObject);
+            SetGameObjectState(m_SpiritMaxLvl,false,m_panelObject);
+            SetGameObjectState(m_Spirits1ProcessStr,true,m_panelObject);
+            local attr_value = WingPanelManager.GetAttrValueAndExp(attr_data.Id,attr_lvl+1);
+            SetLabelContent(m_SpiritNextAttrName .. m_RightAttrLvlStr, string_format(GetTextToId(9184),attr_lvl+1), m_panelObject);
+            SetLabelContent(m_SpiritNextAttrName .. m_RightAttrValueStr, attr_value, m_panelObject);
+
+            SetGameObjectState(m_UpSpriteStr,true,m_panelObject);
+            SetGameObjectState(m_UpAddValueStr,true,m_panelObject);
+
+            SetGameObjectPos(m_attr_NameValueStr,Vector3.New(-510.5999, -96, 0),m_panelObject);
+            SetGameObjectPos(m_SpiritCurAttrName .. m_RightAttrValueStr,Vector3.New(-384.3, 150, 0),m_panelObject);
+        end
+        
+    end
+
+    --设置进度条
+    local rate = attr_exp / next_exp;
+    SetSpriteFillAmount(m_SpiritProcessSpr,rate,m_panelObject);
+    local txt = string_format(GetTextToId(9188),attr_exp,next_exp);
+    SetLabelContent(m_SpiritProcessLab,txt,m_panelObject);
+    --设置道具 
+    local item_table = WingPanelManager.GetShowItemById(attr_data.Id,attr_lvl);
+    SpiritShowItem(item_table);
+end
+
+function SetCostItemIndexTwo(excelID)
+    --local index = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    local index = -1;
+    for Index=1,#m_SpiritItemTable do
+        if m_SpiritItemTable[Index].excelID == excelID then
+            index = Index;
+            break;
+        end
+    end
+    if index<=0 then
+        error("can not find ！！！");
+        return;
+    else
+        m_SpiritCostIndex = index
+    end
+    for Index=1,#m_SpiritItemTable do
+        if Index == index then
+            SetGameObjectState(m_notMaxLvlItems2Str .. Index..m_ItemSelectStr,true,m_panelObject);
+        else
+            SetGameObjectState(m_notMaxLvlItems2Str .. Index..m_ItemSelectStr,false,m_panelObject);
+        end
+    end    
+
+    m_SpiritItemIndex = m_SpiritItemTable[index].excelID;
+    --error("m_SpiritItemIndex-->:"..m_SpiritItemIndex);
+    local hasNum = WingPanelManager.GetTotalNumByUnBindId(m_SpiritItemIndex);
+    --local hasNum = --G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_SpiritItemIndex);
+
+    if hasNum >= m_SpiritItemTable[index].Num then
+        m_SpiritCostEnought = true;
+    else
+        m_SpiritCostEnought = false;
+    end
+end
+
+-- 需要道具的展示
+function SpiritShowItem(itemTable)
+    if itemTable== nil then
+        return;
+    end
+    m_SpiritItemTable = itemTable;
+    for Index = 1, #itemTable do
+        SetSpriteApptitudeV04(m_notMaxLvlItems2Str .. Index .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_notMaxLvlItems2Str .. Index .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteByAtlasID(m_notMaxLvlItems2Str .. Index .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(itemTable[Index].excelID), m_panelObject, true);
+        
+        if itemTable[Index].Type == 1 then
+            SetLabelContent(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, itemTable[Index].Num, m_panelObject);
+            SetGameObjectState(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, false, m_panelObject);
+            if G_UserInfo.BindCoin < itemTable[Index].Num then
+                SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "D83232", m_panelObject);
+            else
+                SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+            end
+        elseif itemTable[Index].Type == 0 then
+            local hasNum = WingPanelManager.GetTotalNumByUnBindId(itemTable[Index].excelID)
+
+            --add 经验
+            local exp_add = string_format(GetTextToId(9199),itemTable[Index].Exp);
+            SetLabelContent(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, exp_add, m_panelObject);
+            -- xxx个
+            
+            if hasNum >= itemTable[Index].Num then
+                --SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+                SetGameObjectState(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, false, m_panelObject);
+                itemTable[Index].IsEnough = 1;
+                SetLabelContent(m_notMaxLvlItems2Str .. Index .. m_itemNumStr2, hasNum, m_panelObject);
+            else
+                --SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                SetGameObjectState(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, true, m_panelObject);
+                itemTable[Index].IsEnough = -1;
+                SetLabelContent(m_notMaxLvlItems2Str .. Index .. m_itemNumStr2, "", m_panelObject);
+            end
+            --SetGameObjectEvent(m_notMaxLvlItems2Str .. Index,SetCostItemIndex,m_panelObject);
+            SetItemToolTipsEventTwo(m_panelObject, m_notMaxLvlItems2Str .. Index, ENUMPANELID.ENUM_PANEL_WINGSPIRITPANEL, false, itemTable[Index].excelID,nil,nil,SetCostItemIndexTwo);
+        end
+        SetGameObjectState(m_notMaxLvlItems2Str .. Index..m_ItemSelectStr,false,m_panelObject);
+        
+        --SetItemToolTipsEvent(m_panelObject, m_notMaxLvlItems2Str .. Index, ENUMPANELID.ENUM_PANEL_WINGSPIRITPANEL, false, itemTable[Index].excelID);
+    end
+
+    m_SpiritCostIndex = GetSuitCostItem(itemTable);
+    --error("m_SpiritCostIndex:--> "..m_SpiritCostIndex);
+    SetGameObjectState(m_notMaxLvlItems2Str .. m_SpiritCostIndex..m_ItemSelectStr,true,m_panelObject);
+    m_SpiritItemIndex = itemTable[m_SpiritCostIndex].excelID;
+    SetGameObjectState(m_notMaxLvlItems2Str .. m_SpiritCostIndex..m_ItemSelectStr, true, m_panelObject);
+    local hasNum = WingPanelManager.GetTotalNumByUnBindId(itemTable[m_SpiritCostIndex].excelID)
+    --local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable[m_SpiritCostIndex].excelID);
+    if hasNum >= itemTable[m_SpiritCostIndex].Num then
+        m_SpiritCostEnought = true;
+    else
+        m_SpiritCostEnought = false;
+    end
+
+    for Index = #itemTable + 1, 3 do
+        SetGameObjectState(m_notMaxLvlItems2Str .. Index, false, m_panelObject);
+    end
+    m_itemsUITableComp:Reposition();
+
+end
+-- 取得品质最低的道具
+function GetSuitCostItem(items)
+    local Index = -1;
+    for index=1,#items do
+        if items[index].IsEnough == 1 then
+            Index = index;
+            break;
+        end
+    end
+    return (Index>0 and Index) or 1;
+end
+function SetCostItemIndex(e)
+    local index = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    m_SpiritCostIndex = index
+    for Index=1,#m_SpiritItemTable do
+        if Index == index then
+            SetGameObjectState(m_notMaxLvlItems2Str .. Index..m_ItemSelectStr,true,m_panelObject);
+        else
+            SetGameObjectState(m_notMaxLvlItems2Str .. Index..m_ItemSelectStr,false,m_panelObject);
+        end
+    end    
+
+    m_SpiritItemIndex = m_SpiritItemTable[index].excelID;
+    --error("m_SpiritItemIndex-->:"..m_SpiritItemIndex);
+    local hasNum = WingPanelManager.GetTotalNumByUnBindId(m_SpiritItemIndex);
+    --local hasNum = --G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_SpiritItemIndex);
+
+    if hasNum >= m_SpiritItemTable[index].Num then
+        m_SpiritCostEnought = true;
+    else
+        m_SpiritCostEnought = false;
+    end
+end
+
+-- 得到共鸣等级
+local SPIRIT_MAX = 5
+function GetResonateLvl()
+    local spirit_table = WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo;
+    if spirit_table==nil or #spirit_table <=0 then
+        return 0;
+    end
+    --error("激活的haul灵长度:--> "..#spirit_table);
+    local lvl_table = {}
+    for index=1,SPIRIT_MAX do
+        if spirit_table[index] ~= nil then
+            
+            table.insert(lvl_table,spirit_table[index].attrLvl);
+        else
+            table.insert(lvl_table,0);
+        end
+        --error("spirit_table[index]:"..lvl_table[index]);
+    end
+
+    table.sort( lvl_table, function (a,b)
+        return a<b;
+    end )
+    local number = lvl_table[1]/SPIRIT_MAX;
+    --error("number-->"..number);
+    return  getIntPart(number);
+end
+-- 取整
+function getIntPart(x)
+    if x<= 0 then
+        return math.ceil(x)
+    end
+    if math.ceil(x) == x then
+        x = math.ceil(x)
+    else
+        x = math.ceil(x)-1
+    end
+
+
+    return x
+end
+-----------------------------------------------------------点击事件------------------------------------------------------------------
+-- 点击化灵培养按钮
+function OnClickLeftAttr(e)
+    --error("点击了左侧的："..e.name);
+    Left_BtnIndex = tonumber(e.name);
+    if attr_table[Left_BtnIndex]~=nil then
+        m_RightShowType = 2;
+        ShowSpiritPanel(Left_BtnIndex);
+    end
+end
+
+-- 显示提示面板
+function ShowExplainPanel()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_ROLE,6);
+    --createPanel(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL);
+     -- 说明标题，说明文本（TXT_id）
+    --SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_ROLE, 1);
+end
+-- 显示共鸣界面
+-- 共鸣最大等级
+local RESONATE_MAX = 20;
+function ShowResonatePanel()
+    m_m_ResonatePanel:SetActive(true);
+    --刷新数据
+    local resonate_Lvl = GetResonateLvl();
+    --error("daresonate_Lvld:"..resonate_Lvl);
+    local cur_data,next_data = WingPanelManager.GetSpiritInfoByLvl(resonate_Lvl);
+    --error("cur_data.Id :"..cur_data.Id.." next_data.Id "..next_data.Id);
+    if resonate_Lvl == 20 then
+        SetGameObjectState(m_ResonateNextAttr2Str,false,m_panelObject);
+        SetGameObjectState(m_ResonateMaxAttrStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_ResonateNextAttr2Str,true,m_panelObject);
+        SetGameObjectState(m_ResonateMaxAttrStr,false,m_panelObject);
+    end
+
+    SetLabelContent(m_ResonateasAttrStr..m_ResonateLabelNameStr,string_format(GetTextToId(9186),cur_data.ID),m_panelObject);
+    SetLabelContent(m_ResonateasAttrStr..m_ResonateLabelCaNameStr,string_format(GetTextToId(9187),cur_data.ID),m_panelObject);
+    local color3 = (resonate_Lvl<cur_data.ID and "807F7E") or "DDEEFF";
+    SetLabelColor(m_ResonateasAttrStr ..m_ResonateLabelCaNameStr, color3, m_panelObject);
+    SetLabelColor(m_ResonateasAttrStr ..m_ResonateLabelNameStr, color3, m_panelObject);
+
+    for index=1,4 do
+        local name,value = GetNameAndValueByIndex(index,cur_data);
+        SetLabelContent(m_ResonateCurAttrStr..index..m_ResonateLabelNameStr,name,m_panelObject);
+        SetLabelContent(m_ResonateCurAttrStr..index..m_ResonateAttrValueStr,value,m_panelObject);
+        local color1 = (resonate_Lvl<cur_data.ID and "807F7E") or "FFFCD1";
+        local color2 = (resonate_Lvl<cur_data.ID and "807F7E") or "89C05A";
+        SetLabelColor(m_ResonateCurAttrStr .. index .. m_ResonateLabelNameStr, color1, m_panelObject);
+        SetLabelColor(m_ResonateCurAttrStr .. index .. m_ResonateAttrValueStr, color2, m_panelObject);
+
+    end
+
+    if next_data~=nil then
+        for index=1,4 do
+            local name,value = GetNameAndValueByIndex(index,next_data);
+            SetLabelContent(m_ResonateNextAttrStr..index..m_ResonateLabelNameStr,name,m_panelObject);
+            SetLabelContent(m_ResonateNextAttrStr..index..m_ResonateAttrValueStr,value,m_panelObject);
+        end
+
+        SetLabelContent(m_ResonateNextAttr2Str..m_ResonateLabelNameStr,string_format(GetTextToId(9186),next_data.ID),m_panelObject);
+        SetLabelContent(m_ResonateNextAttr2Str..m_ResonateLabelCaNameStr,string_format(GetTextToId(9187),next_data.ID),m_panelObject);
+    end
+
+end
+
+function GetNameAndValueByIndex(index,data)
+    if index == 1 then
+        return CCommonTool.GetAttrNameByAttrID(data.Attr1),data.AttrValue1;
+    elseif index ==2 then
+        return CCommonTool.GetAttrNameByAttrID(data.Attr2),data.AttrValue2;
+    elseif index ==3 then
+        return CCommonTool.GetAttrNameByAttrID(data.Attr3),data.AttrValue3;
+    elseif index ==4 then
+        return CCommonTool.GetAttrNameByAttrID(data.Attr4),data.AttrValue4;
+    end
+end
+
+-- 化灵一键提升
+function SpiritFosterMaxLvl()
+    if m_SpiritCostEnought == false then
+        ShowSystemFlowTips(9606);
+        return;
+    end
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_WING_CHEMICALSPIRIT_PENGYANG );
+    buffer:WriteInt(m_CurAttrType);
+    buffer:WriteInt(m_SpiritItemIndex);
+    local num = WingPanelManager.GetTotalNumByUnBindId(m_SpiritItemIndex)
+    --local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_SpiritItemIndex);
+    buffer:WriteInt(num);
+    --error("m_CurAttrType->"..m_CurAttrType.." m_SpiritItemIndex-->"..m_SpiritItemIndex.."  num->"..num);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+-- 化灵提升1次
+function SpiritLevelUp()
+    if m_SpiritCostEnought == false then
+        ShowSystemFlowTips(9606);
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_WING_CHEMICALSPIRIT_PENGYANG );
+    buffer:WriteInt(m_CurAttrType);
+    buffer:WriteInt(m_SpiritItemIndex);
+    buffer:WriteInt(1);
+    --error("m_CurAttrType->"..m_CurAttrType.." m_SpiritItemIndex-->"..m_SpiritItemIndex);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+-- 关闭化灵培养界面
+function CloseSpiritLvlUp()
+    if m_RightShowType ==1 then
+        return;
+    end
+    m_RightShowType =1;
+    m_SpiritAttr:SetActive(false);
+    InitRightShow();
+    -- 隐藏特效
+    m_effect:SetActive(false);
+    m_SpiritItemIndex = -1;
+end
+-- 关闭共鸣界面
+function CloseREsonatePanel()
+    m_m_ResonatePanel:SetActive(false);
+    --error("关闭共鸣界面");
+end
+-- 关闭神翼化灵界面
+function closeSpiritPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_WINGSPIRITPANEL);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_RightShowType;  --右侧显示的类型
+    jumpParamsTable[2] = Left_BtnIndex;  -- 当前选中左边的第几个按钮
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+    
+
+
+-------------------------------------供外部调用刷新--------------------------------------------------------------
+
+-- 刷新化灵培养界面和化灵右侧界面
+function RefreshSpiritCostAndRight()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGSPIRITPANEL) == 1 then
+        error("m_RightShowType-->"..m_RightShowType);
+        if m_RightShowType== 2 then
+            ShowSpiritPanel(Left_BtnIndex);
+        else
+            InitRightShow();   
+        end
+    end
+    -- 判定是否比之前提升了
+    local curlvl = GetResonateLvl();
+    if curlvl>LastResonateLVL then 
+        --恭喜你  共鸣等级提升了
+        LastResonateLVL = curlvl;
+        ShowSystemFlowTips(9610,nil, {curlvl});
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.GOD_WING,WingPanel.IsShowRedHintRide());
+end
+
+-- 判定是否有道具可以培养
+function CanFonsterSpirit()
+    local spirit_table = WingPanelManager.GetAttrTableByRoleID();
+    if spirit_table==nil or #spirit_table<=0 then
+        return false;
+    end
+    -- 取其中一个判定即可
+    local need_Items = WingPanelManager.GetShowItemById(spirit_table[1].Id,0);
+
+    if need_Items==nil or #need_Items<=0 then
+        return false;
+    end
+    local canShow = false;
+    for index=1,#need_Items do
+
+        local hasNum = WingPanelManager.GetTotalNumByUnBindId(need_Items[index].excelID);--G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, need_Items[index].excelID);
+        if hasNum >= need_Items[index].Num then
+            canShow = true;
+        end
+    end
+-- 判定是否都到达满级了
+    if canShow ==true then
+        local isMax = true;
+        for index=1,#spirit_table do
+            local attr_id = spirit_table[index].Id;
+            local lvl,exp = WingPanelManager.GetAttrLvlAndExpByAttrId(attr_id);
+            if lvl <100 then 
+                isMax = false;
+
+                break;
+            end
+        end
+
+        if isMax == true then
+            canShow = false;
+        end
+
+    end
+    return canShow;
+
+end

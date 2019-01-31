@@ -1,0 +1,873 @@
+﻿module("AuctionSell", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 上架物品数量显示
+local m_SellPropNumLabelStr = "Right/PutawayPropInfo/Store/Num";
+-- 上架货币花费数量
+local m_PutawayPopoverCurrencyLabelStr = "Popover/Putaway/Left/Currency/Label";
+-- 上架物品数量
+local m_PutawayPopoverNumLabelStr = "Popover/Putaway/Left/Num/Button1/Label";
+-- 上架单价
+local m_PutawayPopoverSinglePriceLabelStr = "Popover/Putaway/Left/SinglePrice/Label";
+-- 上架总价
+local m_PutawayPopoverTotalPriceLabelStr = "Popover/Putaway/Left/TotalPrice/Label";
+-- 上架税率
+local m_PutawayPopoverRateLabelStr = "Popover/Putaway/Left/Rate/Value";
+-- 下架剩余时间
+local m_SoldOutPopoverRestTimeLabelStr = "Popover/SoldOut/RestTime/Time";
+-- 上架费
+local m_PutawayPopoverCostLabelStr = "Popover/Putaway/Left/Cost/Value";
+-- 下架货币类型
+local m_SoldOutPopoverCurrencyLabelStr = "Popover/SoldOut/Currency/Label";
+-- 下架物品数量
+local m_SoldOutPopoverNumLabelStr = "Popover/SoldOut/Num/Label";
+-- 上架后没有获取到最低价物品
+local m_PutawayPopoverNotLowPriceListLabelStr = "Popover/Putaway/Right/Label";
+-- 下架单价
+local m_SoldOutPopoverSinglePriceLabelStr = "Popover/SoldOut/SinglePrice/Label";
+-- 下架总价
+local m_SoldOutPopoverTotalPriceLabelStr = "Popover/SoldOut/TotalPrice/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 上架关闭按钮
+local m_PutawayCloseButtonStr = "Popover/Putaway/Mask";
+local m_PutawayPopoverCloseButtonStr = "Popover/Putaway/Left/Close";
+-- 上架货币按钮
+local m_PutawayPopoverCurrencyButtonStr = "Popover/Putaway/Left/Currency";
+-- 上架物品数量
+local m_PutawayPopoverNumButtonStr = "Popover/Putaway/Left/Num/Button1";
+-- 上架物品最大数量
+local m_PutawayPopoverBigNumButtonStr = "Popover/Putaway/Left/Num/Button2";
+-- 上架单价
+local m_PutawayPopoverSinglePriceButtonStr = "Popover/Putaway/Left/SinglePrice";
+-- 上架总价
+local m_PutawayPopoverTotalPriceButtonStr = "Popover/Putaway/Left/TotalPrice";
+-- 上架按钮
+local m_PutawayPopoverPutawayButtonStr = "Popover/Putaway/Left/Button";
+-- 下架Item点击事件
+local m_SoldOutItemButtonStr = "Popover/SoldOut/Head/Item";
+-- 下架关闭按钮
+local m_SoldOutCloseButtonStr = "Popover/SoldOut/Mask";
+local m_SoldOutPopoverCloseButtonStr = "Popover/SoldOut/Close";
+-- 下架按钮
+local m_SoldOutPopoverSoldOutButtonStr = "Popover/SoldOut/Button";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 上架总价图片
+local m_PutawayPopoverTotalPriceIconStr = "Popover/Putaway/Left/TotalPrice/Icon/Sprite";
+-- 上架花费图片
+local m_PutawayPopoverCostIconStr = "Popover/Putaway/Left/Cost/Icon/Sprite";
+-- 下架总价Icon
+local m_SoldOutPopoverTotalPriceIconStr = "Popover/SoldOut/TotalPrice/Icon/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+-- 出售物品
+local m_SellPropLeftViewStr = "Left/SellPropInfo";
+local m_SellPropRightViewStr = "Right/PutawayPropInfo";
+-- 上架弹出框
+local m_PutawayPopoverStr = "Popover/Putaway";
+-- 上架物品
+local m_PutawayPopoverItemStr = "Popover/Putaway/Left/Head";
+-- 上架物品列表
+local m_PutawayListStr = "Right/PutawayPropInfo/Scroll View/Grid";
+-- 下架弹出框
+local m_SoldOutPopoverStr = "Popover/SoldOut";
+-- 同最低价物品列表
+local m_PutawayPopoverLowPriceListStr = "Popover/Putaway/Right/Scroll View/Grid";
+-- 下架物品
+local m_SoldOutPopoverItemStr = "Popover/SoldOut/Head";
+-- 出售物品列表
+local m_SellPropLeftListStr = "Left/SellPropInfo/Scroll View/Grid";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 左侧出售物品listVie
+local m_SellPropLeftView = nil;
+-- 右侧出售物品listVie
+local m_SellPropRightView = nil;
+-- 出售物品列表
+local m_SellPropLeftList = nil;
+-- 上架物品数量显示
+local m_SellPropNumLabel = nil;
+-- 上架弹出框
+local m_PutawayPopover = nil;
+-- 上架物品
+local m_PutawayPopoverItem = nil;
+-- 上架物品数量
+local m_PutawayPopoverNumLabel = nil;
+local m_PutawayPopoverNum = 1;
+-- 上架单价
+local m_PutawayPopoverSinglePriceLabel = nil;
+local m_PutawayPopoverSinglePrice = 0;
+-- 上架物品列表
+local m_PutawayList = nil;
+-- 上架费
+local m_PutawayPopoverCostLabel = nil;
+-- 上架总价
+local m_PutawayPopoverTotalPriceLabel = nil;
+local m_PutawayPopoverTotalPrice = 0;
+-- 上架税率
+local m_PutawayPopoverRateLabel = nil;
+-- 同最低价物品列表
+local m_PutawayPopoverLowPriceList = nil;
+-- 下架弹出框
+local m_SoldOutPopover = nil;
+-- 下架物品数量
+local m_SoldOutPopoverNumLabel = nil;
+-- 下架物品
+local m_SoldOutPopoverItem = nil;
+-- 下架单价
+local m_SoldOutPopoverSinglePriceLabel = nil;
+-- 下架总价
+local m_SoldOutPopoverTotalPriceLabel = nil;
+-- 下架剩余时间
+local m_SoldOutPopoverRestTimeLabel = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法-----------------------------
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects(object)
+    m_panelObject = object;
+    -- 出售物品面板
+    m_SellPropLeftView = child(m_panelObject, m_SellPropLeftViewStr).gameObject;
+    m_SellPropRightView = child(m_panelObject, m_SellPropRightViewStr).gameObject;
+
+    -- 可出售物品列表
+    m_SellPropLeftList = GetComponent(m_panelObject, m_SellPropLeftListStr, "UIListView");
+    -- 上架物品数量显示
+    m_SellPropNumLabel = GetComponent(m_panelObject, m_SellPropNumLabelStr, "UILabel");
+    -- 出售物品弹出框
+    m_PutawayPopover = child(m_panelObject, m_PutawayPopoverStr).gameObject;
+    -- 上架物品
+    m_PutawayPopoverItem = child(m_panelObject, m_PutawayPopoverItemStr).gameObject;
+    -- 上架物品列表
+    m_PutawayList = GetComponent(m_panelObject, m_PutawayListStr, "UIListView");
+    -- 上架弹出框数量
+    m_PutawayPopoverNumLabel = GetComponent(m_panelObject, m_PutawayPopoverNumLabelStr, "UILabel");
+    -- 上架弹出框单价
+    m_PutawayPopoverSinglePriceLabel = GetComponent(m_panelObject, m_PutawayPopoverSinglePriceLabelStr, "UILabel");
+    -- 上架弹出框总价
+    m_PutawayPopoverTotalPriceLabel = GetComponent(m_panelObject, m_PutawayPopoverTotalPriceLabelStr, "UILabel");
+    -- 上架费
+    m_PutawayPopoverCostLabel = GetComponent(m_panelObject, m_PutawayPopoverCostLabelStr, "UILabel");
+    -- 上架税率
+    m_PutawayPopoverRateLabel = GetComponent(m_panelObject, m_PutawayPopoverRateLabelStr, "UILabel");
+    -- 同最低价物品列表
+    m_PutawayPopoverLowPriceList = GetComponent(m_panelObject, m_PutawayPopoverLowPriceListStr, "UIListView");
+    -- 下架弹出框
+    m_SoldOutPopover = child(m_panelObject, m_SoldOutPopoverStr).gameObject;
+    -- 下架物品
+    m_SoldOutPopoverItem = child(m_panelObject, m_SoldOutPopoverItemStr).gameObject;
+    -- 下架数量
+    m_SoldOutPopoverNumLabel = GetComponent(m_panelObject, m_SoldOutPopoverNumLabelStr, "UILabel");
+    -- 下架单价
+    m_SoldOutPopoverSinglePriceLabel = GetComponent(m_panelObject, m_SoldOutPopoverSinglePriceLabelStr, "UILabel");
+    -- 下架总价
+    m_SoldOutPopoverTotalPriceLabel = GetComponent(m_panelObject, m_SoldOutPopoverTotalPriceLabelStr, "UILabel");
+    -- 下架时间
+    m_SoldOutPopoverRestTimeLabel = GetComponent(m_panelObject, m_SoldOutPopoverRestTimeLabelStr, "UILabel");
+end
+
+-- 初始化事件信息
+function InitEvents()
+    -- 出售物品信息
+    m_SellPropLeftList:SetInitCallback(OnSellPropLeftListInit);
+    m_SellPropLeftList:SetClickCallback(OnSellPropLeftListClick);
+    -- 上架物品信息
+    m_PutawayList:SetInitCallback(OnPutawayListInit);
+    m_PutawayList:SetClickCallback(OnPutawayClick);
+    m_PutawayList:SetDownScrollCallback(OnPutawayDownScroll);
+    -- 同最低价物品列表
+    m_PutawayPopoverLowPriceList:SetInitCallback(OnPutawayPopoverLowPriceListInit);
+    m_PutawayPopoverLowPriceList:SetClickCallback(OnPutawayPopoverLowPriceListClick);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 上架弹出框关闭事件
+    SetGameObjectEvent(m_PutawayCloseButtonStr, OnPutawayPopoverCloseButtonClick, m_panelObject);
+    SetGameObjectEvent(m_PutawayPopoverCloseButtonStr, OnPutawayPopoverCloseButtonClick, m_panelObject);
+    if AuctionManager.CurrencyShowType == 2 then
+        -- 上架弹出框货币事件
+        SetGameObjectEvent(m_PutawayPopoverCurrencyButtonStr, OnPutawayPopoverCurrencyButtonClick, m_panelObject);
+    end
+    -- 上架弹出框数量事件
+    SetGameObjectEvent(m_PutawayPopoverNumButtonStr, OnPutawayPopoverNumButtonClick, m_panelObject);
+    -- 上架弹出框数量事件
+    SetGameObjectEvent(m_PutawayPopoverBigNumButtonStr, OnPutawayPopoverBigNumButtonClick, m_panelObject);
+    -- 上架弹出框单价事件
+    SetGameObjectEvent(m_PutawayPopoverSinglePriceButtonStr, OnPutawayPopoverSinglePriceButtonClick, m_panelObject);
+    -- 上架弹出框总价事件
+    SetGameObjectEvent(m_PutawayPopoverTotalPriceButtonStr, OnPutawayPopoverTotalPriceButtonClick, m_panelObject);
+    -- 上架弹出框上架事件
+    SetGameObjectEvent(m_PutawayPopoverPutawayButtonStr, OnPutawayPopoverPutawayButtonClick, m_panelObject);
+
+    -- 下架Item点击事件
+    SetGameObjectEvent(m_SoldOutItemButtonStr, OnSoldOutItemButtonClick, m_panelObject);
+    -- 下架弹出框事件
+    SetGameObjectEvent(m_SoldOutPopoverCloseButtonStr, OnSoldOutPopoverCloseButtonClick, m_panelObject);
+    SetGameObjectEvent(m_SoldOutCloseButtonStr, OnSoldOutPopoverCloseButtonClick, m_panelObject);
+    -- 下架弹出框下架按钮
+    SetGameObjectEvent(m_SoldOutPopoverSoldOutButtonStr, OnSoldOutPopoverSoldOutButtonClick, m_panelObject);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    -- 初始化可出售物品列表
+    InitSellPropList();
+    -- 初始化上架物品列表
+    InitPutawayList();
+end
+
+-- 显示购买界面
+function Show()
+    m_SellPropLeftView:SetActive(true);
+    m_SellPropRightView:SetActive(true);
+end
+
+-- 关闭购买界面
+function Hide()
+    m_SellPropLeftView:SetActive(false);
+    m_SellPropRightView:SetActive(false);
+end
+
+-- 初始化可出售物品列表
+function InitSellPropList()
+    m_AllAuctionItems = G_BagMng:GetCanAuctionItemInBag();
+    m_SellPropLeftList:RemoveAll();
+    for index = 1, m_AllAuctionItems.count do
+        local info = m_AllAuctionItems[index - 1];
+        local data =
+        {
+            MoneyType = 1;
+            Info = info;
+        };
+        m_SellPropLeftList:AddData(data);
+    end
+end
+-- 设置出售物品列表显示信息
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnSellPropLeftListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.Info.ExcelID;
+    local num = data.Info.ItemNum;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 21, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    SetGameObjectState("Prop/Sprite_Suit", suitId > 0, item);
+    --    local isAuction = data.Info:GetAuctionValue();
+    --    SetGameObjectState("Prop/Sprite_Auction", isAuction > 0, item);
+    local starItemLevel = data.Info.StarItemLevel;
+    SetGameObjectState("Prop/Label-StarNum", false, item);
+    if starItemLevel > 0 then
+        SetGameObjectState("Prop/Label-StarNum", true, item);
+        SetLabelContent("Prop/Label-StarNum/Label", string_format("+{0}", starItemLevel), item);
+        if starItemLevel >= 10 then
+            SetGameObjectPos("Prop/Sprite_Suit", Vector3.New(7, -48, 0), item);
+            SetGameObjectPos("Prop/Label-StarNum", Vector3.New(35, -47, 0), item);
+        else
+            SetGameObjectPos("Prop/Sprite_Suit", Vector3.New(19, -48, 0), item);
+            SetGameObjectPos("Prop/Label-StarNum", Vector3.New(35, -47, 0), item);
+        end
+    end
+end
+local m_SellPropData = nil;
+-- 设置出售物品点击事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnSellPropLeftListClick(listView, cell, go)
+    AuctionManager.Log("OnSellProLeftpListClick=============" .. cell.dataIndex);
+    local data = listView:GetData(cell.dataIndex);
+    SetSellPropData(data);
+end
+-- 设置出售物品信息
+function SetSellPropData(data)
+    ClearPutawayData();
+    m_SellPropData = data;
+    local price = 0;
+    AuctionManager.Log("data.MoneyType : " .. data.MoneyType);
+    SetLabelContent(m_PutawayPopoverCurrencyLabelStr, AuctionManager.CurrencyTexts[data.MoneyType], m_panelObject);
+    if data.MoneyType == 1 then
+        price = data.Info:GetCoin();
+        -- 非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        SetSpriteByAtlasID(m_PutawayPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+    else
+        price = data.Info:GetDiamond();
+        -- 非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        SetSpriteByAtlasID(m_PutawayPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+    end
+    local excelId = data.Info.ExcelID;
+    local tagType = CCommonTool.GetTagTypeByExcelID(excelId);
+    -- 判断是否是装备
+    --    if tagType == 1 then
+    --        m_PutawayPopoverSinglePrice = 0;
+    --        SetLabelContentAndColor(m_PutawayPopoverSinglePriceLabelStr, GetTextToId(7017), "828283");
+    --    else
+    m_PutawayPopoverSinglePrice = price * AuctionManager.PriceCoef;
+    SetPutawayPopoverSinglePrice();
+    --    end
+    UpdatePutawayData();
+    SetSellPropInfo(m_PutawayPopoverItem, data.Info);
+    SetPutawayPopover(true);
+    m_PutawayPopoverLowPriceList:RemoveAll();
+    AuctionProtocol.RequestEditPrice(data.Info.ExcelID);
+end
+-- 设置上架物品单价
+function SetPutawayPopoverSinglePrice()
+    SetLabelContentAndColor(m_PutawayPopoverSinglePriceLabelStr, m_PutawayPopoverSinglePrice, "FFFFFF");
+end
+
+-- 清除数据
+function ClearPutawayData()
+    m_PutawayPopoverNum = 1;
+    m_PutawayPopoverNumLabel.text = m_PutawayPopoverNum;
+    m_PutawayPopoverSinglePrice = 0;
+    SetPutawayPopoverSinglePrice();
+    m_PutawayPopoverTotalPrice = 0;
+end
+-- 设置上架状态
+-- @param active 状态
+function SetPutawayPopover(active)
+    m_PutawayPopover:SetActive(active);
+end
+-- 刷新出售列表
+function RefreshSellPropList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 1 then
+        InitSellPropList();
+    end
+end
+-- 同物品最低价列表
+function InitLowPriceList()
+    SetGameObjectState(m_PutawayPopoverNotLowPriceListLabelStr, false, m_panelObject);
+    local itemMarket = AuctionManager.GetItemMarket();
+    local length = GetTableLength(itemMarket);
+    m_PutawayPopoverLowPriceList:RemoveAll();
+    if length > 0 then
+        for key, var in pairs(itemMarket) do
+            m_PutawayPopoverLowPriceList:AddData(var);
+        end
+        m_PutawayPopoverLowPriceList:LookAt(0, true);
+    else
+        SetGameObjectState(m_PutawayPopoverNotLowPriceListLabelStr, true, m_panelObject);
+    end
+end
+-- 设置上架弹出框最低价列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnPutawayPopoverLowPriceListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ExcelId;
+    local num = data.Num;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, true, 51, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local moneyType = data.MoneyType;
+    if moneyType == 1 then
+        -- 非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        SetSpriteByAtlasID("Price/Icon", itemInfo.ImageSmallID, item);
+    else
+        -- 非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        SetSpriteByAtlasID("Price/Icon", itemInfo.ImageSmallID, item);
+    end
+    local price = data.Price;
+    SetLabelContent("Price/Num", price, item);
+end
+-- 设置上架弹出框最低价列表点击事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnPutawayPopoverLowPriceListClick(listView, cell, go)
+    AuctionManager.Log("OnPutawayPopoverLowPriceListClick");
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Prop" then
+        local excelId = data.ExcelId;
+        local isRequest = AuctionManager.IsRequestItem(excelId);
+        if isRequest == true then
+            AuctionProtocol.RequestItemInfo(data.GlobalId);
+        else
+            OpenPropToolTips(excelId, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        end
+    end
+end
+-- 刷新物品最低价列表
+function RefreshLowPriceList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 1 then
+        InitLowPriceList();
+    end
+end
+-- 刷新上架数据信息
+function UpdatePutawayData()
+    m_PutawayPopoverTotalPrice = m_PutawayPopoverSinglePrice * m_PutawayPopoverNum;
+    SetLabelContentAndColor(m_PutawayPopoverTotalPriceLabelStr, m_PutawayPopoverTotalPrice, "FFFFFF");
+    AuctionManager.Log("m_PutawayPopoverTotalPrice : " .. m_PutawayPopoverTotalPrice);
+    AuctionManager.Log("AuctionManager.AuctionTaxRate : " .. AuctionManager.AuctionTaxRate);
+    local cost = 0;
+    if m_SellPropData.MoneyType == 1 then
+        cost = math.floor(m_PutawayPopoverTotalPrice * 0.1);
+    else
+        cost = math.floor(m_PutawayPopoverTotalPrice * 200);
+    end
+    m_PutawayPopoverCostLabel.text = cost;
+    m_PutawayPopoverRateLabel.text = math.floor(AuctionManager.AuctionTaxRate * 100) .. "%";
+end
+-- 设置item显示信息
+-- @param item 需要设置的对象
+-- @param data 数据信息
+function SetSellPropInfo(item, data)
+    SetItemToolTipsEvent(item, "Item", ENUMPANELID.ENUM_PANEL_AUCTIONPANEL, true, data, false, false);
+    local excelId = data.ExcelID;
+    AuctionManager.Log("SetSellPropInfo excelId:" .. excelId);
+    local qualityId = CCommonTool.GetAptitudeIDByExcelID(excelId);
+    AuctionManager.Log("SetSellPropInfo qualityId:" .. qualityId);
+    local qualityColorTop = AuctionManager.ItemQualityColorTop[qualityId];
+    local qualityColorBottom = AuctionManager.ItemQualityColorBottom[qualityId];
+    SetSpriteGradientColor("Sprite_ItemQuality", qualityColorTop, qualityColorBottom, item);
+    local qualityLightColor = AuctionManager.ItemQualityLightColor[qualityId];
+    SetSpriteColor("Sprite_Light", qualityLightColor, item);
+    SetItemShowByExcelIDV04(item, "Item", excelId, num, true, 41, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    AuctionManager.Log("SetSellPropInfo suitId:" .. suitId);
+    SetGameObjectState("Item/Sprite_Suit", suitId > 0, item);
+    local starItemLevel = data.StarItemLevel;
+    AuctionManager.Log("SetSellPropInfo starItemLevel:" .. starItemLevel);
+    SetGameObjectState("Item/Label_StarNum", starItemLevel > 0, item);
+    if starItemLevel > 0 then
+        SetLabelContent("Item/Label_StarNum", starItemLevel, item);
+        SetGameObjectPos("Item/Sprite_Suit", Vector3.New(16, -48, 0), item);
+    else
+        SetGameObjectPos("Item/Sprite_Suit", Vector3.New(46, -48, 0), item);
+    end
+    --    local isAuction = data:GetAuctionValue();
+    --    SetGameObjectState("Item/Sprite_Auction", isAuction > 0, item);
+    local tagType = CCommonTool.GetTagTypeByExcelID(excelId);
+    local isEquip = tagType == 1;
+    SetGameObjectState("Label_Part", isEquip == true, item);
+    SetGameObjectState("Label_FightValue", isEquip == true, item);
+    SetGameObjectState("Label_ItemType", isEquip == false, item);
+    if isEquip == true then
+        local equipInfo = CCommonTool.GetEquipInfo(excelId);
+        SetGameObjectState("Label_Level", equipInfo ~= nil, item);
+        if equipInfo ~= nil then
+            SetGameObjectState("Label_Level", equipInfo.NeedLv > 0, item);
+            SetLabelContent("Label_Level", string_format("Lv.{0}", equipInfo.NeedLv), item);
+            SetLabelTextByID("Label_Part", equipInfo.TypeTxtID, item);
+        end
+        SetGameObjectState("Label_FightValue", false, item);
+    else
+        local itemType,itemInfo = AuctionManager.GetItemConfigToExcelId(excelId);
+        SetGameObjectState("Label_Level", itemInfo ~= nil, item);
+        if itemInfo ~= nil then
+            local needLevel = 0;
+            local typeTxtId = 0;
+            if itemType == 3 then
+                needLevel = itemInfo.NeedLv;
+                typeTxtId = itemInfo.TypeTxt;
+            else
+                needLevel = itemInfo.NeedLevel;
+                typeTxtId = itemInfo.TypeTxtID;
+            end
+            SetGameObjectState("Label_Level", needLevel > 0, item);
+            SetLabelContent("Label_Level", string_format("Lv.{0}", needLevel), item);
+            SetLabelTextByID("Label_ItemType", typeTxtId, item);
+        end
+    end
+end
+
+-- 上架物品列表
+function InitPutawayList()
+    AuctionManager.Log("InitPutawayList");
+    local index = 0;
+    m_PutawayList:RemoveAll();
+    local sellItems = AuctionManager.GetSellItems();
+    for key, var in pairs(sellItems) do
+        m_PutawayList:AddData(var);
+        index = key;
+    end
+    m_PutawayList:LookAt(0, true);
+    m_SellPropNumLabel.text = index .. "/" .. AuctionManager.PutawayMax;
+end
+-- 设置上架物品列表显示信息
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnPutawayListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ExcelId;
+    local num = data.Num;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, true, 31, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    SetGameObjectState("Prop/Sprite_Suit", suitId > 0, item);
+    local starItemLevel = data.StarLevel;
+    SetGameObjectState("Prop/Label-StarNum", false, item);
+    if starItemLevel > 0 then
+        SetGameObjectState("Prop/Label-StarNum", true, item);
+        SetLabelContent("Prop/Label-StarNum/Label", string_format("+{0}", starItemLevel), item);
+        if starItemLevel >= 10 then
+            SetGameObjectPos("Prop/Sprite_Suit", Vector3.New(7, -48, 0), item);
+            SetGameObjectPos("Prop/Label-StarNum", Vector3.New(35, -47, 0), item);
+        else
+            SetGameObjectPos("Prop/Sprite_Suit", Vector3.New(19, -48, 0), item);
+            SetGameObjectPos("Prop/Label-StarNum", Vector3.New(35, -47, 0), item);
+        end
+    end
+    -- 类型
+    local itemType, itemConfig = AuctionManager.GetItemConfigToExcelId(excelId);
+    if itemConfig ~= nil then
+        local typeTxtId = 0;
+        if itemType == 3 then
+            typeTxtId = itemConfig.TypeTxt;
+        else
+            typeTxtId = itemConfig.TypeTxtID;
+        end
+        SetLabelTextByID("Type", typeTxtId, item);
+    end
+    local moneyType = data.MoneyType;
+    if moneyType == 1 then
+        -- 非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        SetSpriteByAtlasID("Price/Icon", itemInfo.ImageSmallID, item);
+    else
+        -- 非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        SetSpriteByAtlasID("Price/Icon", itemInfo.ImageSmallID, item);
+    end
+    -- 单价
+    local price = data.Price;
+    SetLabelContent("Price/Num", price, item);
+end
+local m_PutawayData = nil;
+-- 设置上架物品点击事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnPutawayClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Select" then
+        AuctionManager.Log("OnPutawayClick=============" .. cell.dataIndex);
+        m_PutawayData = data;
+        SetPutawayItemInfo(m_SoldOutPopoverItem, data);
+        m_SoldOutPopoverNumLabel.text = data.Num;
+        m_SoldOutPopoverSinglePriceLabel.text = data.Price;
+        m_SoldOutPopoverTotalPriceLabel.text = data.Price * data.Num;
+        local time = math.floor(data.Time - G_TimerMng:GetCurrentSeconds());
+        AuctionManager.Log("time=============" .. time);
+        SetSoldOutPopover(true);
+        if time > 0 then
+            AddTimerEvent("AuctionPutaway", time, ThewTimeBackOver, ETimeShowType.TypeNumberFour, ThewTimeCallBack);
+        else
+            SetLabelContent(m_SoldOutPopoverRestTimeLabelStr, "00:00:00", m_panelObject);
+        end
+    end
+    if go.name == "Prop" then
+        local excelId = data.ExcelId;
+        local isRequest = AuctionManager.IsRequestItem(excelId);
+        if isRequest == true then
+            AuctionProtocol.RequestItemInfo(data.GlobalId);
+        else
+            OpenPropToolTips(excelId, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        end
+    end
+end
+-- 时间监听回调
+-- @param timeTxt 时间字符串
+function ThewTimeCallBack(timeTxt)
+    SetLabelContent(m_SoldOutPopoverRestTimeLabelStr, timeTxt, m_panelObject);
+end
+-- 时间监听结束回调
+function ThewTimeBackOver()
+    SetLabelContent(m_SoldOutPopoverRestTimeLabelStr, "00:00:00", m_panelObject);
+end
+-- 设置上架物品下拉事件
+-- @param listView 列表组件
+function OnPutawayDownScroll(listView)
+    AuctionManager.Log("OnPutawayDownScroll=============");
+end
+-- 设置下架弹出框状态
+-- @param active 显示状态
+function SetSoldOutPopover(active)
+    m_SoldOutPopover:SetActive(active);
+end
+-- 刷新出售列表信息
+function RefreshPutawayList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL) == 1 then
+        InitPutawayList();
+    end
+end
+-- 设置Item显示信息
+-- @param item 设置对象
+-- @param data 数据信息
+function SetPutawayItemInfo(item, data)
+    local excelId = data.ExcelId;
+    AuctionManager.Log("SetPutawayItemInfo excelId:" .. excelId);
+    local qualityId = CCommonTool.GetAptitudeIDByExcelID(excelId);
+    AuctionManager.Log("SetPutawayItemInfo qualityId:" .. qualityId);
+    local qualityColorTop = AuctionManager.ItemQualityColorTop[qualityId];
+    local qualityColorBottom = AuctionManager.ItemQualityColorBottom[qualityId];
+    SetSpriteGradientColor("Sprite_ItemQuality", qualityColorTop, qualityColorBottom, item);
+    local qualityLightColor = AuctionManager.ItemQualityLightColor[qualityId];
+    SetSpriteColor("Sprite_Light", qualityLightColor, item);
+    SetItemShowByExcelIDV04(item, "Item", excelId, num, true, 41, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    AuctionManager.Log("SetPutawayItemInfo suitId:" .. suitId);
+    SetGameObjectState("Item/Sprite_Suit", suitId > 0, item);
+    local starItemLevel = data.StarLevel;
+    AuctionManager.Log("SetPutawayItemInfo starItemLevel:" .. starItemLevel);
+    SetGameObjectState("Item/Label_StarNum", starItemLevel > 0, item);
+    if starItemLevel > 0 then
+        SetLabelContent("Item/Label_StarNum", starItemLevel, item);
+        SetGameObjectPos("Item/Sprite_Suit", Vector3.New(16, -48, 0), item);
+    else
+        SetGameObjectPos("Item/Sprite_Suit", Vector3.New(46, -48, 0), item);
+    end
+    local tagType = CCommonTool.GetTagTypeByExcelID(excelId);
+    local isEquip = tagType == 1;
+    SetGameObjectState("Label_Part", isEquip == true, item);
+    SetGameObjectState("Label_FightValue", isEquip == true, item);
+    SetGameObjectState("Label_ItemType", isEquip == false, item);
+    if isEquip == true then
+        local equipInfo = CCommonTool.GetEquipInfo(excelId);
+        SetGameObjectState("Label_Level", equipInfo ~= nil, item);
+        if equipInfo ~= nil then
+            SetGameObjectState("Label_Level", equipInfo.NeedLv > 0, item);
+            SetLabelContent("Label_Level", string_format("Lv.{0}", equipInfo.NeedLv), item);
+            SetLabelTextByID("Label_Part", equipInfo.TypeTxtID, item);
+        end
+        SetGameObjectState("Label_FightValue", false, item);
+    else
+        local itemType, itemConfig = AuctionManager.GetItemConfigToExcelId(excelId);
+        SetGameObjectState("Label_Level", itemConfig ~= nil, item);
+        if itemConfig ~= nil then
+            local needLevel = 0;
+            local typeTxtId = 0;
+            if itemType == 3 then
+                needLevel = itemConfig.NeedLv;
+                typeTxtId = itemConfig.TypeTxt;
+            else
+                needLevel = itemConfig.NeedLevel;
+                typeTxtId = itemConfig.TypeTxtID;
+            end
+            SetGameObjectState("Label_Level", needLevel > 0, item);
+            SetLabelContent("Label_Level", string_format("Lv.{0}", needLevel), item);
+            SetLabelTextByID("Label_ItemType", typeTxtId, item);
+        end
+        -- SetItemToolTipsEvent(item,"Item",ENUMPANELID.ENUM_PANEL_AUCTIONPANEL,false,excelId);
+    end
+    local moneyType = data.MoneyType;
+    if moneyType == 1 then
+        -- 非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        SetSpriteByAtlasID(m_SoldOutPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+    else
+        -- 非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        SetSpriteByAtlasID(m_SoldOutPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+    end
+    SetLabelContent(m_SoldOutPopoverCurrencyLabelStr, AuctionManager.CurrencyTexts[moneyType], m_panelObject);
+end
+-- 设置Label的文本内容和颜色
+function SetLabelContentAndColor(path, text, color)
+    SetLabelContent(path, text, m_panelObject);
+    SetLabelColor(path, color, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 上架弹出框关闭事件
+function OnPutawayPopoverCloseButtonClick()
+    AuctionManager.Log("OnPutawayPopoverCloseButtonClick");
+    SetPutawayPopover(false);
+end
+-- 上架弹出框货币事件
+function OnPutawayPopoverCurrencyButtonClick()
+    AuctionManager.Log("OnPutawayPopoverCurrencyButtonClick");
+    local menuTextInfos = { };
+    for index = 1, 2 do
+        local data =
+        {
+            Index = index;
+            Type = index;
+            TextId = -1;
+            Text = AuctionManager.CurrencyTexts[index];
+        };
+        table.insert(menuTextInfos, data);
+    end
+    createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL, menuTextInfos, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+    AuctionSelectMenuPanel.Callback = OnPutawayPopoverCurrencyMenuCallback;
+end
+-- 菜单回调
+-- @param data 数据信息
+function OnPutawayPopoverCurrencyMenuCallback(data)
+    AuctionManager.Log("OnPutawayPopoverCurrencyMenuCallback");
+    local menuIndex = data.Index;
+    local menuType = data.Type;
+    local menuText = data.Text;
+    SetLabelContent(m_PutawayPopoverCurrencyLabelStr, menuText, m_panelObject);
+    m_SellPropData.MoneyType = menuType;
+    local data = m_SellPropData.Info;
+    local price = 0;
+    if menuType == 1 then
+        price = data:GetCoin() * AuctionManager.PriceCoef;
+        -- 非绑定金币
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY);
+        SetSpriteByAtlasID(m_PutawayPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+        -- SetSpriteByAtlasID(m_PutawayPopoverCostIconStr, itemInfo.ImageSmallID, m_panelObject);
+    else
+        price = data:GetDiamond() * AuctionManager.PriceCoef;
+        -- 非绑定钻石
+        local itemInfo = CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND);
+        SetSpriteByAtlasID(m_PutawayPopoverTotalPriceIconStr, itemInfo.ImageSmallID, m_panelObject);
+        -- SetSpriteByAtlasID(m_PutawayPopoverCostIconStr, itemInfo.ImageSmallID, m_panelObject);
+    end
+    m_PutawayPopoverSinglePrice = price;
+    SetPutawayPopoverSinglePrice();
+    UpdatePutawayData();
+end
+-- 上架弹出框数量事件
+function OnPutawayPopoverNumButtonClick()
+    AuctionManager.Log("OnPutawayPopoverNumButtonClick");
+    local data =
+    {
+        X = - 284;
+        Y = -440;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnPutawayPopoverNum;
+    SmallKeyboardPanel.ConfirmCallback = OnPutawayPopoverNumConfirm;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL, data, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+-- 小键盘数字按下回调
+-- @param data 数据信息
+function OnPutawayPopoverNum(data)
+    AuctionManager.Log("OnPutawayPopoverNum");
+    if data ~= nil then
+        AuctionManager.Log("Num : " .. data.Num);
+        m_PutawayPopoverNum = data.Num;
+        m_PutawayPopoverNumLabel.text = m_PutawayPopoverNum;
+        UpdatePutawayData();
+    end
+end
+-- 小键盘按下确定回调
+function OnPutawayPopoverNumConfirm()
+    AuctionManager.Log("OnPutawayPopoverNumConfirm");
+    if m_PutawayPopoverNum <= 0 then
+        m_PutawayPopoverNum = 1;
+    end
+    if m_PutawayPopoverNum >= m_SellPropData.Info.ItemNum then
+        m_PutawayPopoverNum = m_SellPropData.Info.ItemNum;
+    end
+    m_PutawayPopoverNumLabel.text = m_PutawayPopoverNum;
+    UpdatePutawayData();
+end
+-- 上架弹出框最大数量事件
+function OnPutawayPopoverBigNumButtonClick()
+    AuctionManager.Log("OnPutawayPopoverBigNumButtonClick");
+    local num = m_SellPropData.Info.ItemNum;
+    AuctionManager.Log("num : " .. num);
+    m_PutawayPopoverNum = num;
+    m_PutawayPopoverNumLabel.text = m_PutawayPopoverNum;
+    UpdatePutawayData();
+end
+-- 上架弹出框单价事件
+function OnPutawayPopoverSinglePriceButtonClick()
+    AuctionManager.Log("OnPutawayPopoverSinglePriceButtonClick");
+    local data =
+    {
+        X = - 284;
+        Y = 0;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnPutawayPopoverSinglePrice;
+    SmallKeyboardPanel.ConfirmCallback = OnPutawayPopoverSinglePriceConfirm;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL, data, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+-- 小键盘数字按下回调
+-- @param data 数据信息
+function OnPutawayPopoverSinglePrice(data)
+    AuctionManager.Log("OnPutawayPopoverSinglePrice");
+    if data ~= nil then
+        AuctionManager.Log("Num : " .. data.Num);
+        m_PutawayPopoverSinglePrice = data.Num;
+        SetPutawayPopoverSinglePrice();
+        UpdatePutawayData();
+    end
+end
+-- 小键盘按下确定回调
+function OnPutawayPopoverSinglePriceConfirm()
+    AuctionManager.Log("OnPutawayPopoverSinglePriceConfirm");
+    local price = 0;
+    AuctionManager.Log("data.MoneyType : " .. m_SellPropData.MoneyType);
+    if m_SellPropData.MoneyType == 1 then
+        price = m_SellPropData.Info:GetCoin();
+    else
+        price = m_SellPropData.Info:GetDiamond();
+    end
+    if m_PutawayPopoverSinglePrice < price then
+        ShowSystemFlowTips(GetTextToId(1326), true);
+        m_PutawayPopoverSinglePrice = price;
+    end
+    SetPutawayPopoverSinglePrice();
+    UpdatePutawayData();
+end
+-- 上架弹出框总价事件
+function OnPutawayPopoverTotalPriceButtonClick()
+    AuctionManager.Log("OnPutawayPopoverTotalPriceButtonClick");
+
+end
+-- 上架弹出框上架事件
+function OnPutawayPopoverPutawayButtonClick()
+    AuctionManager.Log("OnPutawayPopoverPutawayButtonClick");
+    if m_PutawayPopoverSinglePrice > 0 then
+        AuctionManager.Log(m_PutawayPopoverNum .. "/" .. m_SellPropData.Info.ItemNum);
+        if m_PutawayPopoverNum <= m_SellPropData.Info.ItemNum then
+            local data =
+            {
+                BagPanelId = m_SellPropData.Info.PanelPos;
+                LGId = m_SellPropData.Info.CRID;
+                Num = m_PutawayPopoverNum;
+                MoneyType = m_SellPropData.MoneyType;
+                Price = m_PutawayPopoverSinglePrice;
+                AllPrice = m_PutawayPopoverTotalPrice;
+            };
+            AuctionProtocol.RequestPutawayItem(data);
+        end
+    else
+        ShowSystemFlowTips(GetTextToId(1325), true);
+    end
+	--拍卖-出售物品上架
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10004);
+	end
+end
+
+-- 下架Item点击事件
+function OnSoldOutItemButtonClick()
+    if m_PutawayData ~= nil then
+        local excelId = m_PutawayData.ExcelId;
+        local isRequest = AuctionManager.IsRequestItem(excelId);
+        if isRequest == true then
+            AuctionProtocol.RequestItemInfo(m_PutawayData.GlobalId);
+        else
+            OpenPropToolTips(excelId, ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+        end
+    end
+end
+-- 下架弹出框关闭事件
+function OnSoldOutPopoverCloseButtonClick()
+    AuctionManager.Log("OnSoldOutPopoverCloseButtonClick");
+    m_SoldOutPopover:SetActive(false);
+end
+-- 下架弹出框下架按钮
+function OnSoldOutPopoverSoldOutButtonClick()
+    AuctionManager.Log("OnSoldOutPopoverSoldOutButtonClick");
+    AuctionProtocol.RequestSoldOut(m_PutawayData.GlobalId);
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10005);
+	end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

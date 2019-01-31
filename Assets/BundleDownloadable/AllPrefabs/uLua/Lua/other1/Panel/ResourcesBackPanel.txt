@@ -1,0 +1,352 @@
+﻿module('ResourcesBackPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ResourcesBackPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 资源找回物品列表
+local m_RewardGridPath = "Content/Reward/ScrollView/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 资源找回物品列表
+local m_RewardGrid= nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+-- 领取数据
+local m_GetData = nil;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_RewardGrid = nil;
+    m_GetData = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_RESOURCSEBACKPANEL);
+    m_RewardGrid = GetComponent(m_PanelObject, m_RewardGridPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_RewardGrid:SetInitCallback(OnRewardGridViewInit);
+    m_RewardGrid:SetClickCallback(OnRewardGridViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetRewardGridView();
+end
+
+--设置资源找回物品物品列表
+function SetRewardGridView()
+    local resourcesBackDatas =  ResourcesBackManager.GetResourcesBackDatas();
+    local length = GetTableLength(resourcesBackDatas);
+    m_RewardGrid:RemoveAll();
+    for index = 1, length do
+        local data = resourcesBackDatas[index];
+        m_RewardGrid:AddData(data);
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 资源找回物品列表初始化
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param data 列表Item数据信息
+function OnRewardGridViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local activityId = data.Id;
+    local activityInfo = CCommonTool.GetActivityListDataInfo(activityId);
+    if activityInfo ~= nil then
+        SetLabelTextByID("Activity/Name", activityInfo.Name, item);
+        SetSpriteByAtlasID("Activity/Icon/Sprite", activityInfo.Icon, item, true);
+    end
+    local activityNum = data.Num;
+    local numText = string_format(GetTextToId(2300),activityNum);
+    SetLabelContent("Activity/Num", numText, item);
+
+    --领取状态state == 0(未领取状态)
+    local state = data.State;
+    if activityNum > 0 then
+        SetGameObjectState("Buttons/Button1", state == 0, item);
+        SetGameObjectState("Buttons/Button2", state == 0, item);
+        SetGameObjectState("Buttons/Button3", state ~= 0, item);
+    else
+        SetGameObjectState("Buttons/Button1", false, item);
+        SetGameObjectState("Buttons/Button2", false, item);
+        SetGameObjectState("Buttons/Button3", true, item);
+    end
+    local buttonText3 = "";
+    if state == 0 then
+        --error("该任务昨日已全部完成");
+        if activityNum <= 0 then
+            --[该任务昨日已全部完成]
+            buttonText3 = GetTextToId(2303);
+        end
+    elseif state == 1 then
+        --error("已通过{0}找回][银币]");
+        --[已通过{0}找回][银币]
+        buttonText3 = string_format(GetTextToId(2301),GetTextToId(8888));
+    elseif state == 2 then
+        --error("已通过{0}找回][红钻]");
+        --[已通过{0}找回][红钻]
+        buttonText3 = string_format(GetTextToId(2301),GetTextToId(8889));
+    elseif state == 3 then
+        --error("已通过{0}找回][蓝钻]");
+        --[已通过{0}找回][蓝钻]
+        buttonText3 = string_format(GetTextToId(2301),GetTextToId(75006));
+    end
+    SetLabelContent("Buttons/Button3/Label", buttonText3, item);
+    CCommonTool.SetGameObjectGrey(child(item, "Buttons/Button3").gameObject, true);
+
+    local itemDatas = data.ItemDatas;
+    if itemDatas ~= nil then
+        for i = 1 , 4 do
+            local itemPath = string_format("ItemList/Grid/Item{0}",i);
+            local itemData = itemDatas[i];
+            SetGameObjectState(itemPath, itemData ~= nil, item);
+            if itemData ~= nil then
+                local itemId = itemData.ItemId;
+                local itemNum = itemData.ItemNum;
+                SetGameObjectState(itemPath, itemNum > 0, item);
+                if itemNum > 0 then
+                    SetItemShowByExcelIDV04(item,itemPath,itemId,itemNum,false,115,ENUMPANELID.ENUM_RESOURCSEBACKPANEL);
+                    SetItemToolTipsEvent(item, itemPath, ENUMPANELID.ENUM_RESOURCSEBACKPANEL, false, itemId);
+                end
+            end
+        end
+        local itemListGrid = GetComponent(item, "ItemList/Grid", "UIGrid");
+        if itemListGrid ~= nil then
+            itemListGrid:Reposition();
+        end
+    end
+
+    --local resourcesBackInfo = CCommonTool.GetResourcesBackInfo(activityId);
+    local resourcesBackInfo = ResourcesBackTable.Get(activityId);
+    if resourcesBackInfo ~= nil then
+        if resourcesBackInfo.BindCoinState==1 then
+            --银币
+            SetSpriteByAtlasID("Buttons/Button1/Consume/Money/Icon/Sprite",600,item);
+            local bindCoin = resourcesBackInfo.BindCoin;
+            local bindCoinMaxNum = bindCoin * activityNum;
+            SetLabelContent("Buttons/Button1/Consume/Money/Label", bindCoinMaxNum, item);
+            local bindCoinUIRect = GetComponent(item, "Buttons/Button1/Consume/Money/Icon/Sprite", "UIRect");
+            bindCoinUIRect:ResetAndUpdateAnchors();
+        end
+        if resourcesBackInfo.DiamondState==1 then
+            --红钻
+            SetSpriteByAtlasID("Buttons/Button2/Consume/Money/Icon/Sprite",601,item);
+            local diamond = resourcesBackInfo.Diamond;
+            local diamondMaxNum = diamond * activityNum;
+            SetLabelContent("Buttons/Button2/Consume/Money/Label", diamondMaxNum, item);
+            local diamondUIRect = GetComponent(item, "Buttons/Button2/Consume/Money/Icon/Sprite", "UIRect");
+            diamondUIRect:ResetAndUpdateAnchors();
+        end
+        if resourcesBackInfo.BindDiamondState==1 and resourcesBackInfo.BindCoinState==1 then
+            --(银币)-蓝钻
+            Button12("2",item,resourcesBackInfo,activityNum);
+        elseif resourcesBackInfo.BindDiamondState==1 and resourcesBackInfo.DiamondState==1 then
+            --蓝钻--(红钻)
+            Button12("1",item,resourcesBackInfo,activityNum);
+        elseif resourcesBackInfo.BindDiamondState==1 and resourcesBackInfo.BindCoinState==1 and resourcesBackInfo.DiamondState==1  then
+            error("策划配置表ResourcesBack异常:just can show two buttom!");
+        end
+    else
+        error("策划表ResourcesBack对应的活动ID=="..activityId.."缺失");
+    end
+end
+function Button12(LR,item,resourcesBackInfo,activityNum)
+    if LR~=nil then
+        -- 设置UISprite内容第一个参数为路径,第二参数为图集表ID,第三个参数为当前对象的父对象
+        SetSpriteByAtlasID("Buttons/Button"..LR.."/Consume/Money/Icon/Sprite",605,item);
+        local bindDiamond = resourcesBackInfo.BindDiamond;
+        local bindDiamondMaxNum = bindDiamond * activityNum;
+        SetLabelContent("Buttons/Button"..LR.."/Consume/Money/Label", bindDiamondMaxNum, item);
+        local bindDiamondUIRect = GetComponent(item, "Buttons/Button"..LR.."/Consume/Money/Icon/Sprite", "UIRect");
+        bindDiamondUIRect:ResetAndUpdateAnchors();
+    end
+end
+
+-- 资源找回物品列表点击事件
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param go 列表Item对象
+function OnRewardGridViewClick(listView, cell, go)
+    local item = go;
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(cell.dataIndex);
+    local activityId = data.Id;
+    --local resourcesBackInfo = CCommonTool.GetResourcesBackInfo(activityId);
+    local resourcesBackInfo = ResourcesBackTable.Get(activityId);
+    if resourcesBackInfo ~= nil then
+        local activityNum = data.Num;
+        if go.name == "Button1" then
+            local dataNeed ={};
+            if resourcesBackInfo.BindCoinState==1 then
+                --银币
+                --error("OnRewardGridViewClick 银币Button1:");
+                local bindCoin = resourcesBackInfo.BindCoin;
+                local bindCoinMaxNum = bindCoin * activityNum;
+                local dindCoinRatio = math.floor(resourcesBackInfo.BindCoinRatio * 100);
+                --是否花费[fffdbf]{0}[-]银币找回[fffdbf]{1}[-]的昨日奖励？
+                local titleText = string_format(GetTextToId(1712),bindCoinMaxNum,(dindCoinRatio.."%"));
+                dataNeed = 
+                {
+                    Id = data.Id;
+                    Type = 1;
+                    Text = titleText;
+                    HaveNum = bindCoinMaxNum;
+                }
+            else
+                --蓝钻
+                --error("OnRewardGridViewClick 蓝钻Button1:");
+                local titleText,bindDiamondMaxNum = BindDiamondClick(resourcesBackInfo,activityNum);
+                dataNeed = 
+                {
+                    Id = data.Id;
+                    Type = 3;
+                    Text = titleText;
+                    HaveNum = bindDiamondMaxNum;
+                }
+            end
+            SecondaryConfirm(dataNeed);
+            --福利-资源找回上报
+			if Constants.branch == "cn" then
+				ReportManager.RequestReportPanel(10020);
+			end
+        end
+        if go.name == "Button2" then
+            local dataNeed ={};
+            if resourcesBackInfo.DiamondState==1 then
+                --红钻
+                --error("OnRewardGridViewClick 红钻Button2:");
+                local diamond = resourcesBackInfo.Diamond;
+                local diamondMaxNum = diamond * activityNum;
+                local diamondRatio = math.floor(resourcesBackInfo.DiamondRatio * 100);
+                local titleText = string_format(GetTextToId(1713),diamondMaxNum,(diamondRatio.."%"));
+                dataNeed = 
+                {
+                    Id = data.Id;
+                    Type = 2;
+                    Text = titleText;
+                    HaveNum = diamondMaxNum;
+                }
+            else
+                --蓝钻
+                --error("OnRewardGridViewClick 蓝钻Button2:");
+                local titleText,bindDiamondMaxNum = BindDiamondClick(resourcesBackInfo,activityNum);
+                dataNeed = 
+                {
+                    Id = data.Id;
+                    Type = 3;
+                    Text = titleText;
+                    HaveNum = bindDiamondMaxNum;
+                }
+            end
+            SecondaryConfirm(dataNeed);
+            --福利-资源找回上报
+			if Constants.branch == "cn" then
+				ReportManager.RequestReportPanel(10021);
+			end
+        end
+    end
+end
+
+function BindDiamondClick(resourcesBackInfo,activityNum)
+    local bindDiamond = resourcesBackInfo.BindDiamond;
+    local bindDiamondMaxNum = bindDiamond * activityNum;
+    local bindDiamondRatio = math.floor(resourcesBackInfo.BindDiamondRatio * 100);
+    --是否花费[fffdbf]{0}[-]蓝钻找回[fffdbf]{1}[-]的昨日奖励？
+    local titleText = string_format(GetTextToId(1720),bindDiamondMaxNum,(bindDiamondRatio.."%"));
+    return titleText,bindDiamondMaxNum;
+end
+
+
+local m_
+-- 二次确认
+function SecondaryConfirm(data)
+    if data ~= nil then
+        m_GetData = data;
+        local titleText = data.Text;
+        local tempTable = { };
+        table.insert(tempTable, 1, GetTextToId(949));
+        table.insert(tempTable, 2, titleText);
+        table.insert(tempTable, 3, OnConfirmBuyClick);
+        table.insert(tempTable, 4, GetTextToId(375));
+        table.insert(tempTable, 5, OnCancelBuyClick);
+        table.insert(tempTable, 6, GetTextToId(407));
+        table.insert(tempTable, 7, true);
+        table.insert(tempTable, 10, true);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+    end
+end
+function OnConfirmBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    if m_GetData ~= nil then
+        local getType = m_GetData.Type;
+        if getType == 2 then    --红钻
+            OnExchangeMoneyCallBack(m_GetData);
+            local notBindDiamond = G_UserInfo.NotBindDiamond;
+            local haveNum = m_GetData.HaveNum;
+            if notBindDiamond <= haveNum then
+                StorePanel.OpenPanelRecharge();
+            end
+        elseif getType == 3 then --蓝钻
+            if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND, math.abs(m_GetData.HaveNum), ENUMPANELID.ENUM_RESOURCSEBACKPANEL, OnExchangeMoneyCallBack,m_GetData) then
+                OnExchangeMoneyCallBack(m_GetData);
+            end
+        elseif getType==1 then  --银币
+            if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_GetData.HaveNum), ENUMPANELID.ENUM_RESOURCSEBACKPANEL, OnExchangeMoneyCallBack,m_GetData) then
+                OnExchangeMoneyCallBack(m_GetData);
+            end
+        end
+        m_GetData = nil;
+    end
+end
+function OnExchangeMoneyCallBack(m_GetData)
+    error("发送资源找回消息");
+    ResourcesBackProtocol.RequestItemInfo(m_GetData);
+end
+function OnCancelBuyClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshResourcesBackPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_RESOURCSEBACKPANEL) == 1 then
+        SetRewardGridView();
+    end
+end

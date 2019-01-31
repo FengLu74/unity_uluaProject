@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="250dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <include layout="@layout/xyw_fragment_navigation" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/xy_common_margin_10dip"
+            android:orientation="vertical"
+            android:paddingBottom="8dp"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:paddingTop="8dp">
+
+            <EditText
+                android:id="@+id/xy_find_pwd_account"
+                style="@style/xy.edit.text.account"
+                android:layout_width="match_parent"
+                android:drawableLeft="@drawable/xy_ic_user"
+                android:layout_marginBottom="@dimen/xy_common_margin_10dip"
+                android:drawablePadding="4dp"
+                android:textCursorDrawable="@null" />
+
+            <Button
+                android:id="@+id/xy_find_pwd_next_step"
+                style="@style/xy.button.positive"
+                android:layout_marginTop="@dimen/xy_common_margin_20dip"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                android:text="@string/xy_next_step" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

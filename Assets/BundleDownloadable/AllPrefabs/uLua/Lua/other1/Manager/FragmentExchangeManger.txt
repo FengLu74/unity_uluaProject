@@ -1,0 +1,59 @@
+﻿module("FragmentExchangeManger", package.seeall)
+
+-- 碎片兑换字典
+rechargeDict = nil;
+-- 碎片兑换列表
+rechargeTable = { };
+-- 内容列表
+contentTable = { };
+-- 活动开始时间
+beginTime = 0;
+-- 结束时间
+endTime = 0;
+-- 领取状态
+rewardState = nil;
+-- 当前碎片数
+curItemNum = 0;
+-- 需要的碎片数
+needItemNum = 0
+-- 活动结束
+actEnd = false;
+-- 需要道具
+needTable = { };
+-- 说明文本id
+txtId = 0
+-- 场景图片Id
+picterId = 0;
+
+-- 获取信息
+function GetMember(ranklId)
+    if rechargeDict then
+        return rechargeDict[ranklId];
+    end
+    return nil;
+end
+
+-- 通用标签获取list数据
+function GetListByTabIndex(tabIndex)
+    return rechargeTable;
+end
+
+-- 清空数据
+function ClearRechargeData()
+    rechargeDict = nil;
+    rechargeTable = { };
+    contentTable = { };
+end
+-- 数据清理
+function ClearData()
+    rechargeDict = nil;
+    rechargeTable = { };
+    beginTime = 0;
+    endTime = 0;
+    rewardState = nil;
+    acurItemNum = 0;
+    needItemNum = 0
+    contentTable = { };
+    needTable = { };
+    txtId = 0
+end

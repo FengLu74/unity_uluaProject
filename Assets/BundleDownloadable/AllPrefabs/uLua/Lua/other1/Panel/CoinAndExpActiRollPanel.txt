@@ -1,0 +1,235 @@
+﻿module("CoinAndExpActiRollPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 标题
+local m_LabelTittleStr = "Label_Tittle";
+-- 开始挑战文本
+local m_StartFightLabelStr = "Button/Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 开始挑战按钮
+local m_StartRollButton = "Button";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 滚动界面panel
+local m_RollPanelStr = "RollPanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 选项的路径
+local m_SelectStr = "RollPanel/Grid/Sprite_";
+-- 档位图片位置
+local m_IconStr = "/Sprite/Sprite_Icon";
+-- 档位品质位置
+local m_QualityStr = "/Sprite/Sprite_Quality";
+-- 奖励文本位置
+local m_RewardLabelStr = "/Label_Reward";
+-- 难度等级的位置
+local m_LevelLabelStr = "/Label_Level";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建面板成功
+local m_panelInitAlready = false;
+-- 要翻滚的面板
+local m_rollPanelObj = nil;
+-- 要翻滚的UIpanel组件
+local m_rollPanelComp = nil;
+-- CUIAccelerateSpringPanel组件
+local m_acclerateComp = nil;
+-- 此活动的老虎机表数据
+local m_tableData = nil;
+-- 当前的roll到的数值
+local m_rollNum = -1;
+-- 当前服务器通知的是那个活动ID
+local m_activityID = -1;
+-- 老虎机界面不点击战斗多少秒后开始自动转
+local m_startRollTime = 10;
+-- 老虎机界面转动完成后停留几秒后给服务器发送刷怪消息
+local m_sendServerWaitTime = 4;
+-- 老虎机界面转动完成后停留几秒后关闭界面
+local m_closePanelTime = 5;
+-----------------------------------一些写死的规定--------------------------------------
+local m_LevelContent = 
+{
+    [1] = "D",
+    [2] = "C",
+    [3] = "B",
+    [4] = "A",
+    [5] = "S",
+}
+
+local m_AlphaValue = 
+{
+    HasAlpha = "FFFFFF80",
+    NoAlpha = "FFFFFFFF";
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化数据
+    InitData();
+    -- 初始化一些对象
+    InitObjects();
+    -- 初始化界面的数据
+    InitPanelInfo();
+    -- 初始化点击事件
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitPanelInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_rollPanelObj = nil;
+    m_rollPanelComp = nil;
+    m_acclerateComp = nil;
+    m_rollNum = -1;
+end
+
+function functionParameter(paraTable)
+    m_activityID = paraTable[1];
+    if m_createSuccess then
+        -- 初始化数据
+        InitData();
+        -- 初始化一些对象
+        InitObjects();
+    end
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    m_tableData = CCommonTool.GetActivityCoinAndExpDice(m_activityID);-- 这里是活动ID主键
+    m_startRollTime = CCommonTool.GetDefineInfo(6006):GetIntContent();
+    m_sendServerWaitTime = CCommonTool.GetDefineInfo(6007):GetIntContent();
+    m_closePanelTime = CCommonTool.GetDefineInfo(6008):GetIntContent();
+    if m_tableData == nil or m_startRollTime == nil or m_sendServerWaitTime == nil or m_closePanelTime == nil then
+        error("老虎机界面数据初始化出错，表中不存在此数据");
+    end
+end    
+-- 初始化对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_COINANDEXPACTIPANEL);
+    -- 要翻滚的面板对象
+    m_rollPanelObj = child(m_panelObject,m_RollPanelStr).gameObject;
+    -- 要翻滚的UIpanel组件
+    m_rollPanelComp = GetComponent(m_panelObject,m_RollPanelStr,"UIPanel");
+    -- CUIAccelerateSpringPanel组件
+    m_acclerateComp = GetComponent(m_panelObject,m_RollPanelStr,"CUIAccelerateSpringPanel");
+    -- 注册事件
+    CCommonTool.AccelerateSpringOnFinishEvent(m_rollPanelObj,RollOverCallBack,1);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_StartRollButton,OnRandomClick,m_panelObject);
+end
+
+
+
+-- 转动结束的回调
+function RollOverCallBack()
+    SetSpriteColor32(m_SelectStr..m_rollNum,m_AlphaValue.NoAlpha,m_panelObject);
+    AddTimerEvent("CoinAndExpActiRollNum",m_closePanelTime,CoinAndExpActiRollNumCallBackOver);
+    AddTimerEvent("CoinAndExpActiRollNumStartMons",m_sendServerWaitTime,CoinAndExpActiRollNumStartMonsCallBackOver);
+end
+
+-- 时间计时器结束回调
+function CoinAndExpActiRollNumCallBackOver()
+    closePanel(ENUMPANELID.ENUM_PANEL_COINANDEXPACTIPANEL);
+end
+
+function CoinAndExpActiRollNumStartMonsCallBackOver()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_BEGIN_ACTIVITY_CREATE_MONSTER);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 根据不同档得到3个数据
+function GetTableData(num)
+    if num == 1 then
+        return m_tableData.CoinExpDiceRankTitle1,m_tableData.CoinExpDiceRankTxt1,m_tableData.CoinExpDiceRankNum1;
+    elseif num == 2 then
+        return m_tableData.CoinExpDiceRankTitle2,m_tableData.CoinExpDiceRankTxt2,m_tableData.CoinExpDiceRankNum2;
+    elseif num == 3 then
+        return m_tableData.CoinExpDiceRankTitle3,m_tableData.CoinExpDiceRankTxt3,m_tableData.CoinExpDiceRankNum3;
+    elseif num == 4 then
+        return m_tableData.CoinExpDiceRankTitle4,m_tableData.CoinExpDiceRankTxt4,m_tableData.CoinExpDiceRankNum4;
+    elseif num == 5 then
+        return m_tableData.CoinExpDiceRankTitle5,m_tableData.CoinExpDiceRankTxt5,m_tableData.CoinExpDiceRankNum5;
+    end
+end
+
+-- 初始化界面中的数据
+function InitPanelInfo()
+    SetLabelTextByID(m_LabelTittleStr,m_tableData.CoinExpDiceTitle,m_panelObject);
+    for Index = 1,5 do
+        local str = m_SelectStr .. Index;
+        local spriteID = CCommonTool.GetValueInCoinAndExpDice(m_activityID,Index*2);
+        SetSpriteColor32(str,m_AlphaValue.HasAlpha,m_panelObject);
+        if Index == 5 then
+            SetGameObjectPos(str,Vector3.New(0,200,0),m_panelObject);
+        else
+            SetGameObjectPos(str,Vector3.New(0,-200*(Index-1),0),m_panelObject);
+        end
+        SetSpriteByAtlasID(str..m_IconStr,spriteID,m_panelObject,true);
+        SetSpriteApptitudeV04(str..m_QualityStr,Index,m_panelObject);
+        SetLabelPinZhi(str .. m_RewardLabelStr,Index,m_panelObject);
+        SetLabelContent(str .. m_RewardLabelStr,string_format(CCommonTool.GetTxtData(1045).m_str, CCommonTool.GetValueInCoinAndExpDice(m_activityID,Index*2 + 1)),m_panelObject);
+        SetLabelPinZhi(str .. m_LevelLabelStr,Index,m_panelObject);
+        SetLabelContent(str .. m_LevelLabelStr,string_format(CCommonTool.GetTxtData(1046).m_str, m_LevelContent[Index]),m_panelObject);
+    end
+
+    SetGameObjectState(m_StartRollButton,true,m_panelObject);
+    SetLabelContent("Label_Content",-1,m_panelObject);
+    m_rollPanelComp.clipOffset = Vector2.zero;
+    m_rollPanelObj.transform.localPosition = Vector3.zero;
+    SetLabelContent(m_StartFightLabelStr,string_format(CCommonTool.GetTxtData(1047).m_str,m_startRollTime),m_panelObject);
+    AddTimerEvent("CoinAndExpActiRollStartRoll",m_startRollTime,CoinAndExpActiRollStartRollCallBackOver, ETimeShowType.TypeNumberSeven,CoinAndExpActiRollStartRollCallBack);
+end
+
+-- 玩家没有点击的话隔m_startRollTime秒后，自动执行
+function CoinAndExpActiRollStartRollCallBack(time)
+    SetLabelContent(m_StartFightLabelStr,string_format(CCommonTool.GetTxtData(1047).m_str,time),m_panelObject);
+end
+
+-- 玩家没有点击的话隔m_startRollTime秒后，自动执行
+function CoinAndExpActiRollStartRollCallBackOver()
+    OnRandomClick();
+end
+
+-- 开始转动转盘
+function StartRoll()
+    m_acclerateComp.target = Vector3.New(0,6000+200*(m_rollNum - 1),0);
+    m_acclerateComp.enabled = true;
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击按钮事件
+function OnRandomClick()
+    G_TimerMng:RemoveTimeTask("CoinAndExpActiRollStartRoll");
+    SetGameObjectState(m_StartRollButton,false,m_panelObject);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_ACTIVITYRANDNUM_TO_SERVER);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 处理服务器数据
+function GetServerData(num)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_COINANDEXPACTIPANEL) == 1 then
+        if num > 5 or num < 1 then
+            error("服务器发送随机值不在1~5,金币本活动出错");
+        end
+        SetLabelContent("Label_Content",num,m_panelObject);
+        m_rollNum = num;
+        StartRoll();
+    end
+end

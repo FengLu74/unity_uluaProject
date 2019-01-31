@@ -1,0 +1,703 @@
+﻿module('MyTeamPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'MyTeamPanel';
+---------------------------------------label路径---------------------------------------
+-- 队伍目标名称
+local m_GoalNamePath = "HasTeam/TeamGoal/GoalName";
+-- 匹配中
+local m_MatchingLabelPath = "HasTeam/CancelAutoButton/Point";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 中间区域对象
+local m_MiddleWidgetPath = "MiddleWidget";
+-- 没有队伍对象
+local m_NoneTeamPath = "NoneTeam";
+-- 创建队伍按钮
+local m_CreateButtonPath = "NoneTeam/CreateButton";
+-- 有队伍对象
+local m_HasTeamPath = "HasTeam";
+-- 退出队伍
+local m_QuitButtonPath = "HasTeam/QuitButton";
+-- 前往按钮
+local m_EnterButtonPath = "HasTeam/EnterButton";
+-- 自动匹配按钮
+local m_AutoButtonPath = "HasTeam/AutoButton";
+-- 取消自动匹配按钮
+local m_CancelAutoButtonPath = "HasTeam/CancelAutoButton";
+-- 喊话按钮
+local m_SpeakButtonPath = "HasTeam/SpeakButton";
+-- 申请列表按钮
+local m_ApplyButtonPath = "HasTeam/ApplyButton";
+-- 队伍目标
+local m_TeamGoalPath = "HasTeam/TeamGoal";
+----------------------------------通用的名称路径---------------------------------------
+-- 队伍列表
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 中间区域对象
+local m_MiddleWidget = nil;
+-- 队伍列表
+local m_List = nil;
+-- 没有队伍对象
+local m_NoneTeam = nil;
+-- 创建队伍按钮
+local m_CreateButton = nil;
+-- 有队伍对象
+local m_HasTeam = nil;
+-- 退出队伍
+local m_QuitButton = nil;
+-- 前往按钮
+local m_EnterButton = nil;
+-- 自动匹配按钮
+local m_AutoButton = nil;
+-- 取消自动匹配按钮
+local m_CancelAutoButton = nil;
+-- 喊话按钮
+local m_SpeakButton = nil;
+-- 申请列表按钮
+local m_ApplyButton = nil;
+-- 队伍目标名称
+local m_GoalName = nil;
+-- 匹配中
+local m_MatchingLabel = nil;
+
+-- 模型字典
+local m_MemberModels = {};
+-- 个性化管理器
+local m_IndividuationMng = nil;
+-- 特效管理器
+local m_effectMng = nil;
+-- UI3D背景
+local m_Background3D = nil;
+-- 已裁剪的3D对象
+local m_ClippedObjects = {};
+-- 裁剪区域
+local m_ClipRects = {};
+-- 模型对应的globalId
+local m_ModelGlobalIds = {};
+-- 匹配中TimerData
+local m_MatchingTimerData = nil;
+-- 匹配秒数
+local m_MatchingSeconds = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    if m_CreateSuccess then
+        ClearMatchingTimer();
+        --RevertBackground3d();
+        --RevertModels();
+        -- 将所有模型隐藏
+        --HideAll3DModels();
+    end
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MiddleWidget = nil;
+	m_List = nil;
+	m_NoneTeam = nil;
+	m_CreateButton = nil;
+	m_HasTeam = nil;
+	m_QuitButton = nil;
+	m_EnterButton = nil;
+	m_AutoButton = nil;
+    m_CancelAutoButton = nil;
+	m_SpeakButton = nil;
+	m_ApplyButton = nil;
+    m_GoalName = nil;
+    m_MemberModels = {};
+    m_ClippedObjects = {};
+    m_ClipRects = {};
+    m_ModelGlobalIds = {};
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_MiddleWidget = GetComponent(m_PanelObject, m_MiddleWidgetPath, "UIWidget");
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_NoneTeam = child(m_PanelObject, m_NoneTeamPath).gameObject;
+    m_CreateButton = child(m_PanelObject, m_CreateButtonPath).gameObject;
+    m_HasTeam = child(m_PanelObject, m_HasTeamPath).gameObject;
+    m_QuitButton = child(m_PanelObject, m_QuitButtonPath).gameObject;
+    m_EnterButton = child(m_PanelObject, m_EnterButtonPath).gameObject;
+    m_AutoButton = child(m_PanelObject, m_AutoButtonPath).gameObject;
+    m_CancelAutoButton = child(m_PanelObject, m_CancelAutoButtonPath).gameObject;
+    m_SpeakButton = child(m_PanelObject, m_SpeakButtonPath).gameObject;
+    m_ApplyButton = child(m_PanelObject, m_ApplyButtonPath).gameObject;
+    m_GoalName = GetComponent(m_PanelObject, m_GoalNamePath, "UILabel");
+    m_MatchingLabel = GetComponent(m_PanelObject, m_MatchingLabelPath, "UILabel");
+
+    --m_IndividuationMng = G_SceneMng.IndividuationMng;
+    --m_effectMng = Ioo.SceneManager.EquipEffectMng;
+    --m_Background3D = GameObject.Find("SceneUINeedShow/Background/UI_beijing02");
+    --m_ClipRects[0] = GetWidgetRect(m_MiddleWidget.worldCorners);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+    UIEventListener.Get(m_CreateButton).onClick = LuaHelper.OnClick(OnCreateButtonClick);
+    UIEventListener.Get(m_QuitButton).onClick = LuaHelper.OnClick(OnQuitButtonClick);
+    UIEventListener.Get(m_EnterButton).onClick = LuaHelper.OnClick(OnEnterButtonClick);
+    UIEventListener.Get(m_AutoButton).onClick = LuaHelper.OnClick(OnAutoButtonClick);
+    UIEventListener.Get(m_CancelAutoButton).onClick = LuaHelper.OnClick(OnCancelAutoButtonClick);
+    UIEventListener.Get(m_SpeakButton).onClick = LuaHelper.OnClick(OnSpeakButtonClick);
+    UIEventListener.Get(m_ApplyButton).onClick = LuaHelper.OnClick(OnApplyButtonClick);
+    SetGameObjectEvent(m_TeamGoalPath, OnTeamGoalClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local hasTeam = TeamManager.HasTeam();
+    if hasTeam then
+        InitHasTeamState();
+    else
+        InitNoneTeamState();
+    end
+    InitTeamGoalName();
+    --ClipBackground3d();
+end
+
+-- 无队伍状态
+function InitNoneTeamState()
+    m_NoneTeam:SetActive(true);
+    m_HasTeam:SetActive(false);
+    m_List:RemoveAll();
+    HideAll3DModels();
+end
+
+-- 有队伍状态
+function InitHasTeamState()
+    m_NoneTeam:SetActive(false);
+    m_HasTeam:SetActive(true);
+    InitButtonState();
+    InitList();
+end
+
+-- 有队伍时处理队伍的显示状态
+function InitButtonState()
+    local hasTeam = TeamManager.HasTeam();
+    if not hasTeam then
+        return;
+    end
+    local teamData = TeamManager.teamData;
+    local isLeader = TeamManager.IsLeader();
+    m_SpeakButton:SetActive(isLeader);
+    m_ApplyButton:SetActive(isLeader);
+    m_AutoButton:SetActive(isLeader and teamData.autoMatchMember ~= true);
+    local isMatching = isLeader and teamData.autoMatchMember == true;
+    m_CancelAutoButton:SetActive(isMatching);
+    if isMatching == true then 
+        StartMatchingTimer();
+    else
+        ClearMatchingTimer();
+    end
+end
+
+-- 初始化队员列表
+function InitList()
+    m_List:RemoveAll();
+    for i = 1, 4 do
+        m_List:AddData(i);
+    end
+end
+
+-- 刷新匹配职业信息
+function RefreshMatchProfession(proInfo)
+    local index = proInfo.index;
+    local proId = proInfo.proId;
+    local proInfos = TeamManager.teamData.proInfos;
+    if proInfos[index].proId ~= proId then
+        TeamProtocol.RequestMatchProfession(index, proId);
+    end
+end
+
+-- 设置队伍目标
+function InitTeamGoalName()
+    if TeamManager.HasTeam() then
+        local teamData = TeamManager.teamData;
+        m_GoalName.text = TeamManager.GetTeamGoalName(teamData.goalId, teamData.diffIndex, true);
+        local canJump = TeamManager.IsLeader() and TeamManager.GetTeamGoalInfo(teamData.goalId).JumpType > 0;
+        m_EnterButton:SetActive(canJump == true);
+    else
+        local goalData = TeamManager.teamHallGoalData;
+        m_GoalName.text = TeamManager.GetTeamGoalName(goalData.goalId, goalData.diffIndex, true);
+    end
+end
+
+-- 清除匹配中Timer事件
+function ClearMatchingTimer()
+    if m_MatchingTimerData ~= nil then
+        Timer.Instance:StopTimer(m_MatchingTimerData);
+        m_MatchingTimerData = nil;
+        m_MatchingSeconds = 0;
+        m_MatchingLabel.text = "";
+    end
+end
+
+-- 开始匹配中Timer事件
+function StartMatchingTimer()
+    if m_MatchingTimerData == nil then
+        m_MatchingTimerData = Timer.Instance:AddTimer(0.5, -1, OnTimerUpdateEvent);
+    end
+end
+
+-- 匹配中Timer更新事件
+function OnTimerUpdateEvent()
+    m_MatchingSeconds = m_MatchingSeconds + 1;
+    local index = m_MatchingSeconds % 4;
+    if index == 0 then 
+        m_MatchingLabel.text = "";
+    elseif index == 1 then
+        m_MatchingLabel.text = ".";
+    elseif index == 2 then
+        m_MatchingLabel.text = "..";
+    elseif index == 3 then
+        m_MatchingLabel.text = "...";
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = data;
+    local proInfo = TeamManager.teamData.proInfos[index];
+    local member = TeamManager.teamMemberList[index];
+    local hasMember = member ~= nil;
+    if hasMember then
+        local isLeader = member.globalId == TeamManager.teamData.leaderId;
+        SetGameObjectState("Member", true, go);
+        SetGameObjectState("Blank", false, go);
+        SetCampIcon("Member/CampIcon", member.campType, go, true);
+        local nameLabel = GetComponent(go, "Member/Name", "UILabel");
+        nameLabel.text = member.name;
+        if member.campType > 0 then
+            nameLabel.transform.localPosition = Vector3.New(25, -203, 0);
+        else
+            nameLabel.transform.localPosition = Vector3.New(0, -203, 0);
+        end
+        SetLabelContent("Member/Level", string_format("Lv.{0}", member.level), go);
+        SetGameObjectState("Member/Leader", isLeader, go);
+        if member.offline == 1 then
+            SetLabelContent("Member/State", --[[离线]]CCommonTool.GetTxtData(8856).m_str, go);
+            CCommonTool.SetGameObjectGrey(go, true);
+        elseif member.dead == 1 then
+            SetLabelContent("Member/State", --[[死亡]]CCommonTool.GetTxtData(1023).m_str, go);
+            CCommonTool.SetGameObjectGrey(go, true);
+        else
+            SetLabelContent("Member/State", "", go);
+            CCommonTool.SetGameObjectGrey(go, false);
+        end
+        if m_ClipRects[index] == nil then
+            m_ClipRects[index] = GetWidgetRect(GetComponent(go, "Background", "UIWidget").worldCorners);
+            local corners = GetComponent(go, "Background", "UIWidget").worldCorners;
+        end
+        local professionId = member.proId;
+        local atlasId = 0;
+        if professionId == PROFESSION_ID.ASSASSIN then
+            -- 刺客职业图标
+            SetSpriteByAtlasID("Member/ProIcon", 9010, go, true);
+        elseif professionId == PROFESSION_ID.FEILIBA then
+            -- 法师职业图标
+            SetSpriteByAtlasID("Member/ProIcon", 9009, go, true);
+        elseif professionId == PROFESSION_ID.LOLI then
+            -- 萝莉职业图标
+            SetSpriteByAtlasID("Member/ProIcon", 9011, go, true);
+        elseif professionId == PROFESSION_ID.WARDRAGONWHITE then
+            -- 战士职业图标
+            SetSpriteByAtlasID("Member/ProIcon", 9008, go, true);
+        else
+            error(string_format("职业ID:{0}错误!!", professionId));
+        end
+        --Create3DModel(member.proId, index);
+    else
+        CCommonTool.SetGameObjectGrey(go, false);
+        SetGameObjectState("Member", false, go);
+        SetGameObjectState("Blank", true, go);
+        SetGameObjectState("Blank/InviteButton", TeamManager.IsLeader(), go);
+        local proId = proInfo.proId;
+        if proId == TeamManager.MATCH_ALL_PRO_ID then
+            SetGameObjectState("Blank/MatchAll", true, go);
+            SetGameObjectState("Blank/ProfessionIcon", false, go);
+        else
+            SetGameObjectState("Blank/MatchAll", false, go);
+            SetGameObjectState("Blank/ProfessionIcon", true, go);
+            SetProfessionIcon("Blank/ProfessionIcon", proId, go);
+        end
+        HideModelByPosIndex(index);
+    end
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    local index = listView:GetData(cell.dataIndex);
+    local proInfo = TeamManager.teamData.proInfos[index];
+    local member = TeamManager.teamMemberList[index];
+    if member ~= nil and member.id == G_UserInfo.GlobalDBID then
+        return;
+    end
+    if go.name == "MatchButton" then
+        if TeamManager.IsLeader() then
+            TeamSelectProPanel.SelectProfession({index=proInfo.index,proId=proInfo.proId}, RefreshMatchProfession);
+        else
+            ShowSystemFlowTips(3750);
+        end
+    elseif go.name == "InviteButton" then
+        createPanel(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL, ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    elseif member ~= nil then
+        TeamMenuPanel.Show(member);
+    end
+end
+
+-- 创建队伍点击事件
+function OnCreateButtonClick(gameObject)
+    if not TeamManager.HasTeam() then
+        local goalData = TeamManager.teamHallGoalData;
+        TeamProtocol.RequestCreateTeam(goalData.goalId, goalData.diffIndex);
+    else
+        error("已经有队伍了, 界面状态没有切换, BUG BUG");
+    end
+end
+
+-- 退出队伍点击事件
+function OnQuitButtonClick(gameObject)
+    if TeamManager.HasTeam() then
+        local goalData = TeamManager.teamHallGoalData;
+        TeamProtocol.RequestQuitTeam();
+    else
+        error("没有队伍了, 界面状态没有切换, BUG BUG");
+    end
+end
+
+-- 前往按钮点击事件
+function OnEnterButtonClick(gameObject)
+    local teamData = TeamManager.teamData;
+    local goalInfo = TeamManager.GetTeamGoalInfo(teamData.goalId);
+    local jumpType = goalInfo.JumpType;
+    local jumpValue = goalInfo.JumpValue;
+    if jumpType == 0 then
+        return;
+    end
+    if goalInfo.TypeDungeon == 1 then
+        local activityId = goalInfo.DungeonId1;
+        local lackTimes = ActivityManager.IsLackTimes(activityId);
+        if lackTimes == 1 then
+            ActivityTimesItemPanel.Show(activityId);
+            return;
+        end
+    end
+    if jumpType == 4 then
+        jumpValue = goalInfo["DungeonId"..teamData.diffIndex];
+    end
+    ActivityManager.JumpTo(jumpType, jumpValue, ENUMPANELID.ENUM_PANEL_TEAMPANEL, function(jumpType, success) 
+        if success == true then
+            closePanel(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+        end
+    end);
+end
+
+-- 自动匹配按钮点击事件
+function OnAutoButtonClick(gameObject)
+    if TeamManager.GetTeamMemberCount() < TeamManager.MAX_MEMBER_COUNT then
+        TeamProtocol.RequestMatchMember(TeamManager.teamData.id);
+    else
+        ShowSystemFlowTips(3788);
+    end
+end
+
+-- 取消自动匹配按钮点击事件
+function OnCancelAutoButtonClick(gameObject)
+    TeamProtocol.RequestCancelMatchMember(TeamManager.teamData.id);
+end
+
+-- 喊话按钮点击事件
+function OnSpeakButtonClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_TEAM_SPEAK_PANEL, ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+end
+
+-- 申请列表点击事件
+function OnApplyButtonClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_TEAM_APPLY_PANEL, ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+end
+
+-- 队伍目标点击事件
+function OnTeamGoalClick(gameObject)
+    if TeamManager.IsLeader() then
+        local teamData = TeamManager.teamData;
+        TeamGoalPanel.SelectTeamGoal(teamData.goalId, teamData.diffIndex, OnSelectTeamGoal, ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    else
+        ShowSystemFlowTips(3783);
+    end
+end
+
+-- 选择目标回调
+function OnSelectTeamGoal(goalId, diffIndex)
+    if TeamManager.HasTeam() then
+        TeamProtocol.RequestSetTeamGoal(goalId, diffIndex);
+    else
+        ShowSystemFlowTips(3782);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 刷新界面
+function Refresh()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitShow();
+        end
+    end
+end
+
+-- 更新玩家属性
+function UpdateMemberAttr(globalId)
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            m_List:Refresh();
+        end
+    end
+end
+
+-- 更新队伍目标
+function UpdateTeamGoal()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitTeamGoalName();
+        end
+    end
+end
+
+-- 更新匹配状态
+function UpdateMatchState()
+    if m_CreateSuccess == true then
+        if m_PanelObject.activeInHierarchy == true then
+            InitButtonState();
+        end
+    end
+end
+
+------------------------------------------模型相关处理------------------------------------
+
+-- 隐藏所有的3d模型
+function HideAll3DModels()
+    for index, models in pairs(m_MemberModels) do
+        for proId, model in pairs(models) do
+            if model ~= nil then
+                model:SetActive(false);
+            end
+        end
+    end
+end
+
+-- 隐藏指定位置的3D模型
+-- @param posIndex 位置
+function HideModelByPosIndex(posIndex)
+    local models = m_MemberModels[posIndex];
+    if models == nil then
+        return;
+    end
+    for proId, model in pairs(models) do
+        if model ~= nil then
+            model:SetActive(false);
+        end
+    end
+end
+
+-- 创建3d模型
+function Create3DModel(proId, posIndex)
+--    local buffer = ByteBuffer.New();
+--    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+--    local modelId = CCommonTool.GetRoleDateInfo(proId).RoleRes;
+--    buffer:WriteInt(modelId);
+--    buffer:WriteInt(posIndex);
+--    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+-- 创建3d模型Ok
+function CreateModelFinish(model,ui3dResInfo)
+    if m_MemberModels == nil then
+        m_MemberModels = {};
+    end
+    local index = ui3dResInfo.Key1;
+    local proId = ui3dResInfo.Key2;
+    if m_MemberModels[index] == nil then
+        m_MemberModels[index] = {};
+    end
+    m_MemberModels[index][proId] = model;
+    local member = TeamManager.teamMemberList[index];
+    local modelId = m_ModelGlobalIds[index];
+    if modelId == nil or modelId ~= member.id then
+        m_ModelGlobalIds[index] = member.id;
+        InitModelEquipInfo(model,index,proId);
+    end
+    for _proId, model in pairs(m_MemberModels[index]) do
+        if _proId ~= proId then
+            model:SetActive(false);
+        else
+            model:SetActive(true);
+        end
+    end
+    ClipModels();
+    
+    
+
+end
+
+
+-- 3d模型换装
+function InitModelEquipInfo(model,posIndex, proId)
+    local member = TeamManager.teamMemberList[index];
+    if member == nil then
+        model:SetActive(false);
+        return;
+    end
+    local changeEquipComp = GetComponent(model,"","CPlayerChangeEquip");
+    local campType = member.campType;
+    local roleInfo = CCommonTool.GetRoleDateInfo(proId);
+    -- 脸型
+    changeEquipComp:SetChangeEquip(m_IndividuationMng:GetHeadResID(proId,member.faceId));
+    -- 发型
+    changeEquipComp:SetChangeEquip(m_IndividuationMng:GetHairResID(proId,member.hairId));
+    -- 发色
+    changeEquipComp:SetChangeEquip(m_IndividuationMng:GetHairColorResID(proId,member.hairId, member.hairColorId));
+
+    -- 武器ID
+    local weaponID = member.weaponId;
+    if weaponID == 0 then
+        changeEquipComp:SetChangeEquip(roleInfo.WeaponModelID);
+    else
+        changeEquipComp:SetChangeEquip(CCommonTool.GetEquipInfo(weaponID).ModelResourceID);
+    end
+
+    -- 胸甲ID
+    local cuirassID = member.breastplateId;
+    if cuirassID == 0 then
+        changeEquipComp:SetChangeEquip(roleInfo.CuirassModelID);
+    else
+        changeEquipComp:SetChangeEquip(CCommonTool.GetEquipInfo(cuirassID).ModelResourceID);
+    end
+
+    -- 翅膀ID
+    local wingID = member.wingId;
+    if wingID == 0 then
+        -- 删掉这个组件上的翅膀模型
+        changeEquipComp:DestroyUI3DWing();
+    else
+        changeEquipComp:SetChangeEquip(CCommonTool.GetEquipInfo(wingID).ModelResourceID);
+    end
+
+    -- 武器特效
+	local equipEffectLevel = member.weaponLevel;
+    m_effectMng:SetEquipEffect(EquipType.ET_Arm, weaponID, equipEffectLevel, model, "UI_Effect");
+end
+
+-- 裁剪3D背景
+function ClipBackground3d()
+    if not IsClippedObject(m_Background3D) then
+        SetClipState(m_Background3D, true);
+        local rect = m_ClipRects[0];
+        --CCommonTool.AreaClip(m_Background3D, rect, false);
+    end
+end
+
+-- 裁剪3D模型
+function ClipModels()
+    for index, models in pairs(m_MemberModels) do
+        if index == 1 or index == 4 then
+            for proId, model in pairs(models) do
+                if model ~= nil then
+                    if not IsClippedObject(model) then
+                        SetClipState(model, true);
+                        local rect = m_ClipRects[index];
+                        --error("cliped");
+                        --CCommonTool.AreaClip(model, rect, true);
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 还原3D背景
+function RevertBackground3d()
+    if IsClippedObject(m_Background3D) then
+        SetClipState(m_Background3D, false);
+        --CCommonTool.RevertAreaClip(m_Background3D, false);
+    end
+end
+
+-- 还原3D模型
+function RevertModels()
+    for index, models in pairs(m_MemberModels) do
+        for proId, model in pairs(models) do
+            if model ~= nil then
+                if IsClippedObject(model) then
+                    --error("revert");
+                    SetClipState(model, false);
+                    --CCommonTool.RevertAreaClip(model, false);
+                end
+            end
+        end
+    end
+end
+
+function IsClippedObject(obj)
+    local name = obj.name;
+    return m_ClippedObjects[name] == true;
+end
+
+function SetClipState(obj, state)
+    local name = obj.name;
+    m_ClippedObjects[name] = state;
+end
+
+-- 获取裁剪区域
+-- @param corners UIWidget组件的4个顶点全局坐标 
+--        bottom-left, top-left, top-right, bottom-right
+-- return Vector4 对象
+function GetWidgetRect(corners)
+    local x = corners[0].x;
+    local y = corners[0].y;
+    local z = corners[2].x;
+    local w = corners[2].y;
+    return Vector4.New(x, y, z, w);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return nil;
+end
+
+function SetJumpCloseData(paramTable)
+end

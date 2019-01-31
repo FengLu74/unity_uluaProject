@@ -1,0 +1,146 @@
+﻿module("UseTaskItemPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 显示的道具的名称
+local m_equipDaoJuMingCheng = "/Label";
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+-- 显示的道具的图标
+local m_equipDaoJuTuBiao = "/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 显示的装备按钮的对象
+local m_equipButton = "Button-ZhuangBei";
+-- 进度条
+local m_useBar = "UseBar";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 当前游戏对象创建成功
+local m_bCreateSuccess = false;
+-- 当前装备的信息
+local m_ItemInfo = nil;
+-- 当前面板的对象
+local m_strPanelObject = nil;
+-- 道具表里面的道具ID
+local m_itemID = nil;
+
+-- 点击使用后的Loading条时间
+local m_loadingTime = nil;
+-- 当前Loading条进度
+local m_currentLoadintTime = 0;
+-- 当前进度条对象
+local m_gameObjectProgressBar = nil;
+-- 是否开始走进入条
+local m_isLoading = 0;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+
+function Start()
+    InitAllInfo();
+
+    m_bCreateSuccess = true;
+end
+
+function Update()
+    if m_isLoading == 1 then
+        m_currentLoadintTime = m_currentLoadintTime + Time.deltaTime;
+        local progressBarValue = m_currentLoadintTime / m_loadingTime;
+        SetProgressBarValue(m_gameObjectProgressBar, progressBarValue);
+        if progressBarValue > 1 then
+            m_currentLoadintTime = 0;
+            m_isLoading = 0;
+            SetGameObjectState(m_useBar, false, m_strPanelObject);
+            OnSendUseTaskItemMessage();
+        end
+    end
+end
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_bCreateSuccess == true then
+        InitAllInfo();
+    end
+end
+-- 隐藏时处理的逻辑
+function OnDisable()
+
+end
+-- 面板删除逻辑
+function OnDestroy()
+    m_bCreateSuccess = false;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化所有数据信息
+function InitAllInfo()
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_USETASKITEMPANEL);
+    if m_strPanelObject ~= nil then
+        m_gameObjectProgressBar = GetComponent(m_strPanelObject, m_useBar, "UIProgressBar");
+    end
+    SetGameObjectState(m_useBar, false, m_strPanelObject);
+    SetGameObjectState(m_equipButton, true, m_strPanelObject);
+    if m_itemID ~= nil then
+        m_ItemInfo = CCommonTool.GetItemInfo(m_itemID);
+    end
+    if m_ItemInfo ~= nil and m_strPanelObject ~= nil then
+        SetSpriteByAtlasID(m_equipButton .. m_equipDaoJuTuBiao, m_ItemInfo.PictureID, m_strPanelObject);
+        SetSpriteByAtlasID(m_useBar .. m_equipDaoJuTuBiao, m_ItemInfo.PictureID, m_strPanelObject);
+        SetLabelTextByID(m_equipButton .. m_equipDaoJuMingCheng, m_ItemInfo.NameTextID, m_strPanelObject);
+        SetLabelTextByID(m_useBar .. m_equipDaoJuMingCheng, m_ItemInfo.NameTextID, m_strPanelObject);
+    end
+    SetGameObjectEvent(m_equipButton, OnEquipClick, m_strPanelObject, nil);
+    -- 自动任务流程指定区域使用道具
+    if G_MissionMng.IsAutoDoTaskAfterReachPos then
+        missionInfo = G_MissionMng:GetMission(G_MissionMng.AutoDoTaskIDAfterReachPos);
+        if missionInfo.CompleteKeyValue1 == m_itemID then
+            OnEquipClick();
+        end
+        G_MissionMng.IsAutoDoTaskAfterReachPos = false;
+    end
+end
+
+function SetItemID(itemID)
+    m_itemID = itemID;
+end
+
+function OnSendUseTaskItemMessage()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_UES_MISSION_ITEM);
+    buffer:WriteUInt(m_itemID);
+    G_NetWorkMng:SendMessage(buffer);
+    closePanel(ENUMPANELID.ENUM_PANEL_USETASKITEMPANEL);
+end
+
+function SetLoadingTime(loadingTime)
+    m_loadingTime = loadingTime;
+end
+
+-- 设置进度条
+function SetUseBarProgressBarValue()
+    
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 装备使用道具事件
+function OnEquipClick()
+    if m_isLoading == 0 then
+        if m_loadingTime ~= nil and m_loadingTime > 0 then
+            m_isLoading = 1;
+            SetGameObjectState(m_useBar, true, m_strPanelObject);
+            SetGameObjectState(m_equipButton, false, m_strPanelObject);
+        else
+            SetGameObjectState(m_useBar, false, m_strPanelObject);
+            OnSendUseTaskItemMessage();
+            m_isLoading = 0;
+        end
+    end
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function InterruptBar()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_USETASKITEMPANEL) == 1 then
+        m_isLoading = 0;
+        m_currentLoadintTime = 0;
+        m_gameObjectProgressBar.value = 0;
+        SetGameObjectState(m_useBar, false, m_strPanelObject);
+        SetGameObjectState(m_equipButton, true, m_strPanelObject);
+    end
+end

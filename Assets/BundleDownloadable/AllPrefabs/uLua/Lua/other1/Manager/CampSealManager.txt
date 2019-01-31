@@ -1,0 +1,50 @@
+﻿module("CampSealManager", package.seeall)
+
+-- ���ĸ�������
+m_MaxSlotNum = 15;
+
+CampSealData = {};
+
+-- ����Ʒ�ʶ�Ӧ����
+m_QualityScoreTable =
+{
+    [2] = 100, -- ��
+    [3] = 150, -- ��
+    [4] = 200, -- ��
+    [5] = 250, -- ��
+}
+
+function IsShowRedHint()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_CAMPSEAL) == false then return false end
+    local campSealData = nil;
+    for Index = 1,CampSealManager.m_MaxSlotNum do
+        campSealData = CCommonTool.GetCampSealInfo(Index);
+        if campSealData == nil then
+            return false;
+        end
+        if CampSealData[Index] == nil then
+            if CampManager.GetMilitaryRank() >= campSealData.NeedCreditLevel and G_UserInfo.RoleAttribute.Level >= campSealData.NeedPlayerLevel then
+                if G_UserInfo.RoleAttribute.N64Exploits >= campSealData.ActiveCost then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- �õ���ǿ����������Ӫ����ϵͳ�ķ���
+function GetCampSealScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_CAMPSEAL) == false then return score end
+    for Index = 1, m_MaxSlotNum do
+        if CampSealData[Index] ~= nil then
+            local notEmptyItemID = CampSealData[Index];
+            if notEmptyItemID > 0 then
+                local itemData = CCommonTool.GetItemInfo(notEmptyItemID);
+                score = score + m_QualityScoreTable[itemData.AptitudeID]
+            end
+        end
+    end
+    return score;
+end

@@ -1,0 +1,189 @@
+﻿module("BorderWarProtocol", package.seeall)
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 阵营边境数据返回
+    network.Register(GMI_STOC_UPDATE_CAMP_BORDER_DATA, OnGetBorderData);
+    -- 单个任务计数改变
+    network.Register(GMI_STOC_CAMPBORDER_CHANGE_UPDATE, OnMissionUpdate);
+    -- 通知客户端宝箱领取状态
+    network.Register(GMI_STOC_CAMP_ITEM_BOX_STATE_CHANGE, OnBoxUpdate);
+    -- 通知客户端奖励数据
+    network.Register(GMI_STOC_CAMP_REWARD_DATA, OnGetReward);
+end
+
+-- 阵营边境数据返回
+function OnGetBorderData(protocolId, buffer)
+    local curCamp = buffer:ReadByte();              -- 当前边境（1：守护 2：纷争）
+    local endTime = buffer:ReadInt();               -- 结束时间
+    local score = buffer:ReadInt();                 -- 当前积分
+    local boxState = buffer:ReadByte();             -- 宝箱状态（0：未领取 1：已领取）
+    local missionDownNum = buffer:ReadByte();       -- 今日任务总数
+
+    BorderWarManager.BorderWarBoxState = boxState;
+    BorderWarManager.BorderWarData.curCamp = curCamp;
+    BorderWarManager.BorderWarData.endTime = endTime;
+    BorderWarManager.BorderWarData.score = score;
+    BorderWarManager.BorderWarData.missionDownNum = missionDownNum;
+
+    local missionNum = buffer:ReadByte();           -- 任务个数
+    local tempData = {};
+    for i = 1, missionNum do
+        local missionID = buffer:ReadByte();        -- 任务ID
+        local competeTimes = buffer:ReadByte();     -- 完成次数
+        local taskNum = buffer:ReadByte();          -- 子任务个数
+
+        BorderWarManager.BorderWarMissionTypeData[missionID] = {};
+        BorderWarManager.BorderWarMissionTypeData[missionID].competeTimes = competeTimes;
+        BorderWarManager.BorderWarMissionTypeData[missionID].taskNum = taskNum;
+        BorderWarManager.BorderWarMissionTypeData[missionID].missionID = missionID;
+
+        for i = 1, taskNum do
+            local taskID = buffer:ReadInt();              -- 子任务ID
+            local taskCompeteTimes = buffer:ReadUInt();   -- 子任务计数
+            local missionState = buffer:ReadByte();       -- 任务状态（1：前往接取:2：前往交付 ）
+            local remainCount = buffer:ReadByte();        -- 本场剩余
+            local isHaveRefres = buffer:ReadByte();       -- 是否还有刷新（0：没有 1：有）
+            local refreshTime = buffer:ReadUShort();      -- 刷新时间
+            local bossTime = buffer:ReadInt();            -- boss持续时间
+
+            tempData[taskID] = {};
+            tempData[taskID].taskID = taskID;
+            tempData[taskID].taskCompeteTimes = taskCompeteTimes;
+            tempData[taskID].missionState = missionState;
+            tempData[taskID].remainCount = remainCount;
+            tempData[taskID].isHaveRefres = isHaveRefres;
+            tempData[taskID].refreshTime = refreshTime;
+            tempData[taskID].bossTime = bossTime;
+        end
+    end
+    BorderWarManager.BorderWarMissionData = tempData;
+
+    BorderWarPanel.OnOpenBorderWar();
+end
+
+-- 任务计数改变更新
+function OnMissionUpdate(protocolId, buffer)
+    local missionID = buffer:ReadInt();            -- 任务ID
+    local taskID = buffer:ReadInt();               -- 子任务ID
+    local competeTimes = buffer:ReadByte();        -- 任务完成次数
+    local taskCompeteTimes = buffer:ReadUInt();    -- 子任务计数情况
+    local missionState = buffer:ReadByte();        -- 任务状态（1：前往接取:2：前往交付 ）
+    local remainCount = buffer:ReadByte();         -- 本场剩余
+    local isHaveRefres = buffer:ReadByte();        -- 是否还有刷新（0：没有 1：有）
+    local refreshTime = buffer:ReadUShort();       -- 刷新时间
+    local missionDownNum = buffer:ReadByte();      -- 今日任务总数
+
+    BorderWarManager.BorderWarData.missionDownNum = missionDownNum;
+
+    if BorderWarManager.BorderWarMissionTypeData[missionID] == nil then BorderWarManager.BorderWarMissionTypeData[missionID] = {}; end
+    BorderWarManager.BorderWarMissionTypeData[missionID].competeTimes = competeTimes;
+    BorderWarManager.BorderWarMissionTypeData[missionID].missionID = missionID; 
+
+    if BorderWarManager.BorderWarMissionData[taskID] == nil then BorderWarManager.BorderWarMissionData[taskID] = {}; end
+    if taskCompeteTimes > 0 and BorderWarManager.IsNeedShowTip(taskID) == true or BorderWarManager.IsCampKillTask(taskID) == true then 
+        local mItemNum = 1;
+        if BorderWarManager.BorderWarMissionData[taskID].taskCompeteTimes ~= nil and taskCompeteTimes > BorderWarManager.BorderWarMissionData[taskID].taskCompeteTimes then 
+            mItemNum = taskCompeteTimes - BorderWarManager.BorderWarMissionData[taskID].taskCompeteTimes;
+        end
+        if BorderWarManager.IsCampKillTask(taskID) == true then 
+            if BorderWarManager.BorderWarMissionData[taskID].taskCompeteTimes == nil then 
+                mItemNum = taskCompeteTimes;
+            else
+                if taskCompeteTimes > BorderWarManager.BorderWarMissionData[taskID].taskCompeteTimes then 
+                    mItemNum = taskCompeteTimes;
+                else
+                    mItemNum = 0;
+                end
+            end
+        end
+        if mItemNum > 0 then 
+            local data = CCommonTool.GetBorderTaskByIndex(taskID);
+            local infoStr = string_format("{0}{1}[-]", GetColorStrByPinZhi(data.QualityId + 1), GetTextToId(data.NameID));
+            local str = string_format("{0} *{1}", infoStr, mItemNum);
+            if "" ~= str then
+                ShowSystemFlowTips(str, true);
+                -- 获取道具信息显示在聊天系统频道
+                ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+            end
+        end
+    end
+    BorderWarManager.BorderWarMissionData[taskID].taskID = taskID;
+    BorderWarManager.BorderWarMissionData[taskID].taskCompeteTimes = taskCompeteTimes;
+    BorderWarManager.BorderWarMissionData[taskID].missionState = missionState;
+    BorderWarManager.BorderWarMissionData[taskID].remainCount = remainCount;
+    BorderWarManager.BorderWarMissionData[taskID].isHaveRefres = isHaveRefres;
+    BorderWarManager.BorderWarMissionData[taskID].refreshTime = refreshTime;
+
+    BorderWarPanel.OnRefreshMission(missionID);
+
+end
+
+-- 宝箱状态 （0：未领取  1：已领取）
+function OnBoxUpdate(protocolId, buffer)
+    local boxState = buffer:ReadByte();
+    BorderWarManager.BorderWarBoxState = boxState;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BORDERWARPANEL) == 1 then 
+        BorderWarPanel.InitBorderWarData();
+    end
+end
+
+-- 通知客户端奖励数据
+function OnGetReward(protocolId, buffer)
+    local honorScore = buffer:ReadUShort(); -- 荣誉积分
+    local exp = buffer:ReadInt();           -- 军衔经验
+    local campExp = buffer:ReadUShort();    -- 繁荣度
+    local iron = buffer:ReadUShort();       -- 铁矿
+    local food = buffer:ReadUShort();       -- 粮草
+
+    local tempTable = {};
+    tempTable[1] = honorScore;
+    tempTable[2] = exp;
+    tempTable[3] = campExp;
+    tempTable[4] = iron;
+    tempTable[5] = food;
+
+    BorderWarPanel.OnOpenSubmit(tempTable);
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求获取阵营边境数据
+function RequestBorderData()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_CAMP_BORDER_DATA);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 提交完成的阵营边境任务
+function RequestAchieveReward(missionId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_COMPETE_CAMP_BORDER_TASK);
+    buffer:WriteInt(missionId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求进入边境战场
+function RequestEnterBorderWar()
+    error("请求进入边境战场");
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ENTER_CAMP_BORDER_ROOM);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求领取阵营边境宝箱
+function RequestGetBox()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LINGQU_ITEM_BOX);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 客户端请求边境任务奖励数据
+function RequestReward(id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_CAMP_REWARD_DATA);
+    buffer:WriteInt(id);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

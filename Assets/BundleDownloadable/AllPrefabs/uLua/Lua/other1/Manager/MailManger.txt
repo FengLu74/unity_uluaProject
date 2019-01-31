@@ -1,0 +1,120 @@
+﻿module("MailManger", package.seeall)
+
+m_n64MailID = nil;        -- //邮件ID;
+m_eMailType = nil;        -- //邮件类型
+m_szTitle = nil;	    -- //邮件主题
+m_szName = nil;		-- //发件人名字
+m_dwSenderID = nil;		-- //发件人ID
+m_SendTime = nil;      -- //发送时间
+m_eState = nil;      -- //当前状态
+m_Content = nil;    -- // 邮件内容
+m_affixMoneySilver = nil;       -- //游戏币
+m_affixTongBao = nil;      -- //元宝
+m_byItemNum = nil;     --- //道具个数
+m_isRead = nil;            -- //邮件是否读取
+m_itemID = nil;           -- //道具ID;
+m_itemCount = nil;       -- //道具数量
+m_itemAttr = nil;       -- 道具属性
+mailTable = {};       -- 存储全部邮件信息信息
+m_MaxMailCount = 0;     -- 邮件总件数
+m_NotReadMail = 0;     -- 未读的邮件总件数
+m_IsNewMail = 0;    -- 是否为新邮件 0 不是新邮件 1 表示是新邮件
+mailContentTable = {};  -- 存储玩家读取过了邮件内容
+mailItemTabel = {};  -- 每封邮件的道具信息
+
+-- 服务器上线发送邮件
+function AddMialInServer(info)
+    for index = 1, #mailTable do
+        if info.m_n64MailID == mailTable[index].m_n64MailID then
+            --error("邮件已存在");
+        else
+            info.m_isRead = IsReadMial(info.m_eState);
+            table.insert(mailTable, info);
+        end
+    end
+    return true;
+end 
+
+
+-- 获取邮件内容通过邮件ID
+function GetMailContent(mailID)
+    for index = 1, #mailContentTable do
+        if mailID == mailContentTable[index].m_n64MailID then
+            return mailContentTable[index];
+        end
+    end
+end
+
+-- 获取所有邮件
+function GetAllMail()
+    if not mailTable then
+        return { };
+    end
+    local items = { };
+    for i, mail in ipairs(mailTable) do
+        if not mail.m_n64MailIDthen then
+            table.insert(items, mail);
+        end
+    end
+end
+
+-- 更新邮件为已读
+function UpdateMailState(mailID)
+    for index = 1, #mailTable do
+        if mailID == mailTable[index].m_n64MailID then
+            local info = mailTable[index];
+            info.m_isRead = 1;
+            info.m_isNewMail = 0;
+            table.insert(mailTable, info);
+        end
+    end
+end
+
+-- 通过邮件ID删除邮件
+function DeleteMailByID(mailID)
+    for index = 1, #mailTable do
+        if mailID == mailTable[index].m_n64MailID then
+            table.remove(mailTable, index);
+        end
+    end
+    for index = 1, #mailContentTable do
+        if mailID == mailContentTable[index].m_n64MailID then
+            table.remove(mailContentTable, index);
+        end
+    end
+
+end
+
+-- 更新玩家的邮件总数  以及未读邮件总数、
+function UpdatePlayerMailCount(maxCount, count)
+    m_MaxMailCount = maxCount;
+    m_NotReadMail = count;
+    if m_IsNewMail > 0 then
+        m_IsNewMail = 1;
+    end
+
+end
+
+--  玩家获取新邮件
+function AddPlayerMail(count)
+    m_MaxMailCount = m_MaxMailCount + count;
+    m_IsNewMail = 1;
+end
+
+
+-- 邮件状态， 判断是否已读取
+function IsReadMial(mailState)
+    if mailState == ENUM_MAIL_STATE.MS_Read then
+        return true;
+    end
+end
+
+-- 数据清理
+function ClearData()
+    mailTable = {};
+    m_MaxMailCount = 0;
+    m_NotReadMail = 0;
+    m_IsNewMail = 0;
+    mailContentTable = {};
+    mailItemTabel = {};
+end

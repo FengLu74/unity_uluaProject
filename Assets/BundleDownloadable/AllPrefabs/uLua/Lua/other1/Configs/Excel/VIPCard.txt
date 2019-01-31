@@ -1,0 +1,81 @@
+﻿--[[
+    field=VIPCardID, type=byte, desc=特权卡ID
+    field=VIPCardTxt, type=int, desc=说明文本
+    field=VIPCardTime, type=int, desc=生效时间(单位天)
+    field=CostGold, type=int, desc=购买花费
+    field=ItemId1, type=int, desc=图标id1(卡图)
+    field=ItemId2, type=int, desc=图标id2（内容图）
+]]
+module("VIPCardTable", package.seeall)
+local list={
+    {VIPCardID=1,VIPCardTxt=101820,VIPCardTime=-1,CostGold=0,ItemId1=9907,ItemId2=9920},
+    {VIPCardID=2,VIPCardTxt=101821,VIPCardTime=30,CostGold=48,ItemId1=9908,ItemId2=9921},
+    {VIPCardID=3,VIPCardTxt=101822,VIPCardTime=30,CostGold=188,ItemId1=9909,ItemId2=9922}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3]};
+
+count = 3;
+Count = 3;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

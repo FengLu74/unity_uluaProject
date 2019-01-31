@@ -1,0 +1,234 @@
+﻿module('VipWelfarePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'VipWelfarePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_SubVipRewardPath = "Sub_VipInfo/Sub_VipReward";
+local m_SubVipEveryDayRewardPath = "Sub_VipInfo/Sub_VipEveryDayReward";
+
+----------------------------------通用的名称路径---------------------------------------
+-- vip等级列表
+local m_GridVipPath = "Sub_VipTabs/Grid";
+-- vip每一级的奖励列表
+local m_GridVipRewardPath = "Sub_VipInfo/Sub_VipReward/ItemPanel/Grid";
+-- vip每一级的日常奖励列表
+local m_GridVipDayRewardPath = "Sub_VipInfo/Sub_VipEveryDayReward/ItemPanel/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+local m_GridVip = nil;
+local m_GridVipReward = nil;
+local m_GridVipDayReward = nil;
+-- 每日vip奖励领取状态
+local m_everyDayvipRewardState = nil;
+-- 每一等级的vip奖励领取状态
+local m_vipRewardState = nil
+-- 当前选择的vip等级;
+local m_CurSelectVipLV = nil;
+local myVipLv = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_GridVip = nil;
+	m_GridVipReward = nil;
+    m_GridVipDayReward = nil;
+    m_everyDayvipRewardState = nil;
+    m_vipRewardState = nil;
+    m_CurSelectVipLV = nil;
+    myVipLv = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_VIP);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_GridVip = GetComponent(m_PanelObject, m_GridVipPath, "UIListView");
+    m_GridVipReward = GetComponent(m_PanelObject, m_GridVipRewardPath, "UIListView");
+    m_GridVipDayReward = GetComponent(m_PanelObject, m_GridVipDayRewardPath, "UIListView");
+end
+
+-- 初始化数据
+function InitData()
+    m_everyDayvipRewardState = VipManager.MyVipData.vipEveryDayReward;
+    myVipLv = VipManager.MyVipData.vipLv;
+    m_CurSelectVipLV = myVipLv;
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_GridVip:SetInitCallback(OnGridVipViewInit);
+    m_GridVip:SetClickCallback(OnGridVipViewClick);
+    m_GridVipReward:SetInitCallback(OnGridVipRewardViewInit);
+    m_GridVipReward:SetClickCallback(OnGridVipRewardViewClick);
+    m_GridVipDayReward:SetInitCallback(OnGridDayVipRewardViewInit);
+    m_GridVipDayReward:SetClickCallback(OnGridDayVipRewardViewClick);
+    
+
+    SetGameObjectEvent(m_SubVipRewardPath.."/btn_CanGet", OnVipRewardGet, m_PanelObject);
+    SetGameObjectEvent(m_SubVipEveryDayRewardPath.."/btn_CanGet", OnVipEverydayGet, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local allVipData = VIPLevelTable.GetAll();
+    if allVipData == nil then return end
+    m_GridVip:RemoveAll();
+    for i,v in pairs(allVipData) do 
+        if v.Viplevel<=12 or myVipLv>12 then
+            m_GridVip:AddData(v);
+        end
+    end
+
+    if myVipLv > 0 then 
+        m_GridVip:SetSelect(m_CurSelectVipLV - 1, true);
+        InitVipInfo(myVipLv);
+    else
+        m_GridVip:SetSelect(0, true);
+        InitVipInfo(1);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- vip等级
+function OnGridVipViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Label","VIP"..data.Viplevel, go);
+end
+
+function OnGridVipViewClick(listView, cell, go)
+    local index = cell.dataIndex;
+    InitVipInfo(index + 1);
+    m_CurSelectVipLV = index + 1;
+    VipPanel.ChangeProcessBar(m_CurSelectVipLV);
+end
+
+-- vip奖励
+function OnGridVipRewardViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ExcelID;
+    local num = data.itemNum;
+    SetItemShowByExcelIDV04(item, "Item", excelId, num, false, 110, ENUMPANELID.ENUM_PANEL_VIP);
+    SetItemToolTipsEvent(item, "Item", ENUMPANELID.ENUM_PANEL_VIP, false, excelId);
+end
+
+function OnGridVipRewardViewClick(listView, cell, go)
+    
+end
+
+-- vip每日奖励
+function OnGridDayVipRewardViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ExcelID;
+    local num = data.itemNum;
+    SetItemShowByExcelIDV04(item, "Item", excelId, num, false, 110, ENUMPANELID.ENUM_PANEL_VIP);
+    SetItemToolTipsEvent(item, "Item", ENUMPANELID.ENUM_PANEL_VIP, false, excelId);
+end
+
+function OnGridDayVipRewardViewClick(listView, cell, go)
+    
+end
+-- vip等级奖励领取
+function OnVipRewardGet()
+    VipProtocol.RequestGetReward(m_CurSelectVipLV, 0);
+end
+
+-- vip每日奖励领取
+function OnVipEverydayGet()
+    VipProtocol.RequestGetReward(m_CurSelectVipLV, 1);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 显示vip对应的奖励信息
+function InitVipInfo(index)
+    local VipData = VIPLevelTable.Get(index);
+    --得到奖励信息 目前奖励有6个
+    local itemTable = {};
+    for i = 1, 6 do 
+        if VipData["Item"..i] > 0 then 
+            local tempTable = {};
+            local excelIDNow= VipData["Item"..i];
+            if CCommonTool.GetProfessionItemId(excelIDNow)==excelIDNow then
+                tempTable.ExcelID = VipData["Item"..i];
+                tempTable.itemNum = VipData["IyemNum"..i];
+            else
+                tempTable.itemNum = VipData["IyemNum"..i];
+                local id = CCommonTool.GetProfessionItemId(excelIDNow);
+                tempTable.ExcelID = id;
+            end
+            table.insert(itemTable, #itemTable + 1, tempTable)
+        end
+    end
+    m_GridVipReward:RemoveAll();
+    for i,v in pairs(itemTable) do
+        m_GridVipReward:AddData(v);
+    end
+    -- 每日奖励
+    local itemDayTable = {};
+    for i = 1, 2 do 
+        if VipData["Item"..i] > 0 then 
+            local tempTable = {};
+            tempTable.ExcelID = VipData["EveryDayItem"..i];
+            tempTable.itemNum = VipData["EveryDayItemNum"..i];
+            table.insert(itemDayTable, #itemDayTable + 1, tempTable)
+        end
+    end
+    m_GridVipDayReward:RemoveAll();
+    for i,v in pairs(itemDayTable) do
+        m_GridVipDayReward:AddData(v);
+    end
+    -- 设置图标
+    SetSpriteByAtlasID("Sub_VipInfo/sp_Vip", VipData.ItemId1, m_PanelObject, true);
+--    -- 设置图标特效
+--    SetItemIconEffect(m_PanelObject, "Sub_VipInfo/sp_Vip", itemTable[1].ExcelID, 110, ENUMPANELID.ENUM_PANEL_VIP);、
+    SetLabelContent("Sub_VipInfo/Label", GetTextToId(VipData.TextID), m_PanelObject);
+    if myVipLv > 0 and myVipLv >= index then 
+        m_vipRewardState = G_RewardMng:GetState(VipManager.MyVipData.vipRewardTake, 18);
+        SetGameObjectState(m_SubVipRewardPath.."/btn_CanGet", m_vipRewardState[index] == 0, m_PanelObject);
+        SetGameObjectState(m_SubVipRewardPath.."/btn_HaveGet", m_vipRewardState[index] == 1, m_PanelObject);
+        SetGameObjectState(m_SubVipRewardPath.."/btn_NotOpen", false, m_PanelObject);
+        SetGameObjectState(m_SubVipEveryDayRewardPath.."/btn_CanGet", m_everyDayvipRewardState == 0, m_PanelObject);
+        SetGameObjectState(m_SubVipEveryDayRewardPath.."/btn_HaveGet", m_everyDayvipRewardState == 1, m_PanelObject);
+        SetGameObjectState(m_SubVipEveryDayRewardPath.."/btn_NotOpen", false, m_PanelObject);
+    else
+        SetGameObjectState(m_SubVipRewardPath.."/btn_CanGet", false, m_PanelObject);
+        SetGameObjectState(m_SubVipRewardPath.."/btn_HaveGet", false, m_PanelObject);
+        SetGameObjectState(m_SubVipRewardPath.."/btn_NotOpen", true, m_PanelObject);
+        SetGameObjectState(m_SubVipEveryDayRewardPath.."/btn_CanGet", false, m_PanelObject);
+        SetGameObjectState(m_SubVipEveryDayRewardPath.."/btn_HaveGet", false, m_PanelObject);
+        SetGameObjectState(m_SubVipEveryDayRewardPath.."/btn_NotOpen", true, m_PanelObject);
+    end
+    
+    SetLabelContent(m_SubVipEveryDayRewardPath.."/lb_Title", "VIP"..index..GetTextToId(162953), m_PanelObject);
+end

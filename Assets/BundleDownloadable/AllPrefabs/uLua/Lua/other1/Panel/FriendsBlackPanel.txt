@@ -1,0 +1,95 @@
+﻿module("FriendsBlackPanel", package.seeall)
+
+-- 面板对象
+local m_panelObject = nil;
+-----------------------------------------------label路径--------------------------------------------
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+-----------------------------------------------button路径--------------------------------------------
+local m_BlackSearchButtonPath = "Bottom/SearchButton";
+-------------------------------------------通用的名称路径----------------------------------------------
+local m_listViewStr = "ScrollView/Grid";
+--好友列表空列表提示路径
+local m_BlankListHintPath = "BlankListHint";
+----------------------------------------gameobject所在的路径---------------------------------------
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+local m_listView = nil;
+
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+function Start()
+    InitObjects();
+    InitOnClick();
+    FriendsChatPanel.HidePanel();
+    InitList();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitList();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_listView = nil;
+    m_panelInitAlready = false;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+    m_panelObject = child(m_panelObject, "BlackPanel").gameObject;
+    m_listView = GetComponent(m_panelObject, m_listViewStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_BlackSearchButtonPath, OnBlackSearchClick, m_panelObject, nil);
+end
+
+function InitList()
+    local dataList = FriendsData.GetListByTabIndex(FriendsPanel.TAB_BLACK);
+    if dataList == nil then return end
+    m_listView:RemoveAll();
+    for i, data in ipairs(dataList) do
+        m_listView:AddData(data);
+    end
+    SetGameObjectState(m_BlankListHintPath, #dataList == 0, m_panelObject);
+    SetLabelContent("CountLabel", #dataList .. "/" .. FriendsData.MAX_COUNT_BLACK, m_panelObject);
+end
+
+----------------------------------事件处理--------------------------------------
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    FriendsPanel.SetFriendBaseInfo(go, data, false, false);
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "RemoveButton" then
+        FriendsProtocol.RequestRemoveBlackFriend(data.guid);
+        InitList();
+    end
+end
+
+function OnBlackSearchClick(go)
+    local inputField = child(m_panelObject, "Bottom/InputField").gameObject:GetComponent("UIInput");
+    local value = inputField.value;
+    if string.len(value) > 0 then
+        FriendsProtocol.RequestSearch(value, 2);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_FRIENDADD_NOT_NAME);
+    end
+end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------

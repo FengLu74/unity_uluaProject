@@ -1,0 +1,392 @@
+﻿module("RollOverCardPanel", package.seeall)
+
+-- 翻牌的数据信息，状态（1为正面，2为反面），excelid，数量，牌的object
+local ItemInfoTable = {
+    [1] = { state = 1, excelid = 20000, num = 1, cardObj = nil, CoinType = - 1, CostMoney = - 1 },
+    [2] = { state = 1, excelid = 20000, num = 2, cardObj = nil, CoinType = - 1, CostMoney = - 1 },
+    [3] = { state = 1, excelid = 20000, num = 3, cardObj = nil, CoinType = - 1, CostMoney = - 1 },
+    [4] = { state = 1, excelid = 20000, num = 4, cardObj = nil, CoinType = - 1, CostMoney = - 1 },
+    [5] = { state = 1, excelid = 20000, num = 5, cardObj = nil, CoinType = - 1, CostMoney = - 1 },
+};
+-- 是否对翻牌的数据有更新（1代表未使用，0代表已经使用）
+local ItemInfoTableUseFlag = 0;
+-- 面板的对象
+local PanelObject = nil;
+-- 已经点击牌的数量
+local CardsClickNum = 0;
+-- 最大翻牌次数
+local m_maxRollOverTime = 0;
+-- 服务器是否返回了翻拍信息
+local m_serverIsBack = true;
+-- 服务器返回的消息次数
+local m_serverBackTimes = 0;
+---------------------------------------------------------外部传递信息调用----------------------------------------------------
+-- 设置翻牌信息的excelid和num
+function SetTable(tableStruct)
+    ItemInfoTableUseFlag = 1;
+    for index = 1, 5 do
+        ItemInfoTable[index].excelid = tableStruct[index];
+        -- error("excelID::::"..ItemInfoTable[index].excelid);
+    end
+    for index = 6, 10 do
+        ItemInfoTable[index - 5].num = tableStruct[index];
+        -- error("num::::"..ItemInfoTable[index - 5].num);
+    end
+    m_maxRollOverTime = tableStruct[11];
+    for index = 12, 16 do
+        ItemInfoTable[index - 11].CoinType = tableStruct[index];
+        -- error("coinType::::"..ItemInfoTable[index - 11].CoinType);
+    end
+    for index = 17, 21 do
+        ItemInfoTable[index - 16].CostMoney = tableStruct[index];
+        -- error("costmoney::::"..ItemInfoTable[index - 16].CostMoney);
+    end
+end
+
+-- 显示次序为order的道具（0为不显示）
+function ItemShow(obj, order)
+    if order == 0 or ItemInfoTable[order].excelid == -1 then
+        SetGameObjectState("Item", false, obj);
+    else
+        local sub_str = tonumber(string.sub(obj.name, 5, string.len(obj.name)));
+        SetGameObjectState("Item", true, obj);
+        ItemInfoTable[sub_str].state = 1;
+        SetItemShowByExcelIDV04(obj, "Item", ItemInfoTable[order].excelid, ItemInfoTable[order].num, true, 2, ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+        SetGameObjectState("Item/Label_Num", false, obj);
+        SetLabelContent("Item/Num/Label-Num", ItemInfoTable[order].num, obj);
+    end
+end
+
+-- 改变牌的翻面为反面
+function ChangeState(obj)
+    local sub_str = tonumber(string.sub(obj.name, 5, string.len(obj.name)));
+    ItemInfoTable[sub_str].state = 0;
+    SetCoin("Cards/Card" .. sub_str .. "/Yuanbao", 0, 0, 0);
+end
+
+-- 翻牌动画播完添加倒计时事件
+function TweenOver(obj)
+    local sub_str = tonumber(string.sub(obj.name, 5, string.len(obj.name)));
+    if sub_str == 1 then
+        local startRollCardsSeconds = CCommonTool.GetDefineInfo(3011):GetIntContent();
+        local textContent = CCommonTool.GetTxtData(8034).m_str;
+        local showContent = string_format(textContent, startRollCardsSeconds);
+        SetLabelContent("Label", showContent, PanelObject);
+        SetGameObjectState("Label", true, PanelObject);
+        AddTimerEvent("RollOverCardCount", startRollCardsSeconds, RollOverCardCallBackOver, nil, RollOverCardCallBack);
+    end
+end
+
+-- 按钮点击执行的事件
+function ButtonClick(ChangeAndGoComponent)
+    log("玩家点了翻牌2");
+    if not m_serverIsBack then
+        error("服务器还没返回上一次结果")
+        return false;
+    end
+    if m_maxRollOverTime <= CardsClickNum then
+        ShowSystemFlowTips(6102);
+        return false;
+    end
+    error("ButtonClickcoinType::::"..ItemInfoTable[CardsClickNum + 1].CoinType)
+    if ItemInfoTable[CardsClickNum + 1].CoinType == 1 then
+        if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, ItemInfoTable[CardsClickNum + 1].CostMoney, ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL, OnExchangeMoneyCallBack, CardsClickNum, ChangeAndGoComponent) then
+            return false;
+        end
+    elseif ItemInfoTable[CardsClickNum + 1].CoinType == 2 then
+        if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.NOTBIND_COIN, ItemInfoTable[CardsClickNum + 1].CostMoney, ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL, OnExchangeMoneyCallBack, CardsClickNum, ChangeAndGoComponent) then
+            return false;
+        end
+    elseif ItemInfoTable[CardsClickNum + 1].CoinType == 3 then
+        if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND, ItemInfoTable[CardsClickNum + 1].CostMoney, ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL, OnExchangeMoneyCallBack, CardsClickNum, ChangeAndGoComponent) then
+            return false;
+        end
+    elseif ItemInfoTable[CardsClickNum + 1].CoinType == 4 then
+        if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.NOTBIND_DIAMOND, ItemInfoTable[CardsClickNum + 1].CostMoney, ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL, OnExchangeMoneyCallBack, CardsClickNum, ChangeAndGoComponent) then
+            return false;
+        end
+    end
+    log("玩家点了翻牌3");
+    -- 如果够
+    if ChangeAndGoComponent.State == 3 then
+        m_serverIsBack = false;
+        CardsClickNum = CardsClickNum + 1;
+        ItemInfoTable[CardsClickNum].cardObj = ChangeAndGoComponent;
+        local name = ChangeAndGoComponent.name;
+        SetGameObjectState("Cards/" .. name .. "/Yuanbao", false, PanelObject);
+        ItemInfoTable[CardsClickNum].cardObj.State = ItemInfoTable[CardsClickNum].cardObj.State + 1;
+        SetGameObjectState("ZheZhao", true, PanelObject);
+        AddTimerEvent("RollOverCardCount", CCommonTool.GetDefineInfo(3011):GetIntContent(), RollOverCardCallBackOver, nil, RollOverCardCallBack);
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(11300);
+        buffer:WriteByte(CardsClickNum);
+        G_NetWorkMng:SendMessage(buffer);
+        if ItemInfoTable[CardsClickNum + 1] ~= nil then
+            for index = 1, 5 do
+                -- 显示编号是翻拍次数+1
+                SetCoin("Cards/Card" .. index .. "/Yuanbao", ItemInfoTable[CardsClickNum + 1].CoinType, ItemInfoTable[CardsClickNum + 1].CostMoney, ItemInfoTable[CardsClickNum + 1].state);
+            end
+        end
+        log("给服务器发送了翻牌的消息");
+    end
+    if m_maxRollOverTime <= CardsClickNum then
+        for index = 1, 5 do
+            SetGameObjectState("Cards/Card" .. index .. "/Yuanbao", false, PanelObject);
+        end
+    end
+    return true;
+end
+
+
+function OnExchangeMoneyCallBack(clickNum, data)
+    if data.State == 3 then
+        m_serverIsBack = false;
+        CardsClickNum = clickNum + 1;
+        ItemInfoTable[CardsClickNum].cardObj = data;
+        local name = data.name;
+        SetGameObjectState("Cards/" .. name .. "/Yuanbao", false, PanelObject);
+        ItemInfoTable[CardsClickNum].cardObj.State = ItemInfoTable[CardsClickNum].cardObj.State + 1;
+        SetGameObjectState("ZheZhao", true, PanelObject);
+        AddTimerEvent("RollOverCardCount", CCommonTool.GetDefineInfo(3011):GetIntContent(), RollOverCardCallBackOver, nil, RollOverCardCallBack);
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(11300);
+        buffer:WriteByte(CardsClickNum);
+        G_NetWorkMng:SendMessage(buffer);
+        if ItemInfoTable[CardsClickNum + 1] ~= nil then
+            for index = 1, 5 do
+                -- 显示编号是翻拍次数+1
+                SetCoin("Cards/Card" .. index .. "/Yuanbao", ItemInfoTable[CardsClickNum + 1].CoinType, ItemInfoTable[CardsClickNum + 1].CostMoney, ItemInfoTable[CardsClickNum + 1].state);
+            end
+        end
+    end
+end
+
+-- 处理服务器返回的消息
+function DealMessage()
+    -- 如果成功
+    log("收到服务器发送的翻牌消息");
+    m_serverIsBack = true;
+    m_serverBackTimes = m_serverBackTimes + 1;
+    if m_serverBackTimes == 1 then
+        SetGameObjectState("Button", true, PanelObject);
+    end
+    SetGameObjectState("ZheZhao", false, PanelObject);
+    if ItemInfoTable[m_serverBackTimes].cardObj.State == 4 then
+        ItemInfoTable[m_serverBackTimes].cardObj.State = ItemInfoTable[m_serverBackTimes].cardObj.State + 1;
+        ItemInfoTable[m_serverBackTimes].cardObj.WhichTime = m_serverBackTimes;
+        CCommonTool.TweenRotationBegin(ItemInfoTable[m_serverBackTimes].cardObj.gameObject, 0.2, 0, Vector3.New(0, 180, 0), Vector3.New(0, 90, 0));
+    end
+end
+---------------------------------------------------------baselua中的方法-----------------------------------------------------
+-- start方法
+function Start()
+    PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+    InitContent();
+    error("翻拍界面数据初始化完毕");
+end
+
+function OnDisable()
+end
+
+-- Ondestroy方法
+function OnDestroy()
+    m_serverIsBack = true;
+    PanelObject = nil;
+    ItemInfoTableUseFlag = 0;
+    CardsClickNum = 0;
+    m_maxRollOverTime = 0;
+    G_TimerMng:RemoveTimeTask("StartDelay");
+    G_TimerMng:RemoveTimeTask("RollOverCardCount");
+end
+---------------------------------------------------------界面内部调用方法----------------------------------------------------
+-- 初始化内容
+function InitContent()
+    -- 重置点击的次数
+    CardsClickNum = 0;
+    m_serverBackTimes = 0;
+    -- 随机一个5个数的排列
+    local randomTable = RandomNums(5);
+    -- 判断本次翻牌数据是否已经使用
+    if ItemInfoTableUseFlag == 0 then
+        error("server does not send rollovercard info,end panel");
+        EndPanel();
+        return;
+    end
+    -- 初始化界面要显示的内容
+    for index = 1, 5 do
+        ItemInfoTable[index].state = 1;
+        ItemInfoTable[index].cardObj = nil;
+        if ItemInfoTable[randomTable[index]].excelid ~= -1 then
+            SetItemShowByExcelIDV04(PanelObject, "Cards/Card" .. index .. "/Item", ItemInfoTable[randomTable[index]].excelid, ItemInfoTable[randomTable[index]].num, true, 2, ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+            SetGameObjectState("Cards/Card" .. index .. "/Item/Label_Num", false, PanelObject);
+            if ItemInfoTable[randomTable[index]].num > 1 then
+                SetGameObjectState("Cards/Card" .. index .. "/Item/Num/Label-Num", true, PanelObject);
+                SetLabelContent("Cards/Card" .. index .. "/Item/Num/Label-Num", ItemInfoTable[randomTable[index]].num, PanelObject);
+            else
+                SetGameObjectState("Cards/Card" .. index .. "/Item/Num/Label-Num", false, PanelObject);
+            end
+        else
+            SetGameObjectState("Cards/Card" .. index .. "/Item", false, PanelObject);
+        end
+        SetCoin("Cards/Card" .. index .. "/Yuanbao", ItemInfoTable[CardsClickNum + 1].CoinType, ItemInfoTable[CardsClickNum + 1].CostMoney, ItemInfoTable[CardsClickNum + 1].state);
+    end
+    -- 设置结束按钮的事件
+    SetGameObjectEvent("Button", EndPanel, PanelObject);
+    SetGameObjectState("Button", false, PanelObject);
+    -- 设置x秒后开始翻牌
+    local startDelaySeconds = CCommonTool.GetDefineInfo(3010);
+    SetGameObjectState("ZheZhao", true, PanelObject);
+    SetGameObjectEvent("ZheZhao", OnZheZhaoClick, PanelObject);
+    AddTimerEvent("StartDelay", startDelaySeconds:GetIntContent(), RollOverCardDelayCallBackOver, nil, RollOverCardDelayCallBack);
+    -- 将本次翻牌数据的使用置为0
+    ItemInfoTableUseFlag = 0;
+end
+
+function OnZheZhaoClick()
+    if CardsClickNum == 0 then
+        G_TimerMng:RemoveTimeTask("StartDelay");
+        RollOverCardDelayCallBackOver();
+    end
+end
+
+function RollOverCardDelayCallBack(time)
+    local textContent = CCommonTool.GetTxtData(8036).m_str;
+    local showContent = string_format(textContent, time);
+    SetLabelContent("Label", showContent, PanelObject);
+end
+
+function RollOverCardDelayCallBackOver()
+    SetGameObjectState("Label", false, PanelObject);
+    SetGameObjectState("ZheZhao", false, PanelObject);
+    local TweenRotationComponent = nil;
+    for index = 1, 5 do
+        TweenRotationComponent = GetComponent(PanelObject, "Cards/Card" .. index, "TweenRotation");
+        TweenRotationComponent:PlayForward();
+    end
+end
+
+-- 随机一个k个数的排列方法
+function RandomNums(k)
+    local NumTable = { };
+    local NewNumTable = { };
+    local index = nil;
+    for index = 1, k do
+        NumTable[index] = index;
+    end
+    for index = 1, k do
+        randomNum = math.random(1, k - index + 1);
+        NewNumTable[index] = NumTable[randomNum];
+        table.remove(NumTable, randomNum);
+    end
+    return NewNumTable;
+end
+
+-- 每秒调用的函数
+function RollOverCardCallBack(time)
+    if CardsClickNum == 0 then
+        local textContent = CCommonTool.GetTxtData(8034).m_str;
+        local showContent = string_format(textContent, time);
+        SetLabelContent("Label", showContent, PanelObject);
+    else
+        SetGameObjectState("Label", false, PanelObject);
+        SetGameObjectState("Label_Over", true, PanelObject);
+        local textContent = CCommonTool.GetTxtData(8037).m_str;
+        local showContent = string_format(textContent, time);
+        SetLabelContent("Label_Over", showContent, PanelObject);
+    end
+end
+
+-- 倒计时结束调用的信息
+function RollOverCardCallBackOver()
+    if CardsClickNum == 0 then
+        local num = math.random(1, 5);
+        ButtonClick(GetComponent(PanelObject, "Cards/Card" .. num, "ChangeSpriteAndGo"));
+    else
+        EndPanel();
+    end
+end
+
+-- 关闭面板发送退出界面的信息
+function EndPanel()
+    local isNoPick = G_UserInfo.DropManager:IsNoPick();
+    if isNoPick == true then
+        IsPick();
+    else
+        if nil ~= G_TimerMng then
+            G_TimerMng:RemoveTimeTask("RollOverCardCount");
+        end
+        closePanel(ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL) == 1 then
+            closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+        buffer:WriteByte(0);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+
+function IsPick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8038).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8039).m_str);
+    table.insert(tempTable, 3, OnYesPickClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnNoPickClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnYesPickClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    if nil ~= G_TimerMng then
+        G_TimerMng:RemoveTimeTask("RollOverCardCount");
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnNoPickClick()
+    if nil ~= G_TimerMng then
+        G_TimerMng:RemoveTimeTask("RollOverCardCount");
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    closePanel(ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL);
+end
+
+-- 设置当前显示的货币
+function SetCoin(str, coinType, coinCost, state)
+    if coinType == 0 then
+        SetGameObjectState(str .. "/Sprite", false, PanelObject);
+        SetLabelContent(str .. "/Label-Num", "", PanelObject);
+        if state == 0 then
+            SetGameObjectState(str .. "/Label", true, PanelObject);
+        else
+            SetGameObjectState(str .. "/Label", false, PanelObject);
+        end
+    else
+        SetGameObjectState(str .. "/Sprite", true, PanelObject);
+        SetGameObjectState(str .. "/Label", false, PanelObject);
+        if coinType == 1 then
+            SetSpriteByAtlasID(str .. "/Sprite", CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent(), PanelObject, true);
+        elseif coinType == 2 then
+            SetSpriteByAtlasID(str .. "/Sprite", CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiSpriteID):GetIntContent(), PanelObject, true);
+        elseif coinType == 3 then
+            SetSpriteByAtlasID(str .. "/Sprite", CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent(), PanelObject, true);
+        elseif coinType == 4 then
+            SetSpriteByAtlasID(str .. "/Sprite", CCommonTool.GetDefineInfo(EDefineContentID.TypeHongZuanSpriteID):GetIntContent(), PanelObject, true);
+        end
+        SetLabelContent(str .. "/Label-Num", coinCost, PanelObject);
+    end
+end
+
+function OnCloseClick()
+    EndPanel();
+end
+
+function GetMaxRollTime()
+    return m_maxRollOverTime;
+end

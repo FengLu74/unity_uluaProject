@@ -1,0 +1,298 @@
+﻿module('TeamMenuPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamMenuPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 删除好友
+local m_ButtonDeleteFriendPath = "Content/Grid/Button_DeleteFriend";
+-- 查看详情
+local m_ButtonDetailPath = "Content/Grid/Button_Detail";
+-- 私聊
+local m_ButtonChatPath = "Content/Grid/Button_Chat";
+-- 黑名单
+local m_ButtonBlackPath = "Content/Grid/Button_Black";
+-- 添加好友
+local m_ButtonAddFriendPath = "Content/Grid/Button_AddFriend";
+-- 邀请加入公会
+local m_ButtonInviteGuildPath = "Content/Grid/Button_InviteGuild";
+-- 加入公会
+local m_ButtonJoinGuildPath = "Content/Grid/Button_JoinGuild";
+-- 邀请组队
+local m_ButtonInviteTeamPath = "Content/Grid/Button_InviteTeam";
+-- 删除仇人
+local m_ButtonDeleteEnemyPath = "Content/Grid/Button_DeleteEnemy";
+-- 踢出队伍
+local m_ButtonKickTeamMemberPath = "Content/Grid/Button_KickTeamMember";
+-- 提升队长
+local m_ButtonUpLeaderPath = "Content/Grid/Button_UpLeader";
+
+----------------------------------通用的名称路径---------------------------------------
+-- Grid组件
+local m_GridPath = "Content/Grid";
+-- 背景
+local m_BgPath = "Background/Bg";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- Grid组件
+local m_Grid = nil;
+-- 删除好友
+local m_ButtonDeleteFriend = nil;
+-- 查看详情
+local m_ButtonDetail = nil;
+-- 私聊
+local m_ButtonChat = nil;
+-- 黑名单
+local m_ButtonBlack = nil;
+-- 添加好友
+local m_ButtonAddFriend = nil;
+-- 邀请加入公会
+local m_ButtonInviteGuild = nil;
+-- 加入公会
+local m_ButtonJoinGuild = nil;
+-- 邀请组队
+local m_ButtonInviteTeam = nil;
+-- 删除仇人
+local m_ButtonDeleteEnemy = nil;
+-- 踢出队伍
+local m_ButtonKickTeamMember = nil;
+-- 提升队长
+local m_ButtonUpLeader = nil;
+-- 背景
+local m_Bg = nil;
+-- 队员数据 
+local m_Data = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Grid = nil;
+	m_ButtonDeleteFriend = nil;
+	m_ButtonDetail = nil;
+	m_ButtonChat = nil;
+	m_ButtonBlack = nil;
+	m_ButtonAddFriend = nil;
+	m_ButtonInviteGuild = nil;
+	m_ButtonJoinGuild = nil;
+	m_ButtonInviteTeam = nil;
+	m_ButtonDeleteEnemy = nil;
+	m_ButtonKickTeamMember = nil;
+    m_ButtonUpLeader = nil;
+	m_Bg = nil;
+    m_Data = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_MENU_PANEL);
+    m_Grid = GetComponent(m_PanelObject, m_GridPath, "UIGrid");
+    m_ButtonDeleteFriend = child(m_PanelObject, m_ButtonDeleteFriendPath).gameObject;
+    m_ButtonDetail = child(m_PanelObject, m_ButtonDetailPath).gameObject;
+    m_ButtonChat = child(m_PanelObject, m_ButtonChatPath).gameObject;
+    m_ButtonBlack = child(m_PanelObject, m_ButtonBlackPath).gameObject;
+    m_ButtonAddFriend = child(m_PanelObject, m_ButtonAddFriendPath).gameObject;
+    m_ButtonInviteGuild = child(m_PanelObject, m_ButtonInviteGuildPath).gameObject;
+    m_ButtonJoinGuild = child(m_PanelObject, m_ButtonJoinGuildPath).gameObject;
+    m_ButtonInviteTeam = child(m_PanelObject, m_ButtonInviteTeamPath).gameObject;
+    m_ButtonDeleteEnemy = child(m_PanelObject, m_ButtonDeleteEnemyPath).gameObject;
+    m_ButtonKickTeamMember = child(m_PanelObject, m_ButtonKickTeamMemberPath).gameObject;
+    m_ButtonUpLeader = child(m_PanelObject, m_ButtonUpLeaderPath).gameObject;
+    m_Bg = GetComponent(m_PanelObject, m_BgPath, "UISprite");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+    UIEventListener.Get(m_ButtonDeleteFriend).onClick = LuaHelper.OnClick(OnButtonDeleteFriendClick);
+    UIEventListener.Get(m_ButtonDetail).onClick = LuaHelper.OnClick(OnButtonDetailClick);
+    UIEventListener.Get(m_ButtonChat).onClick = LuaHelper.OnClick(OnButtonChatClick);
+    UIEventListener.Get(m_ButtonBlack).onClick = LuaHelper.OnClick(OnButtonBlackClick);
+    UIEventListener.Get(m_ButtonAddFriend).onClick = LuaHelper.OnClick(OnButtonAddFriendClick);
+    UIEventListener.Get(m_ButtonInviteGuild).onClick = LuaHelper.OnClick(OnButtonInviteGuildClick);
+    UIEventListener.Get(m_ButtonJoinGuild).onClick = LuaHelper.OnClick(OnButtonJoinGuildClick);
+    UIEventListener.Get(m_ButtonInviteTeam).onClick = LuaHelper.OnClick(OnButtonInviteTeamClick);
+    UIEventListener.Get(m_ButtonDeleteEnemy).onClick = LuaHelper.OnClick(OnButtonDeleteEnemyClick);
+    UIEventListener.Get(m_ButtonKickTeamMember).onClick = LuaHelper.OnClick(OnButtonKickTeamMemberClick);
+    UIEventListener.Get(m_ButtonUpLeader).onClick = LuaHelper.OnClick(OnButtonUpLeaderClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local relation = FriendsData.GetRelation(m_Data.id);
+	m_ButtonChat:SetActive(relation ~= FriendsData.RELATION_BLACK);
+    m_ButtonDeleteFriend:SetActive(relation == FriendsData.RELATION_FRIEND);
+	m_ButtonBlack:SetActive(relation ~= FriendsData.RELATION_BLACK);
+	m_ButtonAddFriend:SetActive(relation == FriendsData.RELATION_STRANGER);
+	m_ButtonDeleteEnemy:SetActive(relation == FriendsData.RELATION_ENEMY);
+
+    local guildId = GuildManager.guildId;
+	m_ButtonInviteGuild:SetActive(guildId > 0);
+	m_ButtonJoinGuild:SetActive(guildId <= 0);
+
+    local isLeader = TeamManager.IsLeader();
+	m_ButtonInviteTeam:SetActive(false);
+	m_ButtonKickTeamMember:SetActive(isLeader);
+    m_ButtonUpLeader:SetActive(isLeader);
+    m_Grid:Reposition();
+    m_Bg.height = math.ceil(m_Grid:GetChildList().Count / 2) * 70 + 164;
+
+    InitBaseInfo();
+end
+
+function InitBaseInfo()
+    local data = m_Data;
+    local go = child(m_PanelObject, "Content/Info").gameObject;
+    -- 名字
+    SetLabelContent("Name", data.name, go);
+    -- 角色头像
+    local iconId =  CCommonTool.GetRoleDateInfo(data.profession).HeadRes;
+    SetSpriteByAtlasID("Icon", iconId, go, true);
+    -- 等级
+    SetLabelContent("Level", data.level, go);
+    -- 阵营
+    SetGameObjectState("CampIcon", true, go);
+    SetCampIcon("CampIcon", data.campType, go);
+    -- 公会
+    local guildInfo = GuildManager.GetGuildNameLevelAndFlag(data.guildId);
+    SetGameObjectState("Guild", guildInfo ~= nil, go);
+    if guildInfo ~= nil then
+        SetLabelContent("Guild/Name", guildInfo[1], go);
+        SetLabelContent("Guild/FlagName", guildInfo[2], go);
+        local info = CCommonTool.GetGuildInfoByIndex(guildInfo[3]);
+        SetSpriteByAtlasID("Guild/Icon", info.FlagIconBig, go, true);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩
+function OnCloseClick(gameObject)
+    error("mask");
+    Close();
+end
+
+-- 删除好友
+function OnButtonDeleteFriendClick(gameObject)
+    FriendsData.searchResult = m_Data;
+    m_Data.guid = m_Data.id;
+    ParameterToMessageTextBox.DeleteFriend(m_Data.name);
+    Close();
+end
+
+-- 查看详情
+function OnButtonDetailClick(gameObject)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_GET_OTHERPLAYER_STATE);
+    buffer:WriteInt(m_Data.id);
+    G_NetWorkMng:SendMessage(buffer);
+    Close();
+end
+
+-- 私聊
+function OnButtonChatClick(gameObject)
+    FriendsProtocol.RequestSearch(m_Data.name, 3);
+    Close();
+end
+
+-- 黑名单
+function OnButtonBlackClick(gameObject)
+    FriendsProtocol.RequestSearch(m_Data.name, 2);
+    Close();
+end
+
+-- 添加好友
+function OnButtonAddFriendClick(gameObject)
+    FriendsProtocol.RequestApply(m_Data.id);
+    Close();
+end
+
+-- 邀请加入公会
+function OnButtonInviteGuildClick(gameObject)
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.INVITE_JOIN_IN) then
+        GuildProtocol.RequestInviteJoin(m_Data.id);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+    Close();
+end
+
+-- 加入公会
+function OnButtonJoinGuildClick(gameObject)
+    GuildProtocol.RequestJoinGuildByGlobalId(m_Data.id);
+    Close();
+end
+
+-- 邀请组队
+function OnButtonInviteTeamClick(gameObject)
+    Close();
+end
+
+-- 删除仇人
+function OnButtonDeleteEnemyClick(gameObject)
+    FriendsProtocol.RequestDeleteEnemy(m_Data.id);
+    FriendsData.DeleteEnemy(m_Data.id);
+    FriendsPanel.RefreshFriendsList();
+    ShowSystemFlowTips(6105);
+    Close();
+end
+
+-- 踢出队伍
+function OnButtonKickTeamMemberClick(gameObject)
+    TeamProtocol.RequestKickTeam(m_Data.id);
+    Close();
+end
+
+-- 提升队长
+function OnButtonUpLeaderClick(gameObject)
+    TeamProtocol.RequestPromoteLeader(m_Data.id);
+    Close();
+end
+
+function Close()
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_MENU_PANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(data)
+    m_Data = data;
+    local panelId = ENUMPANELID.ENUM_PANEL_TEAM_MENU_PANEL;
+    if IsOpenPanel(panelId) == 1 then
+        InitShow();
+    else
+        createPanel(panelId);
+    end
+end

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+
+   <!--digits-->
+   <string name="digits_username">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</string>
+   <string name="digits_password">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~@#$%^*()-=_+</string>
+   <string name="digits_captcha">0123456789</string>
+   <string name="digits_identity">0123456789Xx</string>
+
+
+   <string name="xy_find_pwd">找回密码</string>
+   <string name="xy_captcha">验证码</string>
+
+   <string name="xy_find_pwd_form_account">帐&#160;&#160;&#160;&#160;&#160;&#160;号：</string>
+   <string name="xy_find_pwd_form_way">找回方式:</string>
+   <string name="xy_find_pwd_form_mail">您的邮箱:</string>
+   <string name="xy_find_pwd_form_phone">您的手机:</string>
+   <string name="xy_find_pwd_form_confirm_phone">确认手机号:</string>
+   <string name="xy_find_pwd_form_confirm_sms">短信验证码:</string>
+
+   <string name="xy_find_pwd_bind_mail">邮箱绑定</string>
+   <string name="xy_find_pwd_bind_phone">手机绑定</string>
+
+   <string name="xy_find_pwd_notice">尊敬的玩家，您好:</string>
+   <string name="xy_find_pwd_no_bind">帐号 %1$s 未绑定手机 , 您可以联系</string>
+
+   <string name="xy_find_pwd_online_customer">在线客服</string>
+
+   <string name="xy_change_phone_number">修改手机号</string>
+   <string name="xy_current_phone_number">当前手机号</string>
+   <string name="xy_new_phone_number">新手机号</string>
+   <string name="xy_confirm_update">确认修改</string>
+
+   <string name="xy_user_status_bind">[已绑定]</string>
+   <string name="xy_user_status_no_bind">[未绑定]</string>
+   <string name="xy_user_status_bind_update">[修&#160;&#160;改]</string>
+   <string name="xy_user_append_information">完善帐号信息</string>
+
+</resources>

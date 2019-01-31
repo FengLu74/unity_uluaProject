@@ -1,0 +1,257 @@
+﻿module("BattleMatchPanel", package.seeall)
+
+Matching = 0;
+MatchedPlayer = 1;
+
+---------------------------------------label路径---------------------------------------
+-- 当前赛季积分数值
+local m_LeftCurSeasonScoreStr = "Content/Left/Label_Score";
+-- 当前玩家战斗力数值
+local m_LeftFightValueStr = "Content/Left/Label_FightValue";
+
+-- 当前匹配时间
+local m_CurMatchTimeStr = "Content/NotFindOpponent/Middle/Label_Time";
+
+-- 对手当前赛季积分数值
+local m_RightCurSeasonScoreStr = "Content/Right/Label_Score";
+-- 对手玩家战斗力数值
+local m_RightFightValueStr = "Content/Right/Label_FightValue";
+-- 本次活动剩余次数
+local m_ActivityLeftTimesStr = "Content/NotFindOpponent/Middle/Label_LeftTime";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮路径
+local m_CancelMatch = "Content/NotFindOpponent/Middle/Button_CancelMatch";
+-- 关闭按钮路径
+local m_CloseButtonStr = "Button_Close";
+-----------------------------------------Sprite路径------------------------------------
+-- 左侧段位小图标位置
+local m_LeftRankSpriteStr = "Content/Left/Sprite_Small";
+-- 右侧段位小图标位置
+local m_RightRankSpriteStr = "Content/Right/Sprite_Small";
+----------------------------------gameobject所在的路径---------------------------------
+-- 未找到对方
+local m_NotFindOpponent = "Content/NotFindOpponent";
+-- 找到对方
+local m_FindOpponent = "Content/FindOpponent";
+
+-- 阴影动画所在的位置
+local m_ShadowTPComp = "Content/NotFindOpponent/OpponentProPanel/OpponentPro";
+-- 对方动画所在的位置
+local m_OpponentTPComp = "Content/FindOpponent/OpponentProPanel/OpponentPro";
+----------------------------------通用的名称路径---------------------------------------
+-- 我的职业所在位置
+local m_MyProStr = "Content/MyPro/";
+-- 敌方职业所在位置
+local m_OpponentProStr = "Content/FindOpponent/OpponentProPanel/OpponentPro/";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 当前的匹配状态
+local m_CurMatchState = 0;
+-- 对手数据
+local m_OpponentData = {};
+-- 当前是从那个活动ID进来的
+local m_CurActivityID = 0;
+-- 当前是否可显示匹配到
+local m_ShowMatch = false;
+-- 等待匹配的数据信息
+local m_WaitData = nil;
+-- 是否可以关闭界面
+local m_CanClickClose = true;
+
+-- 是否是服务器通知
+IsServerNotice = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitPlayerInfo();
+    InitContentInfo();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    m_ShowMatch = false;
+    IsServerNotice = false;
+    m_WaitData = nil;
+    AddTimerEvent("BattleFieldCanMatchTimer",BattleFieldManager.BattleFieldMatchRollTime,BattleFieldCanMatchCallBack,ETimeShowType.TypeNumberThree);
+    if m_panelInitAlready == true then
+        InitPlayerInfo();
+        InitContentInfo();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("BattleFieldCanMatchTimer");
+    G_TimerMng:RemoveTimeTask("BattleFieldMatchTimer");
+    if m_CanClickClose then
+        if m_CurMatchState == Matching and IsServerNotice then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_REQUEST_CANCELMATCH_BATTLEFIELD);
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    end
+    IsServerNotice = false;
+    m_CanClickClose = true;
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL);
+end
+
+function InitPlayerInfo()
+    local proID = 1;
+    if G_UserInfo.RoleAttribute ~= nil then
+        proID = G_UserInfo.RoleAttribute.ProID;
+    end
+    for Index = 1,4 do
+        if Index == proID then
+            SetGameObjectState(m_MyProStr..Index,true,m_panelObject);
+        else
+            SetGameObjectState(m_MyProStr..Index,false,m_panelObject);
+        end
+    end
+    local seasonScore = BattleFieldManager.SeasonScore;
+    local rankNum = BattleFieldManager.BattleFieldRankNum;
+    local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+    local curRank = 1;
+    for Index = 1,rankNum do
+        if seasonScore <= battleFieldTableData[Index].Score then
+            curRank = Index;
+            break;
+        end
+    end
+    SetSpriteByAtlasID(m_LeftRankSpriteStr,battleFieldTableData[curRank].SmallPicID,m_panelObject);
+    SetLabelContent(m_LeftCurSeasonScoreStr,seasonScore,m_panelObject);
+    SetLabelContent(m_LeftFightValueStr,math.floor(G_UserInfo.RoleAttribute.BattlePower),m_panelObject);
+end
+
+function InitContentInfo()
+    G_TimerMng:RemoveTimeTask("BattleFieldMatchTimer");
+    local spriteAnim = GetComponent(m_panelObject,m_RightRankSpriteStr,"UISpriteAnimation");
+    if m_CurMatchState == Matching then
+        SetGameObjectState(m_CloseButtonStr,true,m_panelObject);
+        SetGameObjectState(m_CancelMatch,true,m_panelObject);
+        SetGameObjectState(m_NotFindOpponent,true,m_panelObject);
+        SetGameObjectState(m_FindOpponent,false,m_panelObject);
+        if spriteAnim ~= nil then
+            spriteAnim.enabled = true;
+        end
+        SetLabelContent(m_RightCurSeasonScoreStr,"????",m_panelObject);
+        SetLabelContent(m_RightFightValueStr,"?????",m_panelObject);
+        local tp = GetComponent(m_panelObject,m_ShadowTPComp,"TweenPosition");
+        tp:ResetToBeginning();
+        tp:PlayForward();
+        SetLabelContent(m_CurMatchTimeStr,0,m_panelObject);
+        AddTimerEvent("BattleFieldMatchTimer",BattleFieldManager.BattleFieldMatchTime,MatchEndCallBack,ETimeShowType.TypeNumberSeven,MatchOverSecond);
+        local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_CurActivityID);
+        SetLabelContent(m_ActivityLeftTimesStr,string_format(CCommonTool.GetTxtData(54662).m_str,remainTimes,maxTimes),m_panelObject);
+    elseif m_CurMatchState == MatchedPlayer then
+        SetGameObjectState(m_CloseButtonStr,false,m_panelObject);
+        SetGameObjectState(m_CancelMatch,false,m_panelObject);
+        SetGameObjectState(m_NotFindOpponent,false,m_panelObject);
+        SetGameObjectState(m_FindOpponent,true,m_panelObject);
+        local seasonScore = m_OpponentData.OpponentSeasonScore;
+        local rankNum = BattleFieldManager.BattleFieldRankNum;
+        local battleFieldTableData = BattleFieldManager.BattleFieldTableData;
+        local curRank = 1;
+        for Index = 1,rankNum do
+            if seasonScore <= battleFieldTableData[Index].Score then
+                curRank = Index;
+                break;
+            end
+        end
+        if spriteAnim ~= nil then
+            spriteAnim.enabled = false;
+        end
+        SetSpriteByAtlasID(m_RightRankSpriteStr,battleFieldTableData[curRank].SmallPicID,m_panelObject);
+        SetLabelContent(m_RightCurSeasonScoreStr,m_OpponentData.OpponentSeasonScore,m_panelObject);
+        SetLabelContent(m_RightFightValueStr,m_OpponentData.OpponentFightValue,m_panelObject);
+        for Index = 1,4 do
+            if Index == m_OpponentData.OpponentProID then
+                SetGameObjectState(m_OpponentProStr..Index,true,m_panelObject);
+            else
+                SetGameObjectState(m_OpponentProStr..Index,false,m_panelObject);
+            end
+        end
+        local tp = GetComponent(m_panelObject,m_OpponentTPComp,"TweenPosition");
+        tp:ResetToBeginning();
+        tp:PlayForward();
+    end
+    if m_CurActivityID~=nil then
+        ActivityManager.curActivityId = m_CurActivityID;
+    end
+end
+
+
+function MatchEndCallBack()
+    error("匹配时间响应超时");
+    closePanel(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL);
+end
+
+function MatchOverSecond(leftTime)
+    local time = tonumber(leftTime);
+    SetLabelContent(m_CurMatchTimeStr,BattleFieldManager.BattleFieldMatchTime - time,m_panelObject);
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CancelMatch,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_CloseButtonStr,OnCloseClick,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    if m_CanClickClose then
+        if m_CurMatchState == Matching then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_REQUEST_CANCELMATCH_BATTLEFIELD);
+            G_NetWorkMng:SendMessage(buffer);
+        end
+        closePanel(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 设置匹配状态
+function SetData(state,data,activityID)
+    if state == MatchedPlayer then
+        m_CanClickClose = false;
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL) == 1 then
+            SetGameObjectState(m_CloseButtonStr,false,m_panelObject);
+            SetGameObjectState(m_CancelMatch,false,m_panelObject);
+        end
+        if m_ShowMatch == false then
+            m_WaitData = {[1] = state,[2] = data,[3] = activityID };
+            return;
+        end
+    end
+    m_CurMatchState = state;
+    m_OpponentData = data;
+    m_CurActivityID = activityID;
+    local causePanelID = -1;
+    if m_CurMatchState == Matching then
+        causePanelID = ENUMPANELID.ENUM_PANEL_BATTLEPANEL;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL) == 1 then
+        InitContentInfo();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL,causePanelID);
+    end
+end
+
+function BattleFieldCanMatchCallBack()
+    m_ShowMatch = true;
+    if m_WaitData ~= nil then
+        SetData(m_WaitData[1],m_WaitData[2],m_WaitData[3]);
+        m_WaitData = nil;
+    end
+end

@@ -1,0 +1,518 @@
+﻿require "Panel/GuildEventsPanel";
+module("GuildAffairsPanel", package.seeall)
+
+-----------------------------------------------label路径--------------------------------------------
+
+-- 宣言输入框路径
+local m_declarationInputStr = "Content_DeclarationPanel/Input_Declaration";
+
+-----------------------------------------------sprite路径--------------------------------------------
+
+
+
+-----------------------------------------------button路径--------------------------------------------
+
+-- 编辑宣言
+local m_declarationButtonStr = "Bottom/Button_Declaration";
+-- 查看事件
+local m_eventButtonStr = "Bottom/Button_Event";
+-- 宣言发布按钮路径
+local m_declarationPublishButtonStr = "Content_DeclarationPanel/Button_Publish";
+-- 公会升级按钮路径
+local m_levelUpButtonStr = "Bottom/Button_LevelUp";
+-- 商店升级按钮路径
+local m_shopLevelUpButtonStr = "Bottom/Button_ShopLevelUp";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+
+-- 激活的时候显示的内容
+local m_activeContentStr = "/Active";
+-- 未激活的时候显示的内容
+local m_deactiveContentStr = "/Deactive";
+
+-- 事件面板
+local m_eventPanelStr = "Content_EventsPanel";
+local m_declarationPanelStr = "Content_DeclarationPanel";
+-- 宣言关闭
+local m_declarationPanelCloseStr = "Content_DeclarationPanel/Mask";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+-- 面板对象
+local m_panelObject = nil;
+local m_declarationPanel = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+local m_listView = nil;
+
+local m_selectTagNum = 1;
+local m_lastSelectTagNum = 1;
+
+
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local m_toggleTable = nil;
+
+--------------------------------------BaseLua调用的同名方法------------------------------------------
+
+
+
+function Start()
+    InitToggleTable();
+    InitObjects();
+    InitOnClick();
+    InitTabLevelInfo();
+    InitPanelShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitPanelShow();
+        InitTabLevelInfo();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_listView = nil;
+    m_declarationPanel = nil;
+    m_panelInitAlready = false;
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitToggleTable()
+    m_toggleTable = {
+        [1] = { name = "1Toggle_Guild", panelName = "Right/Content_Guild", initFunction = InitGuildPanel}, 
+        [2] = { name = "2Toggle_Affairs", panelName = "Right/Content_Affairs", initFunction = InitAffairsPanel}, 
+        [3] = { name = "3Toggle_Skill", panelName = "Right/Content_Skill", initFunction = InitSkillPanel}, 
+        [4] = { name = "4Toggle_Shop", panelName = "Right/Content_Shop", initFunction = InitShopPanel}, 
+        [5] = { name = "5Toggle_Wood", panelName = "Right/Content_Wood", initFunction = InitWoodPanel}, 
+        [6] = { name = "6Toggle_WoodStorge", panelName = "Right/Content_WoodStorge", initFunction = InitWoodStorgePanel}, 
+    };
+end
+
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_panelObject = child(m_panelObject, "GuildAffairsPanel").gameObject;
+    m_declarationPanel = child(m_panelObject, m_declarationPanelStr).gameObject;
+    SetGameObjectState(m_declarationPanelStr, false, m_panelObject);
+    GuildEventsPanel.InitPanel(child(m_panelObject, m_eventPanelStr).gameObject);
+end
+
+-- 初始化事件信息
+function InitOnClick()
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent("Left/" .. m_toggleTable[Index].name, OnTabClick, m_panelObject);
+    end
+
+    -- 编辑宣言
+    SetGameObjectEvent(m_declarationButtonStr, OnEditDeclarationClick, m_panelObject);
+    -- 查看事件列表
+    SetGameObjectEvent(m_eventButtonStr, OnEventButtonClick, m_panelObject);
+    -- 发布宣言
+    SetGameObjectEvent(m_declarationPublishButtonStr, OnDeclarationPublish, m_panelObject);
+    -- 关闭宣言
+    SetGameObjectEvent(m_declarationPanelCloseStr, OnDeclarationClose, m_panelObject);
+end
+
+function SetButtonActiveState(index, actived)
+    SetGameObjectState("Left/" .. m_toggleTable[index].name .. m_activeContentStr, actived, m_panelObject);
+    SetGameObjectState("Left/" .. m_toggleTable[index].name .. m_deactiveContentStr, not actived, m_panelObject);
+    SetGameObjectState(m_toggleTable[index].panelName, actived, m_panelObject);
+end
+
+-- 初始化界面的显示
+function InitPanelShow()
+    for Index = 1, #m_toggleTable do
+        SetButtonActiveState(Index, Index == m_selectTagNum);
+    end
+
+    local initFunc = m_toggleTable[m_selectTagNum].initFunction;
+    if initFunc ~= nil then
+        local go = child(m_panelObject, m_toggleTable[m_selectTagNum].panelName).gameObject;
+        initFunc(go);
+    end
+end
+
+function InitData()
+    
+end
+
+function InitTabLevelInfo()
+    local guild = GuildManager.myGuild;
+    SetLabelTextByID("Left/1Toggle_Guild/Label_Name", CCommonTool.GetGuildBuildingTxtInfo(1).Name, m_panelObject);
+    SetLabelContent("Left/1Toggle_Guild/Label_Level", string_format(CCommonTool.GetTxtData(8871).m_str, guild.level), m_panelObject);
+    SetLabelTextByID("Left/2Toggle_Affairs/Label_Name", CCommonTool.GetGuildBuildingTxtInfo(2).Name, m_panelObject);
+    SetLabelContent("Left/2Toggle_Affairs/Label_Level", string_format(CCommonTool.GetTxtData(8871).m_str, guild.guildAffairsLevel), m_panelObject);
+    SetLabelTextByID("Left/3Toggle_Skill/Label_Name", CCommonTool.GetGuildBuildingTxtInfo(3).Name, m_panelObject);
+    SetLabelContent("Left/3Toggle_Skill/Label_Level", string_format(CCommonTool.GetTxtData(8871).m_str, guild.guildSkillLevel), m_panelObject);
+    SetLabelTextByID("Left/4Toggle_Shop/Label_Name", CCommonTool.GetGuildBuildingTxtInfo(4).Name, m_panelObject);
+    SetLabelContent("Left/4Toggle_Shop/Label_Level", string_format(CCommonTool.GetTxtData(8871).m_str, guild.guildShopLevel), m_panelObject);
+    SetLabelTextByID("Left/5Toggle_Wood/Label_Name", CCommonTool.GetGuildBuildingTxtInfo(5).Name, m_panelObject);
+    SetLabelContent("Left/5Toggle_Wood/Label_Level", string_format(CCommonTool.GetTxtData(8871).m_str, guild.guildWoodLevel), m_panelObject);
+    SetLabelTextByID("Left/6Toggle_WoodStorge/Label_Name", CCommonTool.GetGuildBuildingTxtInfo(6).Name, m_panelObject);
+    SetLabelContent("Left/6Toggle_WoodStorge/Label_Level", string_format(CCommonTool.GetTxtData(8871).m_str, guild.guildWoodStorageLevel), m_panelObject);
+end
+
+-- 初始化公会主建筑
+function InitGuildPanel(panelObject)
+    error("InitGuildPanel");
+    local guild = GuildManager.myGuild;
+    local level = guild.level;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    local info = CCommonTool.GetGuildInfoByIndex(level);
+    local building = CCommonTool.GetGuildBuildingTxtInfo(1);
+    SetLabelTextByID("Label_Name", building.Name, panelObject);
+    SetLabelTextByID("Label_Desc", building.Instruction, panelObject);
+
+    --SetLabelContent("Current/Label_CurrentCount", info.MemberNum, panelObject);
+    SetLabelContent("Current/Label_CurrentLevel", level, panelObject);
+    
+    SetGameObjectState("Next", hasNextLevel, panelObject);
+    if hasNextLevel then
+        --local nextInfo = CCommonTool.GetGuildInfoByIndex(level+1);
+        --SetLabelContent("Next/Label_NextCount", nextInfo.MemberNum, panelObject);
+        SetLabelContent("Next/Label_NextLevel", level+1, panelObject);
+        local needMoney = GuildManager.GetGuildMaintainMoney() + info.MoneyNeed;
+        if guild.money < info.MoneyNeed then
+            SetLabelContent("Next/Label_NeedMoney", string_format("[FF0000]{0}[-]/{1}", guild.money, needMoney), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedMoney", guild.money .. "/" .. needMoney, panelObject);
+        end
+        local needWood = CCommonTool.GetGuildInfoByIndex(level).WoodNeed;
+        if guild.guildWoodCount < needWood then
+            SetLabelContent("Next/Label_NeedWood", string_format("[FF0000]{0}[-]/{1}", guild.guildWoodCount, needWood), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedWood", guild.guildWoodCount .. "/" .. needWood, panelObject);
+        end
+    end
+    error("111111111111");
+    SetGameObjectEvent("Button_LevelUp", OnGuildLevelUpClick, panelObject);
+end
+
+-- 初始化内政大厅
+function InitAffairsPanel(panelObject)
+    local guild = GuildManager.myGuild;
+    local level = guild.guildAffairsLevel;
+    local guildLevel = guild.level;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    local buildType = ENUM_GUILD_BUILDING_LV_TYPE.ENUM_GUILD_BUILDING_LV_TYPE_INTERIOR;
+    local buildingId = buildType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    local building = CCommonTool.GetGuildBuildingTxtInfo(2);
+    SetLabelTextByID("Label_Name", building.Name, panelObject);
+    SetLabelTextByID("Label_Desc", building.Instruction, panelObject);
+    SetLabelContent("Current/Label_CurrentCount", info.Num, panelObject);
+    
+    SetGameObjectState("Next", hasNextLevel, panelObject);
+    if hasNextLevel then
+        local nextInfo = CCommonTool.GetGuildBuildingInfo(buildingId+1);
+        SetLabelContent("Next/Label_NextCount", nextInfo.Num, panelObject);
+        local needMoney = info.MoneyNeed;
+        if guild.money < info.MoneyNeed then
+            SetLabelContent("Next/Label_NeedMoney", string_format("[FF0000]{0}[-]/{1}", guild.money, needMoney), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedMoney", guild.money .. "/" .. needMoney, panelObject);
+        end
+        if guildLevel < info.LevelNeed then
+            SetLabelContent("Next/Label_NeedLevel", string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedLevel", "", panelObject);
+        end
+    end
+    SetGameObjectEvent("Button_LevelUp", function() OnBuildingLevelUp(buildType, level) end, panelObject);
+end
+
+--初始化公会商店
+function InitShopPanel(panelObject)
+    error("InitShopPanel");
+    local guild = GuildManager.myGuild;
+    local guildLevel = guild.level;
+    local level = guild.guildShopLevel;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    local buildType = ENUM_GUILD_BUILDING_LV_TYPE.ENUM_GUILD_BUILDING_LV_TYPE_SHOP;
+    local buildingId = buildType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    local building = CCommonTool.GetGuildBuildingTxtInfo(4);
+    SetLabelTextByID("Label_Name", building.Name, panelObject);
+    SetLabelTextByID("Label_Desc", building.Instruction, panelObject);
+    SetLabelTextByID("Label_Desc2", info.Instruction, panelObject);
+
+    SetGameObjectState("Next", hasNextLevel, panelObject);
+    if hasNextLevel then
+        local nextInfo = CCommonTool.GetGuildBuildingInfo(buildingId+1);
+        if guild.money < info.MoneyNeed then
+            SetLabelContent("Next/Label_NeedMoney", string_format("[FF0000]{0}[-]/{1}", guild.money, info.MoneyNeed), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedMoney", guild.money .. "/" .. info.MoneyNeed, panelObject);
+        end
+        if guildLevel < info.LevelNeed then
+            SetLabelContent("Next/Label_NeedLevel", string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedLevel", "", panelObject);
+        end
+    end
+    SetGameObjectEvent("Button_LevelUp", function() OnBuildingLevelUp(buildType, level) end, panelObject);
+end
+
+--初始化公会技能
+function InitSkillPanel(panelObject)
+    local guild = GuildManager.myGuild;
+    local guildLevel = guild.level;
+    local level = guild.guildSkillLevel;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    local buildType = ENUM_GUILD_BUILDING_LV_TYPE.ENUM_GUILD_BUILDING_LV_TYPE_SKILL;
+    local buildingId = buildType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    local building = CCommonTool.GetGuildBuildingTxtInfo(3);
+    SetLabelTextByID("Label_Name", building.Name, panelObject);
+    SetLabelTextByID("Label_Desc", building.Instruction, panelObject);
+    SetLabelContent("Current/Label_CurrentCount", info.Num, panelObject);
+    
+    SetGameObjectState("Next", hasNextLevel, panelObject);
+    if hasNextLevel then
+        local nextInfo = CCommonTool.GetGuildBuildingInfo(buildingId+1);
+        SetLabelContent("Next/Label_NextCount", nextInfo.Num, panelObject);
+        local needMoney = info.MoneyNeed;
+        if guild.money < info.MoneyNeed then
+            SetLabelContent("Next/Label_NeedMoney", string_format("[FF0000]{0}[-]/{1}", guild.money, needMoney), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedMoney", guild.money .. "/" .. needMoney, panelObject);
+        end
+        if guildLevel < info.LevelNeed then
+            SetLabelContent("Next/Label_NeedLevel", string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedLevel", "", panelObject);
+        end
+    end
+    SetGameObjectEvent("Button_LevelUp", function() OnBuildingLevelUp(buildType, level) end, panelObject);
+end
+
+--初始化木材
+function InitWoodPanel(panelObject)
+    local guild = GuildManager.myGuild;
+    local guildLevel = guild.level;
+    local level = guild.guildWoodLevel;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    local buildType = ENUM_GUILD_BUILDING_LV_TYPE.ENUM_GUILD_BUILDING_LV_TYPE_WOOD;
+    local buildingId = buildType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    local building = CCommonTool.GetGuildBuildingTxtInfo(5);
+    SetLabelTextByID("Label_Name", building.Name, panelObject);
+    SetLabelTextByID("Label_Desc", building.Instruction, panelObject);
+    SetLabelContent("Current/Label_CurrentCount", info.Num, panelObject);
+    
+    SetGameObjectState("Next", hasNextLevel, panelObject);
+    if hasNextLevel then
+        local nextInfo = CCommonTool.GetGuildBuildingInfo(buildingId+1);
+        SetLabelContent("Next/Label_NextCount", nextInfo.Num, panelObject);
+        local needMoney = info.MoneyNeed;
+        if guild.money < info.MoneyNeed then
+            SetLabelContent("Next/Label_NeedMoney", string_format("[FF0000]{0}[-]/{1}", guild.money, needMoney), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedMoney", guild.money .. "/" .. needMoney, panelObject);
+        end
+        if guildLevel < info.LevelNeed then
+            SetLabelContent("Next/Label_NeedLevel", string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedLevel", "", panelObject);
+        end
+    end
+    SetGameObjectEvent("Button_LevelUp", function() OnBuildingLevelUp(buildType, level) end, panelObject);
+end
+
+--初始化木材仓库
+function InitWoodStorgePanel(panelObject)
+    local guild = GuildManager.myGuild;
+    local guildLevel = guild.level;
+    local level = guild.guildWoodStorageLevel;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    local buildType = ENUM_GUILD_BUILDING_LV_TYPE.ENUM_GUILD_BUILDING_LV_TYPE_WOOD_STORAGE;
+    local buildingId = buildType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    local building = CCommonTool.GetGuildBuildingTxtInfo(6);
+    SetLabelTextByID("Label_Name", building.Name, panelObject);
+    SetLabelTextByID("Label_Desc", building.Instruction, panelObject);
+    SetLabelContent("Current/Label_CurrentCount", info.Num, panelObject);
+    
+    SetGameObjectState("Next", hasNextLevel, panelObject);
+    if hasNextLevel then
+        local nextInfo = CCommonTool.GetGuildBuildingInfo(buildingId+1);
+        SetLabelContent("Next/Label_NextCount", nextInfo.Num, panelObject);
+        local needMoney = info.MoneyNeed;
+        if guild.money < info.MoneyNeed then
+            SetLabelContent("Next/Label_NeedMoney", string_format("[FF0000]{0}[-]/{1}", guild.money, needMoney), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedMoney", guild.money .. "/" .. needMoney, panelObject);
+        end
+        if guildLevel < info.LevelNeed then
+            SetLabelContent("Next/Label_NeedLevel", string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), panelObject);
+        else
+            SetLabelContent("Next/Label_NeedLevel", "", panelObject);
+        end
+    end
+    SetGameObjectEvent("Button_LevelUp", function() OnBuildingLevelUp(buildType, level) end, panelObject);
+end
+
+----------------------------------事件处理--------------------------------------
+
+--  点击事件处理
+function OnTabClick(e)
+    local currentName = e.name;
+    local selectTagNum = tonumber(string.sub(currentName, 1, 1));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        InitPanelShow();
+    end
+end
+
+-- 编辑宣言
+function OnEditDeclarationClick()
+    if GuildManager.HasPermission(E_GUILD_PERMISSION.EDIT_NOTICE) then
+        if GuildManager.myGuild.announce and #GuildManager.myGuild.announce > 0 then
+            SetInputContent(m_declarationInputStr, GuildManager.myGuild.announce, m_panelObject);
+        else
+            local declarationId = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_DEFAULT_DECLARATION):GetIntContent();
+            SetInputContent(m_declarationInputStr, CCommonTool.GetTxtData(declarationId).m_str, m_panelObject);
+        end
+        SetGameObjectState(m_declarationPanelStr, true, m_panelObject);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+end
+
+-- 查看事件列表
+function OnEventButtonClick()
+    GuildProtocol.RequestGuildEvents();
+    GuildEventsPanel.ShowPanel();
+end
+
+-- 发布宣言事件
+function OnDeclarationPublish()
+    local maxCharLimited = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_DECLARATION_MAX_CHAR_LIMITED):GetIntContent();
+    local content = GetInputContent(m_declarationInputStr, m_panelObject);
+
+    if #content == 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_CONENT_NOT_NULL);
+    elseif string.len(CCommonTool.IsLegitimacyByText(content,ENUM_SHILED_AREA.GUILD)) > 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_LLEGAL_CHARACTER);
+    elseif strlen(content) > maxCharLimited then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_MAX_LIMITED);
+    else
+        GuildProtocol.RequestSaveProclamation(content);
+        SetGameObjectState(m_declarationPanelStr, false, m_panelObject);
+    end
+end
+
+function OnDeclarationClose(go)
+    SetGameObjectState(m_declarationPanelStr, false, m_panelObject);
+end
+
+-- 公会升级
+function OnGuildLevelUpClick(go)
+    if not GuildManager.HasPermission(E_GUILD_PERMISSION.UPGRADE_BUILDING) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        return;
+    end
+
+    local guild = GuildManager.myGuild;
+    local level = guild.level;
+    local maxLevel = guild.maxLevel;
+    local hasNextLevel = level < maxLevel;
+    
+    if hasNextLevel then
+        local info = CCommonTool.GetGuildInfoByIndex(level);
+        if guild.money < info.MoneyNeed then
+            ShowSystemFlowTips(4020);
+        elseif guild.guildWoodCount < info.WoodNeed then
+            ShowSystemFlowTips(4021);
+        else
+            GuildProtocol.RequestGuildLevelUp();
+        end
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_HALL_MAX_LEVEL);
+    end
+end
+
+-- 建筑升级
+function OnBuildingLevelUp(buildingType, level)
+    if not GuildManager.HasPermission(E_GUILD_PERMISSION.UPGRADE_BUILDING) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        return;
+    end
+
+    local guild = GuildManager.myGuild;
+    local maxLevel = guild.maxLevel;
+    local guild = GuildManager.myGuild;
+    local guildLevel = guild.level;
+    local buildingId = buildingType * 100 + level;
+    local info = CCommonTool.GetGuildBuildingInfo(buildingId);
+    if level < maxLevel then
+        if guildLevel < info.LevelNeed then
+            ShowSystemFlowTips(string_format(CCommonTool.GetTxtData(8870).m_str, info.LevelNeed), 0);
+        elseif guild.money < info.MoneyNeed then
+            ShowSystemFlowTips(4020);
+        else
+            GuildProtocol.RequestBuildingLevelUp(buildingType);
+        end
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_STORE_MAX_LEVEL);
+    end
+end
+
+-- 商店升级
+--function OnShopLevelUpClick()
+--    if not GuildManager.HasPermission(E_GUILD_PERMISSION.UPGRADE_BUILDING) then
+--        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+--        return;
+--    end
+
+--    local guild = GuildManager.myGuild;
+--    local guildLevel = guild.level;
+--    local shopLevel = guild.guildShopLevel;
+--    local maxLevel = GuildManager.GetBuildingMaxLevel().shopMaxLevel;
+--    local hasNextLevel = shopLevel < maxLevel;
+--    local info = CCommonTool.GetGuildShopInfo(shopLevel);
+--    if hasNextLevel then
+--        if guildLevel < info.NeedGuildLevel then
+--            ShowSystemFlowTips(string_format(CCommonTool.GetTxtData(8870).m_str, info.NeedGuildLevel), 0);
+--        elseif guild.money < info.MoneyNeed then
+--            ShowSystemFlowTips(4020);
+--        else
+--            GuildProtocol.RequestBuildingLevelUp(ENUM_GUILD_BUILDING_LV_TYPE.ENUM_GUILD_BUILDING_LV_TYPE_SHOP);
+--        end
+--    else
+--        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_STORE_MAX_LEVEL);
+--    end
+--end
+
+---------------------------------------外部调用(或内部)此界面信息的方法----------------------------------------------------
+
+function OnGuildLevelUp()
+    error("OnGuildLevelUp:::");
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        if GuildBeyond3DPanel.GetCurrentTagNum() == 3 then
+            InitTabLevelInfo();
+            InitPanelShow();
+        end
+    end
+end

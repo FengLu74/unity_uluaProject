@@ -1,0 +1,5 @@
+﻿module("Config")
+
+log=10;
+Address="192.168.1.220";
+Port=5585;

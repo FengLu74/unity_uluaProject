@@ -1,0 +1,96 @@
+﻿--[[
+    field=Id, type=int, desc=神将ID，神将ID必须是100的倍数
+    field=ShapeShiftingId, type=int, desc=变身神将ID
+    field=Name, type=int, desc=神将名字，对应txt表主键ID
+    field=Modelres, type=int, desc=神将模型，对应模型表主键ID
+    field=IconID, type=int, desc=神将图标ID
+    field=QualityID, type=byte, desc=神将品质1~6
+    field=NumRide, type=byte, desc=可携带阶段
+    field=NumMax, type=byte, desc=满阶阶段
+    field=Type, type=byte, desc=获取类型,1=收集道具
+    field=Key1, type=int, desc=获取所需道具1
+    field=Key2, type=int, desc=获取所需道具数量
+    field=Key3, type=int, desc=获取所需银币
+    field=Value, type=int, desc=客户端排序显示权重
+]]
+module("GenieTable", package.seeall)
+local list={
+    {Id=100,ShapeShiftingId=10000,Name=56401,Modelres=42900,IconID=4001,QualityID=3,NumRide=1,NumMax=15,Type=1,Key1=24501,Key2=100,Key3=20000,Value=1},
+    {Id=200,ShapeShiftingId=10010,Name=56402,Modelres=44100,IconID=4002,QualityID=3,NumRide=1,NumMax=15,Type=1,Key1=24502,Key2=100,Key3=20000,Value=2},
+    {Id=300,ShapeShiftingId=10020,Name=56403,Modelres=43100,IconID=4003,QualityID=3,NumRide=1,NumMax=15,Type=1,Key1=24503,Key2=100,Key3=20000,Value=3},
+    {Id=400,ShapeShiftingId=10030,Name=56404,Modelres=43400,IconID=4004,QualityID=4,NumRide=1,NumMax=15,Type=1,Key1=24504,Key2=100,Key3=50000,Value=4},
+    {Id=500,ShapeShiftingId=10040,Name=56405,Modelres=43600,IconID=4005,QualityID=4,NumRide=1,NumMax=15,Type=1,Key1=24505,Key2=100,Key3=50000,Value=5},
+    {Id=600,ShapeShiftingId=10050,Name=56406,Modelres=43300,IconID=4006,QualityID=4,NumRide=1,NumMax=15,Type=1,Key1=24506,Key2=100,Key3=50000,Value=6},
+    {Id=700,ShapeShiftingId=10060,Name=56407,Modelres=43500,IconID=4007,QualityID=4,NumRide=1,NumMax=15,Type=1,Key1=24507,Key2=100,Key3=50000,Value=7},
+    {Id=800,ShapeShiftingId=10070,Name=56408,Modelres=43200,IconID=4008,QualityID=5,NumRide=1,NumMax=15,Type=1,Key1=24508,Key2=100,Key3=100000,Value=8},
+    {Id=900,ShapeShiftingId=10080,Name=56409,Modelres=45300,IconID=4009,QualityID=5,NumRide=1,NumMax=15,Type=1,Key1=24509,Key2=100,Key3=100000,Value=9},
+    {Id=1000,ShapeShiftingId=10090,Name=56410,Modelres=44300,IconID=4010,QualityID=5,NumRide=1,NumMax=15,Type=1,Key1=24510,Key2=100,Key3=100000,Value=10},
+    {Id=1100,ShapeShiftingId=10100,Name=56411,Modelres=44400,IconID=4011,QualityID=5,NumRide=1,NumMax=15,Type=1,Key1=24511,Key2=100,Key3=100000,Value=11}
+};
+local map = {[100]=list[1],[200]=list[2],[300]=list[3],[400]=list[4],[500]=list[5],[600]=list[6],[700]=list[7],[800]=list[8],[900]=list[9],[1000]=list[10],[1100]=list[11]};
+
+count = 11;
+Count = 11;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

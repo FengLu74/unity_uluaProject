@@ -1,0 +1,260 @@
+﻿module('EveryDayTaskPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'EveryDayTaskPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 每日任务
+local m_MenuItem1Path = "Menu/Grid/MenuItem1";
+-- 每周任务
+local m_MenuItem2Path = "Menu/Grid/MenuItem2";
+-- 每月任务
+local m_MenuItem3Path = "Menu/Grid/MenuItem3";
+
+----------------------------------通用的名称路径---------------------------------------
+-- List
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 每日任务
+local m_MenuItem1 = nil;
+-- 每周任务
+local m_MenuItem2 = nil;
+-- 每月任务
+local m_MenuItem3 = nil;
+-- List组件
+local m_List = nil;
+
+-- 选中的标签
+local m_selectTagNum = 2;
+-- 上一次选择标签
+local m_lastSelectTagNum = 2;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = m_MenuItem1Path },
+    [2] = { name = m_MenuItem2Path },
+    [3] = { name = m_MenuItem3Path }
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MenuItem1 = nil;
+    m_MenuItem2 = nil;
+    m_MenuItem3 = nil;
+    m_List = nil;
+    m_selectTagNum = 2;
+    m_lastSelectTagNum = 2;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EVERYDAYPANEL);
+    m_MenuItem1 = child(m_PanelObject, m_MenuItem1Path).gameObject;
+    m_MenuItem2 = child(m_PanelObject, m_MenuItem2Path).gameObject;
+    m_MenuItem3 = child(m_PanelObject, m_MenuItem3Path).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    for i = 1, 3 do
+        SetGameObjectState(m_toggleTable[i].name .. "/Toggle", false, m_PanelObject);
+    end
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_MenuItem1).onClick = LuaHelper.OnClick(OnMenuItem1Click);
+    UIEventListener.Get(m_MenuItem2).onClick = LuaHelper.OnClick(OnMenuItem2Click);
+    UIEventListener.Get(m_MenuItem3).onClick = LuaHelper.OnClick(OnMenuItem3Click);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    OpenPanelByTag();
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Toggle", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Toggle", true, m_PanelObject);
+    InitList();
+end
+
+function InitList()
+    local items = EveryDayTaskManager.GetTasksByType(m_selectTagNum);
+    m_List:RemoveAll();
+    for i, info in ipairs(items) do
+        m_List:AddData(info);
+    end
+    m_List:LookAt(0, false);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 每日任务
+function OnMenuItem1Click(gameObject)
+    OnTabClick(1);
+end
+
+-- 每周任务
+function OnMenuItem2Click(gameObject)
+    OnTabClick(2);
+end
+
+-- 每月任务
+function OnMenuItem3Click(gameObject)
+    OnTabClick(3);
+end
+
+function OnTabClick(index)
+    if m_selectTagNum ~= index then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+-- 列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local info = data;
+    local id = info.Id;
+    local unlocked = EveryDayTaskManager.IsUnlockedTask(id);
+    local gotReward = EveryDayTaskManager.GetRewardState(id) == 1;
+    local num, maxNum = EveryDayTaskManager.GetTaskProgress(id);
+
+    SetSpriteByAtlasID("Icon", info.DailyPicture, go, true);
+    SetLabelTextByID("Name", info.DailyName, go);
+    GetComponent(go, "pbar", "UIProgressBar").value = num / maxNum;
+    SetLabelContent("Num", string_format("{0}/{1}", num, maxNum), go);
+    SetLabelTextByID("Desc", info.DailyDescribe, go);
+
+    SetGameObjectState("JumpButton", unlocked and not gotReward and num < maxNum, go);
+    SetGameObjectState("RewardButton", unlocked and not gotReward and num >= maxNum, go);
+    SetGameObjectState("Passed", unlocked and gotReward, go);
+    SetGameObjectState("Condition", not unlocked, go);
+
+    if not unlocked then
+        SetLabelTextByID("Condition", info.OpenValue2, go);
+    end
+
+    local items = { };
+    if info.RewardsExp > 0 then
+        table.insert(items, { excelId = G_ItemToolTipDefine.EXP, num = info.RewardsExp });
+    end
+    local rewards = CCommonTool.GetRewardInfoByIndex(info.RewardsId);
+    if rewards ~= nil then
+        -- 获得奖励道具信息
+        local list = rewards:GetAllItem();
+        local count = list.Count;
+        for i = 1, count do
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            table.insert(items, { excelId = excelId, num = itemData.ItemNum });
+        end
+    end
+    local count = #items;
+    for i = 1, 3 do
+        local path = "Items/Item" .. i;
+        if i <= count then
+            local item = items[i];
+            SetItemShowByExcelIDV04(go, path, item.excelId, item.num, false, 11, ENUMPANELID.ENUM_PANEL_EVERYDAYPANEL);
+            SetItemToolTipsEvent(go, path, ENUMPANELID.ENUM_PANEL_EVERYDAYPANEL, false, item.excelId);
+            SetGameObjectState(path, true, go);
+        else
+            SetGameObjectState(path, false, go);
+        end
+    end
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    if go.name == "JumpButton" then
+        local info = listView:GetData(cell.dataIndex);
+        -- 打开界面
+        if info.BeginType == 1 then
+            local agentPlayer = G_UserInfo:GetCurPlayer();
+            if agentPlayer ~= nil then
+                local mapId = info.PubilishMapId;
+                agentPlayer.m_IsSendWingFly = false;
+                agentPlayer:SetSeekTarget(mapId, Vector3.New(info.PublishiValue1, 0, info.PublishiValue2));
+            end
+        elseif info.BeginType == 2 then
+            OpenUIByEnum.OpenByParam(info.OpenUIParam);
+        end
+    elseif go.name == "RewardButton" then
+        local info = listView:GetData(cell.dataIndex);
+        EveryDayTaskProtocol.RequestGetReward(info.Id);
+    end
+end
+
+-- 关闭界面按钮事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_EVERYDAYPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新界面
+function Refresh()
+    if m_CreateSuccess then
+        -- m_List:Refresh();
+        InitList();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = { };
+    local tabIndex = m_selectTagNum;
+    panelParams.tabIndex = tabIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    m_selectTagNum = panelParams.tabIndex;
+end

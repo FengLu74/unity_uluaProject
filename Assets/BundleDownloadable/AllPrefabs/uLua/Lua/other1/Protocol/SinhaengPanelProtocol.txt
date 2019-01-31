@@ -1,0 +1,99 @@
+﻿
+module("SinhaengPanelProtocol", package.seeall)
+
+-------------------------------------------------------处理宝珠接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --角色上线接受神行数据
+    network.Register(GMI_STOC_SINHAENG_DATA, OnSinhaengInit);    		-- 29873,
+    --神行培养
+    network.Register(GMI_STOC_SEND_CLIENT_SINHAENG_PEIYANG, OnGodFoster);
+    network.Register(GMI_STOC_SEND_CLIENT_SINHAENG_USE,OnGodFoster)
+    --技能，升级
+    network.Register(GMI_STOC_SEND_CLIENT_SKILL_LEVELUP, OnSkillLvlUp);
+    -- 星魂操作
+    network.Register(GMI_STOC_SEND_CLIENT_DAVIDS_PEIYANG, OnStarLvlUp);
+end
+-- 角色上线神行数据
+function OnSinhaengInit(protocolId, buffer)
+	--table 初始化
+	SinhaengPanelManager.ConstructData();
+	--神行阶数
+	local stage_lvl = buffer:ReadByte();
+	--神行星级
+	local star_lvl = buffer:ReadByte();
+	-- 当前神行id 
+	local sinhaeng_id = buffer:ReadByte();   -- 1-12 
+	--当前神行经验
+	local jewe_exp = buffer:ReadInt();
+	--error("[神行]当前神行的阶数："..stage_lvl.." 神行星级:"..star_lvl.." 神行经验："..jewe_exp.." 当前使用的神行特效id: "..sinhaeng_id);
+	SinhaengPanelManager.RefreshGodInfos(jewe_exp,star_lvl,stage_lvl,sinhaeng_id);
+	local davidNeedLvl = buffer:ReadInt();
+	--error("[神行]星魂开启等级要求："..davidNeedLvl)
+	SinhaengPanelManager.DavidsOpenNeedLvAttr(davidNeedLvl);
+	--技能数据
+	local skillCount = buffer:ReadByte();
+	--error("[神行]当前以及培养过的技能数："..skillCount);
+	for index=1,skillCount do
+		local ids = buffer:ReadUShort();
+		local tab = 
+		{
+			id = ids,
+			lvl = buffer:ReadUShort(),
+			index = ids / 1000,
+		};
+		SinhaengPanelManager.inserSkillTab(tab);
+	end
+	SinhaengPanelManager.pullSkillTab();
+	-- 星魂数据--
+	local davidsCount = buffer:ReadByte();
+	--error("[神行]星魂培养 数据长度："..davidsCount);
+	for i=1, davidsCount do
+		local types = buffer:ReadInt();
+		local level = buffer:ReadInt();
+		local star_lvl = buffer:ReadInt();
+		local exp =  buffer:ReadInt();
+		SinhaengPanelManager.insertStarAttr(i,types,level,star_lvl,exp);
+	end
+	SinhaengPanelManager.sortStarInfo();
+end
+---------------------------------------淬炼界面 start----------------------------------
+-- 神行培养
+function OnGodFoster( protocolId, buffer)
+	--神行等级
+	local stage_lvl = buffer:ReadByte();
+	--神行星级
+	local star_lvl = buffer:ReadByte();
+	-- 神行id
+	local sinhaeng_id = buffer:ReadByte();
+	-- 神行经验
+	local exp = buffer:ReadInt();
+	--error("[神行] 神行培养 返回 神行等级："..stage_lvl.." 神行星级： "..star_lvl.."  神行id"..sinhaeng_id);
+	SinhaengPanelManager.RefreshGodInfos(exp,star_lvl,stage_lvl,sinhaeng_id);
+end
+-- 技能学习（）
+function OnSkillLvlUp(protocolId, buffer)
+	local ids = buffer:ReadUShort();
+	local tab = 
+	{
+		id = ids,
+		lvl = buffer:ReadUShort(),
+		index = ids / 1000,
+	};
+	--error("[神行] 技能升级 返回 id："..tab.id.." 等级： "..tab.lvl.."  第几个："..tab.index);
+	SinhaengPanelManager.RefreshPlayerSkillTab(tab);
+end
+
+-- 神行星魂培养
+function OnStarLvlUp(protocolId, buffer)
+	local table = 
+		{
+			types = buffer:ReadInt(),
+			level = buffer:ReadInt(),
+			star_lvl = buffer:ReadInt(),
+			exp =  buffer:ReadInt(),
+		};
+	SinhaengPanelManager.RefreshStarInfos(table);
+end
+
+----------------------------------------技能界面 end---------------------------------

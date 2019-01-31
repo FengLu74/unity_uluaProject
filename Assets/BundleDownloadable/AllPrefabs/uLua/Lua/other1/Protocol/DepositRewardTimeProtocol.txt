@@ -1,0 +1,170 @@
+﻿module("DepositRewardTimeProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 服务器通知客户端限时累积充值奖励领取数据
+    network.Register(GMI_STOC_SEND_CLIENT_DEPOSIT_ACUAWARD_TIME_INIT, OnDepositAcuAwardTimeInit);
+    -- 服务器通知客户端限时累积充值数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_DEPOSIT_ACUAWARD_TIME_DEPOSITEXP, OnDepositAcuAwardTimeExpChange);
+    -- 服务器通知客户端限时累积充值领取返回
+    network.Register(GMI_STOC_REQUEST_GET_DEPOSIT_ACUAWARD_TIME_RETURN, OnDepositAcuAwardTimeGetReturn);
+    -- 服务器通知客户端限时累积充值领取活动结束返回
+    network.Register(GMI_STOC_REQUEST_GET_DEPOSIT_ACUAWARD_TIME_END, OnDepositAcuAwardTimeEnd);
+
+    -------------------------------- 每日充值相关 --------------------------------
+    -- 服务器通知客户端每日充值奖励数据
+    network.Register(GMI_STOC_SEND_CLIENT_DEPOSIT_GOLD,OnDailyChargeDatasInit); 
+    -- 服务器通知客户端每日充值奖励领取返回
+    network.Register(GMI_STOC_REQUEST_GET_DEPOSIT_GOLD_AWARD_RETURN,OnGetDailyReward); 
+    -- 服务器通知客户端充值数改变
+    network.Register(GMI_STOC_SEND_CLIENT_DEPOSIT_GOLD_CHANGE,OnDailyRewardChange);
+end
+
+
+-------------------------------------------------------处理接收协议 END---------------------------------------------------------
+
+function OnDepositAcuAwardTimeInit(protocolId, buffer)
+    RechargeManger.rechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    --error("m_n64StartTime::" .. m_n64StartTime);
+    RechargeManger.beginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    --error("m_n64EndTime::" .. m_n64EndTime);
+    RechargeManger.endTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    --error("m_nDepositGetExp::" .. m_nDepositGetExp);
+    RechargeManger.allGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    RechargeManger.rewardState = m_nGetState;
+    --error("m_nGetState::" .. m_nGetState);
+    local m_yDataSize = buffer:ReadByte();
+    --error("m_yDataSize::" .. m_yDataSize)
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(RechargeManger.rechargeTable, acuAwardInfo);
+    end
+    RechargeManger.actEnd = false;
+    RechargePanel.InitInfoOut();
+end
+
+function OnDepositAcuAwardTimeExpChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    --error("m_nDepositGetExp::" .. m_nDepositGetExp)
+    RechargeManger.allGetExp = m_nDepositGetExp;
+    RechargePanel.InitInfoOut();
+end
+
+function OnDepositAcuAwardTimeGetReturn(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    RechargeManger.rewardState = m_nGetState;
+    RechargePanel.InitInfoOut();
+    --error("m_nGetState::" .. m_nGetState)
+end
+
+function OnDepositAcuAwardTimeEnd(protocolId, buffer)
+    -- 客户端自己重置下自己的领取状态和累积充值分数
+    -- 累积充值分数
+    RechargeManger.allGetExp = 0;
+    RechargeManger.rewardState = 0;
+    RechargeManger.actEnd = true;
+    RechargePanel.InitInfoOut();
+    --error("OnDepositAcuAwardTimeEnd::")
+end
+
+-- 充值内容信息
+function DepositAcuAwardContent(buffer)
+    local ContentTable = { };
+    ContentTable.AcuAwardID = buffer:ReadInt();
+    --error("m_nID::" .. ContentTable.AcuAwardID)
+    ContentTable.AccumulateNum = buffer:ReadInt();
+    --error("m_nAccumulateNum::" .. ContentTable.AccumulateNum);
+    ContentTable.ItemNum = buffer:ReadByte();
+    --error("m_nItemSize::" .. ContentTable.ItemNum);
+    -- error("ContentTable.ItemNum：：" .. ContentTable.ItemNum);
+    ContentTable.contentTable = { };
+    if ContentTable.ItemNum > 0 then
+        for Index = 1, ContentTable.ItemNum do
+            --每一行的道具
+            -- //道具ID;
+            local itemID = buffer:ReadInt();
+            -- //道具数量
+            local itemCount = buffer:ReadInt();
+            if itemID > 0 then
+                ItmeInfo = DepositAcuAwardInfo(ContentTable.AcuAwardID, itemID, itemCount)
+                table.insert(ContentTable.contentTable, ItmeInfo);
+            end
+        end
+    end
+    return ContentTable;
+end
+
+-- 道具信息
+function DepositAcuAwardInfo(Id, ItemId, count)
+    local acuAwardItem = { };
+    acuAwardItem.ID = Id;
+    acuAwardItem.itemid = ItemId;
+    acuAwardItem.num = count;
+    return acuAwardItem;
+end
+
+-- 每日充值奖励数据
+function OnDailyChargeDatasInit(protocolId, buffer)
+    RechargeManger.dailyRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    RechargeManger.dailyBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    RechargeManger.dailyEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    RechargeManger.dailyAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    RechargeManger.dailyRewardState = m_nGetState;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(RechargeManger.dailyRechargeTable, acuAwardInfo);
+    end
+
+    DailyChargePanel.InitInfoOut();
+end
+-- 每日充值奖励领取返回
+function OnGetDailyReward(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    RechargeManger.dailyRewardState = m_nGetState;
+    DailyChargePanel.InitInfoOut();
+end
+-- 每日充值数据改变
+function OnDailyRewardChange(protocolId, buffer)
+     -- 充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    RechargeManger.dailyAllGetExp = m_nDepositGetExp;
+    DailyChargePanel.InitInfoOut();
+end
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+-- 领取限时累积充值奖励
+function RequestGetDepositAcuRewardTime(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_DEPOSIT_ACUAWARD_TIME);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求领取每日充值奖励
+function RequestGetDailyReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_DEPOSIT_GOLD_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

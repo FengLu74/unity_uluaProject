@@ -1,0 +1,459 @@
+﻿module('TimeLimitDrawPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TimeLimitDrawPanel';
+---------------------------------------label路径---------------------------------------
+-- 幸运值
+local m_LbLuckyNumPath = "Sub_Draw/lb_LuckyNum";
+-- 活动时间
+local activityTime = "Top/Content1/Label";
+local activityRule = "Top/Content2/Label";
+--从服务器读取的达到幸运值
+local luckyValueReadPath="Sub_Draw/luckyLable/lb_textValue";
+-----------------------------------------按钮路径--------------------------------------
+-- 说明按钮
+local m_explainButton = "Top/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 抽一次
+local m_BtnDrawOnePath = "Sub_Reward/btn_DrawOne";
+-- 抽十次
+local m_BtnDrawTenPath = "Sub_Reward/btn_DrawTen";
+local m_BtnClosePath = "Sub_Reward/btn_Close";
+-- 抽奖记录
+local m_BtnDrawRecordPath = "Top/btn_DrawRecord";
+-- 抽一次
+local m_SecBtnDrawOnePath = "Sub_Draw/Sub_Buttons/btn_DrawOne";
+-- 抽十次
+local m_SecBtnDrawTenPath = "Sub_Draw/Sub_Buttons/btn_DrawTen";
+
+local m_BtnReAffirmPath = "Sub_Tips/btn_ReAffirm";
+local m_BtnReCancelPath = "Sub_Tips/btn_ReCancel";
+local m_SecBtnReAffirmPath = "Sub_CostTips/btn_ReAffirm";
+local m_SecBtnReCancelPath = "Sub_CostTips/btn_ReCancel";
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 奖励列表
+local m_UIGridPath = "Sub_Reward/ItemPanel/UIGrid";
+-- 要显示的道具路劲
+local m_rewardItem = "Sub_Draw/Sub_Items/Item";
+-- 获奖记录列表
+local m_RecordListPath = "Sub_Record/RecordPanel/UIGrid";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_UIGrid = nil;
+local m_RecordList = nil;
+-- 抽奖券excelid
+local costExcelID = 20503;
+-- 获得的奖励表
+local m_RewardTable = nil;
+-- 抽奖记录列表
+local m_RecordTable = nil;
+
+local m_btnOneObj = nil;
+local m_btnTenObj = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 获得的物品位置
+local m_SelectLv = 1;
+-- 选中
+local m_SelectObj = nil;
+-- 选中图标路径
+local m_SelectObjStr = "Sub_Draw/Sub_Items/sp_Select";
+-- 开始播放的时间
+local m_StartTime = nil;
+-- 匀速时间
+local m_ConstantSpeedTime = 2.5;   --2.5
+-- 匀减速时间
+local m_minusSpeedTime = 1.5;  --1.5
+-- 匀速速度(栏位/s)
+local m_ConstantSpeed = 22;   --28
+-- 减到的速度
+local m_MinSpeed = 20;
+-- 最后匀速时间
+local m_lastConstantSpeedTime = 5;
+-- 匀速速度(栏位/s)
+local m_LastConstantSpeed = 6;
+
+-- 一圈多少栏位
+local m_TotalItems = 20;
+
+local distance = nil;
+local tempPath = "";
+-- 是否可以点击
+local isCanClick = true;
+-- 当前抽奖类型(1:单抽 2:多抽)
+local m_CurDrawType = 0; 
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+
+function OnDisable()
+    m_RecordTable = nil;
+    m_StartTime = nil;
+    if isCanClick == false then 
+        CumulativeCostProtocol.RequestGetReward();
+    end
+    isCanClick = true;
+    m_CurDrawType = 0;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_UIGrid = nil;
+    m_RecordList = nil
+    m_RecordTable = nil;
+    distance = nil;
+    tempPath = "";
+    m_SelectObj = nil;
+    m_StartTime = nil;
+    m_RewardTable = nil;
+    if isCanClick == false then 
+        CumulativeCostProtocol.RequestGetReward();
+    end
+    isCanClick = true;
+    m_CurDrawType = 0;
+end
+
+function Update()
+    if m_StartTime == nil then return end
+    deltaTime = Time.time - m_StartTime;
+    if deltaTime >= 0 and deltaTime <= m_ConstantSpeedTime then
+        isCanClick = false;
+        distance = deltaTime * m_ConstantSpeed;
+        tempPath = m_rewardItem .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+        m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition;
+        CCommonTool.SetGameObjectGrey(m_btnOneObj, true);
+        CCommonTool.SetGameObjectGrey(m_btnTenObj, true);
+    elseif deltaTime > m_ConstantSpeedTime and deltaTime < m_ConstantSpeedTime + m_minusSpeedTime then
+        local curVelocity = (m_minusSpeedTime - deltaTime + m_ConstantSpeedTime)/ m_minusSpeedTime * (m_ConstantSpeed - m_MinSpeed) + m_MinSpeed;
+        distance = m_ConstantSpeedTime * m_ConstantSpeed + (m_ConstantSpeed + curVelocity)*(deltaTime - m_ConstantSpeedTime)/2;
+        tempPath = m_rewardItem .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+        m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition;
+   elseif deltaTime >= m_ConstantSpeedTime + m_minusSpeedTime and deltaTime < m_ConstantSpeedTime + m_minusSpeedTime + m_lastConstantSpeedTime then
+        distance = m_ConstantSpeedTime * m_ConstantSpeed + (m_ConstantSpeed + m_MinSpeed)*m_minusSpeedTime/2 + (deltaTime - m_ConstantSpeedTime - m_minusSpeedTime)*m_LastConstantSpeed;
+        tempPath = m_rewardItem .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+        m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition; 
+        if m_ConstantSpeedTime + m_minusSpeedTime + m_lastConstantSpeedTime - deltaTime < 3.7 then
+            if m_SelectLv == math.floor(math.fmod(distance,m_TotalItems)) + 1 then
+                CCommonTool.SetGameObjectGrey(m_btnOneObj, false);
+                CCommonTool.SetGameObjectGrey(m_btnTenObj, false);
+                m_StartTime = 200;
+                if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW) == 1 then 
+                    CumulativeCostProtocol.RequestGetReward();
+                    SetGameObjectState("Sub_Reward", true, m_PanelObject);
+                    m_UIGrid:RemoveAll();
+                    for i,v in pairs(m_RewardTable) do
+                        m_UIGrid:AddData(v);
+                    end
+                    SetGameObjectState(m_BtnDrawOnePath, #m_RewardTable == 1, m_PanelObject);
+                    SetGameObjectState(m_BtnDrawTenPath, #m_RewardTable > 1, m_PanelObject);
+                    SetLabelContent(m_LbLuckyNumPath, CumulativeCostMng.LimitTimeDrawLuckyNum, m_PanelObject);
+                    SetLabelContent(luckyValueReadPath, CumulativeCostMng.LimitAttainLuckyNum, m_PanelObject);
+                    isCanClick = true;
+                    m_CurDrawType = 0;
+                    SetGameObjectState("Sub_Record", false, m_PanelObject);
+                    closePanel(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL);
+                    RefreshBtnState();
+                end
+            end
+        end 
+    end
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW);
+    m_UIGrid = GetComponent(m_PanelObject, m_UIGridPath, "UIListView");
+    m_RecordList = GetComponent(m_PanelObject, m_RecordListPath, "UIListView");
+    m_SelectObj = child(m_PanelObject, m_SelectObjStr);
+    m_btnOneObj = child(m_PanelObject, m_SecBtnDrawOnePath).gameObject;
+    m_btnTenObj = child(m_PanelObject, m_SecBtnDrawTenPath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_UIGrid:SetInitCallback(OnUIGridViewInit);
+    m_UIGrid:SetClickCallback(OnUIGridViewClick);
+
+    m_RecordList:SetInitCallback(OnListViewInit);
+    m_RecordList:SetClickCallback(OnListViewClick);
+    m_RecordList:SetDownScrollCallback(OnListViewDownScroll);
+
+    SetGameObjectEvent(m_BtnDrawOnePath, OnBtnDrawOneClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnDrawTenPath, OnBtnDrawTenClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+    
+    SetGameObjectEvent(m_SecBtnDrawOnePath, OnBtnDrawOneClick, m_PanelObject);
+    SetGameObjectEvent(m_SecBtnDrawTenPath, OnBtnDrawTenClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnReAffirmPath, OnBtnReAffirmClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnReCancelPath, OnBtnReCancelClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnDrawRecordPath, OnBtnDrawRecordClick, m_PanelObject);
+    SetGameObjectEvent(m_explainButton, OnBtnExplainClick, m_PanelObject);
+    SetGameObjectEvent("Sub_Record/btn_Close", OnBtnCloseRecordClick, m_PanelObject);
+    SetGameObjectEvent(m_SecBtnReAffirmPath, OnSecBtnReAffirmClick, m_PanelObject);
+    SetGameObjectEvent(m_SecBtnReCancelPath, OnSecBtnReCancelClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    isCanClick = true;
+    m_CurDrawType = 0;
+    CCommonTool.SetGameObjectGrey(m_btnOneObj, false);
+    CCommonTool.SetGameObjectGrey(m_btnTenObj, false);
+    -- 设置活动时间
+    local startTime = G_TimerMng:FormatTime(CumulativeCostMng.LimitTimeDrawBeginTime, "yyyy/MM/dd");
+    local endTime = G_TimerMng:FormatTime(CumulativeCostMng.LimitTimeDrawEndTime, "yyyy/MM/dd H");
+    SetLabelContent(activityTime, startTime .. "-" .. endTime .. CCommonTool.GetTxtData(603).m_str, m_PanelObject);
+    -- 设置幸运值
+    SetLabelContent(m_LbLuckyNumPath, CumulativeCostMng.LimitTimeDrawLuckyNum, m_PanelObject);
+    SetLabelContent(luckyValueReadPath, CumulativeCostMng.LimitAttainLuckyNum, m_PanelObject);
+    if #CumulativeCostMng.LimitTimeDrawTable <= 0 then return end
+    for i = 1 ,#CumulativeCostMng.LimitTimeDrawTable do 
+        local path = m_rewardItem .. i;
+        SetGameObjectState(path, true, m_PanelObject);
+        local rechargeInfo = CumulativeCostMng.LimitTimeDrawTable[i];
+        local m_itemExcelID = rechargeInfo.itemExcelID;
+        if m_itemExcelID ~= nil then
+            SetItemShowByExcelIDV04(m_PanelObject, path, m_itemExcelID, rechargeInfo.num, false, 105, ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW);
+            SetItemToolTipsEvent(m_PanelObject, path, ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW, false, m_itemExcelID);
+        end
+    end
+    -- 按钮显示
+    RefreshBtnState();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 获得的道具
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local m_itemExcelID = data.itemExcelID;
+    if m_itemExcelID ~= nil then
+        SetItemShowByExcelIDV04(go, "Prop", m_itemExcelID, data.num, false, 120, ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW);
+        SetItemToolTipsEvent(go, "Prop", ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW, false, m_itemExcelID);
+    end
+end
+
+function OnUIGridViewClick(listView, cell, go)
+    
+end
+
+-- 抽奖记录
+function OnListViewInit(istView, cell, data)
+    local go = cell.gameObject;
+    local timeString = G_TimerMng:GetTime(data.time);
+    SetLabelContent("Label",string_format(GetTextToId(164506), timeString, data.playerName,GetTextToId(CCommonTool.GetNameIDByExcelID(data.itemExcelID))), go);
+end
+function OnListViewClick(istView, cell, data)
+    
+end
+function OnListViewDownScroll(listView)
+    if m_RecordTable ~= nil then 
+        CumulativeCostProtocol.RequestDrawRecord(m_RecordTable[#m_RecordTable].playerID);
+    end
+end
+
+-- 抽一次
+function OnBtnDrawOneClick()
+    if isCanClick == false then return end
+    SetGameObjectState("Sub_Reward", false, m_PanelObject);
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    if num > 0 or G_UserInfo.NotBindDiamond >= 20 then 
+        m_CurDrawType = 1;
+        OpenCostTips(1);
+    else
+        SetGameObjectState("Sub_Tips", true, m_PanelObject);
+    end
+end
+    
+-- 抽多次
+function OnBtnDrawTenClick()
+    if isCanClick == false then return end
+    SetGameObjectState("Sub_Reward", false, m_PanelObject);
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    if num >= 10 or G_UserInfo.NotBindDiamond >= 20*(10 - tonumber(num)) then  
+        m_CurDrawType = 2;
+        OpenCostTips(2);
+    else
+        SetGameObjectState("Sub_Tips", true, m_PanelObject);
+    end
+end
+
+function OnBtnCloseClick()
+    SetGameObjectState("Sub_Reward", false, m_PanelObject);
+end
+
+function OnBtnReAffirmClick()
+    SetGameObjectState("Sub_Tips", false, m_PanelObject);
+    StorePanel.OpenPanelRecharge();
+end
+
+function OnBtnReCancelClick()
+    SetGameObjectState("Sub_Tips", false, m_PanelObject);
+end
+
+-- 抽奖记录按钮
+function OnBtnDrawRecordClick()
+    CumulativeCostProtocol.RequestDrawRecord(-1);
+end
+
+-- 说明按钮
+function OnBtnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW, 18);
+end
+
+function OnBtnCloseRecordClick()
+    SetGameObjectState("Sub_Record", false, m_PanelObject);
+end
+
+function OnSecBtnReAffirmClick()
+    SetGameObjectState("Sub_CostTips", false, m_PanelObject);
+    CumulativeCostProtocol.RequestDraw(m_CurDrawType - 1);
+    isCanClick = false;
+    CCommonTool.SetGameObjectGrey(m_btnOneObj, true);
+    CCommonTool.SetGameObjectGrey(m_btnTenObj, true);
+end
+
+function OnSecBtnReCancelClick()
+    m_CurDrawType = 0;
+    SetGameObjectState("Sub_CostTips", false, m_PanelObject);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 获得奖励显示界面
+function GetDrawReward(rewardTable)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW) == 1 then
+        if m_CurDrawType == 1 then 
+            m_RewardTable = rewardTable;
+            m_StartTime = Time.time;
+            for i,v in pairs(CumulativeCostMng.LimitTimeDrawTable) do 
+                if rewardTable[1].itemExcelID == v.itemExcelID then 
+                    m_SelectLv = i;
+                    break;
+                end
+            end
+            return;
+        elseif m_CurDrawType == 2 then 
+            SetGameObjectState("Sub_Reward", true, m_PanelObject);
+            m_UIGrid:RemoveAll();
+            for i,v in pairs(rewardTable) do
+                m_UIGrid:AddData(v);
+            end
+            SetGameObjectState(m_BtnDrawOnePath, #rewardTable == 1, m_PanelObject);
+            SetGameObjectState(m_BtnDrawTenPath, #rewardTable > 1, m_PanelObject);
+            SetLabelContent(m_LbLuckyNumPath, CumulativeCostMng.LimitTimeDrawLuckyNum, m_PanelObject);
+            SetLabelContent(luckyValueReadPath, CumulativeCostMng.LimitAttainLuckyNum, m_PanelObject);
+            isCanClick = true;
+            CCommonTool.SetGameObjectGrey(m_btnOneObj, false);
+            CCommonTool.SetGameObjectGrey(m_btnTenObj, false);
+            m_CurDrawType = 0;
+            SetGameObjectState("Sub_Record", false, m_PanelObject);
+            closePanel(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL);
+            RefreshBtnState();
+        end
+    end
+end
+
+-- 打开抽奖记录
+function OpenRecord(recordTable)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW) == 1 then 
+        SetGameObjectState("Sub_Record", true, m_PanelObject);
+        if m_RecordTable == nil then 
+            m_RecordTable = {};
+            m_RecordList:RemoveAll();
+            for i,v in pairs(recordTable) do
+                m_RecordList:AddData(v);
+                table.insert(m_RecordTable, v);
+            end
+        else
+            local isNewInfo = false;
+            for index = 1, #recordTable do
+                for i = 1, #m_RecordTable do
+                    if recordTable[index].playerID == m_RecordTable[i].playerID then 
+                        isNewInfo = true;
+                    end
+                end
+                if isNewInfo == false then 
+                    table.insert(m_RecordTable, recordTable[index]);
+                    m_RecordList:AddData(recordTable[index]);
+                else
+                    isNewInfo = false;
+                end
+            end
+        end
+    end
+end
+
+-- 打开限时抽奖界面
+function OpenDrawPanel()
+    if m_CreateSuccess then 
+        createPanel(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW);
+        InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_TIMELIMITDRAW);
+    end
+end
+
+-- 更新按钮状态
+function RefreshBtnState()
+    -- 按钮显示
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    if num > 0 then 
+        SetGameObjectState(m_BtnDrawOnePath.."/sp_JZ", true, m_PanelObject);
+        SetGameObjectState(m_BtnDrawTenPath.."/sp_JZ", true, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawOnePath.."/sp_JZ", true, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawTenPath.."/sp_JZ", true, m_PanelObject);
+        SetGameObjectState(m_BtnDrawOnePath.."/sp_HZ", false, m_PanelObject);
+        SetGameObjectState(m_BtnDrawTenPath.."/sp_HZ", false, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawOnePath.."/sp_HZ", false, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawTenPath.."/sp_HZ", false, m_PanelObject);
+    else
+        SetGameObjectState(m_BtnDrawOnePath.."/sp_JZ", false, m_PanelObject);
+        SetGameObjectState(m_BtnDrawTenPath.."/sp_JZ", false, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawOnePath.."/sp_JZ", false, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawTenPath.."/sp_JZ", false, m_PanelObject);
+        SetGameObjectState(m_BtnDrawOnePath.."/sp_HZ", true, m_PanelObject);
+        SetGameObjectState(m_BtnDrawTenPath.."/sp_HZ", true, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawOnePath.."/sp_HZ", true, m_PanelObject);
+        SetGameObjectState(m_SecBtnDrawTenPath.."/sp_HZ", true, m_PanelObject);
+    end
+end
+
+-- 打开提示花费界面
+function OpenCostTips(value)
+    SetGameObjectState("Sub_CostTips", true, m_PanelObject);
+--    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    if value == 1 then 
+        SetLabelContent("Sub_CostTips/Others/Label", GetTextToId(9217), m_PanelObject);
+    elseif value == 2 then 
+        SetLabelContent("Sub_CostTips/Others/Label", GetTextToId(9218), m_PanelObject);
+    end
+end
+
+function IsShowRedHint()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, costExcelID);
+    if num > 0 then
+        return true;
+    end
+    return false;
+end

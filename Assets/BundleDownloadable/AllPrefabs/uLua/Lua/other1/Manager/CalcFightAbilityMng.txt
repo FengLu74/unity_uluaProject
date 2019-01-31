@@ -1,0 +1,113 @@
+﻿module("CalcFightAbilityMng", package.seeall)
+-- 一些需要特殊计算的属性
+local SpecialAttrs = {257,258,259,260,261};
+
+-- 计算战斗力，参数1：table（key：属性ID，value：属性值） 参数2：是否是其他玩家
+function CalcFightAbility(attributeTable, isOtherPlayer)
+    if type(attributeTable) ~= "table" then
+        return 0;
+    end
+    local mainPlayerAttr;
+    if isOtherPlayer then
+        mainPlayerAttr = EquipMng.OtherPlayerRoleAttribute;
+    else
+        mainPlayerAttr = G_UserInfo.RoleAttribute;
+    end
+    if mainPlayerAttr == nil then
+        return 0;
+    end
+    local fightAbility = 0;
+    for k,v in pairs(attributeTable) do
+        if type(k) ~= "number" or type(v) ~= "number" then
+            break;
+        end
+        local attrIndexInfo = CCommonTool.GetAttrIndexInfo(k);
+        if attrIndexInfo ~= nil then
+            if attrIndexInfo.CalcFightAbility == 1 then
+                if TableContainsValue(SpecialAttrs,k) then
+                    local roleDateInfo = CCommonTool.GetRoleDateInfo(mainPlayerAttr.ProID);
+                    if roleDateInfo ~= nil then
+                        local cultivateID = roleDateInfo.CultivateId + mainPlayerAttr.CultivateLv - 1;
+                        local roleCultivateInfo = CCommonTool.GetRoleCultivateInfo(cultivateID);
+                        if roleCultivateInfo ~= nil then
+                            local roleAttributeInfo = CCommonTool.GetRoleAttributeInfo(roleCultivateInfo.AttributeId);
+                            if roleAttributeInfo ~= nil then
+                                local basicValue = 0;
+                                basicValue = CalcSpecialValue(k,roleAttributeInfo,mainPlayerAttr.Level);
+                                fightAbility = fightAbility + CalcUnitFightAbility(mainPlayerAttr.Level,attrIndexInfo.LevelPara,
+                                attrIndexInfo.AttrPricePara,attrIndexInfo.Ratio*v*basicValue,attrIndexInfo.UnitPara);
+                            end
+                        end
+                    end
+                else
+                    if mainPlayerAttr.ProID == PROFESSION_ID.ASSASSIN or mainPlayerAttr.ProID == PROFESSION_ID.WARDRAGONWHITE then 
+                        if k ~= 21 then 
+                            fightAbility = fightAbility + CalcUnitFightAbility(mainPlayerAttr.Level,attrIndexInfo.LevelPara,
+                            attrIndexInfo.AttrPricePara,attrIndexInfo.Ratio*v,attrIndexInfo.UnitPara);
+                        end
+                    else
+                        if k ~= 11 then 
+                            fightAbility = fightAbility + CalcUnitFightAbility(mainPlayerAttr.Level,attrIndexInfo.LevelPara,
+                            attrIndexInfo.AttrPricePara,attrIndexInfo.Ratio*v,attrIndexInfo.UnitPara);
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return fightAbility;
+end
+
+-- 计算单元属性的战斗力公式  战斗力=（角色等级*等级参数+属性价值参数）*属性总值/计算单位
+-- 参数1：角色等级 参数2：等级参数 参数3：属性价值参数 参数4：属性总值 参数5：计算单位
+function CalcUnitFightAbility(level,levelPara,pricePara,attrValue,unitPara)
+    if type(level) == "number" and type(levelPara) == "number" and type(pricePara) == "number" and type(attrValue) == "number" and type(unitPara) == "number" and unitPara ~= 0 then
+        return (level*levelPara + pricePara)*attrValue/unitPara;
+    end
+    return 0;
+end
+
+-- 计算特殊属性的属性值 参数1：属性ID，参数2：Role_Attribute表类，参数3：角色等级
+function CalcSpecialValue(attrIndex,roleAttributeInfo,level)
+    if attrIndex == SpecialAttrs[1] then
+        return roleAttributeInfo.HpBasics + (level - 1)*roleAttributeInfo.HpGrow;
+    elseif attrIndex == SpecialAttrs[2] then
+        return roleAttributeInfo.ApBasics + (level - 1)*roleAttributeInfo.ApGrow;
+    elseif attrIndex == SpecialAttrs[3] then
+        return roleAttributeInfo.MapBasics + (level - 1)*roleAttributeInfo.MapGrow;
+    elseif attrIndex == SpecialAttrs[4] then
+        return roleAttributeInfo.DpBasics + (level - 1)*roleAttributeInfo.DpGrow;
+    elseif attrIndex == SpecialAttrs[5] then
+        return roleAttributeInfo.MdpBasics + (level - 1)*roleAttributeInfo.MdpGrow;
+    else
+        return 0;
+    end
+end
+
+-- 判断table的value值中是否有值 参数1：table 参数2：要匹配的值
+function TableContainsValue(tempTable,value)
+    for k,v in pairs(SpecialAttrs) do
+        if v == value then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 计算宠物战斗力，参数1：宠物道具,参数2：计算哪个部分的(1:当前所有 2:初始资质 3:未保存的资质),参数3：是否是当前星级
+function CalcPetFightAbility(petItem,qualityState,isCurStar)
+    if isCurStar == nil then
+        isCurStar = true;
+    end
+    local personClass,initiativeSkillNums = PetManager.ChangePetItemIntoCLGPerson(petItem,qualityState,isCurStar);
+    if petItem == nil then
+        return 0;
+    end
+    local petATT = petItem.AllPetAttribute;
+    if petATT == nil then
+        return 0;
+    end
+    local fightAbility = initiativeSkillNums * (petATT.PetLevel * PetMainSkillFightAbilityRatio + PetMainSkillFightAbilityConstant);
+    fightAbility = fightAbility + personClass:CalcFightAbility();
+    return fightAbility;
+end

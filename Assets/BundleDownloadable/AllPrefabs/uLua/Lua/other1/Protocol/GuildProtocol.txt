@@ -1,0 +1,2657 @@
+﻿module("GuildProtocol", package.seeall)
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+local subMessageEvent = Event.New();
+
+function RegisterProtocols()
+    -- 公会资金标段
+    network.Register(GMI_STOC_CORPS_INCREASEMONEY, OnUpdateGuildMoney);
+    --------------公会主协议--------------
+    network.Register(GMI_STOC_GUILD_OP_MSG, OnReceiveGuildMessage);
+    --------------公会子协议--------------
+    -- 创建工会返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_CREATE_GUILD, OnCreateGuildBack);
+    -- 删除工会
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DELETE_GUILD, OnDeleteGuild);
+    -- 接收所有公会ID/名字
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_ID2NAME_BEGIN, OnReceiveGuildIdNames);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_ID2NAME_DATA, OnReceiveGuildIdNames);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_ID2NAME_END, OnReceiveGuildIdNames);
+    -- 查询多个公会名字
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_MULTI_ID2NAME_DATA, OnReceiveMultiGuildName);
+    -- 查询所有帮会消息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA_BEGIN, OnReceiveGuildList);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA, OnReceiveGuildList);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA_END, OnReceiveGuildList);
+    -- 接收公会成员列表
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_MEMBER_INFO_BEGIN, OnReceiveMembers);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_MEMBER_INFO, OnReceiveMembers);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_MEMBER_INFO_END, OnReceiveMembers);
+    -- 接收公会单个成员信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_UPDATE_OR_ADD_SINGLE_MEMBER_INFO, OnReceiveMembers);
+    -- 接收审批列表
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_APPLY_JOIN_DATA, OnReceiveGuildApproval);
+    -- 公告信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_GUILD_NOTICE, OnGuildNoticeChange);
+    -- 玩家公会信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_SINGLE_GUILD_DATA, OnReceiveGuildInfo);
+    -- 按名字查询公会信息(公会列表中的查询)
+    -- subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_GUILD_BYNAME, OnSearchGuildByName);
+    -- 加入帮会成功消息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_JOIN_GUILD, OnJoinGuild);
+    -- 取消申请加入帮会
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_CANCEL_JOIN, OnCancelApplyJoinGuild);
+    -- 申请加入帮会
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_APPLY_JOIN_GUILD, OnApplyJoinGuild);
+    -- 帮会事件
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_GUILD_EVENT, OnReceiveGuildEvents);
+    -- 帮会升级
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_LEVELUP_GUILD, OnGuildLevelUp);
+    -- 主动离开公会
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_LEAVE_GUILD, OnLeaveGuild);
+    -- 增加一个分堂
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_ADD_NEW_KINDRED, OnAddNewKindred);
+    -- 玩家自己的公会申请记录
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SENDQUERYRECORD, OnReceiveApplyRecords);
+    -- 罢免副会长、堂主
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DROP_MEMBER, OnDeposeMember);
+    -- 禅让会长
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_GIVE_LEADER, OnDemiseLeader);
+    -- 罢免堂主(废弃, 用罢免副会长、堂主接口)
+    -- subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DEL_KINDRED_LEADER, OnDeposeKindredLeader);
+    -- 设置、罢免分堂成员(罢免也是设置一种，从分堂设置到帮众堂)
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_ADD_KINDRED_MEMBER, OnAddKindredMember);
+    -- 任命副会长、堂主
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_MINISTER, OnAppointMember);
+    -- 被开除公会
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DELETE_MEMBER, OnExpelledGuild);
+    -- 收到邀请加入帮会信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_INVITE_JION, OnReceiveInviteJoinGuild);
+    -- 邀请回复
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_RETURN_INVITE_JOIN, OnInviteJoinBack);
+    -- 删除成员信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DEL_MEMBER_INFO, OnDelMemberInfo);
+    -- 公会成员信息修改
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_SINGLE_MEMBER_INFO, OnSingleMemberInfo);
+    -- 有玩家申请入公会(or取消申请入公会)
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_PLAYER_QUERYJOIN, OnPlayerQueryJoin);
+    -- 会长取消你的公会申请(需要从我的申请列表中删除这个公会)
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_REFUSE_JOIN, OnRefushJoin);
+    -- 查询多个公会信息(按名字查找功能)
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE, OnFindGuilds);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE_BEGIN, OnFindGuilds);
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE_BND, OnFindGuilds);
+    -- 保存公会公告返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_ADD_ANNOUNCEMENT, OnSaveNotice);
+    -- 保存公会宣言返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_PROCLAMATION, OnSaveProclamation);
+    -- 建筑升级
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_LEVELUP_GUILD_BUILDING, OnBuildingLevelUp);
+    -- 公会捐献
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_CTOS_PERSONAL_DONATE, OnGuildDonation);
+    -- 更新个人贡献度
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_GUILD_UPDATAHORNOR, OnUpdateContribution);
+    -- 更新设置福利区间
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_WELFARE_RANGE, OnUpdateWelfareRange);
+    -- 领取福利奖励
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_GET_WELFARE, OnGetWelfareAward);
+
+    -- 获得饮酒经验
+    network.Register(GMI_STOC_SYNC_CORPSWINE_EXP, OnGetWineBossExp);
+
+    -- 获得公会聚会状态
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SEND_GUILD_PARTY_STATE, OnGetGuildPartyState)
+
+    -- 获得据点战竞拍信息返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_APPLY_DATA, OnGetGuildWarInfo);
+    -- 获得竞拍结果返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_APPLY_BATTLE, OnGetGuildAuction);
+    -- 放弃竞拍返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_ABANDON_APPLY, OnGetGuildAbandonAuction);
+    -- 请求获取竞拍结果信息返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_APPLY_RESULT_DATA, OnGetGuildAuctionResult);
+    -- 竞标结果产生，公会全员收到提示消息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_APPLY_RESULT_GENERATE, OnGetGuildNotice);
+    -- 战前30分钟提示消息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_BEFORE_30_MIN_HINT, OnBeforeNotice);
+    -- 点击提示信息进入准备场景界面返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_OPEN_ACTIVITY, OnOpenActivityWar);
+    -- 战役结束,服务器发来结算信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_BATTLE_OVER, OnWarOver);
+    -- 点击配置人员按钮返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_ALLOC_BUTTON, OnGetMemberInfo);
+    -- 进入人员分配界面请求消息返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_ALLOC_PAGE, OnGetTeamInfo);
+    -- 进入准备场景返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEERBACK_ENTER_READY_RROM, OnOpenGuildWarTips);
+    -- 查看积分返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_SCORE_DATA, OnGetScore);
+    -- 点击战具分配分页按钮返回战具数据
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_ITEM_ALLOC_PAGE, OnGetWeapon);
+    -- 点击配置人员按钮和为参战队员分配战具的返回相同
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_WEAPON_ALLOC_BTN, OnGetWeaponMember);
+    -- 点击城战战具按钮返回，购买城战道具后也会刷这个消息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_CITY_WEAPON_BTN, OnGetWeaponInfo);
+
+    -- 请求公会UI状态返回（1：竞拍状态  2：前往状态）
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CORPS_UI_STATE, OnGetAuctionState);
+
+    -- 点击活动界面的领地战分页按钮返回领地战据点的相关数据
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_ACTIVITY_BATTLE_BTN, OnGetStrongHoldInfo);
+    -- 报名参加领地战成员进入战场后同步的数据
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_PLAYER_ENTER_ROOM_AFTER, OnEnterBattleField);
+    -- 点击左侧面板查看战场资源数据返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_LEFT_PLANEL_LOOK_INFO, OnGetBattleFieldData);
+    -- 资源积分改变同步
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_RESOURCE_SCORE_CHANGE, OnGetResourceData);
+    -- 个人数据改变发送（杀人数，助攻数，死亡数）
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_PERSONAL_DATA_CHANGE, OnGetScoreData);
+    -- 公会战离开战场
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_LEAVE_BATTLE_ROOM, OnGetLeaveGuildWar);
+    -- 竞拍身份检测返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_CLINK_APPLY_BTN, OnGetCheckResult);
+    -- 上线或者加入公会发送公会界面竞拍相关数据
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_PLAYER_ENTER_GAME_SEND_DATA, OnGetAuctionData);
+    -- 更新领地战小地图信息
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_OP_UPDATE_MAP_INFO, OnRefreshMap);
+
+    -- 放弃已占领据点返回
+    subMessageEvent:Add(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_FEEDBACK_ABANDON_SCENE, OnGiveUpStrongHold);
+end
+
+-- 公会资金
+function OnUpdateGuildMoney(protocolId, buffer)
+    local nIncreaseMoney = buffer:ReadInt();
+    local curMoney = nIncreaseMoney;
+    if curMoney > 0 then
+        local str = string_format(GetTextToId(102147), curMoney);
+        ShowSystemFlowTips(str, true);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+    end
+    GuildManager.myGuild.money = GuildManager.myGuild.money + nIncreaseMoney;
+end
+
+-- 接收公会系统主协议
+function OnReceiveGuildMessage(protocolId, buffer)
+    local result = buffer:ReadShort();
+    if result == 0 then
+        local subMessageId = buffer:ReadShort();
+        subMessageEvent:DispatchEvent(subMessageId, buffer);
+    elseif result == 1 then
+        local errorType = buffer:ReadShort();
+        ShowErrorMessage(errorType, buffer);
+    end
+end
+
+-- 创建工会返回
+function OnCreateGuildBack(messageId, buffer)
+    GuildPanel.CreateGuildCallBack();
+end
+
+-- 删除工会
+function OnDeleteGuild(messageId, buffer)
+    GuildManager.ExitGuild();
+end
+
+-- 帮会id-名字对应结构
+function OnReceiveGuildIdNames(messageId, buffer)
+    if messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_ID2NAME_BEGIN then
+        -- 帮会id-名字对应结构开始
+        GuildManager.guildIdNames = { };
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_ID2NAME_DATA then
+        local idNames = GuildManager.guildIdNames;
+        local Testsize = buffer:ReadUShort();
+        -- ?
+        local yversion = buffer:ReadByte();
+        -- ?
+        local count = buffer:ReadShort();
+        -- ?
+        for i = 1, count do
+            local guildId = buffer:ReadInt();
+            local guildName = buffer:ReadStringByByte();
+            local flagName = buffer:ReadStringByByte();
+            local guildLevel = buffer:ReadUShort();
+            idNames[guildId] = { guildName, flagName, guildLevel };
+        end
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_ID2NAME_END then
+        G_GuildMng:SetGuildIdNames(GuildManager.guildIdNames);
+    end
+end
+
+-- 查询多个公会名字
+function OnReceiveMultiGuildName(messageId, buffer)
+    if not GuildManager.guildIdNames then
+        GuildManager.guildIdNames = { };
+    end
+    local Testsize = buffer:ReadUShort();
+    -- ?
+    local yversion = buffer:ReadByte();
+    -- ?
+    local count = buffer:ReadUShort();
+    for i = 1, count do
+        local guildId = buffer:ReadInt();
+        local guildName = buffer:ReadStringByByte();
+        local flagName = buffer:ReadStringByByte();
+        local guildLevel = buffer:ReadUShort();
+        GuildManager.guildIdNames[guildId] = { guildName, flagName, guildLevel };
+    end
+    if count > 0 then
+        G_GuildMng:SetGuildIdNames(GuildManager.guildIdNames);
+        ActivityPanel.RefreshGuildWar();
+    end
+end
+
+-- 查询所有帮会消息
+function OnReceiveGuildList(messageId, buffer)
+    if messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA_BEGIN then
+        -- GuildManager.guilds = {};
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA then
+        if not GuildManager.guilds then
+            GuildManager.guilds = { };
+        end
+        GuildManager.guildMaxCount = buffer:ReadUShort();
+        local yversion = buffer:ReadByte();
+        -- 公会列表版本号s
+        GuildManager.guildListVersion = buffer:ReadInt();
+        local size = buffer:ReadUShort();
+        for i = 1, size do
+            local guild = ReadGuild(buffer);
+            table.insert(GuildManager.guilds, guild);
+        end
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA_END then
+        GuildPanel.InitAllInfoOut();
+    end
+end
+
+-- 按名称查找公会信息列表
+local tempGuilds = nil;
+
+-- 查询多个公会信息(按名字查找功能)
+function OnFindGuilds(messageId, buffer)
+    if messageId == ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE_BEGIN then
+        tempGuilds = { };
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE then
+        if not tempGuilds then
+            tempGuilds = { };
+        end
+        local size = buffer:ReadUShort();
+        for i = 1, size do
+            local guild = ReadGuild(buffer);
+            table.insert(tempGuilds, guild);
+        end
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE_BND then
+        GuildPanel.OnSearchBack(tempGuilds or { });
+        tempGuilds = nil;
+    end
+end
+
+-- 读取公会信息(公会列表中的单个公会信息)
+function ReadGuild(buffer)
+    local guild = { };
+    guild.id = buffer:ReadInt();
+    -- 公会ID
+    guild.guildId = guild.id;
+    -- 公会ID
+    --[[ guild.rank = ]]
+    buffer:ReadInt();
+    guild.level = buffer:ReadUShort();
+    -- 公会等级
+    guild.memberCount = buffer:ReadByte();
+    -- 成员数量
+    guild.recruitType = buffer:ReadByte();
+    -- 招募类型
+    guild.createTime = buffer:ReadUInt64();
+    -- 创建时间
+    guild.name = buffer:ReadStringByByte();
+    -- 公会名称
+    guild.guildName = guild.name;
+    -- 公会名称
+    guild.creatorName = buffer:ReadStringByByte();
+    -- 创建者名称
+    guild.announce = buffer:ReadStringByByte();
+    -- 公会宣言
+    guild.rank = buffer:ReadUInt();
+    -- 公会排行
+    guild.affairsLevel = buffer:ReadUShort();
+    -- 内政等级
+    guild.flagName = buffer:ReadStringByByte();
+    -- 旌旗名称
+    return guild;
+end
+
+-- 接收家族成员列表
+function OnReceiveMembers(messageId, buffer)
+    local needRefresh = false;
+    if messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_MEMBER_INFO_BEGIN then
+        GuildManager.members = { };
+        GuildManager.membersDict = { };
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_MEMBER_INFO then
+        local teamp = buffer:ReadUShort();
+        local msgVersion = buffer:ReadByte();
+        -- 成员列表版本号
+        GuildManager.memberListVersion = buffer:ReadInt();
+        local memberCount = buffer:ReadUShort();
+        for i = 1, memberCount do
+            local member = ReadGuildMember(buffer);
+            table.insert(GuildManager.members, member);
+            GuildManager.membersDict[member.id] = member;
+        end
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_MEMBER_INFO_END then
+        -- 接收家族成员列表结束
+        needRefresh = true;
+    elseif messageId == ENUM_GUILD_OP_SUBMSG.GUILD_OP_UPDATE_OR_ADD_SINGLE_MEMBER_INFO then
+        -- 接收公会单个成员消息
+        local teamp = buffer:ReadUShort();
+        local temp = buffer:ReadByte();
+        local temp = buffer:ReadInt();
+        local size = buffer:ReadUShort();   -- ==1
+        for i = 1, size do
+            local member = ReadGuildMember(buffer);
+            local find = false;
+            for index, mem in ipairs(GuildManager.members) do
+                if mem.id == member.id then
+                    find = true;
+                    GuildManager.members[index] = member;
+                    break;
+                end
+            end
+            if not find then
+                table.insert(GuildManager.members, member);
+            end
+            GuildManager.membersDict[member.id] = member;
+        end
+        needRefresh = true;
+    end
+
+    if needRefresh == true then
+        GuildMemberPanel.RefreshMemberList();
+        GuildSkillPanel.Refresh();
+        TeamInvitePanel.Refresh();
+        CoinPanel.RefreshContentOut();
+        RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_REWARD, GuildManager.CanGetReward());
+    end
+end
+
+-- 读取单个公会成员信息
+function ReadGuildMember(buffer)
+    local member = { };
+    member.version = buffer:ReadByte();
+    -- 版本号
+    member.joinTime = buffer:ReadInt64();
+    -- 入会时间
+    member.id = buffer:ReadUInt();
+    -- id
+    member.globalId = member.id;
+    -- id
+    member.guildId = buffer:ReadInt();
+    -- 公会ID
+    member.totalContribution = buffer:ReadUInt();
+    -- 总贡献度
+    member.contribution = buffer:ReadUInt();
+    -- 当前贡献度
+    member.weekContribution = buffer:ReadUInt();
+    -- 本周贡献度
+    member.right = buffer:ReadUInt();
+    -- 权限
+    member.rankLevel = buffer:ReadUShort();
+    -- 职位 会长/副会长/堂主...
+    member.job = member.rankLevel;
+    -- 职位
+    member.profession = buffer:ReadByte();
+    -- 职业
+    member.proId = member.profession;
+    -- 职业
+    member.level = buffer:ReadByte();
+    -- 等级
+    member.onlineScene = buffer:ReadUShort();
+    if member.onlineScene == 65535 then
+        member.onlineScene = -1;
+    end
+    -- 是否在线( ~= -1 表示所在的场景ID,-1表示不在线)
+    member.activeTime = buffer:ReadByte();
+    -- 活跃时间段 天/小时/周
+    member.activeTimeValue = buffer:ReadByte();
+    -- 活跃时间值 X天/X小时...
+    if member.onlineScene ~= -1 then
+        member.onlineSortValue = 0;
+        -- 活跃时间排序值
+    else
+        member.onlineSortValue = 1 + member.activeTime * 1000 + member.activeTimeValue;
+    end
+    member.fightPower = buffer:ReadUInt();
+    -- 战力
+    member.nickName = buffer:ReadStringByByte();
+    -- 称谓
+    member.name = buffer:ReadStringByByte();
+    -- 成员名称
+    member.kindredType = buffer:ReadByte();
+    -- 分堂ID
+    member.yesterdayContribution = buffer:ReadUInt();
+    -- 昨日贡献
+    error("收到服务器发送的昨日贡献消息，ID:" .. member.globalId .. "昨日贡献" .. member.yesterdayContribution);
+    return member;
+end
+
+--[[
+-- 成员排序方法
+function MembersSort(m1, m2)
+    -- 排序：主角>在线情况>管理职位>普通职位>等级
+    -- member.onlineScene, member.m_vHuoYueTime
+    local globalId = G_UserInfo.GlobalDBID;
+    if m1.id == globalId then return true end
+    if m2.id == globalId then return false end
+    if m1.onlineSortValue ~= m2.onlineSortValue then
+        return m1.onlineSortValue < m2.onlineSortValue;
+    end
+    if m1.rankLevel ~= m2.rankLevel then return m1.rankLevel < m2.rankLevel; end
+    if m1.level ~= m2.level then return m1.level > m1.level; end
+    return m1.id < m2.id;
+end
+]]
+
+-- 接收审批列表
+function OnReceiveGuildApproval(messageId, buffer)
+    GuildManager.guildApplicants = { };
+    local chq = buffer:ReadUShort();
+    -- 无效参数
+    local unuse = buffer:ReadByte();
+    GuildManager.approvalListVersion = buffer:ReadInt();
+    local guildId = buffer:ReadInt();
+    local count = buffer:ReadUShort();
+    for i = 1, count do
+        local data = { };
+        data.id = buffer:ReadUInt();
+        data.globalId = data.id;
+        data.professsion = buffer:ReadByte();
+        data.proId = data.profession;
+        data.level = buffer:ReadUShort();
+        data.applyTime = buffer:ReadInt64();
+        data.activeTime = buffer:ReadByte();
+        data.fightPower = buffer:ReadInt();
+        data.sceneID = buffer:ReadUShort();
+        data.applyName = buffer:ReadStringByByte();
+        data.name = data.applyName;
+        table.insert(GuildManager.guildApplicants, data);
+    end
+    -- 刷新审批面板
+    GuildApprovalPanel.Refresh();
+    GuildMemberPanel.RefreshApprovalRedHint();
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_MEMBER, GuildManager.HasGuildApplicant());
+end
+
+-- 公告信息
+function OnGuildNoticeChange(messageId, buffer)
+    local wUnUseData = buffer:ReadUShort();
+    -- 没啥用
+    local yVersion = buffer:ReadByte();
+    -- 没啥用
+    -- 公告版本号
+    GuildManager.noticeVersion = buffer:ReadInt();
+    local dwGuildID = buffer:ReadUInt();
+    -- 帮会ID
+    local wSize = buffer:ReadUShort();
+    for i = 1, wSize do
+        local announceID = buffer:ReadUInt();
+        -- ID
+        local createTime = buffer:ReadInt64();
+        -- 创建时间
+        local name = buffer:ReadStringByByte();
+        -- 发布公告人
+        local title = buffer:ReadStringByByte();
+        -- 发布公告标题
+        local content = buffer:ReadStringByByte();
+        -- 发布公告内容
+        GuildManager.guildNotice = {
+            title = title,
+            content = content
+        };
+    end
+    GuildInfoPanel.UpdateNotice();
+    GuildAnnouncePanel.RefreshNotice();
+end
+
+-- 玩家公会信息
+function OnReceiveGuildInfo(messageId, buffer)
+    local singleGuild = buffer:ReadUShort();
+    local version = buffer:ReadByte();
+    -- 没有用
+    local guild = { };
+    guild.createTime = buffer:ReadInt64();
+    -- 创建时间
+    guild.guildId = buffer:ReadInt();
+    -- 公会ID
+    guild.id = guild.guildId;
+    -- 公会ID
+    guild.countryId = buffer:ReadUInt();
+    -- 联盟ID
+    guild.creatorId = buffer:ReadUInt();
+    -- 创建者ID
+    guild.creatorName = buffer:ReadStringByByte();
+    -- 创建者名称
+    guild.leaderName = buffer:ReadStringByByte();
+    -- 会长名称
+    guild.leaderProId = buffer:ReadUInt();
+    -- 会长职业ID
+    guild.honor = buffer:ReadInt();
+    -- 公会荣誉值
+    guild.curContribution = buffer:ReadInt();
+    -- 公会当前贡献度
+    guild.icon = buffer:ReadUInt();
+    -- 公会图标
+    guild.level = buffer:ReadUShort();
+    -- 公会等级
+    guild.nickName = buffer:ReadStringByByte();
+    -- 公会称谓 这里可以用作公会旗帜名称
+    guild.flagName = guild.nickName;
+    -- 公会旗帜名称
+    guild.name = buffer:ReadStringByByte();
+    -- 公会名称
+    guild.money = buffer:ReadInt();
+    -- 公会资金
+    guild.memberCount = buffer:ReadUShort();
+    -- 公会成员数量
+    guild.maxMemberCount = buffer:ReadUShort();
+    -- 最大公会成员数量
+    guild.recruitType = buffer:ReadByte();
+    -- 招募类型
+    guild.queryRankLevel = buffer:ReadUShort();
+    -- 查询的玩家军衔等级??
+    guild.queryContribution = buffer:ReadUInt();
+    -- 查询的玩家贡献活跃度??
+    guild.sceneId = buffer:ReadUShort();
+    -- 领地所属场景
+    guild.sceneNGSId = buffer:ReadUShort();
+    -- 领地所属NGS
+    guild.sceneState = buffer:ReadByte();
+    -- 领地状态，0和 1战
+    guild.sceneLevel = buffer:ReadByte();
+    -- 领地等级
+    guild.personalTax = buffer:ReadByte();
+    -- 帮会个人赋税
+
+    guild.version = buffer:ReadInt();
+    -- 公会信息版本号
+    GuildManager.guildInfoVersion = guild.version;
+    guild.friendGuildName = buffer:ReadStringByByte();
+    -- 联盟公会名称
+    guild.enemyGuildName = buffer:ReadStringByByte();
+    -- 敌对公会
+    guild.announce = buffer:ReadStringByByte();
+    -- 公会宣言
+    guild.changeCountryState = buffer:ReadByte();
+    -- 转换联盟状态; 0没有转换; 1是转换中
+    guild.totalContribution = buffer:ReadInt();
+    -- 累计帮会贡献度
+    guild.totalDonate = buffer:ReadInt64();
+    -- 累计帮会捐献
+    guild.totalFightPower = buffer:ReadInt64();
+    -- 公会总战力
+    guild.fightPower = guild.totalFightPower;
+    -- 公会总战力
+
+    guild.guildShopLevel = buffer:ReadUShort();
+    -- 公会商店等级
+    guild.guildSkillLevel = buffer:ReadUShort();
+    -- 公会技能等级
+    guild.guildAffairsLevel = buffer:ReadUShort();
+    -- 公会内政等级
+    guild.guildWoodLevel = buffer:ReadUShort();
+    -- 公会木材等级
+    guild.guildWoodStorageLevel = buffer:ReadUShort();
+    -- 公会木材仓库等级
+    guild.guildWoodCount = buffer:ReadInt();
+    -- 公会木头数量
+    guild.buildingEndTime = buffer:ReadInt64();
+    -- 公会建筑升级CD结束时间
+    guild.buildingDurationTime = buffer:ReadInt() * 60;
+    -- 公会建筑升级总CD
+
+    guild.welfareConfig = { };
+    guild.welfareConfig[1] = { };
+    guild.welfareConfig[1].effectiveTime = buffer:ReadInt();
+    -- 公会福利1生效时间
+    guild.welfareConfig[1].newValue = buffer:ReadUShort();
+    -- 公会福利1新值
+    guild.welfareConfig[1].value = buffer:ReadUShort();
+    -- 公会福利1旧值
+    guild.welfareConfig[2] = { };
+    guild.welfareConfig[2].effectiveTime = buffer:ReadInt();
+    -- 公会福利2生效时间
+    guild.welfareConfig[2].newValue = buffer:ReadUShort();
+    -- 公会福利2新值
+    guild.welfareConfig[2].value = buffer:ReadUShort();
+    -- 公会福利2旧值
+    guild.welfareConfig[3] = { };
+    guild.welfareConfig[3].effectiveTime = buffer:ReadInt();
+    -- 公会福利3生效时间
+    guild.welfareConfig[3].newValue = buffer:ReadUShort();
+    -- 公会福利3新值
+    guild.welfareConfig[3].value = buffer:ReadUShort();
+    -- 公会福利3旧值
+
+    guild.fightPowerRank = buffer:ReadUShort();
+
+    -- error("收到服务器公会福利1生效时间" .. nWelfareStartTimeLv1 .. "旧的值：" .. wWelfareOldValueLv1 .. "新的值" ..wWelfareNewValueLv1);
+    -- error("收到服务器公会福利2生效时间" .. nWelfareStartTimeLv2 .. "旧的值：" .. wWelfareOldValueLv2 .. "新的值" ..wWelfareNewValueLv2);
+    -- error("收到服务器公会福利3生效时间" .. nWelfareStartTimeLv3 .. "旧的值：" .. wWelfareOldValueLv3 .. "新的值" ..wWelfareNewValueLv3);
+
+    local list = CCommonTool.GetAllGuildInfo();
+    guild.maxLevel = list[list.Count - 1].Id;
+    local isNewJoin = not GuildManager.HasGuild();
+    -- 公会最大等级
+    GuildManager.myGuild = guild;
+    GuildManager.guildId = guild.id;
+    G_GuildMng.GuildId = guild.id;
+    if isNewJoin then
+        --ChatVoiceManager.AutoJoinRoom();
+    end
+    GuildBeyond3DPanel.OnGuildInfoChanged();
+    Main_MiddleBottom.AutoSelectRecordChannel();
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_REWARD, GuildManager.CanGetReward());
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_BUILDING, GuildManager.HasUpgradableBuilding());
+    -- RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+    error("收到公会信息");
+end
+
+-- 按名字查询公会信息(公会列表中的查询)
+function OnSearchGuildByName(messageId, buffer)
+    local useless = buffer:ReadUShort();
+    local guild = ReadGuild(buffer);
+    GuildPanel.OnSearchBack( { guild });
+end
+
+-- 加入帮会成功消息
+function OnJoinGuild(messageId, buffer)
+    -- （发给所有人，仅仅更新审批列表，不在帮会列表添加信息，如不是本人，2秒逻辑去请求刷新）
+    -- 无效参数
+    local chq = buffer:ReadUShort();
+    -- 即将进入公会的玩家数据库ID
+    local globalId = buffer:ReadUInt();
+    -- 帮会ID
+    local guildId = buffer:ReadUInt();
+    if G_UserInfo.GlobalDBID == globalId then
+        closePanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+        local text = CCommonTool.GetTxtData(50418).m_str;
+        local guildName = GuildManager.GetGuildName(guildId);
+        if guildName ~= nil then
+            ShowSystemFlowTips(string_format(text, guildName), 0);
+        end
+        GuildManager.ClearInviteData();
+        Main_RightBottom.RemoveAllTypeInTipTable(ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_INVITE);
+    else
+        local applicants = GuildManager.guildApplicants;
+        if applicants then
+            for i, data in ipairs(applicants) do
+                if data.globalId == globalId then
+                    table.remove(applicants, i);
+                    break;
+                end
+            end
+        end
+        -- 刷新审批面板
+        GuildApprovalPanel.Refresh(globalId);
+        GuildMemberPanel.RefreshApprovalRedHint();
+        RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_MEMBER, GuildManager.HasGuildApplicant());
+    end
+end
+
+-- 取消申请加入帮会
+function OnCancelApplyJoinGuild(messageId, buffer)
+    -- error("您成功取消帮会申请");
+end
+
+-- 申请加入帮会
+function OnApplyJoinGuild(messageId, buffer)
+    -- 申请成功提示
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_APPLY_SUCCESS);
+end
+
+-- 帮会事件
+function OnReceiveGuildEvents(messageId, buffer)
+    local guildEvents = { };
+    -- buffer:ReadByte();
+    -- buffer:ReadByte();
+    -- error("收到了公会事件");
+    local version = buffer:ReadByte();
+    local size = buffer:ReadUShort();
+    -- error("size"..size);
+    for i = 1, size do
+        local e = { };
+        e.time = buffer:ReadInt64();
+        e.content = buffer:ReadStringByByte();
+        -- error("e.content");
+        table.insert(guildEvents, e);
+    end
+    -- GuildManager.eventListVersion = version;
+    GuildManager.guildEvents = guildEvents;
+    GuildEventsPanel.Refresh();
+end
+
+-- 帮会升级
+function OnGuildLevelUp(messageId, buffer)
+    -- error("帮会：帮会升级成功");
+    GuildManager.myGuild.level = buffer:ReadUShort();
+    GuildManager.myGuild.buildingEndTime = buffer:ReadInt64();
+    -- 升级CD
+    GuildManager.myGuild.buildingDurationTime = buffer:ReadInt();
+    -- 公会建筑升级总CD
+    GuildManager.myGuild.money = buffer:ReadInt();
+    GuildManager.myGuild.guildWoodCount = buffer:ReadInt();
+    GuildBuildingPanel.OnGuildLevelUp(-1);
+end
+
+-- 主动离开公会
+function OnLeaveGuild(messageId, buffer)
+    GuildManager.ExitGuild();
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_EXIT_SUCCESSED);
+    error("主动离开公会");
+end
+
+-- 增加一个分堂
+function OnAddNewKindred(messageId, buffer)
+    -- error("帮会：帮会增加了一个分堂！");
+end
+
+-- 玩家自己的公会申请记录
+function OnReceiveApplyRecords(messageId, buffer)
+    local records = { }
+    GuildManager.applyRecords = records;
+    local count = buffer:ReadUShort();
+    -- 列表个数
+    for i = 1, count do
+        if i >= 100 then return end
+        local record = { };
+        record.guildId = buffer:ReadInt();
+        -- 帮会ID
+        record.id = record.guildId;
+        record.level = buffer:ReadByte();
+        -- 帮会等级
+        record.memberCount = buffer:ReadByte();
+        -- 帮会成员人数
+        record.guildName = buffer:ReadStringByByte();
+        -- 帮会名称
+        record.name = record.guildName;
+        records[record.guildId] = record;
+    end
+    GuildPanel.OnApplyBack(records);
+end
+
+-- 罢免堂主
+-- function OnDeposeKindredLeader(messageId, buffer)
+--    error("帮会：分堂堂主被罢免！");
+-- end
+
+-- 罢免副会长、堂主
+function OnDeposeMember(messageId, buffer)
+
+end
+
+-- 禅让会长
+function OnDemiseLeader(messageId, buffer)
+
+end
+
+-- 设置、罢免分堂成员(罢免也是设置一种，从分堂设置到帮众堂)
+function OnAddKindredMember(messageId, buffer)
+
+end
+
+-- 任命副会长、堂主
+function OnAppointMember(messageId, buffer)
+    error("任命副会长、堂主");
+end
+
+-- 被开除公会
+function OnExpelledGuild(messageId, buffer)
+    -- 清理帮会信息
+    GuildManager.ExitGuild();
+    -- 被{0}踢出公会
+    local len = buffer:ReadByte();
+    local name = buffer:ReadString(len);
+    local text = CCommonTool.GetTxtData(50420).m_str;
+    ShowSystemFlowTips(string_format(text, name), 0);
+end
+
+-- 收到邀请加入帮会信息
+function OnReceiveInviteJoinGuild(messageId, buffer)
+    local inviteData = { };
+    inviteData.globalId = buffer:ReadUInt();
+    -- 玩家全局ID
+    inviteData.guildId = buffer:ReadUInt();
+    -- 帮会ID
+    inviteData.playerName = buffer:ReadStringByByte();
+    inviteData.guildName = buffer:ReadStringByByte();
+    inviteData.guildRankLevel = buffer:ReadInt();
+    -- 公会排名
+    inviteData.guildLevel = buffer:ReadUShort();
+    -- 公会等级
+    GuildManager.PushInviteData(inviteData);
+    Main_RightBottom.AddTipTableData(inviteData, ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_INVITE);
+end
+
+-- 邀请回复
+function OnInviteJoinBack(messageId, buffer)
+    local result = buffer:ReadUShort();
+    if result == 0 then
+        local len = buffer:ReadByte();
+        local name = buffer:ReadString(len);
+        -- [ff2b2b]玩家[fff95d]{0}[-]拒绝了您的公会邀请[-]
+        local text = CCommonTool.GetTxtData(13934).m_str;
+        ShowSystemFlowTips(string_format(text, name), 0);
+    end
+end
+
+-- 删除成员信息
+function OnDelMemberInfo(messageId, buffer)
+    local globalId = buffer:ReadUInt();
+    local member = GuildManager.GetMember(globalId);
+    if member ~= nil then
+        -- 开除{0}成功
+        local text = CCommonTool.GetTxtData(50419).m_str;
+        ShowSystemFlowTips(string_format(text, member.name), 0);
+    end
+end
+
+-- 公会成员信息变更
+function OnSingleMemberInfo(messageId, buffer)
+    local usPara3 = buffer:ReadUShort();
+    local member = ReadGuildMember(buffer);
+    if not GuildManager.members then
+        GuildManager.members = { };
+        GuildManager.membersDict = { };
+    end
+    for i, mem in ipairs(GuildManager.members) do
+        if mem.id == member.id then
+            GuildManager.members[i] = member;
+            GuildManager.membersDict[mem.id] = member;
+            break;
+        end
+    end
+    -- GuildInfoPanel.RefreshSelfInfo();
+    GuildMemberPanel.RefreshMemberList();
+end
+
+-- 有玩家申请入公会(or取消申请入公会)
+function OnPlayerQueryJoin(messageId, buffer)
+    -- 是否是申请消息1是添加申请，0是取消申请
+    local wIsjoin = buffer:ReadUShort();
+    -- error("wIsjoin".. wIsjoin);
+    RequestApprovalList();
+end
+
+-- 公会申请被拒绝
+function OnRefushJoin(messageId, buffer)
+    local guildId = buffer:ReadUInt();
+    local opType = buffer:ReadByte();
+    -- 0:批准者 1申请人
+    if opType == 0 then
+        local globalId = buffer:ReadUInt();
+        -- 审请人ID
+        if GuildManager.guildApplicants then
+            for i, data in ipairs(GuildManager.guildApplicants) do
+                if data.globalId == globalId then
+                    table.remove(GuildManager.guildApplicants, i);
+                    GuildApprovalPanel.Refresh(globalId);
+                    GuildMemberPanel.RefreshApprovalRedHint();
+                    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_MEMBER, GuildManager.HasGuildApplicant());
+                    break;
+                end
+            end
+        end
+    else
+        -- 从我申请的列表删除这个公会
+        GuildManager.RemoveApplyRecord(guildId);
+        GuildPanel.OnRefushJoin(guildId);
+        local guildName = GuildManager.GetGuildName(guildId);
+        if guildName then
+            -- [ff2b2b]公会[fff95d]{0}[-]拒绝了您的申请[-]
+            local text = CCommonTool.GetTxtData(13933).m_str;
+            ShowSystemFlowTips(string_format(text, guildName), 0);
+        end
+    end
+end
+
+-- 保存公告返回
+function OnSaveNotice(messageId, buffer)
+    ShowSystemFlowTips(4392);
+end
+
+-- 保存公会宣言返回
+function OnSaveProclamation(messageId, buffer)
+    local guildId = buffer:ReadInt();
+    local content = buffer:ReadStringByByte();
+    if guildId == GuildManager.myGuild.guildId then
+        GuildManager.myGuild.announce = content;
+    end
+    GuildAnnouncePanel.RefreshDeclaration();
+    ShowSystemFlowTips(4393);
+end
+
+-- 建筑升级返回
+function OnBuildingLevelUp(messageId, buffer)
+    local guild = GuildManager.myGuild;
+    local level = buffer:ReadUShort();
+    guild.buildingEndTime = buffer:ReadInt64();
+    -- 升级CD
+    guild.buildingDurationTime = buffer:ReadInt();
+    local buildingType = buffer:ReadByte();
+    guild.money = buffer:ReadInt();
+    guild.guildWoodCount = buffer:ReadInt();
+    local buildingTxtId;
+    if buildingType == GUILD_BUILDING_TYPE.INTERIOR then
+        guild.guildAffairsLevel = level;
+        buildingTxtId = 2;
+    elseif buildingType == GUILD_BUILDING_TYPE.SHOP then
+        guild.guildShopLevel = level;
+        buildingTxtId = 4;
+    elseif buildingType == GUILD_BUILDING_TYPE.SKILL then
+        guild.guildSkillLevel = level;
+        buildingTxtId = 3;
+    elseif buildingType == GUILD_BUILDING_TYPE.WOOD then
+        guild.guildWoodLevel = level;
+        buildingTxtId = 5;
+    elseif buildingType == GUILD_BUILDING_TYPE.WOOD_STORAGE then
+        guild.guildWoodStorageLevel = level;
+        buildingTxtId = 6;
+    end
+    GuildBuildingPanel.OnGuildLevelUp(buildingType);
+    if buildingTxtId ~= nil then
+        local content = CCommonTool.GetTxtData(13830).m_str;
+        local name = CCommonTool.GetTxtData(CCommonTool.GetGuildBuildingTxtInfo(buildingTxtId).Name).m_str;
+        content = string.format(content, name);
+        ShowSystemFlowTips(content, 0);
+    end
+    error("建筑升级返回::" .. guild.buildingEndTime);
+end
+
+-- 今日捐献信息 0未捐献 1:已捐献
+-- 登录推送/捐献推送
+function OnGuildDonation(messageId, buffer)
+    GuildManager.donationValue = buffer:ReadUShort();
+    local addGuildMoney = buffer:ReadInt();
+    local addContribution = buffer:ReadInt();
+    local donationType = buffer:ReadByte();
+    -- 请求的捐献类型
+    GuildDonationPanel.Refresh();
+    GuildDonationPanel.OnGuildDonation(donationType);
+    -- RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+end
+
+-- 更新个人贡献度
+function OnUpdateContribution(messageId, buffer)
+    local invalidValue = buffer:ReadShort();
+    local changeValue = buffer:ReadInt();
+    local currentValue = GuildManager.GetSelfContribution();
+    if changeValue > 0 then
+        local str = string_format(GetTextToId(102146), changeValue);
+        ShowSystemFlowTips(str, true);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+    end
+    GuildManager.SetSelfContribution(currentValue + changeValue);
+    CoinPanel.RefreshContentOut();
+    -- 商店界面货币数量刷新
+    ShopPanel.OnBindMoneyChange();
+    -- error("更新个人贡献度");
+    -- RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_SKILL, GuildManager.HasUpgradableSkill());
+end
+
+-- 更新公会设置福利区间段
+function OnUpdateWelfareRange(messageId, buffer)
+    local level = buffer:ReadByte() + 1;
+    -- 类型：几档
+    local oldValue = buffer:ReadUShort();
+    -- 值：旧的值
+    local newValue = buffer:ReadUShort();
+    -- 值：新的值
+    local effectiveTime = buffer:ReadUInt();
+    -- 新的值生效时间
+    error("收到服务器更新公会福利区间消息，第几档：" .. level .. "之前的值" .. oldValue .. "新的值" .. newValue .. "新值生效时间" .. effectiveTime);
+
+    local config = GuildManager.myGuild.welfareConfig;
+    if config == nil then
+        error("福利区间设置数据为nil");
+        return;
+    end
+    config[level] = { };
+    config[level].effectiveTime = effectiveTime;
+    config[level].newValue = newValue;
+    config[level].value = oldValue;
+    GuildSalaryPanel.Refresh();
+end
+
+function OnGetWelfareAward(messageId, buffer)
+    local gotReward = buffer:ReadUShort() == 1;
+    -- 是否领取(0为清空，在24点更新的时候，1为领取)
+    error("收到服务器公会福利领取状态消息，状态：" .. tostring(gotReward));
+    G_UserInfo.RoleAttribute.IsGetGuildWelfare = gotReward;
+    GuildRewardPanel.Refresh();
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_REWARD, GuildManager.CanGetReward());
+end
+
+function OnGetWineBossExp(messageId, buffer)
+    local exp = buffer:ReadUInt();
+    -- 饮酒经验
+    ActivitySummonBacchusPanel.OnSetWinExp(exp);
+end
+
+function OnGetGuildPartyState(messageId, buffer)
+    local guildPartyState = buffer:ReadUShort();
+    -- 宴会状态
+    DrinkWinePanel.OnSetGulidPartyState(guildPartyState);
+end
+
+function OnGetGuildWarInfo(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then 
+        GuildManager.guildAuctionInfo = { };
+    end
+    local table_Temp = { };
+    local noUse1 = buffer:ReadUShort();
+    local guildNum = buffer:ReadByte();
+    -- 据点场景数量
+    local biddingState = buffer:ReadByte();
+    -- 竞拍状态：1是进行中，2是结束
+    GuildManager.guildAuctionInfo.noUse1 = noUse1;
+    GuildManager.guildAuctionInfo.guildNum = guildNum;
+    GuildManager.guildAuctionInfo.biddingState = biddingState;
+    if guildNum > 0 then
+        for i = 1, guildNum do
+            table_Temp[i] = { };
+            table_Temp[i].applyCorpsNum = buffer:ReadByte();
+            -- 竞拍的公会数量
+            table_Temp[i].sceneBattleID = buffer:ReadInt();
+            -- 据点场景ID
+            table_Temp[i].captureCorpsID = buffer:ReadInt();
+            -- 据点的占领公会ID
+            table_Temp[i].captureCorpsRank = buffer:ReadInt();
+            -- 据点的占领公会排名
+            table_Temp[i].captureCorpsMember = buffer:ReadInt();
+            -- 据点的占领公会人数
+            table_Temp[i].captureCorpsWang = buffer:ReadStringByByte();
+            -- 据点的占领公会帮主名字
+            table_Temp[i].selfCorpsCompeteMoney = buffer:ReadInt();
+            -- 我的报价
+            table_Temp[i].leftCompeteCD = buffer:ReadInt();
+            -- 竞价时间冷却
+            table_Temp[i].leftCompeteTimes = buffer:ReadByte();
+            -- 竞价次数限制
+            if table_Temp[i].leftCompeteCD > 0 then GuildManager.guildAuctionInfo.CoolingTime = table_Temp[i].leftCompeteCD; end
+            local table_Guild = { };
+            if table_Temp[i].applyCorpsNum <= 0 then
+                error("竞价该据点场景的公会数量 = 0");
+            else
+                for i = 1, table_Temp[i].applyCorpsNum do
+                    table_Guild[i] = { };
+                    table_Guild[i].corpsID = buffer:ReadInt();
+                    -- 竞拍该据点的公会ID
+                    table_Guild[i].competeMoney = buffer:ReadInt();
+                    -- 竞拍资金
+                end
+                table.sort(table_Guild, function(a, b) return a.competeMoney > b.competeMoney end);
+                -- 按照竞拍价做排序处理
+            end
+            table_Temp[i].guildInfo = table_Guild;
+        end
+        if GuildManager.guildAuctionInfo.CoolingTime == nil then GuildManager.guildAuctionInfo.CoolingTime = 0; end
+        table.sort(table_Temp, function(a, b) return a.sceneBattleID < b.sceneBattleID end);
+        -- 按照场景id做排序处理
+        for i = 1, #table_Temp do
+            table.insert(GuildManager.guildAuctionInfo, i, table_Temp[i])
+        end
+        GuildWarPanel.CreatGuildWarPanel();
+    else
+        GuildManager.guildAuctionInfo = nil;
+    end
+end
+
+function OnGetGuildAuction(messageId, buffer)
+    local temp = { };
+    local noUse1 = buffer:ReadUShort();
+    local sceneID = buffer:ReadInt();
+    -- 竞拍的据点场景ID
+    local competeMoney = buffer:ReadInt();
+    -- 竞拍资金
+    local coolDownTime = buffer:ReadInt();
+    -- 冷却时间
+    local times = buffer:ReadByte();
+    -- 竞拍了多少次
+    temp.noUse1 = noUse1;
+    temp.sceneID = sceneID;
+    temp.competeMoney = competeMoney;
+    temp.coolDownTime = coolDownTime;
+    temp.times = times;
+    GuildWarPanel.RefreshGuildList(temp);
+end
+
+function OnGetGuildAbandonAuction(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local sceneID = buffer:ReadInt();
+    -- 放弃竞拍的据点场景ID
+    GuildWarPanel.RefreshAfterAbandon();
+end
+
+function OnGetGuildAuctionResult(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    local tempTable = { };
+    local noUse1 = buffer:ReadUShort();
+    local sceneNum = buffer:ReadByte();
+    -- 据点场景数量
+    for i = 1, sceneNum do
+        tempTable[i] = { };
+        local sceneID = buffer:ReadInt(); -- 据点场景ID
+        local state = buffer:ReadByte(); -- 战报状态（0：显示竞拍结果信息  1：显示战斗结果信息）
+        local defendCorpsID = buffer:ReadInt(); -- 防守方公会ID
+        local defendCorpsState = buffer:ReadByte(); -- 防守方公会状态
+        local attackCorpsID = buffer:ReadInt(); -- 攻击方公会ID
+        local attackCorpsState = buffer:ReadByte(); -- 攻击方公会状态
+        local date = buffer:ReadInt(); -- 公会战日期
+        local time = buffer:ReadInt(); -- 公会战时间
+
+        tempTable[i].defendCorpsID = defendCorpsID;
+        tempTable[i].defendCorpsState = defendCorpsState;
+        tempTable[i].attackCorpsID = attackCorpsID;
+        tempTable[i].attackCorpsState = attackCorpsState;
+        tempTable[i].date = date;
+        tempTable[i].time = time;
+        tempTable[i].state = state;
+        tempTable[i].sceneID = sceneID;
+    end
+    table.sort(tempTable, function(a, b) return a.sceneID < b.sceneID end);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL) == 1 then
+        ActivityGuildWarPanel.RefreshResult(tempTable, state);
+    elseif IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL) == 1 then
+        GuildManager.guildAuctionInfo.AuctionResult = tempTable;
+        GuildWarPanel.RefreshResult(tempTable);
+    end
+end
+
+function OnGetGuildNotice(messageId, buffer)
+    error("do OnGetGuildNotice");
+    local noUse1 = buffer:ReadUShort();
+    local corpsID = buffer:ReadInt();
+    -- 公会ID
+    local sceneID = buffer:ReadInt();
+    -- 据点场景ID
+    local weekDay = buffer:ReadInt();
+    -- 周几
+    local time = buffer:ReadInt();
+    -- 开战时间
+    _G.LogicData_TipsWarTable = { [1] = corpsID, [2] = sceneID, [3] = weekDay, [4] = time}
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        Main_RightBottom.InitTipButtonShow();
+    end
+end
+
+function OnBeforeNotice(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    local noUse1 = buffer:ReadUShort();
+    local sceneID = buffer:ReadInt();
+    -- 要竞争的据点场景ID
+    local adType = buffer:ReadInt();
+    -- 攻方还是守方（0：守方 1：攻方）
+--    local data = { sceneID = sceneID, adType = adType};
+--    Main_RightBottom.AddTipTableData(data, ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_WAR);
+    RequestOpenActivityWar();
+end
+
+function OnOpenActivityWar(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    local noUse1 = buffer:ReadUShort();
+    local competeCorpsID = buffer:ReadInt();
+    -- 争夺帮会ID
+    local competeSceneID = buffer:ReadInt();
+    -- 争夺的据点ID 
+    local adType = buffer:ReadByte();
+    -- 攻方还是守方（0：守方 1：攻方）
+    local enterMemberNum = buffer:ReadInt();
+    -- 自己已经进入准备场景的人数
+    local maxMemberNum = buffer:ReadInt();
+    -- 可报名的最大人数
+    local LimitedLv = buffer:ReadInt();
+    -- 等级限制
+    local beginTime = buffer:ReadInt();
+    -- 报名开始时间
+    local endTime = buffer:ReadInt();
+    -- 报名结束时间
+    GuildManager.guildAuctionInfo.competeCorpsID = competeCorpsID;
+    GuildManager.guildAuctionInfo.competeSceneID = competeSceneID;
+    GuildManager.guildAuctionInfo.enterMemberNum = enterMemberNum;
+    GuildManager.guildAuctionInfo.maxMemberNum = maxMemberNum;
+    GuildManager.guildAuctionInfo.LimitedLv = LimitedLv;
+    GuildManager.guildAuctionInfo.beginTime = beginTime;
+    GuildManager.guildAuctionInfo.endTime = endTime;
+    GuildManager.guildAuctionInfo.adType = adType;
+
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL) == 1 then
+        ActivityWarPanel.InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL);
+    end
+end
+
+function OnWarOver(messageId, buffer)
+     error("do OnWarOver 公会战结算");
+--    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_RESULT_PANEL);
+    local tempData = {};
+    local noUse1 = buffer:ReadUShort();
+    local state = buffer:ReadByte(); -- 状态 0：失败 1：成功
+    local defGuildID = buffer:ReadUInt(); -- 防守方公会ID
+    local defScore = buffer:ReadUShort();   -- 防守方的资源积分
+    local defKill = buffer:ReadUShort();    -- 防守方杀人数
+    local defSup = buffer:ReadUShort();   -- 防守方助攻数
+    local defDeath = buffer:ReadUShort();   -- 防守方死亡数
+
+    local atackGuildID = buffer:ReadUInt();  -- 攻击方公会ID
+    local atackScore = buffer:ReadUShort();    -- 攻击方的资源积分
+    local atackKill = buffer:ReadUShort();     -- 攻击方杀人数
+    local atackSup = buffer:ReadUShort();      -- 攻击方助攻数
+    local atackDeath = buffer:ReadUShort();    -- 攻击方死亡数
+
+    local killNum = buffer:ReadUShort();     -- 个人击杀
+    local supNum = buffer:ReadUShort();      -- 个人助攻
+    local deathNum = buffer:ReadUShort();    -- 个人死亡
+
+    local awardID = buffer:ReadInt();    -- 奖励ID
+    local awardParam = buffer:ReadFloat(); -- 奖励比率
+
+    tempData.state = state;
+    tempData.defGuildID = defGuildID;
+    tempData.defScore = defScore;
+    tempData.defKill = defKill;
+    tempData.defSup = defSup;
+    tempData.defDeath = defDeath;
+    tempData.atackGuildID = atackGuildID;
+    tempData.atackKill = atackKill;
+    tempData.atackScore = atackScore;
+    tempData.atackSup = atackSup;
+    tempData.atackDeath = atackDeath;
+    tempData.killNum = killNum;
+    tempData.supNum = supNum;
+    tempData.deathNum = deathNum;
+    tempData.awardNum = awardNum;
+    tempData.awardID = awardID;
+    tempData.awardParam = awardParam;
+
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    print("公会战结算 tempData = ",SerializeTable(tempData));
+    GuildManager.guildAuctionInfo.GuildWarResult = tempData;
+    if GuildManager.guildAuctionInfo.GuildWarResult == nil then return end
+    if state == 1 then 
+        createPanel(ENUMPANELID.ENUM_GUILD_WAR_WIN_PANEL);
+    elseif state == 0 then
+        createPanel(ENUMPANELID.ENUM_GUILD_WAR_FAIL_PANEL);
+    end
+    -- 公会战结算时 重置是否显示公会战主界面ui标识
+    Main_LeftMiddle.OnGuildWarEnd();
+    Main_MiddleTop.GuildWarInfoCallBackOver();
+end
+
+function OnGetTeamInfo(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    local noUse1 = buffer:ReadUShort();
+    local applyPersonNum = buffer:ReadInt();
+    -- 报名人数
+    local teamNum = buffer:ReadInt();
+    -- 队伍数量
+    local tempTale = { };
+    local teamAllNum = 0;
+    for i = 1, teamNum do
+        tempTale[i] = { };
+        local teamID = buffer:ReadInt();
+        -- 队伍ID（1,2,3,4,5,6）
+        local teamPersonNum = buffer:ReadInt();
+        -- 这个队伍有多少人
+        local wang = buffer:ReadStringByByte();
+        -- 队长名字
+        tempTale[i].teamID = teamID;
+        tempTale[i].teamPersonNum = teamPersonNum;
+        tempTale[i].wang = wang;
+    end
+    table.sort(tempTale, function(a, b) return a.teamID < b.teamID end);
+    GuildManager.guildAuctionInfo.teamInfo = tempTale;
+    GuildManager.guildAuctionInfo.applyPersonNum = applyPersonNum;
+    GuildWarAssignmentPanel.OnShowMemberList();
+end
+
+function OnOpenGuildWarTips(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local isWang = buffer:ReadInt();
+    -- 是否是公会管理人员（会长或副会长）:0-不是，1-是
+    local time = buffer:ReadInt();
+    -- 剩余时间
+    local tempData = { isWang = isWang, time = time, };
+    Main_MiddleTop.ShowGuildWarTip(tempData);
+end
+
+function OnGetScore(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    local tempTableMy = { };
+    local tempTableEnemy = { };
+    local noUse1 = buffer:ReadUShort();
+    local bothSide = buffer:ReadInt();
+    -- 敌我两方，固定值为 2
+    for i = 1, bothSide do
+        local belongTo = buffer:ReadByte();
+        -- 属于 0：我方 1：敌方
+        local playerCount = buffer:ReadInt();
+        -- 人数
+        local tempTable = { };
+        -- 玩家信息
+        for i = 1, playerCount do
+            tempTable[i] = { };
+            local playerName = buffer:ReadStringByByte();
+            -- 名字
+            local playerLv = buffer:ReadInt();
+            -- 等级
+            local playerFight = buffer:ReadInt();
+            -- 战斗力
+            local playerKillNum = buffer:ReadInt();
+            -- 击杀人数
+            local playerKillWeapon = buffer:ReadInt();
+            -- 击杀的战具
+            local playerScore = buffer:ReadInt();
+            -- 积分
+            local playerDestroy = buffer:ReadInt();
+            -- 箭塔
+
+            tempTable[i].playerName = playerName;
+            tempTable[i].playerLv = playerLv;
+            tempTable[i].playerFight = playerFight;
+            tempTable[i].playerKillNum = playerKillNum;
+            tempTable[i].playerKillWeapon = playerKillWeapon;
+            tempTable[i].playerScore = playerScore;
+            tempTable[i].playerDestroy = playerDestroy;
+        end
+        if belongTo == 0 then
+            tempTableMy = tempTable;
+            table.sort(tempTableMy, function(a, b)
+                if a.playerScore == b.playerScore then
+                    return a.playerFight > b.playerFight;
+                end
+                return a.playerScore > b.playerScore
+            end );
+        else
+            tempTableEnemy = tempTable;
+            table.sort(tempTableEnemy, function(a, b)
+                if a.playerScore == b.playerScore then
+                    return a.playerFight > b.playerFight;
+                end
+                return a.playerScore > b.playerScore
+            end );
+        end
+    end
+    GuildManager.guildAuctionInfo.MyScore = tempTableMy;
+    GuildManager.guildAuctionInfo.EnemyScore = tempTableEnemy;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_INTEGRAL_PANEL) == 1 then
+        GuildWarIntegralPanel.OnEnable();
+    end
+end
+
+function OnGetMemberInfo(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local teamID = buffer:ReadInt();
+    -- 队伍ID（1,2,3,4,5,6）
+    local num = buffer:ReadInt();
+    -- 队伍人数
+    local tempTale = { };
+    for i = 1, num do
+        tempTale[i] = { };
+        local playerGID = buffer:ReadInt();
+        -- 角色全局ID
+        local fight = buffer:ReadInt();
+        -- 战力
+        local name = buffer:ReadStringByByte();
+        -- 名字
+        local profession = buffer:ReadInt();
+        -- 职业
+        local rolePost = buffer:ReadInt();
+        -- 职位
+        local level = buffer:ReadInt();
+        -- 等级
+        local isTeam = buffer:ReadInt();
+        -- 是否在这个队伍中 0：不在 1：在
+        local isCaptain = buffer:ReadInt();
+        -- 是否是队长（0：不是   1：是）
+
+        tempTale[i].playerGID = playerGID;
+        tempTale[i].fight = fight;
+        tempTale[i].name = name;
+        tempTale[i].profession = profession;
+        tempTale[i].isTeam = isTeam;
+        tempTale[i].isCaptain = isCaptain;
+        tempTale[i].level = level;
+    end
+    local inTeam = { };
+    local notInTeam = { };
+    for i, v in pairs(tempTale) do
+        if v.isTeam == 1 then
+            table.insert(inTeam, v);
+        else
+            table.insert(notInTeam, v);
+        end
+    end
+
+    table.sort(inTeam, function(a, b) return a.fight > b.fight end);
+    -- 默认按照战力排序
+    table.sort(notInTeam, function(a, b) return a.fight > b.fight end);
+    --    table.sort(temp, function(a, b) return a.fight > b.fight end);
+    GuildWarAssignmentPanel.RefreshMemberList(inTeam, notInTeam, num);
+
+end
+
+function OnGetWeapon(messageId, buffer)
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    GuildManager.guildAuctionInfo.weaponData = { };
+    local noUse1 = buffer:ReadUShort();
+    local weaponNum = buffer:ReadInt();
+    -- 战具数量
+    for i = 1, weaponNum do
+        GuildManager.guildAuctionInfo.weaponData[i] = { };
+        local weaponID = buffer:ReadInt();
+        -- 战具ID
+        local weaponOwnNum = buffer:ReadInt();
+        -- 该战具拥有数量
+        local weaponDriverNum = buffer:ReadInt();
+        -- 驾驶者数量
+        local nameStr = "";
+        for i = 1, weaponDriverNum do
+            local driverName = buffer:ReadStringByByte();
+            if i < weaponDriverNum then
+                nameStr = nameStr .. driverName .. "\n";
+            else
+                nameStr = nameStr .. driverName;
+            end
+        end
+
+        GuildManager.guildAuctionInfo.weaponData[i].weaponID = weaponID;
+        GuildManager.guildAuctionInfo.weaponData[i].weaponOwnNum = weaponOwnNum;
+        GuildManager.guildAuctionInfo.weaponData[i].weaponDriverName = nameStr;
+    end
+    GuildWarAssignmentPanel.OnShowWeaponList();
+end
+
+function OnGetWeaponMember(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local weaponID = buffer:ReadInt();
+    -- 战具ID
+    local weaponOwnNum = buffer:ReadInt();
+    -- 该战具拥有数量
+    local weaponDriverNum = buffer:ReadInt();
+    -- 驾驶者数量
+    local tempTale = { };
+    for i = 1, weaponDriverNum do
+        tempTale[i] = { };
+        local playerGID = buffer:ReadInt();
+        -- 角色全局ID
+        local fight = buffer:ReadInt();
+        -- 战力
+        local profession = buffer:ReadInt();
+        -- 职业
+        local rolePost = buffer:ReadInt();
+        -- 职位
+        local name = buffer:ReadStringByByte();
+        -- 名字
+        local level = buffer:ReadInt();
+        -- 等级
+        local isHaveWeapon = buffer:ReadInt();
+        -- 是否驶了这个战具 0：不在 1：在
+
+        tempTale[i].playerGID = playerGID;
+        tempTale[i].fight = fight;
+        tempTale[i].name = name;
+        tempTale[i].profession = profession;
+        tempTale[i].isHaveWeapon = isHaveWeapon;
+        tempTale[i].isTeam = isHaveWeapon;
+        tempTale[i].level = level;
+    end
+    local inTeam = { };
+    local notInTeam = { };
+    for i, v in pairs(tempTale) do
+        if v.isHaveWeapon == 1 then
+            table.insert(inTeam, v);
+        else
+            table.insert(notInTeam, v);
+        end
+    end
+    table.sort(inTeam, function(a, b) return a.fight > b.fight end);
+    -- 默认按照战力排序
+    table.sort(notInTeam, function(a, b) return a.fight > b.fight end);
+
+    GuildWarAssignmentPanel.RefreshMemberList(inTeam, notInTeam);
+
+end
+
+function OnGetWeaponInfo(messageId, buffer)
+    local tempTable = { };
+    local noUse1 = buffer:ReadUShort();
+    local weaponType = buffer:ReadInt();
+    -- 攻防类型（1：守方  2：攻方）
+    local weaponNum = buffer:ReadInt();
+    -- 数量
+    for i = 1, weaponNum do
+        tempTable[i] = { };
+        local weaponID = buffer:ReadInt();
+        -- 战具ID
+        local weaponOwnNum = buffer:ReadInt();
+        -- 该战具拥有数量
+
+        tempTable[i].weaponID = weaponID;
+        tempTable[i].weaponOwnNum = weaponOwnNum;
+    end
+
+    GuildWarWeaponAssignmentPanel.OnShowWeaponAssignment(weaponType, tempTable);
+end
+
+function OnGetAuctionState(messageId, buffer)
+    local state = buffer:ReadUShort();
+    -- 公会UI状态返回（1：竞拍状态  2：前往状态）
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        GuildInfoPanel.UpdateAuctionState(state);
+    end
+end
+
+function OnGetStrongHoldInfo(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo = { }
+    end
+    local weekKoera = {[1] = 131, [2] = 132, [3] = 133, [4] = 134, [5] = 135, [6] = 136, [7] = 137};
+    local tempTable = { };
+    local applyWeek = buffer:ReadByte();      -- 周几报名
+    applyWeek = weekKoera[applyWeek];
+    local applyBeginTime = buffer:ReadInt(); -- 报名开始时间
+    local applyEndTim = buffer:ReadInt(); -- 报名结束时间
+    local openWeek = buffer:ReadByte(); -- 周几开战
+    openWeek = weekKoera[openWeek];
+    local openReadyBeginTime = buffer:ReadInt(); -- 准备开始时间
+    local openReadyEndTime = buffer:ReadInt(); -- 准备结束时间
+    local openBeginTime = buffer:ReadInt(); -- 战斗开始时间
+    local openEndTime = buffer:ReadInt(); -- 战斗结束时间
+
+    local applyStr = ActivityManager.TimeToStringRange(applyBeginTime,applyEndTim);
+    local openReadyStr = ActivityManager.TimeToStringRange(openReadyBeginTime,openReadyEndTime);
+    local opeBegintStr = ActivityManager.TimeToStringRange(openBeginTime,openEndTime);
+    local timeInfoStr = "";
+    if applyWeek == nil or openWeek == nil then
+        timeInfoStr = "";
+    else
+        timeInfoStr = string_format(GetTextToId(34352), GetTextToId(applyWeek)..applyStr, GetTextToId(openWeek)..openReadyStr, opeBegintStr);
+    end
+    local btnState = buffer:ReadByte(); -- 按钮显示（0：不显示任何按钮  1：显示竞拍按钮 2：显示报名按钮）
+    local sceneNum = buffer:ReadByte(); -- 领地数量
+    for i = 1, sceneNum do
+        tempTable[i] = { };
+        local sceneID = buffer:ReadUShort(); -- 领地ID（即场景ID）
+        local sceneState = buffer:ReadByte(); -- 领地的状态（0：未激活状态 1：已激活但无公会占领 2：已有公会占领 3：交战中）
+        local ownerID = buffer:ReadUInt(); -- 领地的占有公会ID
+        local attackID = buffer:ReadUInt(); -- 领地的攻击公会ID
+        
+        tempTable[i].sceneID = sceneID;
+        tempTable[i].sceneState = sceneState;
+        tempTable[i].ownerID = ownerID;
+        tempTable[i].attackID = attackID;
+    end
+    print("tempTable = ",SerializeTable(tempTable));
+    table.sort(tempTable, function(a, b) return a.sceneID < b.sceneID end);
+    GuildManager.guildAuctionInfo.btnState = btnState;
+    GuildManager.guildAuctionInfo.timeInfoStr = timeInfoStr;
+    GuildManager.guildAuctionInfo.StrongHoldInfo = tempTable;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL) == 1 then
+        ActivityPanel.OnTabClick(4);
+    end
+end
+
+function OnEnterBattleField(messageId, buffer)
+    error("do OnEnterBattleField");
+    local noUse1 = buffer:ReadUShort();
+    local tempData = {};
+    local towerData = {};
+    local state = buffer:ReadByte(); -- 是否显示领地战ui
+    local time = buffer:ReadInt(); -- 领地战的结束时间
+    local towerNum = buffer:ReadByte(); -- 塔的数量
+    local aDType = buffer:ReadByte();	-- 塔的所属类型（0：守方 1：攻方）
+    for i=1, towerNum do
+        towerData[i] = {};
+        local towerState = buffer:ReadByte(); -- 塔的状态（0：无敌  1：非无敌  2:死亡状态）
+        local towerBlood = buffer:ReadByte();  -- 塔的血量百分比
+        local towerLimited = buffer:ReadUShort(); -- 塔的无敌限制资源数量
+        towerData[i].towerState = towerState;
+        towerData[i].towerBlood = towerBlood;
+        towerData[i].towerLimited = towerLimited;
+    end
+    local guildID = buffer:ReadUInt(); -- 我方公会ID
+    local score = buffer:ReadUShort(); -- 我方的资源积分
+    local enemyGuildID = buffer:ReadUInt(); -- 敌方公会ID
+    local enemyScore = buffer:ReadUShort(); -- 敌方的资源积分
+    local kill = buffer:ReadUShort(); -- 杀人数
+    local sup = buffer:ReadUShort(); -- 助攻数
+    local death = buffer:ReadUShort(); -- 死亡数
+    tempData.time = time;
+    tempData.guildID = guildID;
+    tempData.score = score;
+    tempData.enemyGuildID = enemyGuildID;
+    tempData.enemyScore = enemyScore;
+    tempData.kill = kill;
+    tempData.sup = sup;
+    tempData.death = death;
+    tempData.towerData = towerData;
+    tempData.aDType = aDType;
+
+    Main_LeftMiddle.m_guildWarSelect = 1;
+    Main_MiddleTop.ShowGuildWarInfo(tempData);
+
+    local mapRefreshNum = buffer:ReadByte(); 
+    local mapData = {};
+    for i = 1, mapRefreshNum do 
+        -- 1,2,3是守方塔  4,5,6是攻方塔  7,8,9,10是四个资源点（守方上资源，守方下资源，攻方上资源，攻方下资源）11是中心资源点 12是中立BOSS
+        -- 塔两种状态（0死亡 1:活着）  资源点（0：死亡 1：活着）  中心资源点（0：未归属 1：归属守方 2：归属敌方）
+        local resourceState = buffer:ReadByte();
+        local tempData = {};
+        tempData.resourcePos = i;
+        tempData.resourceState = resourceState;
+        table.insert(mapData, i, tempData);
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then 
+        print("初始化地图信息 mapData = ",SerializeTable(mapData));
+        for i,v in pairs(mapData) do
+            Main_MiddleTop.RefreshMapFunc(mapData);
+        end
+    else
+        if GuildManager.guildAuctionInfo == nil then
+            GuildManager.guildAuctionInfo = {};
+        end
+        GuildManager.guildAuctionInfo.mapData = mapData;
+        Main_MiddleTop.m_isInitMap = true;
+    end
+end
+
+function OnGetBattleFieldData(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local typeLook = buffer:ReadByte(); -- 查看类型（1：查看我方 2：查看敌方 3：查看资源）
+    print("typeLook = ",typeLook);
+    if typeLook == 1 or typeLook == 2 then 
+        local tempData = {};
+        local towerNum = buffer:ReadByte(); -- 塔的数量
+        local aDType = buffer:ReadByte();	-- 塔的所属类型（0：守方 1：攻方）
+        for i=1, towerNum do
+            tempData[i] = {};
+            local towerState = buffer:ReadByte(); -- 塔的状态（0：无敌  1：非无敌  2:死亡状态）
+            local towerBlood = buffer:ReadByte();  -- 塔的血量百分比
+            local towerLimited = buffer:ReadUShort(); -- 塔的无敌限制资源数量
+            tempData[i].towerState = towerState;
+            tempData[i].towerBlood = towerBlood;
+            tempData[i].towerLimited = towerLimited;
+        end
+        tempData.aDType = aDType;
+        Main_LeftMiddle.InitGuildWar(tempData);
+    elseif typeLook == 3 then
+        local tempData = {};
+        local resourceNum = buffer:ReadByte(); -- 资源点的数量
+        for i=1, resourceNum do
+            tempData[i] = {};
+            local index = buffer:ReadByte(); -- 资源索引（1,2,3,4）
+            local restNum = buffer:ReadByte(); -- 剩余怪的数量
+            local resourceScore = buffer:ReadUShort(); -- 资源积分
+            local refresTim = buffer:ReadInt(); -- 刷新时间
+            
+            tempData[i].index = index;
+            tempData[i].restNum = restNum;
+            tempData[i].resourceScore = resourceScore;
+            tempData[i].refresTim = refresTim;
+        end
+        local resourceBelong = buffer:ReadByte(); -- 公共资源的归属（0：归属我方  1：归属敌方）
+        local resourceProduce = buffer:ReadByte(); -- 公会资源的产出
+        local resourceHP = buffer:ReadByte(); -- 公共资源的血量百分比
+        tempData.resourceBelong = resourceBelong;
+        tempData.resourceProduce = resourceProduce;
+        tempData.resourceHP = resourceHP;
+
+        Main_LeftMiddle.InitGuildWar(tempData);
+    end
+end
+
+function OnGetResourceData(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local guildID = buffer:ReadUInt(); -- 资源积分改变的公会ID
+    local resourceScore = buffer:ReadUShort(); -- 资源总积分
+    Main_MiddleTop.RefreshGuildWarScore(guildID, resourceScore);
+end
+
+function OnGetScoreData(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local kill = buffer:ReadUShort(); -- 杀人数
+    local sup = buffer:ReadUShort(); -- 助攻数
+    local death = buffer:ReadUShort(); -- 死亡数
+
+    Main_MiddleTop.RefreshFightScore(kill, sup, death);
+end
+
+function OnGetLeaveGuildWar()
+    error("do OnGetLeaveGuildWar 离开战场");
+    Main_LeftMiddle.OnGuildWarEnd();
+    Main_MiddleTop.GuildWarInfoCallBackOver();
+end
+
+function OnGetCheckResult()
+    GuildWarPanel.OnOpenSubAuction();
+end
+
+function OnGetAuctionData(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local state = buffer:ReadByte(); -- 状态 1：竞拍时间 2：战斗时间
+    local weekTag = buffer:ReadByte(); -- 时间标识1：本周时间 2：下周时间
+    local ownID = buffer:ReadInt(); -- 拥有的领地ID
+    local ownSceneLv = buffer:ReadInt(); -- 拥有的领地等级
+    local ownProductC = buffer:ReadFloat(); -- 领地产出系数
+    local initProductC = buffer:ReadFloat(); -- 领地初始产出系数
+    local week = buffer:ReadByte(); -- 周几
+    local beginTime = buffer:ReadInt(); -- 开始时间
+    local endTime = buffer:ReadInt(); -- 结束时间
+
+    if GuildManager.strongHoldInfo == nil then
+        GuildManager.strongHoldInfo ={};
+    end
+    GuildManager.strongHoldInfo ={};
+    GuildManager.strongHoldInfo.state = state;
+    GuildManager.strongHoldInfo.weekTag = weekTag;
+    GuildManager.strongHoldInfo.ownSceneLv = ownSceneLv;
+    GuildManager.strongHoldInfo.ownProductC = ownProductC;
+    GuildManager.strongHoldInfo.initProductC = initProductC;
+    GuildManager.strongHoldInfo.ownID = ownID;
+    GuildManager.strongHoldInfo.week = week;
+    GuildManager.strongHoldInfo.beginTime = beginTime;
+    GuildManager.strongHoldInfo.endTime = endTime;
+end
+
+function OnRefreshMap(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    -- 1,2,3是守方塔  4,5,6是攻方塔  7,8,9,10是四个资源点（攻方上资源，攻方下资源,守方上资源，守方下资源，）11是中心资源点 12是中立BOSS
+    local resourcePos = buffer:ReadByte();
+    -- 塔两种状态（0死亡 1:活着）  资源点（0：死亡 1：活着）  中心资源点（0：未归属 1：归属守方 2：归属敌方）
+    local resourceState = buffer:ReadByte();
+
+    if GuildManager.guildAuctionInfo == nil then
+        GuildManager.guildAuctionInfo ={};
+    end
+    GuildManager.guildAuctionInfo.GuildWarMapInfo = {};
+    GuildManager.guildAuctionInfo.GuildWarMapInfo.resourcePos = resourcePos;
+    GuildManager.guildAuctionInfo.GuildWarMapInfo.resourceState = resourceState;
+    Main_MiddleTop.RefreshGuildWarMapState();
+end
+
+function OnGiveUpStrongHold(messageId, buffer)
+    local noUse1 = buffer:ReadUShort();
+    local sceneID = buffer:ReadInt(); -- 放弃的据点ID
+    GuildWarPanel.OnGetGiveUp();
+end
+
+-- 帮会系统的错误消息处理
+function ShowErrorMessage(errorType, buffer)
+    local tipsId, textId = 0, 0;
+    local params = nil;
+    if errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CREATE_NOT_ENOUGH_MONEY then
+        -- 钻石不足，创建公会失败
+        tipsId, textId = 2605, 12585;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CREATE_NOT_HAVE_ITEM then
+        error("没有道具不能创建帮会");
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NAME_EMPTY then
+        -- 公会名字最少{0}个字符
+        tipsId, textId = 0, 50415;
+        params = { CCommonTool.GetDefineInfo(EDefineContentID.GUILD_NAME_MIN_CHAR_LIMITED):GetIntContent() };
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CREATE_NAME_INVALID then
+        -- 公会名称含有非法字符，请重新输入
+        tipsId, textId = 2603, 12583;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_UNKNOWN then
+        -- 服务器忙碌，请稍后重试！
+        tipsId, textId = 0, 13928;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NO_GAMEUNIT then
+        -- 必须先加入阵营后才能加入公会
+        tipsId, textId = 2620, 12600;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NO_GUILD then
+        -- 查询失败，找不到这个公会
+        tipsId, textId = 2600, 12580;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CREATE_EXIST_GUILD_NAME then
+        -- 公会名称已存在，请重新输入
+        tipsId, textId = 2604, 12584;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_PLAYER_FULL_JOIN then
+        -- 申请失败，已达最大申请数量
+        tipsId, textId = 2611, 12591;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_EXEC_SQL_FAIL then
+        -- 服务器忙碌，请稍后重试！
+        tipsId, textId = 0, 13928;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_JOINED_GUILD then
+        -- 您已经有公会了
+        tipsId, textId = 0, 13929;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_REFUES_ADDMEMBER then
+        -- error("帮会出错：该帮会拒绝任何人加入");   --暂时我们没有，批准那里设置的
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NOTSAME_GAMEUNIT then
+        -- 不是相同联盟不能加入帮会
+        tipsId, textId = 0, 13930;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_JOIN_GUILD_NOT_ENOUGH_LEVEL then
+        -- 等级不满足入会条件
+        tipsId, textId = 0, 13931;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_FULL_APPLY_NUM then
+        -- 申请失败，已达最大申请数量
+        tipsId, textId = 2612, 12592;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ANNOUNCE_TXT_EMPTY then
+        -- error("帮会出错：公告不能为空");
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NOT_JOIN_GUILD then
+        -- 不是此帮会成员
+        tipsId, textId = 0, 13932;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NO_RIGHTS then
+        -- 没有权限
+        tipsId, textId = 2618, 12598;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_WRONG_KINDRED_TYPE then
+        -- 您所操作的玩家分堂不对!
+        tipsId, textId = 4120, 13918;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_FULL_KINDRED_NUM then
+        -- 您所在的帮会分堂个数已经达到上限！;
+        tipsId, textId = 4130, 13919;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_PLAYER_HAD_QUERY then
+        -- 您已经申请过了加入此公会
+        tipsId, textId = 4140, 13920;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ADD_MEMBER_JOINED_GUILD then
+        -- 此玩家已有公会，无法邀请
+        tipsId, textId = 0, 50355;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_LEVELUP_NOT_ENOUGH_MONEY then
+        -- 金钱不够不能升级帮会
+        tipsId, textId = 4020, 13820;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ALREADY_DROPED_MEMBER then
+        -- 已经是帮众堂的成员不能再罢免
+        tipsId, textId = 0, 50422;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ADD_MEMBER_DEL_CHARACTER then
+        -- 玩家可能删除了该角色或者加入了其他帮会，没有在申请表里
+        tipsId, textId = 0, 50423;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ADD_MEMBER_DEL_CHARACTER then
+        -- 要罢免堂主的堂根本没有堂主
+        tipsId, textId = 0, 50424;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_DEL_WRONG_LEADER then
+        -- 要罢免的堂主根本不是堂主
+        tipsId, textId = 0, 50425;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NO_KINDRED_LEADER then
+        -- 要招人的分堂没有堂主（就是该分堂还没有创建）
+        error("要招人的分堂没有堂主（就是该分堂还没有创建）");
+        tipsId, textId = 0, 0;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NOT_EXIST_KINDRED then
+        -- 要踢人的分堂不存在
+        error("要踢人的分堂不存在");
+        tipsId, textId = 0, 0;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_NOT_ENOUGH_MONEY_SET_PROCLAM then
+        -- 发布宣言金钱不够
+        error("发布宣言金钱不够");
+        tipsId, textId = 0, 0;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ANNOUNCE_TEXT_TOO_LONG then
+        -- 公告字数太多
+        error("公告字数太多");
+        tipsId, textId = 0, 50426;
+        params = { CCommonTool.GetDefineInfo(EDefineContentID.GUILD_NOTICE_MAX_CHAR_LIMITED):GetIntContent() };
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_HAVE_OTHER_POSITION then
+        -- 已经有其他职位了，不能重复任命(只能先罢免)
+        tipsId, textId = 0, 50427;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_JOIN_GUILD_NOT_ENOUGH_LEVEL then
+        -- 加入帮会等级不够
+        tipsId, textId = 0, 50428;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_MAX_KINDRED_LEADER_NUM then
+        -- 此分堂最大堂主数已经满了
+        error("此分堂最大堂主数已经满了");
+        tipsId, textId = 0, 0;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_MAX_HUFA_NUM then
+        -- 最大护法数已满
+        error("最大护法数已满");
+        tipsId, textId = 0, 0;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_PLAEYR_NO_ONLINE then
+        -- 角色不在线
+        error("角色不在线");
+        tipsId, textId = 0, 0;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_MAX_MINISTER_NUM then
+        -- 最大副帮主人数已满
+        tipsId, textId = 0, 50429;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_MAX_KINDRED_MEMBER_NUM then
+        -- 帮会分堂最大人数已满
+        tipsId, textId = 0, 50430;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_FULL_GUILD_MEMBER then
+        -- 本公会人数已满, 无法审批
+        tipsId, textId = 2619, 12599;
+
+        -- 下面的无参数，但为整理begin：
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_GUILD_ALREADY_MAX_LEVLE then
+        -- 您所在的帮会已经到达了最大等级
+        tipsId, textId = 4150, 13921;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CHANGE_UNION_TIME then
+        -- 帮会转换联盟中，不能招人！
+        tipsId, textId = 4160, 13922;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_ALREADY_KINDRED_CREATOR then
+        -- 被授予堂主的玩家已经是某分堂的堂主！
+        tipsId, textId = 4170, 13923;
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_LEADER_EXIST then
+        -- 本堂已拥有堂主！
+        tipsId, textId = 4180, 13924;
+        -- 下面的无参数，但为整理end：
+        -- 有参数：
+
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CREATE_GUILD_LOW_LEVEL then
+        -- 等级不足{0}级不能创建公会
+        tipsId, textId = 4190, 13925;
+        params = { buffer:ReadUShort() };
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_INVITEPLAYER_LIMITTIME then
+        local nBufferLength = buffer.Length;
+        -- 用消息协议长度来区分是否是会长
+        local wIsNotityTime = buffer:ReadUShort();
+        -- 无效数据
+        if wIsNotityTime == 1 then
+            -- 还差{0}小时{1}分钟才可以操作帮会
+            -- 这里包括创建帮会、加入、被邀请
+            params = {
+                buffer:ReadUShort(),-- 小时
+                buffer:ReadUShort(),-- 分钟
+            };
+            tipsId, textId = 4200, 13926
+        else
+            -- 被邀请的人退出帮会不足24小时，不能加入帮会
+            tipsId, textId = 4210, 13927;
+        end
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_CLOSED_ADD_GUILD then
+        tipsId, textId = 2834, 12384
+    elseif errorType == ENUM_GUILD_OP_ERROR_RETURN.GUILD_OP_ERROR_INVITEPLAYER_LEVELERROR then
+        tipsId, textId = 4250, 13931
+    else
+        tipsId, textId = 0, 12434;
+        error("帮会出错：" .. tostring(errorType));
+    end
+
+    if textId > 0 then
+        if tipsId > 0 then
+            ShowSystemFlowTips(tipsId, nil, params);
+        else
+            local textInfo = CCommonTool.GetTxtData(textId);
+            if textInfo ~= nil then
+                ShowSystemFlowTips(string_format(textInfo.m_str, params), 1);
+            end
+        end
+    end
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+-------------------------------------------------------发送协议 START-------------------------------------------------------
+
+-- 请求公会列表
+-- @param lastGuildId 最后一个公会ID
+-- @param recivedCount 接收的公会个数
+function RequestGuildList(lastGuildId, receivedCount)
+    lastGuildId = lastGuildId or -1;
+    receivedCount = receivedCount or 0;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_GUILD_DATA);
+    buffer:WriteUInt(lastGuildId);
+    -- 当前页的最后一个公会ID
+    buffer:WriteInt(receivedCount);
+    buffer:WriteInt(GuildManager.guildListVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 创建公会
+-- @param guildName 公会名称
+-- @param flagName 公会旌旗
+function RequestCreateGuild(guildName, flagName)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_CREATE_GUILD);
+    buffer:WriteStringByByte(guildName);
+    buffer:WriteStringByByte(flagName);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 申请加入公会
+function RequestJoinGuild(guildId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_APPLY_JOIN_GUILD);
+    buffer:WriteByte(0);
+    -- 0代表发公会ID, 1代表发角色ID
+    buffer:WriteUInt(guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 申请加入玩家所在的公会
+function RequestJoinGuildByGlobalId(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_APPLY_JOIN_GUILD);
+    buffer:WriteByte(1);
+    -- 0代表发公会ID, 1代表发角色ID
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 取消申请加入
+function RequestCancelJoin(guildId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_CANCEL_JOIN);
+    buffer:WriteUInt(guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 取消申请加入
+function RequestCancelJoin(guildId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_CANCEL_JOIN);
+    buffer:WriteUInt(guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 拒绝加入公会
+function RequestRefuseJoin(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_REFUSE_JOIN);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 同意加入公会
+function RequestAgreeJoin(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_JOIN_GUILD);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(EKINDREDTYPE.GENERAL);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 一键拒绝加入公会
+function RequestBatchRefuseJoin()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_REFUSE_JOIN_ONCE);
+    buffer:WriteUInt(GuildManager.guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 一键同意加入公会
+function RequestBatchAgreeJoin(globalIds)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_JOIN_GUILD_ONCE);
+    buffer:WriteUInt(GuildManager.guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求多个公会名称
+-- @param clistIds 公会ID数据(List<int>)
+function RequestGuildName(clistIds)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_MULTI_ID2NAME_DATA);
+    local len = clistIds.Count;
+    buffer:WriteByte(len);
+    for i = 0, len - 1 do
+        buffer:WriteInt(clistIds[i]);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 查询公会信息(自己公会)
+function RequestGuildInfo()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_SINGLE_GUILD_DATA);
+    buffer:WriteInt(GuildManager.guildId);
+    buffer:WriteInt(GuildManager.guildInfoVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 通过公会ID列表查找对应的公会信息
+function RequestFindGuilds(guildIds)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE);
+    local len = #guildIds;
+    buffer:WriteByte(len);
+    for i = 1, len do
+        buffer:WriteInt(guildIds[i]);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会公告内容
+function RequestGuildNotice()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_GUILD_NOTICE);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteInt(GuildManager.noticeVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会成员列表
+function RequestGuildMembers()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_ALL_MEMBER_INFO);
+    buffer:WriteUInt(GuildManager.guildId);
+    local nCurVersion = GuildManager.memberListVersion;
+    buffer:WriteInt(nCurVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会审批列表
+function RequestApprovalList()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_APPLY_JOIN_DATA);
+    buffer:WriteUInt(GuildManager.guildId);
+    local nCurVersion = GuildManager.approvalListVersion;
+    buffer:WriteInt(nCurVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 任命
+-- @param globalId, 任命的成员ID
+-- @param rankLevel, 任命的成员职位
+function RequestAppoint(globalId, rankLevel)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_MINISTER);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    buffer:WriteInt(rankLevel);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求调入分堂
+-- @param globalId, 任命的成员ID
+-- @param kindredType, 分堂ID
+function RequestAddKindred(globalId, kindredType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_ADD_KINDRED_MEMBER);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    buffer:WriteInt(kindredType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求开除成员
+-- @param globalId, 成员ID
+function RequestExpelMember(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DELETE_MEMBER);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求罢免副会长、堂主信息
+-- @param globalId, 成员ID
+-- @param rankLevel, 职位
+function RequestDepose(globalId, rankLevel)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DROP_MEMBER);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    buffer:WriteInt(rankLevel);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求请出分堂信息
+-- @param globalId, 成员ID
+function RequestHallOut(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DEL_KINDRED_MEMBER);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求禅让会长
+-- @param globalId, 成员ID
+function RequestDemiseLeader(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_GIVE_LEADER);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 设置申请加入类型
+function RequestRecruitType(typeId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_ZHAOMUTYPE);
+    buffer:WriteByte(typeId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+---- 罢免堂主
+-- function RequestKindredLeader(globalId, KindredType)
+--    local buffer = ByteBuffer.New();
+--    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+--    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_DEL_KINDRED_LEADER);
+--    buffer:WriteUInt(GuildManager.guildId);
+--    --buffer:WriteUInt(globalId);
+--    buffer:WriteInt(KindredType);
+--    G_NetWorkMng:SendMessage(buffer);
+-- end
+
+-- 邀请加入公会
+function RequestInviteJoin(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_INVITE_JION);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求退出公会
+function RequestExitGuild()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_LEAVE_GUILD);
+    buffer:WriteUInt(GuildManager.guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求保存编辑公告信息
+function RequestEditNotice(noticeText)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_ADD_ANNOUNCEMENT);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteStringByByte(noticeText);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 邀请回复
+-- @param guildId 公会ID
+-- @param inviteGlobalId 邀请人ID
+-- @param isAgree 是否同意
+function RequestInviteReplay(guildId, inviteGlobalId, isAgree)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_RETURN_INVITE_JOIN);
+    buffer:WriteUInt(guildId);
+    buffer:WriteUInt(inviteGlobalId);
+    buffer:WriteByte(isAgree == true and 1 or 0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求捐献
+-- @param id 捐献表ID
+function RequestDonate(id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_CTOS_PERSONAL_DONATE);
+    buffer:WriteByte(id);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会升级
+-- @param guildId 公会ID
+function RequestGuildLevelUp()
+    error("请求公会升级!");
+    -- GuildProtocol.RequestSetGuildWelfareRange();
+    -- GuildProtocol.RequestGetGuildGetWelfare();
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_LEVELUP_GUILD);
+    buffer:WriteInt(GuildManager.guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会宣言
+-- @param content 公会宣言内容
+function RequestSaveProclamation(content)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_PROCLAMATION);
+    buffer:WriteUInt(GuildManager.guildId);
+    buffer:WriteStringByByte(content);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会事件列表
+function RequestGuildEvents()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_QUERY_GUILD_EVENT);
+    -- buffer:WriteUInt(GuildManager.guildId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会建筑升级
+-- @param guildId 公会ID
+function RequestBuildingLevelUp(buildingType)
+    error("请求公会升级:buildingType:" .. buildingType);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_LEVELUP_GUILD_BUILDING);
+    buffer:WriteInt(GuildManager.guildId);
+    buffer:WriteByte(buildingType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求返回驻地
+function RequestBackStation()
+    local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+    local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+    CollectBar.BreakTaskSendBar();
+    CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, SendBackStation);
+end
+
+-- 请求返回驻地(内部调用)
+function SendBackStation()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_ENTER_GUILD_REQUIRED);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会设置福利区间
+-- @param level 俸禄等级
+-- @param value 设置的贡献值
+function RequestSetGuildWelfareRange(level, value)
+    error("请求公会福利区间");
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_SET_WELFARE_RANGE);
+    buffer:WriteByte(level - 1);
+    -- 俸禄等级
+    buffer:WriteInt(value);
+    -- 贡献值
+    G_NetWorkMng:SendMessage(buffer);
+    error(string_format("level:{0}, value:{1}", level, value));
+    --    // 公会福利类型
+    --    enum ENUM_CORPS_WELFARE_TYPE
+    --    {
+    --     ENUM_CORPS_WELFARE_TYPE_BEGIN	= 0,
+    --     ENUM_CORPS_WELFARE_TYPE_FIRST	= ENUM_CORPS_WELFARE_TYPE_BEGIN,
+    --     ENUM_CORPS_WELFARE_TYPE_SECOND,
+    --     ENUM_CORPS_WELFARE_TYPE_THIRD,
+    --     ENUM_CORPS_WELFARE_TYPE_END,
+    --    };
+
+end
+
+-- 请求领取公会福利
+function RequestGetGuildWelfare()
+    error("请求领取公会福利");
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_GET_WELFARE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求公会饮酒经验
+function RequestGetWineExp()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_GET_WINEEXP);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求获取据点战所有竞拍信息
+function RequestGetWarInfo()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_APPLY_DATA);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求竞拍
+-- @param ID 据点ID
+-- @param Money 报价
+function RequestAuction(ID, Money)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_APPLY_BATTLE);
+    buffer:WriteInt(ID);
+    buffer:WriteInt(Money);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求放弃竞拍
+-- @param ID 据点ID
+function RequestAbandonAuction(ID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_ABANDON_APPLY);
+    buffer:WriteInt(ID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求查看竞标结果
+function RequestAuctionResult()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_APPLY_RESULT_DATA);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求弹出公会领地战准备场景界面
+function RequestOpenActivityWar()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_OPEN_ACTIVITY);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求进入准备场景
+function RequestEnterScene()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_ENTER_READY_SCENE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求离开战斗场景
+function RequestLeaveScene()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_LEAVE_BATTLE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求退出准备场景
+function RequestExitScene()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_QUIT_READY_ROOM);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求领地战各队伍的分配情况
+function RequestTeamInfo()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_ALLOC_PAGE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击配置人员按钮发送获取数据消息
+function RequestSetMember(teamID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_ALLOC_BUTTON);
+    buffer:WriteInt(teamID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击设置队长按钮消息
+function RequestSetCaptain(teamID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_SET_LEADER_BTN);
+    buffer:WriteInt(teamID);
+    G_NetWorkMng:SendMessage(buffer)
+end
+
+-- 请求设置队友
+function RequestSetTeamMember(data, teamID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_ALLOC_TEAM);
+    buffer:WriteInt(#data);
+    buffer:WriteInt(teamID);
+    buffer:WriteInt(0);
+    for i, v in pairs(data) do
+        buffer:WriteInt(v.playerGID);
+    end
+    G_NetWorkMng:SendMessage(buffer)
+end
+
+-- 请求设置队长
+function RequestSetTeamCaptain(data, teamID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_ALLOC_TEAM_LEADER);
+    buffer:WriteInt(teamID);
+    for i, v in pairs(data) do
+        buffer:WriteInt(v);
+    end
+    buffer:WriteInt(1);
+    G_NetWorkMng:SendMessage(buffer)
+end
+
+-- 请求查看积分
+function RequestScore()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_GET_SCORE_DATA);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求购买城战武器 
+function RequestBuyWeapon(ID, Num)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_BUY_WEAPON_ITEM);
+    buffer:WriteInt(ID);
+    buffer:WriteByte(Num);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求为自己的参战队员分配战具
+function RequestAssignmentWeapon(ID, data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_ALLOC_WEAPON);
+    buffer:WriteInt(ID);
+    buffer:WriteInt(#data);
+    for i = 1, #data do
+        buffer:WriteInt(data[i].playerGID);
+    end
+
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击战具分配分页按钮请求战具数据
+function RequestWeapon()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_ITEM_ALLOC_PAGE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击战具配置人员按钮请求人员数据
+function RequestMemeberData(ID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_WEAPON_ALLOC_BTN);
+    buffer:WriteInt(ID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击城战战具按钮,请求战具相关数据
+function RequestWeaponInfo()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_CITY_WEAPON_BTN);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求领地战状态
+function RequestAutionState()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CORPS_UI_STATE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击活动界面的领地战分页按钮请求领地战据点数据
+function RequestStrongHold()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_ACTIVITY_BATTLE_BTN);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击左侧面板查看战场资源数据
+function RequestStrongHoldInfo(index)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_LEFT_PLANEL_LOOK_INFO);
+    buffer:WriteByte(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--公共资源怪物刷新点 点击自动寻路
+function RequestFindMonster(index)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_FIND_WAY_TO_RESOURCE);
+    buffer:WriteByte(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-- 点击领地战竞拍时发送身份检测消息
+function RequestAuctionCheck(index)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_CLINK_APPLY_BTN);
+    buffer:WriteInt(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击双方防御塔跟核心自动寻路 aDType：（0：守方 1：攻方） index：（0：核心水晶 1：上塔 2：中塔 3：下塔）
+function RequestFindTower(aDType, index)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_OP_AOTO_FIND_WAY_TO_TOWER);
+    buffer:WriteByte(aDType);
+    buffer:WriteByte(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 放弃已占领的据点
+function RequestGiveUp(ID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUILD_OP_MSG);
+    buffer:WriteByte(ENUM_GUILD_OP_SUBMSG.GUILD_SCENE_REQUEST_ABANDON_SCENE);
+    buffer:WriteInt(ID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------发送协议 END-------------------------------------------------------

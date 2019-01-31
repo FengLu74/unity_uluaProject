@@ -1,0 +1,97 @@
+﻿module('GuildEventsPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildEventsPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_GridPath = "EventList/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_Grid = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    GuildProtocol.RequestGuildEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        GuildProtocol.RequestGuildEvents();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Grid = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_Grid = GetComponent(m_PanelObject, m_GridPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_Grid:SetInitCallback(OnGridViewInit);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_Grid:RemoveAll();
+    local events = GuildManager.GetGuildEvents(0);
+    local lastTimeString = "";
+    for i, data in ipairs(events) do
+        local timeString = G_TimerMng:GetTime(data.time);
+        if timeString ~= lastTimeString then
+            lastTimeString = timeString;
+            m_Grid:AddData({content=timeString}, "head");
+        end
+        m_Grid:AddData(data);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 列表初始化
+function OnGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("Content", data.content, go);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if m_CreateSuccess == true and m_PanelObject.activeInHierarchy == true then
+        InitShow();
+    end
+end

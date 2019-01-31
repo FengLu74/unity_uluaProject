@@ -1,0 +1,66 @@
+﻿module("NetProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- NGS连接成功，发送登录数据
+    network.Register(ConnectNGS, OnConnectNGS);
+    -- 网络错误--
+    network.Register(Exception, OnException);
+    -- 连接ZLS错误--
+    network.Register(ConnectZLSException, OnZLSException);
+    -- 连接NGS错误
+    network.Register(ConnectNGSException, OnNGSException);
+end
+
+-- NGS连接成功，发送登录数据
+function OnConnectNGS(protocolId, buffer)
+    error("NGS连接成功，发送登录数据");
+    GameReportManager.AddReportData(9169, true);
+    ComeInGame.OnConnectNGS();
+end
+
+-- 网络错误--
+function OnException(protocolId, buffer)
+    local info = CCommonTool.GetSystemFlowTipsInfo(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_WRONGCONNECT);
+    if nil == info then
+        error("does not find SystemFlowTips info ,SystemFlowTips id is ::" .. eventID);
+        return;
+    else
+        changeStr = CCommonTool.GetTxtData(info.TextID).m_str;
+    end
+    ParameterToMessageTextBox.OnComeInGameBack(changeStr);
+    GameReportManager.AddReportData(9170, true);
+end
+
+-- 连接ZLS错误--
+function OnZLSException(protocolId, buffer)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WAITDONE) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    end
+    local info = CCommonTool.GetSystemFlowTipsInfo(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_WRONGCONNECT);
+    if nil == info then
+        error("does not find SystemFlowTips info ,SystemFlowTips id is ::" .. eventID);
+        return;
+    else
+        changeStr = CCommonTool.GetTxtData(info.TextID).m_str;
+    end
+    ParameterToMessageTextBox.OnComeInGameBack(changeStr);
+end
+
+-- 连接NGS错误
+function OnNGSException(protocolId, buffer)
+    G_TimerMng:RemoveTimeTask("WaitListRoleOK");
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WAITDONE) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    end
+    local info = CCommonTool.GetSystemFlowTipsInfo(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_WRONGCONNECT);
+    if nil == info then
+        error("does not find SystemFlowTips info ,SystemFlowTips id is ::" .. eventID);
+        return;
+    else
+        changeStr = CCommonTool.GetTxtData(info.TextID).m_str;
+    end
+    ParameterToMessageTextBox.OnComeInGameBack(changeStr);
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------

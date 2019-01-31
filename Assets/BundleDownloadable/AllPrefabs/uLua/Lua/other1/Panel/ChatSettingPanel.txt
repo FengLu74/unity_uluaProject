@@ -1,0 +1,192 @@
+﻿module('ChatSettingPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ChatSettingPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 关闭按钮
+local m_CloseButtonPath = "Top/CloseButton";
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- WIFI按钮
+local m_NetWifiButtonPath = "Bottom/NetWifiButton";
+-- 4G按钮
+local m_Net4GButtonPath = "Bottom/Net4GButton";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 世界频道
+local m_WorldTogglePath = "Center/world/WorldToggle";
+-- 公会频道
+local m_GuildTogglePath = "Center/guild/GuildToggle";
+-- 阵营频道
+local m_CampTogglePath = "Center/camp/CampToggle";
+-- 队伍频道
+local m_TeamTogglePath = "Center/team/TeamToggle";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 世界频道
+local m_WorldToggle = nil;
+-- 公会频道
+local m_GuildToggle = nil;
+-- 阵营频道
+local m_CampToggle = nil;
+-- 队伍频道
+local m_TeamToggle = nil;
+-- WIFI按钮
+local m_NetWifiButton = nil;
+-- 4G按钮
+local m_Net4GButton = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_WorldToggle = nil;
+	m_GuildToggle = nil;
+	m_CampToggle = nil;
+	m_TeamToggle = nil;
+	m_NetWifiButton = nil;
+	m_Net4GButton = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CHAT_SETTING);
+    m_WorldToggle = child(m_PanelObject, m_WorldTogglePath).gameObject;
+    m_GuildToggle = child(m_PanelObject, m_GuildTogglePath).gameObject;
+    m_CampToggle = child(m_PanelObject, m_CampTogglePath).gameObject;
+    m_TeamToggle = child(m_PanelObject, m_TeamTogglePath).gameObject;
+    m_NetWifiButton = child(m_PanelObject, m_NetWifiButtonPath).gameObject;
+    m_Net4GButton = child(m_PanelObject, m_Net4GButtonPath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, m_PanelObject);
+    UIEventListener.Get(m_WorldToggle).onClick = LuaHelper.OnClick(OnWorldToggleClick);
+    UIEventListener.Get(m_GuildToggle).onClick = LuaHelper.OnClick(OnGuildToggleClick);
+    UIEventListener.Get(m_CampToggle).onClick = LuaHelper.OnClick(OnCampToggleClick);
+    UIEventListener.Get(m_TeamToggle).onClick = LuaHelper.OnClick(OnTeamToggleClick);
+    UIEventListener.Get(m_NetWifiButton).onClick = LuaHelper.OnClick(OnNetWifiButtonClick);
+    UIEventListener.Get(m_Net4GButton).onClick = LuaHelper.OnClick(OnNet4GButtonClick);
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitToggles();
+    InitButtonState();
+end
+
+function InitToggles()
+    isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_WORLD_ID) == 1;
+    SetGameObjectState("Mark", isOn, m_WorldToggle);
+
+    isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_GUILD_ID) == 1;
+    SetGameObjectState("Mark", isOn, m_GuildToggle);
+
+    isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_CAMP_ID) == 1;
+    SetGameObjectState("Mark", isOn, m_CampToggle);
+
+    isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_JOIN_ID) == 1;
+    SetGameObjectState("Mark", isOn, m_TeamToggle);
+end
+
+function InitButtonState()
+    local isOn = false;
+    isOn = ChatManager.GetNetPlaySetting(1) == 1;
+    SetGameObjectState("On", isOn, m_NetWifiButton);
+    SetGameObjectState("Off", not isOn, m_NetWifiButton);
+
+    isOn = ChatManager.GetNetPlaySetting(2) == 1;
+    SetGameObjectState("On", isOn, m_Net4GButton);
+    SetGameObjectState("Off", not isOn, m_Net4GButton);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭按钮
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_CHAT_SETTING);
+end
+
+-- 世界频道
+function OnWorldToggleClick(gameObject)
+    local isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_WORLD_ID) == 1;
+    ChatManager.SetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_WORLD_ID, not isOn);
+    InitToggles();
+end
+
+-- 公会频道
+function OnGuildToggleClick(gameObject)
+    local isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_GUILD_ID) == 1;
+    ChatManager.SetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_GUILD_ID, not isOn);
+    InitToggles();
+end
+
+-- 阵营频道
+function OnCampToggleClick(gameObject)
+    local isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_CAMP_ID) == 1;
+    ChatManager.SetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_CAMP_ID, not isOn);
+    InitToggles();
+end
+
+-- 队伍频道
+function OnTeamToggleClick(gameObject)
+    local isOn = ChatManager.GetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_JOIN_ID) == 1;
+    ChatManager.SetChannelPlaySetting(CHAT_CHANNEL_ID.CHAT_JOIN_ID, not isOn);
+    InitToggles();
+end
+
+-- WIFI
+function OnNetWifiButtonClick(gameObject)
+    local isOn = ChatManager.GetNetPlaySetting(1) == 1;
+    ChatManager.SetNetPlaySetting(1, not isOn);
+    InitButtonState();
+end
+
+-- 4G
+function OnNet4GButtonClick(gameObject)
+    local isOn = ChatManager.GetNetPlaySetting(2) == 1;
+    ChatManager.SetNetPlaySetting(2, not isOn);
+    InitButtonState();
+end
+
+-- 遮罩
+function OnMaskClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_CHAT_SETTING);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

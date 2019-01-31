@@ -1,0 +1,319 @@
+﻿module('WebDownloadPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'WebDownloadPanel';
+---------------------------------------label路径---------------------------------------
+-- 标题
+local m_TitlePath = "Content/Title";
+-- 提示内容
+local m_ContentPath = "Content/Content";
+-- 悬浮框文本
+local m_FloatLabelPath = "State/FloatButton/FloatLabel";
+-- 确认按钮文本
+local m_OkBtnLabelPath = "Content/ButtonOk/OkBtnLabel";
+-- 取消按钮文本
+local m_CancelBtnLabelPath = "Content/ButtonCancel/CancelBtnLabel";
+-- 重试按钮文本
+local m_RetryBtnLabelPath = "Content/ButtonRetry/RetryBtnLabel";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 确认按钮
+local m_ButtonOkPath = "Content/ButtonOk";
+-- 取消按钮
+local m_ButtonCancelPath = "Content/ButtonCancel";
+-- 悬浮按钮
+local m_FloatButtonPath = "State/FloatButton";
+-- 重试按钮
+local m_ButtonRetryPath = "Content/ButtonRetry";
+-- 悬浮图标
+local m_FloatIconPath = "State/FloatButton/FloatIcon";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 提示内容框 
+local m_Content = nil;
+-- 确认按钮
+local m_ButtonOk = nil;
+-- 取消按钮
+local m_ButtonCancel = nil;
+-- 重试按钮
+local m_ButtonRetry = nil;
+-- 悬浮按钮
+local m_FloatButton = nil;
+-- 悬浮图标
+local m_FloatIcon = nil;
+-- 悬浮框文本
+local m_FloatLabel = nil;
+
+local PANELID = ENUMPANELID.ENUM_PANEL_WEBBUNDLE;
+
+-- 确认状态
+local StateConfirm = 1;
+-- 进度条状态
+local StateProgress = 2;
+-- 出错状态
+local StateError = 3;
+-- 首次提示状态
+local StateFirst = 4;
+-- 当前状态
+local m_ShowState = 0;
+-- CWebBundleManager管理器
+local m_LoadManager = nil;
+-- CWebBundlePromptManager管理器
+local m_PromptManager = nil;
+-- 是否首次下载
+local m_FirstDownload = true;
+-- 当前Bundle
+local m_Info;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_ShowState = 0;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Content = nil;
+	m_ButtonOk = nil;
+	m_ButtonCancel = nil;
+    m_ButtonRetry = nil;
+	m_FloatButton = nil;
+	m_FloatIcon = nil;
+	m_FloatLabel = nil;
+    m_LoadManager = nil;
+    m_PromptManager = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(PANELID);
+    m_Content = GetComponent(m_PanelObject, m_ContentPath, "UILabel");
+    m_ButtonOk = child(m_PanelObject, m_ButtonOkPath).gameObject;
+    m_ButtonCancel = child(m_PanelObject, m_ButtonCancelPath).gameObject;
+    m_ButtonRetry = child(m_PanelObject, m_ButtonRetryPath).gameObject;
+    m_FloatButton = child(m_PanelObject, m_FloatButtonPath).gameObject;
+    m_FloatIcon = child(m_PanelObject, m_FloatIconPath).gameObject;
+    m_FloatLabel = GetComponent(m_PanelObject, m_FloatLabelPath, "UILabel");
+    m_LoadManager = CWebBundleManager.Instance;
+    m_PromptManager = G_UserInfo.WebBundlePromptManager;
+    m_ButtonRetry:SetActive(false);
+    SetLabelTextByID(m_TitlePath, 949, m_PanelObject);
+    SetLabelTextByID(m_CancelBtnLabelPath, 407, m_PanelObject);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_ButtonOk).onClick = LuaHelper.OnClick(OnButtonOkClick);
+    UIEventListener.Get(m_ButtonCancel).onClick = LuaHelper.OnClick(OnButtonCancelClick);
+    UIEventListener.Get(m_ButtonRetry).onClick = LuaHelper.OnClick(OnButtonRetryClick);
+    UIEventListener.Get(m_FloatButton).onClick = LuaHelper.OnClick(OnFloatButtonClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    error("WebDownloadPanel::");
+    if m_ShowState == StateFirst then
+        InitFirstState();
+    elseif m_ShowState == StateError then
+        InitErrorState();
+    elseif m_ShowState == StateProgress then
+        InitProgressState();
+    elseif m_ShowState == StateConfirm then
+        InitConfirmState();
+    end
+end
+
+function InitFirstState()
+    UpdateProgress(9080);
+    SetLabelTextByID(m_OkBtnLabelPath, 375, m_PanelObject);
+    m_ButtonOk:SetActive(true);
+    m_ButtonCancel:SetActive(true);
+    m_ButtonRetry:SetActive(false);
+end
+
+function InitErrorState()
+    SetLabelTextByID(m_ContentPath, 9082, m_PanelObject);
+    SetLabelTextByID(m_RetryBtnLabelPath, 9081, m_PanelObject);
+    m_ButtonRetry:SetActive(true);
+    m_ButtonOk:SetActive(false);
+    m_ButtonCancel:SetActive(false);
+end
+
+function InitProgressState()
+    UpdateProgress(9077);
+    if m_LoadManager:IsLoading() == true then
+        SetLabelTextByID(m_OkBtnLabelPath, 9078, m_PanelObject);
+    else
+        SetLabelTextByID(m_OkBtnLabelPath, 9079, m_PanelObject);
+    end
+    m_ButtonOk:SetActive(true);
+    m_ButtonCancel:SetActive(true);
+    m_ButtonRetry:SetActive(false);
+end
+
+function UpdateProgress(textId)
+    local down, total = GetProgressValue();
+    local text = CCommonTool.GetTxtData(textId).m_str;
+    text = string_format(text, total, down);
+    m_Content.text = text;
+end
+
+function InitConfirmState()
+    local down, total = GetInfoProgressValue();
+    local text = CCommonTool.GetTxtData(9075).m_str;
+    text = string_format(text, total, down);
+    m_Content.text = text;
+    SetLabelTextByID(m_OkBtnLabelPath, 375, m_PanelObject);
+    m_ButtonOk:SetActive(true);
+    m_ButtonCancel:SetActive(true);
+    m_ButtonRetry:SetActive(false);
+end
+
+function GetProgressValue()
+    if m_LoadManager == nil then
+        return "0M", "0M";
+    end
+    local total = Format(m_LoadManager.BundlesSize);
+    local down = Format(m_LoadManager.DownloadSize);
+    return down, total;
+end
+
+function GetInfoProgressValue()
+    if m_Info == nil then
+        return "0M", "0M";
+    end
+    local total = Format(m_Info.totalBytes);
+    local down = Format(m_Info.downloadBytes);
+    return down, total;
+end
+
+function Format(value)
+    local value = value / 1048576;
+    value = string.format("%.2fM", value);
+    return value;
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 确认按钮
+function OnButtonOkClick(gameObject)
+    if m_ShowState == StateConfirm then
+        m_PromptManager:OnConfirm(true);
+        closePanel(PANELID);
+    elseif m_ShowState == StateFirst then
+        m_FirstDownload = false;
+        m_LoadManager:StartDownload();
+        closePanel(PANELID);
+    elseif m_ShowState == StateProgress then
+        if m_LoadManager:IsLoading() == true then
+            m_LoadManager:StopDownload();
+        else
+            m_LoadManager:StartDownload();
+        end
+        InitProgressState();
+    end
+end
+
+-- 取消按钮
+function OnButtonCancelClick(gameObject)
+    if m_ShowState == StateConfirm then
+        m_PromptManager:OnConfirm(false);
+    end
+    closePanel(PANELID);
+end
+
+-- 重试按钮
+function OnButtonRetryClick(gameObject)
+    if m_PromptManager ~= nil then
+        m_PromptManager:Retry();
+        closePanel(PANELID);
+    end
+end
+
+-- 悬浮按钮
+function OnFloatButtonClick(gameObject)
+    
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function InitPanel()
+    if IsOpenPanel(PANELID) == 1 then
+        InitShow();
+    else
+        createPanel(PANELID);
+    end
+end
+
+-- 下载确认
+function DownloadConfirm(info)
+    m_Info = info;
+    m_ShowState = StateConfirm;
+    InitPanel();
+end
+
+-- 下载进度
+function DownloadProgress(info)
+    if m_ShowState == StateProgress and IsOpenPanel(PANELID) == 1 then
+        UpdateProgress(9077);
+    end
+end
+
+-- 下载出错
+function DownloadError(info, isPrompt)
+    m_ShowState = StateError;
+    if isPrompt == true then
+        InitPanel();
+    end
+end
+
+-- 下载完成
+function DownloadFinish()
+    closePanel(PANELID);
+    Main_MiddleBottom.InitDownload();
+end
+
+-- 单个资源下载完成
+function DownloadComplete(info)
+    
+end
+
+function Show()
+    local manager = CWebBundleManager.Instance;
+    if manager:IsLoading() == true then
+        m_FirstDownload = false;
+    end
+
+    if m_FirstDownload == true then
+        m_ShowState = StateFirst;
+    else
+        m_ShowState = StateProgress;
+    end
+    InitPanel();
+end

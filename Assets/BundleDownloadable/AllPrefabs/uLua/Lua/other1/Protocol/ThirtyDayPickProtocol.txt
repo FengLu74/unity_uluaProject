@@ -1,0 +1,156 @@
+﻿module("ThirtyDayPickProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --服务器向客户端发送30天签到道具数据信息
+    network.Register(GMI_STOC_SEND_THIRTYDAY_SIGNIN_ITEM_INFO, OnThirtyDaySignInItemInfo);
+    --服务器向客户端发送30天签到数据信息	
+    network.Register(GMI_STOC_SEND_THIRTYDAY_SIGNIN_INFO, OnThirtyDaySignInInfo);
+    --服务器向客户端发送30天签到某种类型签到成功
+    network.Register(GMI_STOC_SEND_THIRTYDAY_SIGNIN_SUCCESS, OnThirtyDaySignInSuccess);
+end
+
+--服务器向客户端发送30天签到道具数据信息
+function OnThirtyDaySignInItemInfo(protocolId, buffer)
+    --error("OnThirtyDaySignItemInfo protocolId : "..protocolId);
+    ThirtyDayPickManager.ThirtyDayItemDatas = {};
+    local itemIndex = buffer:ReadInt();
+    ThirtyDayPickManager.ThirtyDayIndex = itemIndex;
+    local count1 = buffer:ReadByte();
+    for index1 = 1 , count1 do
+        local itemIndex = buffer:ReadInt();
+        local itemId = buffer:ReadInt();
+        local itemNum = buffer:ReadInt();
+		local needVipLevel = buffer:ReadInt();
+        local data = 
+        {
+            Index = itemIndex,
+            ExcelId = itemId,
+            Num = itemNum,
+            NeedVipLevel = needVipLevel,
+        }
+        ThirtyDayPickManager.ThirtyDayItemDatas[index1] = data;
+    end
+    ThirtyDayPickManager.ThirtyDayRewardDatas = {};
+    local count2 = buffer:ReadByte();
+    for index2 = 1 , count2 do
+        local itemIndex = buffer:ReadInt();
+        local itemId = buffer:ReadInt();
+        local itemNum = buffer:ReadInt();
+        local data = 
+        {
+            Index = itemIndex;
+            ExcelId = itemId;
+            Num = itemNum;
+        }
+        ThirtyDayPickManager.ThirtyDayRewardDatas[index2] = data;
+    end
+end
+
+--服务器向客户端发送30天签到道具数据信息
+function OnThirtyDaySignInInfo(protocolId, buffer)
+    --error("服务器向客户端发送30天签到道具数据信息");
+    --error("OnThirtyDaySignInfo protocolId : "..protocolId);
+    --签到信息
+    local signInState = buffer:ReadInt();
+    --error("signInState : "..signInState);
+    ThirtyDayPickManager.SignInState = signInState;
+    --累积签到信息
+    local signInNum = buffer:ReadInt();
+    --error("signInNum : "..signInNum);
+    ThirtyDayPickManager.RewardState = signInNum;
+    --普通玩家每个月免费5次的补签次数剩余的次数
+    local additionalTimes = buffer:ReadByte();
+    ThirtyDayPickManager.AdditionalTimes = additionalTimes;
+    --今天是否已签	0没签 1签到
+    local fillCheckSignIn = buffer:ReadByte();
+    --error("fillCheckSignIn : "..fillCheckSignIn);
+    ThirtyDayPickManager.FillCheckSignIn = fillCheckSignIn;
+    --今天是否补签	0没签 1签到
+    local fillCheck = buffer:ReadByte();
+    --error("fillCheck : "..fillCheck);--服务器会屏蔽一直发零
+    ThirtyDayPickManager.IsFillCheck = fillCheck == 1;
+    --ThirtyDayPickManager.IsFillCheck = false;
+    --今天的索引值
+    local todayIndex = buffer:ReadByte();
+    --error("todayIndex : "..todayIndex);
+    ThirtyDayPickManager.TodayIndex = todayIndex;
+    --vip获得补签次数
+    if buffer.Length > 12 then
+        local vipMaxNum = buffer:ReadByte();
+        --error("vip获得补签次数 : "..vipMaxNum);
+        ThirtyDayPickManager.VipMaxNum=vipMaxNum;
+    end
+    --vip已使用的补签次数
+    if buffer.Length > 12 then
+        local vipUseAdditionalTimes = buffer:ReadByte();
+        ThirtyDayPickManager.VipUseAdditionalTimes = vipUseAdditionalTimes;
+        --error("vip已使用的补签次数 : "..vipUseAdditionalTimes);
+    end
+    ThirtyDayPickManager.FillCheckNum=additionalTimes+ThirtyDayPickManager.VipMaxNum-ThirtyDayPickManager.VipUseAdditionalTimes;
+    --error("初始化显示剩余所有补签次数ThirtyDayPickManager.FillCheckNum : "..ThirtyDayPickManager.FillCheckNum);
+
+    ThirtyDayPickPanel.RefreshSignInfo();
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_THIRTY_DAY, ThirtyDayPickManager.IsShowRedHint());
+end
+
+--服务器向客户端发送30天签到某种类型签到成功
+function OnThirtyDaySignInSuccess(protocolId, buffer)
+    --error("服务器向客户端发送30天签到某种类型签到成功");
+    --签到类型
+    local signInType = buffer:ReadByte();
+    --error("OnThirtyDaySignInSuccess signInType : "..signInType);
+    --签到信息
+    local signInState = buffer:ReadInt();
+    --error("OnThirtyDaySignInSuccess signInState : "..signInState);
+    local index = buffer:ReadByte();
+    --error("OnThirtyDaySignInSuccess index : "..index);
+    if signInType == 1 then           --正常
+        ThirtyDayPickManager.SignInState = signInState;
+        ThirtyDayPickManager.FillCheckSignIn = 1;
+        ThirtyDayPickPanel.RefreshSignList(index);
+    elseif signInType == 2 then      --补签
+        --免费补签次数：5
+        local additionalTimes=buffer:ReadByte();
+        --error("免费补签次数"..additionalTimes);
+        --VIP获得补签次数
+        local VipMaxAdditionalTimes=buffer:ReadByte();
+        --error("VIP获得补签次数"..VipMaxAdditionalTimes);
+        --VIP已使用的补签次数
+        local vipUseAdditionalTimes=buffer:ReadByte();
+        --error("VIP已使用的补签次数"..vipUseAdditionalTimes);
+        --当前总共剩余的补签次数
+        local leftAdditionalTimes=additionalTimes+VipMaxAdditionalTimes-vipUseAdditionalTimes;
+        ThirtyDayPickManager.AdditionalTimes=additionalTimes;
+        ThirtyDayPickManager.VipMaxNum=VipMaxAdditionalTimes;
+        ThirtyDayPickManager.FillCheckNum=leftAdditionalTimes;
+        ThirtyDayPickManager.VipUseAdditionalTimes = vipUseAdditionalTimes;
+        ThirtyDayPickManager.SignInState = signInState;
+        --ThirtyDayPickManager.FillCheckNum = ThirtyDayPickManager.FillCheckNum - 1;
+        --ThirtyDayPickManager.IsFillCheck = true;    --true                           --今日已经补签
+        ThirtyDayPickManager.IsFillCheck = false;                                      --设定今日未补签，则可以一直补签
+        ThirtyDayPickPanel.RefreshSignList(index);
+    else
+        ThirtyDayPickManager.RewardState = signInState;
+        ThirtyDayPickPanel.RefreshSignRewardList(index);
+    end
+    --error("总剩余的免费补签次数fillCheckNum : "..ThirtyDayPickManager.FillCheckNum);
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_THIRTY_DAY, ThirtyDayPickManager.IsShowRedHint());
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-----------------------------------------------------
+--客户端签到
+function RequestThirtyDaySignIn(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_THIRTYDAY_SIGNIN);
+    local signType = data.Type;
+    --error("RequestThirtyDaySign signType : "..signType);
+    buffer:WriteByte(signType);
+    local index = data.Index;
+    --error("RequestThirtyDaySign index : "..index);
+    buffer:WriteByte(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

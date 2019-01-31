@@ -1,0 +1,213 @@
+﻿module("AuctionSelectMenuPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+local m_TitlePath = "Dynamic/Title";
+local m_Title = nil;
+local m_TitleLabelPath = "Dynamic/Title/Content/Label";
+local m_TitleLabel = nil;
+-----------------------------------------按钮路径--------------------------------------
+--关闭按钮
+local m_CloseButtonPath = "Decoration/Background";
+local m_ConfirmButton = nil;
+-----------------------------------------Sprite路径------------------------------------
+--菜单动态背景
+local m_DynamicBackgroundPath1 = "Dynamic/Background/Bg1";
+local m_DynamicBackground1 = nil;
+local m_DynamicBackgroundPath2 = "Dynamic/Background/Bg2";
+local m_DynamicBackground2 = nil;
+local m_DynamicBackgroundPath3 = "Dynamic/Background/Bg3";
+local m_DynamicBackground3 = nil;
+local m_DynamicBackgroundPath4 = "Dynamic/Background/Bg4";
+local m_DynamicBackground4 = nil;
+----------------------------------gameobject所在的路径---------------------------------
+--菜单列表
+local m_MenuListPath = "Dynamic/List/Scroll View/Grid";
+local m_MenuList = nil;
+--菜单动态显示区域
+local m_DynamicScrollViewPath = "Dynamic/List/Scroll View";
+local m_DynamicScrollView = nil;
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+local m_CreateSuccess = false;
+
+--菜单列表用到的数据信息
+local m_MenuDatas = nil;
+local m_MenuTextInfo = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+function functionParameter(data)
+    m_MenuDatas = data;
+    error("functionParameter");
+    if m_CreateSuccess == true then
+        InitMenuData();
+    end
+end
+
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitEvents();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL);
+    --标题
+    m_Title = child(m_PanelObject, m_TitlePath).gameObject;
+    m_TitleLabel = GetComponent(m_PanelObject, m_TitleLabelPath, "UILabel");
+    --菜单列表
+    m_MenuList = GetComponent(m_PanelObject, m_MenuListPath, "UIListView");
+    --菜单动态显示界面
+    m_DynamicView = child(m_PanelObject, m_DynamicViewStr).gameObject;
+    --菜单动态背景
+    m_DynamicBackground1 = GetComponent(m_PanelObject, m_DynamicBackgroundPath1, "UISprite");
+    m_DynamicBackground2 = GetComponent(m_PanelObject, m_DynamicBackgroundPath2, "UISprite");
+    m_DynamicBackground3 = GetComponent(m_PanelObject, m_DynamicBackgroundPath3, "UISprite");
+    m_DynamicBackground4 = GetComponent(m_PanelObject, m_DynamicBackgroundPath4, "UISprite");
+    --菜单动态面板
+    m_DynamicScrollView = GetComponent(m_PanelObject, m_DynamicScrollViewPath, "UIPanel");
+end
+
+function InitEvents()
+    m_MenuList:SetInitCallback(OnMenuInit);
+    m_MenuList:SetClickCallback(OnMenuClick);
+end
+--设置菜单列表显示信息
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param data 列表Item数据信息
+function OnMenuInit(listView, cell, data)
+    local item = cell.gameObject;
+    SetLabelContent("Label",data.Text,item);
+end
+
+--菜单按下松开事件
+--@param listView 列表组件
+--@param cell 列表Item显示信息
+--@param go 列表Item对象
+function OnMenuClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    m_MenuTextInfo = data;
+    OnConfirmButtonClick();
+    --AddTimerEvent("AuctionSelectMenuPanel", 0.01, ThewTimeBackOver, ETimeShowType.TypeNumberOne, ThewTimeCallBack);
+end
+-- 时间监听回调
+-- @param timeTxt 时间字符串
+function ThewTimeCallBack(timeTxt)
+end
+-- 时间监听结束回调
+function ThewTimeBackOver()
+    G_TimerMng:RemoveTimeTask("AuctionSelectMenuPanel");
+    OnConfirmButtonClick();
+end
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitMenuData();
+    InitOnClick();
+end
+--设置菜单信息
+function InitMenuData()
+    AuctionManager.Log("InitMenuData");
+    if m_MenuDatas ~= nil then
+        local index = 0;
+        m_MenuList:RemoveAll();
+        for key, var in pairs(m_MenuDatas) do
+            local textId = var.TextId;
+            local text = "";
+            if textId == -1 then
+                text = var.Text;
+            else
+                local txtInfo = CCommonTool.GetTxtData(textId);
+                if nil == txtInfo then
+                    text = var.Text;
+                else
+                    text = txtInfo.m_str;
+                end
+            end
+            local data =
+            {
+                Index = var.Index;
+                Type = var.Type;
+                Text = text;
+            };
+            m_MenuList:AddData(data);
+            index = index + 1;
+        end
+        SetPanelSize(index);
+    end
+end
+-- 设置界面的大小
+function SetPanelSize(count)
+    local minCount = 1;
+    local maxCount = 7;
+    local curCount = count;
+    if curCount <= minCount then
+        curCount = minCount;
+    end
+    if curCount >= maxCount then
+        curCount = maxCount;
+    end
+    local titleHeight = 116;
+    local cellHeight = 104;
+    local height = cellHeight * curCount;
+    m_DynamicBackground1.height = titleHeight + height;
+    m_DynamicBackground2.height = titleHeight + height;
+    m_DynamicBackground3.height = titleHeight + height + 48;
+    m_DynamicBackground4.height = titleHeight + height + 48;
+
+    m_DynamicScrollView.baseClipRegion =Vector4.New(0,0,580,height);
+
+    m_Title.transform.localPosition = Vector3.New(0, -((maxCount - curCount) * cellHeight / 2) - 8 , 0);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_ConfirmButtonPath, OnConfirmButtonClick, m_PanelObject);
+end
+--确定按钮回调
+Callback = nil;
+function OnConfirmButtonClick()
+    error("OnConfirmButtonClick:::");
+    OnCloseClick();
+    if Callback ~= nil then
+        local data=
+        {
+            Index = m_MenuTextInfo.Index;
+            Type = m_MenuTextInfo.Type;
+            Text = m_MenuTextInfo.Text;
+        };
+        Callback(data);
+        Callback = nil;
+    end
+end
+--关闭界面
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL);
+    AuctionManager.Log("CloseThisPanel:::");
+end
+
+--------------------------------------按钮事件方法------------------------------------
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

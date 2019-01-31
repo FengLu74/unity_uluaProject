@@ -1,0 +1,200 @@
+﻿module('GetTreaurePanel', package.seeall)
+
+require "Panel.GetRewardPanel";
+
+-- 当前所在面板名字
+local m_PanelName = 'GetTreaurePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_closePanel = "Close";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 宠物十连抽标签
+local m_MenuItem1Path = "Menu/Grid/MenuItem1";
+
+-- 神器十连抽标签
+local m_MenuItem2Path = "Menu/Grid/MenuItem2";
+----------------------------------通用的名称路径---------------------------------------
+-- 宠物十连抽面板
+local m_GetRewardPanelPath = "GetRewardPanel";
+-- 神器十连抽面板
+local m_ArtifactLotteryPanelPath = "ArtifactLotteryPanel";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 宠物十连抽标签
+local m_MenuItem1 = nil;
+-- 神器十连抽标签
+local m_MenuItem2 = nil;
+-- 宠物十连抽面板
+local m_GetRewardPanel = nil;
+-- 神器十连抽面板
+local m_ArtifactLotteryPanel = nil;
+
+-- 选中的标签
+local m_selectTagNum = 1;
+-- 上一次选择标签
+local m_lastSelectTagNum = 1;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = m_MenuItem1Path, panelName = m_GetRewardPanelPath, isFirstOpen = true, luaFileName = GetRewardPanel },
+    [2] = { name = m_MenuItem2Path, panelName = m_ArtifactLotteryPanelPath, isFirstOpen = true, luaFileName = ArtifactLotteryPanel },
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitPanelShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+        InitPanelShow();
+    end
+end
+
+function OnDisable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = 1;
+end
+
+function OnDestroy()
+    for Index = 1, #m_toggleTable do
+        if m_toggleTable[Index].luaFileName ~= nil then
+            m_toggleTable[Index].luaFileName.OnDestroy();
+            m_toggleTable[Index].isFirstOpen = true;
+        end
+    end
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MenuItem1 = nil;
+    m_MenuItem2 = nil;
+    m_GetRewardPanel = nil;
+    m_ArtifactLotteryPanel = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL);
+    m_MenuItem1 = child(m_PanelObject, m_MenuItem1Path).gameObject;
+    m_MenuItem2 = child(m_PanelObject, m_MenuItem2Path).gameObject;
+    m_GetRewardPanel = child(m_PanelObject, m_GetRewardPanelPath).gameObject;
+    m_ArtifactLotteryPanel = child(m_PanelObject, m_ArtifactLotteryPanelPath).gameObject;
+    m_GetRewardPanel:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_MenuItem1).onClick = LuaHelper.OnClick(OnMenuItem1Click);
+    UIEventListener.Get(m_MenuItem2).onClick = LuaHelper.OnClick(OnMenuItem2Click);
+    SetGameObjectEvent(m_closePanel, OnCloseClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    OpenPanelByTag();
+    GetRewardProtocol.RequestExtractState();
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Toggle", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_PanelObject);
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Toggle", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_PanelObject);
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+end
+
+function InitPanelShow()
+    if CCommonTool.GetSystemOpenInfo(43).Level <= G_UserInfo.RoleAttribute.Level then
+        m_MenuItem2:SetActive(true);
+    else
+        m_MenuItem2:SetActive(false);
+    end
+end
+
+
+
+------------------------------------------事件方法------------------------------------
+
+-- 宠物十连抽面板
+function OnMenuItem1Click(gameObject)
+    OnTabClick(1);
+    GetRewardProtocol.RequestExtractState();
+end
+
+-- 神器十连抽面板
+function OnMenuItem2Click(gameObject)
+    OnTabClick(2);
+    GetRewardProtocol.RequestExtractState();
+end
+
+function OnTabClick(index)
+    if m_selectTagNum ~= index then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index, causePanelId)
+    if m_CreateSuccess == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, causePanelId);
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = { };
+    local tabIndex = m_selectTagNum;
+    panelParams.tabIndex = tabIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    local tabIndex = panelParams.tabIndex;
+    OpenThisPanelByTag(tabIndex);
+end

@@ -1,0 +1,136 @@
+﻿module("ThirtyDayPickManager", package.seeall)
+
+--30天签到标记
+ThirtyDayIndex = 0;
+
+--道具签到标记
+SignInState = 0;
+--签到奖励标记
+RewardState = 0;
+--签到道具信息
+ThirtyDayItemDatas = {};
+--签到奖励道具信息
+ThirtyDayRewardDatas = {};
+
+--是否已经补签
+IsFillCheck = false;
+--总共剩余的补签次数
+FillCheckNum = 0;
+--今天是否已签	0没签 1签到
+FillCheckSignIn = 0;
+--今天的索引值
+TodayIndex = 0;
+--剩余的免费的补签次数5
+AdditionalTimes=0;
+--vip已使用补签次数
+VipUseAdditionalTimes=0;
+--vip获得的补签次数
+VipMaxNum=0;
+
+--加载数据
+function LoadData()
+   
+end
+
+--获取签到道具信息
+function GetItemDatas()
+    local datas = {};
+    local signInState = GetState(SignInState);
+    local length = GetTableLength(ThirtyDayItemDatas);
+    for index = 1, length do
+        local state = signInState[index - 1];
+        local itemData = ThirtyDayItemDatas[index];
+        local data = 
+        {
+            IsPick = state == 1;
+            Index = itemData.Index;
+            ExcelId = itemData.ExcelId;
+            Num = itemData.Num;
+            NeedVipLevel = itemData.NeedVipLevel;
+        };
+        datas[index] = data;
+    end
+    return datas;
+end
+
+--获取已签到的次数
+function GetSignInNum()
+    local signInState = GetState(SignInState);
+    local num = 0;
+    for index = 1, 30 do
+        if signInState[index - 1] == 1 then
+            num = num + 1;
+        end
+    end
+    return num;
+end
+
+--获取签到奖励信息
+function GetRewardDatas()
+    local datas = {};
+    local rewardState = GetState(RewardState);
+    local length = GetTableLength(ThirtyDayRewardDatas);
+    for index = 1, length do
+        local rewardData = ThirtyDayRewardDatas[index];
+        local state = rewardState[rewardData.Index - 1];
+        local data = 
+        {
+            IsPick = state == 1;
+            Index = rewardData.Index;
+            ExcelId = rewardData.ExcelId;
+            Num = rewardData.Num;
+        };
+        datas[index] = data;
+    end
+    return datas;
+end
+
+--获取标记
+function GetState(value)
+    return G_RewardMng:GetState(value, 30);
+end
+
+--是否显示红点
+function IsShowRedHint()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        return false;
+    end
+
+    if TodayIndex <= 0 then
+        return false;
+    end
+
+    if FillCheckSignIn == 0 then
+        return true;
+    end
+    local num = GetSignInNum();
+    if FillCheckNum > 0 and IsFillCheck == false and TodayIndex > num then
+        return true;
+    end
+    local rewardState = GetState(RewardState);
+    local length = GetTableLength(ThirtyDayRewardDatas);
+    for index = 1, length do
+        local rewardData = ThirtyDayRewardDatas[index];
+        if num >= rewardData.Index then
+            local state = rewardState[rewardData.Index - 1];
+            if state == 0 then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+
+function Clear()
+    ThirtyDayIndex = 0;
+    SignInState = 0;
+    RewardState = 0;
+    ThirtyDayItemDatas = {};
+    ThirtyDayRewardDatas = {};
+    IsFillCheck = false;
+    FillCheckNum = 0;
+    FillCheckSignIn = 0;
+    TodayIndex = 0;
+    TodayFillNum=0;
+end

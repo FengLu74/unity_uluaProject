@@ -1,0 +1,297 @@
+﻿module('ArenaPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ArenaPanel';
+---------------------------------------label路径---------------------------------------
+-- 当前排名
+local m_LabelRankPath = "Content/Left/Label_Rank";
+-- 当前战力
+local m_LabelFightValuePath = "Content/Left/Label_FightValue";
+-- 剩余挑战次数
+local m_LabelTimesPath = "Content/Right/Bottom/Button_Fight/Label_Times";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+-- 系统介绍
+local m_BtnTipsPath = "btn_Tips";
+-- 刷新对手列表
+local m_ButtonRefreshPath = "Content/Right/Top/Button_Refresh";
+-- 商城
+local m_ButtonShopPath = "Content/Right/Bottom/Button_Shop";
+-- 对战记录
+local m_ButtonRecordPath = "Content/Right/Bottom/Button_Record";
+-- 开始挑战
+local m_ButtonFightPath = "Content/Right/Bottom/Button_Fight";
+-- 每日奖励
+local m_ButtonEveryDayRewardPath = "Content/Right/Bottom/Button_EveryDayReward";
+-- 排行榜
+local m_ButtonRankPath = "Content/Right/Bottom/Button_Rank";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 职业图片父对象
+local m_ProfessionPath = "Profession";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 对手列表
+local m_ListPath = "Content/Right/Top/ScrollView/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 我的排名
+local m_LabelRank = nil;
+-- 战力
+local m_LabelFightValue = nil;
+-- 对手列表
+local m_List = nil;
+-- 剩余次数
+local m_LabelTimes = nil;
+-- 职业图片父对象
+local m_Profession = nil;
+
+-- 是否接收到对手列表
+local m_DataReady = false;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+-- 面板ID
+local panelId = ENUMPANELID.ENUM_PANEL_ARENA;
+-- 活动ID
+local activityId = 1901;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+   m_DataReady = false; 
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_LabelRank = nil;
+	m_LabelFightValue = nil;
+	m_List = nil;
+	m_LabelTimes = nil;
+	m_Profession = nil;
+    m_DataReady = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(panelId);
+    m_LabelRank = GetComponent(m_PanelObject, m_LabelRankPath, "UILabel");
+    m_LabelFightValue = GetComponent(m_PanelObject, m_LabelFightValuePath, "UILabel");
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_LabelTimes = GetComponent(m_PanelObject, m_LabelTimesPath, "UILabel");
+    m_Profession = child(m_PanelObject, m_ProfessionPath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnTipsPath, OnBtnTipsClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonRefreshPath, OnButtonRefreshClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+	SetGameObjectEvent(m_ButtonShopPath, OnButtonShopClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonRecordPath, OnButtonRecordClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonFightPath, OnButtonFightClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonEveryDayRewardPath, OnButtonEveryDayRewardClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonRankPath, OnButtonRankClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    ArenaProtocol.RequestOpponentList(1);
+    -- 职业图片
+    local proId = G_UserInfo.RoleAttribute.ProID;
+    for i = 1, 4 do
+        SetGameObjectState(tostring(i), i == proId, m_Profession);
+    end
+    InitFightValue();
+    InitActivityTimes();
+    InitOpponentList();
+end
+
+-- 设置战力
+function InitFightValue()
+    -- 战力
+    m_LabelFightValue.text = math.floor(G_UserInfo.RoleAttribute.BattlePower);
+end
+
+-- 设置活动次数
+function InitActivityTimes()
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(activityId);
+    local text = CCommonTool.GetTxtData(8012).m_str;
+    -- 改为不显示次数
+    m_LabelTimes.text = "";--string_format(text, remainTimes, maxTimes);
+end
+
+-- 设置对手列表
+function InitOpponentList()
+    if m_DataReady ~= true then
+        m_LabelRank.text = "";
+        m_List:RemoveAll();
+        return;
+    end
+    -- 排名
+    if ArenaManager.myRank > 0 then
+        m_LabelRank.text = ArenaManager.myRank;
+    else
+        m_LabelRank.text = CCommonTool.GetTxtData(8126).m_str;
+    end
+    -- 对手列表
+    m_List:RemoveAll();
+    local oppList = ArenaManager.oppList;
+    for _, data in ipairs(oppList) do
+        m_List:AddData(data);
+    end
+    m_List:LookAt(0, true);
+end
+
+------------------------------------------事件方法------------------------------------
+
+function OnCloseClick()
+    closePanel(panelId);
+end
+
+-- 关闭按钮
+function OnButtonCloseClick(gameObject)
+    OnCloseClick();
+end
+
+-- 系统解释按钮
+function OnBtnTipsClick(gameObject)
+    SystemExplainPanel.SetData(panelId, 1);
+end
+
+-- 刷新对手列表
+function OnButtonRefreshClick(gameObject)
+    ArenaProtocol.RequestOpponentList(0);
+end
+
+-- 对手列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local rankText = CCommonTool.GetTxtData(9112).m_str;
+    SetLabelContent("Label_Rank", string_format(rankText, data.rank), go);
+    SetLabelContent("Label_Name", data.name, go);
+    SetLabelContent("Label_Level", "LV."..data.level, go);
+    SetLabelContent("Label_FightValue", data.fightValue, go);
+    local roleData = CCommonTool.GetPartnerInfo(data.proId);
+    if roleData ~= nil then
+        SetSpriteByAtlasID("Sprite_Icon", roleData.HeadRes, go, true);
+    end
+end
+
+-- 对手列表点击
+function OnListViewClick(listView, cell, go)
+    error(go.name);
+    if go.name == "Sprite_Icon" then
+        local data = listView:GetData(cell.dataIndex);
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_GET_OTHERPLAYER_STATE);
+        buffer:WriteInt(data.id);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+
+-- 商城按钮
+function OnButtonShopClick(gameObject)
+    ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.BattleShop);
+end
+
+-- 对战记录
+function OnButtonRecordClick(gameObject)
+    error("对战记录");
+    createPanel(ENUMPANELID.ENUM_PANEL_ARENA_RECORD, panelId);
+end
+
+-- 开始挑战
+function OnButtonFightClick(gameObject)
+    local activityData = ActivityManager.GetActivity(activityId);
+    if not ActivityManager.IsPassed(activityData) == true then
+        if ActivityManager.IsLackTimes(activityId) == 1 then
+            ActivityTimesItemPanel.Show(activityId);
+            return;
+        end
+    else
+        -- 次数用尽
+        ShowSystemFlowTips(9350);
+        return;
+    end
+    local index = m_List.selectedIndex;
+    if index < 0 then
+        -- 选择对手
+        ShowSystemFlowTips(9351);
+        return;    
+    end
+    local data = m_List:GetData(index);
+    if data == nil then
+        error("对手数据不存在");
+        return;
+    end
+    ArenaProtocol.RequestFightOpponent(data.rank, data.id);
+end
+
+-- 每日奖励
+function OnButtonEveryDayRewardClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_ARENA_REWARD, panelId);
+end
+
+-- 排行榜
+function OnButtonRankClick(gameObject)
+    RankPanel.OpenRankPanel(RANK_TYPE.ARENA, 0);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新对手列表
+function RefreshOppList()
+    if IsOpenPanel(panelId) == 1 then
+        m_DataReady = true;
+        InitOpponentList();
+    end
+end
+
+--开启活动Panel
+function LastInArenaScene()
+    --error(string_format("---------------LastSceneID={0}--ArenaResultPanel={1}",G_SceneMng.LastSceneID,ArenaResultPanel.GetArenaSceneIn(nil)));
+    if G_SceneMng.LastSceneID == 75 and ArenaResultPanel.GetArenaSceneIn(nil) then           --75/76/77(固定的)   上一场景是离线竞技场场景ID && 上次去过竞技结果Panel && 不是离线竞技场强制离开？
+        --error(string_format("in===LastSceneID={0}--ArenaResultPanel={1}",G_SceneMng.LastSceneID,ArenaResultPanel.GetArenaSceneIn(nil)));
+        ActivityPanel.OpenThisPanelByTag(1);                                                 ----开启活动Panel
+        WorldBossActiPanel.Delete3DModel();
+
+        local causePanelId=ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL;  
+        ActivityManager.Jump(activityId,causePanelId, function(jumpType, success)            --activityId=1901  --152 --如果次数用完-》不开启离线竞技场Panel(不需要)
+            if success == true  then
+                if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+                    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+                end
+            end
+        end);
+
+--        local jumpValue="1_"..ENUMPANELID.ENUM_PANEL_ARENA;                  --1_259 --259 离线PanelID
+--        local causePanelId=ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL;             --152  活动PanelID
+        ArenaResultPanel.GetArenaSceneIn(false); 
+    end
+end

@@ -1,0 +1,94 @@
+﻿module("FashionProtocol", package.seeall)
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    --时装系统：角色上线时同步数据给客户端
+    network.Register(GMI_STOC_FADCLOTHES_SYNCDATA_TOCLIENT, OnFashionData);
+    --回复客户端请求时装相关操作
+    network.Register(GMI_STOC_FADCLOTHES_RETURN_OPRESULT, OnFashionState);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+-- 角色上线时同步数据给客户端
+function OnFashionData(protocolId, buffer)
+    local fadClothDataCount = buffer:ReadByte();
+    for i = 1, fadClothDataCount do
+        local fadClothType = buffer:ReadUInt();
+        local fadClothInfoCount = buffer:ReadByte();
+        local data = {};
+        for i = 1, fadClothInfoCount do
+            local fadClothesID = buffer:ReadUInt();
+            local fadClothesState = buffer:ReadByte();
+            local info = 
+            {
+                Type = fadClothType;
+                ExcelId = fadClothesID;
+                State = fadClothesState;
+            };
+            data[fadClothesID] = info;
+        end
+        FashionManager.FashionDatas[fadClothType] = data;
+    end
+    local length = GetTableLength(FashionManager.FashionDatas);
+    FashionPanel.RefreshFashionData();
+end
+
+-- 回复客户端请求时装相关操作
+function OnFashionState(protocolId, buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        local fadClothType = buffer:ReadUInt();
+        local fadClothesID = buffer:ReadUInt();
+        local fadClothesState = buffer:ReadByte();
+        local info = 
+        {
+            Type = fadClothType;
+            ExcelId = fadClothesID;
+            State = fadClothesState;
+        };
+        FashionManager.UpdateFashionData(info);
+        FashionPanel.RefreshFashionState(info);
+        -- 翅膀移到了进阶界面
+        if fadClothType == 4 then
+            --WingPanelManager.RefreshPlayerWingsData(info.ExcelId);
+            --CultivateChangePanel.RefreshWingList();
+            local exp=nil;
+            local star_lvl=nil;
+            local stage_lvl=nil;
+            local Wing_id=info.ExcelId;
+            Wing_id=WingPanelCN.getWingMainTableIdByIndex(Wing_id);
+            Wing_id=WingPanelManagerCN.getModfA(Wing_id);
+            --error("[时装] 神翼装备返回神翼id[>10]="..Wing_id);
+	        WingPanelManagerCN.RefreshGodInfos(exp,star_lvl,stage_lvl,Wing_id);
+        else
+            RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_HAIR, FashionManager.IsShowFashionRedHint(1));
+            RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_FACE, FashionManager.IsShowFashionRedHint(2));
+            RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_CLOTHES, FashionManager.IsShowFashionRedHint(3));
+            --RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_WING, FashionManager.IsShowFashionRedHint(4));
+            RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_WEAPON, FashionManager.IsShowFashionRedHint(5));
+        end
+    else
+        FashionManager.Log("OnFashionState 请求失败！！！！");
+    end
+end
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+-- 角色请求时装相关数据
+function RequestFashionData()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FADCLOTH_DATA_REQUEST);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 角色请求时装相关请求操作
+function RequestFashionOperate(info)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FADCLOTH_OPERATE_REQUEST);
+    --error("角色请求时装相关请求操作RequestFashionOperate State:"..info.State);
+    buffer:WriteByte(info.State);
+    --error("角色请求时装相关请求操作RequestFashionOperate Type:"..info.Type);
+    buffer:WriteByte(info.Type);
+    --error("角色请求时装相关请求操作RequestFashionOperate Id:"..info.ExcelId);
+    buffer:WriteUInt(info.ExcelId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

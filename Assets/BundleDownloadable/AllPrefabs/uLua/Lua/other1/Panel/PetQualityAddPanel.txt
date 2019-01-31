@@ -1,0 +1,333 @@
+﻿module("PetQualityAddPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 宠物等级
+local m_PetLevelStr = "Top/Label_Level";
+-- 宠物名称
+local m_PetNameStr = "Top/Label_Name";
+-- 宠物战斗力
+local m_PetFightValueStr = "Top/Label_FightValue";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 宠物图标
+local m_PetIconStr = "Top/PetItem/Sprite_Icon";
+-- 宠物品质
+local m_PetQualityStr = "Top/PetItem/Sprite_Quality";
+----------------------------------gameobject所在的路径---------------------------------
+-- 是否变异
+local m_PetIsVarietyStr = "Top/Variety";
+-- 资质
+local m_PetQualityInfoStr = "Qualitys/";
+-- 需求道具
+local m_PetNeedItemsStr = "NeedItems/";
+----------------------------------通用的名称路径---------------------------------------
+-- 选中
+local m_QualityIsSelect = "/Select";
+-- 当前资质数值
+local m_QualityValue = "/Label_Value";
+-- 道具
+local m_ItemStr = "/Item";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+-- 道具图标
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具加的数值
+local m_ItemAddValueStr = "/Label_Add";
+-- 道具的数值范围
+local m_ItemRangeStr = "/Label_Range";
+-- 使用按钮文本
+local m_UseButtonLabelStr = "/Button/Label";
+-- 使用按钮
+local m_UseButtonStr = "/Button";
+-- 道具加号
+local m_ItemAddSpriteStr = "/Sprite_Add";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+-- 当前选中的是第几个资质(1~5)
+local m_CurSelectQuality = 1;
+-- 当前4个道具的状态
+local m_RightButtonsState ={1,1,1,1};
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+local ENUM_BUTTON_STATE = {CANNOT_CLICK = 1,GETWAY = 2,USE = 3}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL);
+end
+
+function InitEvents()
+end
+
+function InitData()
+    if m_isJumpPanelSave then
+        m_CurSelectQuality = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = true;
+    else
+        m_CurSelectQuality = 1;
+    end
+end
+
+-- 初始化显示
+function InitShow()
+    InitStaticShow();
+    InitDynamicShow();
+end
+
+function InitStaticShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+    SetSpriteByAtlasID(m_PetIconStr, m_CurSelectPet:GetImageIdById(), m_panelObject);
+    SetSpriteApptitudeV04(m_PetQualityStr, m_CurSelectPet:GetAptitudeID(), m_panelObject);
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    SetLabelContent(m_PetLevelStr,"Lv."..petATT.PetLevel, m_panelObject);
+    SetLabelTextByID(m_PetNameStr,petMainInfo.NameTextID,m_panelObject);
+    if petMainInfo.IsVariety == 1 then
+        SetGameObjectState(m_PetIsVarietyStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_PetIsVarietyStr,false,m_panelObject);
+    end
+    for Index = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+        SetItemShowByExcelIDV04(m_panelObject,m_PetNeedItemsStr..Index..m_ItemStr,PetQualityFosterNeedItemsChunk[Index],1,true,nil,ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL);
+    end
+end
+
+function InitDynamicShow()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    SetLabelContent(m_PetFightValueStr,math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,1) + 0.5),m_panelObject);
+    InitQualityInfo();
+end
+
+function InitQualityInfo()
+    InitLeftQualitySelect();
+    InitQualityValues();
+    InitQualityNeedItems();
+end
+
+function InitLeftQualitySelect()
+    for Index = 1,PET_ENUM.PET_ALL_QUALITY_NUM do
+        if Index == m_CurSelectQuality then
+            SetGameObjectState(m_PetQualityInfoStr .. Index .. m_QualityIsSelect , true, m_panelObject);
+        else
+            SetGameObjectState(m_PetQualityInfoStr .. Index .. m_QualityIsSelect , false, m_panelObject);
+        end
+    end
+end
+
+function InitQualityValues()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curValue;
+    local maxValue;
+    for Index = 1,PET_ENUM.PET_ALL_QUALITY_NUM do
+        curValue = petQualityInfo[Index - 1].QualityMin + petQualityInfo[Index - 1].QualityCur;
+        maxValue = petQualityInfo[Index - 1].QualityMax;
+        SetLabelContent(m_PetQualityInfoStr .. Index .. m_QualityValue , curValue .. "/" .. maxValue, m_panelObject);
+    end
+end
+
+function InitQualityNeedItems()
+    local hasNum;
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curValue = petQualityInfo[m_CurSelectQuality - 1].QualityMin + petQualityInfo[m_CurSelectQuality - 1].QualityCur;
+    local curValueInt = math.floor(curValue/100);
+    local remainValue = math.fmod(curValue,100);
+    local nID = (remainValue == 0 and curValueInt or curValueInt + 1);
+    local minValue;
+    local maxValue;
+    local tempValue;
+    for Index = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+        hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetQualityFosterNeedItemsChunk[Index]);
+        SetLabelContent(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemNumStr,hasNum,m_panelObject);
+        if hasNum <= 0 then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemIconStr).gameObject,true);
+            SetGameObjectState(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemAddSpriteStr,true,m_panelObject);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemIconStr).gameObject,false);
+            SetGameObjectState(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemAddSpriteStr,false,m_panelObject);
+        end
+        SetGameObjectState(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemNumStr,true,m_panelObject);
+        tempValue = CCommonTool.GetValueInPetQualityInfo(nID,1 + 2*(Index - 1));
+        if tempValue == nil then
+            minValue = 0;
+        else
+            minValue = tempValue;
+        end
+        tempValue = CCommonTool.GetValueInPetQualityInfo(nID,2 + 2*(Index - 1));
+        if tempValue == nil then
+            maxValue = 0;
+        else
+            maxValue = tempValue;
+        end
+        SetLabelContent(m_PetNeedItemsStr..Index..m_ItemAddValueStr,"+"..minValue.."-"..maxValue,m_panelObject);
+        SetLabelContent(m_PetNeedItemsStr..Index..m_ItemRangeStr,string_format("({0}-{1})",PetQualityAddRange[Index].low,PetQualityAddRange[Index].high),m_panelObject);
+        local greyObj = child(m_panelObject,m_PetNeedItemsStr..Index..m_UseButtonStr).gameObject;
+        if minValue == maxValue and minValue == 0 then
+            SetLabelTextByID(m_PetNeedItemsStr..Index..m_UseButtonLabelStr, 152, m_panelObject);
+            CCommonTool.SetGameObjectGrey(greyObj,true);
+            m_RightButtonsState[Index] = ENUM_BUTTON_STATE.CANNOT_CLICK;
+        else
+            CCommonTool.SetGameObjectGrey(greyObj,false);
+            if hasNum == 0 then
+                SetLabelTextByID(m_PetNeedItemsStr..Index..m_UseButtonLabelStr, 923, m_panelObject);
+                m_RightButtonsState[Index] = ENUM_BUTTON_STATE.GETWAY;
+            else
+                SetLabelTextByID(m_PetNeedItemsStr..Index..m_UseButtonLabelStr, 152, m_panelObject);
+                m_RightButtonsState[Index] = ENUM_BUTTON_STATE.USE;
+            end
+        end
+        
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr, OnCloseClick, m_panelObject);
+
+    for Index = 1,PET_ENUM.PET_ALL_QUALITY_NUM do
+        SetGameObjectEvent(m_PetQualityInfoStr .. Index, OnQualityClick, m_panelObject);
+    end
+
+    for Index = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+        SetGameObjectEvent(m_PetNeedItemsStr..Index..m_UseButtonStr, OnNeedItemClick, m_panelObject);
+    end
+
+    for Index = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+        SetGameObjectEvent(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemAddSpriteStr, OnNeedItemGetClick, m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL);
+end
+
+
+function OnQualityClick(e)
+    local selectIndex = tonumber(string.sub(e.name, 1, string.len(e.name)));
+    if m_CurSelectQuality ~= selectIndex then
+        m_CurSelectQuality = selectIndex;
+        InitLeftQualitySelect();
+        InitQualityNeedItems();
+    end
+end
+
+function OnNeedItemClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.name, 1, string.len(e.transform.parent.name)));
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curValue;
+    local maxValue;
+    curValue = petQualityInfo[m_CurSelectQuality - 1].QualityMin + petQualityInfo[m_CurSelectQuality - 1].QualityCur;
+    maxValue = petQualityInfo[m_CurSelectQuality - 1].QualityMax;
+    if curValue >= maxValue then
+        log("当前资质已经是最大值了不需要提升了");
+        ShowSystemFlowTips(7811);
+        return;
+    end
+    local haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetQualityFosterNeedItemsChunk[selectIndex]);
+    if m_RightButtonsState[selectIndex] == ENUM_BUTTON_STATE.CANNOT_CLICK then
+        log("这个道具不能再提供资质了");
+        ShowSystemFlowTips(7812);
+        return;
+    elseif m_RightButtonsState[selectIndex] == ENUM_BUTTON_STATE.GETWAY then
+        GetWayPanel.Show(PetQualityFosterNeedItemsChunk[selectIndex],ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL);
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_QUALITY_FOSTER);
+        buffer:WriteInt(m_CurSelectPet.CRID);
+        buffer:WriteByte(m_CurSelectQuality - 1);
+        buffer:WriteByte(selectIndex - 1);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+
+function OnNeedItemGetClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.parent.name, 1, string.len(e.transform.parent.parent.name)));
+    GetWayPanel.Show(PetQualityFosterNeedItemsChunk[selectIndex],ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL) == 1 then
+        InitDynamicShow();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_CurSelectQuality;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

@@ -1,0 +1,612 @@
+﻿module('ChatPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ChatPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 设置按钮
+local m_SettingButtonPath = "Content/Top/SettingButton";
+-- 锁屏按钮
+local m_LockScreenButtonPath = "Content/Top/LockScreenButton";
+-- 关闭按钮
+local m_CloseButtonPath = "Content/Middle/CloseButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩按钮
+local m_MaskPath = "Content/Mask";
+-- 锁屏状态图标
+local m_LockScreenIconPath = "Content/Top/LockScreenButton/LockScreenIcon";
+-- 表情面板遮罩
+local m_FacePanelMaskPath = "Content/FacePanel/FacePanelMask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 提示文本
+local m_HintLabelPath = "Content/Bottom/HintLabel";
+-- 坐标按钮
+local m_PositionButtonPath = "Content/Bottom/PositionButton";
+-- 底部内部面板
+local m_BottomContentPath = "Content/Bottom/BottomContent";
+-- 录音按钮
+local m_RecordButtonPath = "Content/Bottom/BottomContent/RecordButton";
+-- 表情按钮
+local m_FaceButtonPath = "Content/Bottom/BottomContent/FaceButton";
+-- 发送按钮
+local m_SendButtonPath = "Content/Bottom/BottomContent/SendButton";
+-- 表情面板
+local m_FacePanelPath = "Content/FacePanel";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 输入框
+local m_InputPath = "Content/Bottom/BottomContent/Input";
+-- 面情列表
+local m_FaceListPath = "Content/FacePanel/ListPanel/FaceList";
+-- 消息列表
+local m_ListPath = "Content/Middle/ListPanel/List";
+-- 录音组件
+local m_RecordPath = "Content/Record";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 提示文本
+local m_HintLabel = nil;
+-- 坐标按钮
+local m_PositionButton = nil;
+-- 底部内部面板
+local m_BottomContent = nil;
+-- 录音按钮
+local m_RecordButton = nil;
+-- 表情按钮
+local m_FaceButton = nil;
+-- 发送按钮
+local m_SendButton = nil;
+-- 输入框
+local m_Input = nil;
+-- 表情面板
+local m_FacePanel = nil;
+-- 表情面板是否开启
+local m_FacePanelIsOpen = false;
+-- 表情列表
+local m_FaceList = nil;
+-- 消息列表
+local m_List = nil;
+-- 录音组件
+local m_Record = nil;
+
+local m_TabObjects = nil;
+
+-- 当前频道ID, 默认附近
+local m_ChannelId = CHAT_CHANNEL_ID.CHAT_WORLD_ID;
+-- 是否锁屏
+local m_IsLock = 0;
+-- 位置信息
+local m_PositionValue = nil;
+-- 场景名称
+local m_SceneNameValue = nil;
+-- 表情列表是否初始化
+local m_FaceListInited = false;
+
+-- 跳转设置的物品展示文本
+local m_ShowText = nil;
+-- 跳转设置的展示物品ExcelID
+local m_ShowItemExcelID = nil;
+-- 跳转设置的展示物品crid
+local m_ShowItemID = nil;
+local m_pinZhiNum = nil;
+local m_isNeedSend = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+-- 锁住按钮激活未激活图集数据
+local m_LockAtlasTableData = {
+    [1] = { atlasName = "PanelAloneOneAtlasV04", spriteName = "UI_BS_SuoDing_102" },
+    [2] = { atlasName = "PanelAloneOneAtlasV04", spriteName = "UI_BS_SuoDing_101" },
+}
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    -- StopVoice();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_HintLabel = nil;
+	m_PositionButton = nil;
+    m_BottomContent = nil;
+	m_RecordButton = nil;
+	m_FaceButton = nil;
+	m_SendButton = nil;
+	m_Input = nil;
+	m_FacePanel = nil;
+	m_FaceList = nil;
+	m_List = nil;
+	m_Record = nil;
+
+    m_PositionValue = nil;
+    m_SceneNameValue = nil;
+    m_FaceListInited = false;
+    m_TabObjects = nil;
+    m_ShowText = nil;
+    m_ShowItemID = nil;
+    m_pinZhiNum = nil;
+    m_isNeedSend = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CHAT);
+    m_HintLabel = child(m_PanelObject, m_HintLabelPath).gameObject;
+    m_PositionButton = child(m_PanelObject, m_PositionButtonPath).gameObject;
+    m_BottomContent = child(m_PanelObject, m_BottomContentPath).gameObject;
+    m_RecordButton = child(m_PanelObject, m_RecordButtonPath).gameObject;
+    m_FaceButton = child(m_PanelObject, m_FaceButtonPath).gameObject;
+    m_SendButton = child(m_PanelObject, m_SendButtonPath).gameObject;
+    m_Input = GetComponent(m_PanelObject, m_InputPath, "UIInput");
+    m_FacePanel = child(m_PanelObject, m_FacePanelPath).gameObject;
+    m_FaceList = GetComponent(m_PanelObject, m_FaceListPath, "UIListView");
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_Record = GetComponent(m_PanelObject, m_RecordPath, "UIRecordOperate");
+
+    -- m_Record.callback = OnVoiceCallback;
+    m_Input.characterLimit = ChatManager.GetCharacterLimit();
+    m_HintLabel:SetActive(false);
+    m_FacePanelIsOpen = false;
+    m_FacePanel:SetActive(m_FacePanelIsOpen);
+
+    m_TabObjects = { };
+    for i = 0, 7 do
+        m_TabObjects[i] = child(m_PanelObject, "Content/Left/Tab" .. i).gameObject;
+    end
+    -- 私聊标签不在聊天界面显示, 隐藏
+    m_TabObjects[CHAT_CHANNEL_ID.CHAT_ALONE_ID]:SetActive(false);
+    m_Input.defaultText = CCommonTool.GetTxtData(511).m_str;
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+	SetGameObjectEvent(m_SettingButtonPath, OnSettingButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_LockScreenButtonPath, OnLockScreenButtonClick, m_PanelObject);
+    UIEventListener.Get(m_PositionButton).onClick = LuaHelper.OnClick(OnPositionButtonClick);
+    -- UIEventListener.Get(m_RecordButton).onClick = LuaHelper.OnClick(OnRecordButtonClick);
+    UIEventListener.Get(m_FaceButton).onClick = LuaHelper.OnClick(OnFaceButtonClick);
+    UIEventListener.Get(m_SendButton).onClick = LuaHelper.OnClick(OnSendButtonClick);
+    UIEventListener.Get(m_Input.gameObject).onClick = LuaHelper.OnClick(OnInputClick);
+	SetGameObjectEvent(m_FacePanelMaskPath, OnFacePanelMaskClick, m_PanelObject);
+    m_FaceList:SetInitCallback(OnFaceListViewInit);
+    m_FaceList:SetClickCallback(OnFaceListViewClick);
+	SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+    for i = 0, 7 do
+        UIEventListener.Get(m_TabObjects[i]).onClick = LuaHelper.OnClick(OnTabClick);
+    end
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitMessageList();
+    if m_ShowText ~= nil then
+        m_Input.value = "[" .. m_ShowText .. "]";
+    end
+end
+
+-- 选中当前标签
+function InitTabSelect()
+    for i = 0, 7 do
+        local tab = m_TabObjects[i];
+        if m_ChannelId == i then
+            SetGameObjectState("Select", true, tab);
+        else
+            SetGameObjectState("Select", false, tab);
+        end
+    end
+end
+
+-- 初始化聊天数据
+function InitMessageList()
+    m_Record:RegisterButton(m_RecordButton, m_ChannelId);
+    InitTabSelect();
+    m_List:RemoveAll();
+    local messages = nil;
+    if m_ChannelId == 0 then
+        messages = ChatManager.GetAllRecords();
+    else
+        messages = ChatManager.GetChannelRecords(m_ChannelId);
+    end
+    for i, data in ipairs(messages) do
+        if m_ChannelId ~= 0 then
+            ChatManager.SetMessageReadState(data, true);
+        end
+        AddListData(data);
+    end
+    if m_IsLock == 0 then
+        m_List:JumpToIndex(#messages - 1);
+    end
+    UpdateUnreadMessage();
+end
+
+function AddListData(data)
+    if data.msgType == 2 then
+        m_List:AddData(data, "system");
+    elseif data.dwSpkGlobleID == G_UserInfo.GlobalDBID then
+        m_List:AddData(data, "self");
+    else
+        m_List:AddData(data, "player");
+    end
+end
+
+--[[
+-- 语音聊天回调方法
+function OnVoiceCallback(recordComp, data)
+end
+]]
+
+-- 初始化聊天表情
+function InitFaceList()
+    m_FaceListInited = true;
+    local faces = CCommonTool.GetAllChatFaceInfo();
+    local count = faces.Count;
+    for i = 0, count - 1 do
+        m_FaceList:AddData(faces[i]);
+    end
+end
+
+-- 锁屏按钮显示状态
+function SetLockState(value)
+    m_IsLock = value;
+    local atlasName, spriteName;
+    if m_IsLock == 1 then
+        atlasName = m_LockAtlasTableData[2].atlasName;
+        spriteName = m_LockAtlasTableData[2].spriteName;
+    else
+        atlasName = m_LockAtlasTableData[1].atlasName;
+        spriteName = m_LockAtlasTableData[1].spriteName;
+    end
+    SetSpriteContent(m_LockScreenIconPath, atlasName, spriteName, m_PanelObject);
+end
+
+function UpdateUnreadMessage()
+    -- 需要显示红点的标签
+    local showRedTabs = { };
+    showRedTabs[CHAT_CHANNEL_ID.CHAT_JOIN_ID] = true;
+    showRedTabs[CHAT_CHANNEL_ID.CHAT_GUILD_ID] = true;
+
+    for i = 0, 7 do
+        local tab = m_TabObjects[i];
+        local channelId = i;
+        if showRedTabs[channelId] == true then
+            local unreadCount = ChatManager.GetUnreadMessageCount(channelId);
+            SetGameObjectState("Sprite_RedHint", unreadCount > 0, tab);
+            if unreadCount > 0 then
+                SetGameObjectState("Sprite_RedHint/More", unreadCount > 99, tab);
+                SetLabelContent("Sprite_RedHint/Num", unreadCount, tab);
+            end
+        else
+            SetGameObjectState("Sprite_RedHint", false, tab);
+        end
+    end
+    Main_MiddleBottom.UpdateUnreadMessage();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 频道标签点击事件
+function OnTabClick(gameObject)
+    local name = gameObject.name;
+    local newChannelId = tonumber(string.sub(name, 4, string.len(name)));
+    if newChannelId == m_ChannelId then
+        return;
+    end
+    if newChannelId == 0 or newChannelId == 4 then
+        m_HintLabel:SetActive(true);
+        m_BottomContent:SetActive(false);
+    else
+        m_HintLabel:SetActive(false);
+        m_BottomContent:SetActive(true);
+    end
+    m_ChannelId = newChannelId;
+    SetLockState(0);
+    InitMessageList();
+end
+
+-- 遮罩点击
+function OnMaskClick(gameObject)
+    
+end
+
+-- 设置按钮
+function OnSettingButtonClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANEL_CHAT_SETTING, ENUMPANELID.ENUM_PANEL_CHAT);
+end
+
+-- 锁屏按钮
+function OnLockScreenButtonClick(gameObject)
+    if m_IsLock == 0 then
+        SetLockState(1);
+    else
+        SetLockState(0);
+    end
+end
+
+-- 坐标按钮
+function OnPositionButtonClick(gameObject)
+    if m_SceneNameValue ~= nil and string.find(m_Input.value, m_SceneNameValue, 1, true) then
+        return;
+    end
+    local mapData = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID);
+    local mapName = CCommonTool.GetTxtData(mapData.SceneName).m_str;
+    local pos = G_UserInfo:GetCurPlayer().Position;
+    local px = string.format("%1.1f", pos.x);
+    local py = string.format("%1.1f", pos.y);
+    local pz = string.format("%1.1f", pos.z);
+    local dx = math.floor(pos.x);
+    local dz = math.floor(pos.z);
+    local sceneInfo = string_format("({0},{1},{2},{3})", G_SceneMng.SceneID, px, py, pz);
+    m_SceneNameValue = string_format("{0}({1},{2})", mapName, dx, dz);
+    m_PositionValue = string_format("[url=<1>{0}</1>][91e463]{1}[-][/url]", sceneInfo, m_SceneNameValue);
+    m_Input.value = m_Input.value .. m_SceneNameValue;
+    m_List:LookAt(10, true)
+end
+
+-- 表情按钮
+function OnFaceButtonClick(gameObject)
+    if not m_FaceListInited then
+        InitFaceList();
+    end
+    m_FacePanelIsOpen = true;
+    m_FacePanel:SetActive(m_FacePanelIsOpen);
+end
+
+-- 发送按钮
+function OnSendButtonClick(gameObject)
+    -- 内置命令
+    if ChatManager.IsInnerCmd(m_Input.value) == true then
+        return;
+    end
+    local canChat = ChatManager.CanChat(m_ChannelId);
+    if canChat then
+        local message = m_Input.value;
+        local isHaveShowItem = false;
+        if m_ShowItemID ~= nil then
+            local pattern = string.gsub("[" .. m_ShowText .. "]", "([%[%]])", "%%%1");
+            local a, b = string.find(message, pattern);
+            if a ~= nil and b ~= nil then
+                local sendStr = string_format("[url=<4>{0}</4>]{1}{2}[-][/url]", m_ShowItemExcelID, GetColorStrByPinZhi(m_pinZhiNum), "[" .. m_ShowText .. "]");
+                message = string.gsub(message, pattern, sendStr);
+                isHaveShowItem = true;
+            end
+        end
+        if m_PositionValue and m_SceneNameValue then
+            local pattern = string.gsub(m_SceneNameValue, "([%(%)])", "%%%1");
+            local i, j = string.find(message, pattern)
+            if i ~= nil then
+                message = string.gsub(message, pattern, m_PositionValue);
+            end
+        end
+        local sent = nil;
+        if isHaveShowItem == true and m_isNeedSend == true then
+            sent = ChatManager.SendMessage(m_ChannelId, message, nil, 0, 1, m_ShowItemID);
+        else
+            sent = ChatManager.SendMessage(m_ChannelId, message, nil, 0);
+        end
+
+        if sent then
+            m_Input.value = "";
+        end
+        m_SceneNameValue = nil;
+        m_PositionValue = nil;
+        m_ShowText = nil;
+        m_ShowItemID = nil;
+        m_isNeedSend = nil;
+    end
+end
+
+-- 输入框
+function OnInputClick(gameObject)
+    
+end
+
+-- 表情面板遮罩
+function OnFacePanelMaskClick(gameObject)
+    m_FacePanelIsOpen = false;
+    m_FacePanel:SetActive(m_FacePanelIsOpen);
+end
+
+-- 表情列表初始化
+function OnFaceListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetSpriteByAtlasID("Face", data.PictureStart, go);
+end
+
+-- 表情列表点击
+function OnFaceListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local faceText = CCommonTool.GetTxtData(data.MemberNum).m_str;
+    local inputValue = m_Input.value;
+    m_Input.value = inputValue .. faceText;
+end
+
+-- 关闭按钮
+function OnCloseClick(gameObject)
+    if m_FacePanelIsOpen then
+        OnFacePanelMaskClick();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_CHAT);
+end
+
+-- 消息列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local labelComp = GetComponent(go, "Content", "UILabel");
+    local channelName = ChatManager.GetChannelNameWithColor(data.wChannelID, true);
+    if data.msgType == 2 then
+        labelComp.text = "[D6D6D6]" .. channelName .. " " .. data.wcsChat .. "[-]";
+    else
+        error(string_format("data.wRankType={0}--data.wrank={1}",data.wRankType,data.wRank));
+        local title=nil;
+        local tempTitle=nil;
+
+        if data.wRankType==1 and data.wRank>0 then
+            tempTitle=string_format(CCommonTool.GetTxtData(27609).m_str,data.wRank);
+            title= "[FFFF00]" .. "(" .. tempTitle .. ")    " .. "[-]";
+        elseif data.wRankType==2 and data.wRank>0 then
+            tempTitle= string_format(CCommonTool.GetTxtData(27610).m_str,data.wRank);
+            title= "[FFFF00]" .."(" .. tempTitle .. ")    " .. "[-]";
+        elseif data.wRankType==30 and data.wRank>0 then
+            tempTitle=string_format(CCommonTool.GetTxtData(27611).m_str,data.wRank);
+            title= "[FFFF00]" .."(" ..tempTitle .. ")    ".. "[-]";
+        else
+            title="";
+        end
+        error("***"..title.."***");
+        if data.msgType == 2 then
+        SetLabelContent("Name", data.wSpkName, go);
+        elseif data.dwSpkGlobleID == G_UserInfo.GlobalDBID then
+            SetLabelContent("Name", title.. data.wSpkName, go);                              
+        else
+            SetLabelContent("Name", data.wSpkName..title, go);                              
+        end
+        SetLabelContent("Level", "Lv." .. data.dwLevel, go);
+        local roleData = CCommonTool.GetRoleDateInfo(data.dwSpkPortraitID)
+        if roleData ~= nil then
+            SetSpriteByAtlasID("Icon", roleData.HeadRes, go, true);
+        end
+        local voiceGo = child(go, "Voice").gameObject;
+        voiceGo:SetActive(data.msgType == 1);
+        if data.msgType == 1 then
+            local voiceSecend = math.ceil(data.voiceSecend / 1000);
+            SetLabelContent("Label", voiceSecend .. "\"", voiceGo);
+            local msg = data.wcsChat;
+            if #msg < 5 then msg = msg .. "      "; end
+            -- 占位, 拉宽背景
+            labelComp.gameObject:GetComponent("EmojiComponent").text = "[FFFFEE]" .. msg .. "[-]";
+            local spriteAni = GetComponent(voiceGo, "Background", "CUIVoiceAnimation");
+            spriteAni.enabled = data.fileId == CVoiceManager.Instance.playingFileId;
+        else
+            labelComp.gameObject:GetComponent("EmojiComponent").text = "[D6D6D6]" .. data.wcsChat .. "[-]";
+        end
+    end
+end
+
+-- 消息列表点击
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local guid = data.dwSpkGlobleID;
+    if go.name == "Icon" then
+        if guid ~= G_UserInfo.GlobalDBID then 
+            ParameterToMessageTextBox.OpenOtherButtonListPanel(guid, data.wSpkName, data.dwLevel, data.dwSpkPortraitID, nil, nil);
+        end
+    elseif go.name == "Content" or go.name == "MsgBackground" then
+        if data.msgType == 1 then
+            local fileId = data.fileId;
+            data.played = true;
+            if CVoiceManager.Instance.playingFileId == fileId then
+                ChatVoiceManager.StopVoice(fileId);
+                m_List:Refresh();
+            else
+                ChatVoiceManager.PlayVoice(fileId);
+            end
+        else
+            local label = go:GetComponent("UILabel");
+            if label ~= nil then
+                local content = label:GetUrlAtWorldPosition(UICamera.lastWorldPosition);
+                if data.msgType == 10 then
+                    -- 展示物品消息
+                    ChatManager.ParseUrlContent(content, data.itemServiceID);
+                else
+                ChatManager.ParseUrlContent(content);
+            end
+        end
+    end
+end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 重置频道ID
+function ResetChannelId()
+    m_ChannelId = CHAT_CHANNEL_ID.CHAT_SCENE_ID;
+end
+
+-- 收到消息
+function OnRecieveMessage(channelId, msgData)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then
+        if m_CreateSuccess then
+            -- 当前频道, 标记为已读
+            if msgData.wChannelID == m_ChannelId then
+                ChatManager.SetMessageReadState(msgData);
+            else
+                UpdateUnreadMessage();
+            end
+            if m_ChannelId == 0 or m_ChannelId == channelId then
+                AddListData(msgData);
+                if m_IsLock == 0 then
+                    m_List:JumpTo(msgData);
+                end
+            end
+        end
+    end
+end
+
+-- 打开指定频道
+-- @param channelId 频道ID
+-- @param causePanelId 触发聊天界面的面板ID
+function OpenThisPanelByTag(channelId, causePanelId)
+    if channelId == nil or channelId < 0 or channelId > 7 then
+        return;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then
+        if channelId == m_ChannelId then
+            return;
+        end
+        if channelId >= 0 and channelId <= 7 then
+            m_ChannelId = channelId;
+            InitShow();
+        end
+    else
+        m_ChannelId = channelId;
+        createPanel(ENUMPANELID.ENUM_PANEL_CHAT, causePanelId);
+    end
+end
+
+-- 语音播放开始回调
+function OnRecordedFileStartPlay(fileId, fileLength)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then
+        m_List:Refresh();
+    end
+end
+
+-- 语音播放完成回调
+function OnRecordedFilePlayEnd(fileId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then
+        m_List:Refresh();
+    end
+end
+
+-- 设置指定文本
+function SetText(text, excelID, id, pinZhiNum, isNeedSend)
+    m_ShowText = text;
+    m_ShowItemExcelID = excelID;
+    m_ShowItemID = id;
+    m_pinZhiNum = pinZhiNum;
+    m_isNeedSend = isNeedSend;
+end

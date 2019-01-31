@@ -1,0 +1,224 @@
+﻿module('ActivityWarPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityWarPanel';
+---------------------------------------label路径---------------------------------------
+-- 据点名字
+local m_NamePath = "Content/Name";
+-- 据点描述
+local m_DescPath = "Content/Desc";
+-- 报名人数
+local m_MemberPath = "Content/lb_Member";
+-- 报名等级
+local m_LVPath = "Content/lb_LV";
+-- 报名时间
+local m_TimePath = "Content/lb_OpenTime";
+-- 加注释
+local m_LbGuildFlagPath = "Content/Sub_Blue/lb_GuildFlag";
+-- 加注释
+local m_LbGuildFlagPath = "Content/Sub_Red/lb_GuildFlag";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 进入场景按钮路径
+local m_JumpButtonPath = "Content/JumpButton";
+-- 关闭按钮
+local m_CloseButtonPath = "Content/CloseButton";
+-- 防守方
+local m_SubBluePath = "Content/Sub_Blue";
+-- 攻击方
+local m_SubRedPath = "Content/Sub_Red";
+
+local m_RewardListPath = "Content/Sub_Reward/UIGrid";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_JumpButton = nil;
+
+local m_CloseButton = nil;
+-- 加注释
+local m_LbGuildFlag = nil;
+-- 加注释
+local m_LbGuildFlag = nil;
+
+local m_RewardList = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+    RequestInfo();
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_JumpButton = nil;
+    m_CloseButton = nil;
+    m_LbGuildFlag = nil;
+    m_LbGuildFlag = nil;
+    m_RewardList = nil;
+    G_TimerMng:RemoveTimeTask("RequestInfo");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL);
+    m_JumpButton = child(m_PanelObject, m_JumpButtonPath).gameObject;
+    m_CloseButton = child(m_PanelObject, m_CloseButtonPath).gameObject;
+    m_LbGuildFlag = GetComponent(m_PanelObject, m_LbGuildFlagPath, "UILabel");
+    m_LbGuildFlag = GetComponent(m_PanelObject, m_LbGuildFlagPath, "UILabel");
+    m_RewardList = GetComponent(m_PanelObject, m_RewardListPath, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_JumpButton).onClick = LuaHelper.OnClick(OnJumpButtonClick);
+    UIEventListener.Get(m_CloseButton).onClick = LuaHelper.OnClick(OnCLoseClick);
+    m_RewardList:SetInitCallback(OnRewardListInit);
+    m_RewardList:SetClickCallback(OnRewardListClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local info = GuildManager.guildAuctionInfo;
+    if info == nil then return end
+    print("info = ", SerializeTable(info));
+    SetLabelContent(m_LVPath, info.LimitedLv, m_PanelObject);
+    local timeStr = ActivityManager.TimeToString(info.beginTime) .. "-" .. ActivityManager.TimeToString(info.endTime);
+    SetLabelContent(m_TimePath, timeStr, m_PanelObject);
+    if info.competeSceneID ~= nil then
+        local sceneID = info.competeSceneID;
+        local competeCorpsID = info.competeCorpsID;
+        local enterMemberNum = info.enterMemberNum;
+        local adType = info.adType;
+        local sceneData = CCommonTool.GetActivityWarInfoIndex(sceneID);
+        if sceneData then
+            SetLabelTextByID(m_NamePath, sceneData.NameID, m_PanelObject);
+            SetLabelTextByID(m_DescPath, sceneData.TextID, m_PanelObject);
+        end
+        SetLabelContent(m_MemberPath, enterMemberNum, m_PanelObject);
+        -- 自己公会信息
+        local guild = GuildManager.myGuild;
+        local myGuildName = guild.name;
+        local myGuildLv = guild.level;
+        local myGuildFlag = guild.nickName;
+        local myInfo = CCommonTool.GetGuildInfoByIndex(myGuildLv);
+        if adType == 1 then
+            SetLabelContent(m_SubRedPath .. "/lb_Name", myGuildName, m_PanelObject);
+            SetLabelContent(m_SubRedPath .. "/lb_GuildFlag", myGuildFlag, m_PanelObject);
+            SetSpriteByAtlasID(m_SubRedPath .. "/lb_GuildFlag/sp_Flag", myInfo.FlagIconBig, m_PanelObject, true);
+        else
+            SetLabelContent(m_SubBluePath .. "/lb_Name", myGuildName, m_PanelObject);
+            SetLabelContent(m_SubBluePath .. "/lb_GuildFlag", myGuildFlag, m_PanelObject);
+            SetSpriteByAtlasID(m_SubBluePath .. "/lb_GuildFlag/sp_Flag", myInfo.FlagIconBig, m_PanelObject, true);
+        end
+        -- 敌方公会相关信息,0：npc
+        if competeCorpsID <= 0 then
+            if adType == 1 then
+                SetLabelTextByID(m_SubBluePath .. "/lb_Name", 162322, m_PanelObject);
+                SetLabelTextByID(m_SubBluePath .. "/lb_GuildFlag", 162323, m_PanelObject);
+                --                SetSpriteByAtlasID(m_SubBluePath .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            else
+                SetLabelTextByID(m_SubRedPath .. "/lb_Name", 162322, m_PanelObject);
+                SetLabelTextByID(m_SubRedPath .. "/lb_GuildFlag", 162323, m_PanelObject);
+                --                SetSpriteByAtlasID(m_SubRedPath .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            end
+        else
+            local guildName = G_GuildMng:GetGuildName(competeCorpsID);
+            local flagName = G_GuildMng:GetFlagName(competeCorpsID);
+            local guildLv = G_GuildMng:GetGuildLevel(competeCorpsID);
+            local info = CCommonTool.GetGuildInfoByIndex(guildLv);
+            if adType == 1 then
+                SetLabelContent(m_SubBluePath .. "/lb_Name", guildName, m_PanelObject);
+                SetLabelContent(m_SubBluePath .. "/lb_GuildFlag", flagName, m_PanelObject);
+                SetSpriteByAtlasID(m_SubBluePath .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            else
+                SetLabelContent(m_SubRedPath .. "/lb_Name", guildName, m_PanelObject);
+                SetLabelContent(m_SubRedPath .. "/lb_GuildFlag", flagName, m_PanelObject);
+                SetSpriteByAtlasID(m_SubRedPath .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+            end
+        end
+        local rewardID = sceneData.OutputId;
+        local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+        local itemTable = { };
+        if rewardInfo ~= nil then
+            -- 获得奖励道具信息
+            local list = rewardInfo:GetAllItem();
+            local count = list.Count;
+            for i = 1, count do
+                local itemData = list[i - 1];
+                local excelId = itemData.ExcelID;
+                if itemData.ItemDealType == 3 then
+                    excelId = 10000;
+                elseif itemData.ItemDealType == 4 then
+                    excelId = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                table.insert(itemTable, { excelId = excelId, num = itemData.ItemNum });
+            end
+            m_RewardList:RemoveAll();
+            for i, v in pairs(itemTable) do
+                m_RewardList:AddData(v);
+            end
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 点击进入场景
+function OnJumpButtonClick(gameObject)
+    GuildProtocol.RequestEnterScene();
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL);
+end
+
+-- 关闭界面
+function OnCLoseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL);
+end
+
+-- 奖励列表初始化 
+function OnRewardListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.excelId;
+    local num = math.floor(data.num * GuildManager.strongHoldInfo.initProductC);
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 11, ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL, false, excelId);
+end
+
+-- 奖励列表点击
+function OnRewardListClick(listView, cell, go)
+
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 在打开准备进入领地战界面时每1秒请求一次报名人员数据
+function RequestInfo()
+    AddTimerEvent("RequestInfo", 1, RequestInfo);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL) == 1 and m_PanelObject.activeSelf then
+        GuildProtocol.RequestOpenActivityWar();
+    end
+end

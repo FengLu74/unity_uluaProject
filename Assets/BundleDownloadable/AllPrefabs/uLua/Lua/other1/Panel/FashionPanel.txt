@@ -1,0 +1,1237 @@
+﻿module('FashionPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'FashionPanel';
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 关闭按钮
+local m_CloseButtonPath = "CloseButton";
+-- 菜单列表Item
+local m_MenuItemPath = "Left/Menu/Item";
+-- 菜单列表长度
+local m_MenuMaxNum = 5;
+-- 当前装备类型
+local m_MenuType = 1;
+-- 当前点击页面的Index
+local m_BagIndex = 0;
+-- 装备滑动最大页数
+local m_MaxPageNum = 5;
+-- 装备一页的最大格子数
+local m_MaxNum = 9;
+-- 存储所有格子信息
+local m_FashionItems = { };
+-- 时装装备信息
+local m_FashionDatas = { };
+-- 时装选择信息
+local m_FashionSelectedDatas = { };
+-- 当前点击的时装信息
+local m_CurFashionInfo = nil;
+-- 时装列表显示控制
+local m_FashionItemsScrollPath = "Right/FashionItems/Scroll View";
+local m_FashionItemsGridPath = "Right/FashionItems/Scroll View/Grid";
+local m_FashionItemsGrid = nil;
+-- 时装装备列表
+local m_FashionItemGroupPath = "Right/FashionItems/Scroll View/Grid/ItemGroup";
+-- 装备列表翻页显示
+local m_FashionPageGridPath = "Right/FashionItems/Grid";
+local m_FashionPageGrid = nil;
+-- 装备列表翻页显示
+local m_FashionPageItemPath = "Right/FashionItems/Grid/Item";
+-- 装备颜色
+local m_FashionColorMenuPath = "Right/ColorMenu";
+-- 设置装备颜色
+local m_FashionColorGridItemPath = "Right/ColorMenu/Grid/Item";
+-- 存储时装颜色格子信息
+local m_FashionColorItems = { };
+-- 装备属性
+local m_FashionInfoViewPath = "Right/FashionInfo";
+local m_FashionInfoView = nil;
+-- 装备名称
+local m_EquipNameLabelPath = "Right/FashionInfo/Name";
+-- 装备属性信息和获取条件提示
+local m_FashionInfoListPath = "Right/FashionInfo/TextInfo/Scroll View/Grid";
+local m_FashionInfoList = nil;
+-- 切换右侧界面
+local m_AnimationButtonPath = "Right/AnimationButton";
+local m_RightTweenPosPth = "Right";
+local m_RightTweenPos = nil;
+local m_IsPlayingTween = false;
+-- 显示属性按钮
+local m_AttributeButtonPath = "Right/AttributeButton";
+-- 属性显示
+local m_AttributeViewPath = "AttributeView";
+-- 总属性界面是否打开
+local m_AttributeViewPanelIsOpen = false;
+-- 属性遮罩关闭按钮
+local m_AttributeMaskPath = "AttributeView/Mask";
+local m_AttributeMask = nil;
+-- 属性列表
+local m_AttributeViewListPath = "AttributeView/Scroll View/Grid";
+local m_AttributeViewList = nil;
+
+-- 装备解锁、穿戴、卸下按钮
+local m_ChangeButtonPath = "Right/ChangeButton";
+local m_ChangeButtonLabelPath = "Right/ChangeButton/Label";
+-- 还原装备按钮
+local m_RestoreButtonPath = "Right/RestoreButton";
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+
+local m_isOpenTableSelectIndex = 1;
+
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    -- FashionProtocol.RequestFashionData();
+    LifeSkillManager.LoadTexts();
+    InitShow();
+    m_CreateSuccess = true;
+end
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+function OnDisable()
+
+end
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MenuType = 1;
+    m_BagIndex = 0;
+    m_FashionItems = { };
+    m_FashionColorItems = { };
+    m_FashionDatas = { };
+    m_IsPlayingTween = false;
+    if m_FashionItemsGrid ~= nil then
+        CCommonTool.OnAddSpringPanelObjectEvent(m_FashionItemsGrid, OnUICenterOnChild, 0);
+    end
+    m_isOpenTableSelectIndex = 1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANAEL_FASHION);
+    -- 装备属性信息和获取条件提示List
+    m_FashionInfoList = GetComponent(m_PanelObject, m_FashionInfoListPath, "UIListView");
+    -- 设置所有格子的Item
+    for i = 1, m_MaxPageNum do
+        local itemData = { };
+        for j = 1, m_MaxNum do
+            local item = child(m_PanelObject, m_FashionItemGroupPath .. i .. "/Item" .. j).gameObject;
+            itemData[j] = item;
+        end
+        m_FashionItems[i] = itemData;
+    end
+    -- 时装列表显示控制
+    m_FashionItemsGrid = child(m_PanelObject, m_FashionItemsGridPath).gameObject;
+    -- 装备列表翻页显示
+    m_FashionPageGrid = GetComponent(m_PanelObject, m_FashionPageGridPath, "UIGrid");
+    for i = 1, 5 do
+        local item = child(m_PanelObject, m_FashionColorGridItemPath .. i).gameObject;
+        m_FashionColorItems[i] = item;
+    end
+    -- 时装属性显示界面
+    m_FashionInfoView = child(m_PanelObject, m_FashionInfoViewPath);
+    -- 右侧界面动画
+    m_RightTweenPos = GetComponent(m_PanelObject, m_RightTweenPosPth, "TweenPosition");
+    -- 属性显示list
+    m_AttributeViewList = GetComponent(m_PanelObject, m_AttributeViewListPath, "UIListView");
+end
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, m_PanelObject);
+    -- 初始化左侧菜单列表
+    for i = 1, m_MenuMaxNum do
+        SetGameObjectEvent(m_MenuItemPath .. i, OnMenuItemClick, m_PanelObject);
+    end
+    -- 右侧界面动画切换
+    SetGameObjectEvent(m_AnimationButtonPath, OnAnimationButtonClick, m_PanelObject);
+    -- 右侧显示属性按钮
+    SetGameObjectEvent(m_AttributeButtonPath, OnAttributeButtonClick, m_PanelObject);
+    -- 装备解锁、穿戴、卸下按钮
+    SetGameObjectEvent(m_ChangeButtonPath, OnChangeFashionButtonClick, m_PanelObject);
+    -- 还原装备按钮
+    SetGameObjectEvent(m_RestoreButtonPath, OnRestoreButtonClick, m_PanelObject);
+    -- 设置所有格子的点击事件
+    for i = 1, m_MaxPageNum do
+        for j = 1, m_MaxNum do
+            SetGameObjectEvent(m_FashionItemGroupPath .. i .. "/Item" .. j, OnEquipItemClick, m_PanelObject);
+        end
+    end
+    -- 设置装备颜色点击事件
+    for i = 1, 5 do
+        SetGameObjectEvent(m_FashionColorGridItemPath .. i, OnEquipColorClick, m_PanelObject);
+    end
+    -- 设置关闭按钮
+    SetGameObjectEvent(m_AttributeMaskPath, OnAttributeMaskClick, m_PanelObject);
+    -- 设置装备显示属性
+    m_FashionInfoList:SetInitCallback(OnEquipTextInfoListInit);
+
+    -- 总属性显示
+    m_AttributeViewList:SetInitCallback(OnAttributeViewListInit);
+    -- 滑动列表回调
+    if m_FashionItemsGrid ~= nil then
+        CCommonTool.OnAddSpringPanelObjectEvent(m_FashionItemsGrid, OnUICenterOnChild, 1);
+    end
+end
+-- 初始化显示信息
+function InitShow()
+    InitPlayerModel();
+    InitFashionData();
+    InitData();
+    --[[
+    for i = 1, m_MenuMaxNum do
+        local num = i;
+        
+        if Constants.branch == "cn" then
+            if i == 3 then
+                SetGameObjectState(m_MenuItemPath .. i, false, m_PanelObject);
+            end
+            if i == 4 or i == 5 then
+                num = num - 1;
+            end
+        end
+        local PosY =(1 - num) * 146;
+        SetGameObjectPos(m_MenuItemPath .. i, Vector3.New(0, PosY, 0), m_PanelObject);
+    end
+    ]]
+end
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_isOpenTableSelectIndex = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    else
+        if nil == m_isOpenTableSelectIndex then
+            m_isOpenTableSelectIndex = 1;
+        end
+    end
+    SetItemInfo(m_isOpenTableSelectIndex);
+end
+-- 加载玩家模型
+function InitPlayerModel()
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANAEL_FASHION);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 创建模型结束
+local m_FashionCamera = nil;
+local m_TweenPosition = nil;
+local m_TweenPlayer = true;
+local m_PlayerChangeEquip = nil;
+local m_TweenPosFroms =
+{
+    [1] = Vector3.New(-0.25,1.5,
+    7);
+    -- 1.刺客
+    [2] = Vector3.New(-0.25,1.5,
+    7);
+    -- 2.法师
+    [3] = Vector3.New(-0.25,1.5,
+    7);
+    -- 3.龙战士
+    [4] = Vector3.New(-0.12,1.3,5.8);-- 4.召唤
+};
+local m_TweenPosTos =
+{
+    [1] = Vector3.New(0.13,1.7,
+    2.5);
+    -- 1.刺客
+    [2] = Vector3.New(0.13,1.7,
+    2.5);
+    -- 2.法师
+    [3] = Vector3.New(0.13,1.7,
+    2.5);
+    -- 3.龙战士
+    [4] = Vector3.New(0.15,1.3,2);-- 4.召唤
+};
+local m_TweenPosFrom = nil;
+local m_TweenPosTo = nil;
+function OnCreateModelFinish(fashionCamera, tweenPosition, playerChangeEquip)
+    error("OnCreateModelFinish");
+    m_TweenPosFrom = m_TweenPosFroms[G_UserInfo.RoleAttribute.ProID];
+    m_TweenPosTo = m_TweenPosTos[G_UserInfo.RoleAttribute.ProID];
+    m_FashionCamera = fashionCamera;
+    m_FashionCamera:SetCameraDistance(m_TweenPosTo, m_TweenPosFrom);
+    m_FashionCamera.enabled = true;
+    m_TweenPosition = tweenPosition;
+    m_TweenPosition.duration = 0.6;
+    m_FashionCamera.transform.localPosition = m_TweenPosFrom;
+    m_TweenPosition.from = m_TweenPosFrom;
+    m_TweenPosition.to = m_TweenPosTo;
+    TweenPositionPlay(false);
+    TweenPositionPlay(true);
+    m_PlayerChangeEquip = playerChangeEquip;
+    RefreshFashion();
+end
+-- 刷新时装
+function RefreshFashion()
+    FashionManager.RefreshFashion(m_PlayerChangeEquip);
+end
+
+-- 设置更换时装显示
+function UpdateFashion(equipType)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANAEL_FASHION) ~= 1 or m_PlayerChangeEquip == nil then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+            -- 如果使用的是解锁时装道具,刷新背包界面的模型
+            BagPanel.InitPlayerModel();
+        elseif equipType == 4 then
+            -- 翅膀的功能移到了进阶界面, 进阶后获得翅膀
+--            if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL) == 1 then 
+--                CultivateChangePanel.UpdateFashion(equipType);
+--            end
+            --刷新神翼界面翅膀模型
+            if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL) == 1 then 
+                WingPanelCN.RefreshWingModeShow(equipType);
+            end
+        end
+        return;
+    end
+    m_BagIndex = 0;
+    if equipType == 1 then
+        -- 时装发型Id
+        FashionManager.Log("G_UserInfo.RoleAttribute.FashionHairId : " .. G_UserInfo.RoleAttribute.FashionHairId);
+        local fashionHairId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionHairId);
+        FashionManager.Log("fashionHairId : " .. fashionHairId);
+        FashionManager.Log("G_UserInfo.RoleAttribute.HairID : " .. G_UserInfo.RoleAttribute.HairID);
+        if fashionHairId > 0 then
+            m_PlayerChangeEquip:SetUIFashion(1, fashionHairId, true);
+            local fashion = CCommonTool.GetFashion(G_UserInfo.RoleAttribute.FashionHairId);
+            m_PlayerChangeEquip:SetUIFashion(-1, fashion.MaterialId, true);
+        else
+            m_PlayerChangeEquip:SetChangeEquip(G_SceneMng.IndividuationMng:GetHairResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.HairID));
+            -- 发色
+            local hairColorModelId = G_SceneMng.IndividuationMng:GetHairColorResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.HairID, G_UserInfo.RoleAttribute.HairColor);
+            FashionManager.Log("hairColorModelId : " .. hairColorModelId);
+            m_PlayerChangeEquip:SetChangeEquip(hairColorModelId);
+        end
+    elseif equipType == 2 then
+        -- 时装脸型Id
+        local fashionFaceId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionFaceId);
+        FashionManager.Log("fashionFaceId : " .. fashionFaceId);
+        m_PlayerChangeEquip:SetUIFashion(2, fashionFaceId, true);
+    elseif equipType == 3 then
+        -- 时装衣服Id
+        local fashionClothesId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionClothesId);
+        FashionManager.Log("fashionClothesId : " .. fashionClothesId);
+        m_PlayerChangeEquip:SetUIFashion(3, fashionClothesId, true);
+    elseif equipType == 4 then
+        -- 时装翅膀Id
+        local fashionWingId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionWingId);
+        FashionManager.Log("fashionWingId : " .. fashionWingId);
+        m_PlayerChangeEquip:SetUIFashion(4, fashionWingId, true);
+    elseif equipType == 5 then
+        -- 时装武器Id
+        local fashionWeaponId = GetFashionModelId(G_UserInfo.RoleAttribute.FashionWeaponId);
+        m_PlayerChangeEquip:SetUIFashion(5, fashionWeaponId, true);
+        m_PlayerChangeEquip.gameObject:SetActive(true);
+    end
+end
+-- 播放摄像机拉近动画
+function TweenPositionPlay(isPlay)
+    m_TweenPlayer = isPlay;
+    if isPlay == true then
+        m_TweenPosition.from = m_FashionCamera.transform.localPosition;
+        m_TweenPosition.to = m_TweenPosTo;
+        m_TweenPosition:PlayForward();
+    else
+        m_TweenPosition.from = m_TweenPosFrom;
+        m_TweenPosition.to = m_FashionCamera.transform.localPosition;
+        m_TweenPosition:PlayReverse();
+    end
+end
+-- 获取时装模型Id
+function GetFashionModelId(id)
+    if id > 0 then
+        local fashion = CCommonTool.GetFashion(id);
+        if fashion ~= nil then
+            return fashion.ModelresId;
+        end
+    end
+    return 0;
+end
+-- 设置选择菜单状态
+function SetMenuItem(menuIndex)
+    if m_FashionCamera ~= nil then
+        m_FashionCamera.enabled = false;
+        m_FashionCamera.enabled = true;
+    end
+    for index = 1, 5 do
+        SetGameObjectState(m_MenuItemPath .. index .. "/Selected", index == menuIndex, m_PanelObject);
+        SetGameObjectState(m_MenuItemPath .. index .. "/Bg1", index ~= menuIndex, m_PanelObject);
+        SetGameObjectState(m_MenuItemPath .. index .. "/Bg2", index ~= menuIndex, m_PanelObject);
+    end
+end
+-- 初始化时装相关数据
+function InitFashionData()
+    FashionManager.Log("InitGridInfo");
+    local faceModelId = G_SceneMng.IndividuationMng:GetHeadResID(G_UserInfo.RoleAttribute.ProID, G_UserInfo.RoleAttribute.FaceID)
+    for menuIndex = 1, m_MenuMaxNum do
+        local cFashionDatas = FashionManager.GetFashionDatas(G_UserInfo.RoleAttribute.ProID, menuIndex);
+        local fashionData = { };
+        local fashionIndex = 1;
+        for index, data in pairs(cFashionDatas) do
+            local FInfos = { };
+            local length = GetTableLength(data.Infos);
+            if length > 0 then
+                local fashionIndex1 = 1;
+                for i = 1, length do
+                    local fashionInfo = data.Infos[i].FashionInfo;
+                    local result = true;
+                    if menuIndex == 2 then
+                        if faceModelId == fashionInfo.ModelresId then
+                            result = false;
+                        end
+                    end
+                    local excelId = fashionInfo.Id;
+                    if result == true then
+                        local fInfo =
+                        {
+                            Type = menuIndex;
+                            Index = fashionIndex;
+                            ColorIndex = fashionIndex1;
+                            State = 0;
+                            Selected = 0;
+                            ExcelId = excelId;
+                            FashionInfo = fashionInfo;
+                        };
+                        fInfo.State = FashionManager.GetFashionState(menuIndex, excelId);
+                        if fInfo.State == 2 then
+                            fInfo.Selected = 1;
+                        end
+                        FInfos[fashionIndex1] = fInfo;
+                        fashionIndex1 = fashionIndex1 + 1;
+                    end
+                end
+            end
+            local fLength = GetTableLength(FInfos);
+            if fLength > 0 then
+                local Info =
+                {
+                    Type = menuIndex;
+                    Index = fashionIndex;
+                    Infos = FInfos;
+                };
+                fashionData[fashionIndex] = Info;
+                fashionIndex = fashionIndex + 1;
+            end
+        end
+        m_FashionDatas[menuIndex] = fashionData;
+    end
+    InitAttributeViewList();
+end
+-- 设置选择的Item信息
+function SetItemInfo(menuIndex)
+    FashionManager.Log("SetItemInfo  menuIndex : " .. menuIndex);
+    m_isOpenTableSelectIndex = menuIndex;
+    local bagIndex = 0;
+    local colorIndex = 1;
+    local fashionInfos = m_FashionDatas[menuIndex];
+    for i, fashionInfo in pairs(fashionInfos) do
+        local infos = fashionInfo.Infos;
+        local isSelected = false;
+        for j, info in pairs(infos) do
+            if info.Selected == 1 then
+                isSelected = true;
+                bagIndex = i;
+                colorIndex = j;
+            end
+        end
+    end
+
+    local panelPos =
+    {
+        [1] = Vector3.New(0,0,
+        0);
+        [2] = Vector3.New(-510,0,
+        0);
+        [3] = Vector3.New(-1020,0,
+        0);
+        [4] = Vector3.New(-1530,0,
+        0);
+        [5] = Vector3.New(-2040,0,0);
+    }
+    local springPanel = GetComponent(m_PanelObject, m_FashionItemsScrollPath, "SpringPanel");
+    if springPanel ~= nil then
+        local pageIndex = math.ceil(bagIndex / m_MaxNum);
+        if pageIndex <= 0 then
+            pageIndex = 1;
+        end
+        springPanel.target = panelPos[pageIndex];
+        springPanel.enabled = true;
+        SetFashionBagTag(pageIndex);
+    end
+    SetItemSelected(menuIndex, bagIndex, colorIndex);
+end
+-- 初始化时装当前类型的背包页签
+function InitFashionBagTag(num)
+    for i = 1, m_MaxPageNum do
+        local itemPath = m_FashionPageItemPath .. i;
+        SetGameObjectState(itemPath, false, m_PanelObject);
+    end
+    if num > 1 then
+        for i = 1, m_MaxPageNum do
+            local itemPath = m_FashionPageItemPath .. i;
+            SetGameObjectState(itemPath, i <= num, m_PanelObject);
+        end
+        m_FashionPageGrid:Reposition();
+    end
+end
+-- 设置时装当前类型的背包页签效果
+function SetFashionBagTag(pageIndex)
+    for i = 1, m_MaxPageNum do
+        local itemPath = m_FashionPageItemPath .. i;
+        SetGameObjectState(itemPath .. "/Selected", i == pageIndex, m_PanelObject);
+    end
+end
+-- 时装背包滑动时触发回调
+function OnUICenterOnChild()
+    local springPanel = GetComponent(m_PanelObject, m_FashionItemsScrollPath, "SpringPanel");
+    local x = math.abs(springPanel.target.x);
+    local index = math.round(x / 510);
+    SetFashionBagTag(index + 1);
+end
+
+-- 设置选择的Item信息
+function SetItemSelected(menuIndex, index, colorIndex)
+    m_MenuType = menuIndex;
+    m_BagIndex = index;
+    if menuIndex == 1 or menuIndex == 2 then
+        if m_TweenPlayer == false then
+            TweenPositionPlay(true);
+        end
+    else
+        if m_TweenPlayer == true then
+            TweenPositionPlay(false);
+        end
+    end
+    SetMenuItem(menuIndex);
+    SetFashionShowInfo(menuIndex, index, colorIndex);
+end
+
+-- 设置时装Item显示效果
+function SetFashionItemStates(menuIndex, index)
+    local cFashionDatas = m_FashionDatas[menuIndex];
+    local fashionData = { };
+    for key, data in pairs(cFashionDatas) do
+        local length = GetTableLength(data.Infos);
+        if length > 0 then
+            local lock = false;
+            for i = 1, length do
+                local fashionInfo = data.Infos[i].FashionInfo;
+                local excelId = fashionInfo.Id;
+                local state = FashionManager.GetFashionState(menuIndex, excelId);
+                if state <= 1 then
+                    local unlockData =
+                    {
+                        [1] = false;
+                        [2] = false;
+                        [3] = false;
+                    };
+                    if fashionInfo.Key1 > 0 then
+                        unlockData[1] = FashionManager.GetUnlockInfo(fashionInfo.Key1, fashionInfo.Key1Value1, fashionInfo.Key1Value2, fashionInfo.Key1Value3).Lock;
+                    else
+                        unlockData[1] = true;
+                    end
+                    if fashionInfo.Key2 > 0 then
+                        unlockData[2] = FashionManager.GetUnlockInfo(fashionInfo.Key2, fashionInfo.Key2Value1, fashionInfo.Key2Value2, fashionInfo.Key2Value3).Lock;
+                    else
+                        unlockData[2] = true;
+                    end
+                    if fashionInfo.Key3 > 0 then
+                        unlockData[3] = FashionManager.GetUnlockInfo(fashionInfo.Key3, fashionInfo.Key3Value1, fashionInfo.Key3Value2, fashionInfo.Key3Value3).Lock;
+                    else
+                        unlockData[3] = true;
+                    end
+                    -- 判断是否有未满足的条件
+                    local lockIndex = 0;
+                    for key, var in pairs(unlockData) do
+                        if var == false then
+                            lockIndex = lockIndex + 1;
+                        end
+                    end
+                    if lockIndex <= 0 then
+                        lock = true;
+                    end
+                    local curIndex = data.Infos[i].Index;
+                    if index == curIndex then
+                        local colorIndex = data.Infos[i].ColorIndex;
+                        local colorItem = m_FashionColorItems[colorIndex];
+                        SetLockAnimation(colorItem, "Lock", lockIndex <= 0);
+                    end
+                end
+            end
+            local bagIndex = data.Index;
+            local pageIndex = math.ceil(bagIndex / m_MaxNum);
+            local pageNum = bagIndex % m_MaxNum;
+            if pageNum == 0 then
+                pageNum = pageIndex * m_MaxNum;
+            end
+            local item = m_FashionItems[pageIndex][pageNum];
+            if item ~= nil then
+                SetLockAnimation(item, "Lock/Icon", lock);
+            end
+            InitFashionBagTag(pageIndex);
+        end
+    end
+end
+function SetLockAnimation(item, path, enabled)
+    local tweenRotation = GetComponent(item, path, "TweenRotation");
+    if tweenRotation ~= nil then
+        tweenRotation.enabled = enabled;
+        if enabled == false then
+            tweenRotation.transform.eulerAngles = Vector3.New(0, 0, 0);
+        end
+    end
+end
+-- 设置和滑动的装备列表
+-- @param menuIndex 菜单指针
+-- @param bagIndex 背包格子指针
+-- @param colorIndex 颜色菜单指针
+function SetFashionItemInfos(menuIndex, bagIndex, colorIndex)
+    ResetFashionItemList();
+    local fashionData = m_FashionDatas[menuIndex];
+    if bagIndex > 0 then
+        -- 设置颜色菜单
+        local infos = fashionData[bagIndex].Infos;
+        local infoCount = #infos;
+        SetGameObjectState(m_FashionColorMenuPath, infoCount > 1, m_PanelObject);
+        if infoCount > 1 then
+            for i = 1, infoCount do
+                local item = m_FashionColorItems[i];
+                local state = infos[i].State;
+                local pictureId = infos[i].FashionInfo.PictureId;
+                local defineInfo = CCommonTool.GetDefineInfo(pictureId);
+                if defineInfo ~= nil then
+                    local color = defineInfo:GetStrContent();
+                    SetSpriteColor("Background", color, item);
+                end
+                SetGameObjectState("Lock", state <= 1, item);
+                SetGameObjectState("Wear", state == 2, item);
+                SetGameObjectState("Selected", colorIndex == i, item);
+            end
+            m_FashionInfoView.localPosition = Vector3.New(-220, -84, 0);
+        elseif infoCount == 1 then
+            m_FashionInfoView.localPosition = Vector3.New(-220, -36, 0);
+        end
+    end
+    -- 设置时装背包页数
+    local count = #fashionData;
+    local length = math.ceil(count / m_MaxNum);
+    for i = 1, m_MaxPageNum do
+        SetGameObjectState(m_FashionItemGroupPath .. i, i <= length, m_PanelObject);
+    end
+    -- 设置时装背包内容
+    local pageIndex = math.ceil(count / m_MaxNum);
+    local remainder = count % m_MaxNum;
+    if remainder == 0 then
+        remainder = pageIndex * m_MaxNum;
+    end
+    for i = 1, length do
+        for j = 1, m_MaxNum do
+            local index =(i - 1) * m_MaxNum + j;
+            if i == length then
+                if j <= remainder then
+                    local item = m_FashionItems[i][j];
+                    local excelId = fashionData[index].Infos[colorIndex].FashionInfo.ItemId;
+                    local infos = fashionData[index].Infos;
+                    local infoCount = #infos;
+                    local isLock = true;
+                    local isWear = false;
+                    if infoCount > 1 then
+                        for i = 1, infoCount do
+                            local state = infos[i].State;
+                            if state > 1 then
+                                isLock = false;
+                                if state == 2 then
+                                    isWear = true;
+                                end
+                            end
+                        end
+                    elseif infoCount == 1 then
+                        local state = infos[1].State;
+                        if state > 1 then
+                            isLock = false;
+                        end
+                        isWear = state == 2;
+                    end
+                    SetFashionItem(item, isLock, isWear, excelId);
+                end
+            else
+                local item = m_FashionItems[i][j];
+                local excelId = fashionData[index].Infos[colorIndex].FashionInfo.ItemId;
+                local infos = fashionData[index].Infos;
+                local infoCount = #infos;
+                local isLock = true;
+                local isWear = false;
+                if infoCount > 1 then
+                    for i = 1, infoCount do
+                        local state = infos[i].State;
+                        if state > 1 then
+                            isLock = false;
+                            if state == 2 then
+                                isWear = true;
+                            end
+                        end
+                    end
+                elseif infoCount == 1 then
+                    local state = infos[1].State;
+                    if state > 1 then
+                        isLock = false;
+                    end
+                    isWear = state == 2;
+                end
+                SetFashionItem(item, isLock, isWear, excelId);
+            end
+        end
+    end
+end
+-- 刷新装备列表显示状态
+function ResetFashionItemList()
+    for i = 1, m_MaxPageNum do
+        for j = 1, m_MaxNum do
+            local item = m_FashionItems[i][j];
+            SetGameObjectState("Equip", false, item);
+            SetGameObjectState("Selected", false, item);
+            SetGameObjectState("Lock", false, item);
+            SetGameObjectState("Wear", false, item);
+        end
+    end
+    for i = 1, 5 do
+        local item = m_FashionColorItems[i];
+        SetGameObjectState("Lock", true, item);
+        SetGameObjectState("Wear", false, item);
+        SetGameObjectState("Selected", false, item);
+    end
+end
+-- 设置单个装备信息
+-- @param item 时装Item对象
+-- @param isLock 是否解锁
+-- @param excelId 时装ItemId
+function SetFashionItem(item, isLock, isWear, excelId)
+    SetGameObjectState("Equip", true, item);
+    SetGameObjectState("Lock", isLock == true, item);
+    SetGameObjectState("Wear", isWear == true, item);
+    SetItemShowByExcelIDV04(item, "Equip", excelId, 1, false, 11, ENUMPANELID.ENUM_PANAEL_FASHION);
+end
+-- 设置选择的Item对象
+-- @param index 当前点击的Index
+function SetFashionItemSelected(index, colorIndex)
+    local pageIndex = math.ceil(index / m_MaxNum);
+    local pageNum = index % m_MaxNum;
+    if pageNum == 0 then
+        pageNum = pageIndex * m_MaxNum;
+    end
+    local fashionInfos = m_FashionDatas[m_MenuType];
+    for i, fashionInfo in pairs(fashionInfos) do
+        local infos = fashionInfo.Infos;
+        for j, info in pairs(infos) do
+            info.Selected = 0;
+            if i == index and j == colorIndex then
+                info.Selected = 1;
+            end
+        end
+    end
+    for i, items in pairs(m_FashionItems) do
+        for j, item in pairs(items) do
+            SetGameObjectState("Selected",(pageIndex == i and j == pageNum), item);
+        end
+    end
+end
+-- 设置选择装备显示信息
+-- @param menuIndex 菜单Index
+-- @param index 当前页面的Index
+-- @param colorIndex 时装颜色指针
+-- @param isClick 判断是否是点击事件
+function SetFashionShowInfo(menuIndex, index, colorIndex, isClick)
+    if isClick == true then
+        m_BagIndex = index;
+    end
+    SetFashionItemStates(menuIndex, index);
+    SetGameObjectState(m_FashionColorMenuPath, index ~= 0, m_PanelObject);
+    SetGameObjectState(m_ChangeButtonPath, index ~= 0, m_PanelObject);
+    SetGameObjectState(m_FashionInfoViewPath, index ~= 0, m_PanelObject);
+    SetFashionItemInfos(menuIndex, index, colorIndex);
+    SetFashionItemSelected(index, colorIndex);
+    if index > 0 then
+        local fashionData = m_FashionDatas[menuIndex][index];
+        FashionManager.Log("SetFashionShowInfo ExcelId : " .. fashionData.Infos[colorIndex].ExcelId);
+        -- 装备名称
+        local excelId = fashionData.Infos[colorIndex].FashionInfo.ItemId;
+        FashionManager.Log("SetFashionShowInfo ItemId : " .. excelId);
+        SetLabelTextByID(m_EquipNameLabelPath, CCommonTool.GetNameIDByExcelID(excelId), m_PanelObject);
+        SetLabelPinZhi(m_EquipNameLabelPath, CCommonTool.GetAptitudeIDByExcelID(excelId), m_PanelObject);
+        -- 装备属性
+        SetFashionData(fashionData.Infos[colorIndex]);
+    end
+end
+-- 设置时装属性
+function SetFashionData(info)
+    m_CurFashionInfo = info;
+    local fashionInfo = info.FashionInfo;
+    m_FashionInfoList:RemoveAll();
+
+    --    AddTextInfo(1,GetTextToId(1225),"",1);
+    if fashionInfo.Attr1 > 0 then
+        local title = CCommonTool.GetAttrNameByAttrID(fashionInfo.Attr1);
+        local value = GetAttrIndexValue(fashionInfo.Attr1, fashionInfo.Attr1Value);
+        AddTextInfo(2, title, value, 1);
+    end
+    if fashionInfo.Attr2 > 0 then
+        local title = CCommonTool.GetAttrNameByAttrID(fashionInfo.Attr2);
+        local value = GetAttrIndexValue(fashionInfo.Attr2, fashionInfo.Attr2Value);
+        AddTextInfo(2, title, value, 1);
+    end
+    if fashionInfo.Attr3 > 0 then
+        local title = CCommonTool.GetAttrNameByAttrID(fashionInfo.Attr3);
+        local value = GetAttrIndexValue(fashionInfo.Attr3, fashionInfo.Attr3Value);
+        AddTextInfo(2, title, value, 1);
+    end
+    if info.State <= 1 then
+        AddTextInfo(1, "", "", 3);
+        AddTextInfo(1, GetTextToId(1226), "", 2);
+        local unlockData =
+        {
+            [1] = false;
+            [2] = false;
+            [3] = false;
+        };
+        if fashionInfo.Key1 > 0 then
+            local data = GetUnlockData(fashionInfo.Key1, fashionInfo.Key1Value1, fashionInfo.Key1Value2, fashionInfo.Key1Value3);
+            local title = data.Title;
+            local value = data.Value;
+            if data.Lock == true then
+                title = "[48FF00FF]" .. data.Title .. "[-]";
+                value = "[48FF00FF]" .. data.Value .. "[-]";
+            end
+            AddTextInfo(3, title, value, 1);
+            unlockData[1] = data.Lock;
+        else
+            unlockData[1] = true;
+        end
+        if fashionInfo.Key2 > 0 then
+            local data = GetUnlockData(fashionInfo.Key2, fashionInfo.Key2Value1, fashionInfo.Key2Value2, fashionInfo.Key2Value3);
+            local title = data.Title;
+            local value = data.Value;
+            if data.Lock == true then
+                title = "[48FF00FF]" .. data.Title .. "[-]";
+                value = "[48FF00FF]" .. data.Value .. "[-]";
+            end
+            AddTextInfo(3, title, value, 1);
+            unlockData[2] = data.Lock;
+        else
+            unlockData[2] = true;
+        end
+        if fashionInfo.Key3 > 0 then
+            local data = GetUnlockData(fashionInfo.Key3, fashionInfo.Key3Value1, fashionInfo.Key3Value2, fashionInfo.Key3Value3);
+            local title = data.Title;
+            local value = data.Value;
+            if data.Lock == true then
+                title = "[48FF00FF]" .. data.Title .. "[-]";
+                value = "[48FF00FF]" .. data.Value .. "[-]";
+            end
+            AddTextInfo(3, title, value, 1);
+            unlockData[3] = data.Lock;
+        else
+            unlockData[3] = true;
+        end
+        -- 判断是否有未满足的条件
+        local index = 0;
+        for key, var in pairs(unlockData) do
+            if var == false then
+                index = index + 1;
+            end
+        end
+        if index <= 0 then
+            info.State = 1;
+        end
+    end
+    SetButtonState(info.State);
+end
+-- 添加数据信息
+-- @param textType 文字类型
+-- @param title 文字标题
+-- @param value 文字数据
+-- @param itemType 组件Item类型
+function AddTextInfo(textType, title, value, itemType)
+    local data =
+    {
+        Type = textType;
+        Title = title;
+        Value = value;
+    };
+    local cellStyle = "Item" .. itemType;
+    m_FashionInfoList:AddData(data, cellStyle);
+end
+-- 获取解锁条件
+-- @param key 条件类型
+-- @param keyValue1 条件参数1
+-- @param keyValue2 条件参数2
+-- @param keyValue3 条件参数3
+function GetUnlockData(key, keyValue1, keyValue2, keyValue3)
+    local lockInfo = FashionManager.GetUnlockInfo(key, keyValue1, keyValue2, keyValue3);
+    local data =
+    {
+        Title = "";
+        Value = "";
+        Lock = false;
+    };
+    if lockInfo ~= nil then
+        -- 消耗{0}个{1}
+        if lockInfo.Type == 1 then
+            local excelId = lockInfo.ExcelId;
+            local curNum = lockInfo.CurNum;
+            local needNum = lockInfo.NeedNum;
+            local lock = lockInfo.Lock;
+            data.Title = string_format(GetTextToId(14150), needNum, GetTextToId(CCommonTool.GetNameIDByExcelID(excelId)));
+            data.Value = curNum .. "/" .. needNum;
+            data.Lock = lock;
+        end
+        -- 解锁时装{0}
+        if lockInfo.Type == 2 then
+            local excelId = lockInfo.ExcelId;
+            local curNum = lockInfo.CurNum;
+            local needNum = lockInfo.NeedNum;
+            local lock = lockInfo.Lock;
+            data.Title = string_format(GetTextToId(14151), GetTextToId(CCommonTool.GetNameIDByExcelID(excelId)));
+            data.Value = curNum .. "/" .. needNum;
+            data.Lock = lock;
+        end
+        -- {0}装备强化等级达到{1}级
+        if lockInfo.Type == 3 then
+            local all = lockInfo.All;
+            local partIndex = lockInfo.PartIndex;
+            local level = lockInfo.Level;
+            local curNum = lockInfo.CurNum;
+            local needNum = lockInfo.NeedNum;
+            local lock = lockInfo.Lock;
+            if all == true then
+                data.Title = string_format(GetTextToId(14153), level);
+                data.Value = curNum .. "/" .. needNum;
+                data.Lock = lock;
+            else
+                local partText = FashionManager.FashionPartTexts[partIndex];
+                data.Title = string_format(GetTextToId(14152), part, level);
+                data.Value = curNum .. "/" .. needNum;
+                data.Lock = lock;
+            end
+        end
+        -- 所有装备镶嵌宝石总等级到{0}级
+        if lockInfo.Type == 4 then
+            local all = lockInfo.All;
+            local partIndex = lockInfo.PartIndex;
+            local curLevel = lockInfo.CurLevel;
+            local needLevel = lockInfo.NeedLevel;
+            local lock = lockInfo.Lock;
+            if all == true then
+                data.Title = string_format(GetTextToId(14155), level);
+                data.Value = curLevel .. "/" .. needLevel;
+                data.Lock = lock;
+            else
+                local partText = FashionManager.FashionPartTexts[partIndex];
+                data.Title = string_format(GetTextToId(14154), part, needLevel);
+                data.Value = curLevel .. "/" .. needLevel;
+                data.Lock = lock;
+            end
+        end
+        if lockInfo.Type == 5 then
+            local partIndex = lockInfo.PartIndex;
+            local level = lockInfo.Level;
+            local quality = lockInfo.Quality;
+            local curNum = lockInfo.CurNum;
+            local needNum = lockInfo.NeedNum;
+            local lock = lockInfo.Lock;
+            data.Title = string_format(GetTextToId(14156), num, level, FashionManager.QualityTexts[quality]);
+            data.Value = curNum .. "/" .. needNum;
+            data.Lock = lock;
+        end
+    end
+    return data;
+end
+-- 设置装备解锁、穿戴、卸下按钮的显示效果
+-- @param state 显示按钮状态1.获取2.穿戴3.卸下其它值不显示该按钮
+function SetButtonState(state)
+    SetGameObjectState(m_ChangeButtonPath, true, m_PanelObject);
+    if state == 0 then
+        SetLabelContent(m_ChangeButtonLabelPath,
+        --[[ 获取 ]]
+        CCommonTool.GetTxtData(923).m_str, m_PanelObject);
+    elseif state == 1 then
+        SetLabelContent(m_ChangeButtonLabelPath,
+        --[[ 解锁 ]]
+        CCommonTool.GetTxtData(703).m_str, m_PanelObject);
+    elseif state == 2 then
+        SetLabelContent(m_ChangeButtonLabelPath,
+        --[[ 卸下 ]]
+        CCommonTool.GetTxtData(156).m_str, m_PanelObject);
+    elseif state == 3 then
+        SetLabelContent(m_ChangeButtonLabelPath,
+        --[[ 穿戴 ]]
+        CCommonTool.GetTxtData(1025).m_str, m_PanelObject);
+    else
+        SetGameObjectState(m_ChangeButtonPath, false, m_PanelObject);
+    end
+end
+
+-- 装备属性信息和获取条件提示列表数据
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnEquipTextInfoListInit(listView, cell, data)
+    local item = cell.gameObject;
+    if data.Type == 1 then
+        SetLabelContent("Title", data.Title, item);
+        SetLabelContent("Value", "", item);
+    end
+    if data.Type == 2 then
+        SetLabelContent("Title", data.Title .. "  +" .. data.Value, item);
+        SetLabelContent("Value", "", item);
+    end
+    if data.Type == 3 then
+        SetLabelContent("Title", data.Title, item);
+        SetLabelContent("Value", data.Value, item);
+    end
+end
+-- 初始化总属性数据
+function InitAttributeViewList()
+    error("InitAttributeViewList");
+    m_AttributeViewList:RemoveAll();
+    local attributeData = FashionManager.GetHaveFashionAttributeData();
+    local length = GetTableLength(attributeData);
+    if length > 0 then
+        for key, var in pairs(attributeData) do
+            local data =
+            {
+                AttrId = key;
+                Value = var;
+            };
+            m_AttributeViewList:AddData(data);
+        end
+    end
+end
+-- 总属性列表初始化
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnAttributeViewListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local attrTitle = CCommonTool.GetAttrNameByAttrID(data.AttrId);
+    SetLabelContent("Title", attrTitle, item);
+    local attrValue = GetAttrIndexValue(data.AttrId, data.Value);
+    SetLabelContent("Value", attrValue, item);
+end
+----------------------------------------事件方法------------------------------------
+-- 左侧菜单按钮响应事件
+function OnMenuItemClick(gameObject)
+    local index = tonumber(string.sub(gameObject.name, 5, string.len(gameObject.name)));
+    SetItemInfo(index);
+	--角色-人物时装上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10196+tonumber(index));
+	end
+end
+
+-- 切换右侧界面动画按钮
+function OnAnimationButtonClick(gameObject)
+    error("OnAnimationButtonClick");
+    -- 判断是不是Iphone10的分辨率
+    if Constants.ISIos10Resolution == true then
+        m_RightTweenPos.to = Vector3.New(1465, 0, 0);
+    end
+    if m_IsPlayingTween == true then
+        m_RightTweenPos:PlayReverse();
+        m_IsPlayingTween = false;
+    else
+        m_RightTweenPos:PlayForward();
+        m_IsPlayingTween = true;
+    end
+    SetGameObjectState("Background", m_IsPlayingTween == false, gameObject);
+    SetGameObjectState("Selected", m_IsPlayingTween == true, gameObject);
+end
+-- 显示属性按钮
+function OnAttributeButtonClick(gameObject)
+    m_AttributeViewPanelIsOpen = true;
+    SetGameObjectState(m_AttributeViewPath, m_AttributeViewPanelIsOpen, m_PanelObject);
+end
+-- 装备解锁、穿戴、卸下按钮
+function OnChangeFashionButtonClick(gameObject)
+    FashionManager.Log("OnChangeFashionButtonClick");
+    if m_CurFashionInfo ~= nil then
+        --        if m_CurFashionInfo.State == 1 then
+        --            m_CurFashionInfo.State = 2;
+        --        elseif m_CurFashionInfo.State == 2 then
+        --            m_CurFashionInfo.State = 3;
+        --        elseif m_CurFashionInfo.State == 3 then
+        --            m_CurFashionInfo.State = 2;
+        --        end
+        --        RefreshFashionState(m_CurFashionInfo);
+
+        if m_CurFashionInfo.State == 0 then
+            FashionManager.Log("OnChangeFashionButtonClick1");
+            local excelId = CCommonTool.GetProfessionItemId(m_CurFashionInfo.FashionInfo.DropPointId);
+            GetWayPanel.Show(excelId, ENUMPANELID.ENUM_PANAEL_FASHION);
+        elseif m_CurFashionInfo.State == 2 then
+            m_CurFashionInfo.State = 3;
+        elseif m_CurFashionInfo.State == 3 then
+            m_CurFashionInfo.State = 2;
+        end
+        FashionManager.Log("m_CurFashionInfo.State : " .. m_CurFashionInfo.State);
+        if m_CurFashionInfo.State ~= 0 then
+            FashionProtocol.RequestFashionOperate(m_CurFashionInfo);
+        end
+    end
+end
+
+-- 还原装备按钮
+function OnRestoreButtonClick(gameObject)
+    FashionManager.Log("OnRestoreButtonClick");
+    InitFashionData();
+    SetItemInfo(m_MenuType);
+    RefreshFashion();
+end
+
+-- 点击选择时装
+function OnEquipItemClick(gameObject)
+    -- FashionManager.Log("OnEquipItemClick name:"..gameObject.name);
+    local parentName = gameObject.transform.parent.name;
+    local parentNameLength = string.len(parentName);
+    local pageIndex = tonumber(string.sub(parentName, 10, string.len(parentName)));
+    local num = tonumber(string.sub(gameObject.name, 5, string.len(gameObject.name)));
+    local index = math.floor(pageIndex - 1) * m_MaxNum + num;
+    --    FashionManager.Log("OnMenuItemClick menuIndex :"..pageIndex.." index:"..index);
+    --    FashionManager.Log("OnMenuItemClick num :"..num);
+    if m_BagIndex ~= index then
+        local colorIndex = 1;
+        if m_FashionDatas[m_MenuType] ~= nil and m_FashionDatas[m_MenuType][index] ~= nil then
+            local fashionData = m_FashionDatas[m_MenuType];
+            if fashionData ~= nil then
+                local data = fashionData[index];
+                if data ~= nil then
+                    local infos = data.Infos;
+                    for j, info in pairs(infos) do
+                        if info.Selected == 1 then
+                            colorIndex = j;
+                        end
+                    end
+                    SetFashionShowInfo(m_MenuType, index, colorIndex, true);
+                    if m_PlayerChangeEquip ~= nil then
+                        m_PlayerChangeEquip:SetChangeEquip(data.Infos[colorIndex].FashionInfo.ModelresId);
+                        if data.Infos[colorIndex].FashionInfo.MaterialId > 0 then
+                            m_PlayerChangeEquip:SetChangeEquip(data.Infos[colorIndex].FashionInfo.MaterialId);
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 设置装备颜色
+function OnEquipColorClick(gameObject)
+    local result = true;
+    if m_CurFashionInfo ~= nil then
+        local menuIndex = m_CurFashionInfo.Type;
+        local index = m_CurFashionInfo.Index;
+        local fashionData = m_FashionDatas[menuIndex];
+        if fashionData ~= nil then
+            local data = fashionData[index];
+            if data ~= nil then
+                local length = GetTableLength(data.Infos);
+                if length > 1 then
+                    result = false;
+                    local colorIndex = tonumber(string.sub(gameObject.name, 5));
+                    FashionManager.Log("OnMenuItemClick colorIndex :" .. colorIndex);
+                    SetFashionShowInfo(menuIndex, index, colorIndex, true);
+                    if m_PlayerChangeEquip ~= nil then
+                        m_PlayerChangeEquip:SetChangeEquip(data.Infos[colorIndex].FashionInfo.ModelresId);
+                        m_PlayerChangeEquip:SetChangeEquip(data.Infos[colorIndex].FashionInfo.MaterialId);
+                    end
+                end
+            end
+        end
+    end
+    if result == true then
+        ShowSystemFlowTips("功能暂未开放，敬请期待", 1);
+    end
+end
+
+-- 设置关闭属性事件
+function OnAttributeMaskClick(gameObject)
+    m_AttributeViewPanelIsOpen = false;
+    SetGameObjectState(m_AttributeViewPath, m_AttributeViewPanelIsOpen, m_PanelObject);
+end
+
+-- 关闭事件
+function OnCloseClick(gameObject)
+    if gameObject == nil then
+        if m_AttributeViewPanelIsOpen then
+            OnAttributeMaskClick();
+            return;
+        end
+    end
+    destroy(m_TweenPosition);
+    Delete3DModel();
+    closePanel(ENUMPANELID.ENUM_PANAEL_FASHION);
+end
+-- 删除玩家3d模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANAEL_FASHION);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 刷新时装状态
+-- @param info 时装状态信息
+function RefreshFashionState(info)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANAEL_FASHION) == 1 then
+        UpdateFashionData(info);
+    end
+end
+-- 刷新时装状态
+-- @param info 时装状态信息
+function UpdateFashionData(info)
+    local curInfo = nil;
+    local menuIndex = info.Type;
+    local excelId = info.ExcelId;
+    local state = info.State;
+    local fashionData = m_FashionDatas[menuIndex];
+    for i, data in pairs(fashionData) do
+        local infos = data.Infos;
+        for j, info in pairs(infos) do
+            if info.State > 1 then
+                info.State = 3;
+            end
+            if info.ExcelId == excelId then
+                info.State = state;
+                curInfo = info;
+            end
+        end
+    end
+    local curMenuIndex = curInfo.Type;
+    local curIndex = curInfo.Index;
+    local curColorIndex = curInfo.ColorIndex;
+    SetFashionShowInfo(curMenuIndex, curIndex, curColorIndex);
+    InitAttributeViewList();
+end
+-- 获取数据信息
+function RefreshFashionData()
+    if m_CreateSuccess == true then
+        InitShow();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_isOpenTableSelectIndex };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

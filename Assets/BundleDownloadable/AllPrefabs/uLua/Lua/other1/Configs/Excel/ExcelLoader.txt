@@ -1,0 +1,2 @@
+﻿require("Configs/Excel/drop_mother");
+require("Configs/Excel/drop_son");

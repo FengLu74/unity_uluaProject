@@ -1,0 +1,151 @@
+﻿module("Main", package.seeall)
+-- 当前面板的tag信息
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- 场景名称
+local m_sceneNameStr = "SceneName/Bg/sceneName";
+-----------------------------------------按钮路径--------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+
+-- 场景类型
+local m_sceneType = "SceneName/Bg/sceneType";
+-- 场景名称背景图标
+local m_sceneBg = "SceneName/Bg";
+----------------------------------gameobject所在的路径---------------------------------
+
+-----------------------------------组件------------------------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 面板是否初始化完成
+local m_bCreateSuccess = false;
+
+local m_PanelData = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    Main_RightBottom.Start();
+    Main_MiddleBottom.Start();
+    Main_RightTop.Start();
+    Main_MiddleTop.Start();
+    Main_Middle.Start();
+    Main_LeftTop.Start();
+    Main_LeftMiddle.Start();
+    Main_Interface.Start();
+    BuffListPanel.Start();
+    UpdatePlaneMain();
+    DrinkWinePanel.IsNeedCreate();
+    RealTimeVoicePanel.Start();
+    m_bCreateSuccess = true;
+    CSDKManager.EventHook("enter-main-view", function() end);
+end
+
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_bCreateSuccess then
+        Main_RightBottom.OnEnable();
+        Main_MiddleBottom.OnEnable();
+        Main_RightTop.OnEnable();
+        Main_MiddleTop.OnEnable();
+        Main_LeftTop.OnEnable();
+        Main_LeftMiddle.OnEnable();
+        Main_Interface.OnEnable();
+        BuffListPanel.OnEnable();
+        UpdatePlaneMain();
+        Main_Middle.OnEnable();
+        RealTimeVoicePanel.OnEnable();
+    end
+end
+
+function OnDisable()
+    Main_RightBottom.OnDisable();
+    Main_MiddleBottom.OnDisable();
+    Main_RightTop.OnDisable();
+    Main_MiddleTop.OnDisable();
+    Main_LeftTop.OnDisable();
+    Main_LeftMiddle.OnDisable();
+    Main_Interface.OnDisable();
+    BuffListPanel.OnDisable();
+    -- 看看饮酒界面是否需要伴随打开
+    DrinkWinePanel.IsNeedClose();
+    RideDungeonRatePanel.IsNeedClose();
+    Main_Middle.OnDisable();
+    RealTimeVoicePanel.OnDisable();
+end
+
+function OnDestroy()
+    Main_RightBottom.OnDestroy();
+    Main_MiddleBottom.OnDestroy();
+    Main_RightTop.OnDestroy();
+    Main_MiddleTop.OnDestroy();
+    Main_LeftTop.OnDestroy();
+    Main_LeftMiddle.OnDestroy();
+    Main_Interface.OnDestroy();
+    BuffListPanel.OnDestroy();
+    Main_Middle.OnDestroy();
+    RealTimeVoicePanel.OnDestroy();
+    m_bCreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function OnCloseClick()
+    if Main_Middle.IsForeShowPanelOpen() then
+        Main_Middle.OnCloseNewSystemPanelClick();
+        return;
+    end
+    if Main_Interface.IsInterfaceOpen() then
+        Main_Interface.OnInterfaceCloseButtonClick();
+        return;
+    end
+    if not CSDKManager.useThirdLogin then
+        ParameterToMessageTextBox.ShowExitGamePanel();
+    else
+        CSDKManager.ShowExitUI();
+    end
+end
+-----------------外部调用的更新此界面信息的方法----------------------
+-- 解锁更新界面显示
+function OnOpenNewFuncSystem(moduleInfo)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        Main_MiddleBottom.InitAutoFightShow();
+        Main_MiddleTop.InitButtonGroupsShow();
+        Main_MiddleBottom.InitRideButtonShow();
+    end
+end
+
+-- 设置位面Main显示UI
+function SetPlaneMain(excelId, time)
+    local data =
+    {
+        ExcelId = excelId;
+        Time = time;
+    };
+    m_PanelData = data;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        UpdatePlaneMain();
+    end
+end
+-- 还原main的UI效果（针对位面）
+function PlaneMainRestoreMain()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        UpdatePlaneMain();
+    end
+end
+
+function UpdatePlaneMain()
+    ArenaPanel.LastInArenaScene();                   
+    if G_UserInfo.IsPlane == true then
+        -- Main_LeftMiddle.Hide();
+        Main_RightTop.SetPanelData(m_PanelData);
+    else
+        -- Main_LeftMiddle.Show();
+        Main_RightTop.SetPanelData(nil);
+        DrinkWinePanel.IsNeedCreate();
+        RideDungeonRatePanel.IsNeedCreate();
+    end
+
+end
+
+-- 更新领地战地图
+function RefreshGuildWarMap()
+    Main_MiddleTop.DrawMapPosision();
+    Main_MiddleTop.CheckRefreshMap();
+end

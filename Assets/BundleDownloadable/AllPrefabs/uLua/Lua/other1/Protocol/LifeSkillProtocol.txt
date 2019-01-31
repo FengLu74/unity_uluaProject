@@ -1,0 +1,80 @@
+﻿module("LifeSkillProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    --同步生活技能的数据信息
+    network.Register(GMI_STOC_LIFESKILL_ONLINE_SYNDATA, OnLifeSkillData);
+    --生活技能激活升级反馈
+    network.Register(GMI_STOC_LIFESKILL_LEVELUP, OnLifeSkillLevelUp);
+    --生活技能生产制造
+    network.Register(GMI_STOC_LIFESKILL_PRODUCT, OnLifeSkillProduct);
+end
+--同步生活技能的数据信息
+function OnLifeSkillData(protocolId, buffer)
+    --LifeSkillManager.Log("OnLifeSkillData");
+    local count = buffer:ReadByte();
+    --LifeSkillManager.Log("OnLifeSkillData count: "..count);
+    for index = 1, count do
+        local skillId = buffer:ReadByte();
+        --LifeSkillManager.Log("OnLifeSkillData skillId: "..skillId);
+        local skillLevel = buffer:ReadByte();
+        --LifeSkillManager.Log("OnLifeSkillData skillLevel: "..skillLevel);
+        local skillExp = buffer:ReadInt();
+        --LifeSkillManager.Log("OnLifeSkillData skillExp: "..skillExp);
+        local data = 
+        {
+            Id = skillId;
+            Level = skillLevel;
+            Exp = skillExp;
+        };
+        LifeSkillManager.LifeskillDatas[skillId] = data;
+    end
+end
+--生活技能激活升级反馈
+function OnLifeSkillLevelUp(protocolId, buffer)
+    local skillId = buffer:ReadByte();
+    LifeSkillManager.Log("OnLifeSkillLevelUp skillId: "..skillId);
+    local skillLevel = buffer:ReadByte();
+    LifeSkillManager.Log("OnLifeSkillLevelUp skillLevel: "..skillLevel);
+    local skillExp = buffer:ReadInt();
+    LifeSkillManager.Log("OnLifeSkillLevelUp skillExp: "..skillExp);
+    local data = 
+    {
+        Id = skillId;
+        Level = skillLevel;
+        Exp = skillExp;
+    };
+    LifeSkillManager.LifeskillDatas[skillId] = data;
+    LifeSkillPanel.RefreshLifeSkillData(data);
+    RedHintMng.SetRedHintState(CREDHINTENUM.LIFE_SKILL_PRODUCTION, LifeSkillManager.IsShowProductionLifeSkillRedHint());
+end
+--生活技能生产制造
+function OnLifeSkillProduct(protocolId, buffer)
+    local productId = buffer:ReadInt();
+    LifeSkillManager.Log("OnLifeSkillProduct productId: "..productId);
+    LifeSkillPanel.RefreshProductionItem(productId);
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+--生活技能激活/升级/突破
+function RequestLifeSkillLevelUp(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LIFESKILL_LEVELUP);
+    local skillId = data.SkillId;
+    LifeSkillManager.Log("RequestLifeSkillLevelUp skillId: "..skillId);
+    buffer:WriteByte(skillId);
+    local num = data.Num;
+    LifeSkillManager.Log("RequestLifeSkillLevelUp num: "..num);
+    buffer:WriteByte(num);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--生活技能生产制造
+function RequestLifeSkillProduct(productId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LIFESKILL_PRODUCT);
+    LifeSkillManager.Log("RequestLifeSkillProduct productId: "..productId);
+    buffer:WriteInt(productId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

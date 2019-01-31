@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="xy_download_margin_5dip">5dip</dimen>
+    <dimen name="xy_download_margin_10dip">10dip</dimen>
+    <dimen name="xy_download_margin_15dip">15dip</dimen>
+    <dimen name="xy_download_margin_20dip">20dip</dimen>
+
+    <dimen name="xy_download_width_15dip">15dip</dimen>
+
+</resources>

@@ -1,0 +1,555 @@
+﻿module("Main_LeftTop", package.seeall)
+-- 当前所在面板名字
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- 主角等级
+local m_PlayerLevelStr = "LeftTop/Player/Content/Label_Level";
+-- 主角血量
+local m_PlayerCurHpStr = "LeftTop/Player/Content/Label_CurHp";
+-- 主角蓝量
+local m_PlayerCurMpStr = "LeftTop/Player/Content/Label_CurMp";
+-- PK模式文本
+local m_PKModeNameStr = "LeftTop/PKMode/Button_PKMode/Label_PKName";
+-- 主角战斗力
+local m_FightValueStr = "LeftTop/Player/Content/Label_FightValue";
+
+-- 宠物等级
+local m_PetLevelStr = "LeftTop/Pet/HasPet/Label_Level";
+-- 宠物复活信息
+local m_PetRebornLabelStr = "LeftTop/Pet/HasPet/Reborn/Label_RebornTime";
+
+-- Pk和平模式文本
+local m_PKPaceModeStr = "LeftTop/PKMode/PKModeSelect/Content/Info/Label_Pace";
+-- Pk自由模式文本
+local m_PKFreeModeStr = "LeftTop/PKMode/PKModeSelect/Content/Info/Label_Free";
+-- Pk公会模式文本
+local m_PKGuildModeStr = "LeftTop/PKMode/PKModeSelect/Content/Info/Label_Guild";
+-- Pk阵营模式文本
+local m_PKCampModeStr = "LeftTop/PKMode/PKModeSelect/Content/Info/Label_Camp";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 打开Pk改变面板的按钮
+local m_OpenChangePKModeButton = "LeftTop/PKMode/Button_PKMode";
+-- 和平按钮
+local m_PeaceButton = "LeftTop/PKMode/PKModeSelect/Content/Button_Peace";
+-- 自由按钮
+local m_FreeButton = "LeftTop/PKMode/PKModeSelect/Content/Button_Free";
+-- 公会按钮
+local m_GuildButton = "LeftTop/PKMode/PKModeSelect/Content/Button_Guild";
+-- 阵营按钮
+local m_CampButton = "LeftTop/PKMode/PKModeSelect/Content/Button_Camp";
+-- 头像按钮
+local m_AvatarButton = "LeftTop/Player/Content/AvatarButton";
+-- 左上角玩家信息整体做为一个按钮, 点击有整体缩放效果
+local m_SelectPlayerButton = "LeftTop/Player/Content";
+-----------------------------------------Sprite路径------------------------------------
+-- 主角头像所在的位置
+local m_playerIconStr = "LeftTop/Player/Content/AvatarButton/Sprite_Avatar";
+-- Pk模式图标
+local m_PKModeIconStr = "LeftTop/PKMode/Button_PKMode/Sprite_PKModel";
+-- 宠物图标
+local m_PetIconStr = "LeftTop/Pet/HasPet/PetItem/Sprite_Icon";
+-- 宠物品质
+local m_PetQualityStr = "LeftTop/Pet/HasPet/PetItem/Sprite_Quality";
+-- 宠物血量
+local m_PetHpProStr = "LeftTop/Pet/HasPet/Hp";
+----------------------------------gameobject所在的路径---------------------------------
+
+-- 玩家血条的UIProgressBar所在的位置
+local m_PlayerHpProBarCompStr = "LeftTop/Player/Content/Sprite_Hp";
+-- 玩家蓝条的UIProgressBar所在的位置
+local m_PlayerMpProBarCompStr = "LeftTop/Player/Content/Sprite_Mp";
+-- 玩家是否有队伍
+local m_PlayerHaseTeamStr = "LeftTop/Player/Content/HasTeam";
+-- 玩家pk模式选择
+local m_PlayerPKModeStr = "LeftTop/PKMode";
+-- 玩家选择PK模式的面板
+local m_PlayerChangePKModePanelStr = "LeftTop/PKMode/PKModeSelect";
+
+-- 当前的阵营模式选择框
+local m_PKModeCurSelectTransStr = "LeftTop/PKMode/PKModeSelect/Content/Sprite_Select";
+
+-- 宠物
+local m_PetInfoStr = "LeftTop/Pet";
+-- 当前有出战宠物
+local m_HasOutPetStr = "LeftTop/Pet/HasPet";
+-- 当前没有出战宠物
+local m_NoOutPetStr = "LeftTop/Pet/NoPet";
+-- 宠物复活信息
+local m_PetRebornStr = "LeftTop/Pet/HasPet/Reborn";
+----------------------------------通用的名称路径---------------------------------------
+-- 角色选中特效
+local m_SelectPlayerEffectStr = "LeftTop/Player/Content/Effect_Select";
+
+-- 模式简介
+local m_PKModeIntroStr = "/Label_PKIntro";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 玩家血条的UIProgressBar
+local m_PlayerHpProBarComp = nil;
+-- 玩家蓝条的UIProgressBar
+local m_PlayerMpProBarComp = nil;
+-- 当前的阵营模式选择框的TransForm
+local m_PKModeCurSelectTrans = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("MainPanelClosePKModePanel");
+    G_TimerMng:RemoveTimeTask("PetRebornTaskInMainPanel");
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_PlayerHpProBarComp = nil;
+    m_PlayerMpProBarComp = nil;
+    m_PKModeCurSelectTrans = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_PlayerHpProBarComp = GetComponent(m_panelObject, m_PlayerHpProBarCompStr, "UIProgressBar");
+    m_PlayerMpProBarComp = GetComponent(m_panelObject, m_PlayerMpProBarCompStr, "UIProgressBar");
+    m_PKModeCurSelectTrans = child(m_panelObject, m_PKModeCurSelectTransStr);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitPlayerInfoShow();
+    InitPKMode();
+    InitPetInfo();
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_OpenChangePKModeButton, OnOpenChangePKModePanelClick, m_panelObject);
+
+    SetGameObjectEvent(m_PeaceButton, OnPeaceClick, m_panelObject);
+    SetGameObjectEvent(m_FreeButton, OnFreeClick, m_panelObject);
+    SetGameObjectEvent(m_GuildButton, OnGuildClick, m_panelObject);
+    SetGameObjectEvent(m_CampButton, OnCampClick, m_panelObject);
+    SetGameObjectEvent(m_AvatarButton, OnAvatarClick, m_panelObject);
+    SetGameObjectEvent(m_SelectPlayerButton, OnPlayerSelectButtonClick, m_panelObject);
+    SetGameObjectEvent(m_HasOutPetStr, OnPetClick, m_panelObject);
+    SetGameObjectEvent(m_NoOutPetStr, OnPetClick, m_panelObject);
+end
+
+-- 初始化玩家信息
+function InitPlayerInfoShow()
+    InitPlayerLevel();
+    InitPlayerCurHp();
+    InitPlayerCurMp();
+    InitPlayerAvatar();
+    InitPlayerHasTeamTag();
+    InitPlayerBuffItems();
+    InitFightValue();
+    InitPlayerSelectState();
+end
+
+-- 初始化Buff的Item列表
+function InitPlayerBuffItems()
+
+end
+
+-- 初始化玩家等级
+function InitPlayerLevel()
+    SetLabelContent(m_PlayerLevelStr, G_UserInfo.RoleAttribute.Level, m_panelObject);
+end
+
+-- 初始化玩家当前血量
+function InitPlayerCurHp()
+    local curHp = math.modf(G_UserInfo.RoleAttribute.Health);
+    local maxHp = math.modf(G_UserInfo.RoleAttribute.MaxHealth);
+    local value = curHp / maxHp;
+    local valuestr = curHp .. "/" .. maxHp;
+    SetLabelContent(m_PlayerCurHpStr, valuestr, m_panelObject);
+    m_PlayerHpProBarComp.value = value;
+end
+
+-- 初始化玩家当前法力值
+function InitPlayerCurMp()
+    local curMp = math.modf(G_UserInfo.RoleAttribute.Mp);
+    local maxMp = math.modf(G_UserInfo.RoleAttribute.MaxMp);
+    value = curMp / maxMp;
+    local valuestr = curMp .. "/" .. maxMp;
+    SetLabelContent(m_PlayerCurMpStr, valuestr, m_panelObject);
+    m_PlayerMpProBarComp.value = value;
+end
+
+-- 初始化主角头像
+function InitPlayerAvatar()
+    local roleDataInfo = CCommonTool.GetRoleDateInfo(G_UserInfo.RoleAttribute.ProID);
+    if roleDataInfo ~= nil then
+        SetSpriteByAtlasID(m_playerIconStr, roleDataInfo.HeadRes, m_panelObject, true);
+    end
+end
+
+-- 初始化主角是否有队伍
+function InitPlayerHasTeamTag()
+    if TeamManager.HasTeam() then
+        if TeamManager.IsLeader() then
+            SetGameObjectState(m_PlayerHaseTeamStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_PlayerHaseTeamStr, false, m_panelObject);
+        end
+    else
+        SetGameObjectState(m_PlayerHaseTeamStr, false, m_panelObject);
+    end
+end
+
+-- 初始化玩家PK模式显示
+function InitPKMode()
+    local define = CCommonTool.GetDefineInfo(EDefineContentID.TypeFightModelUnlock);
+    local cofLevel = 0;
+    if define then
+        cofLevel = define:GetIntContent();
+    end
+    if G_UserInfo.RoleAttribute.Level >= cofLevel then
+        SetGameObjectState(m_PlayerPKModeStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_PlayerPKModeStr, false, m_panelObject);
+    end
+    G_TimerMng:RemoveTimeTask("MainPanelClosePKModePanel");
+    SetGameObjectState(m_PlayerChangePKModePanelStr, false, m_panelObject);
+    local PKModeType = G_UserInfo.RoleAttribute.PKType;
+    local PanelPKModeType = GetPKModePanelType(PKModeType);
+    SetSpriteByAtlasID(m_PKModeIconStr, G_PKModePicID[PanelPKModeType].PicID, m_panelObject, true);
+    SetLabelTextByID(m_PKModeNameStr, G_PKModePicID[PanelPKModeType].TxtID, m_panelObject);
+end
+
+-- 初始化宠物图标
+function InitPetInfo()
+    --[[if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_PET) then
+        SetGameObjectState(m_PetInfoStr, false, m_panelObject);
+        return;
+    end
+    SetGameObjectState(m_PetInfoStr, true, m_panelObject);--]]
+	SetGameObjectState(m_PetInfoStr, false, m_panelObject);
+    if PetManager.m_yIsSetPetOut then
+        SetGameObjectState(m_HasOutPetStr, true, m_panelObject);
+        SetGameObjectState(m_NoOutPetStr, false, m_panelObject);
+        local petList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+        local itemPetAttr = nil;
+        for Index = 1, petList.Count do
+            if petList[Index - 1].PakID == PetManager.m_yPetPanelPos then
+                itemPetAttr = petList[Index - 1];
+                break;
+            end
+        end
+        if itemPetAttr ~= nil then
+            SetSpriteByAtlasID(m_PetIconStr, itemPetAttr:GetImageIdById(), m_panelObject);
+            SetSpriteApptitudeV04(m_PetQualityStr, itemPetAttr:GetAptitudeID(), m_panelObject);
+        else
+            error("严重问题::宠物有出战，但是道具的信息得不到");
+            SetGameObjectState(m_HasOutPetStr, false, m_panelObject);
+            SetGameObjectState(m_NoOutPetStr, true, m_panelObject);
+            return;
+        end
+        local petATT = itemPetAttr.AllPetAttribute;
+        if petATT == nil then
+            return;
+        end
+        SetLabelContent(m_PetLevelStr, "Lv." .. petATT.PetLevel, m_panelObject);
+        if petATT.PetState == PET_ENUM.PET_STATE_ADULT then
+            local rebornTime = petATT.NextCanOutTime;
+            local deltaTime = math.floor(rebornTime - G_TimerMng:GetCurrentSeconds());
+            if deltaTime <= 0 then
+                SetGameObjectState(m_PetRebornStr, false, m_panelObject);
+            else
+                SetGameObjectState(m_PetRebornStr, true, m_panelObject);
+                SetLabelContent(m_PetRebornLabelStr, deltaTime, m_panelObject);
+                AddTimerEvent("PetRebornTaskInMainPanel", deltaTime, OnPetRebornCallOver, ETimeShowType.TypeNumberSeven, OnPetRebornUpdate);
+            end
+        else
+            SetGameObjectState(m_PetRebornStr, false, m_panelObject);
+        end
+        local agentMonster = G_SceneMng:GetSceneObj(PetManager.m_dwPetCridInScene);
+        if agentMonster == nil then
+            SetSpriteFillAmount(m_PetHpProStr, 0, m_panelObject);
+        else
+            SetPetHp(agentMonster);
+        end
+    else
+        SetGameObjectState(m_HasOutPetStr, false, m_panelObject);
+        SetGameObjectState(m_NoOutPetStr, true, m_panelObject);
+    end
+end
+
+function SetPetHp(agentMonster)
+    local curHp = math.modf(agentMonster.MonsterAttribute.Health);
+    local maxHp = math.modf(agentMonster.MonsterAttribute.MaxHealth);
+    local value = curHp / maxHp;
+    SetSpriteFillAmount(m_PetHpProStr, value, m_panelObject);
+end
+
+function OnPetRebornUpdate(timeTxt)
+    SetLabelContent(m_PetRebornLabelStr, timeTxt, m_panelObject);
+end
+
+function OnPetRebornCallOver()
+    SetGameObjectState(m_PetRebornStr, false, m_panelObject);
+end
+
+-- 初始化玩家战斗力
+function InitFightValue()
+    SetLabelContent(m_FightValueStr, math.floor(G_UserInfo.RoleAttribute.BattlePower), m_panelObject);
+end
+
+function InitPlayerSelectState()
+    if G_SceneMng.CurSelectAlliedPlayerId == G_UserInfo.GlobalDBID then
+        SetGameObjectState(m_SelectPlayerEffectStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_SelectPlayerEffectStr, false, m_panelObject);
+    end
+end
+
+-- 显示改变PK模式面板
+function OnShowPKModePanel()
+    local PKModeType = G_UserInfo.RoleAttribute.PKType;
+    local PanelPKModeType = GetPKModePanelType(PKModeType);
+    -- 设置pk模式文本置灰
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKPaceModeStr).gameObject, true);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKFreeModeStr).gameObject, true);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKGuildModeStr).gameObject, true);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKCampModeStr).gameObject, true);
+
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKPaceModeStr .. m_PKModeIntroStr).gameObject, true);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKFreeModeStr .. m_PKModeIntroStr).gameObject, true);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKGuildModeStr .. m_PKModeIntroStr).gameObject, true);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, m_PKCampModeStr .. m_PKModeIntroStr).gameObject, true);
+
+    SetLabelColor(m_PKPaceModeStr, "ffffff", m_panelObject);
+    SetLabelColor(m_PKFreeModeStr, "ffffff", m_panelObject);
+    SetLabelColor(m_PKGuildModeStr, "ffffff", m_panelObject);
+    SetLabelColor(m_PKCampModeStr, "ffffff", m_panelObject);
+
+    if PanelPKModeType == ENUM_MAINPANEL_PKMODE.PEACE then
+        SetSelectPkMode(m_PKPaceModeStr, m_PeaceButton);
+    elseif PanelPKModeType == ENUM_MAINPANEL_PKMODE.FREE then
+        SetSelectPkMode(m_PKFreeModeStr, m_FreeButton);
+    elseif PanelPKModeType == ENUM_MAINPANEL_PKMODE.GUILD then
+        SetSelectPkMode(m_PKGuildModeStr, m_GuildButton);
+    elseif PanelPKModeType == ENUM_MAINPANEL_PKMODE.CAMP then
+        SetSelectPkMode(m_PKCampModeStr, m_CampButton);
+    else
+        error("界面无法设置选择状态，不存在的PK模式::::" .. PKModeType);
+    end
+    SetGameObjectState(m_PlayerChangePKModePanelStr, true, m_panelObject);
+    AddTimerEvent("MainPanelClosePKModePanel", 10, OnClosePKModePanel);
+end
+
+-- 设置选中Pk模式的信息
+function SetSelectPkMode(path, buttonPath)
+    if path == m_PKPaceModeStr then
+        SetLabelColor(path, "aafb90", m_panelObject);
+    elseif path == m_PKFreeModeStr then
+        SetLabelColor(path, "ff4949", m_panelObject);
+    elseif path == m_PKGuildModeStr then
+        SetLabelColor(path, "ffd373", m_panelObject);
+    elseif path == m_PKCampModeStr then
+        SetLabelColor(path, "ba98fe", m_panelObject);
+    end
+    m_PKModeCurSelectTrans.localPosition = child(m_panelObject, buttonPath).localPosition;
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, path).gameObject, false);
+    CCommonTool.SetGameObjectGrey(child(m_panelObject, path .. m_PKModeIntroStr).gameObject, false);
+end
+
+-- 发送改变PK模式的消息
+function OnFightModelSendMessage(mType)
+    local PKModeType = G_UserInfo.RoleAttribute.PKType;
+    if PKModeType == mType then
+        return;
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PKTYPE_CHANGE);
+        buffer:WriteUShort(mType);
+        G_NetWorkMng:SendMessage(buffer);
+        if G_UserInfo.RoleAttribute:GetAttackState() then
+            ShowSystemFlowTips(5415);
+        end
+    end
+end
+
+-- 关闭Pk模式面板
+function OnClosePKModePanel()
+    G_SceneMng:OnSetCancelManualSelectTarget(true);
+    G_TimerMng:RemoveTimeTask("MainPanelClosePKModePanel");
+    SetGameObjectState(m_PlayerChangePKModePanelStr, false, m_panelObject);
+end
+
+-- 设置切换PK模式的时间
+function OnSetPKModeTime()
+    local PKModeType = G_UserInfo.RoleAttribute.PKType;
+    local PanelPKModeType = GetPKModePanelType(PKModeType);
+    -- 切换成和平模式所需要的时间
+    local changeTime = CCommonTool.GetDefineInfo(EDefineContentID.TYPE_CHANGE_PACEMODE_TIME):GetIntContent();
+    if PanelPKModeType == ENUM_MAINPANEL_PKMODE.PEACE then
+        G_UserInfo.RoleAttribute.N64PkChangeTime = G_TimerMng:GetCurrentSeconds() + changeTime;
+    else
+        return;
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击打开改变PK模式面板的按钮
+function OnOpenChangePKModePanelClick()
+    if G_UserInfo.IsLockMode == true then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_CHANGE_ATTACK_MODE);
+    else
+        OnShowPKModePanel();
+    end
+end
+
+-- 点击和平按钮
+function OnPeaceClick()
+    OnClosePKModePanel();
+    local nextPKTime = G_UserInfo.RoleAttribute.N64PkChangeTime;
+    local surplusTime = math.floor(nextPKTime - G_TimerMng:GetCurrentSeconds());
+    local PKModeType = G_UserInfo.RoleAttribute.PKType;
+    local PanelPKModeType = GetPKModePanelType(PKModeType);
+    if PanelPKModeType == ENUM_MAINPANEL_PKMODE.PEACE then
+        return;
+    end
+    if surplusTime > 0 then
+        ShowSystemFlowTips(string_format(CCommonTool.GetTxtData(1523).m_str, surplusTime), 0);
+    else
+        OnFightModelSendMessage(G_PKModePicID[ENUM_MAINPANEL_PKMODE.PEACE].Mode);
+    end
+
+end
+
+-- 点击自由按钮
+function OnFreeClick()
+    OnClosePKModePanel();
+    OnFightModelSendMessage(G_PKModePicID[ENUM_MAINPANEL_PKMODE.FREE].Mode);
+    OnSetPKModeTime();
+end
+
+-- 点击公会按钮
+function OnGuildClick()
+    if GuildManager.guildId < 1 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_CHANGE_NOT_GONG_HUI);
+        return;
+    end
+    OnClosePKModePanel();
+    OnFightModelSendMessage(G_PKModePicID[ENUM_MAINPANEL_PKMODE.GUILD].Mode);
+    OnSetPKModeTime();
+end
+
+-- 点击阵营按钮
+function OnCampClick()
+    if G_UserInfo.RoleAttribute.JoinCampType == 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_CHANGE_NOT_ZHENG_YING);
+        return;
+    end
+    OnClosePKModePanel();
+    OnFightModelSendMessage(G_PKModePicID[ENUM_MAINPANEL_PKMODE.CAMP].Mode);
+    OnSetPKModeTime();
+end
+
+-- 点击头像按钮
+function OnAvatarClick()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ROLE) == 0 then
+        createPanel(ENUMPANELID.ENUM_PANEL_ROLE);
+    end
+    ReportManager.RequestReportPanel(10266);
+end
+
+-- 选中角色按钮
+function OnPlayerSelectButtonClick()
+    -- 按配置的职业选中
+    local proId = G_UserInfo.RoleAttribute.ProID;
+    local canSelect = PlayerSelectEffectProIdDict[proId] == true;
+    if canSelect == false then return end;
+
+    local selfId = G_UserInfo.GlobalDBID;
+    if G_SceneMng.CurSelectAlliedPlayerId == selfId then
+        return;
+    end
+    SetGameObjectState(m_SelectPlayerEffectStr, true, m_panelObject);
+    G_SceneMng:SelectAlliedPlayerByGlobalId(selfId);
+    Main_LeftMiddle.CancelTeamMemberSelect();
+end
+
+-- 点击宠物按钮
+function OnPetClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 玩家升级回调
+function InitLevelOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPlayerLevel();
+        InitPKMode();
+    end
+    MagicForgePanel.LevelUpCallBack();
+    Main_RightBottom.InitAutoFightShowOut();
+    Main_MiddleBottom.InitFlyButtonShowOut();
+    Main_RightTop.UpdateUserLevel();
+    GrowFundOnePanel.RefreshPanelOut();
+end
+
+-- 初始化血条C#调用
+function InitHpOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPlayerCurHp();
+    end
+end
+
+-- 初始化法力值C#调用
+function InitMpOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPlayerCurMp();
+    end
+end
+
+-- 更新玩家PK模式
+function RefreshPKModeOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPKMode();
+    end
+end
+
+-- 更新玩家战斗力
+function RefreshFightValueOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitFightValue();
+    end
+end
+
+-- 设置宠物血量
+function SetPetHpOut(agentMonster)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetPetHp(agentMonster);
+    end
+end
+
+function InitPetInfoOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPetInfo();
+    end
+end
+
+-- 取消玩家选中
+function CancelPlayerSelect()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetGameObjectState(m_SelectPlayerEffectStr, false, m_panelObject);
+    end
+end

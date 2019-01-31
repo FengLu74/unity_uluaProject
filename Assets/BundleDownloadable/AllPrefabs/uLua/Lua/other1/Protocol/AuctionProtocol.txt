@@ -1,0 +1,334 @@
+﻿require "Panel/AuctionBuy";
+require "Panel/AuctionSell";
+require "Manager/AuctionManager";
+module("AuctionProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    --角色上线发送税率、热销道具、出售道具到客户端
+    network.Register(GMI_STOC_AUCTIONSYS_PLAYER_LOADDATA, OnAuctionData);
+    --搜索道具时，Server回复搜索结果
+    network.Register(GMI_STOC_AUCTIONSYS_SEARCH_RESULT, OnSearchData);
+    --Client购买道具时，Server回复购买结果
+    network.Register(GMI_STOC_AUCTIONSYS_BUY_RESULT, OnBuyItemResult);
+    --购买成功后刷新
+    network.Register(GMI_STOC_AUCTIONSYS_UPDATE_SELLLIST, OnUpdateSellList);
+    --返回当前道具最低价
+    network.Register(GMI_STOC_AUCTIONSYS_PROMPT_CURMARKET, OnCurItemMarket);
+    --道具上架结果
+    network.Register(GMI_STOC_AUCTIONSYS_PUTAWAY_RESULT, OnPutawayResult);
+    --刷新角色出售列表：添加道具
+    network.Register(GMI_STOC_AUCTIONSYS_UPDATE_ADDITEM, OnRefreshItemListAdd);
+    --回复道具下架结果
+    network.Register(GMI_STOC_AUCTIONSYS_SOLDOUT_RESULT, OnSoldOutResult);
+    --刷新角色出售列表：删除道具
+    network.Register(GMI_STOC_AUCTIONSYS_UPDATE_DELITEM, OnRefreshItemListRemove);
+    --刷新角色出售列表：更新道具
+    network.Register(GMI_STOC_AUCTIONSYS_UPDATE_UPDATEITEM, OnRefreshItemListUpdate);
+    --回复查询单位道具的详细信息
+    network.Register(GMI_STOC_AUCTIONSYS_SEARCH_ITEMINFO, OnItemInfo);
+end
+
+--角色上线发送税率、热销道具、出售道具到客户端
+function OnAuctionData(protocolId, buffer)
+    AuctionManager.Log("OnAuctionData");
+    local taxRate = buffer:ReadFloat();
+    AuctionManager.AuctionTaxRate = taxRate;
+    AuctionManager.Log("taxRate : "..taxRate);
+    local count = buffer:ReadByte();
+    AuctionManager.Log("count : "..count);
+    for i = 1, count do
+        local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+        AuctionManager.Log("globalId : "..globalId);
+        local excelId = buffer:ReadUInt();
+        local num = buffer:ReadUInt();
+        local fight = buffer:ReadUInt();
+        local moneyType = buffer:ReadByte();
+        local price = buffer:ReadUInt();
+        local time = buffer:ReadInt64();
+        local starLevel = buffer:ReadShort();
+        AuctionManager.Log("OnAuctionData starLevel : "..starLevel);
+        AuctionManager.CurSellItems[globalId] =
+        {
+            Index = i;
+            GlobalId = globalId;
+            ExcelId = excelId;
+            Num = num;
+            Fight = fight;
+            MoneyType = moneyType;
+            Price = price;
+            Time = time;
+            StarLevel = starLevel;
+        };
+    end
+end
+--查找物品返回信息
+function OnSearchData(protocolId, buffer)
+    local count = buffer:ReadByte();
+    AuctionManager.Log("OnSearchData count : "..count);
+    AuctionManager.SearchItems = {};
+    for i = 1, count do
+        local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+        local excelId = buffer:ReadUInt();
+        local num = buffer:ReadUInt();
+        local fight = buffer:ReadUInt();
+        local moneyType = buffer:ReadByte();
+        local price = buffer:ReadUInt();
+        local starLevel = buffer:ReadShort();
+        AuctionManager.Log("OnSearchData starLevel : "..starLevel);
+        AuctionManager.SearchItems[globalId] = 
+        {
+            Index = i;
+            GlobalId = globalId;
+            ExcelId = excelId;
+            Num = num;
+            Fight = fight;
+            MoneyType = moneyType;
+            Price = price;
+            StarLevel = starLevel;
+        };
+    end
+    AuctionBuy.RefreshBuyPropList();
+end
+--购买道具时，Server回复购买结果
+function OnBuyItemResult(protocolId, buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        AuctionManager.Log("购买道具成功！！！");
+        AuctionBuy.SetBuyPopover(false);
+        ShowSystemFlowTips(8063);
+    else
+        AuctionManager.Log("购买道具失败！！！ result== "..result);
+    end
+end
+--购买道具后的列表刷新
+function OnUpdateSellList(protocolId, buffer)
+    local updateType = buffer:ReadByte();
+    AuctionManager.Log("OnUpdateSellList : "..updateType);
+    local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+    AuctionManager.Log("globalId : "..globalId);
+    local num = buffer:ReadInt();
+    AuctionManager.Log("num : "..num);
+    local length = GetTableLength(AuctionManager.HotSellItems);
+    if length > 0 then
+        AuctionManager.Log("HotSellItems globalId : "..globalId);
+        if updateType == 1 then 
+            AuctionManager.HotSellItems[globalId] = nil;
+        end
+        if updateType == 2 then 
+             AuctionManager.HotSellItems[globalId].Num = num;
+        end
+        AuctionBuy.RefreshHotSellItemList();
+    else
+        AuctionManager.Log("SearchItems globalId : "..globalId);
+        if updateType == 1 then 
+            AuctionManager.SearchItems[globalId] = nil;
+        end
+        if updateType == 2 then 
+             AuctionManager.SearchItems[globalId].Num = num;
+        end
+        AuctionBuy.RefreshBuyPropList();
+    end
+end
+--返回当前道具最低价列表
+function OnCurItemMarket(protocolId, buffer)
+    AuctionManager.CurItemMarket = {};
+    local count = buffer:ReadByte();
+    AuctionManager.Log("OnCurItemMarket count : "..count);
+    for i = 1, count do
+        local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+        local excelId = buffer:ReadUInt();
+        local num = buffer:ReadUInt();
+        local fight = buffer:ReadUInt();
+        local moneyType = buffer:ReadByte();
+        local price = buffer:ReadUInt();
+        local time = 0;
+        local starLevel = 1;
+        AuctionManager.Log("OnCurItemMarket starLevel : "..starLevel);
+        AuctionManager.CurItemMarket[globalId] = 
+        {
+            Index = i;
+            GlobalId = globalId;
+            ExcelId = excelId;
+            Num = num;
+            Fight = fight;
+            MoneyType = moneyType;
+            Price = price;
+            Time = time;
+            StarLevel = starLevel;
+        };
+    end
+    AuctionSell.RefreshLowPriceList();
+end
+--道具上架结果
+function OnPutawayResult(protocolId, buffer)
+    local result = buffer:ReadInt();
+    AuctionManager.Log("OnBuyItemResult : "..result);
+    if result == 1 then
+        AuctionManager.Log("道具上架成功！！！");
+        AuctionSell.RefreshSellPropList();
+        AuctionSell.SetPutawayPopover(false);
+        ShowSystemFlowTips(8065);
+    else
+        AuctionManager.Log("道具上架失败！！！ result== "..result);
+    end
+end
+--刷新角色出售列表：添加道具
+function OnRefreshItemListAdd(protocolId, buffer)
+    local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+    AuctionManager.Log("OnRefreshItemListAdd  globalId : "..globalId);
+    local excelId = buffer:ReadUInt();
+    local num = buffer:ReadUInt();
+    local fight = buffer:ReadUInt();
+    local moneyType = buffer:ReadByte();
+    local price = buffer:ReadUInt();
+    local time = buffer:ReadInt64();
+    local starLevel = buffer:ReadShort();
+    AuctionManager.Log("OnRefreshItemListAdd starLevel : "..starLevel);
+    AuctionManager.Log("OnRefreshItemListAdd  price : "..price);
+    local length = GetTableLength(AuctionManager.CurSellItems);
+    local index = length + 1;
+    AuctionManager.CurSellItems[globalId] = 
+    {
+        Index = index;
+        GlobalId = globalId;
+        ExcelId = excelId;
+        Num = num;
+        Fight = fight;
+        MoneyType = moneyType;
+        Price = price;
+        Time = time;
+        StarLevel = starLevel;
+    };
+    AuctionSell.RefreshPutawayList();
+end
+--道具下架结果
+function OnSoldOutResult(protocolId, buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        AuctionManager.Log("道具下架成功！！！");
+        AuctionSell.SetSoldOutPopover(false);
+        ShowSystemFlowTips(8064);
+    else
+        AuctionManager.Log("道具下架失败！！！ result== "..result);
+    end
+end
+--刷新角色出售列表：删除道具
+function OnRefreshItemListRemove(protocolId, buffer)
+    local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+    AuctionManager.Log("OnRefreshItemListRemove : "..globalId);
+    AuctionManager.CurSellItems[globalId] = nil;
+    AuctionSell.RefreshPutawayList();
+end
+
+--刷新角色出售列表：更新道具
+function OnRefreshItemListUpdate(protocolId, buffer)
+    local globalId = LuaInt64.ToString(buffer:ReadBytes(8));
+    AuctionManager.Log("OnRefreshItemListUpdate : "..globalId);
+    local num = buffer:ReadInt();
+    AuctionManager.Log("num : "..num);
+    if AuctionManager.CurSellItems[globalId] ~= nil then
+        AuctionManager.CurSellItems[globalId].Num = num;
+    else
+        AuctionManager.CurSellItems[globalId] = nil;
+    end
+    AuctionSell.RefreshPutawayList();
+end
+
+--回复查询单位道具的详细信息1.返回信息的Id 2.返回的数据信息
+function OnItemInfo(protocolId, buffer)
+    local globalId = buffer:ReadInt64();
+    AuctionManager.Log("OnItemInfo globalId : "..globalId);
+    local itemData = BagProtocol.ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_ADD);
+    SetRealItemTipsEvent(itemData,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+--请求打开拍卖行时数据信息
+function RequestOpenItems()
+    AuctionManager.SearchItems = {};
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_GOODSLIST);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求搜索目标道具1.数据信息
+function RequestSearchItems(data)
+    AuctionManager.HotSellItems = {};
+    AuctionManager.SearchItems = {};
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_SEARCHITEM);
+    buffer:WriteByte(data.Type);
+    AuctionManager.Log("RequestSearchItems Type : "..data.Type);
+    buffer:WriteByte(data.Count);
+    AuctionManager.Log("RequestSearchItems Count : "..data.Count);
+    for index = 1, data.Count do
+        AuctionManager.Log("RequestSearchItems : "..data.ItemData[index-1]);
+        buffer:WriteInt(data.ItemData[index-1]);
+    end
+    buffer:WriteByte(data.MoneyType);
+    AuctionManager.Log("RequestSearchItems MoneyType : "..data.MoneyType);
+    buffer:WriteUInt(data.MoneyLimitMin);
+    AuctionManager.Log("RequestSearchItems MoneyLimitMin : "..data.MoneyLimitMin);
+    buffer:WriteUInt(data.MoneyLimitMax);
+    AuctionManager.Log("RequestSearchItems MoneyLimitMax : "..data.MoneyLimitMax);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--请求购买目标道具1.数据信息
+function RequestBuyItem(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_BUYITEM);
+    AuctionManager.Log("RequestBuyItem GlobalId : "..data.GlobalId);
+    AuctionManager.Log("RequestBuyItem Num : "..data.Num);
+    buffer:WriteBytes(LuaInt64.GetBytes(data.GlobalId));
+    buffer:WriteInt(data.Num);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--请求当前道具最低价列表1.物品的excelId
+function RequestEditPrice(excelId)
+    AuctionManager.CurItemMarket = {};
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_EDITPRICE);
+    buffer:WriteUInt(excelId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--角色请求道具 上架1.数据信息
+function RequestPutawayItem(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_PUTAWAY);
+    AuctionManager.Log("data.BagPanelId : "..data.BagPanelId);
+    AuctionManager.Log("data.LGId : "..data.LGId);
+    AuctionManager.Log("data.Num : "..data.Num);
+    AuctionManager.Log("data.MoneyType : "..data.MoneyType);
+    AuctionManager.Log("data.Price : "..data.Price);
+    AuctionManager.Log("data.AllPrice : "..data.AllPrice);
+    buffer:WriteByte(data.BagPanelId);
+    buffer:WriteUInt(data.LGId);
+    buffer:WriteByte(data.Num);
+    buffer:WriteByte(data.MoneyType);
+    buffer:WriteUInt(data.Price);
+    buffer:WriteUInt(data.AllPrice);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--角色请求道具 下架 1.下架物品的globalId
+function RequestSoldOut(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_SOLDOUT);
+    AuctionManager.Log("globalId : "..globalId);
+    buffer:WriteBytes(LuaInt64.GetBytes(globalId));
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--刷新道具信息1.物品的globalId
+function RequestItemInfo(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_AUCTIONSYS_REQUEST_ITEMINFO);
+    AuctionManager.Log("globalId : "..globalId);
+    buffer:WriteBytes(LuaInt64.GetBytes(globalId));
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

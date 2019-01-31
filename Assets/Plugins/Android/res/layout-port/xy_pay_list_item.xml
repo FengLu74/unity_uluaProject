@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:paddingLeft="9dp"
+    android:paddingRight="10dp"
+    android:gravity="clip_vertical"
+    android:descendantFocusability="blocksDescendants"
+    android:layout_height="50dp">
+
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_centerVertical="true"
+        android:layout_height="40dp"
+        android:id="@+id/xy_pay_list_item_method_ic"
+        />
+
+    <ImageView
+    android:id="@+id/xyw_pay_list_item_selete"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentRight="true"
+    android:focusable="false"
+    android:layout_centerVertical="true"
+    android:src="@drawable/xyw_pay_item_nor"
+    android:background="@android:color/transparent"
+    />
+
+    <TextView
+        android:id="@+id/xy_pay_list_item_method_name"
+        android:textSize="16sp"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:gravity="center_vertical"
+        android:text="pay method name"
+        android:textColor="#333333"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/xy_pay_list_item_method_ic"
+        android:layout_toEndOf="@+id/xy_pay_list_item_method_ic" />
+
+</RelativeLayout>

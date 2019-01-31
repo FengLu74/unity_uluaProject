@@ -1,0 +1,388 @@
+﻿module('AchievePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'AchievePanel';
+---------------------------------------label路径---------------------------------------
+-- 成就点数
+local m_LabelPointPath = "Right/PointPanel/Label_Point";
+-- 进度条文本
+local m_LabelProgressPath = "Right/PointPanel/ProgressBar/Label_Progress";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 奖励遮罩
+local m_RewardMaskPath = "Right/PointPanel/RewardsContent/RewardMask";
+-- 宝箱奖励面板
+local m_RewardsContentPath = "Right/PointPanel/RewardsContent";
+-- 奖励面板标题
+local m_RewardTitlePath = "Right/PointPanel/RewardsContent/RewardTitle";
+-- 宝箱奖励1
+local m_Item1Path = "Right/PointPanel/RewardsContent/Items/Item1";
+-- 宝箱奖励2
+local m_Item2Path = "Right/PointPanel/RewardsContent/Items/Item2";
+-- 宝箱奖励3
+local m_Item3Path = "Right/PointPanel/RewardsContent/Items/Item3";
+-- 宝箱奖励4
+local m_Item4Path = "Right/PointPanel/RewardsContent/Items/Item4";
+-- 宝箱奖励5
+local m_Item5Path = "Right/PointPanel/RewardsContent/Items/Item5";
+-- 宝箱按钮
+local m_BoxContentPath = "Right/PointPanel/BoxContent";
+-- 成就宝箱未打开状态图标
+local m_BoxIconPath = "Right/PointPanel/BoxContent/BoxIcon";
+-- 成就宝箱打开状态图标
+local m_BoxOpenedIconPath = "Right/PointPanel/BoxContent/BoxOpenedIcon";
+-- 宝箱可打开特效
+local m_EffectOpenPath = "Right/PointPanel/BoxContent/EffectOpen";
+-- 宝箱打开特效
+local m_EffectAchievePath = "Right/PointPanel/BoxContent/EffectAchieve";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 菜单列表
+local m_MenuListPath = "Left/MenuList";
+-- 进度条
+local m_ProgressBarPath = "Right/PointPanel/ProgressBar";
+-- 成就列表
+local m_ListPath = "Right/ListPanel/List";
+-- 奖励面板Grid
+local m_ItemsPath = "Right/PointPanel/RewardsContent/Items";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 菜单列表
+local m_MenuList = nil;
+-- 成就点数
+local m_LabelPoint = nil;
+-- 宝箱按钮
+local m_BoxContent = nil;
+-- 成就宝箱未打开状态图标
+local m_BoxIcon = nil;
+-- 成就宝箱打开状态图标
+local m_BoxOpenedIcon = nil;
+-- 宝箱可打开特效
+local m_EffectOpen = nil;
+-- 宝箱打开特效
+local m_EffectAchieve = nil;
+-- 进度条
+local m_ProgressBar = nil;
+-- 进度条文本
+local m_LabelProgress = nil;
+-- 成就列表
+local m_List = nil;
+-- 奖励面板
+local m_RewardsContent = nil;
+-- 奖励列表Grid
+local m_Items = nil;
+
+-- 成就界面数据
+local m_ViewAchieves = nil;
+
+local selectIndex = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    if m_EffectOpen ~= nil then
+        m_EffectOpen:SetActive(false);
+    end
+    selectIndex = nil;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MenuList = nil;
+    m_LabelPoint = nil;
+    m_RewardsContent = nil;
+    m_BoxIcon = nil;
+    m_BoxOpenedIcon = nil;
+    m_EffectOpen = nil;
+    m_EffectAchieve = nil;
+    m_ProgressBar = nil;
+    m_LabelProgress = nil;
+    m_List = nil;
+    m_ViewAchieves = nil;
+    m_Items = nil;
+    selectIndex = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACHIEVE);
+    m_MenuList = GetComponent(m_PanelObject, m_MenuListPath, "UIListView");
+    m_LabelPoint = GetComponent(m_PanelObject, m_LabelPointPath, "UILabel");
+    m_BoxContent = child(m_PanelObject, m_BoxContentPath).gameObject;
+    m_RewardsContent = child(m_PanelObject, m_RewardsContentPath).gameObject;
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+    m_BoxIcon = child(m_PanelObject, m_BoxIconPath).gameObject;
+    m_BoxOpenedIcon = child(m_PanelObject, m_BoxOpenedIconPath).gameObject;
+    m_EffectOpen = child(m_PanelObject, m_EffectOpenPath).gameObject;
+    m_EffectAchieve = child(m_PanelObject, m_EffectAchievePath).gameObject;
+    m_ProgressBar = GetComponent(m_PanelObject, m_ProgressBarPath, "UIProgressBar");
+    m_LabelProgress = GetComponent(m_PanelObject, m_LabelProgressPath, "UILabel");
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+
+    m_RewardsContent:SetActive(false);
+    m_EffectOpen:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_MenuList:SetInitCallback(OnMenuListViewInit);
+    m_MenuList:SetSelectedCallback(OnMenuListSelected);
+    UIEventListener.Get(m_BoxContent).onClick = LuaHelper.OnClick(OnBoxContentClick);
+    SetGameObjectEvent(m_RewardMaskPath, OnRewardMaskClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_ViewAchieves = AchieveManager.GetViewAchieves();
+    InitLeftInfo();
+    InitRightInfo();
+end
+
+-- 左侧菜单
+function InitLeftInfo()
+    if selectIndex == nil then 
+        selectIndex = m_MenuList.selectedIndex;
+    end
+    m_MenuList:RemoveAll();
+    for tabId, achieves in pairs(m_ViewAchieves) do
+        m_MenuList:AddData( { tabId = tabId, achieves = achieves });
+    end
+    m_MenuList:LookAt(selectIndex, true);
+end
+
+-- 成就点信息初始化
+function InitRightInfo()
+    InitAchievePointInfo();
+end
+
+
+-- 初始化成就点信息
+function InitAchievePointInfo()
+    local totalPoint = AchieveManager.totalPoint;
+    local reward = AchieveManager.GetCurrentRewardInfo();
+    if not reward then
+        local rewards = CCommonTool.GetAllRewardAchieveInfo();
+        reward = rewards[rewards.Count - 1];
+        m_ProgressBar.value = 1;
+        m_LabelProgress.text = reward.PointNum .. "/" .. reward.PointNum;
+        m_BoxIcon:SetActive(false);
+        m_BoxOpenedIcon:SetActive(true);
+        m_EffectAchieve:SetActive(false);
+    else
+        m_ProgressBar.value = totalPoint / reward.PointNum;
+        m_LabelProgress.text = totalPoint .. "/" .. reward.PointNum;
+        m_BoxIcon:SetActive(true);
+        m_BoxOpenedIcon:SetActive(false);
+        m_EffectAchieve:SetActive(totalPoint >= reward.PointNum);
+    end
+    m_LabelPoint.text = totalPoint;
+end
+
+
+------------------------------------------事件方法------------------------------------
+
+-- 菜单列表初始化
+function OnMenuListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local info = data.achieves[1].info;
+    SetLabelTextByID("Background/Label", info.NameId, go);
+    SetLabelTextByID("Toggle/Label", info.NameId, go);
+    local hasFinishState = AchieveManager.HasFinishStateAchieveWithTabId(info.CompleteType);
+    SetGameObjectState("Sprite_RedHint", hasFinishState, go);
+end
+
+-- 菜单列表选中事件
+function OnMenuListSelected(listView, dataIndex)
+    selectIndex = dataIndex;
+    local data = listView:GetData(dataIndex);
+    local achieves = m_ViewAchieves[data.tabId];
+    m_List:RemoveAll();
+    for i, achieve in ipairs(achieves) do
+        m_List:AddData(achieve);
+    end
+end
+
+-- 宝箱点击事件
+function OnBoxContentClick(gameObject)
+    local totalPoint = AchieveManager.totalPoint;
+    local reward = AchieveManager.GetCurrentRewardInfo();
+    if reward == nil then
+        return;
+    end
+
+    if totalPoint >= reward.PointNum then
+        -- 可领奖时直接领奖
+        local data = m_MenuList:GetData(m_MenuList.selectedIndex);
+        AchieveProtocol.RequestBoxReward(data.tabId);
+    else
+
+        local rewards = CCommonTool.GetRewardInfoByIndex(reward.RewardId);
+        if rewards == nil then
+            error("奖励配置列表不存在")
+            return;
+        end
+        -- 不可领奖时显示奖励预览
+        m_RewardsContent:SetActive(true);
+        SetLabelContent(m_RewardTitlePath, string_format(
+        --[[ 成就点数达到{0}可领取 ]]
+        CCommonTool.GetTxtData(1469).m_str, reward.PointNum), m_PanelObject);
+        local paths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+        -- 获得奖励道具信息
+        local list = rewards:GetAllItem();
+        local count = list.Count;
+        for i, path in ipairs(paths) do
+            if i <= count then
+                local itemData = list[i - 1];
+                local excelId = itemData.ExcelID;
+                if itemData.ItemDealType == 3 then
+                    excelId = 10000;
+                elseif itemData.ItemDealType == 4 then
+                    excelId = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                SetItemShowByExcelIDV04(m_PanelObject, path, excelId, itemData.ItemNum, false, 21, ENUMPANELID.ENUM_PANEL_ACHIEVE);
+                SetItemToolTipsEvent(child(m_PanelObject, path).gameObject, "", ENUMPANELID.ENUM_PANEL_ACHIEVE, false, excelId);
+                SetGameObjectState(path, true, m_PanelObject);
+            else
+                SetGameObjectState(path, false, m_PanelObject);
+            end
+        end
+        m_Items:Reposition();
+    end
+end
+
+-- 奖励遮罩点击事件
+function OnRewardMaskClick(gameObject)
+    m_RewardsContent:SetActive(false);
+end
+
+-- 成就列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local info = data.info;
+    local sdata = data.data;
+    local state = sdata.state;
+    SetLabelContent("Label_Value", info.PointNum, go);
+    SetLabelTextByID("Label_Desc", info.DescribeId, go);
+    local descLabel = GetComponent(go, "Label_Desc", "UILabel");
+    descLabel:Update();
+    -- 数量
+    local count = AchieveManager.GetAchieveCurrentCount(data);
+    local txtColor = count < info.GoalNum and "ff3131" or "7CFC00";
+    local numLabel = GetComponent(go, "Label_Num", "UILabel");
+    numLabel.text = string_format("{0}/{1}", count, info.GoalNum);
+    -- numLabel.text = string_format("[{0}]({1}/{2})[-]", txtColor, count, info.GoalNum);
+    -- numLabel:UpdateAnchors();
+    -- numLabel:Update();
+    GetComponent(go, "pbar", "UIProgressBar").value = count / info.GoalNum;
+
+    -- 奖励
+    local rewards = GetRewardData(info);
+    local paths = { "Items/Item1", "Items/Item2", "Items/Item3" };
+    -- 获得奖励道具信息
+    local count = #rewards;
+    for i, path in ipairs(paths) do
+        if i <= count then
+            local itemData = rewards[i];
+            SetItemShowByExcelIDV04(go, path, itemData.excelId, itemData.num, false, 15, ENUMPANELID.ENUM_PANEL_ACHIEVE);
+            SetItemToolTipsEvent(child(go, path).gameObject, "", ENUMPANELID.ENUM_PANEL_ACHIEVE, false, itemData.excelId);
+            SetGameObjectState(path, true, go);
+        else
+            SetGameObjectState(path, false, go);
+        end
+    end
+    -- 按钮状态
+    SetGameObjectState("RewardButton", sdata.state == AchieveManager.STATE_FINISH, go);
+    SetGameObjectState("Passed", sdata.state == AchieveManager.STATE_GETAWARD, go);
+    SetGameObjectState("NonAchieveButton", sdata.state == AchieveManager.STATE_DOING, go);
+    CCommonTool.SetGameObjectGrey(child(go, "NonAchieveButton").gameObject, sdata.state == AchieveManager.STATE_DOING);
+end
+
+function GetRewardData(info)
+    local rewards = { };
+    if info.RewardGold > 0 then
+        table.insert(rewards, { excelId = G_ItemToolTipDefine.BINDDIAMOND, num = info.RewardGold });
+    end
+    if info.RewardMoney > 0 then
+        table.insert(rewards, { excelId = G_ItemToolTipDefine.BINDMONEY, num = info.RewardMoney });
+    end
+    if info.RewardId > 0 then
+        local reward = CCommonTool.GetRewardInfoByIndex(info.RewardId);
+        if reward ~= nil then
+            local items = reward:GetAllItem();
+            if items.Count > 0 then
+                local item = items[0];
+                if item.ItemDealType == 3 then
+                    table.insert(rewards, { excelId = G_ItemToolTipDefine.BINDMONEY, num = item.ItemNum });
+                elseif item.ItemDealType == 4 then
+                    table.insert(rewards, { excelId = G_ItemToolTipDefine.BINDDIAMOND, num = item.ItemNum });
+                elseif item.ItemDealType == 5 then
+                    table.insert(rewards, { excelId = G_ItemToolTipDefine.NOTBINDMONEY, num = item.ItemNum });
+                else
+                    table.insert(rewards, { excelId = item.ExcelID, num = item.ItemNum });
+                end
+            end
+        end
+    end
+    return rewards;
+end
+
+-- 成就列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "RewardButton" then
+        AchieveProtocol.RequestAchieveReward(data.info.Id);
+    end
+    ReportManager.RequestReportPanel(10298);
+end
+
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_ACHIEVE);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function RefreshList()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACHIEVE) == 1 then
+        InitShow();
+    end
+end
+
+function OnGetReward()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACHIEVE) == 1 then
+        m_EffectOpen:SetActive(false);
+        m_EffectOpen:SetActive(true);
+    end
+end
+
+function OpenPanelByTag(tagId)
+    selectIndex = tagId - 1;
+    createPanel(ENUMPANELID.ENUM_PANEL_ACHIEVE);
+end

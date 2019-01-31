@@ -1,0 +1,783 @@
+﻿module("ParameterToMessageTextBox", package.seeall)
+
+-- 通用点击取消按钮回调
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+--  金币不足通用点击确定按钮回调
+function OnCoinButtonClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    -- 跳转到点击术界面
+    WonderMeetPanel.OpenThisPanelByTag(1);
+end
+-- 通用点击取消按钮回调
+function OnCloseLiKaiClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+-- 切换角色
+function OnChangeRoleClick()
+    log("客户端发送GMI_CTOS_LGS_CLOSE消息,请求切换角色");
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_CLOSE);
+    buffer:WriteUInt(1);
+    G_NetWorkMng:SendMessage(buffer);
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    Event.DispatchEvent("submitExtraData", "exit", 4);
+end
+
+-- 更换账户
+function OnChangeUserClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    Main_MiddleTop.TimerReSet(); 
+    G_GameMng:ChangeAccount();
+end
+
+-- 返回到登陆界面
+function OnBackComeInClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    Main_MiddleTop.TimerReSet(); 
+    -- 条状到登陆界面
+    SelectRole.OnBackOnLogin();
+end
+
+-- 删除角色界面传参
+function DeleteRole(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8071).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8072).m_str, name));
+    table.insert(tempTable, 3, SelectRole.OnQueDingClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 更换账户界面确认
+function ChangeUser(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8073).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8074).m_str);
+    table.insert(tempTable, 3, OnChangeUserClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 切换角色界面确认
+function ChangeRole(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8075).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8076).m_str);
+    table.insert(tempTable, 3, OnChangeRoleClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+function BlackFriend(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8077).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8078).m_str, name));
+    table.insert(tempTable, 3, FriendsPanel.OnBlackFriendBySearch);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 删除好友界面传参
+function DeleteFriend(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8079).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8080).m_str, name));
+    table.insert(tempTable, 3, FriendsPanel.OnDeleteFriendBySearch);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 添加好友界面传参
+function AddFriend(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8081).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8082).m_str, name));
+    table.insert(tempTable, 3, FriendsPanel.OnAddFriendBySearch);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 登录错误消息返回
+function OnLoginBack(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8083).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8084).m_str, name));
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 连接服务器消息返回
+function OnComeInGameBack(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8083).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8084).m_str, name));
+    table.insert(tempTable, 3, OnComeInGameEnterClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnComeInGameEnterClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnComeInGameEnterClick()
+    OnCloseClick();
+    createPanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+    closePanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+end
+
+-- 创建角色消息返回
+function OnCreateBack(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, string_format(CCommonTool.GetTxtData(8086).m_str, name));
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 当前设置的药品使用完毕后弹出提示框设置药品
+function OpenChangeMed()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(8087).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8088).m_str);
+    table.insert(tempTable, 3, OnChangeMedClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnChangeMedCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 更换药品提示
+function OnChangeMedClick()
+    G_UseMedMng:SetCurrentUseMedExcelID(G_BagMng:GetMedExcelID());
+    Main_RightBottom.InitMedicineUseOut();
+    PlayerSettingPanel.SettingCurrentMed();
+    PlayerSettingPanel.SetStoreMed();
+    G_UseMedMng:AutoCheckHpUseMed(true);
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+-- 更换药品提示关闭界面
+function OnChangeMedCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+-- 主界面退出位面按钮
+function OnPlaneQuitClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8095).m_str);
+    table.insert(tempTable, 3, OnQuitPlaneClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 退出位面
+function OnQuitPlaneClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_REQUEST_LEAVE_PLANES);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 主界面退出副本按钮
+function OnFuBenQuitClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8094).m_str);
+    table.insert(tempTable, 3, DungeonQuitPanel.OnQueDingClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 主界面退出公会战场景按钮
+function OnGuildWarQuitClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(9037).m_str);
+    table.insert(tempTable, 3, GuildProtocol.RequestLeaveScene);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 主界面退出公会准备战场景按钮
+function OnGuildPrepareWarQuitClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(9037).m_str);
+    table.insert(tempTable, 3, DungeonQuitPanel.OnQueDingClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 主界面退出无尽炼狱副本按钮
+function OnEndlessActQuitClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8094).m_str);
+    table.insert(tempTable, 3, OnQuitEndlessSceneClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 主界面退出猎魔大师副本
+function OnHUNTActQuitClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8094).m_str);
+    table.insert(tempTable, 3, OnQuitHuntSceneClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 商城界面钻石不足按钮
+function OnStoreNotMoneyClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8096).m_str);
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 十连抽界面金币不足按钮
+function OnCapsuleNotMoneyClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8845).m_str);
+    table.insert(tempTable, 3, OnCoinButtonClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 完成体力大餐活动
+function ActivityMealThew(num)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent = CCommonTool.GetTxtData(8065).m_str;
+    table.insert(tempTable, 2, string_format(textContent, num));
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 打开其他玩家的按钮列表
+function OpenOtherButtonListPanel(guid, name, level, profession, guildId, onlineState)
+    local relation = FriendsData.GetRelation(guid);
+    if relation == FriendsData.RELATION_BLACK then
+        ShowSystemFlowTips(6104);
+        return;
+    end
+    OtherPlayerButtonListPanel.SetData(guid, name, level, profession, guildId, onlineState);
+    createPanel(ENUMPANELID.ENUM_PANEL_OTHERPLAYERBUTTONLISTPANEL);
+end
+
+-- 断线重连
+function RestartNetworkCasueNetwork()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(8063).m_str);
+    table.insert(tempTable, 3, OnRestartNetworkCasueNetworkClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnRestartNetworkCasueNetworkClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 断线重连确定和取消按钮
+function OnRestartNetworkCasueNetworkClick()
+    G_GameMng:RestartNetWork();
+end
+-- 退出无尽炼狱场景
+function OnQuitEndlessSceneClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-- 退出猎魔副本
+function OnQuitHuntSceneClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+    buffer:WriteByte(ENUM_HUNT_QUIT_TYPE.HUNT_QUIT_TYPE_ACTIVE);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 服务器正在维护
+function ServerIsUnderMaintenance()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(813).m_str);
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 服务器是个假服务器
+function ServerIsNotReal()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(813).m_str..".");
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 提示服务器战区关闭的 
+function OnCloseZoneMessage(txtId)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(txtId).m_str);
+    table.insert(tempTable, 3, OnBackComeInClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnBackComeInClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 踢人
+function ServerKickClient()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(11090).m_str);
+    table.insert(tempTable, 3, OnRestartNetworkCasueNetworkClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnRestartNetworkCasueNetworkClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 所选战区不存在
+function SelectserverNotHave()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(960).m_str);
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 邀请自己加入队伍
+function TeamInvite(member)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent = CCommonTool.GetTxtData(12788).m_str;
+    table.insert(tempTable, 2, string_format(textContent, member.name, TeamManager.GetTeamGoalName(member.goalId, member.diffIndex, false)));
+    table.insert(tempTable, 3, function() OnTeamInviteConfirm(member) end);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, function() OnTeamInviteCancel(member) end);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 同意组队邀请
+function OnTeamInviteConfirm(member)
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    TeamProtocol.RequestAgreeInvite(member.globalId, member.memType);
+end
+
+-- 拒绝组队邀请
+function OnTeamInviteCancel(member)
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    TeamProtocol.RequestRefuseInvite(member.globalId, member.memType);
+end
+
+-- 邀请自己加入公会
+function GuildInvite(member)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent =
+    --[[ 玩家{0}邀请你加入公会\n公会名称：{1}\n公会等级：{2} ]]
+    CCommonTool.GetTxtData(1252).m_str;
+    -- CCommonTool.GetTxtData(12788).m_str;
+    table.insert(tempTable, 2, string_format(textContent, member.playerName, member.guildName, member.guildLevel));
+    table.insert(tempTable, 3, function() OnGuildInviteConfirm(member) end);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, function() OnGuildInviteCancel(member) end);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 同意公会邀请
+function OnGuildInviteConfirm(member)
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    GuildProtocol.RequestInviteReplay(member.guildId, member.globalId, true);
+end
+
+-- 拒绝公会邀请
+function OnGuildInviteCancel(member)
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    GuildProtocol.RequestInviteReplay(member.guildId, member.globalId, false);
+end
+
+-- 组队匹配队员超时提示
+function MatchTeamMemberPrompt()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent =
+    --[[ 匹配时间过长是否更换匹配职业? ]]
+    CCommonTool.GetTxtData(1024).m_str;
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, OnMatchTeamMemberPromptConfirm);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 队伍匹配队员超时提示->确认
+function OnMatchTeamMemberPromptConfirm()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    if TeamManager.HasTeam() then
+        if TeamManager.IsLeader() then
+            if TeamManager.teamData.autoMatchMember then
+                TeamProtocol.RequestCancelMatchMember(TeamManager.teamData.id);
+                TeamPanel.OpenThisPanelByTag(3);
+            end
+        else
+            ShowSystemFlowTips(3750);
+        end
+    else
+        ShowSystemFlowTips(3739);
+    end
+end
+
+-- 退出公会提示
+function OnExitGuildPrompt()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent =
+    --[[ 注意事项：\n1.离开公会后，24小时后才能加入公会。\n2.公会贡献将清零。\n3.拥有的公会技能、道具将保留。 ]]
+    CCommonTool.GetTxtData(1130).m_str;
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, OnExitGuildPromptConfirm);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 退出公会提示->确认
+function OnExitGuildPromptConfirm()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local globalId = G_UserInfo.GlobalDBID;
+    local guildInfo = GuildManager.myGuild;
+    local peopleNum = guildInfo.memberCount;
+    if globalId == guildInfo.creatorId then
+        if peopleNum <= 1 then
+            GuildProtocol.RequestExitGuild();
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_EXIT);
+        end
+    else
+        GuildProtocol.RequestExitGuild();
+    end
+end
+
+-- 显示退出游戏确认框
+function ShowExitGamePanel()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent =
+    --[[ 您确定要退出游戏吗？ ]]
+    CCommonTool.GetTxtData(1407).m_str;
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, OnExitGameConfirm);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnExitGameConfirm()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    Event.DispatchEvent("submitExtraData", "exit", 4);
+    Application.Quit();
+end
+
+-- 申请添加好友提示窗
+function ShowFriendsApply(name)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent = string_format(CCommonTool.GetTxtData(2017).m_str, name);
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, OnFriendsApplyConfirm);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(420).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnFriendsApplyConfirm()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    FriendsPanel.OpenFriendsApplyPanel();
+end
+
+-- 进入活动杀戮值信息提示框
+-- @param index （index = 1 活动通用面板   index = 2 世界boss活动  index = 3 魔王副本 index = 4 日常活动 index = 5 公会活动 index = 6 公会据点战, 7 剧情副本）
+function JumpActivity(index)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(124067).m_str);
+    table.insert(tempTable, 3, function() OnJumpActivityConfirm(index) end);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 确定进入活动按钮
+-- @param index （index = 1 活动通用面板   index = 2 世界boss活动  index = 3 魔王副本 index = 4 日常活动 index = 5 公会活动 index = 6 公会据点战, 7 剧情副本）
+function OnJumpActivityConfirm(index)
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    if index == 1 then
+        ActivityGeneralPanel.OnJumpActivityClick();
+    elseif index == 2 then
+        WorldBossPanel.OnJumpConfirmClick();
+        --ActivityBossPanel.OnJumpConfirmClick();
+    elseif index == 3 then
+        DungeonBossPanel.OnEnterConfirmClick();
+    elseif index == 4 then
+        ActivityDailyPanel.OnEnterConfirmClick();
+    elseif index == 5 then
+        ActivityGuildPanel.OnEnterConfirmClick();
+    elseif index == 6 then
+        GuildProtocol.RequestEnterScene();
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL) == 1 then
+            closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_WAR_PANEL);
+        end
+    elseif index == 7 then
+        DungeonSoloPanel.OnEnterConfirmClick();
+    end
+end
+
+-- 放弃当前占领据点提示窗
+function IsGiveUpStrongHold()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent = string_format(CCommonTool.GetTxtData(163369).m_str, name);
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, GuildWarPanel.GiveUpStrongHold);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 接取猎魔大师任务无队伍时弹窗提示
+function ChooseHuntMissionType()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local textContent = string_format(CCommonTool.GetTxtData(141336).m_str, name);
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, OnTeamHall);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(141338).m_str);
+    table.insert(tempTable, 5, OnCreatTeam);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(141337).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+-- 前往组队
+function OnTeamHall()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    TeamPanel.OpenThisPanelByTag(1);
+end
+-- 创建队伍
+function OnCreatTeam()
+    TeamPanel.OpenThisPanelByTag(3);
+    local goalInfo, diffIndex = TeamManager.GetTeamGoalInfoByActivityId(1401);
+    TeamProtocol.RequestCreateTeam(goalInfo.Id, diffIndex, 1);
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+-- vip特权卡到期提醒
+function OnVipCardEnd(cardID)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local nameID = VIPCardTable.Get(cardID).VIPCardTxt ;
+    local textContent = string_format(GetTextToId(162954), GetTextToId(nameID));
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, OnCloseClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 8, 1);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- vip特权卡购买
+function OnBuyVipCard(cardID)
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    local nameID = VIPCardTable.Get(cardID).VIPCardTxt ;
+    local textContent = string_format(CCommonTool.GetTxtData(9270).m_str, VIPCardTable.Get(cardID).CostGold, GetTextToId(nameID));
+    table.insert(tempTable, 2, textContent);
+    table.insert(tempTable, 3, VipShowPanel.BuyCard);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+-- 简化版显示确认框
+-- @param title 标题文本 nil | "" 默认标题 "提示" id:949
+-- @param content 提示内容
+-- @param callback 回调方法 回调参数 确认返回true 取消返回false
+-- @param escKeyEnabled 确认框界面是否响应esc按键(默认为true)
+-- @param closeCallback 确认框关闭回调(默认为nil)
+function ShowConfirm(title, content, callback, escKeyEabled, closeCallback)
+    local okConfirm = function()
+        if callback ~= nil then
+            callback(true);
+        end
+        OnCloseClick();
+    end
+    local cancelCallback = function()
+        if callback ~= nil then
+            callback(false);
+        end
+        OnCloseClick();
+    end
+
+    if title == nil or title == "" then
+        title = CCommonTool.GetTxtData(949).m_str;
+    end
+
+    local params = { };
+    params[1] = title;
+    -- 标题
+    params[2] = content;
+    -- 提示内容
+    params[3] = okConfirm;
+    -- 确定回调
+    params[4] = CCommonTool.GetTxtData(375).m_str;
+    -- 确定按钮文本
+    params[5] = cancelCallback;
+    -- 取消回调
+    params[6] = CCommonTool.GetTxtData(407).m_str;
+    -- 取消按钮文本
+    params[7] = title ~= "";
+    -- 是否显示标题
+    params[8] = 2;
+    -- 按钮个数(1:确定 2:确定/取消);
+    params[9] = closeCallback;
+    -- 确认框关闭回调, 不做处理
+    params[10] = escKeyEnabled ~= false;
+    -- 是否响应返回键关闭界面
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, params);
+end
+
+-- 在副本中继续追踪任务的2次弹框
+function ContinueTraceMissionInDungeon(missionID)
+    local DoAction = function(isOk)
+        if isOk then
+            G_MissionMng:TraceTypeOperate(missionID, true, true);
+        else
+            OnCloseClick();
+        end
+    end
+    ShowConfirm(nil, CCommonTool.GetTxtData(2005).m_str, DoAction, true);
+end

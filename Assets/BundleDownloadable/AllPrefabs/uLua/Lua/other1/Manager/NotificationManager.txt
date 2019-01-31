@@ -1,0 +1,136 @@
+﻿module("NotificationManager", package.seeall)
+
+NIGHT_START = 21;
+NIGHT_END = 9;
+
+PUSH_TYPE_USER = 1;
+PUSH_TYPE_SYS = 2;
+
+inited = false;
+items = {}
+
+Manager = nil;
+
+function InitData()
+    if inited == true then
+        return;
+    end
+    inited = true;
+    Manager = G_UserInfo.LocalNotificationManager;
+    local infos = CCommonTool.GetAllCPushInfo();
+    local count = infos.Count;
+    for i = 0, count - 1 do
+        local info = infos[i];
+        table.insert(items, info);
+    end
+    -- APP暂停/恢复事件
+    Event.Add("OnApplicationPause", OnApplicationPause);
+    error("添加本地推送事件");
+end
+
+-- 系统暂停/恢复时本地消息推送处理
+function OnApplicationPause(eventName, paused)
+    if not inited then
+        return;
+    end
+    if paused == true then
+        AddLocalNotifications();
+    elseif Manager ~= nil then
+        Manager:ClearLocalNotification();
+    end
+end
+
+function GetTime()
+    local now = os.time();
+    local date = os.date("*t");
+    local wday = date.wday == 1 and 7 or (date.wday - 1);
+    local todayZeroTime = now - date.hour * 3600 - date.min * 60 - date.sec;
+    local weekZeroTime = todayZeroTime - (wday - 1) * 86400;
+    return now, todayZeroTime, weekZeroTime;
+end
+
+function AddLocalNotifications()
+    local now, todayZeroTime, weekZeroTime = GetTime();
+    for i, info in ipairs(items) do
+        if IsNotifyOpened(info.PushType) == true then
+            if info.Id == 10001 then
+                -- 角色系统-离线经验值已满
+                local delay = 28800;
+                AddNotification(info.Id, info.Pushtext, now + delay, 0);
+            else
+                if info.PushtimeType == 1 then
+                    local time = todayZeroTime + TimeToSeconds(info.Pushtime);
+                    if time < now then
+                        time = time + 86400;
+                    end
+                    AddNotification(info.Id, info.Pushtext, time, 86400);
+                elseif info.PushtimeType == 2 then
+                    local str = tostring(info.Pushtime);
+                    local w = tonumber(string.sub(str, 1, 1));
+                    local seconds = TimeToSeconds(tonumber(string.sub(str, 2)));
+                    local time = weekZeroTime + (w - 1) * 86400 + seconds;
+                    if time < now then
+                        time = time + 86400 * 7;
+                    end
+                    AddNotification(info.Id, info.Pushtext, time, 86400 * 7);
+                end
+            end
+        end
+    end
+end
+
+--1230(12:30)转化为秒数
+function TimeToSeconds(time)
+    if time == nil then  return 0 ;end
+    local h = math.floor(time / 100);
+    local m = time - h * 100;
+    return h * 3600 + m * 60
+end
+
+-- 检测推送条件是否满足
+function CheckNotifyCondition(info)
+    local userInfo = G_UserInfo;
+    local userLevel = userInfo.RoleAttribute.Level;
+    local campType = userInfo.RoleAttribute.JoinCampType;
+    if userLevel >= info.UserLevel then
+        local condType = info.UserCondition;
+        if condType == 0 then
+            return true;
+        elseif condType == 1 then
+            return campType ~= 0;
+        else 
+            return false;
+        end
+    end
+    return false;
+end
+
+-- 添加系统提示
+-- param time 本地推送消息时间
+-- param textId 文本ID
+function AddNotification(id, textId, time, interval)
+    error(string_format("推送ID:{0}, time:{1}", id, os.date("%c", time)));
+    local nightNotifyOpened = PlayerSettingManager.GetNightNotification() == 1;
+    local now, todayZeroTime = GetTime();
+    local h = math.floor((time - todayZeroTime) / 3600) % 24;
+    if nightNotifyOpened or (h < NIGHT_START and h >= NIGHT_END) then
+        local textInfo = CCommonTool.GetTxtData(textId);
+        local text = textInfo and textInfo.m_str or "";
+        if #text > 0 then
+            Manager:AddLocalNotification(id, text, time - now, interval);
+            error("添加本地推送消息::delay::" .. tostring(time - now) .. ", text::" .. tostring(text));
+        end
+    end
+end
+
+-- 推送类型开关是否打开
+function IsNotifyOpened(pushType)
+    if pushType == PUSH_TYPE_USER then
+        return PlayerSettingManager.GetLocalNotification() == 1;
+    elseif pushType == PUSH_TYPE_SYS then
+        return PlayerSettingManager.GetSystemNotification() == 1;
+    else
+        error("推送类型错误!");
+        return false;
+    end
+end

@@ -1,0 +1,88 @@
+﻿module("DungeonQuitPanel", package.seeall)
+--当前panel名字
+local m_strPanelName="SmallWindow/DungeonQuitPanel";
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-- 取消按钮
+local m_quXiaoButton = "Button-FanHui";
+-- 确定按钮
+local m_queDingButton = "Button-QueDing";
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+--当前面板的对象
+local m_strPanelObject=nil;
+--初始化失败默认情况
+local m_bCreateSuccess=nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+--系统函数,对象创建成功后执行,面板中激活对象的方法必须放在这里面
+function Start()
+    InitAllInfo();
+    m_bCreateSuccess=true;
+end
+--系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+--初始化背包的所有数据信息
+ function InitAllInfo()
+    InitPlayerSelfUserInfo();
+    InitOnClick();
+end
+
+--初始化玩家自身信息
+function InitPlayerSelfUserInfo()
+    --面板对象
+    m_strPanelObject =FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_DUNGEONQUITPANEL);
+end
+ --初始化物品点击事件点击事件信息
+function InitOnClick()
+    SetGameObjectEvent(m_quXiaoButton,closetPanel,m_strPanelObject,nil);
+    SetGameObjectEvent(m_queDingButton,OnQueDingClick,m_strPanelObject,nil);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 取消按钮
+function closetPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_DUNGEONQUITPANEL);
+end
+
+-- 确定按钮
+function OnQueDingClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+
+    local activityID = G_SceneMng.ActivityID;
+    -- 猎魔大师活动退出时，特殊处理
+    if activityID == ENUM_AOT_ID.AOT_ID_DUNGEON_HUNT_ACTIVITY then
+        buffer:WriteByte(ENUM_HUNT_QUIT_TYPE.HUNT_QUIT_TYPE_ACTIVE);
+    else
+        buffer:WriteByte(0);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    Time.timeScale = 1;
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnLeaveDungeonClick()
+    -- 点击传送场景
+    error("当前场景ID="..G_SceneMng.SceneID);
+    if G_SceneMng.SceneID > 0 then
+        if G_UserInfo.RoleAttribute:GetAttackState() then
+            ShowSystemFlowTips(252);
+        else
+            JumpManager.BossLobbySceneTransferLeave(G_SceneMng.SceneID, function(jumpType, success)
+                if success == true then
+                    --在点击传送场景后秒请求一次closePanel
+                    --AddTimerEvent("OnCloseClick",3,OnCloseClick);
+                    error("发送多人离开副本按钮点击事件！");
+                end
+            end );
+        end
+    else
+        error("多人离开副本按钮点击事件G_SceneMng.SceneID异常！="..G_SceneMng.SceneID);
+    end
+    G_MusicMng:OnLoadMusic(4010);
+end

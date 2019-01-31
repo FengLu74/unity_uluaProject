@@ -1,0 +1,256 @@
+﻿require "Panel/GuildInfoPanel";
+require "Panel/GuildMemberPanel";
+require "Panel/GuildBuildingPanel";
+require "Panel/GuildSkillPanel";
+require "Panel/GuildEventsPanel";
+
+module("GuildBeyond3DPanel", package.seeall)
+
+
+-- 激活的时候显示的内容
+local m_activeContentStr = "/Active";
+-- 未激活的时候显示的内容
+local m_deactiveContentStr = "/Deactive";
+-- 按钮的路径
+local m_buttonStr = "Sprite-LeftDown/";
+
+-- 公会信息面板
+local m_GuildInfoPanelPath = "GuildInfoPanel";
+-- 公会成员面板
+local m_GuildMemberPanelPath = "GuildMemberPanel";
+-- 公会建筑面板
+local m_GuildBuildingPanelPath = "GuildBuildingPanel";
+-- 公会技能面板
+local m_GuildSkillPanelPath = "GuildSkillPanel";
+-- 公会事件面板
+local m_GuildEventsPanelPath = "GuildEventsPanel";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左下方选择的标签（1为最左侧的，依次向右）
+local m_selectTagNum = 1;
+-- 上一次选择的标签
+local m_lastSelectTagNum = 1;
+
+local m_currendSeconds = 0;
+-----------------------------------一些写死的规定--------------------------------------
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = "Sprite-LeftDown/1Toggle_Info", panelName = m_GuildInfoPanelPath, isFirstOpen = true, luaFileName = GuildInfoPanel }, 
+    [2] = { name = "Sprite-LeftDown/2Toggle_Member", panelName = m_GuildMemberPanelPath, isFirstOpen = true, luaFileName = GuildMemberPanel }, 
+    [3] = { name = "Sprite-LeftDown/3Toggle_Building", panelName = m_GuildBuildingPanelPath, isFirstOpen = true, luaFileName = GuildBuildingPanel }, 
+    [4] = { name = "Sprite-LeftDown/4Toggle_Skill", panelName = m_GuildSkillPanelPath, isFirstOpen = true, luaFileName = GuildSkillPanel }, 
+    [5] = { name = "Sprite-LeftDown/5Toggle_Event", panelName = m_GuildEventsPanelPath, isFirstOpen = true, luaFileName = GuildEventsPanel }, 
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    InitOnClick();
+    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+    m_toggleTable[m_selectTagNum].luaFileName.Start();
+    StartTimer();
+    -- 红点
+    -- G_RedHintMng:StartTrigRedHint(CREDHINTENUM.GUILD_APPLICANT);
+    m_panelInitAlready = true;    
+end
+
+function OnEnable()
+    if true == m_panelInitAlready then
+        InitShow();
+        StartTimer();
+        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    end
+end
+
+function OnDisable()
+    StopTimer();
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+end
+
+function OnDestroy()
+    m_selectObject = nil;
+    for Index = 1, #m_toggleTable do
+        m_toggleTable[Index].luaFileName.OnDestroy();
+        m_toggleTable[Index].isFirstOpen = true;
+    end
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+    m_PanelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function StartTimer()
+    AddTimerEvent("GuildInfoPanel_3Seconds", 3600, RefreshPerThreeSecondsOver, ETimeShowType.TypeNumberThree, RefreshPerThreeSeconds);
+end
+
+function StopTimer()
+    G_TimerMng:RemoveTimeTask("GuildInfoPanel_3Seconds");
+end
+
+function RefreshPerThreeSeconds()
+    m_currendSeconds = m_currendSeconds + 1;
+    if m_currendSeconds % 3 == 0 then
+        GuildProtocol.RequestGuildInfo();
+        GuildProtocol.RequestGuildNotice();
+        GuildProtocol.RequestGuildMembers();
+        if GuildManager.HasPermission(E_GUILD_PERMISSION.APPROVE) then
+            GuildProtocol.RequestApprovalList();
+        end
+    end
+end
+
+function RefreshPerThreeSecondsOver()
+end
+
+function SetButtonActiveState(index, actived)
+    SetGameObjectState(m_buttonStr .. m_toggleTable[index].name .. m_activeContentStr, actived, m_PanelObject);
+    SetGameObjectState(m_buttonStr .. m_toggleTable[index].name .. m_deactiveContentStr, not actived, m_PanelObject);
+    SetGameObjectState(m_toggleTable[index].panelName, actived, m_PanelObject);
+end
+
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    SetGameObjectState(m_GuildInfoPanelPath, false, m_PanelObject);
+    SetGameObjectState(m_GuildMemberPanelPath, false, m_PanelObject);
+    SetGameObjectState(m_GuildBuildingPanelPath, false, m_PanelObject);
+    SetGameObjectState(m_GuildSkillPanelPath, false, m_PanelObject);
+    SetGameObjectState(m_GuildEventsPanelPath, false, m_PanelObject);
+end
+
+-- 初始化界面的显示
+function InitPanelShow()
+    for Index = 1, #m_toggleTable do
+        SetButtonActiveState(Index, Index == m_selectTagNum);
+    end
+end
+
+-- 初始所有的信息
+function InitShow()
+    OpenPanelByTag();
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Background", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Toggle", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_PanelObject);
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Background", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Toggle", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_PanelObject);
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent(m_toggleTable[Index].name, OnButtonClick, m_PanelObject);
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+
+-- 关闭公会成员界面
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+end
+
+--  点击事件处理
+function OnButtonClick(e)
+    error("click::::" .. e.name);
+    local currentName = e.name;
+    local index = tonumber(string.sub(currentName, 1, 1));
+    if m_selectTagNum ~= index then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index, causePanelId)
+    if m_panelInitAlready == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL, causePanelId);
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+function GetCurrentTagNum()
+    return m_selectTagNum
+end
+
+function OnGuildInfoChanged()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL) == 1 then
+        local panel = m_toggleTable[m_selectTagNum].luaFileName;
+        if type(panel.Refresh) == "function" then
+            panel.Refresh();
+        end
+    end
+end
+
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    local tabIndex = m_selectTagNum;
+    panelParams.tabIndex = tabIndex;
+    if tabIndex == 1 then
+    elseif tabIndex == 2 then
+        -- 成员
+        panelParams.data = GuildMemberPanel.GetJumpCloseData();
+    elseif tabIndex == 3 then
+        -- 建筑
+        panelParams.data = GuildBuildingPanel.GetJumpCloseData();
+    elseif tabIndex == 4 then
+        -- 技能
+        panelParams.data = GuildSkillPanel.GetJumpCloseData();
+    elseif tabIndex == 5 then
+    end
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    local tabIndex = panelParams.tabIndex;
+
+    if tabIndex == 1 then
+    elseif tabIndex == 2 then
+        -- 成员
+        GuildMemberPanel.SetJumpCloseData(panelParams.data);
+    elseif tabIndex == 3 then
+        -- 建筑
+        GuildBuildingPanel.SetJumpCloseData(panelParams.data);
+    elseif tabIndex == 4 then
+        -- 技能
+        GuildSkillPanel.SetJumpCloseData(panelParams.data);
+    elseif tabIndex == 5 then
+    end
+    OpenThisPanelByTag(panelParams.tabIndex);
+end

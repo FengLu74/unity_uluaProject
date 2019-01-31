@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="260dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        android:background="@drawable/xy_bg_dialog_white"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/xy_bg_dialog_title">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:src="@drawable/xy_ic_logo" />
+
+            <ImageButton
+                android:id="@+id/btn_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:src="@drawable/xy_btn_close"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="1px"
+                android:layout_height="match_parent"
+                android:layout_toLeftOf="@id/btn_close"
+                android:background="@color/xy_color_line"
+                android:visibility="gone" />
+        </RelativeLayout>
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="您确认要退出游戏吗？"
+                android:textColor="@color/xy_color_c5"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal"
+            android:paddingBottom="15dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
+            <Button
+                android:id="@+id/xy_btn_cancel"
+                style="@style/xy.button.border"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                android:layout_marginRight="8dp"
+                android:layout_weight="1"
+                android:text="@string/xy_cancel" />
+
+            <Button
+                android:id="@+id/xy_btn_confirm"
+                style="@style/xy.button.positive"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                android:layout_marginLeft="8dp"
+                android:layout_weight="1"
+                android:text="@string/xy_confirm" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,292 @@
+﻿module("FirstChargePanel",package.seeall);
+
+-- 当前所在面板名字
+local m_panelName="FirstChargePanel"
+
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 充值按钮
+local m_FirstChargeButtonPath = "Buttons/Button";
+-- 关闭按钮路径
+local m_ClosePath = "Buttons/Close"; 
+
+-----------------------------------------Sprite路径------------------------------------
+
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 首次充值
+local m_FirstChargePath = "FirstCharge";
+
+local UI_beijing01_chouka_02="/SceneUINeedShow/Background/UI_beijing01_chouka_02"
+
+----------------------------------通用的名称路径---------------------------------------
+-- 显示内容title
+local m_titlePath = "FirstCharge/Title";
+
+-- 首次充值奖励Grid路径
+local m_RewardGridPath = "FirstCharge/Reward/Scroll View/Grid";
+--首次充值按钮Label
+local m_FirstChargeLabelPath = "Buttons/Button/Label";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 背景框
+local m_Mask = nil;
+-- 显示title
+local m_titleString = nil;
+
+
+-- 显示内容Item1
+local m_DescItem1 = nil;
+-- 显示内容Item2
+local m_DescItem2 = nil;
+-- 显示内容Item3
+local m_DescItem3 = nil;
+
+--坐骑ID
+local m_pieModelID=nil;
+--武器ID
+local m_weaponModelID=nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+-- 记录领取首次充值奖励信息
+local m_FirstChargeRewardDatas = {};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Mask = nil;
+	m_RewardGrid = nil;
+	m_Close = nil;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    m_Mask = child(m_PanelObject, m_MaskPath).gameObject;
+
+    m_RewardGrid = GetComponent(m_PanelObject, m_RewardGridPath, "UIListView");
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_RewardGrid:SetInitCallback(OnRewardGridViewInit);
+    m_RewardGrid:SetClickCallback(OnRewardGridViewClick);
+	SetGameObjectEvent(m_FirstChargeButtonPath, OnFirstChargeButtonClick, m_PanelObject);
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitDescItemInfo();
+    InitRewardItemInfo();
+    InitFirstPanelPanel();
+    InitAllModel();
+end
+
+-- 初始化内容显示信息
+function InitDescItemInfo()
+
+end
+
+--初始化奖励信息信息
+function InitRewardItemInfo()
+    local chargeRewardData = FirstChargeManager.GetChargeRewardDatas(ENUM_TAKE_GOLD_OP_TYPE.TAKE_GOLD_OP_FIRST);
+    if chargeRewardData ~= nil then
+        local length = GetTableLength(chargeRewardData.RewardInfos);
+        m_RewardGrid:RemoveAll();
+        if length >= 1 then
+            local rewardInfo = chargeRewardData.RewardInfos[1];
+            m_ReceiveFirstChargeId = rewardInfo.AwardZone;
+            local length1 = GetTableLength(rewardInfo.ItemInfos);
+            local rewardData = {};
+            for index1 = 1 , length1 do
+                local itemData = rewardInfo.ItemInfos[index1];
+                itemData.ItemId = CCommonTool.GetProfessionItemId(itemData.ItemId);  --获得角色职业对应的道具id
+                if itemData.ItemId > 0 then
+                    if IsNotMoney(itemData.ItemId) then
+                        rewardData[itemData.ItemId] = itemData.ItemNum;
+                    end
+                    m_RewardGrid:AddData(itemData);
+                end
+            end
+            m_FirstChargeRewardDatas[1] = 
+            {
+                AwardZone = rewardInfo.AwardZone;
+                RewardData = rewardData;
+            }
+        end
+    else
+        error("chargeRewardData=nil");
+    end
+end
+
+-- 初始化面板效果
+function InitFirstPanelPanel()
+    local firstChargeState = FirstChargeManager.FirstChargeTakeGoldState;
+    --[[local UIBackground= find(UI_beijing01_chouka_02);
+    if UIBackground ~=nil then
+        UIBackground:SetActive(false);
+    end
+    ]]
+    UnityEngine.RenderSettings.fog = false;
+    if firstChargeState == 1 then
+        local text = GetTextToId(646);   --领取
+        --error(text.."-------------");
+        SetLabelContent(m_FirstChargeLabelPath,text,m_PanelObject);
+    else
+        local text = GetTextToId(9261);  --前往充值
+        --error(text.."--");
+        SetLabelContent(m_FirstChargeLabelPath,text,m_PanelObject);
+    end
+end
+
+function IsNotMoney(itemId)
+    if itemId >= 10000 and itemId < 20000  then
+        return false;
+    end
+    return true;
+end
+
+local act=0;
+function InitAllModel()
+    local zuoqi= FirstChargeJobidMatchModleidTable.Get(1).ModelId;
+    if act==0 then
+        error("[Lua]-->(坐骑)=>"..zuoqi);
+        LoadModel(zuoqi);
+    end
+    local m_jobID=G_UserInfo.RoleAttribute.ProID;
+    if m_jobID == 4 then
+        local zhaohuan= FirstChargeJobidMatchModleidTable.Get(5).ModelId;
+        error("[Lua]-->JobID.4(召唤)=>"..zhaohuan);
+        LoadModel(zhaohuan);
+    elseif m_jobID == 1 then
+        local liemo= FirstChargeJobidMatchModleidTable.Get(4).ModelId;
+        error("[Lua]-->JobID.1（猎魔）=>"..liemo);
+        LoadModel(liemo);
+    elseif m_jobID == 2 then
+        local modao= FirstChargeJobidMatchModleidTable.Get(3).ModelId;
+        error("[Lua]-->JobID.2（魔导）=>"..modao);
+        LoadModel(modao);
+    elseif m_jobID == 3 then
+        local longqi= FirstChargeJobidMatchModleidTable.Get(2).ModelId;
+        error("[Lua]-->JobID.3（龙骑）=>"..longqi);
+        LoadModel(longqi);
+    else
+        error("[Lua]-->未定义的JobID？");
+    end
+end
+
+--[[加载模型
+function InitModel(wordID)
+    local rowCUI3dResInfo= CCommonTool.GetUI3dresInfo(wordID);
+    if rowCUI3dResInfo ~= nil then
+        m_pieModelID=rowCUI3dResInfo.modelID;
+        LoadModel(m_pieModelID);
+        --error(string_format("m_pieModelID======{0}",m_pieModelID));
+    else
+        --error("[Lua]FirstChargePanel--> 未找到加载模型的ID");
+    end 
+end]]
+
+function LoadModel(modelID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    buffer:WriteInt(modelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+-- 删除boss3d模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 点击充值按钮
+function OnFirstChargeButtonClick(gameObject)
+    local firstChargeState = FirstChargeManager.FirstChargeTakeGoldState;
+    if firstChargeState == 1 then
+        local rewardData = m_FirstChargeRewardDatas[1];
+        if rewardData ~= nil then
+            local itemList = G_BagMng:GetCanPickUpListItem(rewardData.RewardData);
+            --error("itemList.Count : "..itemList.Count);
+            if itemList.Count <= 0 then
+                --error("背包已满，无法领取！！！");
+                ShowSystemFlowTips(103);
+            else
+                --error("领取充值奖励");
+                FirstChargeProtocol.RequestReceiveFirstReward(m_ReceiveFirstChargeId);
+                --error("打开累积领取界面");
+                --createPanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+                UnityEngine.RenderSettings.fog = true;
+                FirstChargeManager.FirstChargeTakeGoldState=2;
+                Main_MiddleTop.RefreshFirstPanel();
+                CloseFirstChargePanel();
+
+            end
+        else 
+        end
+    else
+        StorePanel.OpenPanelRecharge(); --打开充值面板
+    end
+end
+
+-- 关闭按钮 
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    Delete3DModel();
+end
+
+-- 奖励列表初始化
+function OnRewardGridViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ItemId;
+    local num = data.ItemNum;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 145, ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_FIRST_CHARGE_PANEL, false, excelId);
+end
+
+-- 奖励列表
+function OnRewardGridViewClick(listView, cell, go)
+    
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--刷新Ui显示
+function RefreshChargeRewardPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL) == 1 then
+        InitFirstPanelPanel();
+    end
+end
+
+function  CloseFirstChargePanel()
+    closePanel(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    Delete3DModel();
+end

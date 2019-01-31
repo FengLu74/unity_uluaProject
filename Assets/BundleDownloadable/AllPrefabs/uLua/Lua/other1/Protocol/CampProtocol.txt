@@ -1,0 +1,157 @@
+﻿module("CampProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 获取推荐阵营数据回复
+    network.Register(GMI_STOC_RETURN_RECOMMEND_CAMP, OnRecommendCamp);
+    -- 获取阵营数据回复
+    network.Register(GMI_STOC_RETURN_CAMPDATA, OnCampData);
+    -- 提升神位回复
+    network.Register(GMI_STOC_RETURN_GODOFFICER_DATA, OnGodOfficerData);
+    -- 申请加入阵营返回
+    network.Register(GMI_STOC_APPLY_JOIN_CAMP, OnJoinCamp);
+    -- 请求阵营捐献返回
+    network.Register(GMI_STOC_UNION_OPERATE_RESULT, OnContribute);
+    -- 请求领取俸禄返回
+    network.Register(GMI_STOC_UNION_JX_OPERATE_RESULT, OnGetSalary);
+end
+
+-- 推荐阵营数据返回
+function OnRecommendCamp(protocolId, buffer)
+    -- 推荐阵营ID
+    local m_recommendCampId = buffer:ReadByte();
+    -- 是否锁定阵营（0-不锁定，1-锁定）
+    local m_isLock = buffer:ReadByte();
+--    error("收到协议数据:推荐阵营ID:" .. m_recommendCampId);
+    JoinCampPanel.OpenJoinCampPanel(m_recommendCampId, m_isLock);
+end
+
+-- 阵营数据返回
+function OnCampData(protocolId, buffer)
+    local unionID = buffer:ReadInt(); -- 阵营ID
+    local memberRt = buffer:ReadInt(); -- 自己阵营人数所占比例
+    local uninoLv = buffer:ReadInt(); -- 阵营等级
+    local unionExp = buffer:ReadInt(); -- 阵营繁荣度
+    local unionMarshal = buffer:ReadInt(); -- 阵营元帅
+    local unionFood = buffer:ReadInt(); -- 阵营粮草
+    local unionMineral = buffer:ReadInt(); -- 阵营矿产
+    local unionFtCorp = buffer:ReadInt(); -- 阵营第一公会
+    local MaxMilitary = buffer:ReadInt(); -- 阵营最高军衔
+    local MyMilitary = buffer:ReadInt(); -- 角色自己的军衔
+    local unionExploit = buffer:ReadInt(); -- 角色阵营功勋
+    local mineralDCount = buffer:ReadInt(); -- 角色粮草捐献次数
+    local grainDCount = buffer:ReadInt(); -- 角色矿产捐献次数
+    local getSalaryCount = buffer:ReadInt(); -- 角色领取俸禄次数
+
+    local tempTable = {};
+    tempTable.unionID = unionID;
+    tempTable.memberRt = memberRt;
+    tempTable.uninoLv = uninoLv;
+    tempTable.unionExp = unionExp;
+    tempTable.unionMarshal = unionMarshal;
+    tempTable.unionFood = unionFood;
+    tempTable.unionMineral = unionMineral;
+    tempTable.unionFtCorp = unionFtCorp;
+    tempTable.MaxMilitary = MaxMilitary;
+    tempTable.MyMilitary = MyMilitary;
+    tempTable.unionExploit = unionExploit;
+    tempTable.grainDCount = grainDCount;
+    tempTable.mineralDCount = mineralDCount;
+    tempTable.getSalaryCount = getSalaryCount;
+    CampManager.CampAllInfo = tempTable;
+
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then 
+        createPanel(ENUMPANELID.ENUM_PANEL_CAMPPANEL);
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_INFO,CampBeyond3DPanel.IsShowRedHint());
+end
+
+-- 提升神位回复
+function OnGodOfficerData(protocolId, buffer)
+    local m_result = buffer:ReadByte();
+end
+
+-- 申请加入阵营返回(1-成功 2-失败)
+function OnJoinCamp(protocolId, buffer)
+    local result = buffer:ReadByte();
+end
+
+-- 请求阵营捐献返回(1-粮草 2-矿产)
+function OnContribute(protocolId, buffer)
+    local operateType = buffer:ReadInt(); -- 捐献类型
+    local result = buffer:ReadInt();      -- 捐献结果
+    local Mineral=0;
+    local Food=0;
+    local value=0;
+    if buffer.Length>16 then
+         Food= buffer:ReadInt();          -- 捐献类型对应结果
+         Mineral = buffer:ReadInt();      -- 捐献类型对应结果
+   else
+         value = buffer:ReadInt();        -- 捐献类型对应结果
+   end
+    local resNum = buffer:ReadInt();      -- 捐献类型对应捐献次数
+    if CampManager.CampAllInfo == nil then CampManager.CampAllInfo = {}; end
+
+    if operateType == 1 then
+        CampManager.CampAllInfo.unionFood = value;
+        CampManager.CampAllInfo.grainDCount = resNum;
+    elseif operateType == 2 then
+        CampManager.CampAllInfo.unionMineral = value;
+        CampManager.CampAllInfo.mineralDCount = resNum;
+    elseif operateType==3 then   --左边
+        CampManager.CampAllInfo.unionFood = Food;
+        CampManager.CampAllInfo.unionMineral = Mineral;
+        CampManager.CampAllInfo.mineralDCount = resNum;
+    elseif operateType==4 then   --右边
+        CampManager.CampAllInfo.unionFood = Food;
+        CampManager.CampAllInfo.unionMineral = Mineral;
+        CampManager.CampAllInfo.grainDCount = resNum;
+    end
+    CampInfoPanel.OnContributeRefresh();
+end
+
+-- 请求领取俸禄返回
+function OnGetSalary(protocolId, buffer)
+    local result = buffer:ReadInt(); -- 领取结果
+    local exploitValue = buffer:ReadInt(); -- 阵营功勋
+    local getSalaryNum = buffer:ReadInt(); -- 领取俸禄次数
+    if CampManager.CampAllInfo == nil then CampManager.CampAllInfo = {}; end
+    CampManager.CampAllInfo.getSalaryCount = getSalaryNum;
+    CampInfoPanel.OnGetSalaryRefresh(getSalaryNum);
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理发送协议 START-------------------------------------------------------
+-- 发送捐献消息 （1：捐献粮草 2：捐献矿产）-->(3：银币捐献粮草矿产 4：红钻捐献粮草矿产)
+function RequestContribute(ID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_UNION);
+    buffer:WriteByte(ID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 发送领取军衔奖励
+function RequestGetSalary(list)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_APPLY_GODOFFICER_OPERATE);
+    buffer:WriteByte(0);
+    local cridCount = tonumber(list.count);
+    buffer:WriteInt(cridCount);
+    local item = nil;
+    for count = 1, list.count do
+        item = list[count - 1];
+        buffer:WriteInt(tonumber(item.CRID));
+    end
+--    buffer:WriteInt(CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 向服务器请求阵营基础数据
+function RequestCampInfo()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_APPLY_CAMPDATA);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理发送协议 END-------------------------------------------------------

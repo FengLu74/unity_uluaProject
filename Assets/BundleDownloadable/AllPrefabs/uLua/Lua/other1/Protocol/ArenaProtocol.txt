@@ -1,0 +1,130 @@
+﻿module("ArenaProtocol", package.seeall)
+
+-- 战报版本号
+recordVersion = -1;
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 通知客户端离线竞技场匹配列表v
+    network.Register(GMI_STOC_SEND_OFFLINEARENA_LIST, OnRecieveOppList);
+    -- 战报信息
+    network.Register(GMI_STOC_GET_OFFLINEARENA_FIGHTING_LOG_RETURN, OnGetRecordList);
+    -- 通知客户端离线竞技场结果
+    network.Register(GMI_STOC_GET_OFFLINEARENA_FIGHT_RESULT, OnFightResult);
+end
+
+-- 通知客户端离线竞技场匹配列表
+function OnRecieveOppList(protocolId, buffer)
+    local myId = buffer:ReadUInt();
+    local myRank = buffer:ReadInt();
+    local size = buffer:ReadInt();
+    local oppList = {};
+    for i = 1, size do
+        local id = buffer:ReadUInt();
+        local rank = buffer:ReadInt();
+        local level = buffer:ReadInt();
+        local profession = buffer:ReadInt();
+        local fightValue = buffer:ReadInt();
+        local name = buffer:ReadStringByByte();
+        table.insert(oppList, {
+            id = id,
+            rank = rank,
+            level = level,
+            profession = profession,
+            proId = profession,
+            fightValue = fightValue,
+            name = name,
+        });
+    end
+    ArenaManager.myRank = myRank;
+    ArenaManager.SetOppList(oppList);
+    ArenaPanel.RefreshOppList();
+end
+
+-- 战斗记录
+function OnGetRecordList(protocolId, buffer)
+    recordVersion = buffer:ReadInt();
+    local records = {};
+    local size = buffer:ReadUShort();
+    for i = 1, size do
+        local id = buffer:ReadUInt();         -- 排序编号
+        local atkId = buffer:ReadUInt();      -- 攻击者ID
+        local defId = buffer:ReadUInt();      -- 防守者ID
+        local result = buffer:ReadByte();     -- 结果 1:成功 0:失败
+        local rankDiff = buffer:ReadInt();    -- 排名变化
+        local atkRank = buffer:ReadInt();     -- 攻击者排名
+        local defRank = buffer:ReadInt();     -- 防守者排名
+        local name = buffer:ReadStringByByte();   -- 对手名字
+        local isAtk = G_UserInfo.GlobalDBID == atkId;
+        table.insert(records, {
+            id = id,
+            isAtk = isAtk,
+            name = name,
+            rank = isAtk and atkRank or defRank,
+            rankDiff = rankDiff * (isAtk and 1 or -1),        -- 排名变化
+            result = (isAtk and result) or (result == 1 and 0 or 1),
+        });
+    end
+    table.sort(records, function(r1, r2) return r1.id > r2.id; end);
+    ArenaManager.records = records;
+    ArenaRecordPanel.RefreshList();
+    error(SerializeTable(records));
+end
+
+-- 通知客户端离线竞技场结果
+function OnFightResult(protocolId, buffer)
+    local data = {};
+    data.oppName = buffer:ReadStringByByte();
+    data.oppId = buffer:ReadUInt();
+    data.proId = buffer:ReadInt();
+    data.level = buffer:ReadInt();
+    data.result = buffer:ReadByte();
+    data.items = {};
+    local count = buffer:ReadInt();
+    for i = 1, count do
+        table.insert(data.items, {
+            itemId = buffer:ReadUInt(),
+            itemNum = buffer:ReadInt()
+        });
+    end
+    ArenaResultPanel.Show(data);
+    error("通知客户端离线竞技场结果:"..SerializeTable(data));
+end
+
+-------------------------------------------------------处理接收协议 END---------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求匹配对手
+-- @param op 1:打开面板 0:刷新
+function RequestOpponentList(op)
+    error("请求匹配对手:" .. op);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASK_OFFLINEARENA_MATCH_OPPONENT);
+    buffer:WriteByte(op);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求挑战对手
+-- @param oppRank 对手的排名
+-- @param oppId 对手的玩家ID
+function RequestFightOpponent(oppRank, oppId)
+    error(string_format("请求挑战对手 -> rank:{0} id:{1}", oppRank, oppId));
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASK_OFFLINEARENA_FIGHTING_OPPONENT);
+    buffer:WriteInt(oppRank);
+    buffer:WriteInt(oppId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求战斗记录
+function RequestBattleRecords()
+    error(string_format("请求战报信息 -> version:{0}", recordVersion));
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_OFFLINEARENA_FIGHTING_LOG);
+    buffer:WriteInt(recordVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

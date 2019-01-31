@@ -1,0 +1,223 @@
+﻿module('ActivityGuildPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityGuildPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 活动列表
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 活动列表组件
+local m_List = nil;
+-- 单个活动信息
+local m_activityInfo = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_List = nil;
+    m_activityInfo = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView")
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitList();
+end
+
+-- 初始化列表
+function InitList()
+    m_List:RemoveAll();
+    local items = ActivityManager.GetActivityList(2);
+    local level = G_UserInfo.RoleAttribute.Level;
+    for i, data in ipairs(items) do
+        if ActivityManager.GetActivityVisible(data.id) then
+            m_List:AddData(data);
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 活动列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local info = data.info;
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local state = ActivityManager.GetActivityState(data.id);
+    go.name = "Cell_" .. data.id;
+
+    SetSpriteByAtlasID("Icon", info.Icon, go);
+    SetLabelTextByID("Name", info.Name, go);
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(data.id);
+    if maxTimes > 0 then
+        SetLabelContent("Times", string_format(
+        --[[ 次数:{0}/{1} ]]
+        CCommonTool.GetTxtData(895).m_str, usedTimes, maxTimes), go);
+    else
+        SetLabelContent("Times",
+        --[[ 次数:不限 ]]
+        CCommonTool.GetTxtData(1137).m_str, go);
+    end
+
+    SetLabelContent("Liveness", string_format(
+    --[[ 活跃度:{0} ]]
+    CCommonTool.GetTxtData(896).m_str, data.liveness), go);
+
+    -- 限时活动时间
+    if data.isServerLimit == true then
+        SetLabelContent("Liveness", "", go);
+        SetLabelContent("Times", "", go);
+        if data.limitEndTime > 0 then
+            SetLabelContent("Times", string_format(
+            --[[ 剩余时间: {0}分钟 ]]
+            CCommonTool.GetTxtData(1544).m_str, data.remainLimitMinute), go);
+        end
+    end
+
+    if info.RewardType > 0 then
+        SetGameObjectState("TypeName", true, go);
+        SetLabelTextByID("TypeName", info.RewardTypeTextId, go);
+        SetSpriteByAtlasID("TypeName/TypeIcon", info.RewardTypeIconId, go);
+    else
+        SetGameObjectState("TypeName", false, go);
+    end
+    -- corner
+    SetGameObjectState("CornerRecommend", ActivityManager.IsRecommendActivity(data.id), go);
+    SetGameObjectState("CornerNew", ActivityManager.IsNewActivity(data.id), go);
+    SetGameObjectState("CornerLimit", ActivityManager.IsLimitActivity(data.id), go);
+    SetGameObjectState("CornerWeek", ActivityManager.IsWeekActivity(data.id), go);
+
+    local passedVisible, openTimeVisible, openLevelVisible, jumpButtonVisible, viewButtonVisible, timesButtonVisible = false, false, false, false, false, false;
+	if data.passed then
+	    passedVisible = true;
+	elseif state == ACTIVITY_STATE.LOCKED then
+	    openLevelVisible = true;
+	elseif state == ACTIVITY_STATE.WAITING or state == ACTIVITY_STATE.OVER then
+	    openTimeVisible = true;
+	elseif state == ACTIVITY_STATE.OPENING then
+	    -- 前往类型是0不可前往
+	    if info.jumpType > 0 then
+            -- 限时活动
+            if data.isServerLimit == true then
+                if ActivityManager.IsLackTimes(data.id) == 1 then
+                    timesButtonVisible = true;
+                else
+                    jumpButtonVisible = true;
+                end
+            else
+                if remainTimes > 0 or maxTimes == 0 then
+                    jumpButtonVisible = true;
+                elseif data.addTimesItemId > 0 and data.addMaxTimes > 0 and data.timesByUseItem < data.addMaxTimes then
+                    timesButtonVisible = true;
+                end
+            end
+        end
+	end
+    if openLevelVisible then
+        SetLabelContent("OpenLevel", string_format(
+        --[[ {0}级开放 ]]
+        CCommonTool.GetTxtData(897).m_str, data.openLevel), go);
+    end
+    if openTimeVisible then
+        SetLabelContent("OpenTime", ActivityManager.GetOpenTime(data.id, false, "\n"), go);
+    end
+    SetGameObjectState("Passed", passedVisible, go);
+    SetGameObjectState("OpenLevel", openLevelVisible, go);
+    SetGameObjectState("OpenTime", openTimeVisible, go);
+    SetGameObjectState("JumpButton", jumpButtonVisible, go);
+    SetGameObjectState("ViewButton", viewButtonVisible, go);
+    SetGameObjectState("addTimesButton", timesButtonVisible, go);
+
+    -- 单人/多人
+    local teamTypeTextId = info.TeamTypeTextId;
+    local text = teamTypeTextId > 0 and CCommonTool.GetTxtData(teamTypeTextId).m_str or "";
+    SetLabelContent("TeamType", text, go);
+end
+
+-- 活动列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "JumpButton" or go.name == "ViewButton" then
+        local panelId = ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL;
+        ActivityManager.Jump(data.id, panelId, function(jumpType, success) 
+            if success == true  then
+                if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+                    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+                end
+            end
+        end);
+        --[[
+        local result, jumpType = ActivityManager.Jump(data.id, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+        if result then
+            if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+                closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+            end
+        end
+        ]]
+    elseif go.name == "Icon" then
+        ActivityDetailPanel.Show(data.id, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    elseif go.name == "addTimesButton" then
+        -- 增加活动次数按钮
+        ActivityTimesItemPanel.Show(data.id);
+    end
+	--活动-公会活动上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10192);
+	end
+
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if m_CreateSuccess and m_PanelObject.activeInHierarchy == true then
+        InitShow();
+    end
+end

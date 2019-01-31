@@ -1,0 +1,236 @@
+﻿module('DungeonSoloPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'DungeonSoloPanel';
+---------------------------------------label路径---------------------------------------
+-- 副本名称
+local m_NamePath = "Content/Name";
+-- 副本类型
+local m_TypePath = "Content/Type";
+-- 描述
+local m_DescPath = "Content/Desc";
+-- 描述2
+local m_Desc2Path = "Content/Desc2";
+-- 活动类型
+local m_TypeNamePath = "Content/TypeName";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonPath = "Content/CloseButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 图标
+local m_IconPath = "Content/Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 组队平台
+local m_TeamButtonPath = "Content/ButtonGrid/TeamButton";
+-- 进入副本
+local m_JumpButtonPath = "Content/ButtonGrid/JumpButton";
+-- 奖励1
+local m_Item1Path = "Content/Items/Item1";
+-- 奖励2
+local m_Item2Path = "Content/Items/Item2";
+-- 奖励3
+local m_Item3Path = "Content/Items/Item3";
+-- 奖励4
+local m_Item4Path = "Content/Items/Item4";
+-- 奖励5
+local m_Item5Path = "Content/Items/Item5";
+-- 星级
+local m_StartsPath = "Content/Stars";
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 按钮组Grid
+local m_ButtonGridPath = "Content/ButtonGrid";
+-- 奖励Grid
+local m_ItemsPath = "Content/Items";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 副本类型
+local m_Type = nil;
+-- 奖励GRID
+local m_Items = nil;
+-- 奖励1
+local m_Item1 = nil;
+-- 奖励2
+local m_Item2 = nil;
+-- 奖励3
+local m_Item3 = nil;
+-- 奖励4
+local m_Item4 = nil;
+-- 奖励5
+local m_Item5 = nil;
+-- 按钮组Grid
+local m_ButtonGrid = nil;
+-- 组队平台
+local m_TeamButton = nil;
+-- 进入副本
+local m_JumpButton = nil;
+local m_ItemObjects = nil;
+local m_ItemPaths = nil;
+
+local m_DungeonId = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_Type = nil;
+    m_ButtonGrid = nil;
+    m_TeamButton = nil;
+    m_JumpButton = nil;
+    m_DungeonId = 0;
+    m_Items = nil;
+    m_Item1 = nil;
+    m_Item2 = nil;
+    m_Item3 = nil;
+    m_Item4 = nil;
+    m_Item5 = nil;
+    m_ItemObjects = nil;
+    m_ItemPaths = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL);
+    m_Type = GetComponent(m_PanelObject, m_TypePath, "UILabel");
+    m_ButtonGrid = GetComponent(m_PanelObject, m_ButtonGridPath, "UIGrid");
+    m_TeamButton = child(m_PanelObject, m_TeamButtonPath).gameObject;
+    m_JumpButton = child(m_PanelObject, m_JumpButtonPath).gameObject;
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid")
+    m_Item1 = child(m_PanelObject, m_Item1Path).gameObject;
+    m_Item2 = child(m_PanelObject, m_Item2Path).gameObject;
+    m_Item3 = child(m_PanelObject, m_Item3Path).gameObject;
+    m_Item4 = child(m_PanelObject, m_Item4Path).gameObject;
+    m_Item5 = child(m_PanelObject, m_Item5Path).gameObject;
+
+    m_ItemObjects = { m_Item1, m_Item2, m_Item3, m_Item4, m_Item5 };
+    m_ItemPaths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_TeamButton).onClick = LuaHelper.OnClick(OnTeamButtonClick);
+    UIEventListener.Get(m_JumpButton).onClick = LuaHelper.OnClick(OnJumpButtonClick);
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local info = DungeonManager.GetDungeonInfo(m_DungeonId);
+    SetLabelTextByID(m_NamePath, info.NameId, m_PanelObject);
+    SetLabelTextByID(m_DescPath, info.DescId, m_PanelObject);
+    SetLabelTextByID(m_Desc2Path, info.DescId2, m_PanelObject);
+    SetSpriteByAtlasID(m_IconPath, info.Icon, m_PanelObject, true);
+	if info.RewardType > 0 then
+		SetGameObjectState(m_TypeNamePath, true, m_PanelObject);
+		SetLabelTextByID(m_TypeNamePath, info.RewardType, m_PanelObject);
+		SetSpriteByAtlasID(m_TypeNamePath .. "/TypeIcon", info.RewardTypeIconId, go);
+	else
+		SetGameObjectState(m_TypeNamePath, false, m_PanelObject);
+	end
+    
+
+    -- 星级
+    local star = info.StarDifficulty;
+    for i = 1, 5 do
+        SetGameObjectState(m_StartsPath .. "/Star" .. i .. "/Icon", i <= star, m_PanelObject);
+    end
+
+    -- 获得奖励展示表道具信息
+    local rewardId = info.RewardId;
+    local list = CCommonTool.GetRewardShowItemIds(rewardId);
+    local count = list.count;
+    for i, path in ipairs(m_ItemPaths) do
+        if i <= count then
+            local excelId = list[i - 1];
+            SetItemShowByExcelIDV04(m_PanelObject, path, excelId, 1, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL);
+            SetItemToolTipsEvent(m_ItemObjects[i], "", ENUMPANELID.ENUM_PANEL_ACTIVITYGENERALPANEL, false, excelId);
+            SetGameObjectState(path, true, m_PanelObject);
+        else
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+    m_Items:Reposition();
+
+    local dungeonType = info.DungeonType;
+    if dungeonType == DUNGEON_TYPE.RECOMMEND_TEAM then
+        --[[ 推荐组队 ]]
+        m_Type.text = CCommonTool.GetTxtData(162012).m_str;
+    else
+        m_Type.text = "";
+    end
+
+    local activity = ActivityManager.GetActivity(m_DungeonId);
+    local showTeam = false;
+    showTeam = DungeonManager.IsTeamDungeon(m_DungeonId);
+    m_TeamButton:SetActive(showTeam);
+    m_ButtonGrid:Reposition();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 组队按钮点击事件
+function OnTeamButtonClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL);
+    -- createPanel(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+    TeamPanel.OpenByDungeonId(m_DungeonId);
+end
+
+-- 进入副本按钮点击事件
+function OnJumpButtonClick(gameObject)
+    JumpManager.DungeonTransfer(m_DungeonId, function(jumpType, success) 
+        closePanel(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL);
+    end);
+    --DungeonProtocol.RequestEnterDungeon(m_DungeonId);
+end
+
+-- 关闭按钮点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL);
+end
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(dungeonId)
+    m_DungeonId = dungeonId;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL) == 1 then
+        InitShow();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_DUNGEONSOLOPANEL);
+    end
+end

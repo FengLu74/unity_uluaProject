@@ -1,0 +1,94 @@
+﻿module("ActivityDungeonProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 通知客户端打开补充体力面板
+    network.Register(GMI_STOC_LGS_OPEN_ADD_THEW_PANEL, DangerousSceneAddThew);
+    -- 服务器发送副本活动倒计时
+    
+    network.Register(CMI_STOC_LGS_TIME_END_ACTIVITY, OnDealDungeonOrActCountDownTime);
+    -- 服务器发送体力大餐信息
+    --network.Register(GMI_STOC_RETURN_CREQUESTJOINACTIVITY, ActivityObjInfo);
+    -- 服务器无尽炼狱胜利信息
+    network.Register(GMI_STOC_SELECT_LIANSHENTAIUI, ActivityEndlessVictory);
+    -- 接收服务器随机值的数据
+    network.Register(GMI_STOC_SEND_ACTIVITYRANDNUM_TO_CLIENT, CoinAndExpActiRollBack);
+end
+
+-- 危险场景体力补充面板
+function DangerousSceneAddThew(protocolId, buffer)
+    isHaveEnergyDrug = false;
+    -- 获取背包列表中的道具信息
+    local listBag = G_BagMng:GetGoodsByItemTagType(ITEMTAGTYPE.TT_Consume);
+    -- 判断背包中是否存在体力药水
+    for Index = 1, listBag.count do
+        if listBag[Index - 1].ExcelID >= 25100 and listBag[Index - 1].ExcelID <= 25102 then
+            isHaveEnergyDrug = true;
+            break;
+        end
+    end
+    if isHaveEnergyDrug == true then
+        ParameterToMessageTextBox.DangerSceneNoThewUseThewMed();
+    else
+        ParameterToMessageTextBox.DangerSceneNoThewBuyThew();
+    end
+end
+
+-- 服务器发送副本活动倒计时处理
+function OnDealDungeonOrActCountDownTime(protocolId, buffer)
+    G_SceneMng.DungeonOrActOverTime = buffer:ReadInt64();
+end
+
+-- 体力大餐活动信息
+--function ActivityObjInfo(protocolId, buffer)
+--    -- 回复类型  1:上线接受 2：参加活动回复 3:活动成功回复
+--    local m_ySendDataType = buffer:ReadByte();
+--    -- 每日是否参加过活动1:参加过 2：没有 3.今天活动不开放
+--    local m_yCharJoinActiRecord = buffer:ReadByte();
+--    --SocialActPanel.ActivityMealDayInfo(m_yCharJoinActiRecord);
+--    -- 活动对象索引
+--    local m_yActiGatherIndex = buffer:ReadByte();
+--    -- 体力大餐表信息
+--    if m_ySendDataType == 2 and m_yCharJoinActiRecord == 0 then
+--        local m_TableData = CCommonTool.GetActivitySocialMealDice(m_yActiGatherIndex);
+--        if nil == m_TableData then
+--            error("活动编号错误，找不到对象信息");
+--        end
+--        G_MissionMng:AddActivityCollect(m_yActiGatherIndex);
+--        G_MissionMng.IsActivityTrace = true;
+--        local goPosition = Vector3.New(m_TableData.MealmapX, 0, m_TableData.MealmapZ);
+--        G_UserInfo:GetCurPlayer():SetMovePathwithNoTarget(m_TableData.Mealmap, goPosition);
+--    end
+--    local index = 1;
+--    if m_yActiGatherIndex > 0 then
+--        index = m_yActiGatherIndex;
+--    end
+--    if m_ySendDataType == 3 then
+--        -- 奖励系数(打开成功面板)
+--        local rewardCoefficient = 1.0;
+--        if G_UserInfo.RoleAttribute.TeamID > 0 then
+--            rewardCoefficient = m_TableData.MealrewardPlus;
+--        end
+--        ParameterToMessageTextBox.ActivityMealThew(math.floor(CCommonTool.GetActivitySocialMealDice(index).Mealreward * rewardCoefficient));
+--    end
+--end
+
+-- 打开无尽炼狱胜利界面
+function ActivityEndlessVictory(protocolId, buffer)
+    local activityId = buffer:ReadUShort();
+    local index = buffer:ReadUShort();
+    local isLast = buffer:ReadUShort();
+    local time = buffer:ReadUShort();
+    local isFirstPass = buffer:ReadUShort() == 1;
+    EndlessActiWinPanel.RefreshEndlessVitory(activityId, index, isLast,time, isFirstPass);
+    Main_MiddleTop.EndlessActiEndCountDown();
+end
+
+-- 接收服务器随机值的数据
+function CoinAndExpActiRollBack(protocolId, buffer)
+    local num = buffer:ReadInt();
+    CoinAndExpActiRollPanel.GetServerData(num);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

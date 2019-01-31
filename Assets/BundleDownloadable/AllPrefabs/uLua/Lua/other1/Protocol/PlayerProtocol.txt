@@ -1,0 +1,773 @@
+﻿module("PlayerProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 购买体力值返回信息
+    network.Register(GMI_STOC_BUY_THEW_RETURN, BuyThewReturn);
+    -- 服务器通知客户端自动回血的百分比设置
+    network.Register(GMI_STOC_CLIENT_CFG, OnSetUseMedPercent);
+    -- 服务器发送给客户端更新玩家角色战斗力消息
+    network.Register(GMI_STOC_ATTACK_FIGHT_ABILITY, UpdatePlayerFightAbility);
+    -- 绑定与非绑定钻石相关的更新
+    network.Register(GMI_STOC_CHANGE_GOLD_RESERVE, OnUpdateMoney);
+    -- 玩家的绑定金币更新
+    network.Register(GMI_STOC_SET_BINDMONEY, OnUpdateBindMoney);
+    -- 玩家的非绑定金币更新
+    network.Register(GMI_STOC_SETMONEY, OnUpdateMoney);
+    -- 玩家的体力更新
+    network.Register(GMI_STOC_THEW_CHANGE, OnUpdateMoney);
+    -- 玩家的功勋更新
+    network.Register(GMI_STOC_EXPLOITUPDATESYNCHROCLIENT, OnUpdateMoney);
+    -- 通知客户端修为升级信息
+    network.Register(GMI_STOC_QUALITY_LV_INFO, XiuWeiLevelUp);
+    -- 更新玩家的抽奖状态    更新玩家的基本抽奖信息
+    -- network.Register(GMI_STOC_LOTTERY_DRAW_LOGIN_UPDATE_INFO, OnUpdatePlayerCapsule);
+    -- 更新玩家的抽奖信息 更新玩家的抽奖内容
+    -- network.Register(GMI_STOC_LOTTERY_DRAW_INFO, OnUpdatePlayerCapsuleInfo);
+    -- //查看属性通知
+    network.Register(GMI_STOC_LOOK_UP_ATTRIBUTE, OnSetOthersPlyaerAttribute);
+    -- 查看其他玩家的信息
+    network.Register(GMI_STOC_GET_OTHERPLAYER_STATE, OnSetOtherPlayerInfo);
+    -- 服务器脚本客户端读条
+    network.Register(GMI_STOC_SCRIPT_LOADING, OnStartLoadBar);
+    -- 服务器通知客户端系统解锁
+    network.Register(GMI_STOC_SYSTEMOPEN_UPDATE, SystemOpen);
+
+    -- 更新帝国悬赏星级
+    network.Register(GMI_STOC_EMPIREBOUNTY_REFRESHSTAR_RETURN, RefreshEmpireBountyStarLv);
+    -- 接取帝国悬赏任务返回
+    network.Register(GMI_STOC_EMPIREBOUNTY_ACCEPT_RETURN, AcceptEmpireBountyMissionReturn);
+
+    -- 告诉客户端角色上线所有数据发送完成
+    network.Register(GMI_STOC_PLAYER_SEND_MSG_OK, InitAllDataOK);
+
+    -- 服务器回复货币兑换的结果
+    network.Register(GMI_STOC_MONEY_EXCHANGE_RESULT, MoneyExchangeResult);
+    -- 服务器回复功能预告Id
+    network.Register(GMI_STOC_SEND_CLIENT_SYS_TRAILERID, OpenNewSystem);
+
+    -- 猎魔活动出副本自动寻路
+    network.Register(GMI_STOC_TEAM_HUNT_MAGIC_LEAVE_FB_AOTO_FIND_ROAD, HuntActiSetAutoPath);
+
+    -- 服务器更新骑士荣誉值
+    network.Register(GMI_STOC_HONORVALUE_SYNCHROCLIENT, OnUpdatePlayerHonorValue);
+
+    -- 吃鸡相关：
+    -- 服务器更新吃鸡场景主界面玩家相关信息（玩家刚进入场景的时候）
+    network.Register(GMI_STOC_SEND_EAT_CHICKEN_ACTIVITY_MAIN_UI_INFO, UpdateEatChickenMainUIInfo);
+
+    -- 服务器更新吃鸡场景相关信息(玩家刚进入场景的时候和安全区刷新的时候)
+    network.Register(GMI_STOC_UPDATE_EAT_CHICKEN_ACTIVITY_ROOM_INFO, UpdateEatChickenRoomInfo);
+
+    -- 服务器更新吃鸡排行信息
+    network.Register(GMI_STOC_SEND_EAT_CHICKEN_ACTIVITY_ALL_PLAYER_INFO, UpdateEatChickenRankInfo);
+
+    -- 服务器发送吃鸡结果
+    network.Register(GMI_STOC_SEND_EAT_CHICKEN_RESULT, ReceiveEatChickenResult);
+
+    -- 服务器发送注册活动的ID
+    network.Register(GMI_STOC_NOTIFY_CLIENT_REGISTER_ACTIVITY_ID, ReceiveRegisterActivityID);
+    -- 服务器发送吃鸡技能等级
+    network.Register(GMI_CTOS_LGS_SKILL_SWITCH_ACTIVE_STATE, EatChickenSkillActive);
+    -- 同步角色升级时间
+    network.Register(GMI_STOC_LEVEL_UP_TIME, OnUpdatePlayerLevelUpTime);
+    -- 返回修为培养
+    network.Register(GMI_STOC_CULTIVATE_PENGYANG_RETURN, OnCultivatePeiyangReturn);
+end
+
+-- 服务器发送吃鸡技能等级
+function EatChickenSkillActive(protocolId, buffer)
+    skillData = {};
+    skillData.SkillID = buffer:ReadInt();
+    skillData.SkillIndex = buffer:ReadInt();
+    skillData.SkillLevel = buffer:ReadInt();
+    EatChickenManager.SkillData[skillData.SkillIndex] = skillData;
+    Main_RightBottom.UpdateEatChickenSkillOut(skillData.SkillIndex);
+end
+
+
+-- 服务器更新吃鸡场景主界面信息
+function UpdateEatChickenMainUIInfo(protocolId, buffer)
+    EatChickenManager.wKillPlayerNum = buffer:ReadUShort();
+    EatChickenManager.wActivityScore = buffer:ReadUShort();
+    EatChickenManager.wDeadPlayerNum = buffer:ReadUShort();
+    EatChickenManager.wAllPlayerNum = buffer:ReadUShort();
+    error("吃鸡：主界面加载：击杀数量"..EatChickenManager.wKillPlayerNum.."得分"..EatChickenManager.wActivityScore.."死亡数量"..EatChickenManager.wDeadPlayerNum.."总人数"..EatChickenManager.wAllPlayerNum);
+    Main_MiddleTop.UpdateEatChickenStasticContent();
+end
+
+-- 服务器更新吃鸡场景相关信息
+function UpdateEatChickenRoomInfo(protocolId, buffer)
+    -- 活动状态
+    local yActivityState    = buffer:ReadByte();
+--    enum EAT_CHICKEN_STATE
+--    {
+--	    EAT_CHICKEN_STATE_PLAYER_READY		= 0,	// 准备期间(显示活动即将开始，大约几秒钟)
+--	    EAT_CHICKEN_STATE_FIRST_ROUND_READY	= 1,	// 准备开始第一轮(显示还有多少秒出现安全区)
+--	    EAT_CHICKEN_STATE_AFTER_FIRST_ROUND	= 2,	// 第一轮安全区生效后的状态(显示下一轮安全区多少秒刷新)
+--	    EAT_CHICKEN_STATE_LAST_ROUND		= 3,	// 最后一轮(显示最后一轮)
+--	    EAT_CHICKEN_STATE_END,
+--    };
+	local	nEndTime                = 0;
+
+    if yActivityState ==  0 then                --准备期间(显示活动即将开始，大约几秒钟)
+        nEndTime = buffer:ReadInt();         --这里是活动将要开启的时间
+        EatChickenManager.bShowCurCircle = false;
+        EatChickenManager.bShowNextCircle = false;
+        error("吃鸡：活动即将开始");
+    elseif yActivityState ==  1 then            --准备开始第一轮(显示还有多少秒出现安全区)
+        EatChickenManager.fNextSecurityPosX = buffer:ReadFloat();
+	    EatChickenManager.fNextSecurityPosZ = buffer:ReadFloat();
+	    EatChickenManager.fNextSecurityRadius = buffer:ReadFloat();
+        nEndTime = buffer:ReadInt();         --显示还有多少秒出现安全区
+        EatChickenManager.bShowCurCircle = false;
+        EatChickenManager.bShowNextCircle = true;
+        error("吃鸡：活动生效当前安全区且过会即将第一次刷新安全区：X:"..EatChickenManager.fNextSecurityPosX.."Z:"..EatChickenManager.fNextSecurityPosZ.."半径:"..EatChickenManager.fNextSecurityRadius);
+    elseif yActivityState ==  2 then            --第一轮安全区生效后的状态(显示下一轮安全区多少秒刷新)
+        EatChickenManager.fCurSecurityPosX = buffer:ReadFloat();
+	    EatChickenManager.fCurSecurityPosZ = buffer:ReadFloat();
+	    EatChickenManager.fCurSecurityRadius = buffer:ReadFloat();
+        EatChickenManager.fNextSecurityPosX = buffer:ReadFloat();
+	    EatChickenManager.fNextSecurityPosZ = buffer:ReadFloat();
+	    EatChickenManager.fNextSecurityRadius = buffer:ReadFloat();
+        nEndTime = buffer:ReadInt();         --显示下一轮安全区多少秒刷新
+        EatChickenManager.bShowCurCircle = true;
+        EatChickenManager.bShowNextCircle = true;
+        error("吃鸡：活动生效当前安全区且过会即将刷新下一个安全区：当前点X:"..EatChickenManager.fCurSecurityPosX.."Z:"..EatChickenManager.fCurSecurityPosZ.."半径:"..EatChickenManager.fCurSecurityRadius);
+        error("吃鸡：活动生效当前安全区且过会即将刷新下一个安全区：下一个点X:"..EatChickenManager.fNextSecurityPosX.."Z:"..EatChickenManager.fNextSecurityPosZ.."半径:"..EatChickenManager.fNextSecurityRadius);
+    elseif yActivityState ==  3 then
+        EatChickenManager.fCurSecurityPosX = buffer:ReadFloat();
+	    EatChickenManager.fCurSecurityPosZ = buffer:ReadFloat();
+	    EatChickenManager.fCurSecurityRadius = buffer:ReadFloat();
+        nEndTime = buffer:ReadInt();         --显示活动结束还有多少秒
+        EatChickenManager.bShowCurCircle = true;
+        EatChickenManager.bShowNextCircle = false;
+        error("吃鸡：活动最后一个安全区生效：X:"..EatChickenManager.fCurSecurityPosX.."Z:"..EatChickenManager.fCurSecurityPosZ.."半径:"..EatChickenManager.fCurSecurityRadius);
+    else
+        error("吃鸡：场景数据刷新出错，类型"..yActivityState);
+    end
+    EatChickenManager.nTxtID = buffer:ReadInt();         --这里是主界面显示的文本ID
+    Main_MiddleTop.UpdateEatChickenTimeContent();
+    EatChickenMapPanel.UpdatePanel();
+    EatChickenManager.AddCountDownTimer(nEndTime);
+    EatChickenManager.InitSceneData();
+end
+
+-- 服务器更新吃鸡排行信息
+function UpdateEatChickenRankInfo(protocolId, buffer)
+    EatChickenManager.nVersion = buffer:ReadInt();      -- 服务器吃鸡信息版本号
+    local yVectorSize = buffer:ReadByte();  -- 数组个数
+    local yNeedUpdateName = buffer:ReadByte(); -- 是否需要更新名字和战斗力
+
+    if yNeedUpdateName == 1 then
+        EatChickenManager.RankData = {};
+    end
+    local rankDataTable = {};
+    for Index = 1, yVectorSize do
+        rankDataTable = {};
+        rankDataTable.GlobalID = buffer:ReadUInt();
+        if yNeedUpdateName == 1 then
+            rankDataTable.Name = buffer:ReadStringByByte();
+            rankDataTable.FightValue = buffer:ReadInt();
+            rankDataTable.Level = buffer:ReadUShort();
+            error("吃鸡：排行刷新:ID"..rankDataTable.GlobalID.."名字"..rankDataTable.Name.."战斗力"..rankDataTable.FightValue.."等级"..rankDataTable.Level);
+        end
+        rankDataTable.KillNum = buffer:ReadUShort();
+        rankDataTable.Score = buffer:ReadUShort();
+        rankDataTable.RankOrder = buffer:ReadUShort();
+        error("吃鸡：排行刷新：玩家"..rankDataTable.GlobalID.."杀人数"..rankDataTable.KillNum.."分数"..rankDataTable.Score.."玩家索引"..rankDataTable.RankOrder);
+        EatChickenManager.AddRankData(rankDataTable);
+    end
+    EatChickenManager.RankDataSort();
+    EatChickenRankPanel.UpdatePanel();
+end
+
+-- 服务器发送吃鸡结果
+function  ReceiveEatChickenResult(protocolId, buffer)
+    local resultData = {};
+    resultData.Result = buffer:ReadByte();    -- 吃鸡结果
+    resultData.KillNum = buffer:ReadUShort();  -- 杀人数
+    resultData.Score = buffer:ReadUShort();  -- 活动积分
+    resultData.RankOrder = buffer:ReadUShort();  -- 排名名次(死亡名次)
+    resultData.TotalNum = buffer:ReadUShort();  -- 本场次人数
+    error("吃鸡：结果:"..resultData.Result.."杀人数"..resultData.KillNum.."分数"..resultData.Score
+    .."名次："..resultData.RankOrder.."本场人数:"..resultData.TotalNum);
+    resultData.RewardTable = {};
+    local ySize = buffer:ReadByte();    -- 奖励道具个数
+    for Index = 1, ySize do
+        local itemTable = {}; 
+        itemTable.ItemID = buffer:ReadUInt();
+		itemTable.ItemNum = buffer:ReadUShort();
+        table.insert(resultData.RewardTable,itemTable);
+        error("吃鸡：奖励道具ID："..itemTable.ItemID.."个数"..itemTable.ItemNum);
+    end
+    EatChickenResultPanel.SetData(resultData);
+end
+
+-- 服务器发送注册活动的
+function ReceiveRegisterActivityID(protocolId, buffer)
+    local nRegisterActivityID = buffer:ReadInt();    -- 0为取消不等于0为活动ID
+    error("报名：报名活动ID"..nRegisterActivityID);
+    G_UserInfo.RoleAttribute.CurSignUpActivityID = nRegisterActivityID;
+    Main_Middle.UpdateSignUpContent();
+end
+
+-- 服务器更新骑士荣誉值
+function OnUpdatePlayerHonorValue(protocolId, buffer)
+    local acuHonorValue = buffer:ReadInt();
+    local curHonorValue = buffer:ReadInt();
+    local changeValue = curHonorValue - G_UserInfo.RoleAttribute.CurHonourValue;
+    if changeValue > 0 then
+        GetTispInfoByItemType(1,8,changeValue);
+    end
+    G_UserInfo.RoleAttribute.CurHonourValue = curHonorValue;
+    G_UserInfo.RoleAttribute.HonourValue = acuHonorValue;
+    ShopPanel.OnHonorChangeRefresh();
+end
+
+-- 货币兑换的结果
+function MoneyExchangeResult(protocolId, buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        log("非绑定钻石兑换非绑定金币成功");
+    elseif result == 2 then
+        log("非绑定金币兑换绑定金币成功");
+    elseif result == 3 then
+        log("非绑定钻石兑换绑定金币成功");
+    elseif result == 4 then
+        log("绑定钻石兑换绑定金币成功");
+    elseif result == 5 then
+        log("钻石兑换绑定钻石成功");
+    else
+        error("货币兑换无法兑换，原因编号:::" .. result);
+    end
+    -- 绑定金币有变化
+    if result == 2 or result == 3 or result == 4 then
+        RidePanel.OnBindMoneyChange();
+        Equip_Force.OnBindMoneyChange();
+        Equip_StarUp.OnBindMoneyChange();
+        Equip_Enchant.OnBindMoneyChange();
+        Equip_Gem.OnBindMoneyChange();
+        Equip_RandEff.OnBindMoneyChange();
+        EmpireBountyStarPanel.OnBindMoneyChange();
+        ShopPanel.OnBindMoneyChange();
+        MoneyExchangePanel.OnPlayerMoneyChange();
+        SkillLevelupPanel.OnBindMoneyChange();
+        CombinePanel.OnRefreshItem();
+    end
+    if result > 0 then
+        ShowSystemFlowTips(3330);
+    end
+end
+
+-- 告诉客户端角色上线所有数据发送完成
+function InitAllDataOK(protocolId, buffer)
+    -- G_MissionMng:InitAllMissionsState();
+    -- 玩家数据加载完成，可以初始化红点的显示了
+end
+
+-- 接取帝国悬赏任务返回
+function AcceptEmpireBountyMissionReturn(protocolId, buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        log("帝国悬赏任务接受成功");
+        ShowSystemFlowTips(5301);
+    elseif nResult == -1 then
+        log("玩家已经有悬赏任务了，无法再次接取");
+        ShowSystemFlowTips(5306);
+    elseif nResult == -2 then
+        log("没有符合玩家等级的可接的悬赏任务");
+        ShowSystemFlowTips(5307);
+    elseif nResult == -3 then
+        log("task_random表中不存在对应的库ID")
+        ShowSystemFlowTips(5308);
+    end
+end
+
+-- 更新帝国悬赏星级
+function RefreshEmpireBountyStarLv(protocolId, buffer)
+    local nResult = buffer:ReadInt();
+    if nResult >= 0 then
+        EmpireBountyStarPanel.RefreshPanel();
+        _G.LogicData_EmpireBountyStarLv = nResult;
+        return;
+    elseif result == -1 then
+        log("帝国悬赏刷星消耗不超过0");
+        ShowSystemFlowTips(5302);
+    elseif result == -2 then
+        log("玩家银币不够，无法刷星");
+        ShowSystemFlowTips(5303);
+    elseif result == -3 then
+        log("帝国悬赏刷星，扣除金币失败");
+        ShowSystemFlowTips(5304);
+    elseif result == -4 then
+        log("帝国悬赏刷星，刷星结果不为1~5");
+        ShowSystemFlowTips(5305);
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL);
+end
+
+-- 玩家购买体力值返回信息
+function BuyThewReturn(protocolId, buffer)
+    local num = buffer:ReadByte();
+    G_UserInfo.RoleAttribute.BuyThewNum = num;
+    return;
+end
+
+-- 设置自动回血的百分比
+function OnSetUseMedPercent(protocolId, buffer)
+    local mType = buffer:ReadByte();
+    if mType == 2 then
+        local mHpPercent = buffer:ReadFloat();
+        local mMpPercent = buffer:ReadFloat();
+        G_UseMedMng:StoCSetCurrentHpPercent(mHpPercent);
+    end
+end
+
+-- 服务器发送给客户端更新玩家角色战斗力消息,战斗力值更新已移动到c#
+function UpdatePlayerFightAbility(protocolId, buffer)
+    Main_LeftTop.RefreshFightValueOut();
+    RoleBeyond3DPanel.InitFightValueOut();
+    RedHintMng.RefreshFightValue();
+end
+
+-- 玩家体力、金钱、钻石、功勋更新，更新C#的存储，更新UI的显示
+function OnUpdateMoney(protocolId, buffer)
+    CoinPanel.RefreshContentOut();
+    RedHintMng.RefreshMoney();
+end
+
+function OnUpdateBindMoney(protocolId, buffer)
+    CoinPanel.RefreshContentOut();
+    RedHintMng.RefreshBindCoin();
+end
+
+-- 修为升级
+function XiuWeiLevelUp(protocolId, buffer)
+    local Reason = buffer:ReadInt();
+    if Reason == ENUM_QUALITY_MSG.ENUM_QUALIT_MSG_SERVER_ERR then
+        -- error("服务器出错");
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SEVERWRONGXIUWEI);
+    elseif Reason == ENUM_QUALITY_MSG.ENUM_QUALIT_MSG_LV_MAX then
+        -- error("修为等级满级");
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_XIUWEILEVELFULL);
+    elseif Reason == ENUM_QUALITY_MSG.ENUM_QUALIT_MSG_ITEM_NOT_ENOUGH then
+        -- error("升级道具个数不足");
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SPRITESTONELACK);
+    elseif Reason == ENUM_QUALITY_MSG.ENUM_QUALIT_MSG_EXP_NOT_ENOUGH then
+        -- error("升级星星不足");
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_STARSLACK);
+    elseif Reason == ENUM_QUALITY_MSG.ENUM_QUALIT_MSG_ITEM_NOT_LEGAL then
+        -- error("升级道具填表不合法");
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_ITEMISILLEGAL);
+    elseif Reason == ENUM_QUALITY_MSG.ENUM_QUALIT_MSG_SUCCEED then
+        -- error("升级成功");
+        -- ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LEVELUPXIUWEI);
+        local cultivateLevel = buffer:ReadInt();
+        local hp = buffer:ReadInt();
+        local mp = buffer:ReadInt();
+        local ap = buffer:ReadInt();
+        local map = buffer:ReadInt();
+        local dp = buffer:ReadInt();
+        local mdp = buffer:ReadInt();
+        local ac = buffer:ReadInt();
+        local dh = buffer:ReadInt();
+        local ah = buffer:ReadInt();
+        local ch = buffer:ReadInt();
+        local dc = buffer:ReadInt();
+        local sb = buffer:ReadInt();
+        local pt = buffer:ReadInt();
+        local as = buffer:ReadInt();
+        local ms = buffer:ReadInt();
+
+        local hpAdd = buffer:ReadInt();
+        local mpAdd = buffer:ReadInt();
+        local apAdd = buffer:ReadInt();
+        local mapAdd = buffer:ReadInt();
+        local dpAdd = buffer:ReadInt();
+        local mdpAdd = buffer:ReadInt();
+        local acAdd = buffer:ReadInt();
+        local dhAdd = buffer:ReadInt();
+        local ahAdd = buffer:ReadInt();
+        local chAdd = buffer:ReadInt();
+        local dcAdd = buffer:ReadInt();
+        local sbAdd = buffer:ReadInt();
+        local ptAdd = buffer:ReadInt();
+        local asAdd = buffer:ReadInt();
+        local msAdd = buffer:ReadInt();
+
+        local attibuteTable = { };
+        table.insert(attibuteTable, 1, cultivateLevel);
+        table.insert(attibuteTable, 2, hp);
+        table.insert(attibuteTable, 3, hpAdd);
+        table.insert(attibuteTable, 4, ap);
+        table.insert(attibuteTable, 5, apAdd);
+        table.insert(attibuteTable, 6, map);
+        table.insert(attibuteTable, 7, mapAdd);
+        table.insert(attibuteTable, 8, dp);
+        table.insert(attibuteTable, 9, dpAdd);
+        table.insert(attibuteTable, 10, mdp);
+        table.insert(attibuteTable, 11, mdpAdd);
+        -- createPanelExx(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL, attibuteTable);
+        CultivateChangePanel.OnUpDateCultivateLevel(cultivateLevel);
+    else
+        error("服务器返回了客户端未知的参数");
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_RETURNBADARG);
+    end
+end
+
+-- 更新玩家上线或者服务器重置时候的信息
+function OnUpdatePlayerCapsule(protocolId, buffer)
+    local m_capsuleManager = G_UserInfo.GetCapsuleManager;
+    local size = buffer:ReadByte();
+    local capsuleInfo = nil;
+    if size > 0 then
+        for Index = 1, size do
+            capsuleInfo = CapsuleInfo.New();
+            capsuleInfo.m_nLotteryDrawID = buffer:ReadInt();
+            -- //藏宝图ID
+            capsuleInfo.m_nLotteryLastTime = buffer:ReadInt();
+            -- //上一次抽奖的时间
+            capsuleInfo.m_nLotteryCoolTime = buffer:ReadInt();
+            -- //冷却时间
+            capsuleInfo.m_nLotteryTotalTimes = buffer:ReadInt();
+            -- //抽奖的总次数
+            capsuleInfo.m_nLottaryDayTimes = buffer:ReadByte();
+            -- //今天免费抽奖次数
+            -- m_capsuleManager:AddCapsuleInfo(capsuleInfo);
+        end
+    else
+        size = 4;
+        for Index = 1, size do
+            capsuleInfo = CapsuleInfo.New();
+            capsuleInfo.m_nLotteryDrawID = Index;
+            capsuleInfo.m_nLotteryLastTime = 0;
+            capsuleInfo.m_nLotteryCoolTime = 0;
+            if Index == 1 then
+                local capsuleData = CCommonTool.GetCapsuleById(Index);
+                capsuleInfo.m_nLotteryTotalTimes = capsuleData.FreeNum;
+            else
+                capsuleInfo.m_nLotteryTotalTimes = 0;
+            end
+            capsuleInfo.m_nLottaryDayTimes = 0;
+            -- m_capsuleManager:AddCapsuleInfo(capsuleInfo);
+        end
+    end
+end
+
+-- 更新玩家的抽奖信息
+function OnUpdatePlayerCapsuleInfo(protocolId, buffer)
+
+end
+
+-- //查看属性通知
+function OnSetOthersPlyaerAttribute(protocolId, buffer)
+    -- 装备数量
+    local equipCount = 8;
+    local roleAtt = RoleAttribute.New();
+    roleAtt.CRID = buffer:ReadUInt();
+    -- 角色经验
+    roleAtt.Experience = buffer:ReadInt64();
+    -- 角色等级
+    roleAtt.Level = buffer:ReadUShort();
+    -- 修为等级
+    roleAtt.CultivateLv = buffer:ReadUShort();
+    -- 职业ID
+    roleAtt.ProID = buffer:ReadByte();
+    -- 战力
+    roleAtt.BattlePower = buffer:ReadInt();
+    -- 当前生命
+    roleAtt.Health = buffer:ReadFloat();
+    -- 最大生命
+    roleAtt.BaseMaxHealth = buffer:ReadFloat();
+    roleAtt.Mp = buffer:ReadFloat();
+    roleAtt.MaxMp = buffer:ReadFloat();
+    roleAtt.Ap = buffer:ReadFloat();
+    roleAtt.Map = buffer:ReadFloat();
+    roleAtt.Dp = buffer:ReadFloat();
+    roleAtt.Mdp = buffer:ReadFloat();
+    roleAtt.Ac = buffer:ReadFloat();
+    roleAtt.Dh = buffer:ReadFloat();
+    roleAtt.Ah = buffer:ReadFloat();
+    roleAtt.Ch = buffer:ReadFloat();
+    roleAtt.Dc = buffer:ReadFloat();
+    roleAtt.Sb = buffer:ReadFloat();
+    roleAtt.Pt = buffer:ReadFloat();
+    roleAtt.As = buffer:ReadFloat();
+    roleAtt.Speed = buffer:ReadFloat();
+    local len = buffer:ReadByte();
+    roleAtt.Name = buffer:ReadString(len);
+    local list = { };
+    for index = 0, equipCount do
+        local excelID = buffer:ReadUInt();
+        local itemAtt = ItemAttribute.New(excelID);
+        itemAtt.ExcelID = excelID;
+        itemAtt.ItemNum = 1;
+        itemAtt.LevelupItemLevel = buffer:ReadByte();
+        itemAtt.StarItemLevel = buffer:ReadByte();
+        table.insert(list, index, itemAtt);
+    end
+    local tab = { }
+    table.insert(tab, 1, roleAtt);
+    table.insert(tab, 2, list);
+    -- createPanelExx(panelName, tab);暂时屏蔽 ，added by liuyang
+end
+
+-- 设置其他玩家的详细信息
+function OnSetOtherPlayerInfo(protocolId, buffer)
+    -- 道具信息
+    local roleAttribute = RoleAttribute.New();
+    roleAttribute.GlobalDBID = buffer:ReadInt();
+    -- //设置基础属性
+    roleAttribute.IsPlayer = false;
+    roleAttribute.ReactOnHit = false;
+    roleAttribute.MaxRotationSpeed = 1440;
+    -- vip等级
+    local vipLevel = buffer:ReadByte();
+    roleAttribute.CultivateLv = buffer:ReadInt();
+    local nameLen = buffer:ReadByte();
+    roleAttribute.Name = buffer:ReadString(nameLen);
+    roleAttribute.ProID = buffer:ReadByte();
+    -- 等级
+    roleAttribute.Level = buffer:ReadByte();
+    -- 战斗力
+    roleAttribute.BattlePower = buffer:ReadInt();
+    -- 阵营
+    roleAttribute.JoinCampType = buffer:ReadInt();
+    -- 称号ID
+    roleAttribute.TitleId = buffer:ReadInt();
+    -- 公会Id
+    roleAttribute.GuildId = buffer:ReadInt();
+    error("roleAttribute.GuildId" .. roleAttribute.GuildId);
+    -- 公会等级
+    roleAttribute.GuildLevel = buffer:ReadUShort();
+    error("roleAttribute.GuildLevel" .. roleAttribute.GuildLevel);
+
+    -- 总的功勋值
+    roleAttribute.N64AllExploits = buffer:ReadUInt();
+    error("roleAttribute.N64AllExploits::::" .. roleAttribute.N64AllExploits);
+
+    roleAttribute.HairID = buffer:ReadByte();
+    roleAttribute.HairColor = buffer:ReadByte();
+    roleAttribute.FaceID = buffer:ReadByte();
+    -- 生命值
+    roleAttribute.Health = buffer:ReadFloat();
+    roleAttribute.Mp = buffer:ReadFloat();
+    roleAttribute.Ap = buffer:ReadFloat();
+    roleAttribute.Map = buffer:ReadFloat();
+    -- 外防
+    roleAttribute.Dp = buffer:ReadFloat();
+    -- 内防
+    roleAttribute.Mdp = buffer:ReadFloat();
+    -- 暴击
+    roleAttribute.Ac = buffer:ReadFloat();
+    -- 闪避
+    roleAttribute.Dh = buffer:ReadFloat();
+    -- 命中
+    roleAttribute.Ah = buffer:ReadFloat();
+    -- 韧性
+    roleAttribute.Dc = buffer:ReadFloat();
+    -- 暴伤
+    roleAttribute.Ch = buffer:ReadFloat();
+    -- 吸血
+    roleAttribute.Sb = buffer:ReadFloat();
+    -- 穿透
+    roleAttribute.Pt = buffer:ReadFloat();
+    -- 免伤
+    roleAttribute.ReduceDamage = buffer:ReadFloat();
+    -- 反伤
+    roleAttribute.FeedBack = buffer:ReadFloat();
+    -- 增伤
+    roleAttribute.AddDamage = buffer:ReadFloat();
+    -- 冰攻
+    roleAttribute.IceHurt = buffer:ReadFloat();
+    roleAttribute.IceAnt = buffer:ReadFloat();
+    -- 火攻
+    roleAttribute.FireHurt = buffer:ReadFloat();
+    roleAttribute.FireAnt = buffer:ReadFloat();
+    -- 雷攻
+    roleAttribute.ThunderHurt = buffer:ReadFloat();
+    roleAttribute.ThunderAnt = buffer:ReadFloat();
+    -- 风攻
+    roleAttribute.WindHurt = buffer:ReadFloat();
+    roleAttribute.WindAnt = buffer:ReadFloat();
+    -- 光攻
+    roleAttribute.LightHurt = buffer:ReadFloat();
+    roleAttribute.LightAnt = buffer:ReadFloat();
+    -- 暗抗
+    roleAttribute.DarkHurt = buffer:ReadFloat();
+    roleAttribute.DarkAnt = buffer:ReadFloat();
+    -- 沉默强度
+    roleAttribute.CHENMOQD = buffer:ReadFloat();
+    -- 沉默抗性
+    roleAttribute.CHENMOKX = buffer:ReadFloat();
+    -- 中毒强度
+    roleAttribute.ZHONGDUQD = buffer:ReadFloat();
+    -- 中毒抗性
+    roleAttribute.ZHONGDUKX = buffer:ReadFloat();
+    -- 晕眩强读
+    roleAttribute.XuanYunQD = buffer:ReadFloat();
+    -- 晕眩抗性
+    roleAttribute.XuanYunKX = buffer:ReadFloat();
+    -- 减速强度
+    roleAttribute.JIANSUQD = buffer:ReadFloat();
+    -- 减速抗性
+    roleAttribute.JIANSUKX = buffer:ReadFloat();
+    -- 定身强度
+    roleAttribute.DINGSHENQD = buffer:ReadFloat();
+    -- 定身抗性
+    roleAttribute.DINGSHENKX = buffer:ReadFloat();
+     --对领主造成的伤害加成
+    roleAttribute.BossAttackRadio = buffer:ReadFloat();
+    -- 气魄值
+    roleAttribute.QipoValue = buffer:ReadFloat();
+    -- 反伤属性
+    roleAttribute.FanAttackRadio = buffer:ReadFloat();
+    -- 防反伤属性
+    roleAttribute.PreventAttackRadio = buffer:ReadFloat();
+
+    roleAttribute.BingCiValue = buffer:ReadFloat(); --总冰元素穿透
+    roleAttribute.HuoCiValue =buffer:ReadFloat(); --总火元素穿透
+    roleAttribute.LeiCiValue =buffer:ReadFloat(); --总雷元素穿透
+    roleAttribute.FeedBack =buffer:ReadFloat(); --总风元素穿透
+    roleAttribute.GuangCiValue =buffer:ReadFloat(); --总光元素穿透
+    roleAttribute.AnCiValue =buffer:ReadFloat(); --总暗元素穿透
+    roleAttribute.BaoMianValue =buffer:ReadFloat(); --总的暴伤抗性
+
+    -- 装备信息
+    local equipCount = buffer:ReadByte();
+    local equipTable = { };
+    for Index = 1, equipCount do
+        local item = BagProtocol.ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_ONLY_SERIALIZE);
+        table.insert(equipTable, Index, item);
+    end
+
+    -- 强化信息
+    local OtherPlayerEquipForceData = { };
+    local equipForceCount = buffer:ReadByte();
+    for Index = 0, equipForceCount - 1 do
+        local forceLevel = buffer:ReadInt();
+        OtherPlayerEquipForceData[Index] = forceLevel;
+    end
+
+    -- 附魔信息
+    local OtherPlayerEnchantData = { };
+    local posNum = buffer:ReadByte();
+    for Index = 1, posNum do
+        local enchantLevel = buffer:ReadInt();
+        OtherPlayerEnchantData[Index] = { };
+        OtherPlayerEnchantData[Index].EnchantLevel = enchantLevel;
+        local enchantExp = buffer:ReadInt();
+        OtherPlayerEnchantData[Index].EnchantExp = enchantExp;
+        local holeNum = buffer:ReadByte();
+        local holesDataTable = { };
+        for j = 1, holeNum do
+            local apptitudeLevel = buffer:ReadInt();
+            holesDataTable[j] = apptitudeLevel;
+        end
+        OtherPlayerEnchantData[Index].EnchantHolesDataTable = holesDataTable;
+    end
+
+    -- 宝石信息
+    local OtherPlayerGemData = { };
+    local equipCount = buffer:ReadByte();
+    local gemCount = buffer:ReadByte();
+    for equipIndex = 1, equipCount do
+        local posIndex = buffer:ReadByte();
+        local singleEquipGemsData = { };
+        for gemIndex = 1, gemCount do
+            local singleGemData = { };
+            singleGemData.GemIndex = buffer:ReadByte();
+            singleGemData.ExcelID = buffer:ReadInt();
+            singleEquipGemsData[gemIndex] = singleGemData;
+        end
+        OtherPlayerGemData[posIndex] = singleEquipGemsData;
+    end
+
+    -- 时装信息
+    local fashionTable = { };
+    local fashionCount = buffer:ReadByte();
+    for fashionIndex = 1, fashionCount do
+        local fashionType = buffer:ReadByte();
+        local fashionId = buffer:ReadUInt();
+        fashionTable[fashionType] = fashionId;
+    end
+
+    OtherPlayerRolePanel.SetData(roleAttribute, equipTable, fashionTable);
+    EquipMng.OtherPlayerRoleAttribute = roleAttribute;
+    EquipMng.OtherPlayerEquipForceData = OtherPlayerEquipForceData;
+    EquipMng.OtherPlayerEnchantData = OtherPlayerEnchantData;
+    EquipMng.OtherPlayerGemData = OtherPlayerGemData;
+    createPanel(ENUMPANELID.ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL);
+end
+
+-- 通知客户端开始读条
+function OnStartLoadBar(protocolId, buffer)
+    -- 加载时长
+    local loadTime = buffer:ReadFloat()
+    -- 事件ID
+    local eventID = buffer:ReadUInt();
+    -- 文本ID
+    local textID = buffer:ReadUInt();
+    -- 特效ID
+    local effectID = buffer:ReadInt();
+    -- 图片ID
+    local iconID = buffer:ReadInt();
+    CollectBar.InitLoadProgressBar(loadTime, eventID, textID, effectID, iconID);
+end
+
+-- 系统解锁
+function SystemOpen(protocolId, buffer)
+    SystemOpenMng.DealServerMsg(buffer);
+end
+
+-- 系统预告功能
+function OpenNewSystem(protocolId, buffer)
+    -- 新功能ID预告ID
+    local currentId = buffer:ReadInt()
+    Main_RightTop.UpdateNewSystemData(currentId);
+end
+
+-- 猎魔活动，出副本，自动寻路
+function HuntActiSetAutoPath(protocolId, buffer)
+    G_MissionMng.IsMissionTrace = true;
+end
+
+-- 同步角色升级时间
+function OnUpdatePlayerLevelUpTime(protocolId, buffer)
+    local level = buffer:ReadInt();
+    local upTime = buffer:ReadInt();
+    G_UserInfo.RoleAttribute.LastLevelUpTime = upTime;
+end
+
+-- 返回修为培养
+function OnCultivatePeiyangReturn(protocolId, buffer)
+    local result = buffer:ReadByte(); -- 0:失败 1:成功
+    local level = buffer:ReadInt(); -- 进阶等级
+    local subLevel = buffer:ReadInt(); -- 培养等级
+    if result == 1 then
+        local attribute = G_UserInfo.RoleAttribute;
+        attribute.CultivateLv = level;
+        attribute.CultivateSubLv = subLevel;
+        CultivateChangePanel.OnCultivatePeiyangReturn(level, subLevel);
+    end
+end
+-------------------------------------------------------处理接收协议 END -------------------------------------------------------
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+-- 发送读条完成的消息
+function SendCollectBarEvent(eventID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_LOADING_CLOSE);
+    buffer:WriteUInt(eventID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function RequestCultivatePeiyang(count)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_CULTIVATE_PENGYANG);
+    buffer:WriteByte(count);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

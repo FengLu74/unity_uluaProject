@@ -1,0 +1,654 @@
+﻿module("CombinePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-----------------------------------------Sprite路径------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-- 单个按钮所在的路径
+local m_buttonHeCheng = "CombinePanel/ButtonPanel/Button_One";
+-- 使用按钮所在的路径
+local m_buttonAllHeCheng = "CombinePanel/ButtonPanel/Button_All";
+-- 购买按钮
+local m_buttonBuyStr = "/Buy_Button";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 道具所在位置
+local m_itemObjectName = "CombinePanel/Sprite_Left/ItemPanel/UIGrid/Item";
+-- 品质1位置
+local m_pinZhiStr1 = "/Sprite_Apptitude2";
+-- 道具背景框
+local m_apptitude = "/Sprite_Apptitude";
+-- 道具名字
+local m_itemName = "/Label_Name";
+-- 图标位置
+local m_iconStr = "/Sprite-DaoJuTuBiao";
+-- 图标遮罩
+local m_iconMask = "/Sprite_Mask";
+-- 数量位置
+local m_numStr = "/Label_Num";
+-- 属性名字
+local m_attLabelName = "/Label_Str";
+-- 设置选择
+local m_selectState = "ItemShow/Sprite_Select";
+-- 道具图标
+
+-- 道具属性名字
+local m_itemValueName = "/Label_Name";
+-- 道具原始属性
+local m_labelCurValue = "/Label_CurValue";
+-- 道具升级后的属性值
+local m_labelStarUpValue = "/Label_StarUpValue";
+-- 属性差值
+local m_labelStarUpAddValue = "/Label_StarUpAddValue";
+-- 消耗道具所在位置
+local m_CostItemStr = "Item";
+-- 消耗道具的数值
+local m_CostItemNumStr = "/Label_Need";
+-- 道具是否可拍卖
+local m_itemAuction = "/Sprite_Auction";
+----------------------------------gameobject所在的路径---------------------------------
+-- 单个道具所在的位置
+local m_itemObjectStr = "CombinePanel/Sprite_Left/ItemPanel/Item";
+-- grid所在的位置
+local m_gridObjectStr = "CombinePanel/Sprite_Left/ItemPanel/UIGrid";
+-- - 单次合成的按钮的背景
+local m_buttonSaleSprite = "CombinePanel/ButtonPanel/Button_One/Background";
+-- 全部合成的按钮的背景
+local m_buttonUseSprite = "CombinePanel/ButtonPanel/Button_All/Background";
+-- 合成内容的显示
+local m_compoundContent = "CombinePanel/Sprite_Right/Compound_Content";
+-- 没有选择装备
+local m_notContent = "CombinePanel/Sprite_Right/NotContent";
+-- 道具1
+local m_item1Content = "CombinePanel/Sprite_Right/Compound_Content/Item1";
+-- 道具2
+local m_item2Content = "CombinePanel/Sprite_Right/Compound_Content/Item2";
+-- 道具名字
+local m_itemContentNum = "/ItemCount";
+-- 道具属性
+local m_itemValues = "CombinePanel/Sprite_Right/Compound_Content/Attrs/Value";
+-- 合成需要的钱图标
+local m_compoundMoney = "CombinePanel/Sprite_Right/Compound_Content/MoneyContent/Sprite";
+-- 合成需要的钱数量
+local m_compoundMoneyCount = "CombinePanel/Sprite_Right/Compound_Content/MoneyContent/Label_Money";
+-- 背包装备面板显示
+local m_itemShow = "/ItemShow";
+-- 合成消耗道具1
+local m_CostItem1Str = "CombinePanel/Cost/ItemCost1";
+-- 合成消耗道具2
+local m_CostItem2Str = "CombinePanel/Cost/ItemCost2";
+-- 合成面板
+local m_CostStr = "CombinePanel/Cost";
+-- 无物品显示
+local m_NoItem = "CombinePanel/Sprite_Left/BlankListHint";
+--合成成功及失败特效，暂用装备强化特效代替
+local m_SuccessEffectStr = "CombinePanel/Sprite_Right/Compound_Content/Effect_Success";
+local m_FailEffectStr = "CombinePanel/Sprite_Right/Compound_Content/Effect_Fail";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 单个道具的对象
+local m_itemObject = nil;
+-- grid对象
+local m_gridObject = nil;
+-- 道具总个数
+local m_itemCount = 0;
+-- 右侧点击的道具顺序数(0代表没有点击)
+local m_rightClickNum = 0;
+-- 右侧点击道具的excelID
+local m_rightClickExcelID = nil;
+-- 选中图标所在的位置
+-- 当前面板所有物品
+local listBag = nil;
+-- 最大合成数量
+local m_maxCombineCount = 5;
+-- 合成需要道具的数量
+local m_combineCount = 5;
+-- 当前合成的信息
+local m_combineInfo = nil;
+-- 当前选择合成的道具的ExcelID
+-- local m_combinItemExcelID = 0;
+-- 当前道具的数量
+local m_combinItemNum = 0;
+-- 当前选择的对象
+local m_currentSelectObject = nil;
+-- 当前添加显示的excelID
+local m_currentExcelIDList = {};
+-- 是否已经在选择状态
+local m_isSelectState = false;
+-- 要创建的道具的个数
+local m_createCount = 5;
+-- 合成消耗道具1
+local m_CostItem1 = nil;
+-- 合成消耗道具2
+local m_CostItem2 = nil;
+-- 合成特效
+local m_SuccessEffect = nil;
+local m_FailEffect = nil;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 面板初始化完毕
+    m_panelInitAlready = true;
+    InitEffectsShow();
+end
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitObjects();
+        -- 设定数据
+        m_rightClickNum = 0;
+        -- m_rightClickExcelID = nil;
+        -- 初始化界面所有信息
+        InitAllInfo();
+        InitEffectsShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    listBag = nil;
+    m_itemCount = 0;
+    m_gridObject = nil;
+    m_itemObject = nil;
+    m_rightClickNum = 0;
+    m_panelObject = nil;
+    m_rightClickExcelID = nil;
+    m_panelInitAlready = false;
+    m_currentSelectObject = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化界面所有信息
+function InitAllInfo()
+    OnClearLeftContent();
+    -- 初始化右侧信息（格子数，道具内容）
+    InitLeftItemInfo();
+    -- 初始化按钮信息
+    InitOnClick();
+end
+
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+    -- 单个道具对象
+    m_itemObject = child(m_panelObject, m_itemObjectStr).gameObject;
+    -- grid对象
+    m_gridObject = GetComponent(m_panelObject, m_gridObjectStr, "UIGrid");
+    -- 消耗道具1,2
+    m_CostItem1 = child(m_panelObject,m_CostItem1Str).gameObject;
+    m_CostItem2 = child(m_panelObject,m_CostItem2Str).gameObject;
+    -- 合成特效
+    m_SuccessEffect = child(m_panelObject,m_SuccessEffectStr).gameObject;
+    m_FailEffect = child(m_panelObject,m_FailEffectStr).gameObject;
+end
+-- 初始化特效
+function InitEffectsShow()
+    m_SuccessEffect:SetActive(false);
+    m_FailEffect:SetActive(false);
+end
+-- 初始化左侧信息（格子数，道具内容）
+function InitLeftItemInfo()
+    SetGameObjectState(m_CostStr, false, m_panelObject);
+    -- 排序规则
+    G_BagMng:ClearSortType();
+    G_BagMng:SetSortType(ESortType.TypeItemCombineType);
+    local startCount = nil;
+    listBag = G_BagMng:GetAllCombineItemInfoList();
+    local BagCount = listBag.count;
+    local creatCount = 0
+    if BagCount < m_createCount then
+        creatCount = m_createCount;
+    else
+        creatCount = BagCount;
+    end
+    -- prefab是增加还是减少
+    if m_itemCount > creatCount then
+        for Index = creatCount + 1, m_itemCount do
+            destroy(child(m_panelObject, m_itemObjectName .. Index).gameObject);
+            -- SetGameObjectState(m_itemObjectName .. Index, false, m_panelObject);
+        end
+    else
+        startCount = m_itemCount + 1;
+    end
+    if startCount ~= nil then
+        for Index = startCount, creatCount do
+            local item = newobject(m_itemObject);
+            item.transform.parent = m_gridObject.transform;
+            item.name = "Item" .. Index;
+            item.transform.localScale = Vector3.one;
+            item:SetActive(true);
+        end
+        m_gridObject:Reposition();
+    end
+    m_itemCount = creatCount;
+    
+    -- 面板格子实例数量
+    local Count = m_gridObject:GetChildList().count;
+    if BagCount == 0 then
+        SetGameObjectState(m_NoItem,true,m_panelObject);
+        for Index = BagCount+1, Count do
+            SetGameObjectState(m_itemObjectName .. Index, false, m_panelObject);
+        end
+    else
+        SetGameObjectState(m_NoItem,false,m_panelObject);
+        for Index = 1, BagCount do
+            SetGameObjectState(m_itemObjectName .. Index, true, m_panelObject);
+        end
+        for Index = BagCount+1, Count do
+            SetGameObjectState(m_itemObjectName .. Index, false, m_panelObject);
+        end
+    end
+
+    -- 每个道具的图标和颜色的显示
+    local itemsHaveNum = BagCount;
+    for Index = 1, itemsHaveNum do
+        local itemAttr = listBag[Index - 1];
+        local itemStr = m_itemObjectName .. Index;
+        local pinZhiNum = itemAttr:GetAptitudeID();
+        SetGameObjectState(itemStr.. m_itemShow,true,m_panelObject);
+--        SetSpriteBgV04(itemStr .. m_itemShow .. m_pinZhiStr1, pinZhiNum, m_panelObject);
+        SetSpriteApptitude2V04(itemStr .. m_itemShow .. m_pinZhiStr1, CCommonTool.GetAptitudeIDByExcelID(itemAttr.ExcelID), m_panelObject);
+        SetSpriteApptitudeV04(itemStr..m_itemShow..m_apptitude,pinZhiNum,m_panelObject);
+        SetSpriteByAtlasID(itemStr.. m_itemShow .. m_iconStr, itemAttr:GetImageIdById(), m_panelObject);
+        SetItemIconEffect(m_panelObject, itemStr.. m_itemShow .. m_iconStr, itemAttr.ExcelID, 11);
+        -- 设置道具名字
+        SetLabelContent(itemStr.. m_itemShow..m_itemName,itemAttr:GetItemName(),m_panelObject);
+        SetLabelPinZhi(itemStr.. m_itemShow..m_itemName,itemAttr:GetAptitudeID(),m_panelObject);
+        SetGameObjectState(itemStr.."/"..m_selectState,false,m_panelObject);
+        local itemString = GetItypeTypeByExcelID(itemAttr.ExcelID);
+        local itemCofig = CCommonTool.GetItemInfo(itemAttr.ExcelID);
+        if 1 == itemString then
+            if itemCofig then
+                local attData = CCommonTool.GetAttrIndexInfo(itemCofig.Attr1);
+                if attData then 
+                    local txtInfo = CCommonTool.GetTxtData(attData.TextID);
+                    if txtInfo then 
+                        itemString = txtInfo.m_str.."+"..itemCofig.Attr1Value;
+                    end
+                end
+            end
+        else
+            if itemCofig then
+                itemString = GetTextToId(itemCofig.TypeTxtID);
+            end  
+        end
+        SetLabelContent(itemStr.. m_itemShow..m_attLabelName,itemString,m_panelObject);
+        SetGameObjectEvent(itemStr, OnItemClick, m_panelObject);
+        -- 设置物品num的数量
+        local itemLength = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemAttr.ExcelID);
+        if itemLength == 1 then
+            SetGameObjectState(itemStr.. m_itemShow .. m_numStr, false, m_panelObject);
+        else
+            SetGameObjectState(itemStr.. m_itemShow .. m_numStr, true, m_panelObject);
+            SetLabelContent(itemStr.. m_itemShow .. m_numStr, itemLength, m_panelObject);
+        end
+        -- 是否可拍卖
+        local itemType =  itemAttr:GetTagType();
+        local itemInfo = nil;
+        if itemType == ITEMTAGTYPE.TT_None then
+            itemInfo = nil
+        elseif itemType == ITEMTAGTYPE.TT_Equip then
+            itemInfo = CCommonTool.GetEquipInfo(itemAttr.ExcelID);
+        else
+            itemInfo = CCommonTool.GetItemInfo(itemAttr.ExcelID);
+        end
+        if itemInfo ~= nil then
+            if itemInfo.IsAuction > 0 then
+                SetGameObjectState(itemStr.. m_itemShow .. m_itemAuction, true, m_panelObject);
+            else
+                SetGameObjectState(itemStr.. m_itemShow .. m_itemAuction, false, m_panelObject);
+            end
+        else
+            SetGameObjectState(itemStr .. m_itemAuction, false, m_panelObject);
+        end
+        if itemAttr.ExcelID == m_rightClickExcelID and true == m_isSelectState then
+            local obj = child(m_panelObject,itemStr).gameObject;
+            -- InitSelectItem(obj);
+            OnItemClick(obj);
+            m_isSelectState = false;
+        else
+            if Index == itemsHaveNum and true == m_isSelectState then
+                OnClearLeftContent();
+                m_rightClickExcelID = nil;
+            end
+        end
+    end
+    if BagCount < m_createCount then
+        for Index = BagCount + 1, m_createCount do
+            SetGameObjectState(m_itemObjectName .. Index .. m_itemShow, false, m_panelObject);
+            SetGameObjectEvent(m_itemObjectName .. Index, Kong, m_panelObject);
+        end
+    end
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+end
+
+function Kong()
+    -- body
+end
+
+-- 
+
+-- 清理左边内容
+function OnClearLeftContent()
+    m_rightClickNum = 0;
+    SetGameObjectState(m_buttonHeCheng, false, m_panelObject);
+    SetGameObjectState(m_buttonAllHeCheng, false, m_panelObject);
+    SetGameObjectState(m_compoundContent,false,m_panelObject);
+    SetGameObjectState(m_notContent,true,m_panelObject);
+    if nil ~= m_currentSelectObject then
+        SetGameObjectState(m_selectState, false, m_currentSelectObject);
+        m_currentSelectObject = nil;
+    else
+        InitEffectsShow();
+    end
+    SetLabelTextByID(m_notContent, 8965, m_panelObject);
+end
+
+function OnNotItemClick(e)
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_NOT_COMPOUND_SUCCESS);
+end
+	
+-- 不能合成提示信息
+function OnNotCombineClick(e)
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_NOITEM);
+end
+-- 合成一次
+function OnCombineOneClick(e)
+	error("m_combineInfo.ItemMoney:-->"..m_combineInfo.ItemMoney.."  G_UserInfo.BindCoin-->  "..G_UserInfo.BindCoin);
+    if m_combineInfo.ItemMoney > G_UserInfo.BindCoin then
+		--金钱不够
+		OnBuyMoneyClick();
+        --ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_NOTMONEY);
+        return;
+    end
+    OnSendOneMessage();
+end
+-- 合成多次发送消息
+function OnCombineClick(e)
+    if m_combineInfo.ItemMoney > G_UserInfo.BindCoin then
+        --ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_NOTMONEY);
+		--金钱不够
+		OnBuyMoneyClick();
+        return;
+    end
+    OnSendMessageTwo();
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭界面按钮事件
+function OnCloseClick()
+    -- 关闭背包界面
+    closePanel(ENUMPANELID.ENUM_PANEL_COMBINEPANEL);
+end
+
+-- 点击道具按钮事件
+function OnItemClick(e)
+    local num = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    SetGameObjectState(m_buttonHeCheng, true, m_panelObject);
+    SetGameObjectState(m_buttonAllHeCheng, true, m_panelObject);
+    if m_rightClickNum ~= num then
+        m_rightClickNum = num;
+        m_rightClickExcelID = listBag[m_rightClickNum - 1].ExcelID;
+        local itemAtt = ItemAttribute.New(m_rightClickExcelID);
+        if 0 == itemAtt:GetCompoundType() then
+            -- 不能合成给提示
+			error("111");
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_NOT_COMPOUND_SUCCESS);
+            SetGameObjectEvent(m_buttonHeCheng, OnNotItemClick, m_panelObject);
+            SetGameObjectEvent(m_buttonAllHeCheng, OnNotItemClick, m_panelObject);
+            OnClearLeftContent();
+            return;
+        else
+            SetGameObjectState(m_compoundContent,true,m_panelObject);
+            SetGameObjectState(m_notContent,false,m_panelObject);
+--            SetSpriteBgV04(m_item1Content..m_pinZhiStr1,itemAtt:GetAptitudeID(),m_panelObject);
+            SetSpriteApptitude2V04(m_item1Content..m_pinZhiStr1, itemAtt:GetAptitudeID(), m_panelObject);
+            SetSpriteApptitudeV04(m_item1Content..m_apptitude,itemAtt:GetAptitudeID(),m_panelObject);
+            SetSpriteByAtlasID(m_item1Content..m_iconStr,itemAtt:GetImageIdById(),m_panelObject);
+            SetItemIconEffect(m_panelObject, m_item1Content..m_iconStr, itemAtt.ExcelID, 11);
+
+            SetItemToolTipsEvent(m_panelObject, m_item1Content, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL, false, m_rightClickExcelID);
+            -- 名字和数量
+            SetLabelContent(m_item1Content..m_itemName,itemAtt:GetItemName(),m_panelObject);
+            SetLabelPinZhi(m_item1Content..m_itemName,itemAtt:GetAptitudeID(),m_panelObject);
+
+            -- 合成信息
+            m_combineInfo = CCommonTool.GetCompoundInfo(itemAtt:GetCompoundType());
+            if m_combineInfo == nil then return end
+            local nextData = ItemAttribute.New(m_combineInfo.Display);
+            local itemString = GetItypeTypeByExcelID(itemAtt.ExcelID);
+            if 1 == itemString then
+                SetGameObjectState(m_itemValues,true,m_panelObject);
+                local itemCofig = CCommonTool.GetItemInfo(nextData.ExcelID);
+                if itemCofig == nil then return end
+                local curValue = CCommonTool.GetItemInfo(itemAtt.ExcelID).Attr1Value;
+                local attData = CCommonTool.GetAttrIndexInfo(CCommonTool.GetItemInfo(itemAtt.ExcelID).Attr1);
+                if curValue == nil or attData == nil then return end
+                local txtInfo = CCommonTool.GetTxtData(attData.TextID);
+                local dValue = itemCofig.Attr1Value - curValue;
+                if txtInfo then 
+                    SetLabelContent(m_itemValues..m_itemValueName,txtInfo.m_str,m_panelObject);
+                end
+                SetLabelContent(m_itemValues..m_labelCurValue,curValue,m_panelObject);
+                SetLabelContent(m_itemValues..m_labelStarUpValue,itemCofig.Attr1Value,m_panelObject);
+                SetLabelContent(m_itemValues..m_labelStarUpAddValue,dValue,m_panelObject);
+            else
+                SetGameObjectState(m_itemValues,false,m_panelObject);
+            end
+
+--            SetSpriteBgV04(m_item2Content..m_pinZhiStr1,nextData:GetAptitudeID(),m_panelObject);
+            SetSpriteApptitude2V04(m_item2Content..m_pinZhiStr1, nextData:GetAptitudeID(), m_panelObject);
+            SetSpriteApptitudeV04(m_item2Content..m_apptitude,nextData:GetAptitudeID(),m_panelObject);
+            SetSpriteByAtlasID(m_item2Content..m_iconStr,nextData:GetImageIdById(),m_panelObject);
+            SetItemIconEffect(m_panelObject, m_item2Content..m_iconStr, nextData.ExcelID, 11);
+            SetItemToolTipsEvent(m_panelObject, m_item2Content, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL, false, m_combineInfo.Display);
+            SetLabelContent(m_item2Content..m_itemName,nextData:GetItemName(),m_panelObject);
+            SetLabelPinZhi(m_item2Content..m_itemName,nextData:GetAptitudeID(),m_panelObject);
+             
+            OnShowCost(itemAtt,m_rightClickExcelID);
+        end
+        InitSelectItem(e);
+    end
+end
+
+-- 设置当前选择的对象
+function InitSelectItem(currentClickObject)
+    if nil ~= m_currentSelectObject then
+        -- 将上一个激活的对象关闭
+        SetGameObjectState(m_selectState, false, m_currentSelectObject);
+    end
+    -- 获取当前点击的对象
+    m_currentSelectObject = currentClickObject;
+    -- 将当前点击的对象激活
+    SetGameObjectState(m_selectState, true, m_currentSelectObject);
+end
+
+-- 合成消耗的显示
+function OnShowCost(itemAtt,ExcelID2)
+    SetGameObjectState(m_CostStr, true, m_panelObject);
+    -- 合成信息
+    m_combineInfo = CCommonTool.GetCompoundInfo(itemAtt:GetCompoundType());
+    if m_combineInfo == nil then return end
+    -- 显示第一个物品
+    local ExcelID1 = nil;
+    if m_combineInfo.ItemType == MONEY_TYPE.YINBI_TYPE then
+            ExcelID1 = G_ItemToolTipDefine.BINDMONEY;
+    else
+        error("错误的资源类型"..Type);    
+    end
+    SetLabelContent(m_CostItem1Str..m_CostItemNumStr, m_combineInfo.ItemMoney, m_panelObject);
+        -- 设置金钱的颜色
+    if m_combineInfo.ItemMoney <= G_UserInfo.BindCoin then
+        SetLabelColor(m_CostItem1Str..m_CostItemNumStr, "D1B686", m_panelObject);
+    else
+        SetLabelColor(m_CostItem1Str..m_CostItemNumStr, "af332c", m_panelObject);
+    end
+    SetItemShowByExcelIDV04(m_CostItem1, m_CostItemStr, ExcelID1, 1, true, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+--    SetItemIconEffect(m_panelObject, m_CostItem1Str, ExcelID1, 11);
+    SetItemToolTipsEvent(m_panelObject, m_CostItem1Str, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL, false, ExcelID1);
+    SetGameObjectEvent(m_CostItem1Str..m_buttonBuyStr, OnBuyMoneyClick, m_panelObject);
+    -- 显示第二个物品
+    SetItemShowByExcelIDV04(m_CostItem2, m_CostItemStr, ExcelID2, 1, true, 11, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+        -- 设置消耗道具数量的文本颜色
+    m_combineCount = m_combineInfo.Num;
+    local itemCount = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_rightClickExcelID);
+    SetLabelContent(m_CostItem2Str..m_CostItemNumStr,itemCount.."/"..m_combineCount,m_panelObject);
+    SetItemToolTipsEvent(m_panelObject, m_CostItem2Str, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL, false, ExcelID2);
+    SetGameObjectEvent(m_CostItem2Str..m_buttonBuyStr, OnBuyItemClick, m_panelObject);
+--    SetItemIconEffect(m_panelObject, m_CostItem2Str, ExcelID2, 11);
+    if itemCount >= m_combineCount then
+        SetLabelColor(m_CostItem2Str..m_CostItemNumStr, "DD8F3C", m_panelObject);
+        SetGameObjectEvent(m_buttonHeCheng, OnCombineOneClick, m_panelObject);
+        SetGameObjectEvent(m_buttonAllHeCheng, OnCombineClick, m_panelObject);
+        showCount = m_combineCount;
+    else
+		if CCommonTool.GetQuickToBuyByExcelID(m_rightClickExcelID) ~=nil then
+			SetGameObjectEvent(m_buttonHeCheng, ShowMaterialPanel, m_panelObject);
+			SetGameObjectEvent(m_buttonAllHeCheng, ShowMaterialPanel, m_panelObject);
+			SetLabelColor(m_CostItem2Str..m_CostItemNumStr, "af332c", m_panelObject);
+		else
+			SetGameObjectEvent(m_buttonHeCheng, OnNotCombineClick, m_panelObject);
+			SetGameObjectEvent(m_buttonAllHeCheng, OnNotCombineClick, m_panelObject);
+			SetLabelColor(m_CostItem2Str..m_CostItemNumStr, "af332c", m_panelObject);			
+		end
+        showCount = itemCount;
+    end
+end
+
+function ShowMaterialPanel()
+	MaterialExchangePanel.ShowPanel(m_rightClickExcelID,ENUMPANELID.ENUM_PANEL_EQUIPPANEL)
+end
+
+function OnBuyMoneyClick()
+    MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+end
+
+function OnBuyItemClick(args)
+    GetWayPanel.Show(m_rightClickExcelID, ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL);
+end
+-- 发送消息
+function OnSendOneMessage()
+    if nil == m_rightClickExcelID or 0 == m_rightClickNum then
+        return;
+    end
+    local itemCount = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_rightClickExcelID);
+    if itemCount < m_combineCount then
+--        error("合成道具数量不足");
+        return;
+    end
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_CLIENT_COMPOUND);
+    local list = G_BagMng:GetCombineItemList(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_rightClickExcelID,m_combineCount);
+    local cridCount = tonumber(list.count);
+    buffer:WriteByte(cridCount);
+    local item = nil;
+    for count = 1, list.count do
+        item = list[count - 1];
+        buffer:WriteInt(tonumber(item.CRID));
+        buffer:WriteByte(tonumber(item.UserNum));
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+-- 全部合成消息
+function OnSendMessageTwo()
+    if nil == m_rightClickExcelID or 0 == m_rightClickNum then
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_CLIENT_COMPOUND_ALL_AT_ONCE);
+    local list = G_BagMng:GetCombineAllItemList(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, m_rightClickExcelID);
+    local crid = nil;
+    buffer:WriteByte(list.count);
+    for count = 1, list.count do
+        crid = list[count - 1];
+        buffer:WriteInt(tonumber(crid));
+    end
+    G_NetWorkMng:SendMessage(buffer);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 外部调用更新背包的方法
+function InitAllInfoOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL) == 1 then
+        InitAllInfo();
+    end
+end
+-- 获得材料或货币时刷新
+function OnRefreshItem()
+	if IsOpenPanel(ENUMPANELID.ENUM_PANEL_RESOLVEANDCOMBINEPANEL) ==1 then
+		if type(m_rightClickExcelID) ~="number" then
+			return;
+		end
+		local itemAtt = ItemAttribute.New(m_rightClickExcelID);
+		if itemAtt ~=nil then
+			OnShowCost(itemAtt,m_rightClickExcelID);
+		else
+			error("[lua]--> ID为："..m_rightClickExcelID.."出错");
+		end
+	end
+end
+-- 合成成功
+function OnHeChengSuccess(buffer)
+    local message = buffer:ReadByte();
+    if message == ENUM_ITEMCOMPOUND_NEW_MSG.MSG_ITEMCOMPOUND_NEW_FAIL then
+        -- 失败
+--        error("合成失败");
+        m_FailEffect:SetActive(false);
+        m_FailEffect:SetActive(true);
+        return;
+    else
+        if message == ENUM_ITEMCOMPOUND_NEW_MSG.MSG_ITEMCOMPOUND_NEW_SUCCESS then
+            m_isSelectState = true;
+            -- ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_COMPOUND_SUCCESS);
+            local excelID = buffer:ReadUInt();
+            local count = buffer:ReadUShort();
+            m_SuccessEffect:SetActive(false);
+            m_SuccessEffect:SetActive(true);
+            -- 成功清理界面数据;
+            InitAllInfoOut();
+        end
+    end
+end
+
+-- 通过excelID获得特效的道具端
+function GetItypeTypeByExcelID(mExcelID)
+    if 29999 >= mExcelID and  mExcelID >= 25000 then
+        return GetTextToId(8964);
+    elseif 24999 >= mExcelID and mExcelID >= 20000 then
+        return GetTextToId(8963);
+    elseif 30999 >= mExcelID and mExcelID >= 30000 then
+        -- 宝石
+         return 1;
+    else
+        return GetTextToId(8962);
+    end
+end
+
+function GetNameColorByQuaity(aptitudeID)
+    local colorStr = "e8da9b";
+     if 1 == aptitudeID then
+        colorStr = "e8da9b";
+    elseif 2 == aptitudeID then
+        colorStr = "91e464";
+    elseif 3 == aptitudeID then
+        colorStr = "3bbdee";
+    elseif 4 == aptitudeID then
+        colorStr = "d719ff";
+    elseif 5 == aptitudeID then
+        colorStr = "fff437";
+    elseif 5 == aptitudeID then
+        colorStr = "fff437";
+    elseif 6 == aptitudeID then
+        colorStr = "f63333";
+    end
+    return colorStr;
+end

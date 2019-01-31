@@ -1,0 +1,596 @@
+﻿module("MissionBeyond3DPanel", package.seeall)
+
+require "Panel/MissionPanel";
+---------------------------------------label路径---------------------------------------
+-- 任务描述文本
+local m_missionDes = "MissionPanel/Right/Zone1/Label-Des";
+-- 任务目标文本
+local m_missionTar = "MissionPanel/Right/Zone2/Label-Target";
+-- 奖励的经验值文本
+local m_expLabelStr = "MissionPanel/Right/Zone3/Coins/Exp/Label";
+-- 奖励的银币值文本
+local m_moneyLabelStr = "MissionPanel/Right/Zone3/Coins/Money/Label";
+
+-- 未接任务的个数
+local m_notRecTaskNum = "Toggle_NotReceive/Task_Num/Label";
+-- 未接任务的位置
+local m_notRecTask = "Toggle_NotReceive/Task_Num";
+-----------------------------------------按钮路径--------------------------------------
+-- 前往按钮所在的路径
+local m_buttonGo = "MissionPanel/Right/Zone4/Button";
+-- 放弃按钮所在的路径
+local m_buttonGiveUp = "MissionPanel/Right/Zone4/Button_GiveUp";
+
+-- 已接任务的标签
+local m_toggleRevTask = "Toggle_Receive";
+-- 未接任务的标签
+local m_toogleNotRevTask = "Toggle_NotReceive";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- grid所在的位置
+local m_gridObjectStr = "MissionPanel/Left/Panel/Grid";
+-- 任务panel所在位置
+local m_missionPanel = "MissionPanel/Left/Panel";
+
+-- 右侧区域1所在的位置
+local m_rightZone1Str = "MissionPanel/Right/Zone1";
+-- 右侧区域1所在的位置
+local m_rightZone2Str = "MissionPanel/Right/Zone2";
+-- 右侧区域1所在的位置
+local m_rightZone3Str = "MissionPanel/Right/Zone3";
+-- 右侧区域1所在的位置
+local m_rightZone4Str = "MissionPanel/Right/Zone4";
+
+-- 没有任务
+local m_notTask = "MissionPanel/NotTask";
+-- 右侧数据
+local m_rightPanel = "MissionPanel/Right";
+----------------------------------通用的名称路径---------------------------------------
+-- 每个道具的通用路径
+local m_itemStr = "MissionPanel/Right/Zone3/Item";
+-- 每个道具下的品质颜色
+local m_itemPinZhiStr = "/Sprite_Apptitude";
+local m_itemPinZhi2Str = "/Sprite_Apptitude2";
+-- 每个道具下的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 每个道具下的数量
+local m_itemNumStr = "/Label_Num";
+
+-- 主线任务
+local m_zhuTask = "Label-TaskType1";
+-- 支线任务
+local m_zhiXianTask = "Label-TaskType2";
+-- 日常任务
+local m_everyDayTask = "Label-TaskType3";
+-- 已接任务完成状态
+local m_finishState = "Sprite-State";
+-- 任务名称
+local m_taskName = "Label_Name";
+
+-- 激活状态
+local m_toggleActive = "/Active";
+-- 未激活状态
+local m_toggleDeactive = "/Deactive";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 角色身上的所有任务
+local allMissions = nil;
+-- 左侧选择的是第几个
+local m_leftSelectNum = 1;
+-- 左侧UIPanel组件
+local m_leftUIPanelComp = nil;
+-- 左侧邮件列表
+local m_leftListView = nil;
+-- 左侧任务已接task
+local m_recTasTable = { };
+-- 左侧未接
+local m_notRecTaskTable = { };
+-- 任务状态
+local m_taskState = 1;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化点击事件
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_leftSelectNum = 1;
+    m_taskState = 1;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_recTasTable = { };
+    m_notRecTaskTable = { };
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MISSIONPANEL);
+    -- 左侧组件
+    m_leftUIPanelComp = GetComponent(m_panelObject, m_missionPanel, "UIPanel");
+    m_leftListView = GetComponent(m_panelObject, m_gridObjectStr, "UIListView");
+    m_leftListView:SetInitCallback(OnLeftListViewInit);
+    m_leftListView:SetClickCallback(OnLeftListViewSelected);
+
+    -- 激活的选中的对象
+    m_selectGameObject = child(m_panelObject, m_selectGameObjectStr).gameObject;
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    if m_isJumpPanelSave then
+        m_taskState = m_JumpPanelParamsTable[1];
+    else
+        m_taskState = 1;
+    end
+    -- 初始化左侧整体任务的信息
+    InitLeftList();
+    m_isJumpPanelSave = false;
+end
+
+-- 初始化左侧整体任务的信息
+function InitLeftList()
+    if m_isJumpPanelSave then
+        m_leftSelectNum = m_JumpPanelParamsTable[2];
+    else
+        m_leftSelectNum = 1;
+    end
+    m_recTasTable = { };
+    m_notRecTaskTable = { };
+    m_leftListView:RemoveAll();
+    allMissions = G_MissionMng:GetPlayerCurrentMissions(false);
+
+    for Index = 1, allMissions.Count do
+        local missionInfo = allMissions[Index - 1].missionInfo;
+        if missionInfo ~= nil then
+            -- 设置任务的状态
+            if missionInfo.TaskType == 2 then
+                -- 任务库id
+                local randomId = missionInfo.TaskRandom;
+                if randomId > 0 then
+                    -- 任务库信息
+                    local randomInfo = CCommonTool.GetMissionRandomInfo(randomId);
+                    if allMissions[Index - 1].missionID == randomInfo.TaskLast then
+                        table.insert(m_recTasTable, allMissions[Index - 1]);
+                    elseif allMissions[Index - 1].missionid >= randomInfo.StartTask and allMissions[Index - 1].missionid <= randomInfo.FinishTask then
+                        table.insert(m_recTasTable, allMissions[Index - 1]);
+                    elseif allMissions[Index - 1].missionID == randomInfo.TaskStart then
+                        table.insert(m_notRecTaskTable, allMissions[Index - 1]);
+                    else
+                        error("this mission state is wrong,check if it has been defined");
+                    end
+                end
+            else
+                if allMissions[Index - 1].missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_COMPLETE then
+                    table.insert(m_recTasTable, allMissions[Index - 1]);
+                elseif allMissions[Index - 1].missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_GOING then
+                    table.insert(m_recTasTable, allMissions[Index - 1]);
+                elseif allMissions[Index - 1].missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_CAN_ACCEPT then
+                    table.insert(m_notRecTaskTable, allMissions[Index - 1]);
+                else
+                    error("this mission state is wrong,check if it has been defined");
+                end
+            end
+        end
+    end
+    if m_taskState == 1 then
+        for i, data in ipairs(m_recTasTable) do
+            m_leftListView:AddData(data);
+        end
+    elseif m_taskState == 2 then
+        for i, data in ipairs(m_notRecTaskTable) do
+            m_leftListView:AddData(data);
+        end
+    else
+        error("m_taskState not exist");
+    end
+    m_leftListView:LookAt(m_leftSelectNum - 1, true);
+    -- 初始化基本信息
+    InitInfo();
+    SetGameObjectState(m_notRecTask, false, m_panelObject);
+    if #m_notRecTaskTable > 0 then
+        SetGameObjectState(m_notRecTask, true, m_panelObject);
+        SetLabelContent(m_notRecTaskNum, #m_notRecTaskTable, m_panelObject);
+    end
+
+    local curTaskList = { };
+    if m_taskState == 1 then
+        curTaskList = m_recTasTable;
+    elseif m_taskState == 2 then
+        curTaskList = m_notRecTaskTable;
+    else
+        error("m_taskState not exist");
+    end
+    if #curTaskList > 0 then
+        InitRightInfo(curTaskList[m_leftSelectNum].missionInfo);
+    end
+end
+
+function OnLeftListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local missionInfo = data.missionInfo;
+    -- 任务类型
+    if missionInfo.TaskType == ENUM_MISSIONTYPE.MAIN then
+        SetGameObjectState(m_zhuTask, true, go);
+        SetGameObjectState(m_zhiXianTask, false, go);
+        SetGameObjectState(m_everyDayTask, false, go);
+    elseif missionInfo.TaskType == ENUM_MISSIONTYPE.BRANCH then
+        SetGameObjectState(m_zhuTask, false, go);
+        SetGameObjectState(m_zhiXianTask, true, go);
+        SetGameObjectState(m_everyDayTask, false, go);
+    elseif missionInfo.TaskType == ENUM_MISSIONTYPE.EVERYDAY then
+        SetGameObjectState(m_zhuTask, false, go);
+        SetGameObjectState(m_zhiXianTask, false, go);
+        SetGameObjectState(m_everyDayTask, true, go);
+    end
+    -- 任务名字
+    if missionInfo.TaskType == ENUM_MISSIONTYPE.EVERYDAY then
+        -- 任务库id
+        local randomId = missionInfo.TaskRandom;
+        if randomId > 0 then
+            local randomInfo = CCommonTool.GetMissionRandomInfo(randomId);
+            if randomInfo.EverydayNum > 1 and missionInfo.Id >= randomInfo.StartTask and missionInfo.Id <= randomInfo.FinishTask then
+                -- 任务环数
+                loopTime = G_MissionMng:GetDayMissionLoopTimeById(missionInfo.Id);
+                -- 任务总环数
+                loopAllTime = randomInfo.EverydayNum;
+                if randomInfo.TxtId == 0 then
+                    if randomInfo.TaskType == ENUM_EVERYDAY_TASKTYPE.EXP then
+                        SetLabelContent(m_taskName, string_format(CCommonTool.GetTxtData(8116).m_str, loopTime, loopAllTime), go);
+                    elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.BOTHCAMP and randomInfo.TaskType < ENUM_EVERYDAY_TASKTYPE.GUILD then
+                        SetLabelContent(m_taskName, string_format(CCommonTool.GetTxtData(8115).m_str, loopTime, loopAllTime), go);
+                    elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.GUILD then
+                        SetLabelContent(m_taskName, string_format(CCommonTool.GetTxtData(8114).m_str, loopTime, loopAllTime), go);
+                    end
+                else
+                    SetLabelContent(m_taskName, CCommonTool.GetTxtData(randomInfo.TxtId).m_str .. "(" .. loopTime .. "/" .. loopAllTime .. ")", go);
+                end
+            else
+                if randomInfo.TxtId == 0 then
+                    if randomInfo.TaskType == ENUM_EVERYDAY_TASKTYPE.EXP then
+                        SetLabelContent(m_taskName, CCommonTool.GetTxtData(8113).m_str, go);
+                    elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.BOTHCAMP and randomInfo.TaskType < ENUM_EVERYDAY_TASKTYPE.GUILD then
+                        SetLabelContent(m_taskName, CCommonTool.GetTxtData(8112).m_str, go);
+                    elseif randomInfo.TaskType >= ENUM_EVERYDAY_TASKTYPE.GUILD then
+                        SetLabelContent(m_taskName, CCommonTool.GetTxtData(8111).m_str, go);
+                    end
+                else
+                    SetLabelTextByID(m_taskName, randomInfo.TxtId, go);
+                end
+            end
+        end
+    else
+        SetLabelTextByID(m_taskName, missionInfo.TaskNameId, go);
+    end
+    local curTaskList = { };
+    if m_taskState == 1 then
+        curTaskList = m_recTasTable;
+    elseif m_taskState == 2 then
+        curTaskList = m_notRecTaskTable;
+    else
+        error("m_taskState not exist");
+    end
+    if curTaskList[cell.dataIndex + 1].missionState == ENUM_MISSION_NPC_STATE.ENUM_MISSION_NPC_STATE_COMPLETE then
+        SetGameObjectState(m_finishState, true, go);
+    else
+        SetGameObjectState(m_finishState, false, go);
+    end
+end
+
+function OnLeftListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local num = cell.dataIndex + 1;
+    if m_leftSelectNum ~= num then
+        m_leftSelectNum = num;
+    end
+    InitRightInfo(data.missionInfo);
+end
+
+-- 初始化基本信息
+function InitInfo()
+    if m_taskState == 1 then
+        SetGameObjectState(m_toggleRevTask .. m_toggleActive, true, m_panelObject);
+        SetGameObjectState(m_toggleRevTask .. m_toggleDeactive, false, m_panelObject);
+        SetGameObjectState(m_toogleNotRevTask .. m_toggleActive, false, m_panelObject);
+        SetGameObjectState(m_toogleNotRevTask .. m_toggleDeactive, true, m_panelObject);
+    elseif m_taskState == 2 then
+        SetGameObjectState(m_toggleRevTask .. m_toggleActive, false, m_panelObject);
+        SetGameObjectState(m_toggleRevTask .. m_toggleDeactive, true, m_panelObject);
+        SetGameObjectState(m_toogleNotRevTask .. m_toggleActive, true, m_panelObject);
+        SetGameObjectState(m_toogleNotRevTask .. m_toggleDeactive, false, m_panelObject);
+    end
+    if #m_recTasTable <= 0 and m_taskState == 1 then
+        SetGameObjectState(m_notTask, true, m_panelObject);
+        SetGameObjectState(m_rightPanel, false, m_panelObject);
+    elseif #m_notRecTaskTable <= 0 and m_taskState == 2 then
+        SetGameObjectState(m_notTask, true, m_panelObject);
+        SetGameObjectState(m_rightPanel, false, m_panelObject);
+    else
+        SetGameObjectState(m_notTask, false, m_panelObject);
+        SetGameObjectState(m_rightPanel, true, m_panelObject);
+    end
+end
+-- 初始化右侧信息
+function InitRightInfo(Info)
+    if Info == nil then
+        return;
+    end
+    if m_leftSelectNum > 0 then
+        -- 将4个区域设置为显示
+        SetGameObjectState(m_rightZone1Str, true, m_panelObject);
+        SetGameObjectState(m_rightZone2Str, true, m_panelObject);
+        SetGameObjectState(m_rightZone3Str, true, m_panelObject);
+        SetGameObjectState(m_rightZone4Str, true, m_panelObject);
+        local missionInfo = Info;
+        -- Zone1
+        -- 设置任务描述
+        local txtInfo = CCommonTool.GetTxtData(missionInfo.CanPublishId);
+        if nil == txtInfo then
+            error("this textID does not exist::" .. m_plotConfigInfo.Label);
+        else
+            local textContent = string.gsub(txtInfo.m_str, "{0}", G_UserInfo.RoleAttribute.Name);
+            SetLabelContent(m_missionDes, textContent, m_panelObject);
+        end
+        -- Zone2
+        -- 设置任务目标
+        SetLabelTextByID(m_missionTar, missionInfo.TaskDescribeId, m_panelObject);
+        -- Zone3
+        -- 设置奖励的金币和经验值
+        -- 公会押镖任务的奖励要客户端自己计算，需做单独处理
+        -- 押镖表数据
+        local m_EscortData = CCommonTool.GetAllUnionConvoyInfo();
+        if m_EscortData ~= nil then
+            for i = 1, m_EscortData.count do
+                if m_EscortData[i - 1].MissionID == missionInfo.Id then
+                    local lv = G_UserInfo.RoleAttribute.Level;
+                    local guildLv = GuildManager.myGuild.level;
+                    -- 计算银币所需系数
+                    local n1 = CCommonTool.GetDefineInfo(6060);
+                    local n2 = CCommonTool.GetDefineInfo(6061);
+                    local n3 = CCommonTool.GetDefineInfo(6040 + guildLv - 1);
+                    -- 品质系数
+                    local quality = m_EscortData[i - 1].Quality;
+                    if n1 and n2 and n3 and quality then
+                        local moneyNum = math.ceil(((lv * n1:GetIntContent()) + n2:GetIntContent()) * quality * n3:GetFloatContent());
+                        missionInfo.RewardsMoney = moneyNum;
+                    end
+                    break;
+                end
+            end
+        end
+        -- 任务库id
+        local randomId = missionInfo.TaskRandom;
+        -- 得到奖励的list结构
+        local allRewardItems = nil;
+        if randomId > 0 then
+            -- 日常任务库信息
+            local randomInfo = CCommonTool.GetMissionRandomInfo(randomId);
+            -- 任务环数
+            local loopTime = G_MissionMng:GetDayMissionLoopTimeById(missionInfo.Id);
+            if missionInfo.Id == randomInfo.TaskLast or missionInfo.Id == randomInfo.TaskStart then
+                allRewardItems = G_MissionMng:GetCurrentMissionRewards(missionInfo.RewardsItemId);
+            elseif missionInfo.Id >= randomInfo.StartTask and missionInfo.Id <= randomInfo.FinishTask then
+                if loopTime > 0 then
+                    local aa = randomInfo.StartReward + loopTime - 1;
+                    allRewardItems = G_MissionMng:GetCurrentMissionRewards(randomInfo.StartReward + loopTime - 1);
+                end
+            end
+            if loopTime == 0 then
+                loopTime = 1;
+            end
+            local loopValue = G_MissionMng:DayMisssionLoopRewardValue(loopTime, randomId);
+            -- 任务星级
+            local starLevel = G_MissionMng:GetDayMissionStarById(missionInfo.Id);
+            if randomInfo.star_byte == 1 and missionInfo.Id ~= randomInfo.TaskStart and missionInfo.Id ~= randomInfo.TaskLast then
+                if starLevel == 0 then
+                    starLevel = 1;
+                end
+            end
+            -- 任务星级奖励系数
+            starValue = G_MissionMng:DayMisssionStarRewardValue(starLevel, randomId);
+            SetLabelContent(m_itemStr .. 2 .. m_itemNumStr, math.floor(missionInfo.RewardsMoney * starValue * loopValue), m_panelObject);
+            SetLabelContent(m_itemStr .. 1 .. m_itemNumStr, math.floor(missionInfo.RewardsExp * starValue * loopValue), m_panelObject);
+        else
+            -- 得到奖励的list结构
+            allRewardItems = G_MissionMng:GetCurrentMissionRewards(missionInfo.RewardsItemId);
+            SetLabelContent(m_itemStr .. 1 .. m_itemNumStr, math.floor(missionInfo.RewardsExp), m_panelObject);
+            SetLabelContent(m_itemStr .. 2 .. m_itemNumStr, math.floor(missionInfo.RewardsMoney), m_panelObject);
+        end
+
+        local count = 0;
+        if missionInfo.RewardsExp > 0 then
+            count = count + 1;
+        end
+        if missionInfo.RewardsMoney > 0 then
+            count = count + 1;
+        end
+        if count == 1 then
+            if missionInfo.RewardsExp > 0 then
+                local nExpIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpID):GetIntContent();
+                SetSpriteByAtlasID(m_itemStr .. 1 .. m_itemIconStr, nExpIconIndex, m_panelObject, true);
+                local nExpPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpAptitudeID):GetIntContent();
+                SetSpriteApptitudeV04(m_itemStr .. 1 .. m_itemPinZhiStr, nExpPinZhiIndex, m_panelObject);
+                SetSpriteApptitude2V04(m_itemStr .. 1 .. m_itemPinZhi2Str, nExpPinZhiIndex, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_itemStr .. 1, ENUMPANELID.ENUM_PANEL_MISSIONPANEL, false, G_ItemToolTipDefine.EXP);
+            end
+            if missionInfo.RewardsMoney > 0 then
+                local nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+                SetSpriteByAtlasID(m_itemStr .. 1 .. m_itemIconStr, nMoneyIconIndex, m_panelObject, true);
+                local nMoneyPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeYinBiAptitudeID):GetIntContent();
+                SetSpriteApptitudeV04(m_itemStr .. 1 .. m_itemPinZhiStr, nMoneyPinZhiIndex, m_panelObject);
+                SetSpriteApptitude2V04(m_itemStr .. 1 .. m_itemPinZhi2Str, nMoneyPinZhiIndex, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_itemStr .. 1, ENUMPANELID.ENUM_PANEL_MISSIONPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+            end
+        elseif count == 2 then
+            -- 设置奖励信息
+            -- 1.经验2.金钱3.4.5,7.8.9.为道具信息
+            -- 设置经验、金币的图片和品质
+            local nExpIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpID):GetIntContent();
+            SetSpriteByAtlasID(m_itemStr .. 1 .. m_itemIconStr, nExpIconIndex, m_panelObject, true);
+            local nExpPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpAptitudeID):GetIntContent();
+            SetSpriteApptitudeV04(m_itemStr .. 1 .. m_itemPinZhiStr, nExpPinZhiIndex, m_panelObject);
+            SetSpriteApptitude2V04(m_itemStr .. 1 .. m_itemPinZhi2Str, nExpPinZhiIndex, m_panelObject);
+            SetItemToolTipsEvent(m_panelObject, m_itemStr .. 1, ENUMPANELID.ENUM_PANEL_MISSIONPANEL, false, G_ItemToolTipDefine.EXP);
+            local nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+            SetSpriteByAtlasID(m_itemStr .. 2 .. m_itemIconStr, nMoneyIconIndex, m_panelObject, true);
+            local nMoneyPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeYinBiAptitudeID):GetIntContent();
+            SetSpriteApptitudeV04(m_itemStr .. 2 .. m_itemPinZhiStr, nMoneyPinZhiIndex, m_panelObject);
+            SetSpriteApptitude2V04(m_itemStr .. 2 .. m_itemPinZhi2Str, nMoneyPinZhiIndex, m_panelObject);
+            SetItemToolTipsEvent(m_panelObject, m_itemStr .. 2, ENUMPANELID.ENUM_PANEL_MISSIONPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+        end
+        local index = count + 1;
+        for Index = index, 9 do
+            local num = Index + 2;
+            if num - 2 <= allRewardItems.Count then
+                SetGameObjectState(m_itemStr .. Index, true, m_panelObject);
+                SetSpriteApptitudeV04(m_itemStr .. Index .. m_itemPinZhiStr, allRewardItems[num - 3].rewardExcelID:GetAptitudeID(), m_panelObject);
+                SetSpriteApptitude2V04(m_itemStr .. Index .. m_itemPinZhi2Str, allRewardItems[num - 3].rewardExcelID:GetAptitudeID(), m_panelObject);
+                SetSpriteByAtlasID(m_itemStr .. Index .. m_itemIconStr, allRewardItems[num - 3].rewardExcelID:GetImageIdById(), m_panelObject);
+                SetItemIconEffect(m_panelObject, m_itemStr .. Index .. m_itemIconStr, allRewardItems[num - 3].rewardExcelID.ExcelID, 21);
+                SetLabelContent(m_itemStr .. Index .. m_itemNumStr, allRewardItems[num - 3].rewardNums, m_panelObject);
+                SetItemToolTipsEvent(m_panelObject, m_itemStr .. Index, ENUMPANELID.ENUM_PANEL_MISSIONPANEL, false, allRewardItems[num - 3].rewardExcelID.ExcelID);
+            else
+                SetGameObjectState(m_itemStr .. Index, false, m_panelObject);
+            end
+        end
+
+        if m_taskState == 1 then
+            if missionInfo.TaskGiveUp == 1 then
+                SetGameObjectState(m_buttonGiveUp, true, m_panelObject);
+            else
+                SetGameObjectState(m_buttonGiveUp, false, m_panelObject);
+            end
+        else
+            SetGameObjectState(m_buttonGiveUp, false, m_panelObject);
+        end
+    else
+        -- 将4个区域设置为不显示
+        SetGameObjectState(m_rightZone1Str, false, m_panelObject);
+        SetGameObjectState(m_rightZone2Str, false, m_panelObject);
+        SetGameObjectState(m_rightZone3Str, false, m_panelObject);
+        SetGameObjectState(m_rightZone4Str, false, m_panelObject);
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_buttonGo, OnGoClick, m_panelObject);
+    SetGameObjectEvent(m_toggleRevTask, OnReceiveClick, m_panelObject);
+    SetGameObjectEvent(m_toogleNotRevTask, OnNotReceiveClick, m_panelObject);
+    SetGameObjectEvent(m_buttonGiveUp, OnGiveUpClick, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+
+-- 点击前往事件
+function OnGoClick()
+    local missionid = nil;
+    if m_taskState == 1 then
+        missionid = m_recTasTable[m_leftSelectNum].missionID;
+    elseif m_taskState == 2 then
+        missionid = m_notRecTaskTable[m_leftSelectNum].missionID;
+    end
+    G_MissionMng:TraceTypeOperate(missionid, true, false);
+    _G.LogicData_CurTraceTaskID = missionid;
+    MissionBeyond3DPanel.OnCloseClick();
+end
+
+function OnGiveUpClick()
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(1524).m_str);
+    table.insert(tempTable, 3, OnGiveUpOKClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnGiveUpOKClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    local missionid = nil;
+    if m_taskState == 1 then
+        missionid = m_recTasTable[m_leftSelectNum].missionID;
+    elseif m_taskState == 2 then
+        missionid = m_notRecTaskTable[m_leftSelectNum].missionID;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_DEL_TASK);
+    buffer:WriteUInt(missionid);
+    G_NetWorkMng:SendMessage(buffer);
+    OnCloseClick();
+end
+
+-- 已接任务点击事件
+function OnReceiveClick()
+    if m_taskState ~= 1 then
+        m_taskState = 1;
+    end
+    InitLeftList();
+end
+
+-- 已接任务点击事件
+function OnNotReceiveClick()
+    if m_taskState ~= 2 then
+        m_taskState = 2;
+    end
+    InitLeftList();
+end
+
+function Kong()
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MISSION_REFRESHSTAR);
+end
+
+-- 关闭界面按钮事件
+function OnCloseClick()
+    -- 关闭当前界面
+    closePanel(ENUMPANELID.ENUM_PANEL_MISSIONPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 外部调用更新任务界面的接口
+function InitMissionInfoOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MISSIONPANEL) == 1 then
+        InitAllInfo();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_taskState;
+    jumpParamsTable[2] = m_leftSelectNum;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

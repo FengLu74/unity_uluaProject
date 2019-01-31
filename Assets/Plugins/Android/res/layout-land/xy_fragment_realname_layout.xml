@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:paddingBottom="12dp"
+    android:paddingTop="12dp">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/xy_bg_dialog_title">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="@string/xy_realname_title"
+                android:textColor="@color/xy_color_c1"
+                android:textSize="20sp" />
+
+            <ImageButton
+                android:id="@+id/xy_realname_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:src="@drawable/xy_btn_back"
+                android:visibility="gone" />
+
+
+            <ImageButton
+                android:id="@+id/xy_realname_close"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="@dimen/xy_common_margin_5dip"
+                android:background="@null"
+                android:src="@drawable/xy_btn_close" />
+        </RelativeLayout>
+
+        <ScrollView
+            android:id="@+id/xy_realname_body_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="28dp"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingTop="28dp">
+
+                <LinearLayout
+                    android:id="@+id/xy_realname_layout_1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <EditText
+                        android:id="@+id/xy_realname_name"
+                        style="@style/xy_edit_text"
+                        android:layout_width="match_parent"
+                        android:drawableLeft="@drawable/xy_ic_user"
+                        android:drawablePadding="4dp"
+                        android:hint="@string/xy_input_realname"
+                        android:textCursorDrawable="@null" />
+
+                    <EditText
+                        android:id="@+id/xy_realname_idcard"
+                        style="@style/xy.edit.text.id"
+                        android:layout_width="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:digits="@string/xy_idcard_regex"
+                        android:drawableLeft="@drawable/xy_ic_idcard"
+                        android:drawablePadding="4dp"
+                        android:hint="@string/xy_input_idcard"
+                        android:maxLength="20"
+                        android:textCursorDrawable="@null" />
+
+                    <Button
+                        android:id="@+id/xy_realname_auth"
+                        style="@style/xy.button.positive"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                        android:layout_marginTop="30dp"
+                        android:text="@string/xy_realname_auth" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/xy_realname_layout_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:orientation="vertical"
+                    android:paddingBottom="20dp"
+                    android:visibility="invisible">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/xy_realname_success_info" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/xy_realname_layout_3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:orientation="vertical"
+                    android:visibility="invisible">
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:src="@drawable/xy_realname_defeat_info" />
+
+                    <Button
+                        android:id="@+id/xy_realname_edit"
+                        style="@style/xy.button.positive"
+                        android:layout_width="200dp"
+                        android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="42dp"
+                        android:text="@string/xy_realname_edit" />
+                </LinearLayout>
+            </RelativeLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</RelativeLayout>

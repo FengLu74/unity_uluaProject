@@ -1,0 +1,16 @@
+﻿module("CombineProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 合成返回
+    network.Register(GMI_STOC_ITEMCOMPOUND_NEW_RETURN, OnHeChengMessage);
+end
+
+-- 合成成功消息处理
+function OnHeChengMessage(protocolId, buffer)
+    CombinePanel.OnHeChengSuccess(buffer);
+end
+
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

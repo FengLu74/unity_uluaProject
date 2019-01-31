@@ -1,0 +1,30 @@
+﻿module("PlayerSettingProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 系统统一提示内容；游戏内提示系统
+    network.Register(GMI_STOC_UPDATE_CLIENT_PLAYER_ACTION, OnSocialSetting);
+end
+
+
+function OnSocialSetting(protocolId, buffer)
+    local settingBits = buffer:ReadUInt();
+    BitUtil.Print(settingBits);
+    local settingManager = G_UserInfo.PlayerSettingManager;
+    settingManager.IsCloseFrientInvite = BitUtil.UIntAnd(settingBits, 1);
+    settingManager.IsCloseTeamInvite = BitUtil.UIntRight(BitUtil.UIntAnd(settingBits, 2), 1);
+    settingManager.IsNotAddSociatyInvite = BitUtil.UIntRight(BitUtil.UIntAnd(settingBits, 4), 2);
+    PlayerSettingPanel.SaveOriginalSetting();
+end
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+-- 请求保存系统设置
+function RequestSaveSetting(value)
+    BitUtil.Print(value);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_UPDATE_CLIENT_PLAYER_ACTION);
+    buffer:WriteUInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end

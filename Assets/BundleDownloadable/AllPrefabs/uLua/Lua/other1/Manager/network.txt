@@ -1,0 +1,74 @@
+﻿module("network", package.seeall)
+
+local event = Event.New();
+
+function RegisterProtocols()
+    NetProtocol.RegisterProtocols();
+    CommonProtocol.RegisterProtocols();
+    LoginProtocol.RegisterProtocols();
+    FriendsProtocol.RegisterProtocols();
+    DungeonProtocol.RegisterProtocols();
+    EquipmentProtocol.RegisterProtocols();
+    BagProtocol.RegisterProtocols();
+    SkillProtocol.RegisterProtocols();
+    ChatProtocol.RegisterProtocols();
+    PlayerProtocol.RegisterProtocols();
+    RankProtocol.RegisterProtocols();
+    MailProtocol.RegisterProtocols();
+    CombineProtocol.RegisterProtocols();
+    GMProtocol.RegisterProtocols();
+    PartnerProtocol.RegisterProtocols();
+    AchieveProtocol.RegisterProtocols();
+    GuideProtocol.RegisterProtocols();
+    EveryDayTaskProtocol.RegisterProtocols();
+    DragonSoulProtocol.RegisterProtocols();
+    CampProtocol.RegisterProtocols();
+    GuildProtocol.RegisterProtocols();
+    GuildSkillProtocol.RegisterProtocols();
+    WelfareProtocol.RegisterProtocols();
+    SceneProtocol.RegisterProtocols();
+    ActivityDungeonProtocol.RegisterProtocols();
+    WingProtocol.RegisterProtocols();
+    MiscProtocol.RegisterProtocols();
+    PlayerSettingProtocol.RegisterProtocols();
+    NPCShopProtocol.RegisterProtocols();
+    RidePanelProtocol.RegisterProtocols();
+    DrinkWinePanelProtocol.RegisterProtocols();
+
+    AuctionProtocol.RegisterProtocols();
+    FashionProtocol.RegisterProtocols();
+    LifeSkillProtocol.RegisterProtocols();
+    ShopProtocol.RegisterProtocols();
+    PetProtocol.RegisterProtocols();
+    StoreProtocol.RegisterProtocols();
+    ChargeProtocol.RegisterProtocols();
+    ExchangeItemProtocol.RegisterProtocols();
+    GrowFundProtocol.RegisterProtocols();
+    ArtifactProtocol.RegisterProtocols();
+    CampSealProtocol.RegisterProtocols();
+    BorderWarProtocol.RegisterProtocols();
+    ArenaProtocol.RegisterProtocols();
+	WingPanelProtocolCN.RegisterProtocols();
+
+end
+
+function Register(protocolId, callback)
+    event:Add(protocolId, callback);
+end
+
+function Unregister(protocolId, callback)
+    event:Remove(protocolId, callback);
+end
+
+-- Socket消息--
+function OnSocket(key, buffer)
+    event:DispatchEvent(key, buffer);
+--    if not event:HasEventGroup(key) then
+--        log("NetWorkKey not dealed in c# and lua,which key value is::::" .. key);
+--    end
+end
+
+function Clear()
+    event:Clear();
+end
+

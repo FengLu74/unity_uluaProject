@@ -1,0 +1,286 @@
+﻿module("EquipMng", package.seeall)
+
+-- 装备强化的数据(key为装备部位枚举EquipType，value为强化等级)
+EquipForceData =
+{
+    [0] = 0;[1] = 0;[2] = 0;[3] = 0;[4] = 0;[5] = 0;[6] = 0;[7] = 0;[8] = 0;[9] = 0;[12] = 0;[13] = 0;
+};
+
+-- 当前强化等级装备强化的次数(key为装备部位枚举EquipType，value为当前等级强化次数)
+EquipForceTimesData =
+{
+    [0] = 0;[1] = 0;[2] = 0;[3] = 0;[4] = 0;[5] = 0;[6] = 0;[7] = 0;[8] = 0;[9] = 0;[12] = 0;[13] = 0;
+};
+
+-- 是否可以继续点击强化按钮
+CanClickEquipForceButton = true;
+CanClickOneEquipForceButton=true;
+
+-- 是否可以继续点击洗练保存属性按钮
+CanClickEquipRandEffSaveAttrButton = true;
+-- 是否可以继续点击洗练中洗练按钮
+CanClickEquipRandEffButton = true;
+
+-- 宝石数据（key为装备位置1~10，value为宝石数据table（key为宝石索引号1~5，value为单个宝石数据excelID））
+GemData = {};
+
+-- 是否可以继续点击符石的开孔，镶嵌，摘除按钮
+CanClickEquipGemButton = true;
+-- 是否正在播放特效
+IsPlayingParticle = false;
+-- 播放完特效执行的事件
+EventExcuteAfterPlaying = nil;
+
+-- 是否可以继续点击精炼按钮
+CanClickEquipStarUpButton = true;
+
+-----------------传承-------------
+InheritTempPrtocolData={};
+InheritClick=false;
+-- 是否可以继续点击传承按钮
+CanClickEquipInheritButton = true;
+--是否使用传承护符 --1=用
+IsUseProtectStoneButton = 1;
+--左边hole
+m_leftSelectHole=-1;
+--右边hole
+m_rightSelectHole=-1;
+
+m_Delay=false;
+-----------------------------------
+
+--[[ 附魔数据(key为装备位置1~10,value为附魔数据table(EnchantLevel:当前栏位附魔等级，EnchantExp:当前栏位多余经验，EnchantHolesDataTable:3个孔的数据(key为
+孔的索引号,value为品质ID(<0代表未解锁或未开启,=0代表已开启但是未附魔,>0代表已经附魔的品质ID(1~6) ) ) ) ) --]]
+EnchantData = {};
+
+-- 是否可以继续点击附魔附魔按钮
+CanClickEquipEnchantEnchantButton = true;
+-- 是否可以继续点击附魔养成按钮
+CanClickEquipGetExpButton = true;
+
+-- 其他角色的属性类
+OtherPlayerRoleAttribute = nil;
+-- 查看其他角色的装备强化信息
+OtherPlayerEquipForceData = {};
+-- 查看其他角色的附魔信息
+OtherPlayerEnchantData = {};
+-- 查看其他角色的宝石信息
+OtherPlayerGemData = {};
+
+-- 装备升星11级-15级增加的属性百分比
+StarUpAddPercentData = nil;
+
+-- 通过装备部位获得装备强化等级
+function GetEquipLvByEquipType(equipType)
+    if equipType < EquipType.ET_EquipCount and equipType >= EquipType.ET_Arm then
+        return EquipForceData[equipType];
+    else
+        return 0;
+    end
+end
+
+function ClearData()
+    for k, v in pairs(EquipForceData) do
+        EquipForceData[k] = 0;
+    end
+    for k, v in pairs(EquipForceTimesData) do
+        EquipForceTimesData[k] = 0;
+    end
+    CanClickEquipForceButton = true;
+    CanClickOneEquipForceButton = true;
+    CanClickEquipRandEffSaveAttrButton = true;
+    CanClickEquipRandEffButton = true;
+    GemData = {};
+    CanClickEquipGemButton = true;
+    CanClickEquipStarUpButton = true;
+    EnchantData = {};
+    CanClickEquipEnchantEnchantButton = true;
+    CanClickEquipGetExpButton = true;
+    CanClickEquipInheritButton=true;
+
+    OtherPlayerEquipForceData = {};
+    OtherPlayerEnchantData = {};
+    OtherPlayerGemData = {};
+    OtherPlayerRoleAttribute = nil;
+end
+
+-- 通过装备属性表行数据得到对应Index值的属性ID，最小属性值，最大属性值
+function GetEquipRandEffInfo(tableInfo, index)
+    if tableInfo ~= nil then
+        if index == 0 then
+            return tableInfo.Attr1, tableInfo.NumMin1, tableInfo.NumMax1;
+        elseif index == 1 then
+            return tableInfo.Attr2, tableInfo.NumMin2, tableInfo.NumMax2;
+        elseif index == 2 then
+            return tableInfo.Attr3, tableInfo.NumMin3, tableInfo.NumMax3;
+        elseif index == 3 then
+            return tableInfo.Attr4, tableInfo.NumMin4, tableInfo.NumMax4;
+        elseif index == 4 then
+            return tableInfo.Attr5, tableInfo.NumMin5, tableInfo.NumMax5;
+        elseif index == 5 then
+            return tableInfo.Attr6, tableInfo.NumMin6, tableInfo.NumMax6;
+        elseif index == 6 then
+            return tableInfo.Attr7, tableInfo.NumMin7, tableInfo.NumMax7;
+        elseif index == 7 then
+            return tableInfo.Attr8, tableInfo.NumMin8, tableInfo.NumMax8;
+        elseif index == 8 then
+            return tableInfo.Attr9, tableInfo.NumMin9, tableInfo.NumMax9;
+        elseif index == 9 then
+            return tableInfo.Attr10, tableInfo.NumMin10, tableInfo.NumMax10;
+        elseif index == 10 then
+            return tableInfo.Attr11, tableInfo.NumMin11, tableInfo.NumMax11;
+        elseif index == 11 then
+            return tableInfo.Attr12, tableInfo.NumMin12, tableInfo.NumMax12;
+        elseif index == 12 then
+            return tableInfo.Attr13, tableInfo.NumMin13, tableInfo.NumMax13;
+        elseif index == 13 then
+            return tableInfo.Attr14, tableInfo.NumMin14, tableInfo.NumMax14;
+        elseif index == 14 then
+            return tableInfo.Attr15, tableInfo.NumMin15, tableInfo.NumMax15;
+        elseif index == 15 then
+            return tableInfo.Attr16, tableInfo.NumMin16, tableInfo.NumMax16;
+        elseif index == 16 then
+            return tableInfo.Attr17, tableInfo.NumMin17, tableInfo.NumMax17;
+        elseif index == 17 then
+            return tableInfo.Attr18, tableInfo.NumMin18, tableInfo.NumMax18;
+        elseif index == 18 then
+            return tableInfo.Attr19, tableInfo.NumMin19, tableInfo.NumMax19;
+        elseif index == 19 then
+            return tableInfo.Attr20, tableInfo.NumMin20, tableInfo.NumMax20;
+        elseif index == 20 then
+            return tableInfo.Attr21, tableInfo.NumMin21, tableInfo.NumMax21;
+        elseif index == 21 then
+            return tableInfo.Attr22, tableInfo.NumMin22, tableInfo.NumMax22;
+        elseif index == 22 then
+            return tableInfo.Attr23, tableInfo.NumMin23, tableInfo.NumMax23;
+        elseif index == 23 then
+            return tableInfo.Attr24, tableInfo.NumMin24, tableInfo.NumMax24;
+        end
+    end
+    return 0, 0, 0;
+end
+
+-- 获取符石系统第nIndex(1~10)个栏位的符石总等级
+function GetGemAllLevelByIndex(nIndex)
+    local resultLevel = 0;
+    if GemData[nIndex] ~= nil then
+        local singleEquipGemsData = GemData[nIndex];
+        for Index = 1,5 do
+            if singleEquipGemsData[Index] ~= nil then
+                local singleGemData = singleEquipGemsData[Index];
+                if singleGemData.ExcelID > 0 then
+                    local itemInfo = CCommonTool.GetItemInfo(singleGemData.ExcelID);
+                    if itemInfo ~= nil then
+                        resultLevel = itemInfo.Level + resultLevel;
+                    end
+                end
+            else
+                return 0;
+            end
+        end
+    else
+        return 0;
+    end
+    return resultLevel;
+end
+
+-- 获取符石系统所有栏位(1~10)的某一等级符石的所有数量
+function GetGemAllNumByLv(index)
+    local resultNum = 0;
+    for nIndex = 1, 14 do
+        if GemData[nIndex] ~= nil then
+            local singleEquipGemsData = GemData[nIndex];
+            for Index = 1,5 do
+                if singleEquipGemsData[Index] ~= nil then
+                    local singleGemData = singleEquipGemsData[Index];
+                    if singleGemData.ExcelID > 0 then
+                        local itemInfo = CCommonTool.GetItemInfo(singleGemData.ExcelID);
+                        if itemInfo ~= nil and itemInfo.Level == index then
+                            resultNum = resultNum + 1;
+                        end
+                    end
+                else
+                    return 0;
+                end
+            end
+        else
+            return 0;
+        end
+    end
+    return resultNum;
+end
+
+-- 获取附魔系统所有栏位(1~10)的某一个品质附魔的总等级
+function GetEnchantAllLvByIndex(index)
+    local resultLv = 0;
+    for i = 1, 14 do
+        if EnchantData[i] ~= nil then
+            local singleData = EnchantData[i];
+            if singleData ~= nil then
+                for k = 1, 3 do
+                    if singleData.EnchantHolesDataTable[k] == index then
+                        resultLv = resultLv + singleData.EnchantLevel + 1; 
+                    end
+                end
+            else
+                return 0;
+            end
+        else
+            return 0;
+        end
+    end
+    return resultLv;
+end
+
+
+function InitStarUpConfig()
+    if StarUpAddPercentData == nil then
+        StarUpAddPercentData = {
+            math.round(CCommonTool.GetDefineInfo(6650):GetFloatContent() * 100),--11级
+            math.round(CCommonTool.GetDefineInfo(6651):GetFloatContent() * 100),--12级
+            math.round(CCommonTool.GetDefineInfo(6652):GetFloatContent() * 100),--13级
+            math.round(CCommonTool.GetDefineInfo(6653):GetFloatContent() * 100),--14级
+            math.round(CCommonTool.GetDefineInfo(6654):GetFloatContent() * 100),--15级
+        };
+    end
+end
+
+-- 获取装备升星增加的百分比(0-100+)
+function GetStarUpAddPercent(baseAddPercent, level)
+    InitStarUpConfig();
+    local baseLevel = 10;
+    if level <= baseLevel  then
+        return baseAddPercent / 10000 * level;
+    else
+		--error("函数内111level"..level);
+        local percent = baseAddPercent / 10000 * baseLevel;
+		--error("函数内percent"..percent);
+        local diffLevel = level - baseLevel;
+        for i, value in ipairs(StarUpAddPercentData) do
+            if i <= diffLevel then
+				--error("函数内value"..value);
+                percent = percent + value/100;
+				--error("计算完percent"..percent);
+            end
+        end
+        return percent;
+    end
+end
+
+-- 获取装备升星累计增加的百分比(0-100+)
+function GetStarUpTotalPercent(baseAddPercent, level)
+    InitStarUpConfig();
+    local baseLevel = 10;
+    if level <= baseLevel  then
+        return baseAddPercent / 100 * level;
+    else
+        local percent = baseAddPercent / 100 * baseLevel;
+        local diffLevel = level - baseLevel;
+        for i, value in ipairs(StarUpAddPercentData) do
+            if i <= diffLevel then
+                percent = percent + value;
+            end
+        end
+        return percent;
+    end
+end

@@ -1,0 +1,301 @@
+﻿module("BossLobbyPanel", package.seeall)
+
+require "Panel.EquipBossPanel";
+require "Panel.WorldBossPanel";
+require "Panel.CampBossPanel";
+require "Panel.VIPBossPanel";
+require "Panel.ChildBossLivenessPanel";
+
+-- 当前所在面板名字
+local m_PanelName = 'ActivityPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 周历按钮
+local m_WeekButtonPath = "WeekButton";
+-- 说明按钮
+local m_SystemExlpainStr = "EquipBossPanel/Info/ExplainButton";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 装备Boss标签
+local m_MenuItem1Path = "Menu/Grid/MenuItem1";
+-- 世界Boss标签
+local m_MenuItem2Path = "Menu/Grid/MenuItem2";
+-- 阵营BOSS标签
+local m_MenuItem3Path = "Menu/Grid/MenuItem3";
+-- VIPBoss标签
+local m_MenuItem4Path = "Menu/Grid/MenuItem4";
+----------------------------------通用的名称路径---------------------------------------
+-- 装备Boss标签
+local m_EquipBossPanelPath = "EquipBossPanel";
+-- 世界Boss标签
+local m_WorldBossPanelPath = "WorldBossPanel";
+-- 阵营BOSS标签
+local m_CampBossPanelPath = "CampBossPanel";
+-- VIPBoss标签
+local m_VIPBossPanelPath = "VIPBossPanel";
+
+-- 活跃度面板
+local m_ActivityLivenessPanelPath = "ChildBossLivenessPanel";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+
+-- 装备Boss标签
+local m_MenuItem1 = nil;
+-- 世界Boss标签
+local m_MenuItem2 = nil;
+-- 阵营BOSS标签
+local m_MenuItem3 = nil;
+-- VIPBoss标签
+local m_MenuItem4 = nil;
+
+-- 装备Boss面板
+local m_EquipBossPanel = nil;
+-- 世界Boss面板
+local m_WorldBossPanel = nil;
+-- 阵营BOSS面板
+local m_CampBossPanel = nil;
+-- VIPBoss面板
+local m_VIPBossPanel = nil;
+-- 活跃度面板
+local m_ActivityLivenessPanel = nil;
+-- 选中的标签
+local m_selectTagNum = 1;
+-- 上一次选择标签
+local m_lastSelectTagNum = 1;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = m_MenuItem1Path, panelName = m_EquipBossPanelPath, isFirstOpen = true, luaFileName = EquipBossPanel},
+    [2] = { name = m_MenuItem2Path, panelName = m_WorldBossPanelPath, isFirstOpen = true, luaFileName = WorldBossPanel },
+    [3] = { name = m_MenuItem3Path, panelName = m_CampBossPanelPath, isFirstOpen = true, luaFileName = CampBossPanel },
+    [4] = { name = m_MenuItem4Path, panelName = m_VIPBossPanelPath, isFirstOpen = true, luaFileName = VIPBossPanel },
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    ChildBossLivenessPanel.Start();
+    ActivityProtocol.RequestActivitysLimitTime();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+        ActivityProtocol.RequestActivitysLimitTime();
+    end
+    ChildBossLivenessPanel.OnEnable();
+end
+
+function OnDisable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    ChildBossLivenessPanel.OnDisable();
+    m_lastSelectTagNum = m_selectTagNum;
+    m_selectTagNum = 1;
+    ActivityManager.ClearLimitTime();
+end
+
+function OnDestroy()
+    for Index = 1, #m_toggleTable do
+        if m_toggleTable[Index].luaFileName ~= nil then
+            m_toggleTable[Index].luaFileName.OnDestroy();
+            m_toggleTable[Index].isFirstOpen = true;
+        end
+    end
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_MenuItem1 = nil;
+    m_MenuItem2 = nil;
+    m_MenuItem3 = nil;
+    m_MenuItem4 = nil;
+    -- 装备Boss面板
+    m_EquipBossPanel = nil;
+    -- 世界Boss面板
+    m_WorldBossPanel = nil;
+    -- 阵营BOSS面板
+    m_CampBossPanel = nil;
+    -- VIPBoss面板
+    m_VIPBossPanel = nil;
+    m_ActivityLivenessPanel = nil;
+    ChildBossLivenessPanel.OnDestroy();
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_BOSSLOBBYPANEL);
+
+    m_MenuItem1 = child(m_PanelObject, m_MenuItem1Path).gameObject;
+    m_MenuItem2 = child(m_PanelObject, m_MenuItem2Path).gameObject;
+    m_MenuItem3 = child(m_PanelObject, m_MenuItem3Path).gameObject;
+    m_MenuItem4 = child(m_PanelObject, m_MenuItem4Path).gameObject;
+    m_EquipBossPanel = child(m_PanelObject, m_EquipBossPanelPath).gameObject;
+    m_WorldBossPanel = child(m_PanelObject, m_WorldBossPanelPath).gameObject;
+    m_CampBossPanel = child(m_PanelObject, m_CampBossPanelPath).gameObject;
+    m_VIPBossPanel = child(m_PanelObject, m_ActivityCampPanelPath).gameObject;
+    m_ActivityLivenessPanel = child(m_PanelObject, m_ActivityLivenessPanelPath).gameObject;
+
+    m_EquipBossPanel:SetActive(false);
+    m_WorldBossPanel:SetActive(false);
+    m_CampBossPanel:SetActive(false);
+    m_VIPBossPanel:SetActive(false);
+    m_ActivityLivenessPanel:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_MenuItem1).onClick = LuaHelper.OnClick(OnMenuItem1Click);
+    UIEventListener.Get(m_MenuItem2).onClick = LuaHelper.OnClick(OnMenuItem2Click);
+    UIEventListener.Get(m_MenuItem3).onClick = LuaHelper.OnClick(OnMenuItem3Click);
+    UIEventListener.Get(m_MenuItem4).onClick = LuaHelper.OnClick(OnMenuItem4Click);
+
+    SetGameObjectEvent(m_WeekButtonPath, OnWeekButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    OpenPanelByTag();
+
+--    -- 骑士荣誉开启等级
+--    local honorOpenLevel = CCommonTool.GetDefineInfo(EDefineContentID.TYPE_LEVEL_ACTIVITYHONIR):GetIntContent();
+--    -- 判断角色等级是否可以开启骑士荣誉页签
+--    if G_UserInfo.RoleAttribute.Level >= honorOpenLevel then
+--        m_MenuItem6:SetActive(true);
+--    else
+--        m_MenuItem6:SetActive(false);
+--    end
+end
+-- 删除boss3d模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_BOSSLOBBYPANEL);
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    Delete3DModel();
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Toggle", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_PanelObject);
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Toggle", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_PanelObject);
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+    --活跃度界面(阵营boss显示)
+    local livenessVisible = m_selectTagNum == 3 ;
+    if m_ActivityLivenessPanel.activeSelf ~= livenessVisible then
+        m_ActivityLivenessPanel:SetActive(livenessVisible);
+        if livenessVisible then
+            ChildBossLivenessPanel.OnEnable();
+        else
+            ChildBossLivenessPanel.OnDisable();
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 装备Boss面板
+function OnMenuItem1Click(gameObject)
+    OnTabClick(1);
+end
+
+-- 世界Boss面板
+function OnMenuItem2Click(gameObject)
+    OnTabClick(2);
+end
+
+-- 阵营BOSS面板
+function OnMenuItem3Click(gameObject)
+    OnTabClick(3);
+end
+
+-- VIPBoss面板
+function OnMenuItem4Click(gameObject)
+    GuildProtocol.RequestStrongHold();
+end
+
+function OnTabClick(index)
+    if m_selectTagNum ~= index then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+-- 周历按钮点击事件
+function OnWeekButtonClick(gameObject)
+    createPanel(ENUMPANELID.ENUM_PANAEL_ACTIVITYCALENDERPANEL, ENUMPANELID.ENUM_BOSSLOBBYPANEL);
+end
+
+-- 关闭界面事件
+function OnCloseClick()
+    if ChildBossLivenessPanel.m_RewardsContentIsOpen then
+        ChildBossLivenessPanel.OnRewardMaskClick();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_BOSSLOBBYPANEL);
+    ForLeaveDungeonPanel.MoveButton(0);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index, causePanelId)
+    if m_CreateSuccess == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_BOSSLOBBYPANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_BOSSLOBBYPANEL, causePanelId);
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = { };
+    local tabIndex = m_selectTagNum;
+    panelParams.tabIndex = tabIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    if paramTable == nil then
+        return;
+    end
+    local panelParams = paramTable;
+    local tabIndex = panelParams.tabIndex;
+    OpenThisPanelByTag(tabIndex);
+end 
+
+-- 说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_BOSSLOBBYPANEL, 1);
+end
+
+---- 刷新领地战页面
+--function RefreshGuildWar()
+--    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL) and m_selectTagNum == 4 then
+--        OpenPanelByTag();
+--    end
+--end

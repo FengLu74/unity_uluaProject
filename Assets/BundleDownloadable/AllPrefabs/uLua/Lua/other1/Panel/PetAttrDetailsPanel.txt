@@ -1,0 +1,737 @@
+﻿module("PetAttrDetailsPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 玩家详细属性中的生命值
+local m_DetailHpStr = "Content/AllAttr/attribute-Hp/Label-Num";
+-- 玩家详细属性中的魔法值
+local m_DetailMpStr = "Content/AllAttr/attribute-Mp/Label-Num";
+-- 玩家详细属性中的物攻值
+local m_DetailApStr = "Content/AllAttr/attribute-Ap/Label-Num";
+-- 玩家详细属性中的法攻值
+local m_DetailMapStr = "Content/AllAttr/attribute-Map/Label-Num";
+-- 玩家详细属性中的物防值
+local m_DetailDpStr = "Content/AllAttr/attribute-Dp/Label-Num";
+-- 玩家详细属性中的魔防值
+local m_DetailMdpStr = "Content/AllAttr/attribute-Mdp/Label-Num";
+-- 玩家详细属性中的暴击值
+local m_DetailAcStr = "Content/AllAttr/attribute-Ac/Label-Num";
+-- 玩家详细属性中的暴伤值
+local m_DetailChStr = "Content/AllAttr/attribute-Ch/Label-Num";
+-- 玩家详细属性中的命中值
+local m_DetailAhStr = "Content/AllAttr/attribute-Ah/Label-Num";
+-- 玩家详细属性中的闪避值
+local m_DetailDhStr = "Content/AllAttr/attribute-Dh/Label-Num";
+-- 玩家详细属性中的韧性值
+local m_DetailDcStr = "Content/AllAttr/attribute-Dc/Label-Num";
+-- 玩家详细属性中的吸血值
+local m_DetailSbStr = "Content/AllAttr/attribute-Sb/Label-Num";
+-- 玩家详细属性中的穿透值
+local m_DetailPtStr = "Content/AllAttr/attribute-Pt/Label-Num";
+
+-- 玩家详细属性中的暴击值
+local m_DetailAc1Str = "Content/AllAttr/attribute-Ac/Label-Num1";
+-- 玩家详细属性中的命中值
+local m_DetailAh1Str = "Content/AllAttr/attribute-Ah/Label-Num1";
+-- 玩家详细属性中的闪避值
+local m_DetailDh1Str = "Content/AllAttr/attribute-Dh/Label-Num1";
+-- 玩家详细属性中的韧性值
+local m_DetailDc1Str = "Content/AllAttr/attribute-Dc/Label-Num1";
+
+
+-- 玩家详细属性中的生命
+local m_DetailHpNameStr = "Content/AllAttr/attribute-Hp/Label";
+-- 玩家详细属性中的魔法
+local m_DetailMpNameStr = "Content/AllAttr/attribute-Mp/Label";
+-- 玩家详细属性中的物攻
+local m_DetailApNameStr = "Content/AllAttr/attribute-Ap/Label";
+-- 玩家详细属性中的法攻
+local m_DetailMapNameStr = "Content/AllAttr/attribute-Map/Label";
+-- 玩家详细属性中的物防
+local m_DetailDpNameStr = "Content/AllAttr/attribute-Dp/Label";
+-- 玩家详细属性中的魔防
+local m_DetailMdpNameStr = "Content/AllAttr/attribute-Mdp/Label";
+-- 玩家详细属性中的暴击
+local m_DetailAcNameStr = "Content/AllAttr/attribute-Ac/Label";
+-- 玩家详细属性中的暴伤
+local m_DetailChNameStr = "Content/AllAttr/attribute-Ch/Label";
+-- 玩家详细属性中的命中
+local m_DetailAhNameStr = "Content/AllAttr/attribute-Ah/Label";
+-- 玩家详细属性中的闪避
+local m_DetailDhSNameStr = "Content/AllAttr/attribute-Dh/Label";
+-- 玩家详细属性中的韧性
+local m_DetailDcNameStr = "Content/AllAttr/attribute-Dc/Label";
+-- 玩家详细属性中的吸血
+local m_DetailSbNameStr = "Content/AllAttr/attribute-Sb/Label";
+-- 玩家详细属性中的穿透
+local m_DetailPtNameStr = "Content/AllAttr/attribute-Pt/Label";
+
+
+-- 玩家详细属性中的免伤值
+local m_DetailRdStr = "Content/AllAttr/attribute-Rd/Label-Num";
+-- 玩家详细属性中的反伤值
+local m_DetailFbStr = "Content/AllAttr/attribute-Fb/Label-Num";
+-- 玩家详细属性中的增伤值
+local m_DetailAdStr = "Content/AllAttr/attribute-Ad/Label-Num";
+
+
+-- 玩家详细属性中的免伤
+local m_DetailRdNameStr = "Content/AllAttr/attribute-Rd/Label";
+-- 玩家详细属性中的反伤
+local m_DetailFbNameStr = "Content/AllAttr/attribute-Fb/Label";
+-- 玩家详细属性中的增伤
+local m_DetailAdNameStr = "Content/AllAttr/attribute-Ad/Label";
+
+
+-- 玩家详细属性中的冰攻值
+local m_DetailIhStr = "Content/AllAttr/attribute-Ih/Label-Num";
+-- 玩家详细属性中的火攻值
+local m_DetailFhStr = "Content/AllAttr/attribute-Fh/Label-Num";
+-- 玩家详细属性中的雷攻值
+local m_DetailThStr = "Content/AllAttr/attribute-Th/Label-Num";
+-- 玩家详细属性中的风攻值
+local m_DetailWhStr = "Content/AllAttr/attribute-Wh/Label-Num";
+-- 玩家详细属性中的光攻值
+local m_DetailLhStr = "Content/AllAttr/attribute-Lh/Label-Num";
+-- 玩家详细属性中的暗攻值
+local m_DetailDh2Str = "Content/AllAttr/attribute-Dh2/Label-Num";
+-- 玩家详细属性中的冰抗值
+local m_DetailIaStr = "Content/AllAttr/attribute-Ia/Label-Num";
+-- 玩家详细属性中的火抗值
+local m_DetailFaStr = "Content/AllAttr/attribute-Fa/Label-Num";
+-- 玩家详细属性中的雷抗值
+local m_DetailTaStr = "Content/AllAttr/attribute-Ta/Label-Num";
+-- 玩家详细属性中的风抗值
+local m_DetailWaStr = "Content/AllAttr/attribute-Wa/Label-Num";
+-- 玩家详细属性中的光抗值
+local m_DetailLaStr = "Content/AllAttr/attribute-La/Label-Num";
+-- 玩家详细属性中的暗抗值
+local m_DetailDaStr = "Content/AllAttr/attribute-Da/Label-Num";
+
+
+-- 玩家详细属性中的冰攻
+local m_DetailIhNameStr = "Content/AllAttr/attribute-Ih/Label";
+-- 玩家详细属性中的火攻
+local m_DetailFhNameStr = "Content/AllAttr/attribute-Fh/Label";
+-- 玩家详细属性中的雷攻
+local m_DetailThNameStr = "Content/AllAttr/attribute-Th/Label";
+-- 玩家详细属性中的风攻
+local m_DetailWhNameStr = "Content/AllAttr/attribute-Wh/Label";
+-- 玩家详细属性中的光攻
+local m_DetailLhNameStr = "Content/AllAttr/attribute-Lh/Label";
+-- 玩家详细属性中的暗攻
+local m_DetailDh2NameStr = "Content/AllAttr/attribute-Dh2/Label";
+-- 玩家详细属性中的冰抗
+local m_DetailIaNameStr = "Content/AllAttr/attribute-Ia/Label";
+-- 玩家详细属性中的火抗
+local m_DetailFaNameStr = "Content/AllAttr/attribute-Fa/Label";
+-- 玩家详细属性中的雷抗
+local m_DetailTaNameStr = "Content/AllAttr/attribute-Ta/Label";
+-- 玩家详细属性中的风抗
+local m_DetailWaNameStr = "Content/AllAttr/attribute-Wa/Label";
+-- 玩家详细属性中的光抗
+local m_DetailLaNameStr = "Content/AllAttr/attribute-La/Label";
+-- 玩家详细属性中的暗抗
+local m_DetailDaNameStr = "Content/AllAttr/attribute-Da/Label";
+
+
+-- 玩家详细属性中的眩晕强度
+local m_DetailXsNameStr = "Content/AllAttr/attribute-Xs";
+-- 玩家详细属性中的减速强度
+local m_DetailJsNameStr = "Content/AllAttr/attribute-Js";
+-- 玩家详细属性中的定身强度
+local m_DetailDsNameStr = "Content/AllAttr/attribute-Ds";
+-- 玩家详细属性中的沉默强度
+local m_DetailCsNameStr = "Content/AllAttr/attribute-Cs";
+-- 玩家详细属性中的中毒强度
+local m_DetailZsNameStr = "Content/AllAttr/attribute-Zs";
+-- 玩家详细属性中的眩晕抗性
+local m_DetailXrNameStr = "Content/AllAttr/attribute-Xr";
+-- 玩家详细属性中的减速抗性
+local m_DetailJrNameStr = "Content/AllAttr/attribute-Jr";
+-- 玩家详细属性中定的身抗性
+local m_DetailDrNameStr = "Content/AllAttr/attribute-Dr";
+-- 玩家详细属性中的沉默抗性
+local m_DetailCrNameStr = "Content/AllAttr/attribute-Cr";
+-- 玩家详细属性中的中毒抗性
+local m_DetailZrNameStr = "Content/AllAttr/attribute-Zr";
+
+-- 角色属性名字
+local m_attrNameStr = "/Label";
+-- 角色属性值
+local m_attrValueStr = "/Label-Num";
+
+-- 详细属性面板内容
+local m_detailPanel = "Content";
+
+-- 关闭详细属性面板
+local m_closeDetailsPanel = "CloseButton";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化按钮信息
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitDetailInfo();
+end
+
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETATTRDETAILSPANEL);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    SetGameObjectEvent(m_closeDetailsPanel, OnCloseClick, m_panelObject);
+end
+
+-- 更新中间角色属性的详细信息
+function InitDetailInfo()
+    --  初始化坐标位置
+    local panelObj = GetComponent(m_panelObject, m_detailPanel, "UIPanel");
+    panelObj.gameObject.transform.localPosition = Vector3.New(11, 345, 0);
+    panelObj.clipOffset = Vector2.New(0, 1);
+
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    -- 伤害计算等级系数
+    coeffValue = CCommonTool.GetDefineInfo(EDefineContentID.Type_GradeCoefficient):GetIntContent();
+    -- 伤害计算等级常数
+    constValue = CCommonTool.GetDefineInfo(EDefineContentID.Type_GradeConstant):GetIntContent();
+    local personClass = PetManager.ChangePetItemIntoCLGPerson(m_CurSelectPet, 1);
+    local attrIndex = 0;
+    local fData = 0;
+    local attrIndexData = nil;
+    local defineInfo = nil;
+    local textInfo = nil;
+    local attrValue = 0;
+    local perValue = 0;
+    local m_attrPer = 0;
+    -- 生命
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[1]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailHpNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetMaxHp()));
+        OnNumberShow(m_DetailHpStr, attrValue);
+    end
+    -- 魔法
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[15]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailMpNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetMaxMp()));
+        OnNumberShow(m_DetailMpStr, attrValue);
+    end
+    -- 外攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[2]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailApNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetAp()));
+        OnNumberShow(m_DetailApStr, attrValue);
+    end
+    -- 内攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[3]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailMapNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetMap()));
+        OnNumberShow(m_DetailMapStr, attrValue);
+    end
+    -- 外防
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[16]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDpNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetDp()));
+        OnNumberShow(m_DetailDpStr, attrValue);
+    end
+    -- 内防
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[17]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailMdpNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetMdp()));
+        OnNumberShow(m_DetailMdpStr, attrValue);
+    end
+    -- 暴击
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[4]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailAcNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetAc()));
+        OnNumberShow(m_DetailAcStr, attrValue);
+        -- 暴击百分比
+        perValue = attrValue /(attrValue + petATT.PetLevel * coeffValue + constValue);
+        perValue = perValue + personClass:GetAcPercent();
+        m_attrPer = string.format("%0.4f", perValue) * 100;
+        SetLabelContent(m_DetailAc1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+    end
+    -- 闪避
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[19]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDhSNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetDh()));
+        OnNumberShow(m_DetailDhStr, attrValue);
+        -- 闪避百分比
+        perValue = attrValue /(attrValue + petATT.PetLevel * coeffValue + constValue);
+        perValue = perValue + personClass:GetDhPercent();
+        m_attrPer = string.format("%0.4f", perValue) * 100;
+        SetLabelContent(m_DetailDh1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+    end
+    -- 命中
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[5]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailAhNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetAh()));
+        OnNumberShow(m_DetailAhStr, attrValue);
+        -- 命中百分比
+        perValue = attrValue /(attrValue + petATT.PetLevel * coeffValue + constValue);
+        perValue = perValue + personClass:GetAhPercent();
+        m_attrPer = string.format("%0.4f", perValue) * 100;
+        SetLabelContent(m_DetailAh1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+    end
+    -- 韧性
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[18]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDcNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetDc()));
+        OnNumberShow(m_DetailDcStr, attrValue);
+        -- 韧性百分比
+        perValue = attrValue /(attrValue + petATT.PetLevel * coeffValue + constValue);
+        perValue = perValue + personClass:GetDcPercent();
+        m_attrPer = string.format("%0.4f", perValue) * 100;
+        SetLabelContent(m_DetailDc1Str, "(" .. m_attrPer .. "%" .. ")", m_panelObject);
+    end
+    -- 暴伤
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[6]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailChNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetCh() * 1000 + 1500));
+        SetLabelContent(m_DetailChStr, attrValue, m_panelObject);
+    end
+    -- 穿透
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[7]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailPtNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetPt() * 1000));
+        SetLabelContent(m_DetailPtStr, attrValue, m_panelObject);
+    end
+    -- 增伤
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[8]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailAdNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetAddDamage() * 1000));
+        SetLabelContent(m_DetailAdStr, attrValue, m_panelObject);
+    end
+    -- 吸血
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[20]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailSbNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetSb() * 1000));
+        SetLabelContent(m_DetailSbStr, attrValue, m_panelObject);
+    end
+    -- 反伤
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[21]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailFbNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetFeedBack() * 1000));
+        SetLabelContent(m_DetailFbStr, attrValue, m_panelObject);
+    end
+    -- 免伤
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[22]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailRdNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetReduceDamage() * 1000));
+        SetLabelContent(m_DetailRdStr, attrValue, m_panelObject);
+    end
+    -- 火攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[9]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailFhNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetFireHurt()));
+        OnNumberShow(m_DetailFhStr, attrValue);
+    end
+    -- 冰攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[10]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailIhNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetIceHurt()));
+        OnNumberShow(m_DetailIhStr, attrValue);
+    end
+    -- 雷攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[11]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailThNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetThunderHurt()));
+        OnNumberShow(m_DetailThStr, attrValue);
+    end
+    -- 风攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[12]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailWhNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetWindHurt()));
+        OnNumberShow(m_DetailWhStr, attrValue);
+    end
+    -- 光攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[13]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailLhNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetLightHurt()));
+        OnNumberShow(m_DetailLhStr, attrValue);
+    end
+    -- 暗攻
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[14]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDh2NameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetDarkHurt()));
+        OnNumberShow(m_DetailDh2Str, attrValue);
+    end
+    InitOtherAttrInfo();
+end
+
+function InitOtherAttrInfo()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    -- 伤害计算等级系数
+    coeffValue = CCommonTool.GetDefineInfo(EDefineContentID.Type_GradeCoefficient):GetIntContent();
+    -- 伤害计算等级常数
+    constValue = CCommonTool.GetDefineInfo(EDefineContentID.Type_GradeConstant):GetIntContent();
+    local personClass = PetManager.ChangePetItemIntoCLGPerson(m_CurSelectPet, 1);
+    local attrIndex = 0;
+    local fData = 0;
+    local attrIndexData = nil;
+    local defineInfo = nil;
+    local textInfo = nil;
+    local attrValue = 0;
+    local perValue = 0;
+    local m_attrPer = 0;
+    -- 火抗
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[23]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailFaNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetFireAnt()));
+        OnNumberShow(m_DetailFaStr, attrValue);
+    end
+    -- 冰抗
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[24]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailIaNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetIceAnt()));
+        OnNumberShow(m_DetailIaStr, attrValue);
+    end
+    -- 雷抗
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[25]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailTaNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetThunderAnt()));
+        OnNumberShow(m_DetailTaStr, attrValue);
+    end
+    -- 风抗
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[26]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailWaNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetWindAnt()));
+        OnNumberShow(m_DetailWaStr, attrValue);
+    end
+    -- 光抗
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[27]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailLaNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetLightAnt()));
+        OnNumberShow(m_DetailLaStr, attrValue);
+    end
+    -- 暗抗
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[28]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDaNameStr, textInfo.TextID, m_panelObject);
+        end
+        attrValue = GetAttrIndexValue(attrIndexData, math.floor(personClass:GetDarkAnt()));
+        OnNumberShow(m_DetailDaStr, attrValue);
+    end
+    -- 晕眩强度
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[29]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailXsNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetXuanYunQD()*1000), m_DetailXsNameStr);
+    end
+    -- 减速强度
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[30]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailJsNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetJianSuQD()*1000), m_DetailJsNameStr);
+    end
+    -- 定身强度
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[31]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDsNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetDingShenQD()*1000), m_DetailDsNameStr);
+    end
+    -- 沉默强度
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[32]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailCsNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetChenMoQD()*1000), m_DetailCsNameStr);
+    end
+    -- 中毒强度
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[33]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailZsNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetZhongDuQD()*1000), m_DetailZsNameStr);
+    end
+    -- 晕眩抗性
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[34]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailXrNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetXuanYunKX()*1000), m_DetailXrNameStr);
+    end
+    -- 减速抗性
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[35]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailJrNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetJianSuKX()*1000), m_DetailJrNameStr);
+    end
+    -- 定身抗性
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[36]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailDrNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetDingShenKX()*1000), m_DetailDrNameStr);
+    end
+    -- 沉默抗性
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[37]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailCrNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetChenMoKX()*1000), m_DetailCrNameStr);
+    end
+    -- 中毒抗性
+    defineInfo = CCommonTool.GetDefineInfo(G_AttrTable[38]);
+    if defineInfo ~= nil then
+        attrIndexData = defineInfo:GetIntContent();
+        textInfo = CCommonTool.GetAttrIndexInfo(attrIndexData);
+        if textInfo ~= nil then
+            SetLabelTextByID(m_DetailZrNameStr .. m_attrNameStr, textInfo.TextID, m_panelObject);
+        end
+        ReserveTwoNums(attrIndexData, math.floor(personClass:GetZhongDuKX()*1000), m_DetailZrNameStr);
+    end
+end
+
+-- 数字显示方式
+function OnNumberShow(path, num)
+    local value1 = nil;
+    local value2 = nil;
+    num = tonumber(num);
+    if num > 1000 then
+        value1 = math.floor(num / 1000);
+        value2 = num - value1 * 1000;
+        if value2 > 100 then
+            SetLabelContent(path, value1 .. "," .. value2, m_panelObject);
+        elseif value2 > 10 then
+            SetLabelContent(path, value1 .. "," .. "0" .. value2, m_panelObject);
+        elseif value2 > 1 then
+            SetLabelContent(path, value1 .. "," .. "00" .. value2, m_panelObject);
+        end
+    else
+        SetLabelContent(path, num, m_panelObject);
+    end
+end
+
+-- 属性值保留两位小数
+function ReserveTwoNums(attrIndex, attrValue, path)
+    local m_indexData = nil;
+    local m_attrValue = nil;
+    if attrValue <= 0 then
+        m_attrValue = string.format("%1d", attrValue) .. "%";
+    else
+        m_indexData = CCommonTool.GetAttrIndexInfo(attrIndex).Ratio;
+        m_attrValue = string.format("%0.2f", attrValue * m_indexData * 100) .. "%";
+    end
+
+    SetLabelContent(path .. m_attrValueStr, m_attrValue, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭界面按钮事件
+function OnCloseClick()
+    -- 关闭当前界面
+    closePanel(ENUMPANELID.ENUM_PANEL_PETATTRDETAILSPANEL);
+end

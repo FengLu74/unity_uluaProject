@@ -1,0 +1,83 @@
+﻿module("ArtifactProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --服务器通知客户端神器初始化数据
+    network.Register(GMI_STOC_ARTIFACT_INIT_DATA, OnArtifactInitData);
+    --服务器通知客户端神器操作返回
+    network.Register(GMI_STOC_ARTIFACT_OPERATE_RETURN, OnArtifactOperateReturn);
+end
+
+--服务器通知客户端神器初始化数据
+function OnArtifactInitData(protocolId, buffer)
+    ArtifactManager.ArtifactFragmentData = {};
+    local fragmentCount = buffer:ReadInt();
+    local key,value;
+    for Index = 1,fragmentCount do
+        key = buffer:ReadInt();
+        value = buffer:ReadInt();
+        ArtifactManager.ArtifactFragmentData[key] = value;
+    end
+    ArtifactManager.ArtifactData = {};
+    local artifactCount = buffer:ReadInt();
+    for Index = 1,artifactCount do
+        key = buffer:ReadInt();
+        value = buffer:ReadInt();
+        ArtifactManager.ArtifactData[key] = value;
+    end
+end
+
+--服务器通知客户端神器操作返回
+function OnArtifactOperateReturn(protocolId, buffer)
+    local subMsgID = buffer:ReadByte();
+    if subMsgID == ARTIFACT_OPERATE_MSG.ARTIFACT_ACTIVE_FRAGMENT then
+        local fragID = buffer:ReadInt();
+        ArtifactManager.ArtifactFragmentData[fragID] = 1;
+        ShowSystemFlowTips(9087);
+        ArtifactPanel.Refresh();
+        ArtifactFragmentPanel.Refresh(true);
+    elseif subMsgID == ARTIFACT_OPERATE_MSG.ARTIFACT_ACTIVE_ARTIFACT then
+        local artifactID = buffer:ReadInt();
+        ShowSystemFlowTips(9090);
+        ArtifactManager.ArtifactData[artifactID] = 1;
+        ArtifactPanel.Refresh();
+    elseif subMsgID == ARTIFACT_OPERATE_MSG.ARTIFACT_LEVELUP_FRAGMENT then
+        local bSuccess = buffer:ReadByte();
+        local fragID = buffer:ReadInt();
+        if bSuccess == 1 then
+            ShowSystemFlowTips(9088);
+            if ArtifactManager.ArtifactFragmentData[fragID] ~= nil then
+                ArtifactManager.ArtifactFragmentData[fragID] = ArtifactManager.ArtifactFragmentData[fragID] + 1;
+            else
+                error("important error");
+            end
+        else
+            ShowSystemFlowTips(9089);
+        end
+        ArtifactPanel.Refresh();
+        ArtifactFragmentPanel.Refresh(false,bSuccess);
+    elseif subMsgID == ARTIFACT_OPERATE_MSG.ARTIFACT_LEVELUP_ARTIFACT then
+        local bSuccess = buffer:ReadByte();
+        local artifactID = buffer:ReadInt();
+        if bSuccess == 1 then
+            ShowSystemFlowTips(9091);
+            if ArtifactManager.ArtifactData[artifactID] ~= nil then
+                ArtifactManager.ArtifactData[artifactID] = ArtifactManager.ArtifactData[artifactID] + 1;
+            else
+                error("important error");
+            end
+        else
+            ShowSystemFlowTips(9092);
+        end
+        ArtifactPanel.Refresh();
+        ArtifactLevelUpPanel.Refresh(false,bSuccess);
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_ARTIFACT, ArtifactManager.IsShowRedHint());
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

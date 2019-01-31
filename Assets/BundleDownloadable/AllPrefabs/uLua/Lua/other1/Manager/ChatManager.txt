@@ -1,0 +1,550 @@
+﻿module("ChatManager", package.seeall)
+
+-----------------------------------一些写死的规定--------------------------------------
+
+print(CHAT_CHANNEL_ID.CHAT_WORLD_ID)
+
+--记录频道CD时间
+local m_CdDict = {
+    [CHAT_CHANNEL_ID.CHAT_WORLD_ID] = {maxCDId=EDefineContentID.TYPELIAOTIANWORLDCD, last=0},
+    [CHAT_CHANNEL_ID.CHAT_SCENE_ID] = {maxCDId=EDefineContentID.TYPELIAOTIANCURRENTCD, last=0},
+    [CHAT_CHANNEL_ID.CHAT_ALONE_ID] = {maxCDId=EDefineContentID.TYPE_CHAT_PRIVATE_CD, last=0},
+    [CHAT_CHANNEL_ID.CHAT_CAMP_ID] = {maxCDId=EDefineContentID.TYPELIAOTIANCAMPCD, last=0},
+    [CHAT_CHANNEL_ID.CHAT_GUILD_ID] = {maxCDId=EDefineContentID.TYPELIAOTIANGUILDCD, last=0},
+    [CHAT_CHANNEL_ID.CHAT_JOIN_ID] = {maxCDId=EDefineContentID.TYPELIAOTIANTEMPCD, last=0},
+};
+
+--各频道等级限制
+local m_LevelDict = {
+    [CHAT_CHANNEL_ID.CHAT_WORLD_ID] = EDefineContentID.TYPELIAOTIANWORLDLEVEL,
+    [CHAT_CHANNEL_ID.CHAT_SCENE_ID] = EDefineContentID.TYPELIAOTIANCURRENTLEVEL,
+    [CHAT_CHANNEL_ID.CHAT_ALONE_ID] = EDefineContentID.TYPELIAOTIANALONELEVEL,
+    [CHAT_CHANNEL_ID.CHAT_CAMP_ID] = EDefineContentID.TYPELIAOTIANCAMPLEVEL,
+    [CHAT_CHANNEL_ID.CHAT_GUILD_ID] = EDefineContentID.TYPELIAOTIANGUILDLEVEL,
+    [CHAT_CHANNEL_ID.CHAT_JOIN_ID] = EDefineContentID.TYPELIAOTIANTEMPLEVEL,
+};
+
+-- 频道名称与颜色值
+local m_ChannelNameColorDict = {
+    [CHAT_CHANNEL_ID.CHAT_ALL_ID] = {name = 8853, color = "F3A16B"},
+    [CHAT_CHANNEL_ID.CHAT_WORLD_ID] = {name = 8852, color = "F9F23E"},
+    [CHAT_CHANNEL_ID.CHAT_SCENE_ID] = {name = 8851, color = "FEF8D7"},
+    [CHAT_CHANNEL_ID.CHAT_ALONE_ID] = {name = 8850, color = "FFFFFF"},
+    [CHAT_CHANNEL_ID.CHAT_SYSTEM_ID] = {name = 8849, color = "ED5050"},
+    [CHAT_CHANNEL_ID.CHAT_CAMP_ID] = {name = 8848, color = "E67820"},
+    [CHAT_CHANNEL_ID.CHAT_GUILD_ID] = {name = 8847, color = "459BF3"},
+    [CHAT_CHANNEL_ID.CHAT_JOIN_ID] = {name = 8846, color = "6DE05E"}
+}
+
+-----------------------------------引用的对象------------------------------------------
+
+-- 所有聊天数据
+local m_AllRecords = {};
+-- 频道聊天数据
+local m_channelRecords = {};
+-- 当前频道ID
+local m_ChannelId = nil;
+-- 聊天对象
+local m_ChatTarget = nil;
+-- 语音聊天数据
+local m_VoiceDatas = {};
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function GetChannelName(channelId)
+    return CCommonTool.GetTxtData(m_ChannelNameColorDict[channelId].name).m_str;
+end
+
+-- 获取带颜色的频道名称
+function GetChannelNameWithColor(channelId, withBracket)
+    local nameInfo = m_ChannelNameColorDict[channelId];
+    if nameInfo then
+        if withBracket then
+            return "[".. nameInfo.color .."][" .. GetChannelName(channelId) .. "][-]";
+        else
+            return "[".. nameInfo.color .."]" .. GetChannelName(channelId) .. "[-]";
+        end
+    end
+    return "";
+end
+
+-- 指定聊天频道CD是否结束
+function IsCDEnd(channelId, prompted)
+    local cdInfo = m_CdDict[channelId];
+    if cdInfo then
+        local ms = os.time() - cdInfo.last;
+        print("ms:", ms);
+        local max = CCommonTool.GetDefineInfo(cdInfo.maxCDId):GetIntContent();
+        if ms <= max then
+            if prompted then ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTCD); end
+            return false;
+        end
+    end
+    return true;
+end
+
+-- 玩家等级是否达到指定聊天频道的等级限制
+function IsLevelReach(channelId, prompted)
+    local needLevelId = m_LevelDict[channelId];
+    if needLevelId then
+        local needLevel = CCommonTool.GetDefineInfo(needLevelId):GetIntContent();
+        local level = G_UserInfo.RoleAttribute.Level;
+        if level < needLevel then
+            if prompted then ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTLEVEL_1, nil, {needLevel}); end
+            return false;
+        end
+    end
+    return true;
+end
+
+--更新CD时间
+function UpdateCdTime(channelId)
+    local cdInfo = m_CdDict[channelId];
+    if cdInfo then cdInfo.last = os.time(); end
+end
+
+--组队频道是否开启
+function IsOpenedTeamChannel(prompted)
+    if not TeamManager.HasTeam() then
+        if prompted then ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTJOIN_TEAM); end
+        return false;
+    end
+    return IsLevelReach(CHAT_CHANNEL_ID.CHAT_JOIN_ID, prompted);
+end
+
+--公会频道是否开启
+function IsOpenedGuildChannel(prompted)
+    if GuildManager.guildId <= 0 then
+        if prompted then ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTJOIN_GUILD); end
+        return false;
+    end
+    return IsLevelReach(CHAT_CHANNEL_ID.CHAT_GUILD_ID, prompted);
+end
+
+-- 判断指定频道是否可进行聊天
+function CanChat(channelId)
+    -- 组队判断
+    if channelId == CHAT_CHANNEL_ID.CHAT_JOIN_ID then
+        if G_UserInfo.RoleAttribute.TeamID == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTJOIN_TEAM);
+            return false;
+        end
+    end
+    -- 公会判断
+    if channelId == CHAT_CHANNEL_ID.CHAT_GUILD_ID then
+        if GuildManager.guildId <= 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTJOIN_GUILD);
+            return false;
+        end
+    end
+    -- 阵营判断
+    if channelId == CHAT_CHANNEL_ID.CHAT_CAMP_ID then
+        if G_UserInfo.RoleAttribute.JoinCampType < 1 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_NOTJOIN_CAMP);
+            return false;
+        end
+    end
+    if not IsCDEnd(channelId, true) then return false end
+    if not IsLevelReach(channelId, true) then return false end
+    return true;
+end
+
+-- 设置附近频道ID和聊天对象
+function SetChannelIdAndTarget(channelId, target)
+    m_ChannelId = channelId;
+    m_ChatTarget = target;
+end
+
+-- 发送语音信息
+-- @param number channelId 频道ID
+-- @param string speechText 语音识别文本
+-- @param string url 语音文件url(文件ID)
+-- @param number duration 语音时长(毫秒)
+-- @param number targetId 私聊玩家ID
+function SendVoiceMessage(channelId, speechText, url, duration, targetId)
+    if not CanChat(channelId) then
+        return false;
+    end
+    error(string_format("发送语音信息:channelId:{0},speechText:{1},url:{2},millseconds:{3}", channelId, speechText, url, duration));
+    -- 非中文忽略识别文本
+    if Constants.RegionalId ~= 1 then
+        speechText = "";
+    end
+    local message = speechText or "";
+    message = "\n"..message;
+    message = RecursiveGsub(message);
+    local cmessage = System.String.New(message);
+    local len = cmessage.Length;
+    local maxLen = GetCharacterLimit()-1;
+    if len >= maxLen then
+        message = tostring(cmessage:Substring(0, maxLen));
+    end
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_CHAT);
+    buffer:WriteByte(channelId);
+    -- 广播类型(0:默认 1:组队频道广播 2:公会频道广播, 处理队伍中的喊话功能)
+    buffer:WriteByte(0);
+    if channelId == CHAT_CHANNEL_ID.CHAT_ALONE_ID then
+        -- 私聊玩家ID
+        if targetId == 0 or targetId == nil then
+            error("私聊频道发送语音, 接收玩家ID为nil");
+            return false;
+        end
+        buffer:WriteInt(targetId);
+    else
+        buffer:WriteInt(-1);
+    end
+    buffer:WriteStringByUShort(message);
+    -- 消息类型: 1语音 0普通
+    buffer:WriteByte(1);
+    buffer:WriteStringByUShort(url);
+    buffer:WriteInt(duration);
+    G_NetWorkMng:SendMessage(buffer);
+    UpdateCdTime(channelId);
+    return true;
+end
+
+-- 发送聊天信息
+function SendMessage(channelId, message, target, broadcastType, showSize, ShowID)
+    if not CanChat(channelId) then
+        return false;
+    end
+    DoSendMessage(channelId, message, target, broadcastType, showSize, ShowID);
+    return true;
+end
+
+-- 发送聊天消息
+function DoSendMessage(channelId, message, target, broadcastType, showSize, ShowID)
+    broadcastType = broadcastType or 0;
+    message = RecursiveGsub(message);
+    local cmessage = System.String.New(message);
+    local len = cmessage.Length;
+    local maxLen = GetCharacterLimit()-1;
+    if len >= maxLen then
+        message = tostring(cmessage:Substring(0, maxLen));
+    elseif len == 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN__CONTENT_EMPTY);
+        return false;
+    end
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_CHAT);
+    if channelId < 1 then
+        buffer:WriteByte(1);
+    else
+        buffer:WriteByte(channelId);
+    end
+    -- 广播类型(0:默认 1:组队频道广播 2:公会频道广播, 处理队伍中的喊话功能 3:匹配队伍喊话广播)
+    buffer:WriteByte(broadcastType);
+    if channelId == CHAT_CHANNEL_ID.CHAT_ALONE_ID then
+        -- 接收人GlobleID
+        buffer:WriteInt(target.guid);
+    else
+        -- 接收人GlobleID
+        buffer:WriteInt(-1);
+    end
+    error(message);
+    buffer:WriteStringByUShort(message);
+    -- 消息类型: 1语音 0普通
+    buffer:WriteByte(0);
+    -- 是否有物品展示(目前只支持显示一件物品)，没有的时候给0
+    if showSize~= nil and showSize>0 then 
+        buffer:WriteUShort(showSize);
+        buffer:WriteInt64(ShowID);
+    else
+        buffer:WriteUShort(0);
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    UpdateCdTime(channelId);
+end
+
+-- 是否为内部测试命令
+function IsInnerCmd(msg)
+    if msg == "$$cmd$$:gm" then
+        createPanel(ENUMPANELID.ENUM_PANEL_GMPANEL);
+        return true;
+    elseif msg == "$$cmd$$:log" then
+        Util.OpenLogPanel();
+        return true;
+    end
+    return false;
+end
+
+-- 替换非法文字
+function RecursiveGsub(message)
+    local len = 0
+    repeat
+        local illegalChars = CCommonTool.IsLegitimacyByText(message,ENUM_SHILED_AREA.CHAT);
+        len = string.len(illegalChars)
+        if len > 0 then
+            message = string.gsub(message, illegalChars, "*");
+        end
+    until len == 0;
+    return message;
+end
+
+-- 输入框最大字符个数
+function GetCharacterLimit()
+    return CCommonTool.GetDefineInfo(3557):GetIntContent();
+end
+
+-- 解析urlContent
+function ParseUrlContent(urlContent, sendID)
+    if urlContent ~= nil and string.len(urlContent) > 0 then
+        if string.find(urlContent, "<1>") ~= nil then
+            -- <1>寻路位置</1>
+            --local m_targetSceneId = string.sub(urlContent, 4, 4);
+            local _, _, sceneInfoString = string.find(urlContent, "[(](.+)[)]");
+            local sceneData = string_split(sceneInfoString, ",");
+            local sceneId = tonumber(sceneData[1]);
+            local m_pos = Vector3.New(tonumber(sceneData[2]), tonumber(sceneData[3]), tonumber(sceneData[4]));
+            G_UserInfo:GetCurPlayer():SetSeekTarget(sceneId, m_pos);
+        elseif string.find(urlContent, "<2>") ~= nil then
+            -- <2>队伍喊话</2>
+            local globalId, teamId, time = string.match(urlContent, "<2>(%d+)_(%d+)_(%d+)</2>");
+            if not globalId or not time then return; end
+            -- 如果消息超过5分钟, 提示过期
+            if G_TimerMng:GetCurrentSeconds() - tonumber(time) > 300 then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_TEAM_OVERDUE);
+                return;
+            end
+            if TeamManager.HasTeam() then
+                ShowSystemFlowTips(3734);
+                return;
+            end
+            --error("申请组队:globalId:"..globalId..", teamId:"..teamId);
+            globalId = tonumber(globalId);
+            teamId = tonumber(teamId);
+            TeamProtocol.RequestApplyTeam(globalId);
+        elseif string.find(urlContent, "<3>") ~= nil then
+            -- 匹配队伍喊话
+            local globalId, goalId, diffIndex, time = string.match(urlContent, "<3>(%d+)_(%d+)_(%d+)_(%d+)</3>");
+            if not globalId or not time then return; end
+            -- 如果消息超过5分钟, 提示过期
+            if G_TimerMng:GetCurrentSeconds() - tonumber(time) > 300 then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_TEAM_OVERDUE);
+                return;
+            end
+            globalId = tonumber(globalId);
+            goalId = tonumber(goalId);
+            diffIndex = tonumber(diffIndex);
+            if globalId ~= G_UserInfo.GlobalDBID then
+                if TeamManager.HasTeam() then
+                    TeamProtocol.RequestInvitePlayer(globalId);
+                else
+                    TeamProtocol.RequestApplyTeam(globalId);
+                end
+            end
+        elseif string.find(urlContent, "<4>") ~= nil then
+            -- <4>展示物品</4>, 前面解析出来的是物品对应的exelID
+            local itemExcelID = string.match(urlContent, "<4>(%d+)</4>");
+            if sendID~= nil and tonumber(sendID) > 0 then 
+                BagProtocol.RequestChatShowItem(sendID)
+            else
+                local paraTable = {};
+                paraTable.PanelID = ENUMPANELID.ENUM_PANEL_CHAT;
+                paraTable.IsRealItem = false;
+                paraTable.ItemData = itemExcelID;
+                paraTable.IsEquiped = false;
+                paraTable.IsOtherPlayerEquip = false;
+                OnItemToolTipsPanelClick(nil,paraTable);
+            end
+        end
+    end
+end
+
+-- 发送队伍喊话信息
+-- @param broacastType 广播类型 1:组队频道广播 2:公会频道广播
+-- @param teamId 组伍ID
+-- @param content 喊话内容
+function SendTeamMessage(broacastType, teamId, content)
+    local channelId = CHAT_CHANNEL_ID.CHAT_GUILD_ID;
+    if broacastType == 1 then
+        channelId = CHAT_CHANNEL_ID.CHAT_WORLD_ID;
+    end
+    if not CanChat(channelId) then
+        return;
+    end
+
+    local globalId = G_UserInfo.GlobalDBID;
+    local message = "[url=<2>%d_%d_%d</2>]%s[/url]";
+    message = string.format(message, globalId, teamId, G_TimerMng:GetCurrentSeconds(), content);
+    SendMessage(channelId, message, nil, broacastType);
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_LIAOTIAN_TEAM_SENDED);
+end
+
+-- 发送匹配队伍喊话信息
+-- @param goalData 队伍目标信息
+-- @param content 喊话内容
+function SendMatchTeamMessage(goalData, content)
+    local channelId = CHAT_CHANNEL_ID.CHAT_WORLD_ID;
+    --[[
+    if not CanChat(channelId) then
+        return;
+    end
+    ]]
+    local globalId = G_UserInfo.GlobalDBID;
+    local message = "[url=<3>{0}_{1}_{2}_{3}</3>]{4}[/url]";
+    message = string_format(message, globalId, goalData.goalId, goalData.diffIndex, G_TimerMng:GetCurrentSeconds(), content);
+    DoSendMessage(channelId, message, nil, 3); -- 匹配队伍的广播类型是3
+end
+
+-- 显示系统聊天消息
+-- @param channelId 频道ID
+-- @param content 消息内容
+-- @param isShowAtMainView 是否在主界面显示
+-- @param isShowAtChatView 是否在聊天界面显示
+function ShowSystemMessage(channelId, content, isShowAtMainView, isShowAtChatView)
+    local chatData = {wcsChat=content, wChannelID=channelId, msgType=2};
+    AddChatRecord(channelId, chatData);
+    if isShowAtChatView == true and IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then
+        ChatPanel.OnRecieveMessage(channelId, chatData);
+    end
+    --if isShowAtMainView == true and IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+    if isShowAtMainView == true then
+        Main_MiddleBottom.ShowLiaoTianData(channelId, chatData);
+    end
+end
+
+-- 添加聊天数据
+function AddChatRecord(channelId, msgData)
+    table.insert(m_AllRecords, msgData);
+    if #m_AllRecords > 1000 then table.remove(m_AllRecords, 0) end
+    local channelRecords = GetChannelRecords(channelId);
+    table.insert(channelRecords, msgData);
+    if #channelRecords > 1000 then table.remove(channelRecords, 0) end
+    if msgData.msgType == 1 then
+        table.insert(m_VoiceDatas, msgData);
+        if msgData.dwSpkGlobleID == G_UserInfo.GlobalDBID then
+            -- 自己发送的语音不自动播放
+            msgData.played = true;
+        end
+        CheckAutoPlayVoice();
+    end
+end
+
+
+function GetAllRecords()
+    return m_AllRecords;
+end
+
+function GetChannelRecords(channelId)
+    if not m_channelRecords[channelId] then
+        m_channelRecords[channelId] = {};
+    end
+    return m_channelRecords[channelId];
+end
+
+-- 获取指定频道的未读消息数量
+-- @param channelId 频道ID
+function GetUnreadMessageCount(channelId)
+    local messages = GetChannelRecords(channelId);
+    local count = 0;
+    for i, msg in ipairs(messages) do
+        if msg.isRead ~= true and msg.broadcastType == 0 and msg.msgType ~= 2 then
+            count = count + 1;
+        end
+    end
+    return count;
+end
+
+-- 聊天消息设置为已读状态
+function SetMessageReadState(msgData)
+    if msgData ~= nil then
+        msgData.isRead = true;
+    end
+end
+
+local m_ChannelPrefsName = "ChannelPlaySetting";
+
+-- 获取频道自动播放设置
+-- @param channelId 频道ID
+function GetChannelPlaySetting(channelId)
+    local channelPrefsName = m_ChannelPrefsName..channelId;
+    return PlayerPrefs.GetInt(channelPrefsName, 1);
+end
+
+-- 设置频道自动播放设置
+-- @param channelId 频道ID
+-- @param isOn true:开启
+function SetChannelPlaySetting(channelId, isOn)
+    local channelPrefsName = m_ChannelPrefsName..channelId;
+    PlayerPrefs.SetInt(channelPrefsName, isOn == true and 1 or 0);
+end
+
+local m_NetPrefsName = "NetPlaySetting";
+
+-- 获取频道自动播放设置
+-- @param netType 1:WIFI 2:4G
+function GetNetPlaySetting(netType)
+    local netPrefsName = m_NetPrefsName..netType;
+    return PlayerPrefs.GetInt(netPrefsName, 1);
+end
+
+-- 设置频道自动播放设置
+-- @param netType 1:WIFI 2:4G
+function SetNetPlaySetting(netType, isOn)
+    local netPrefsName = m_NetPrefsName..netType;
+    PlayerPrefs.SetInt(netPrefsName, isOn == true and 1 or 0);
+end
+
+-- 指定频道ID是否设置了自动播放
+function IsAutoPlayChannel(channelId)
+    local isOn = GetChannelPlaySetting(channelId) == 1;
+    if isOn == true then
+        if GetNetPlaySetting(1) == 1 and Util.IsWifi == true then
+            return true;
+        end
+        if GetNetPlaySetting(2) == 1 and Util.Is4GNet == true then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 检测自动播放语音
+function CheckAutoPlayVoice()
+    if CVoiceManager.Instance.playingFileId ~= "" then
+        return;
+    end
+    for i, data in ipairs(m_VoiceDatas) do
+        if data.played ~= true then
+            data.played = true;
+            if IsAutoPlayChannel(data.channelId) then
+                ChatVoiceManager.PlayVoice(data.fileId);
+            end
+            break;
+        end
+    end
+end
+
+-- 语音播放完成后回调
+function OnRecordedFilePlayEnd(fileId)
+    local find = false;
+    for i, data in ipairs(m_VoiceDatas) do
+        if data.played ~= true then
+            data.played = true;
+            if find == true then
+                if IsAutoPlayChannel(data.channelId) then
+                    -- 自动播放下一条语音
+                    ChatVoiceManager.PlayVoice(data.fileId);
+                    break;
+                end
+            end
+        end
+        if data.fileId == fileId then
+            find = true;
+        end
+    end
+end
+
+function Reset()
+    m_ChannelId = nil;
+    m_ChatTarget = nil;
+    ChatPanel.ResetChannelId();
+    -- 聊天数据
+    m_AllRecords = {};
+    m_channelRecords = {};
+    m_VoiceDatas = {};
+    ChatVoiceManager.ClearData();
+end

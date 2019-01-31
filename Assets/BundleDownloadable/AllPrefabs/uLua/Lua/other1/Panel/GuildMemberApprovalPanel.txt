@@ -1,0 +1,130 @@
+﻿module("GuildMemberApprovalPanel", package.seeall)
+
+-----------------------------------------------button路径--------------------------------------------
+
+-- 审批面板全部拒绝按钮路径
+local m_approvalPanelRefuseAllButton = "Sprite_ButtomBg/Button_RefuseAll";
+-- 审批面板全部同意按钮路径
+local m_approvalPanelAgreeAllButton = "Sprite_ButtomBg/Button_AgreeAll";
+-- 审批面板关闭按钮路径
+local m_approvalPanelCloseButton = "Button_Close";
+
+-------------------------------------------通用的名称路径----------------------------------------------
+
+-- 审批面板角色头像Icon路径
+local m_approvalPanelRoleIconStr = "Sprite_RoleIcon";
+-- 审批面板角色名称路径
+local m_approvalPanelRoleNameStr = "Name";
+-- 审批面板角色等级路径
+local m_approvalPanelRoleLevelStr = "Level";
+-- 审批面板职业Icon路径
+local m_approvalPanelProfessionIconStr = "Icon";
+-- 审批面板战力路径
+local m_approvalPanelPowerStr = "FightPower";
+-- 审批面板拒绝按钮路径
+local m_approvalPanelRefuseStr = "RefuseButton";
+-- 审批面板同意按钮路径
+local m_approvalPanelAgreeStr = "AgreeButton";
+
+----------------------------------------gameobject所在的路径---------------------------------------
+
+-- 列表Panel
+local m_listPanelStr = "ApprovalList/List";
+-- 无申请玩家显示路径
+local m_noneApprovalMemberStr = "Label_DefaultContent";
+-- 自动同意申请
+local m_toggleStr = "Toggle_AutoJoin";
+
+--------------------------------------------引用的对象-------------------------------------------------
+
+-- panel面板
+local m_panelObject = nil;
+-- 自动同意申请
+local m_toggle = nil;
+local m_hasPermission = false;
+
+function ShowPanel(gameObject)
+    m_panelObject = gameObject;
+    m_hasPermission = GuildManager.HasPermission(E_GUILD_PERMISSION.APPROVE);
+    InitObjects();
+    InitOnClick();
+    InitList();
+end
+
+function InitObjects()
+    m_listView = GetComponent(m_panelObject, m_listPanelStr, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+end
+
+-- 初始化事件信息
+function InitOnClick()
+    -- 申请面板关闭按钮事件
+    SetGameObjectEvent(m_approvalPanelCloseButton, OnClose, m_panelObject);
+    SetGameObjectEvent("Mask", OnClose, m_panelObject);
+end
+
+-- 初始化审批列表信息
+function InitList()
+    local applicants = GuildManager.guildApplicants or {};
+    m_listView:RemoveAll();
+    for i, data in ipairs(applicants) do
+        m_listView:AddData(data);
+    end
+    SetGameObjectState(m_noneApprovalMemberStr, #applicants == 0, m_panelObject);
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent(m_approvalPanelRoleNameStr, data.applyName, go);
+    SetLabelContent(m_approvalPanelRoleLevelStr, data.level, go);
+    SetLabelContent(m_approvalPanelPowerStr, string_format(--[[战斗力 {0}]]CCommonTool.GetTxtData(994).m_str,data.fightPower), go);
+    SetSpriteByAtlasID(m_approvalPanelProfessionIconStr, CCommonTool.GetRoleDateInfo(data.professsion).HeadRes, go, true);
+    -- 没有权限置灰
+    CCommonTool.SetGameObjectGrey(child(go, m_approvalPanelRefuseStr).gameObject, not m_hasPermission);
+    CCommonTool.SetGameObjectGrey(child(go, m_approvalPanelAgreeStr).gameObject, not m_hasPermission);
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == m_approvalPanelRefuseStr then
+        if m_hasPermission then
+            GuildProtocol.RequestRefuseJoin(data.globalId);
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        end
+    elseif go.name == m_approvalPanelAgreeStr then
+        if m_hasPermission then
+            GuildProtocol.RequestAgreeJoin(data.globalId);
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+        end
+    end
+end
+
+--------------------------------------------审批面板点击事件-----------------------------------------------------
+
+-- 全部同意按钮事件
+function OnApprovalPanelAgreeAll()
+    if m_hasPermission then
+        if not GuildManager.guildApplicants then return; end
+        GuildProtocol.RequestBatchAgreeJoin();
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+end
+
+-- 全部拒绝按钮事件
+function OnApprovalPanelRefuseAll()
+    if m_hasPermission then
+        if not GuildManager.guildApplicants then return; end
+        GuildProtocol.RequestBatchRefuseJoin();
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_AUTHORITY_OPERATION);
+    end
+end
+
+-- 关闭面板事件
+function OnClose()
+    SetGameObjectState(m_memberApprovalPanel, false, m_panelObject);
+end

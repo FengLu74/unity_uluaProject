@@ -1,0 +1,178 @@
+﻿module('TeamSpeakPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamSpeakPanel';
+---------------------------------------label路径---------------------------------------
+-- 剩余字数
+local m_RemainCountPath = "Content/RemainCount";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 队伍频道
+local m_TeamChannelButtonPath = "Content/TeamChannelButton";
+-- 公会频道
+local m_GuildChannelButtonPath = "Content/GuildChannelButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 输入框
+local m_InputPath = "Content/Input";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 剩余字数
+local m_RemainCount = nil;
+-- 输入框
+local m_Input = nil;
+
+-- 可输入的最大文本长度
+local m_MaxLength = 40;
+
+local m_LastContent = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_LastContent = nil;
+    if m_Input ~= nil then
+        m_Input.value = "";
+    end
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_RemainCount = nil;
+	m_Input = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_SPEAK_PANEL);
+    m_RemainCount = GetComponent(m_PanelObject, m_RemainCountPath, "UILabel");
+    m_Input = GetComponent(m_PanelObject, m_InputPath, "UIInput");
+    EventDelegate.Add(m_Input.onChange, EventDelegate.New(OnInputChange));
+    local define = CCommonTool.GetDefineInfo(3563);
+    if define ~= nil then
+        m_MaxLength = define:GetIntContent();
+    end
+    m_Input.characterLimit = m_MaxLength;
+    m_Input.defaultText = CCommonTool.GetTxtData(989).m_str;
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_TeamChannelButtonPath, OnTeamChannelButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_GuildChannelButtonPath, OnGuildChannelButtonClick, m_PanelObject);
+    SetGameObjectEvent("CloseButton", OnCloseClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_LastContent ~= nil then
+        m_Input.value = m_LastContent;
+        m_LastContent = nil;
+        return;
+    end
+
+    local teamData = TeamManager.teamData;
+    local isMatchAll = false;
+    local proNames = {};
+    for _, info in ipairs(teamData.proInfos) do
+        local proId = info.proId
+        if info.globalId == 0 then
+            if proId == TeamManager.MATCH_ALL_PRO_ID then
+                isMatchAll = true;
+                break;
+            else
+                table.insert(proNames, CCommonTool.GetTxtData(CCommonTool.GetRoleDateInfo(proId).NameTxt).m_str);
+            end
+        end
+    end
+    if isMatchAll == true then
+        --[[{0}，老司机开车快来上车职业不限]]
+        m_Input.value = CCommonTool.GetTxtData(996).m_str;
+    else
+        --[[{0}，老司机开车快来上车只限:{1}职业]]
+        m_Input.value = string_format(CCommonTool.GetTxtData(997).m_str, table.concat(proNames, "、"));
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_SPEAK_PANEL);
+end
+
+-- 组队频道发布按钮点击事件
+function OnTeamChannelButtonClick(gameObject)
+    local content = m_Input.value;
+    if IsLegitimacy(content) then
+        TeamProtocol.RequestTeamSpeak(1, m_Input.value);
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_SPEAK_PANEL);
+    end
+end
+
+-- 帮派频道发布按钮点击事件
+function OnGuildChannelButtonClick(gameObject)
+    local content = m_Input.value;
+    if IsLegitimacy(content) then
+        TeamProtocol.RequestTeamSpeak(2, m_Input.value);
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_SPEAK_PANEL);
+    end
+end
+
+function IsLegitimacy(content)
+    local len = strlen(CCommonTool.IsLegitimacyByText(content,ENUM_SHILED_AREA.CHAT));
+    if len > 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_LLEGAL_CHARACTER);
+        return false;
+    end
+    return true;
+end
+
+-- 输入文本change事件
+function OnInputChange()
+    local value = System.String.New(m_Input.value);
+    local length = value.Length;
+    m_RemainCount.text = string_format(--[[剩余{0}个字]]CCommonTool.GetTxtData(995).m_str, m_MaxLength - length);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    panelParams.lastContent = m_Input.value;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_LastContent = paramTable.lastContent;
+end

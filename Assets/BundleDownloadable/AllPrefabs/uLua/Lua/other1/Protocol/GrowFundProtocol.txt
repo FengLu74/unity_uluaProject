@@ -1,0 +1,78 @@
+﻿module("GrowFundProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --服务器通知客户端领取成长基金奖励返回
+    network.Register(GMI_CTOS_REQUEST_GET_GROWFUND_REWARD_RETURN, OnGetGrowFundRewardReturn);
+    --服务器通知客户端购买成长基金奖励返回
+    network.Register(GMI_STOC_REQUEST_BUY_GROWFUND_RETURN, OnBuyGrowFundReturn);
+    -- 服务器通知客户端成长基金初始化数据
+    network.Register(GMI_STOC_GROWFUND_INITDATA, OnGrowFundDataInit);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+-- 服务器通知客户端成长基金初始化数据
+function OnGrowFundDataInit(protocolId, buffer)
+    local growFundCount = buffer:ReadByte();
+    local m_bHasBoughtGrowFundOne = buffer:ReadInt();
+    GrowFundManager.HasBoughtGrowFundOne = (m_bHasBoughtGrowFundOne == 1);
+    local m_nGrowFundOneCostNotBindDiamond = buffer:ReadInt();
+    GrowFundManager.GrowFundOneCostMoney = m_nGrowFundOneCostNotBindDiamond;
+    local m_nGetCount = buffer:ReadByte();
+    local m_nKeyID = 0;
+    GrowFundManager.GetGrowFundOneState = {};
+    for Index = 1,m_nGetCount do
+        m_nKeyID = buffer:ReadInt();
+        GrowFundManager.GetGrowFundOneState[m_nKeyID] = true;--已领取
+    end
+    local m_bHasBoughtGrowFundTwo = buffer:ReadInt();
+    GrowFundManager.HasBoughtGrowFundTwo = (m_bHasBoughtGrowFundTwo == 1);
+    local m_nGrowFundTwoCostNotBindDiamond = buffer:ReadInt();
+    GrowFundManager.GrowFundTwoCostMoney = m_nGrowFundTwoCostNotBindDiamond;
+    m_nGetCount = buffer:ReadByte();
+    m_nKeyID = 0;
+    GrowFundManager.GetGrowFundTwoState = {};
+    for Index = 1,m_nGetCount do
+        m_nKeyID = buffer:ReadInt();
+        GrowFundManager.GetGrowFundTwoState[m_nKeyID] = true;
+    end
+    --根据不同的等级和条件显示不同的基金页签对应的红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1,GrowFundManager.GrowFundTenLevelShowRedHint());
+end
+
+-- 服务器通知客户端购买成长基金奖励返回
+function OnBuyGrowFundReturn(protocolId, buffer)
+    local fundType = buffer:ReadByte();
+    if fundType == GrowFundType.GROW_FUND_TYPE_1 then
+        GrowFundManager.HasBoughtGrowFundOne = true;
+        GrowFundOnePanel.RefreshPanelOut();
+    elseif fundType == GrowFundType.GROW_FUND_TYPE_2 then
+        GrowFundManager.HasBoughtGrowFundTwo = true;
+        GrowFundTwoPanel.RefreshPanelOut();
+    end
+    ShowSystemFlowTips(6120);
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDONE, GrowFundManager.GrowFundOneShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1, GrowFundManager.GrowFundTenLevelShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDTWO, GrowFundManager.GrowFundTwoShowRedHint());
+end
+
+-- 服务器通知客户端领取成长基金奖励返回
+function OnGetGrowFundRewardReturn(protocolId, buffer)
+    local fundType = buffer:ReadByte();
+    local nRewardID = buffer:ReadInt();
+    if fundType == GrowFundType.GROW_FUND_TYPE_1 then
+        GrowFundManager.GetGrowFundOneState[nRewardID] = true;
+        GrowFundOnePanel.RefreshPanelOut();
+    elseif fundType == GrowFundType.GROW_FUND_TYPE_2 then
+        GrowFundManager.GetGrowFundTwoState[nRewardID] = true;
+        GrowFundTwoPanel.RefreshPanelOut();
+    end
+    ShowSystemFlowTips(6121);
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDONE, GrowFundManager.GrowFundOneShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1, GrowFundManager.GrowFundTenLevelShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDTWO, GrowFundManager.GrowFundTwoShowRedHint());
+end
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

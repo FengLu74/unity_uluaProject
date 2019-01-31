@@ -1,0 +1,188 @@
+﻿module('ArenaResultPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ArenaResultPanel';
+---------------------------------------label路径---------------------------------------
+-- 对手等级
+local m_OppLevelPath = "Content/Opponent/Opp_Level";
+-- 对手名称
+local m_OppNamePath = "Content/Opponent/Opp_Name";
+-- 倒计时
+local m_LabelCountdownPath = "Content/LabelCountdown";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 返回按钮
+local m_ButtonBackPath = "ButtonBack";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 对手头像
+local m_OppIconPath = "Content/Opponent/Opp_Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 胜利面板
+local m_WinStatePath = "WinState";
+-- 失败面板
+local m_FailStatePath = "FailState";
+-- 对手面板
+local m_OpponentPath = "Content/Opponent";
+-- 奖励
+local m_RewardsPath = "Content/Rewards";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 对手
+local m_Opponent = nil;
+-- 对手等级
+local m_OppLevel = nil;
+-- 对手名称
+local m_OppName = nil;
+-- 奖励
+local m_Rewards = nil;
+-- 倒计时
+local m_LabelCountdown = nil;
+
+-- 界面数据
+local m_Data = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local panelId = ENUMPANELID.ENUM_PANEL_ARENA_RESULT;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_Data = nil;
+    G_TimerMng:RemoveTimeTask("ArenaResultPanelTimer");
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Opponent = nil;
+	m_OppLevel = nil;
+	m_OppName = nil;
+    m_Rewards = nil;
+    m_LabelCountdown = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(panelId);
+    m_Opponent = child(m_PanelObject, m_OpponentPath).gameObject;
+    m_OppLevel = GetComponent(m_PanelObject, m_OppLevelPath, "UILabel");
+    m_OppName = GetComponent(m_PanelObject, m_OppNamePath, "UILabel");
+    m_Rewards = child(m_PanelObject, m_RewardsPath).gameObject;
+    m_LabelCountdown = GetComponent(m_PanelObject, m_LabelCountdownPath, "UILabel");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Opponent).onClick = LuaHelper.OnClick(OnOpponentClick);
+	SetGameObjectEvent(m_ButtonBackPath, OnButtonBackClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_Data == nil then
+        error("离线竞技场结算界面数据为nil");
+        closePanel(panelId);
+        GetArenaSceneIn(true);
+        return;
+    end
+    -- 胜利/失败
+    SetGameObjectState(m_WinStatePath, m_Data.result == 1, m_PanelObject);
+    SetGameObjectState(m_FailStatePath, m_Data.result ~= 1, m_PanelObject);
+    -- 对手信息
+    if m_Data.oppId > 0 then
+        m_Opponent:SetActive(true);
+        m_OppName.text = m_Data.oppName;
+        m_OppLevel.text = m_Data.level;
+        local roleData = CCommonTool.GetPartnerInfo(m_Data.proId);
+        if roleData ~= nil then
+            SetSpriteByAtlasID("Opp_Icon", roleData.HeadRes, m_Opponent, true);
+        end
+    else
+        m_Opponent:SetActive(false);
+    end
+    -- 奖励信息
+    local rewardCount = #m_Data.items;
+    for i = 1, 4 do
+        local pathName = "Item" .. i;
+        if i <= rewardCount then
+            SetGameObjectState(pathName, true, m_Rewards);
+            SetSpriteByAtlasID(pathName .. "/Icon", CCommonTool.GetImageIDByExcelID(m_Data.items[i].itemId), m_Rewards, true);
+            SetLabelContent(pathName .. "/Value", m_Data.items[i].itemNum, m_Rewards);
+        else
+            SetGameObjectState(pathName, false, m_Rewards);
+        end
+    end
+
+    -- 10秒倒计时
+    m_LabelCountdown.text = "10";
+    AddTimerEvent("ArenaResultPanelTimer", 10, TimerOverCallBack,ETimeShowType.TypeNumberSeven,TimerCallback)
+end
+
+function TimerCallback(time)
+    m_LabelCountdown.text = time;
+end
+
+function TimerOverCallBack()
+    OnCloseClick()
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 对手点击事件
+function OnOpponentClick(gameObject)
+    if FriendsData.IsFriend(m_Data.oppId) == false then
+        FriendsProtocol.RequestApply(m_Data.oppId);
+    else
+        ShowSystemFlowTips(2904);
+    end
+end
+
+-- 返回按钮
+function OnButtonBackClick(gameObject)
+    OnCloseClick();
+end
+
+function OnCloseClick()
+    DungeonProtocol.RequestLeaveDungeon(0);
+    closePanel(panelId);
+    GetArenaSceneIn(true);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(data)
+    m_Data = data;
+    createPanel(panelId);
+end
+
+--开启活动Panel Flag
+local arenaSceneIn=false;
+function GetArenaSceneIn(In)
+    if In ~= nil then
+        arenaSceneIn=In;
+    end
+    return arenaSceneIn;
+end

@@ -1,0 +1,2022 @@
+﻿module("BagPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前背包所存在的道具数量
+local m_labelCurrentBagNum = "Sprite_Right/BagNum/Label_Current";
+-- 当前背包所有栏位数
+local m_labelAllBagNum = "Sprite_Right/BagNum/Label_All";
+-- 背包格子解锁面板的解锁格子数量
+local m_unlockCellNumStr = "ItemLock/Label_Num";
+-- 背包格子解锁面板的钻石需求数量
+local m_unlockDiamondNeedStr = "ItemLock/Label_DiamondCount";
+-----------------------------------------Sprite路径------------------------------------
+-- 放置按钮的背景
+local m_buttonSetSprite = "ButtonPanel/Buttons/Button-Setting/Background";
+-- 整理按钮图片置灰所在的路径
+local m_bagSortDark = "Sprite_Right/Button_Sort/Dark";
+-- 整理按钮图片发亮所在的路径
+local m_bagSortLight = "Sprite_Right/Button_Sort/Bright";
+-----------------------------------------按钮路径--------------------------------------
+-- 全部按钮所在的路径
+local m_buttonAll = "Sprite_Right/Toggle-All";
+-- 装备按钮所在的路径
+local m_buttonEquip = "Sprite_Right/Toggle-Equip";
+-- 符石按钮所在的路径
+local m_buttonGem = "Sprite_Right/Toggle-Stone";
+-- 道具按钮所在的路径
+local m_buttonItem = "Sprite_Right/Toggle-Cost";
+-- 整理按钮所在的路径
+local m_bagSortButton = "Sprite_Right/Button_Sort";
+-- 出售按钮所在的路径
+local m_buttonSale = "ButtonPanel/Buttons/Button-Sale";
+-- 放置按钮所在的路径
+local m_buttonSetting = "ButtonPanel/Buttons/Button-Setting";
+-- 使用按钮所在的路径
+local m_buttonUse = "ButtonPanel/Buttons/Button-Use";
+-- 合成按钮所在的路径
+local m_buttonCombine = "ButtonPanel/Buttons/Button-Combine";
+-- 装备按钮所在的路径
+local m_buttonSuitOn = "ButtonPanel/Buttons/Button-Equip";
+-- 分解按钮所在的路径
+local m_buttonDecompose = "ButtonPanel/Buttons/Button-Decompose";
+-- 强化按钮所在的路径
+local m_buttonForce = "ButtonPanel/Buttons/Button-Force";
+-- 精炼按钮所在的路径
+local m_buttonStarUp = "ButtonPanel/Buttons/Button-StarUp";
+-- 符石按钮所在的路径
+local m_buttonEquipGem = "ButtonPanel/Buttons/Button-Gem";
+-- 附魔按钮所在的路径
+local m_buttonEnchant = "ButtonPanel/Buttons/Button-Enchant";
+-- 卸下按钮所在的路径
+local m_buttonEquipDown = "ButtonPanel/Buttons/Button-EquipDown";
+-- 拍卖按钮所在的路径
+local m_buttonAuction = "ButtonPanel/Buttons/Button-Auction";
+-- 洗练按钮所在的路径
+local m_buttonRandEff = "ButtonPanel/Buttons/Button-RandEff";
+-- 传承按钮所在的路径
+local m_buttonInherit = "ButtonPanel/Buttons/Button-Inherit";
+-- 分享按钮所在的路径
+local m_buttonShare = "ButtonPanel/Buttons/Button-Share";
+-- 购买确定按钮所在的路径
+local m_buttonBuyYes = "ItemLock/Button-QueDing";
+-- 购买取消按钮所在的路径
+local m_buttonBuyNo = "ItemLock/Button-FanHui";
+-- 右下分解按钮所在的路径
+local m_rightBottomResolveButtonStr = "Sprite_Right/Button_Resolve";
+----------------------------------通用的名称路径---------------------------------------
+-- 显示此道具是套装道具
+local m_spriteSuit = "/Sprite_Suit";
+-- 显示是几星级装备
+local m_leftEquipStartStr = "/Label-StarNum";
+-- 道具装备的属性
+local m_ItemEquipStr = "Equip";
+-- X的位置
+local m_ItemCannotEquipStr = "Equip/Sprite_Other";
+-- 等级低的位置
+local m_ItemLevelDownStr = "Equip/Sprite_LvDown";
+-- 战斗力提升的位置
+local m_ItemFightUpStr = "Equip/Sprite_FightUp";
+-- 显示此道具是套装道具
+local m_ItemSpriteSuit = "Equip/Sprite_Suit";
+-- 显示是几星级装备
+local m_ItemEquipStartStr = "Equip/Label_StarNum";
+-- 道具是否可拍卖
+local m_itemAuction = "Auction";
+-- 锁头所在的位置
+local m_spriteLockStr = "Sprite_Suo";
+-- 可解锁特效
+local m_CanLockEffectStr = "Effect_LockCanClick";
+-- 可解锁红点
+local m_CanLockRedHintStr = "Sprite_RedHint";
+-- 解锁倒计时
+local m_UnlockTimeLabelStr = "Label_UnlockTime";
+-- 道具信息所在位置
+local m_itemInfoStr = "Info";
+-- 选中
+local m_itemSelectStr = "Sprite_Select";
+-- 星星数量位置
+local m_leftEquipStartNumStr = "/Label-StarNum/Label";
+-- 左侧装备道具所在的位置
+local m_equipObjectName = "Sprite-Left/Item";
+-- 左侧装备图标通用路径
+local m_leftEquipIconStr = "/Sprite_Name";
+-- 左侧装备阶数通用路径
+local m_leftEquipStepStr = "/lb_Equip_Apptitude";
+-- 左侧装备强化等级文本路径
+local m_leftEquipForceLevelStr = "/Sprite_EquipForceLevel/Label";
+-- 左侧装备强化等级所在路径
+local m_leftEquipForceStr = "/Sprite_EquipForceLevel";
+-- 上方按钮未激活所在的位置
+local m_topButtonDeactive = "/Deactive";
+-- 上方按钮激活所在的位置
+local m_topButtonActive = "/Active";
+
+-- 道具数量
+local m_ItemCloneNumStr = "/Label_Num";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧点击的激活框所在的位置
+local m_selectObjectStr = "Sprite-Left/Sprite-Select";
+-- 格子解锁面板
+local m_itemUnLockPanelStr = "ItemLock";
+-- 按钮组所在的位置
+local m_buttonPanelStr = "ButtonPanel";
+-- UIListView所在的位置
+local m_ItemUIListViewCompStr = "Sprite_Right/ItemPanel/UIGrid";
+-- 所有按钮所在的位置
+local m_allButtonsStr = "ButtonPanel/Buttons";
+-- scrollbar
+local m_scrollBarCompStr = "Sprite_Right/ScrollBar";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 右侧点击的是符石还是道具(0为全部,1为装备,2为道具,3为符石)
+local m_RightClickState = 0;
+-- 当前背包数目
+local m_itemsHaveNum = 0;
+-- 当前要开启的格子的位置
+local m_lockPosClickNum = 0;
+-- 左侧12件装备
+local m_equipTable = { };
+-- 左侧点击的是第几个装备,0为未点击
+local m_equipSelect = 0;
+-- 是否打开了道具信息
+local m_leftContentOpen = false;
+-- 左侧点击的激活框的object
+local m_selectObject = nil;
+-- 设置按钮背景对象
+local m_buttonSetSpriteObj = nil;
+-- 通用装备职业id
+local m_commonProId = 255;
+-- 当前右侧显示的所有道具的table，在表中的位置即为所在的格子号(pakid)+1
+local m_allItemsByPos = { };
+
+-- 是否可以再次点击整理了
+local m_canClickSort = true;
+-- 穿在身上的装备
+local m_onEquipTable = { };
+
+-- 背包解锁花费的绑定银币数
+local m_BagUnlockCost = 0;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 出售界面是否开启
+local m_SellPanelIsOpen = false;
+-- 格子解锁面板是否开启
+local m_itemUnLockPanelIsOpen = false;
+
+-- UIListView组件
+local m_ItemUIListViewComp = nil;
+
+-- 当前显示的所有格子的Table
+local m_AllShowCellsTable = { };
+
+-- 当前右侧点击的索引
+local m_CurRightClickIndex = -1;
+------------------------------------一些写死的规定-------------------------------------
+-- 界面一页最多显示的背包格子数
+local MAXBAGCELLNUM = 25;
+
+-- 整理按钮的cd事件
+local SORTTIMETASKNAME = "SetSortButtonState";
+-- 背包格子解锁事件
+local UNLOCKTIMETASKNAME = "bagPanelUnlock";
+
+-- 背包格子可开启文本颜色
+local CANOPENCOLOR = "FFED77";
+-- 背包格子开启倒计时
+local OPENTIMECOLOR = "C58540";
+-- 上方4个按钮的对应变量
+local m_TopButtonStrTable = { [1] = m_buttonAll, [2] = m_buttonEquip, [3] = m_buttonItem, [4] = m_buttonGem }
+
+-- UIListCell的3个模板名称
+local ItemCellType =
+{
+    Item = "Item";
+    NoItem = "NoItem";
+    Lock = "Lock";
+}
+
+-- 一行5个格子
+local m_CellsNumPerLine = 5;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化事件
+    InitEvent();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化按钮信息
+    InitOnClick();
+    -- 面板初始化完毕
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        -- 初始化界面数据信息
+        InitPanelShowData();
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("bagPanelUnlock");
+end
+
+function OnDestroy()
+    m_equipTable = { };
+    m_onEquipTable = { };
+    m_unlockTimeLabelObj = nil;
+    m_RightClickState = 0;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_equipSelect = 0;
+    m_selectObject = nil;
+    m_itemsHaveNum = 0;
+    m_lockPosClickNum = 0;
+    m_CurRightClickIndex = -1;
+    m_ItemUIListViewComp = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    -- 设置按钮背景
+    m_buttonSetSpriteObj = GetComponent(m_panelObject, m_buttonSetSprite, "UISprite");
+    -- UIListView组件
+    m_ItemUIListViewComp = GetComponent(m_panelObject, m_ItemUIListViewCompStr, "UIListView");
+    -- 亮色选中框对象
+    m_selectObject = child(m_panelObject, m_selectObjectStr).gameObject;
+end
+
+function InitEvent()
+    m_ItemUIListViewComp:SetInitCallback(OnItemCloneInit);
+    m_ItemUIListViewComp:SetClickCallback(OnItemCloneClick);
+end
+
+function InitAllInfo()
+    -- 检测数据
+    CheckData();
+    -- 初始化面板展示的数据
+    InitPanelShowData();
+    -- 初始化跳转的设置
+    InitJumpSaveData1();
+    -- 初始化左侧装备的信息
+    InitLeftEquipInfo();
+    -- 初始化右侧信息（格子数，道具内容）
+    InitRightInfo();
+    -- 加载玩家模型
+    InitPlayerModel();
+    -- 初始化跳转的设置
+    InitJumpSaveData2();
+end
+
+function CheckData()
+    if G_BagMng.AlreadySetBagNum == false then
+        error("未接受服务器发送面板个数和解锁的信息,使用默认数据");
+    end
+end
+
+function InitPanelShowData()
+    m_equipSelect = 0;
+    m_RightClickState = 0;
+    m_lockPosClickNum = 0;
+    m_CurRightClickIndex = -1;
+    m_itemUnLockPanelIsOpen = false;
+    SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+    SetGameObjectState(m_buttonPanelStr, false, m_panelObject);
+end
+
+function InitLeftEquipInfo()
+    m_equipTable = { };
+    m_onEquipTable = { };
+    for Index = 1, EquipType.ET_EquipCount do
+        if Index~= 11 and Index ~= 12 then
+            local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(Index - 1);
+            table.insert(m_equipTable, Index, ItemInfo);
+            -- 每个对象的相对路径
+            local strPath = m_equipObjectName .. Index;
+            SetGameObjectState(strPath .. m_spriteSuit, false, m_panelObject);
+            if ItemInfo ~= nil then
+                local curEquipInfo = ItemInfo:GetEquipInfo();
+                -- 套装图标
+                if curEquipInfo.SuitID > 0 then
+                    SetGameObjectState(strPath .. m_spriteSuit, true, m_panelObject);
+                else
+                    SetGameObjectState(strPath .. m_spriteSuit, false, m_panelObject);
+                end
+                table.insert(m_onEquipTable, ItemInfo);
+                SetItemShowByExcelIDV04(m_panelObject, strPath, ItemInfo.ExcelID, 1, false, 2, ENUMPANELID.ENUM_PANEL_BAGPANEL);
+                SetItemToolTipsEvent(m_panelObject, strPath, ENUMPANELID.ENUM_PANEL_BAGPANEL, true, ItemInfo, true, false);
+                local itemObj = child(m_panelObject, strPath).gameObject;
+                LuaHelper.AddObjOnClickEvent(itemObj, LeftEquipClick);
+                SetGameObjectState(strPath .. m_leftEquipStepStr, true, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipIconStr, false, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipForceStr, true, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipStartStr, true, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipForceLevelStr, false, m_panelObject);
+                if ItemInfo.LevelupItemLevel > 0 then
+                    SetLabelContent(strPath .. m_leftEquipForceLevelStr, "Lv." .. ItemInfo.LevelupItemLevel, m_panelObject);
+                else
+                    SetLabelContent(strPath .. m_leftEquipForceLevelStr, " ", m_panelObject);
+                end
+                if ItemInfo.StarItemLevel > 0 then
+                    SetGameObjectState(strPath .. m_leftEquipStartStr, true, m_panelObject);
+                    SetLabelContent(strPath .. m_leftEquipStartStr, "+"..ItemInfo.StarItemLevel, m_panelObject);
+             
+                    if ItemInfo.StarItemLevel < 10 then
+                        --SetGameObjectPos(strPath .. m_leftEquipStartStr, Vector3.New(40, -48, 0), m_panelObject);
+                        SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(25, -48, 0), m_panelObject);
+                    else
+                       -- SetGameObjectPos(strPath .. m_leftEquipStartStr, Vector3.New(25, -48, 0), m_panelObject);
+                        SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(10, -48, 0), m_panelObject);
+                    end
+               
+                else
+                    SetGameObjectState(strPath .. m_leftEquipStartStr, false, m_panelObject);
+                    SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(50, -48, 0), m_panelObject);
+                end
+            else
+                SetItemShowByExcelIDV04(m_panelObject, strPath, nil, 1, false);
+                SetGameObjectEvent(strPath, Kong, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipForceLevelStr, false, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipStepStr, false, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipIconStr, true, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipForceStr, false, m_panelObject);
+                SetGameObjectState(strPath .. m_leftEquipStartStr, false, m_panelObject);
+                if m_equipSelect == Index then
+                    m_equipSelect = 0;
+                end
+            end
+        end
+    end
+    local myLv = G_UserInfo.RoleAttribute.Level;
+    SetGameObjectState(m_equipObjectName .. 13, myLv >= NewEquipOpenLv, m_panelObject);
+    SetGameObjectState(m_equipObjectName .. 14, myLv >= NewEquipOpenLv, m_panelObject);
+    
+    InitLeftSpriteSelect();
+end
+
+-- 初始化跳转的设置1
+function InitJumpSaveData1()
+    if m_isJumpPanelSave then
+        if m_JumpPanelParamsTable[3] >= 0 then
+            m_CurRightClickIndex = m_JumpPanelParamsTable[3];
+        end
+    end
+end
+
+-- 初始化跳转的设置2
+function InitJumpSaveData2()
+    if m_isJumpPanelSave then
+        m_isJumpPanelSave = false;
+        if m_JumpPanelParamsTable[2] == 0 then
+            local obj = child(m_panelObject, m_buttonAll).gameObject;
+            OnAllButtonClick(obj);
+        elseif m_JumpPanelParamsTable[2] == 1 then
+            local obj = child(m_panelObject, m_buttonEquip).gameObject;
+            OnEquipButtonClick(obj);
+        elseif m_JumpPanelParamsTable[2] == 2 then
+            local obj = child(m_panelObject, m_buttonItem).gameObject;
+            OnItemButtonClick(obj);
+        elseif m_JumpPanelParamsTable[2] == 3 then
+            local obj = child(m_panelObject, m_buttonGem).gameObject;
+            OnGemButtonClick(obj);
+        end
+        if m_JumpPanelParamsTable[1] ~= 0 then
+            local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(m_JumpPanelParamsTable[1] -1);
+            if ItemInfo ~= nil then
+                local strPath = m_equipObjectName .. m_JumpPanelParamsTable[1];
+                local tempObj = child(m_panelObject, strPath).gameObject;
+                tempObj:SendMessage("OnClick", tempObj);
+                m_isJumpPanelSave = false;
+                return;
+            end
+        end
+        if m_JumpPanelParamsTable[4] ~= 0 then
+            m_lockPosClickNum = m_JumpPanelParamsTable[4];
+            m_BagUnlockCost = 0;
+            m_BagUnlockCost = CCommonTool.GetBagCost(m_lockPosClickNum).CostAll - CCommonTool.GetBagCost(G_BagMng.BagCount).CostAll;
+            SetLabelContent(m_unlockCellNumStr, m_lockPosClickNum - G_BagMng.BagCount, m_panelObject);
+            SetLabelContent(m_unlockDiamondNeedStr, m_BagUnlockCost, m_panelObject);
+            m_itemUnLockPanelIsOpen = true;
+            SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+            return;
+        end
+        if m_JumpPanelParamsTable[3] >= 0 then
+            m_ItemUIListViewComp:LookAt(m_CurRightClickIndex, false);
+            local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+            if itemAttr == nil then
+                m_CurRightClickIndex = -1;
+                return;
+            end
+            local tagType = itemAttr:GetTagType();
+            m_leftContentOpen = true;
+            if tagType == ITEMTAGTYPE.TT_None then
+                error("Important Errror:this item has no tagType::::" .. itemAttr.ExcelID);
+                InitButtons(itemAttr, 0, false);
+            elseif tagType == ITEMTAGTYPE.TT_Equip then
+                local equipType = itemAttr:GetEquipType();
+                if m_equipTable[equipType + 1] ~= nil then
+                    InitButtons(itemAttr, 2, false);
+                else
+                    InitButtons(itemAttr, 1, false);
+                end
+            else
+                InitButtons(itemAttr, 1, false);
+            end
+            local paraTable = { };
+            paraTable.PanelID = ENUMPANELID.ENUM_PANEL_BAGPANEL;
+            paraTable.IsRealItem = true;
+            paraTable.ItemData = itemAttr;
+            paraTable.IsEquiped = false;
+            paraTable.IsOtherPlayerEquip = false;
+            OnItemToolTipsPanelClick(nil, paraTable);
+            return;
+        end
+        if m_JumpPanelParamsTable[5] then
+            if m_RightClickState == 0 then
+                local itemAttr = m_ItemUIListViewComp:GetData(m_JumpPanelParamsTable[6]).Data;
+                if itemAttr == nil then
+                    return;
+                end
+                local tableName = { };
+                table.insert(tableName, 1, itemAttr.CRID);
+                table.insert(tableName, 2, itemAttr.ItemNum);
+                table.insert(tableName, 3, ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+                createPanelExx(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL, tableName, ENUMPANELID.ENUM_PANEL_BAGPANEL);
+            end
+        end
+    end
+end
+
+
+-- 初始化右侧信息（格子数，道具内容）
+function InitRightInfo()
+    RefreshRightTopContent();
+    RefreshRightMiddleContent();
+    RefreshRightBottomContent();
+end
+
+-- 一个道具的显示操作
+function OnItemCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    if data.CellType == ItemCellType.NoItem then
+        -- nothing to do
+    elseif data.CellType == ItemCellType.Lock then
+        if cell.dataIndex == G_BagMng.BagCount then
+            if G_BagMng.IsUnlockingCell then
+                SetGameObjectState(m_spriteLockStr, true, go);
+                SetGameObjectState(m_CanLockEffectStr, false, go);
+                SetGameObjectState(m_CanLockRedHintStr, false, go);
+                SetGameObjectState(m_UnlockTimeLabelStr, true, go);
+                G_TimerMng:RemoveTimeTask(UNLOCKTIMETASKNAME);
+                local unlockTime = G_BagMng.UnlockTime;
+                local deltaTime = math.floor(unlockTime - G_TimerMng:GetCurrentSeconds());
+                if deltaTime > 0 then
+                    SetLabelContent(m_UnlockTimeLabelStr, CaculateTime(deltaTime), go);
+                    SetLabelColor(m_UnlockTimeLabelStr, OPENTIMECOLOR, go);
+                    AddTimerEvent(UNLOCKTIMETASKNAME, deltaTime, UnlockCallBackOver, ETimeShowType.TypeNumberFour, UnlockCallBack);
+                else
+                    SetLabelContent(m_UnlockTimeLabelStr, "", go);
+                end
+            else
+                SetGameObjectState(m_spriteLockStr, true, go);
+                SetGameObjectState(m_CanLockEffectStr, true, go);
+                SetGameObjectState(m_CanLockRedHintStr, true, go);
+                SetGameObjectState(m_UnlockTimeLabelStr, true, go);
+                SetLabelTextByID(m_UnlockTimeLabelStr, 8982, go);
+                SetLabelColor(m_UnlockTimeLabelStr, CANOPENCOLOR, go);
+            end
+        else
+            SetGameObjectState(m_spriteLockStr, true, go);
+            SetGameObjectState(m_CanLockEffectStr, false, go);
+            SetGameObjectState(m_CanLockRedHintStr, false, go);
+            SetGameObjectState(m_UnlockTimeLabelStr, false, go);
+        end
+    elseif data.CellType == ItemCellType.Item then
+        if cell.dataIndex == m_CurRightClickIndex then
+            SetGameObjectState(m_itemSelectStr, true, go);
+        else
+            SetGameObjectState(m_itemSelectStr, false, go);
+        end
+        local item = data.Data;
+        local excelID = item.ExcelID;
+        local itemType = item:GetTagType();
+        SetItemShowByExcelIDV04(go, m_itemInfoStr, excelID, item.ItemNum, false, 20, ENUMPANELID.ENUM_PANEL_BAGPANEL);
+        if itemType == ITEMTAGTYPE.TT_Equip then
+            SetGameObjectState(m_ItemEquipStr, true, go);
+            if item:GetEquipInfo().ProID == G_UserInfo.RoleAttribute.ProID or item:GetEquipInfo().ProID == m_commonProId then
+                if item:GetEquipInfo().NeedLv > G_UserInfo.RoleAttribute.Level then
+                    SetGameObjectState(m_ItemLevelDownStr, true, go);
+                    SetGameObjectState(m_ItemFightUpStr, false, go);
+                else
+                    SetGameObjectState(m_ItemLevelDownStr, false, go);
+                    -- 穿戴的同类型装备信息
+                    local ItemInfo = G_BagMng:GetEquipUse():GetEquipByEquipType(item:GetEquipType());
+                    if ItemInfo == nil then
+                        SetGameObjectState(m_ItemFightUpStr, true, go);
+                    else
+                        local equipedFightValue = Equip_StarUp.CaculateStarUpFightValue(ItemInfo, false) + Equip_Force.CaculateEquipForceFightValue(ItemInfo, false);
+                        local notEquipedFightValue = Equip_StarUp.CaculateStarUpFightValue(item, false) + Equip_Force.CaculateEquipForceFightValue(item, false);
+                        if notEquipedFightValue > equipedFightValue then
+                            SetGameObjectState(m_ItemFightUpStr, true, go);
+                        else
+                            SetGameObjectState(m_ItemFightUpStr, false, go);
+                        end
+                    end
+                end
+                SetGameObjectState(m_ItemCannotEquipStr, false, go);
+            else
+                SetGameObjectState(m_ItemCannotEquipStr, true, go);
+                SetGameObjectState(m_ItemFightUpStr, false, go);
+                SetGameObjectState(m_ItemLevelDownStr, false, go);
+            end
+            local curEquipInfo = item:GetEquipInfo();
+            -- 精炼星数
+            if item.StarItemLevel > 0 then
+                SetGameObjectState(m_ItemEquipStartStr, true, go);
+                SetLabelContent(m_ItemEquipStartStr .. "/Label", item.StarItemLevel, go);
+                if item.StarItemLevel < 10 then
+                    SetGameObjectPos(m_ItemEquipStartStr, Vector3.New(40, -48, 0), go);
+                    SetGameObjectPos(m_ItemSpriteSuit, Vector3.New(25, -48, 0), go);
+                else
+                    SetGameObjectPos(m_ItemEquipStartStr, Vector3.New(25, -48, 0), go);
+                    SetGameObjectPos(m_ItemSpriteSuit, Vector3.New(10, -48, 0), go);
+                end
+            else
+                SetGameObjectPos(m_ItemSpriteSuit, Vector3.New(50, -48, 0), go);
+                SetGameObjectState(m_ItemEquipStartStr, false, go);
+            end
+            -- 套装图标
+            if curEquipInfo.SuitID > 0 then
+                SetGameObjectState(m_ItemSpriteSuit, true, go);
+            else
+                SetGameObjectState(m_ItemSpriteSuit, false, go);
+            end
+        else
+            SetGameObjectState(m_ItemEquipStr, false, go);
+        end
+        -- 道具是否可以拍卖
+        local isAuction = item:GetAuctionValue();
+        if isAuction > 0 then
+            SetGameObjectState(m_itemAuction, true, go);
+        else
+            SetGameObjectState(m_itemAuction, false, go);
+        end
+        -- 设置道具按钮的点击事件
+        SetItemToolTipsEvent(go, "", ENUMPANELID.ENUM_PANEL_BAGPANEL, true, item, false, false);
+    end
+end
+
+-- 解锁的每秒时间回调
+function UnlockCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        local listCell = m_ItemUIListViewComp:GetCell(G_BagMng.BagCount);
+        if listCell ~= nil then
+            local go = listCell.gameObject;
+            SetLabelContent(m_UnlockTimeLabelStr, timeTxt, go);
+            SetLabelColor(m_UnlockTimeLabelStr, OPENTIMECOLOR, go);
+        end
+    end
+end
+
+-- 解锁完成的回调
+function UnlockCallBackOver()
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 全部按钮点击事件
+    SetGameObjectEvent(m_buttonAll, OnAllButtonClick, m_panelObject);
+    -- 符石按钮点击事件
+    SetGameObjectEvent(m_buttonGem, OnGemButtonClick, m_panelObject);
+    -- 道具按钮点击事件
+    SetGameObjectEvent(m_buttonItem, OnItemButtonClick, m_panelObject);
+    -- 装备按钮点击事件
+    SetGameObjectEvent(m_buttonEquip, OnEquipButtonClick, m_panelObject);
+    -- 整理按钮点击事件
+    SetGameObjectEvent(m_bagSortButton, OnBagSortButtonClick, m_panelObject);
+    -- 购买背包确定按钮事件
+    SetGameObjectEvent(m_buttonBuyYes, OnBuyBagPosClick, m_panelObject);
+    -- 购买背包取消按钮事件
+    SetGameObjectEvent(m_buttonBuyNo, OnBuyBagCancelClick, m_panelObject);
+
+    -- 设置出售按钮事件
+    SetGameObjectEvent(m_buttonSale, OnSaleClick, m_panelObject);
+    -- 设置放置按钮事件
+    SetGameObjectEvent(m_buttonSetting, OnSettingClick, m_panelObject);
+    -- 设置使用按钮事件
+    SetGameObjectEvent(m_buttonUse, OnUseClick, m_panelObject);
+    -- 设置合成按钮事件
+    SetGameObjectEvent(m_buttonCombine, OnCombineClick, m_panelObject);
+    -- 设置装备按钮事件
+    SetGameObjectEvent(m_buttonSuitOn, OnSuitOnClick, m_panelObject);
+    -- 设置分解按钮事件
+    SetGameObjectEvent(m_buttonDecompose, OnDecomposeClick, m_panelObject);
+    -- 设置强化按钮事件
+    SetGameObjectEvent(m_buttonForce, OnForceClick, m_panelObject);
+    -- 设置精炼按钮事件
+    SetGameObjectEvent(m_buttonStarUp, OnStarUpClick, m_panelObject);
+    -- 设置符石按钮事件
+    SetGameObjectEvent(m_buttonEquipGem, OnGemClick, m_panelObject);
+    -- 设置附魔按钮事件
+    SetGameObjectEvent(m_buttonEnchant, OnEnchantClick, m_panelObject);
+    -- 设置卸下按钮事件
+    SetGameObjectEvent(m_buttonEquipDown, OnEquipDownClick, m_panelObject);
+    -- 设置拍卖按钮事件
+    SetGameObjectEvent(m_buttonAuction, OnAuctionClick, m_panelObject);
+    -- 设置洗练按钮事件
+    SetGameObjectEvent(m_buttonRandEff, OnRandEffClick, m_panelObject);
+    -- 设置分享按钮事件
+    SetGameObjectEvent(m_buttonShare, OnShareClick, m_panelObject);
+    -- 设置传承按钮事件
+    SetGameObjectEvent(m_buttonInherit, OnInheritClick, m_panelObject);
+
+    -- 设置右下分解按钮事件
+    SetGameObjectEvent(m_rightBottomResolveButtonStr, OnResolveClick, m_panelObject);
+end
+
+function CalculateItemTagTypeEnum()
+    if m_RightClickState == 3 then
+        return ITEMTAGTYPE.TT_Item;
+    elseif m_RightClickState == 2 then
+        return ITEMTAGTYPE.TT_Consume;
+    elseif m_RightClickState == 1 then
+        return ITEMTAGTYPE.TT_Equip;
+    else
+        return ITEMTAGTYPE.TT_None;
+    end
+end
+
+-- 初始化按钮位置
+function InitButtons(itemAttr, showType, equipped)
+    local count = 0;
+    if showType == 0 then
+        SetGameObjectState(m_buttonPanelStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_buttonPanelStr, true, m_panelObject);
+        local tagType = itemAttr:GetTagType();
+        local excelID = itemAttr.ExcelID;
+        local itemType = itemAttr:GetItemType();
+        if tagType == ITEMTAGTYPE.TT_None then
+        elseif itemType == ITEMTYPE.IT_Pet then
+            if showType == 1 then
+                SetGameObjectPos(m_allButtonsStr, Vector3.New(265, -55, 0), m_panelObject);
+            end
+            local petInfo = CCommonTool.GetPetMainInfo(excelID);
+            -- 14.分享
+            SetGameObjectState(m_buttonShare, true, m_panelObject);
+            count = count + 1;
+            SetGameObjectPos(m_buttonShare, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            -- 1.出售
+            if petInfo.IsSale == 1 then
+                count = count + 1;
+                SetGameObjectState(m_buttonSale, true, m_panelObject);
+                SetGameObjectPos(m_buttonSale, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            else
+                SetGameObjectState(m_buttonSale, false, m_panelObject);
+            end
+            -- 2.精炼
+            SetGameObjectState(m_buttonStarUp, false, m_panelObject);
+            -- 3.洗练
+            SetGameObjectState(m_buttonRandEff, false, m_panelObject);
+            -- 4.附魔
+            SetGameObjectState(m_buttonEnchant, false, m_panelObject);
+            -- 5.符石
+            SetGameObjectState(m_buttonEquipGem, false, m_panelObject);
+            -- 6.强化
+            SetGameObjectState(m_buttonForce, false, m_panelObject);
+            -- 6.1传承
+            SetGameObjectState(m_buttonInherit, false, m_panelObject);
+            -- 7.分解
+            SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+            -- 8.合成
+            SetGameObjectState(m_buttonCombine, false, m_panelObject);
+            -- 9.放置
+            SetGameObjectState(m_buttonSetting, false, m_panelObject);
+            -- 10.拍卖
+            if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_AUCTION) then
+                if petInfo.IsAuction > 0 then
+                    count = count + 1;
+                    SetGameObjectState(m_buttonAuction, true, m_panelObject);
+                    SetGameObjectPos(m_buttonAuction, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                else
+                    SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_buttonAuction, false, m_panelObject);
+            end
+            -- 11.使用
+            SetGameObjectState(m_buttonUse, true, m_panelObject);
+            count = count + 1;
+            SetGameObjectPos(m_buttonUse, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            -- 12.卸下
+            SetGameObjectState(m_buttonEquipDown, false, m_panelObject);
+            -- 13.装备
+            SetGameObjectState(m_buttonSuitOn, false, m_panelObject); 
+        elseif tagType == ITEMTAGTYPE.TT_Equip then
+            if showType == 1 then
+                SetGameObjectPos(m_allButtonsStr, Vector3.New(265, -55, 0), m_panelObject);
+                local itemInfo = CCommonTool.GetEquipInfo(excelID);
+                if equipped then
+                    -- 1.出售
+                    SetGameObjectState(m_buttonSale, false, m_panelObject);
+                    -- 6.1传承
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPINHERIT) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonInherit, true, m_panelObject);
+                        SetGameObjectPos(m_buttonInherit, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonInherit, false, m_panelObject);
+                    end
+                    -- 2.精炼
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTARUP) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonStarUp, true, m_panelObject);
+                        SetGameObjectPos(m_buttonStarUp, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonStarUp, false, m_panelObject);
+                    end
+                    -- 3.洗练
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPRANDEFF) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonRandEff, true, m_panelObject);
+                        SetGameObjectPos(m_buttonRandEff, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonRandEff, false, m_panelObject);
+                    end
+                    -- 4.附魔
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonEnchant, true, m_panelObject);
+                        SetGameObjectPos(m_buttonEnchant, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonEnchant, false, m_panelObject);
+                    end
+                    -- 5.符石
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonEquipGem, true, m_panelObject);
+                        SetGameObjectPos(m_buttonEquipGem, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonEquipGem, false, m_panelObject);
+                    end
+                    -- 6.强化
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPFORCE) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonForce, true, m_panelObject);
+                        SetGameObjectPos(m_buttonForce, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonForce, false, m_panelObject);
+                    end
+
+                    -- 7.分解
+                    SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+                    -- 8.合成
+                    SetGameObjectState(m_buttonCombine, false, m_panelObject);
+                    -- 9.放置
+                    SetGameObjectState(m_buttonSetting, false, m_panelObject);
+                    -- 10.拍卖
+                    SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                    -- 11.使用
+                    SetGameObjectState(m_buttonUse, false, m_panelObject);
+                    -- 12.卸下
+                    count = count + 1;
+                    SetGameObjectState(m_buttonEquipDown, true, m_panelObject);
+                    SetGameObjectPos(m_buttonEquipDown, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    -- 13.装备
+                    SetGameObjectState(m_buttonSuitOn, false, m_panelObject);
+                    -- 14.分享
+                    SetGameObjectState(m_buttonShare, false, m_panelObject);
+                else
+                    -- 14.分享
+                    SetGameObjectState(m_buttonShare, true, m_panelObject);
+                    count = count + 1;
+                    SetGameObjectPos(m_buttonShare, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    -- 1.出售
+                    if itemInfo.IsSale == 1 then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonSale, true, m_panelObject);
+                        SetGameObjectPos(m_buttonSale, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonSale, false, m_panelObject);
+                    end
+                    -- 2.精炼
+                    SetGameObjectState(m_buttonStarUp, false, m_panelObject);
+                    -- 3.洗练
+                    SetGameObjectState(m_buttonRandEff, false, m_panelObject);
+                    -- 4.附魔
+                    SetGameObjectState(m_buttonEnchant, false, m_panelObject);
+                    -- 5.符石
+                    SetGameObjectState(m_buttonEquipGem, false, m_panelObject);
+                    -- 6.强化
+                    SetGameObjectState(m_buttonForce, false, m_panelObject);
+                    -- 6.1传承
+                    SetGameObjectState(m_buttonInherit, false, m_panelObject);
+                    -- 7.分解
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RESOLVE) then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonDecompose, true, m_panelObject);
+                        SetGameObjectPos(m_buttonDecompose, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+                    end
+                    -- 8.合成
+                    SetGameObjectState(m_buttonCombine, false, m_panelObject);
+                    -- 9.使用
+                    SetGameObjectState(m_buttonUse, false, m_panelObject);
+                    -- 10.放置
+                    SetGameObjectState(m_buttonSetting, false, m_panelObject);
+                    -- 11.拍卖
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_AUCTION) then
+                        if itemInfo.IsAuction > 0 then
+                            count = count + 1;
+                            SetGameObjectState(m_buttonAuction, true, m_panelObject);
+                            SetGameObjectPos(m_buttonAuction, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                        else
+                            SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                    end
+                    -- 12.卸下
+                    SetGameObjectState(m_buttonEquipDown, false, m_panelObject);
+                    -- 13.装备
+                    count = count + 1;
+                    SetGameObjectState(m_buttonSuitOn, true, m_panelObject);
+                    SetGameObjectPos(m_buttonSuitOn, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                end
+            end
+            if showType == 2 then
+                SetGameObjectPos(m_allButtonsStr, Vector3.New(680, -55, 0), m_panelObject);
+                local itemInfo = CCommonTool.GetEquipInfo(excelID);
+                -- 14.分享
+                SetGameObjectState(m_buttonShare, true, m_panelObject);
+                count = count + 1;
+                SetGameObjectPos(m_buttonShare, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                -- 1.出售
+                if itemInfo.IsSale == 1 then
+                    count = count + 1;
+                    SetGameObjectState(m_buttonSale, true, m_panelObject);
+                    SetGameObjectPos(m_buttonSale, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                else
+                    SetGameObjectState(m_buttonSale, false, m_panelObject);
+                end
+                -- 2.精炼
+                SetGameObjectState(m_buttonStarUp, false, m_panelObject);
+                -- 3.洗练
+                SetGameObjectState(m_buttonRandEff, false, m_panelObject);
+                -- 4.附魔
+                SetGameObjectState(m_buttonEnchant, false, m_panelObject);
+                -- 5.符石
+                SetGameObjectState(m_buttonEquipGem, false, m_panelObject);
+                -- 6.强化
+                SetGameObjectState(m_buttonForce, false, m_panelObject);
+                -- 6.1传承
+                SetGameObjectState(m_buttonInherit, false, m_panelObject);
+                -- 7.分解
+                if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RESOLVE) then
+                    count = count + 1;
+                    SetGameObjectState(m_buttonDecompose, true, m_panelObject);
+                    SetGameObjectPos(m_buttonDecompose, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                else
+                    SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+                end
+                -- 8.合成
+                SetGameObjectState(m_buttonCombine, false, m_panelObject);
+                -- 9.放置
+                SetGameObjectState(m_buttonSetting, false, m_panelObject);
+                -- 10.拍卖
+                if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_AUCTION) then
+                    if itemInfo.IsAuction > 0 then
+                        count = count + 1;
+                        SetGameObjectState(m_buttonAuction, true, m_panelObject);
+                        SetGameObjectPos(m_buttonAuction, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                    else
+                        SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                    end
+                else
+                    SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                end
+                -- 11.使用
+                SetGameObjectState(m_buttonUse, false, m_panelObject);
+                -- 12.卸下
+                SetGameObjectState(m_buttonEquipDown, false, m_panelObject);
+                -- 13.装备
+                count = count + 1;
+                SetGameObjectState(m_buttonSuitOn, true, m_panelObject);
+                SetGameObjectPos(m_buttonSuitOn, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            end
+        else
+            if showType == 1 then
+                SetGameObjectPos(m_allButtonsStr, Vector3.New(265, -55, 0), m_panelObject);
+            end
+            local itemInfo = CCommonTool.GetItemInfo(excelID);
+            -- 14.分享
+            SetGameObjectState(m_buttonShare, true, m_panelObject);
+            count = count + 1;
+            SetGameObjectPos(m_buttonShare, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            -- 1.出售
+            if itemInfo.IsSale == 1 then
+                count = count + 1;
+                SetGameObjectState(m_buttonSale, true, m_panelObject);
+                SetGameObjectPos(m_buttonSale, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            else
+                SetGameObjectState(m_buttonSale, false, m_panelObject);
+            end
+            -- 2.精炼
+            SetGameObjectState(m_buttonStarUp, false, m_panelObject);
+            -- 3.洗练
+            SetGameObjectState(m_buttonRandEff, false, m_panelObject);
+            -- 4.附魔
+            SetGameObjectState(m_buttonEnchant, false, m_panelObject);
+            -- 5.符石
+            SetGameObjectState(m_buttonEquipGem, false, m_panelObject);
+            -- 6.强化
+            SetGameObjectState(m_buttonForce, false, m_panelObject);
+            -- 6.1传承
+            SetGameObjectState(m_buttonInherit, false, m_panelObject);
+            -- 7.分解
+            SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+            if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RESOLVE) then
+                if excelID >= 21400 and excelID <= 21800 then
+                    count = count + 1;
+                    SetGameObjectState(m_buttonDecompose, true, m_panelObject);
+                    SetGameObjectPos(m_buttonDecompose, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                else
+                    SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_buttonDecompose, false, m_panelObject);
+            end
+            -- 8.合成
+            if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_COMBINE) then
+                if itemInfo.CompoundType > 0 then
+                    count = count + 1;
+                    SetGameObjectState(m_buttonCombine, true, m_panelObject);
+                    SetGameObjectPos(m_buttonCombine, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                else
+                    SetGameObjectState(m_buttonCombine, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_buttonCombine, false, m_panelObject);
+            end
+            -- 9.放置
+            if itemAttr:GetItemCategory() == ItemCategory.IC_MedBackItem or itemAttr:GetItemCategory() == ItemCategory.IC_PlayerMedBackItem or itemAttr:GetItemCategory() == ItemCategory.IC_StoreMedBackItem then
+                count = count + 1;
+                if itemInfo.NeedLevel > G_UserInfo.RoleAttribute.Level then
+                    m_buttonSetSpriteObj.saturationAmount = 0;
+                else
+                    m_buttonSetSpriteObj.saturationAmount = 1;
+                end
+                SetGameObjectState(m_buttonSetting, true, m_panelObject);
+                SetGameObjectPos(m_buttonSetting, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            else
+                SetGameObjectState(m_buttonSetting, false, m_panelObject);
+            end
+            -- 10.拍卖
+            if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_AUCTION) then
+                if itemInfo.IsAuction > 0 then
+                    count = count + 1;
+                    SetGameObjectState(m_buttonAuction, true, m_panelObject);
+                    SetGameObjectPos(m_buttonAuction, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+                else
+                    SetGameObjectState(m_buttonAuction, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_buttonAuction, false, m_panelObject);
+            end
+            -- 11.使用
+            if itemInfo.CanUse == 1 then
+                count = count + 1;
+                if itemInfo.NeedLevel > G_UserInfo.RoleAttribute.Level then
+                else
+                end
+                SetGameObjectState(m_buttonUse, true, m_panelObject);
+                SetGameObjectPos(m_buttonUse, Vector3.New(0, -345 + 97 *(count - 1), 0), m_panelObject);
+            else
+                SetGameObjectState(m_buttonUse, false, m_panelObject);
+            end
+            -- 12.卸下
+            SetGameObjectState(m_buttonEquipDown, false, m_panelObject);
+            -- 13.装备
+            SetGameObjectState(m_buttonSuitOn, false, m_panelObject);
+        end
+    end
+end
+
+
+-- 加载玩家模型
+function InitPlayerModel()
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+function InitLeftSpriteSelect()
+    -- 设置点击的图标显示的地方
+    if m_equipSelect == 0 then
+        -- 不显示中间的界面
+        SetGameObjectState(m_selectObjectStr, false, m_panelObject);
+    else
+        -- 显示中间的界面
+        local selectedStr = m_equipObjectName .. m_equipSelect;
+        local selectedObject = child(m_panelObject, selectedStr).gameObject;
+        m_selectObject.transform.localPosition = selectedObject.transform.localPosition;
+        SetGameObjectState(m_selectObjectStr, true, m_panelObject);
+    end
+end
+
+function SortButtonUnlock()
+    m_canClickSort = true;
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) ~= nil then
+        SetGameObjectState(m_bagSortDark, false, m_panelObject);
+        SetGameObjectState(m_bagSortLight, true, m_panelObject);
+    end
+end
+
+function RefreshRightTopContent()
+    for Index = 1, #m_TopButtonStrTable do
+        if m_RightClickState == Index - 1 then
+            SetGameObjectState(m_TopButtonStrTable[Index] .. m_topButtonDeactive, false, m_panelObject);
+            SetGameObjectState(m_TopButtonStrTable[Index] .. m_topButtonActive, true, m_panelObject);
+        else
+            SetGameObjectState(m_TopButtonStrTable[Index] .. m_topButtonDeactive, true, m_panelObject);
+            SetGameObjectState(m_TopButtonStrTable[Index] .. m_topButtonActive, false, m_panelObject);
+        end
+    end
+end
+
+function RefreshRightMiddleContent()
+    if m_RightClickState == 1 then
+        G_BagMng:ClearSortType();
+        G_BagMng:SetSortType(ESortType.TypeEquipNeedLevelDescend);
+        G_BagMng:SetSortType(ESortType.TypeQualityDescend);
+        G_BagMng:SetSortType(ESortType.TypeExcelIDAscend);
+        G_BagMng:SetSortType(ESortType.TypeEquipNumDescend);
+    elseif m_RightClickState == 2 or m_RightClickState == 3 then
+        G_BagMng:ClearSortType();
+        G_BagMng:SetSortType(ESortType.TypeExcelIDDescend);
+        G_BagMng:SetSortType(ESortType.TypeEquipNumDescend);
+    end
+    local canUseCellsNum = G_BagMng.BagCount;
+    local remainer = math.fmod(canUseCellsNum, m_CellsNumPerLine);
+    local needShowCellsNum = 0;
+    if remainer == 0 then
+        needShowCellsNum = canUseCellsNum + m_CellsNumPerLine;
+    else
+        needShowCellsNum = m_CellsNumPerLine - remainer + canUseCellsNum;
+    end
+    if needShowCellsNum > G_BagMng.BagNum then
+        needShowCellsNum = G_BagMng.BagNum;
+    end
+    m_AllShowCellsTable = { };
+    m_allItemsByPos = { };
+    local allItems;
+    if m_RightClickState == 0 then
+        allItems = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+        local cellPos;
+        for Index = 1, allItems.Count do
+            cellPos = allItems[Index - 1].PakID + 1;
+            m_AllShowCellsTable[cellPos] = { };
+            m_AllShowCellsTable[cellPos].Data = allItems[Index - 1];
+            allItems[Index - 1].BagPanelPos = cellPos;
+            m_allItemsByPos[cellPos] = allItems[Index - 1];
+            m_AllShowCellsTable[cellPos].CellType = ItemCellType.Item;
+        end
+        for Index = 1, needShowCellsNum do
+            if m_AllShowCellsTable[Index] == nil then
+                m_AllShowCellsTable[Index] = { };
+                if Index > canUseCellsNum then
+                    m_AllShowCellsTable[Index].Data = nil;
+                    m_AllShowCellsTable[Index].CellType = ItemCellType.Lock;
+                else
+                    m_AllShowCellsTable[Index].Data = nil;
+                    m_AllShowCellsTable[Index].CellType = ItemCellType.NoItem;
+                end
+            end
+        end
+    else
+        local tagTypeNum = CalculateItemTagTypeEnum();
+        allItems = G_BagMng:GetGoodsByItemTagType(tagTypeNum);
+        for Index = 1, allItems.Count do
+            m_AllShowCellsTable[Index] = { };
+            m_AllShowCellsTable[Index].Data = allItems[Index - 1];
+            allItems[Index - 1].BagPanelPos = Index;
+            m_allItemsByPos[allItems[Index - 1].PakID + 1] = allItems[Index - 1];
+            m_AllShowCellsTable[Index].CellType = ItemCellType.Item;
+        end
+        for Index = allItems.Count + 1, canUseCellsNum do
+            m_AllShowCellsTable[Index] = { };
+            m_AllShowCellsTable[Index].Data = nil;
+            m_AllShowCellsTable[Index].CellType = ItemCellType.NoItem;
+        end
+        for Index = canUseCellsNum + 1, needShowCellsNum do
+            m_AllShowCellsTable[Index] = { };
+            m_AllShowCellsTable[Index].Data = nil;
+            m_AllShowCellsTable[Index].CellType = ItemCellType.Lock;
+        end
+    end
+    m_ItemUIListViewComp:RemoveAll();
+    for Index = 1, #m_AllShowCellsTable do
+        m_ItemUIListViewComp:AddData(m_AllShowCellsTable[Index], m_AllShowCellsTable[Index].CellType);
+    end
+    local scrollBarComp = GetComponent(m_panelObject, m_scrollBarCompStr, "UIScrollBar");
+    local totalCount = #m_AllShowCellsTable;
+    if totalCount == 0 then
+        totalCount = 1;
+    end
+    scrollBarComp.barSize = MAXBAGCELLNUM / totalCount;
+    m_itemsHaveNum = allItems.Count;
+end
+
+function RefreshRightBottomContent()
+    SetLabelContent(m_labelCurrentBagNum, m_itemsHaveNum, m_panelObject);
+    SetLabelContent(m_labelAllBagNum, G_BagMng.BagCount, m_panelObject);
+    if m_canClickSort then
+        SetGameObjectState(m_bagSortDark, false, m_panelObject);
+        SetGameObjectState(m_bagSortLight, true, m_panelObject);
+    else
+        SetGameObjectState(m_bagSortDark, true, m_panelObject);
+        SetGameObjectState(m_bagSortLight, false, m_panelObject);
+    end
+end
+
+function RequestUnlockFirstCell()
+    local index = G_BagMng.BagCount;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_APPLY_BAGENLARGE);
+    buffer:WriteByte(1);
+    buffer:WriteByte(index + 1);
+    G_NetWorkMng:SendMessage(buffer);
+    G_BagMng.UnlockTime = G_TimerMng:GetCurrentSeconds() + CCommonTool.GetBagCost(index + 1).CostTime;
+    G_BagMng:SetBagUnlockTimeTask();
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 and m_panelInitAlready then
+        if m_ItemUIListViewComp ~= nil then
+            local cell = m_ItemUIListViewComp:GetCell(index);
+            local data = m_ItemUIListViewComp:GetData(index);
+            if cell ~= nil and data ~= nil then
+                OnItemCloneInit(m_ItemUIListViewComp, cell, data);
+            end
+        end
+    end
+    RefreshBagRedHint();
+end
+
+--------------------------------------按钮事件方法------------------------------------
+function OnItemCloneClick(listView, cell, go)
+    local clickIndex = cell.dataIndex;
+    local data = listView:GetData(clickIndex);
+    local go = cell.gameObject;
+    if data.CellType == ItemCellType.NoItem then
+        -- nothing to do
+    elseif data.CellType == ItemCellType.Lock then
+        if clickIndex >= G_BagMng.BagCount then
+            if G_BagMng.IsUnlockingCell == false and clickIndex == G_BagMng.BagCount then
+                RequestUnlockFirstCell();
+                return;
+            end
+            m_BagUnlockCost = 0;
+            m_BagUnlockCost = CCommonTool.GetBagCost(clickIndex + 1).CostAll - CCommonTool.GetBagCost(G_BagMng.BagCount).CostAll;
+            SetLabelContent(m_unlockCellNumStr, clickIndex + 1 - G_BagMng.BagCount, m_panelObject);
+            SetLabelContent(m_unlockDiamondNeedStr, m_BagUnlockCost, m_panelObject);
+            m_itemUnLockPanelIsOpen = true;
+            m_lockPosClickNum = clickIndex + 1;
+            SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+        end
+    elseif data.CellType == ItemCellType.Item then
+        if m_CurRightClickIndex ~= clickIndex then
+            m_CurRightClickIndex = clickIndex;
+            m_leftContentOpen = true;
+            local itemAttr = data.Data;
+            local tagType = itemAttr:GetTagType();
+            SetGameObjectState(m_itemSelectStr, true, go);
+            if tagType == ITEMTAGTYPE.TT_None then
+                error("Important Errror:this item has no tagType::::" .. itemAttr.ExcelID);
+                InitButtons(itemAttr, 0, false);
+            elseif tagType == ITEMTAGTYPE.TT_Equip then
+                local equipType = itemAttr:GetEquipType();
+                if m_equipTable[equipType + 1] ~= nil then
+                    InitButtons(itemAttr, 2, false);
+                else
+                    InitButtons(itemAttr, 1, false);
+                end
+            else
+                InitButtons(itemAttr, 1, false);
+            end
+        end
+    end
+end
+
+-- 点击道具信息关闭按钮
+function OnItemInfoCloseClick()
+    if m_leftContentOpen then
+        m_leftContentOpen = false;
+        m_equipSelect = 0;
+        if m_CurRightClickIndex >= 0 then
+            local listCell = m_ItemUIListViewComp:GetCell(m_CurRightClickIndex);
+            if listCell ~= nil and listCell.cellStyle == "Item" then
+                local go = listCell.gameObject;
+                SetGameObjectState(m_itemSelectStr, false, go);
+            end
+        end
+        m_CurRightClickIndex = -1;
+        InitLeftSpriteSelect();
+        InitButtons(nil, 0, false);
+    end
+end
+
+-- 关闭界面按钮事件
+function OnCloseClick()
+    if m_itemUnLockPanelIsOpen then
+        OnBuyBagCancelClick();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_BAGPANEL);
+end
+
+-- 左侧装备按钮点击事件
+function LeftEquipClick(e)
+    m_equipSelect = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    SetGameObjectState(m_buttonPanelStr, true, m_panelObject);
+    m_leftContentOpen = true;
+    InitButtons(m_equipTable[m_equipSelect], 1, true);
+    InitLeftSpriteSelect();
+end
+
+function OnBuyBagPosClick(e)
+    if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_BagUnlockCost), ENUMPANELID.ENUM_PANEL_BAGPANEL, OnExchangeMoneyCallBack) then
+        -- 发送购买的消息
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_APPLY_BAGENLARGE);
+        buffer:WriteByte(2);
+        buffer:WriteByte(m_lockPosClickNum);
+        G_NetWorkMng:SendMessage(buffer);
+        m_itemUnLockPanelIsOpen = false;
+        SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+    else
+        -- ShowSystemFlowTips(2573);
+    end
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    -- 发送购买的消息
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_APPLY_BAGENLARGE);
+    buffer:WriteByte(2);
+    buffer:WriteByte(m_lockPosClickNum);
+    G_NetWorkMng:SendMessage(buffer);
+    m_itemUnLockPanelIsOpen = false;
+    SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+end
+
+-- 购买背包格子取消
+function OnBuyBagCancelClick()
+    m_lockPosClickNum = 0;
+    m_itemUnLockPanelIsOpen = false;
+    SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+end
+
+-- 点击空事件
+function Kong()
+end
+
+-- 点击全部按钮的事件
+function OnAllButtonClick()
+    if m_RightClickState ~= 0 then
+        m_RightClickState = 0;
+        InitRightInfo();
+        m_ItemUIListViewComp:LookAt(-1, false);
+    end
+end
+
+-- 点击装备按钮的事件
+function OnEquipButtonClick()
+    if m_RightClickState ~= 1 then
+        m_RightClickState = 1;
+        InitRightInfo();
+        m_ItemUIListViewComp:LookAt(-1, false);
+    end
+end
+
+-- 点击道具按钮的事件
+function OnItemButtonClick()
+    if m_RightClickState ~= 2 then
+        m_RightClickState = 2;
+        InitRightInfo();
+        m_ItemUIListViewComp:LookAt(-1, false);
+    end
+end
+
+-- 点击符石按钮的事件
+function OnGemButtonClick()
+    if m_RightClickState ~= 3 then
+        m_RightClickState = 3;
+        InitRightInfo();
+        m_ItemUIListViewComp:LookAt(-1, false);
+    end
+end
+
+-- 出售按钮点击事件
+function OnSaleClick()
+    local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    local tableName = { };
+    m_SaleClickIndex = m_CurRightClickIndex;
+    table.insert(tableName, 1, itemAttr.CRID);
+    table.insert(tableName, 2, itemAttr.ItemNum);
+    table.insert(tableName, 3, ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL, tableName, ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    ToolTipsPanel.OnCloseClick();
+	--背包-出售上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10260);
+	end
+end
+
+-- 点击放置按钮事件
+function OnSettingClick()
+    local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    local excelID = itemAttr.ExcelID;
+    local itemInfo = CCommonTool.GetItemInfo(excelID);
+    if itemInfo.NeedLevel > G_UserInfo.RoleAttribute.Level then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SETMED_LACKLEVEL);
+        return;
+    end
+    local useMedExcelID = G_UseMedMng.CurrentSetMedExcelID;
+    if excelID == useMedExcelID then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SETMED_SAMEMED);
+        return;
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SETMED_OK);
+        G_UseMedMng:SetCurrentUseMedExcelIDByLua(excelID);
+    end
+end
+
+-- 使用按钮点击事件
+function OnUseClick()
+    local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    local itemType = itemAttr:GetItemType();
+    if itemType == ITEMTYPE.IT_Pet then
+        if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_PET) then
+            ShowSystemFlowTips(442);
+            return;
+        end
+        local pos = G_BagMng:GetPetPanelNoUsePos();
+        if pos == -1 then
+            ShowSystemFlowTips(7871);
+            return;
+        end
+        if itemAttr.ItemNum <= 1 then
+            ToolTipsPanel.OnCloseClick();
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_UPDATEUIITEMPOS);
+        buffer:WriteUShort(1);
+        buffer:WriteByte(0);
+        buffer:WriteByte(itemAttr.PanelPos);
+        buffer:WriteByte(itemAttr.PakID);
+        buffer:WriteByte(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+        buffer:WriteByte(pos);
+        G_NetWorkMng:SendMessage(buffer);
+        ShowSystemFlowTips(9064);
+        return;
+    end
+    local excelID = itemAttr.ExcelID;
+    local itemInfo = CCommonTool.GetItemInfo(excelID);
+    if itemInfo.NeedLevel > G_UserInfo.RoleAttribute.Level then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ITEM_NEED_LEVEL_DISSATISFY);
+        return;
+    end
+    local itemCategory = itemAttr:GetItemCategory();
+    if itemCategory == ItemCategory.IC_MedBackItem or itemCategory == ItemCategory.IC_PlayerMedBackItem or itemCategory == ItemCategory.IC_StoreMedBackItem then
+        G_UseMedMng:UseMed(false, excelID);
+    else
+        local canBatchUse = false;
+        if itemInfo.BatchUse > 0 and itemAttr.ItemNum > 1 then
+            canBatchUse = true;
+        end
+        if canBatchUse then
+            ToolTipsPanel.OnCloseClick();
+            BatchUseItemPanel.SetData(itemAttr);
+            return;
+        else
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_USEUIITEM);
+            buffer:WriteUInt(G_UserInfo.RoleAttribute.CRID);
+            buffer:WriteByte(itemAttr.PanelPos);
+            buffer:WriteByte(itemAttr.PakID);
+            buffer:WriteByte(1);
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    end
+    if itemAttr.ItemNum <= 1 then
+        ToolTipsPanel.OnCloseClick();
+    end
+	--装备-使用按钮上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10265);
+	end
+end
+
+-- 点击合成按钮事件
+function OnCombineClick()
+    ResolveAndCombinePanel.OpenThisPanelByTag(2);
+end
+
+-- 点击装备按钮事件
+function OnSuitOnClick()
+    local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    local pinZhiNum = itemAttr:GetAptitudeID();
+    local excelID = itemAttr.ExcelID;
+    local equipInfo = itemAttr:GetEquipInfo();
+    local equipType = itemAttr:GetEquipType();
+    -- 判断当前装备的职业跟玩家职业
+    if G_UserInfo.RoleAttribute.ProID ~= equipInfo.ProID and equipInfo.ProID ~= 255 then
+        ShowSystemFlowTips(510);
+        ToolTipsPanel.OnCloseClick();
+        return;
+    end
+    if G_UserInfo.RoleAttribute.Level < equipInfo.NeedLv then
+        ShowSystemFlowTips(509);
+        ToolTipsPanel.OnCloseClick();
+        return;
+    end
+    if m_equipTable[equipType + 1] == nil then
+        SendUpdateItemPos(0);
+        ToolTipsPanel.OnCloseClick();
+    else
+        SendUpdateItemPos(0);
+        ToolTipsPanel.OnCloseClick();
+    end
+    if equipInfo.SuitID > 0 then
+        local equipSuitInfo = CCommonTool.GetEqupipSuitInfoById(equipInfo.SuitID);
+        local haveSuitCount = 0;
+        for Index = 1, #m_onEquipTable do
+            local itemInfo = m_onEquipTable[Index]:GetEquipInfo();
+            if itemInfo.SuitID == equipInfo.SuitID then
+                haveSuitCount = haveSuitCount + 1;
+            end
+        end
+        local tempTable = { };
+        table.insert(tempTable, 1, CCommonTool.GetTxtData(equipSuitInfo.TextId).m_str);
+        table.insert(tempTable, 2, haveSuitCount + 1);
+        table.insert(tempTable, 3, equipSuitInfo.AllNum);
+        if haveSuitCount > 0 then
+            ShowSystemFlowTips(6107, nil, tempTable);
+        else
+            return;
+        end
+    else
+        return;
+    end
+	--装备-装备按钮上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10258);
+	end
+end
+
+-- 发送装备或者卸下的消息
+function SendUpdateItemPos(isInheritItemUpdateLv)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_UPDATEUIITEMPOS);
+    buffer:WriteUShort(1);
+    buffer:WriteByte(isInheritItemUpdateLv);
+    -- 0代表不继承强化，1代表继承强化
+    local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    buffer:WriteByte(itemAttr.PanelPos);
+    buffer:WriteByte(itemAttr.PakID);
+    buffer:WriteByte(ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF);
+    buffer:WriteByte(itemAttr:GetEquipType());
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击分解按钮事件
+function OnDecomposeClick()
+    local itemAttr = nil;
+    if m_equipSelect <= 0 then
+        itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    else
+        itemAttr = m_equipTable[m_equipSelect];
+    end
+    if itemAttr == nil then
+        return;
+    end
+    _G.LogicData_ResolveData[1] = itemAttr;
+    if itemAttr:GetItemCategory() == ItemCategory.IC_Artifact then
+        _G.LogicData_ResolveData[2] = 3;
+        ResolvePanel.OpenResolvePanelByTag(1, 3, ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    else
+        _G.LogicData_ResolveData[2] = 1;
+        ResolvePanel.OpenResolvePanelByTag(1, 1, ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    end
+	--背包-分解上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10259);
+	end
+end
+function OnResolveClick()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RESOLVE) then
+        ResolveAndCombinePanel.OpenThisPanelByTag(1);
+    else
+        error("分解系统尚未开启");
+        local info = CCommonTool.GetSystemOpenInfo(CSYSTEMENUM.SYSTEM_RESOLVE);
+        local lvl = -1;
+        if info ~= nil then 
+            lvl = info.Level;
+        end
+        ShowSystemFlowTips(2680,nil, {lvl});
+    end
+	--背包-熔炼上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10256);
+	end
+end
+
+-- 点击强化按钮事件
+function OnForceClick()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPFORCE) then
+        local itemAttr = nil;
+        if m_equipSelect <= 0 then
+            itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+        else
+            itemAttr = m_equipTable[m_equipSelect];
+        end
+        if itemAttr == nil then
+            return;
+        end
+        Equip_Force.SelectItem(itemAttr);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_BAG_STRENG_SYSTEM_CLOSED);
+    end
+end
+
+-- 点击传承按钮事件
+function OnInheritClick()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPINHERIT) then
+        local itemAttr = nil;
+        if m_equipSelect <= 0 then
+            itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+        else
+            itemAttr = m_equipTable[m_equipSelect];
+        end
+        if itemAttr == nil then
+            return;
+        end
+        Equip_Inherit.SelectItem(itemAttr);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_BAG_INHERIT_SYSTEM_CLOSED);
+    end
+end
+
+-- 点击精炼按钮事件
+function OnStarUpClick()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTARUP) then
+        local itemAttr;
+        if m_equipSelect <= 0 then
+            itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+        else
+            itemAttr = m_equipTable[m_equipSelect];
+        end
+        Equip_StarUp.SelectItem(itemAttr);
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_BAG_SHENGXINF_SYSTEM_CLOSED);
+    end
+end
+
+-- 点击符石按钮事件
+function OnGemClick()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+        local itemAttr = nil;
+        if m_equipSelect <= 0 then
+            itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+        else
+            itemAttr = m_equipTable[m_equipSelect];
+        end
+        if itemAttr == nil then
+            return;
+        end
+        Equip_Gem.SelectItem(itemAttr);
+    else
+        ShowSystemFlowTips(7000);
+    end
+end
+
+-- 点击附魔按钮事件
+function OnEnchantClick()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+        local itemAttr = nil;
+        if m_equipSelect <= 0 then
+            itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+        else
+            itemAttr = m_equipTable[m_equipSelect];
+        end
+        if itemAttr == nil then
+            return;
+        end
+        Equip_Enchant.SelectItem(itemAttr);
+    else
+        ShowSystemFlowTips(7454);
+    end
+end
+
+-- 点击卸下按钮事件
+function OnEquipDownClick()
+    local itemAttr = m_equipTable[m_equipSelect];
+    local equipInfo = itemAttr:GetEquipInfo();
+    if G_BagMng:GetPanelNoUsePos(ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN) == -1 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_EQUIPBAGFULLNOIN);
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_UPDATEUIITEMPOS);
+        buffer:WriteUShort(1);
+        buffer:WriteByte(0);
+        -- 0代表不继承强化，1代表继承强化
+        buffer:WriteByte(m_equipTable[m_equipSelect].PanelPos);
+        buffer:WriteByte(m_equipTable[m_equipSelect].PakID);
+        buffer:WriteByte(ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN);
+        buffer:WriteByte(G_BagMng:GetPanelNoUsePos(ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN));
+        G_NetWorkMng:SendMessage(buffer);
+        m_equipSelect = 0;
+        InitLeftSpriteSelect();
+        ToolTipsPanel.OnCloseClick();
+    end
+    if equipInfo.SuitID > 0 then
+        local equipSuitInfo = CCommonTool.GetEqupipSuitInfoById(equipInfo.SuitID);
+        local haveSuitCount = 0;
+        for Index = 1, #m_onEquipTable do
+            local itemInfo = m_onEquipTable[Index]:GetEquipInfo();
+            if itemInfo.SuitID == equipInfo.SuitID then
+                haveSuitCount = haveSuitCount + 1;
+            end
+        end
+        local tempTable = { };
+        table.insert(tempTable, 1, CCommonTool.GetTxtData(equipSuitInfo.TextId).m_str);
+        table.insert(tempTable, 2, haveSuitCount - 1);
+        table.insert(tempTable, 3, equipSuitInfo.AllNum);
+        if haveSuitCount > 1 then
+            ShowSystemFlowTips(6107, nil, tempTable);
+        else
+            return;
+        end
+    else
+        return;
+    end
+	--背包--卸下上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10261);
+	end
+end
+
+-- 点击拍卖按钮
+function OnAuctionClick(e)
+    local itemAttr = nil;
+    if m_equipSelect <= 0 then
+        itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    else
+        itemAttr = m_equipTable[m_equipSelect];
+    end
+    if itemAttr == nil then
+        return;
+    end
+    AuctionPanel.OpenSellPropItem(itemAttr);
+	--背包--拍卖上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10262);
+	end
+end
+
+-- 点击洗练按钮
+function OnRandEffClick(e)
+    local itemAttr = nil;
+    if m_equipSelect <= 0 then
+        itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    else
+        itemAttr = m_equipTable[m_equipSelect];
+    end
+    if itemAttr == nil then
+        return;
+    end
+    Equip_RandEff.SelectItem(itemAttr);
+end
+
+-- 点击分享按钮
+function OnShareClick(e)
+    local itemAttr = m_ItemUIListViewComp:GetData(m_CurRightClickIndex).Data;
+    local pinZhiNum = itemAttr:GetAptitudeID();
+    local itemName = GetTextToId(CCommonTool.GetNameIDByExcelID(itemAttr.ExcelID));
+    local itemType = itemAttr:GetItemType();
+    local isNeedSend = false;
+    if itemType == ITEMTYPE.IT_Pet or itemType == ITEMTYPE.IT_Equip then
+        isNeedSend = true;
+    end
+--    itemName = string_format("[u]{0}{1}[-]", GetColorStrByPinZhi(pinZhiNum), itemName);
+    ChatPanel.SetText(itemName, itemAttr.ExcelID, itemAttr.CRID, pinZhiNum, isNeedSend);
+    ToolTipsPanel.OnCloseClick();
+    closePanel(ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    ChatPanel.OpenThisPanelByTag(CHAT_CHANNEL_ID.CHAT_WORLD_ID);
+end
+
+-- 点击背包整理按钮
+function OnBagSortButtonClick()
+    if m_canClickSort then
+        SendBagSortMsg();
+        m_canClickSort = false;
+        SetGameObjectState(m_bagSortDark, true, m_panelObject);
+        SetGameObjectState(m_bagSortLight, false, m_panelObject);
+        AddTimerEvent(SORTTIMETASKNAME, 6, SortButtonUnlock, ETimeShowType.TypeNumberFour);
+    else
+        ShowSystemFlowTips(1006);
+    end
+	--背包-整理上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10257);
+	end
+end
+
+-- 发送整理的消息
+function SendBagSortMsg()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SORT_TRIM_PANEL);
+    buffer:WriteByte(1);
+    -- 1代表背包，2代表仓库
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 背包解锁格子的外部调用
+function BagCellOpenOut(oldOpenCellNum)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        G_TimerMng:RemoveTimeTask(UNLOCKTIMETASKNAME);
+        local canUseCellsNum = G_BagMng.BagCount;
+        local remainer = math.fmod(canUseCellsNum, m_CellsNumPerLine);
+        local needShowCellsNum = 0;
+        if remainer == 0 then
+            needShowCellsNum = canUseCellsNum + m_CellsNumPerLine;
+        else
+            needShowCellsNum = m_CellsNumPerLine - remainer + canUseCellsNum;
+        end
+        if needShowCellsNum > G_BagMng.BagNum then
+            needShowCellsNum = G_BagMng.BagNum;
+        end
+        local curShowNum = #m_AllShowCellsTable;
+        for Index = curShowNum + 1, needShowCellsNum do
+            m_AllShowCellsTable[Index] = { };
+            m_AllShowCellsTable[Index].Data = nil;
+            m_AllShowCellsTable[Index].CellType = ItemCellType.Lock;
+            m_ItemUIListViewComp:AddData(m_AllShowCellsTable[Index], m_AllShowCellsTable[Index].CellType);
+        end
+        for Index = oldOpenCellNum, canUseCellsNum - 1 do
+            m_AllShowCellsTable[Index + 1] = { };
+            m_AllShowCellsTable[Index + 1].Data = nil;
+            m_AllShowCellsTable[Index + 1].CellType = ItemCellType.NoItem;
+            m_ItemUIListViewComp:SetData(Index, m_AllShowCellsTable[Index + 1], m_AllShowCellsTable[Index + 1].CellType);
+        end
+        local listCell = m_ItemUIListViewComp:GetCell(canUseCellsNum);
+        if listCell ~= nil then
+            OnItemCloneInit(m_ItemUIListViewComp, listCell, m_AllShowCellsTable[canUseCellsNum + 1]);
+        end
+        m_lockPosClickNum = 0;
+        m_itemUnLockPanelIsOpen = false;
+        SetGameObjectState(m_itemUnLockPanelStr, m_itemUnLockPanelIsOpen, m_panelObject);
+        SetLabelContent(m_labelAllBagNum, G_BagMng.BagCount, m_panelObject);
+    end
+end
+
+-- 添加道具，刷新右侧的面板
+function AddItemInBag(item)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        if item.PanelPos == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            -- 将添加的道具刷新到界面中
+            if m_RightClickState == 0 then
+                item.BagPanelPos = item.PakID + 1;
+                m_allItemsByPos[item.PakID + 1] = item;
+                m_AllShowCellsTable[item.PakID + 1] = { };
+                m_AllShowCellsTable[item.PakID + 1].Data = item;
+                m_AllShowCellsTable[item.PakID + 1].CellType = ItemCellType.Item;
+                m_ItemUIListViewComp:SetData(item.PakID, m_AllShowCellsTable[item.PakID + 1], m_AllShowCellsTable[item.PakID + 1].CellType);
+            elseif item:GetTagType() == CalculateItemTagTypeEnum() then
+                for Index = 1, #m_AllShowCellsTable do
+                    if m_AllShowCellsTable[Index].CellType == ItemCellType.NoItem then
+                        item.BagPanelPos = Index;
+                        m_allItemsByPos[item.PakID + 1] = item;
+                        m_AllShowCellsTable[Index].CellType = ItemCellType.Item;
+                        m_AllShowCellsTable[Index].Data = item;
+                        m_ItemUIListViewComp:SetData(Index - 1, m_AllShowCellsTable[Index], m_AllShowCellsTable[Index].CellType);
+                        return;
+                    end
+                end
+            else
+            end
+            -- 设置背包的格子
+            m_itemsHaveNum = m_itemsHaveNum + 1;
+            SetLabelContent(m_labelCurrentBagNum, m_itemsHaveNum, m_panelObject);
+        elseif item.PanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            InitLeftEquipInfo();
+        end
+    end
+end
+
+-- 删除道具，刷新右侧的面板
+function RemoveItemInBag(panelType, panelPos)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        if panelType == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            local pos = 0;
+            if m_RightClickState == 0 then
+                pos = panelPos + 1;
+                m_allItemsByPos[pos] = nil;
+                m_AllShowCellsTable[panelPos + 1] = { };
+                m_AllShowCellsTable[panelPos + 1].Data = nil;
+                m_AllShowCellsTable[panelPos + 1].CellType = ItemCellType.NoItem;
+                m_ItemUIListViewComp:SetData(panelPos, m_AllShowCellsTable[panelPos + 1], m_AllShowCellsTable[panelPos + 1].CellType);
+            else
+                if m_allItemsByPos[panelPos + 1] == nil then
+                    return;
+                else
+                    pos = m_allItemsByPos[panelPos + 1].BagPanelPos;
+                    m_AllShowCellsTable[pos] = { };
+                    m_AllShowCellsTable[pos].Data = nil;
+                    m_AllShowCellsTable[pos].CellType = ItemCellType.NoItem;
+                    m_ItemUIListViewComp:SetData(pos - 1, m_AllShowCellsTable[pos], m_AllShowCellsTable[pos].CellType);
+                end
+            end
+            -- 设置背包的格子
+            m_itemsHaveNum = m_itemsHaveNum - 1;
+            SetLabelContent(m_labelCurrentBagNum, m_itemsHaveNum, m_panelObject);
+        elseif panelType == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            m_equipSelect = 0;
+            InitLeftEquipInfo();
+        end
+    end
+end
+
+-- 装备上装备道具，装备道具交换位置
+function UpdateOneItemPos(FormerPanelPos, FormerPakID, CurPanelPos, Crid)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        RemoveItemInBag(FormerPanelPos, FormerPakID);
+        if CurPanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            -- 初始化左侧装备的信息
+            InitLeftEquipInfo();
+        elseif CurPanelPos == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            local item = G_BagMng:GetGoodsItem(Crid);
+            AddItemInBag(item);
+        end
+    end
+end
+
+-- 装备替换，2件装备交换位置
+function UpdateTwoItemPos(ItemPanelID1, ItemCRID1, ItemPanelID2, ItemCRID2)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        local item1 = G_BagMng:GetGoodsItem(ItemCRID1);
+        local item2 = G_BagMng:GetGoodsItem(ItemCRID2);
+        if ItemPanelID1 == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            InitLeftEquipInfo();
+        elseif ItemPanelID1 == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            RemoveItemInBag(ItemPanelID1, item1.PakID);
+            AddItemInBag(item1);
+        end
+        if ItemPanelID2 == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            InitLeftEquipInfo();
+        elseif ItemPanelID2 == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            RemoveItemInBag(ItemPanelID2, item2.PakID);
+            AddItemInBag(item2);
+        end
+    end
+end
+
+-- 更新道具数量
+function UpdateItemNum(panelType, panelPos, num)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        if panelType == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            local item = m_allItemsByPos[panelPos + 1];
+            if item == nil then
+                return;
+            else
+                local listCell = m_ItemUIListViewComp:GetCell(item.BagPanelPos - 1);
+                if listCell ~= nil then
+                    if item.ItemNum <= 1 then
+                        SetGameObjectState(m_itemInfoStr..m_ItemCloneNumStr,false,listCell.gameObject);
+                    else
+                        SetGameObjectState(m_itemInfoStr..m_ItemCloneNumStr,true,listCell.gameObject);
+                        SetLabelContent(m_itemInfoStr..m_ItemCloneNumStr,item.ItemNum,listCell.gameObject);
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 刷新道具信息
+function RefreshItem(panelType, panelPos, item)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        if panelType == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            -- 初始化左侧装备的信息
+            InitLeftEquipInfo();
+        elseif panelType == ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM then
+            local item = m_allItemsByPos[panelPos + 1];
+            if item == nil then
+                return;
+            else
+                local listCell = m_ItemUIListViewComp:GetCell(item.BagPanelPos - 1);
+                if listCell ~= nil then
+                    OnItemCloneInit(m_ItemUIListViewComp, listCell, m_AllShowCellsTable[item.BagPanelPos]);
+                end
+            end
+        end
+    end
+end
+
+-- 背包整理结束
+function BagSortOver()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL) == 1 then
+        RefreshRightMiddleContent();
+        RefreshRightBottomContent();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_equipSelect;
+    jumpParamsTable[2] = m_RightClickState;
+    jumpParamsTable[3] = m_CurRightClickIndex;
+    jumpParamsTable[4] = m_lockPosClickNum;
+    jumpParamsTable[5] = m_SellPanelIsOpen;
+    jumpParamsTable[6] = m_SaleClickIndex;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+-- 出售界面设置出售界面状态
+function SetSellPanelState(state)
+    m_SellPanelIsOpen = state;
+end
+
+-- 背包红点是否显示
+function IsShowRedHintBagCanLock()
+    if G_BagMng.IsUnlockingCell then
+        return false;
+    else
+        if G_BagMng.BagCount < G_BagMng.BagNum then
+            return true;
+        else
+            return false;
+        end
+    end
+end
+
+-- 刷新背包的红点显示
+function RefreshBagRedHint()
+    RedHintMng.SetRedHintState(CREDHINTENUM.BAG_CANUNLOCK, BagPanel.IsShowRedHintBagCanLock());
+end
+
+local timerData = nil;
+-- 添加背包自动解锁Timer
+function AddAutoUnlockTimer()
+    timerData = Timer.Instance:AddTimer(3, -1, AutoUnlock);
+end
+
+-- 清除背包自动解锁Timer
+function ClearAutoUnlockTimer()
+    if timerData ~= nil then
+        Timer.Instance:StopTimer(timerData);
+        timerData = nil;
+    end
+end
+
+-- 背包自动解锁Timer
+function AutoUnlock()
+    if not G_BagMng.IsBagDataInit then
+        return;
+    end
+    if G_BagMng.BagCount < G_BagMng.BagNum then
+        if G_BagMng.IsUnlockingCell ~= true then
+            RequestUnlockFirstCell();
+        else
+            local unlockTime = G_BagMng.UnlockTime;
+            local deltaTime = math.floor(unlockTime - G_TimerMng:GetCurrentSeconds());
+            if deltaTime < 0 then
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_APPLY_BAGENLARGE);
+                buffer:WriteByte(3);
+                buffer:WriteByte(G_BagMng.BagCount + 1);
+                G_NetWorkMng:SendMessage(buffer);
+            end
+        end
+    else
+        ClearAutoUnlockTimer();
+    end
+end

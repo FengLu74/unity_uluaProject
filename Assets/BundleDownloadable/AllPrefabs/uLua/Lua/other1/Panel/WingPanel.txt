@@ -1,0 +1,1025 @@
+﻿module("WingPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 右侧翅膀的名称
+local m_rightWingNameStr = "Right/Top/Label_Name";
+-- 右侧翅膀的进阶数
+local m_rightWingStageStr = "Right/Top/Label_Level";
+-- 右侧翅膀增加的战斗力
+local m_rightWingPowerStr = "Right/Top/Active/Label_FightValue";
+
+-----------------------------------------按钮路径--------------------------------------
+
+----------------------------------------公共路径---------------------------------------
+--右侧普通3条属性路径
+local m_rightFosterAttrStr = "Right/Middle/FosterAttrs/";
+--右侧特殊4条属性路径
+local m_rightSpecificAttrStr = "Right/Middle/SpecificAttrs/";
+-- 已经激活
+local m_rightActive = "/Active";
+-- 没有激活
+local m_rightNotActive = "/NotActive";
+-- 右侧属性名称(物理攻击力，生命值)
+local m_rightAttrNameStr = "/Label_Attr"
+-- 右侧当前的属性值
+local m_rightAttrValueStr = "/Label_CurValue"
+-- 右侧下一级的属性值
+local m_rightActiveNextValueStr = "/Add/Label_NextValue";
+-- 右侧增加的属性值
+local m_rightActiveAddValueStr = "/Add/Label_AddValue";
+-- 文本路径
+local m_rightLabelStr = "/Label";
+
+-- 等级格子所在的位置
+local m_LevelGridStr = "Right/Top/Active/Progress/Sprite";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 已经升阶到最大等级
+local m_maxLevelStr = "Right/Bottom/MaxLevel";
+
+local m_maxLevelLblStr = "Right/Bottom/MaxLevel/Label";
+-- NotMaxLevel
+local m_NotMaxLevelStr = "Right/Bottom/NotMaxLevel";
+-- uitable 路径
+local m_notMaxLvlItemsStr = "Right/Bottom/NotMaxLevel/Items";
+--
+local m_notMaxLvlItems2Str = "Right/Bottom/NotMaxLevel/Items/Item";
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+-- 红点路径
+local Sprite_RedHint = "/Sprite_RedHint";
+-- 培养1次，10次路径
+local m_notMaxLvlFosterStr = "Right/Bottom/NotMaxLevel/NeedFoster" ;
+-- 激活按钮路径
+local m_notMaxLvlActiveStr = "Right/Bottom/NotMaxLevel/NeedActive";
+-- 进阶按钮路径
+local m_notMaxLvlBreachStr = "Right/Bottom/NotMaxLevel/NeedBreach";
+-- 需要等级提示路径
+local m_notMaxLvlLvlStr = "Right/Bottom/NotMaxLevel/NeedLevel";
+-- 装备翅膀按钮
+local m_equipWingStr = "Middle/Button_Wing";
+-- 翅膀按钮文本字
+local m_equipBtnLabStr = "Middle/Button_Wing/Label";
+-- 翅膀按钮英文文本字
+local m_equipBtnLab1Str = "Middle/Button_Wing/Label1";
+-- 神翼化灵 按钮路径
+local m_wingSpiritStr = "Left/Button_WingSpirit";
+-- 左侧翅膀图标列表路径
+local m_leftUIWingCompStr = "Left/Wings/WingList";
+-- 右侧uitable组件
+local m_ItemsUITableCompStr = "Right/Bottom/NotMaxLevel/Items";
+-- 培养1次
+local m_ButtonPyOneStr = "Right/Bottom/NotMaxLevel/NeedFoster/Button_FosterOnce";
+-- 培养10次
+local m_ButtonPyTenStr= "Right/Bottom/NotMaxLevel/NeedFoster/Button_FosterTenth";
+--突破按钮
+local m_ButtonLvlUpStr = "Right/Bottom/NotMaxLevel/NeedBreach/Button_Breach";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左侧UIListView组件
+local m_leftUIListViewComp = nil;
+-- 左侧选择的是第几个翅膀
+local m_leftSelect = 1;
+-- 左侧选中的翅膀的ID
+local m_leftSelect_Id = -1;
+-- 消耗道具的UITable的组件
+local m_itemsUITableComp = nil;
+-- 货币是否满足
+local m_CoinIsEnough = true;
+--道具是否满足
+local m_MatIsEnough = true;
+--道具excelid 
+local m_ItemDataId = -1;
+-- 神翼化灵界面是否打开了
+local m_isWingSpiritPanelOpen = false;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 左侧翅膀数据
+local m_LeftPlayerWingInfos= nil;
+-- 翅膀数据根据职业相应区间的总表（id，moderes，品质，解锁等）
+local m_WingsTotalDataCfgs = {};
+-- 翅膀属性值培养表
+-- 玩家身上的组件
+local m_PlayerChangeEquip = nil;
+-- 当前对应的翅膀可以装备，可以卸下
+local m_CurWingStateType = -1;    -- -1 未解锁，1装备，2卸下
+-- 翅膀的状态
+local ENUM_WING_STATE =
+{
+    CANFOSTER = 1,    -- 可以培养
+    CANLEVELUP = 2,   -- 可以突破
+    LEVELMAX = 3,     -- 最大阶级
+    LEVELLACK = 4,    -- 还未解锁
+}
+-- 10个翅膀
+local MAX_LEVEL = 9;
+local WING_INDEX = 1;
+-- 最高阶，最高培养等级
+local MAX_MAXLVL = 10;
+-- 翅膀类型
+local FASHION_WING_TYPE = 4;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+--    InitObjects();
+--    InitEvents();
+--    InitShow();
+--    m_panelInitAlready = true;
+end
+function OnEnable()
+--    if m_panelInitAlready == true then
+--        InitShow();
+--    end
+end
+function OnDisable()
+    m_WingsTotalDataCfgs = nil;
+    m_LeftPlayerWingInfos = nil;
+    m_ItemDataId = -1;
+    m_leftSelect = 1;
+    m_leftSelect_Id = -1;
+    m_CoinIsEnough = false;
+    m_MatIsEnough = false;
+    Hide3DModel();
+    m_PlayerChangeEquip = nil;
+    m_CurWingStateType = -1;
+end
+function OnDestroy()
+    m_PlayerChangeEquip = nil;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_CurWingStateType = -1;
+    m_WingsTotalDataCfgs = nil;
+    m_LeftPlayerWingInfos = nil;
+    m_ItemDataId = -1;
+    m_leftSelect = 1;
+    m_leftSelect_Id = -1;
+    m_CoinIsEnough = false;
+    m_MatIsEnough = false;
+    Hide3DModel();
+end
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_WINGPANEL);
+    -- 右侧uitable
+    m_itemsUITableComp = GetComponent(m_panelObject,m_ItemsUITableCompStr, "UITable");
+    --左侧uilistview
+    m_leftUIListViewComp = GetComponent(m_panelObject,m_leftUIWingCompStr, "UIListView");
+
+end
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnWingCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnWingCloneClick);
+    -- 点击装备按钮
+    SetGameObjectEvent(m_equipWingStr,OnEquipWingButton,m_panelObject);
+    -- 点击神翼化灵按钮
+    SetGameObjectEvent(m_wingSpiritStr,OnOpenWingSpiritPanel,m_panelObject);
+    -- 培养按钮
+    SetGameObjectEvent(m_ButtonPyOneStr,OnWingPyButtonOneClick,m_panelObject);
+    SetGameObjectEvent(m_ButtonPyTenStr,OnWingPyButtonTenClick,m_panelObject);
+    -- 突破按钮
+    SetGameObjectEvent(m_ButtonLvlUpStr,OnWingLvlUpClick,m_panelObject);
+
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, OnItemGetWayClick, m_panelObject);
+    end
+end
+function OnItemGetWayClick(e)
+    local selectTag = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    GetWayPanel.Show(m_ItemDataId,ENUMPANELID.ENUM_PANEL_WINGPANEL);
+end
+-- 左侧翅膀图标数据初始化
+function OnWingCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local culInfo = data;
+    local culLevel = G_UserInfo.RoleAttribute.CultivateLv;
+    local isLock = culLevel < culInfo.AttributeLv;
+    local isWear = G_UserInfo.RoleAttribute.FashionWingId == culInfo.Id;
+    SetGameObjectState("Equip", true, go);
+    SetGameObjectState("Lock", isLock == true, go);
+    SetGameObjectState("Wear", isWear == true, go);
+    SetItemShowByExcelIDV04(go, "Equip", culInfo.ItemId, 1, false, 11, ENUMPANELID.ENUM_PANEL_WINGPANEL);
+    -- 是否显示小红点
+    if isLock then
+        SetGameObjectState("Equip"..Sprite_RedHint,false,go);
+    else
+        SetGameObjectState("Equip"..Sprite_RedHint,CanShowRedHit(cell.dataIndex+1),go);
+    end
+    
+end
+
+function CanShowRedHit(index)
+    
+    local player_data = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+    if player_data==nil or player_data[index] ==nil then 
+        return false;
+    end
+    local state = WingPanelManager.GetCurWingState(player_data[index]);
+
+    if state == ENUM_WING_STATE.LEVELMAX or state == ENUM_WING_STATE.LEVELLACK then
+        return false;
+    end
+    local idnexStr = (player_data[index].StageLvl<1  and player_data[index].Id.."01") or (WrapStageLvl(player_data[index]));
+    if tonumber(idnexStr)<=0 then
+        error("tonumber(idnexStr) 转化出错");
+        return;
+    end
+    local curWingCostInfo = WingPanelManager.GetWingCostById(tonumber(idnexStr));
+
+    local tables = WingPanelManager.GetCurWingCostByState(state,curWingCostInfo);
+
+    if #tables >0 then
+        return WingPanelManager.IsEnoughCostByWingId(tables);
+    end
+    return false;
+end
+-- 左侧翅膀图标点击事件
+function OnWingCloneClick(listView, cell, go)
+    m_leftSelect = cell.dataIndex+1;
+    error("m_WingsTotalDataCfgs[m_leftSelect]:-->"..m_WingsTotalDataCfgs[m_leftSelect].Id);
+    if m_WingsTotalDataCfgs[m_leftSelect] ~=nil then
+        local modeid = m_WingsTotalDataCfgs[m_leftSelect].Modelres;
+        ChangePlayerWing(modeid);
+        SetEquipButtonState();
+    end
+    ReportManager.RequestReportPanel(10334);
+    -- 设置右侧展示的属性
+    InitRightContent();
+end
+-- 根据当前翅膀数据设置 equip按钮状态
+function SetEquipButtonState()
+    local curWingData = m_WingsTotalDataCfgs[m_leftSelect];
+    if curWingData ==nil then
+        return;
+    end
+    local culLevel = G_UserInfo.RoleAttribute.CultivateLv;
+    local isLock = culLevel < curWingData.AttributeLv;
+    error("当前玩家时装id-->"..G_UserInfo.RoleAttribute.FashionWingId);
+    local isWear = G_UserInfo.RoleAttribute.FashionWingId == curWingData.Id;
+    
+    if isLock==false then
+        SetGameObjectState(m_equipWingStr,true,m_panelObject);
+        local txt,txt1 ;
+        if isWear then
+            m_CurWingStateType = 2;
+            txt = CCommonTool.GetTxtData(156).m_str;
+            txt1 = CCommonTool.GetTxtData(56216).m_str;
+        else
+            m_CurWingStateType = 1;
+            txt = CCommonTool.GetTxtData(797).m_str;
+            txt1 = CCommonTool.GetTxtData(56215).m_str;
+        end
+        SetLabelContent(m_equipBtnLabStr,txt,m_panelObject);
+        SetLabelContent(m_equipBtnLab1Str,txt1,m_panelObject);
+    else
+        m_CurWingStateType = -1;
+        SetGameObjectState(m_equipWingStr,false,m_panelObject);
+    end
+
+    if m_leftUIListViewComp ~=nil then  
+        m_leftUIListViewComp:Refresh();   -- 会重新调用一次:Init方法
+    end
+end
+-- 点击装备翅膀按钮
+function OnEquipWingButton()
+    local state = nil;
+    if m_CurWingStateType == 1 then
+       state = FashionManager.WEAR_STATE;
+    elseif m_CurWingStateType == 2 then
+        state =FashionManager.OFF_STATE;
+    end
+
+    local data = {
+            Type = FASHION_WING_TYPE,
+            State = state,
+            ExcelId = m_WingsTotalDataCfgs[m_leftSelect].Id
+        };
+    FashionProtocol.RequestFashionOperate(data);
+    ReportManager.RequestReportPanel(10335);
+end
+function InitShow()
+    InitLeftContent();
+    InitRightContent();
+    InitPlayerModel();
+    m_isJumpPanelSave = false;
+end
+-- 左侧ui内容
+function InitLeftContent()
+    --从wing.数据表中取相应区间的翅膀数据
+    if m_WingsTotalDataCfgs==nil or #m_WingsTotalDataCfgs<=0 then
+        m_WingsTotalDataCfgs = {};
+        local minId = -1;
+        local min_Id = CCommonTool.GetRoleDateInfo(G_UserInfo.RoleAttribute.ProID).CultivateId;
+        local info = CCommonTool.GetRoleCultivateInfo(min_Id+WING_INDEX);
+        minId  = info.WingsId;
+        if minId <=0 then
+            return;
+        end
+        local max_id = minId + MAX_LEVEL;
+        for culId = minId, max_id do
+            local culInfo = WingPanelManager.GetWingsSuitCfgById(culId);
+            table.insert(m_WingsTotalDataCfgs, culInfo);
+        end
+    end
+
+    if #m_WingsTotalDataCfgs<=0 then
+        error("[lua]翅膀总表配置缺失，请核查wing配置！！！");
+        return;
+    end 
+    table.sort( m_WingsTotalDataCfgs, function(a,b)
+        return a.Value>b.Value;
+    end );
+
+    m_leftUIListViewComp:RemoveAll();
+
+    error("[lua]翅膀数据m_WingsTotalDataCfgs的长度-->"..#m_WingsTotalDataCfgs);
+
+    SetGameObjectState(m_equipWingStr,false,m_panelObject);
+
+    for index = 1, #m_WingsTotalDataCfgs do
+        --error("m_WingsTotalDataCfgs[index].Id-->"..m_WingsTotalDataCfgs[index].Id);
+        m_leftUIListViewComp:AddData(m_WingsTotalDataCfgs[index]);
+    end
+    InitLeftSelect();
+    SetShowSpiritRedHint();
+    --Hide3DModel();
+    --LoadModel(m_WingsTotalDataCfgs[m_leftSelect].modelres);
+end
+--设置点选的翅膀id
+function InitLeftSelect()
+    if m_isJumpPanelSave then
+        -- [1] 左侧选中的第几个 1开始
+        m_leftSelect = m_JumpPanelParamsTable[1];
+        -- [3] 左侧选中的第几个 的对于的翅膀ID
+        m_leftSelect_Id = m_JumpPanelParamsTable[2];
+        if m_leftSelect_Id ~= nil and m_leftSelect_Id > 0 then
+            for Index = 1,#m_WingsTotalDataCfgs do
+                if m_WingsTotalDataCfgs[Index].Id == m_leftSelect_Id then
+                    if m_leftSelect ~= Index then
+                        error("[lua]wing [1],[3]数据有问题或者 wing配置表有问题");
+                    end
+                    break;
+                end
+            end
+        end
+    else
+        m_leftSelect = 1;
+        --[[for Index = 1,#m_WingsTotalDataCfgs do
+            if m_WingsTotalDataCfgs[Index].Id == G_UserInfo.RoleAttribute.FashionWingId then
+                m_leftSelect = Index;
+                break;
+            end
+        end]]
+    end
+    m_leftUIListViewComp:LookAt(m_leftSelect - 1,true);
+    --m_leftUIListViewComp:LookAt(0,true);
+    SetEquipButtonState();
+end
+-- 加载玩家模型
+function InitPlayerModel()
+    local buffer = ByteBuffer.New();  
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL);   -- ENUM_PANEL_CULTIVATECHANGEPANEL进阶的    
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 缓存进阶动画模型
+function SaveAnimator(animator)
+    m_animator = animator;
+    --error("[Lua] 缓存动画模型");
+    m_PlayerChangeEquip = animator.gameObject:GetComponent("CPlayerChangeEquip");
+end
+function ChangePlayerWing(modeId)
+    if m_PlayerChangeEquip ~= nil then
+        --error("[lua]想要跟换翅膀的模型id：-->"..modeId);
+        m_PlayerChangeEquip:SetUIFashion(4, modeId, true);
+    end
+end
+
+-- 删除3d模型
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL);
+end
+function WrapStageLvl(play_data)
+    --error("play_data.StageLvl:"..play_data.StageLvl.."  play_data.Id:"..play_data.Id);
+    if play_data.StageLvl<MAX_MAXLVL then
+        return play_data.Id.."0"..play_data.StageLvl;
+    end
+    return play_data.Id..play_data.StageLvl;
+end
+-- 右侧ui内容
+function InitRightContent()
+    m_LeftPlayerWingInfos = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+    if m_LeftPlayerWingInfos == nil or #m_LeftPlayerWingInfos<=0 then
+        --error("[lua]翅膀数据为空！！！请与sever沟通");
+        m_LeftPlayerWingInfos = {};
+    end
+    local wingData = m_WingsTotalDataCfgs[m_leftSelect];
+    --当前翅膀数据（id，阶数，培养等级）
+    local curPlayerWingInfo = m_LeftPlayerWingInfos[m_leftSelect];
+    if curPlayerWingInfo ==nil and wingData~=nil then
+        --说明是未解锁
+        curPlayerWingInfo = {
+            Id = wingData.Id,
+            StageLvl = 0,
+            FosterLvl = 0,
+        };
+        
+    end
+
+    -- 當前翅膀的名稱
+    local curName =  CCommonTool.GetTxtData(wingData.Name1).m_str;
+    -- 设置翅膀名称
+    SetLabelContent(m_rightWingNameStr, curName, m_panelObject);
+    local curStageLvl = curPlayerWingInfo.StageLvl;
+    local curFosterLvl = curPlayerWingInfo.FosterLvl;
+    local wingState = nil;
+    if curStageLvl<1 then
+
+        wingState = ENUM_WING_STATE.LEVELLACK; --未解锁
+
+    elseif curStageLvl<wingData.NumMax then             --10
+
+            if curFosterLvl<wingData.QualityId then   -- 培养等级 10
+
+                wingState = ENUM_WING_STATE.CANFOSTER; -- 可以培养
+            else
+                wingState = ENUM_WING_STATE.CANLEVELUP; -- 可以突破了
+            end
+    else 
+        if curFosterLvl == wingData.QualityId then
+            wingState = ENUM_WING_STATE.LEVELMAX;      -- 已经到达最大阶段
+        else
+            wingState = ENUM_WING_STATE.CANFOSTER; -- 可以培养
+        end
+       
+    end
+    -- 对应翅膀id的配置数据块
+    local idnexStr = (curPlayerWingInfo.StageLvl<1  and wingData.Id.."01") or (WrapStageLvl(curPlayerWingInfo));
+    if tonumber(idnexStr)<=0 then
+        error("tonumber(idnexStr) 转化出错");
+        return;
+    end
+    error("idnexStr-->"..idnexStr.." wingData.Id-->"..wingData.Id);
+    -- 當前id的翅膀的培養數據 
+    local curWingAttrData,curWingCostData = WingPanelManager.GetWingAttrCfgInLuaById(wingData.Id,tonumber(idnexStr));
+
+    if curWingAttrData ==nil or curWingCostData ==nil then
+        error("[lua]翅膀属性培养，消耗配置表缺失，请核查lua 配置表！！！")
+        return;
+    end
+
+    local num_stage ;
+    if wingState==ENUM_WING_STATE.LEVELLACK  then
+        --翅膀阶数
+        local txt = GetTextToId(905);
+        SetLabelContent(m_rightWingStageStr, txt, m_panelObject);
+        -- 翅膀战斗力
+        SetLabelContent(m_rightWingPowerStr,"+0",m_panelObject);
+        --设置培养等级数
+        for i = 1, 10 do
+            SetGameObjectState(m_LevelGridStr .. i, false, m_panelObject);
+        end
+        local needlvl = -1;
+        local value = -1;
+        local attrType = -1
+        -- 设置普通属性显示
+        for index=1,3 do
+            needlvl,attrType,value = GetNormalAttrByIndex(index,curWingAttrData);
+
+            SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive, false, m_panelObject);
+            SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightNotActive, true, m_panelObject);
+            SetLabelContent(m_rightFosterAttrStr .. index .. m_rightNotActive .. m_rightLabelStr,string_format(GetTextToId(1074),needlvl),m_panelObject);
+            -- 普通属性颜色，名称
+            SetLabelColor(m_rightFosterAttrStr .. index .. m_rightAttrNameStr, "807F7E", m_panelObject);
+            SetLabelContent(m_rightFosterAttrStr .. index .. m_rightAttrNameStr,CCommonTool.GetAttrNameByAttrID(attrType),m_panelObject);
+        end
+        -- 设置特殊属性显示
+        for index=1,4 do
+            needlvl,attrType,value = GetSpecialAttrByIndex(index,curWingAttrData);
+            --特性1
+            SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightLabelStr, "807F7E", m_panelObject);
+            -- 特殊属性颜色，名称（基础物攻）
+            SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrNameStr, "807F7E", m_panelObject);
+            SetLabelContent(m_rightSpecificAttrStr .. index .. m_rightAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrType), m_panelObject);
+            --+30%
+            SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrValueStr, "807F7E", m_panelObject);
+            local attrInfo = CCommonTool.GetAttrIndexInfo(attrType);
+            if attrInfo.Ratio < 1 then
+                local valuePercent = attrInfo.Ratio * value;
+                AttrSingleValue = string.format("%1d", valuePercent * 100).."%";
+            end
+            SetLabelContent(m_rightSpecificAttrStr .. index .. m_rightAttrValueStr, "+"..value, m_panelObject);
+            --1阶解锁
+            SetGameObjectState(m_rightSpecificAttrStr .. index .. m_rightNotActive, true, m_panelObject);
+            SetLabelContent(m_rightSpecificAttrStr .. index .. m_rightNotActive..m_rightLabelStr, string_format(GetTextToId(1074),needlvl), m_panelObject);
+        end
+        
+        --设置右下底部
+        SetGameObjectState(m_maxLevelStr,true,m_panelObject);
+        --SetLabelContent(m_maxLevelStr..m_rightLabelStr,GetTextToId(948) , m_panelObject);--未解锁
+        -- 设置显示的解锁文字   --
+        local txt = string_format(GetTextToId(56222),GetTextToId(wingData.Name));
+        SetLabelContent(m_maxLevelLblStr, txt, m_panelObject);
+        --道具
+        SetGameObjectState(m_notMaxLvlItemsStr,false,m_panelObject);
+        --培养按钮
+        SetGameObjectState(m_notMaxLvlFosterStr,false,m_panelObject);
+        SetGameObjectState(m_notMaxLvlBreachStr,false,m_panelObject);
+       
+    else
+
+        --翅膀阶数
+        SetLabelContent(m_rightWingStageStr, string_format(GetTextToId(8040),curStageLvl), m_panelObject);
+        -- 翅膀战斗力
+        SetLabelContent(m_rightWingPowerStr,"+"..CalcMountFightValue(curPlayerWingInfo),m_panelObject);
+        if wingState == ENUM_WING_STATE.LEVELMAX then
+             for i = 1, 10 do
+                SetGameObjectState(m_LevelGridStr .. i, true, m_panelObject);
+            end
+        else
+            for i=1,10 do
+
+            if i>curFosterLvl then
+                SetGameObjectState(m_LevelGridStr .. i, false, m_panelObject);
+            else
+                SetGameObjectState(m_LevelGridStr .. i, true, m_panelObject);
+            end
+        end
+        end
+        
+        local needlvl = -1;
+        local value = -1;
+        local attrType = -1
+        -- 设置普通属性显示
+        local valueTable = GetAttrValueByWingInfo(curPlayerWingInfo);
+        if valueTable ==nil then
+            error("[lua]..valueTable..为nil");
+            return;
+        end
+        for index=1,3 do
+            needlvl,attrType = GetNormalAttrByIndex(index,curWingAttrData);
+            --已激活
+            if curStageLvl>=needlvl then
+                SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive, true, m_panelObject);
+                SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightNotActive, false, m_panelObject);
+                -- 普通属性颜色，名称
+                SetLabelColor(m_rightFosterAttrStr .. index .. m_rightAttrNameStr, "FFFED6", m_panelObject);
+                SetLabelContent(m_rightFosterAttrStr .. index .. m_rightAttrNameStr,CCommonTool.GetAttrNameByAttrID(attrType),m_panelObject);
+                -- 当前属性值
+                SetLabelContent(m_rightFosterAttrStr .. index ..m_rightActive.. m_rightAttrValueStr, valueTable[attrType].Cur, m_panelObject);
+                -- 下一级属性值
+                SetLabelContent(m_rightFosterAttrStr .. index ..m_rightActive.. m_rightActiveNextValueStr, valueTable[attrType].Cur+valueTable[attrType].Value, m_panelObject);
+                -- 增加的值
+                SetLabelContent(m_rightFosterAttrStr .. index ..m_rightActive.. m_rightActiveAddValueStr, valueTable[attrType].Value, m_panelObject);
+            -- 未激活
+            else
+                SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive, false, m_panelObject);
+                SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightNotActive, true, m_panelObject);
+                SetLabelContent(m_rightFosterAttrStr .. index .. m_rightNotActive .. m_rightLabelStr,string_format(GetTextToId(1074),needlvl),m_panelObject);
+                -- 普通属性颜色，名称
+                SetLabelColor(m_rightFosterAttrStr .. index .. m_rightAttrNameStr, "807F7E", m_panelObject);
+                SetLabelContent(m_rightFosterAttrStr .. index .. m_rightAttrNameStr,CCommonTool.GetAttrNameByAttrID(attrType),m_panelObject);    
+            end
+            if wingState==ENUM_WING_STATE.LEVELMAX then  -- 如果满阶隐藏
+                SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive.."/Add", false, m_panelObject);
+            else
+                SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive.."/Add", true, m_panelObject);
+
+                if wingState==ENUM_WING_STATE.CANLEVELUP then -- 突破
+                    SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive.."/Add/Sprite", false, m_panelObject);
+                    SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive.."/Add/Label_AddValue", false, m_panelObject);
+                else
+                    SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive.."/Add/Sprite", true, m_panelObject);
+                    SetGameObjectState(m_rightFosterAttrStr .. index .. m_rightActive.."/Add/Label_AddValue", true, m_panelObject);
+                end
+            end
+        end
+        -- 设置特殊属性显示
+        for index=1,4 do
+            needlvl,attrType,value = GetSpecialAttrByIndex(index,curWingAttrData);
+            
+            SetLabelContent(m_rightSpecificAttrStr .. index .. m_rightAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrType), m_panelObject);
+           
+            local attrInfo = CCommonTool.GetAttrIndexInfo(attrType);
+            if attrInfo.Ratio < 1 then
+                local valuePercent = attrInfo.Ratio * value;
+                AttrSingleValue = string.format("%1d", valuePercent * 100).."%";
+            end
+            SetLabelContent(m_rightSpecificAttrStr .. index .. m_rightAttrValueStr, "+"..value, m_panelObject);
+            --1阶解锁
+            if curStageLvl>=needlvl then
+                --特性1
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightLabelStr, "FFEE78", m_panelObject);
+                -- 特殊属性颜色，名称（基础物攻）
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrNameStr, "FFEE78", m_panelObject);
+                SetGameObjectState(m_rightSpecificAttrStr .. index .. m_rightNotActive, false, m_panelObject); --A0A9B5
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrValueStr, "A0A9B5", m_panelObject);
+                 --+30%
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrValueStr, "A0A9B5", m_panelObject);
+            else
+                --特性1
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightLabelStr, "807F7E", m_panelObject);
+                -- 特殊属性颜色，名称（基础物攻）
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrNameStr, "807F7E", m_panelObject);
+                SetGameObjectState(m_rightSpecificAttrStr .. index .. m_rightNotActive, true, m_panelObject);
+                SetLabelContent(m_rightSpecificAttrStr .. index .. m_rightNotActive..m_rightLabelStr, string_format(GetTextToId(1074),needlvl), m_panelObject);
+                --
+                SetLabelColor(m_rightSpecificAttrStr .. index .. m_rightAttrValueStr, "807F7E", m_panelObject);
+            end
+            
+            --[[if wingState==ENUM_WING_STATE.LEVELMAX then  -- 如果满阶隐藏
+                SetGameObjectState(m_rightSpecificAttrStr .. index .. m_rightNotActive, false, m_panelObject);
+            else
+                SetGameObjectState(m_rightSpecificAttrStr .. index .. m_rightNotActive, true, m_panelObject);
+            end]]
+
+        end
+         --设置右下底部
+         --CANFOSTER = 1,    -- 可以培养
+        --CANLEVELUP = 2,   -- 可以突破
+        --LEVELMAX = 3,     -- 最大阶级
+        --LEVELLACK = 4,    -- 还未解锁
+         if wingState==ENUM_WING_STATE.LEVELMAX then
+
+            SetGameObjectState(m_maxLevelStr,true,m_panelObject);
+            SetLabelContent(m_maxLevelStr..m_rightLabelStr,GetTextToId(280) , m_panelObject);--未解锁
+            --道具
+            SetGameObjectState(m_notMaxLvlItemsStr,false,m_panelObject);
+            --培养按钮
+            SetGameObjectState(m_notMaxLvlFosterStr,false,m_panelObject);
+            SetGameObjectState(m_notMaxLvlBreachStr,false,m_panelObject);
+        elseif wingState ==ENUM_WING_STATE.CANLEVELUP then
+            SetGameObjectState(m_maxLevelStr,false,m_panelObject);
+            --道具
+            SetGameObjectState(m_notMaxLvlItemsStr,true,m_panelObject);
+            --培养按钮
+            SetGameObjectState(m_notMaxLvlFosterStr,false,m_panelObject);
+            SetGameObjectState(m_notMaxLvlBreachStr,true,m_panelObject);
+
+            SetCostItemContent(wingState,curWingCostData);
+        elseif wingState== ENUM_WING_STATE.CANFOSTER then
+             SetGameObjectState(m_maxLevelStr,false,m_panelObject);
+            --道具
+            SetGameObjectState(m_notMaxLvlItemsStr,true,m_panelObject);
+            --培养按钮
+            SetGameObjectState(m_notMaxLvlFosterStr,true,m_panelObject);
+            SetGameObjectState(m_notMaxLvlBreachStr,false,m_panelObject);
+
+            SetCostItemContent(wingState,curWingCostData);
+        end
+    end    
+end 
+-- 设置道具显示table
+function SetCostItemContent(wingState,costInfo)
+    if costInfo ==nil or wingState == nil then
+        error("costInfo==nil");
+        return;
+    end
+    local item_table = {};
+    if wingState == ENUM_WING_STATE.CANFOSTER then
+        local item1 = { };
+        item1.excelID = G_ItemToolTipDefine.BINDMONEY;
+        item1.Type = 1;
+        item1.Num = costInfo.GroomGold;
+        table.insert(item_table, item1);
+
+        local item2 = { };
+        item2.excelID = costInfo.GroomItem1;
+        m_ItemDataId = item2.excelID;
+        item2.Type = 0;
+        item2.Num = costInfo.GroomItem1Num;
+        table.insert(item_table, item2);
+    elseif wingState == ENUM_WING_STATE.CANLEVELUP then
+        local item1 = { };
+        item1.excelID = G_ItemToolTipDefine.BINDMONEY;
+        item1.Type = 1;
+        item1.Num = costInfo.UpgradeGold;
+        table.insert(item_table, item1);
+
+        local item2 = { };
+        item2.excelID = costInfo.UpgradeItem1;
+        m_ItemDataId = item2.excelID;
+        item2.Type = 0;
+        item2.Num = costInfo.UpgradeItem1Num;
+        table.insert(item_table, item2);
+    end
+    if #item_table>0 then
+        WingShowItem(item_table);
+    end
+end
+-- 需要道具的展示
+function WingShowItem(itemTable)
+
+    for Index = 1, #itemTable do
+        SetSpriteApptitudeV04(m_notMaxLvlItems2Str .. Index .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_notMaxLvlItems2Str .. Index .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteByAtlasID(m_notMaxLvlItems2Str .. Index .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(itemTable[Index].excelID), m_panelObject, true);
+        SetItemToolTipsEvent(m_panelObject, m_notMaxLvlItems2Str .. Index, ENUMPANELID.ENUM_PANEL_WINGPANEL, false, itemTable[Index].excelID);
+        if itemTable[Index].Type == 1 then
+            SetLabelContent(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, itemTable[Index].Num, m_panelObject);
+            SetGameObjectState(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, false, m_panelObject);
+            if G_UserInfo.BindCoin < itemTable[Index].Num then
+                SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                m_CoinIsEnough = false;
+            else
+                m_CoinIsEnough = true;
+                SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+            end
+        elseif itemTable[Index].Type == 0 then
+            local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable[Index].excelID);
+            m_ItemDataId = itemTable[Index].excelID;
+            SetLabelContent(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, hasNum .. "/" .. itemTable[Index].Num, m_panelObject);
+            if hasNum >= itemTable[Index].Num then
+                SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+                SetGameObjectState(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, false, m_panelObject);
+                m_MatIsEnough = true;
+            else
+                SetLabelColor(m_notMaxLvlItems2Str .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                SetGameObjectState(m_notMaxLvlItems2Str .. Index .. m_itemGetsWay, true, m_panelObject);
+                m_MatIsEnough = false;
+            end
+        end
+        SetGameObjectState(m_notMaxLvlItems2Str .. Index, true, m_panelObject);
+        SetItemToolTipsEvent(m_panelObject, m_notMaxLvlItems2Str .. Index, ENUMPANELID.ENUM_PANEL_WINGPANEL, false, itemTable[Index].excelID);
+    end
+    for Index = #itemTable + 1, 3 do
+        SetGameObjectState(m_notMaxLvlItems2Str .. Index, false, m_panelObject);
+    end
+    m_itemsUITableComp:Reposition();
+
+end
+--根据阶数，培养等级数得到当前属性值
+function GetAttrValueByWingInfo(player_wingData)
+    if player_wingData == nil then
+        return nil;
+    end
+    local values_Table = {};
+     -- 多少阶
+    local cur_StageLevel = player_wingData.StageLvl;
+    -- 多少培养等级
+    local cur_FosterLvl = player_wingData.FosterLvl;
+    local wingData = m_WingsTotalDataCfgs[m_leftSelect];
+    local wingAttrData = WingAttrTable.Get(wingData.Id);
+    --成长属性（普通）
+    for Index = 1,3 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetNormalAttrByIndex(Index, wingAttrData);
+        if cur_StageLevel >= activeLevel then
+            local value =((cur_StageLevel - activeLevel) * 10 + cur_FosterLvl) * AttrSingleValue;
+            values_Table[AttrIndex] = {};
+            values_Table[AttrIndex].Cur = value;
+            values_Table[AttrIndex].Value = AttrSingleValue;
+        end
+    end
+    -- 非成长属性（特殊）
+   --[[ for Index = 1, 4 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetSpecialAttrByIndex(Index, mountAttrData);
+        if cur_FosterLvl >= activeLevel then
+            local value =((cur_FosterLvl - activeLevel) * 10 + cur_FosterLvl) * AttrSingleValue;
+            values_Table[AttrIndex] = value;
+        end
+    end]]
+    return values_Table;
+end
+
+-- 计算翅膀战斗力
+function CalcMountFightValue(player_wingData)
+    if player_wingData == nil then
+        error("player_wingData == nil")
+        return 0;
+    end
+    local fightTable = {};
+    -- 多少阶
+    local cur_StageLevel = player_wingData.StageLvl;
+    -- 多少培养等级
+    local cur_FosterLvl = player_wingData.FosterLvl;
+    local wingData = m_WingsTotalDataCfgs[m_leftSelect];
+    local wingAttrData = WingAttrTable.Get(wingData.Id);
+    for Index = 1,3 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetNormalAttrByIndex(Index, wingAttrData);
+        if cur_StageLevel >= activeLevel then
+            local value =((cur_StageLevel - activeLevel) * 10 + cur_FosterLvl) * AttrSingleValue;
+            AddFightValueTable(fightTable,AttrIndex,value);
+        end
+    end
+    for Index = 1, 4 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetSpecialAttrByIndex(Index, wingAttrData);
+        if cur_StageLevel >= activeLevel then
+            AddFightValueTable(fightTable,AttrIndex,AttrSingleValue);
+        end
+    end
+
+    --[[for k,v,in pairs(fightTable) do
+        error("k-->"..k,"  v-->"..v);
+    end]]
+
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, false) + 0.5);
+    return curFightValue;
+end
+-- 战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end
+-- 根據idnex 得到普通屬性的階數限制
+-- 返回激活属性要求等级，属性类型，增加的属性值
+function GetNormalAttrByIndex(index,datas)
+    if index ==1 then
+        return datas.ActivateAttr1,datas.TypeAttr1,datas.ValueAttr1;
+    elseif index ==2 then
+        return datas.EffectTxtId,datas.TypeAttr2,datas.ValueAttr2;
+    elseif index ==3 then
+        return datas.ActivateAttr3,datas.TypeAttr3,datas.ValueAttr3;
+    end
+end
+--根据index得到特殊属性的阶数限制
+function GetSpecialAttrByIndex(index,datas)
+    if index ==1 then
+        return datas.ActivateSenior1,datas.TypeSenior1,datas.ValueSenior1;
+    elseif index ==2 then
+        return datas.ActivateSenior2,datas.TypeSenior2,datas.ValueSenior2;
+    elseif index ==3 then
+        return datas.ActivateSenior3,datas.TypeSenior3,datas.ValueSenior3;
+    elseif index ==4 then
+        return datas.ActivateSenior4,datas.TypeSenior4,datas.ValueSenior4;
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_leftSelect;  -- 当前选中第几个
+    if m_WingsTotalDataCfgs[m_leftSelect] ~= nil then
+        jumpParamsTable[2] = m_WingsTotalDataCfgs[m_leftSelect].Id;   --当前选中第几个的wing_id
+    end
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+-- 是否可以发送server 请求
+function IsCanSendServerMsg()
+
+    if m_MatIsEnough and m_CoinIsEnough then
+        return true;
+    end
+
+    return false;
+end
+
+function OnWingPyButtonTenClick(times)
+    if IsCanSendServerMsg() == false then
+        ShowSystemFlowTips(9601);
+        error("金钱或材料不足！");
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_WING_PENGYANG);
+    buffer:WriteInt(m_WingsTotalDataCfgs[m_leftSelect].Id);
+    buffer:WriteByte(10);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+    ReportManager.RequestReportPanel(10336);
+end
+function OnWingPyButtonOneClick(times)
+
+    if IsCanSendServerMsg() == false then
+        ShowSystemFlowTips(9601);
+        error("金钱或材料不足！");
+        return;
+    end
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_WING_PENGYANG);
+    buffer:WriteInt(m_WingsTotalDataCfgs[m_leftSelect].Id);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+    ReportManager.RequestReportPanel(10337);
+end
+function OnWingLvlUpClick()
+
+    if IsCanSendServerMsg() == false then
+        ShowSystemFlowTips(9601);
+        error("金钱或材料不足！");
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_WING_LEVELUP );
+    buffer:WriteInt(m_WingsTotalDataCfgs[m_leftSelect].Id);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+    ReportManager.RequestReportPanel(10338);
+end
+-- 关闭按钮事件
+function OnCloseClick(e)
+    closePanel(ENUMPANELID.ENUM_PANEL_WINGPANEL);
+end
+-- 打开神翼化灵界面
+function OnOpenWingSpiritPanel()
+    local isCan,needlvl = WingPanelManager.CanShowSpiritPanel();
+    if  isCan  then
+        createPanel(ENUMPANELID.ENUM_PANEL_WINGSPIRITPANEL,ENUMPANELID.ENUM_PANEL_WINGPANEL);
+    else
+        error("神翼总培养等级不足:"..needlvl);
+        ShowSystemFlowTips(9609, nil, {needlvl});
+    end
+    ReportManager.RequestReportPanel(10339);
+end
+-- 神翼化灵是否显示小红点
+function SetShowSpiritRedHint()
+    local isOpen,needlvl = WingPanelManager.CanShowSpiritPanel();
+    if isOpen == false then
+        return isOpen;
+    end
+    local isCanShowRed = WingSpiritPanel.CanFonsterSpirit();
+    if m_panelObject ~= nil  then
+        SetGameObjectState(m_wingSpiritStr..Sprite_RedHint,isCanShowRed,m_panelObject);
+    end
+    return isCanShowRed;
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新当前翅膀模型
+function RefreshWingModeShow(fashionType)
+    if fashionType == FASHION_WING_TYPE then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL) == 1 then
+            if m_PlayerChangeEquip ~= nil then
+                local fashionWingId = G_UserInfo.RoleAttribute.FashionWingId;
+                error("刷新翅膀模型时 翅膀模型id-->"..fashionWingId);
+                if fashionWingId > 0 then
+                    local fashionInfo = WingTable.Get(fashionWingId);
+                    if fashionInfo ~= nil then
+                        local modelId = fashionInfo.Modelres;
+                        m_PlayerChangeEquip:SetUIFashion(FASHION_WING_TYPE, modelId, true);
+                    end
+                else
+                    m_PlayerChangeEquip:SetUIFashion(FASHION_WING_TYPE, 0, true);
+                end
+                SetEquipButtonState();
+            end
+        end
+    end
+end
+-- server返回培养，进阶数据时刷新
+function RefreshWingCostShow()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL) == 1 then
+
+        if m_leftUIListViewComp ~=nil then  
+            m_leftUIListViewComp:Refresh();   -- 会重新调用一次:Init方法
+        end
+        InitRightContent();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.GOD_WING,WingPanel.IsShowRedHintRide());
+end
+-- 在 ServerSendInitAllSysDataOK调用即可
+function IsShowRedHintRide()
+
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_WING) == false then
+        return false;
+    end
+--    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL) == 1 then
+
+--        if m_leftUIListViewComp ~=nil  then  
+--            m_leftUIListViewComp:Refresh();   -- 会重新调用一次:Init方法
+--            InitRightContent();
+--        end
+--    end
+--    local player_tables = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+--    if player_tables ==nil or #player_tables<=0 then
+--        return false;
+--    end
+--    local wing_red = false;
+--    local spirit_red = false;
+--    for index=1,#player_tables do
+
+--        local curCanShow = CanShowRedHit(index);
+--        if curCanShow then
+--            wing_red =  true;
+--            break;
+--        end
+--    end
+--    if SetShowSpiritRedHint() == true then
+--        spirit_red =  true;
+--    end
+--    if spirit_red == true or wing_red == true then
+--        return true;
+--    end
+    return false;
+end

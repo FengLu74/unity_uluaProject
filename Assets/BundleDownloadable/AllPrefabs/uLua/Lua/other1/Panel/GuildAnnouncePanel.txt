@@ -1,0 +1,244 @@
+﻿module('GuildAnnouncePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'Content/GuildAnnouncePanel';
+---------------------------------------label路径---------------------------------------
+-- 剩余字数
+local m_RemainCountPath = "Right/RemainCount";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 放弃按钮
+local m_CancelButtonPath = "Right/CancelButton";
+-- 保存按钮
+local m_SaveButtonPath = "Right/SaveButton";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 公告标签
+local m_1ToggleNoticePath = "Left/1Toggle_Notice";
+-- 宣言标签
+local m_2ToggleDeclarationPath = "Left/2Toggle_Declaration";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 公告输入框
+local m_NoticeInputPath = "Right/NoticeInput";
+-- 宣言输入框
+local m_DeclarationInputPath = "Right/DeclarationInput";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 剩余次数
+local m_RemainCount = nil;
+-- 公告输入框
+local m_NoticeInput = nil;
+-- 宣言输入框
+local m_DeclarationInput = nil;
+
+--当前选中的标签
+local m_SelectTag = 1;
+local m_TagPaths = nil;
+local m_InputPaths = nil;
+local m_NoticeMaxLength = 0;
+local m_DeclarationMaxLength = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_SelectTag = 1;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_RemainCount = nil;
+	m_NoticeInput = nil;
+	m_DeclarationInput = nil;
+    m_SelectTag = 1;
+    m_TagPaths = nil;
+    m_InputPaths = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_RemainCount = GetComponent(m_PanelObject, m_RemainCountPath, "UILabel");
+    m_NoticeInput = GetComponent(m_PanelObject, m_NoticeInputPath, "UIInput");
+    m_DeclarationInput = GetComponent(m_PanelObject, m_DeclarationInputPath, "UIInput");
+    
+    m_NoticeMaxLength = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_NOTICE_MAX_CHAR_LIMITED):GetIntContent();
+    m_NoticeInput.defaultText = --[[输入公会公告]]CCommonTool.GetTxtData(1160).m_str;
+    m_NoticeInput.characterLimit = m_NoticeMaxLength;
+    m_NoticeInput.gameObject:SetActive(false);
+
+    m_DeclarationMaxLength = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_DECLARATION_MAX_CHAR_LIMITED):GetIntContent();
+    m_DeclarationInput.defaultText = --[[输入公会宣言]]CCommonTool.GetTxtData(1161).m_str;
+    m_DeclarationInput.characterLimit = m_DeclarationMaxLength;
+    m_DeclarationInput.gameObject:SetActive(false);
+
+    m_TagPaths = {m_1ToggleNoticePath, m_2ToggleDeclarationPath};
+    m_InputPaths = {m_NoticeInputPath, m_DeclarationInputPath};
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_1ToggleNoticePath, On1ToggleNoticeClick, m_PanelObject);
+	SetGameObjectEvent(m_2ToggleDeclarationPath, On2ToggleDeclarationClick, m_PanelObject);
+	SetGameObjectEvent(m_CancelButtonPath, OnCancelButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_SaveButtonPath, OnSaveButtonClick, m_PanelObject);
+    EventDelegate.Add(m_NoticeInput.onChange, EventDelegate.New(OnNoticeInputChange));
+    EventDelegate.Add(m_DeclarationInput.onChange, EventDelegate.New(OnDeclarationInputChange));
+end
+
+-- 初始化显示信息
+function InitShow()
+    SelectTag(m_SelectTag);
+end
+
+function SelectTag(index)
+    for i, path in ipairs(m_TagPaths) do
+        if i == index then
+            SetGameObjectState(path .. "/Active", true, m_PanelObject);
+            SetGameObjectState(path .. "/Deactive", false, m_PanelObject);
+            SetGameObjectState(m_InputPaths[i], true, m_PanelObject);
+        else
+            SetGameObjectState(path .. "/Active", false, m_PanelObject);
+            SetGameObjectState(path .. "/Deactive", true, m_PanelObject);
+            SetGameObjectState(m_InputPaths[i], false, m_PanelObject);
+        end
+    end
+    m_SelectTag = index;
+    InitInputValue();
+end
+
+function InitInputValue()
+    if m_SelectTag == 1 then
+        InitNoticeInput();
+    else
+        InitDeclarationInput();
+    end
+end
+
+function InitNoticeInput()
+    local content = nil;
+    if GuildManager.guildNotice then
+        content = GuildManager.guildNotice.content;
+    end
+    if content == nil then
+        local noticeId = CCommonTool.GetDefineInfo(EDefineContentID.GUILD_DEFAULT_NOTICE):GetIntContent();
+        content = CCommonTool.GetTxtData(noticeId).m_str;
+    end
+    m_NoticeInput.value = content;
+    OnNoticeInputChange();
+end
+
+function InitDeclarationInput()
+    m_DeclarationInput.value = GuildManager.myGuild.announce;
+    OnDeclarationInputChange();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 公会标签点击事件
+function On1ToggleNoticeClick(gameObject)
+    SelectTag(1);
+end
+
+-- 宣言标签点击事件
+function On2ToggleDeclarationClick(gameObject)
+    SelectTag(2);
+end
+
+-- 公告输入框change事件
+function OnNoticeInputChange()
+    local length = strlen(m_NoticeInput.value);
+    m_RemainCount.text = string_format(--[[剩余{0}个字]]CCommonTool.GetTxtData(995).m_str, m_NoticeMaxLength - length);
+end
+
+-- 宣言输入框change事件
+function OnDeclarationInputChange()
+    local length = strlen(m_DeclarationInput.value);
+    m_RemainCount.text = string_format(--[[剩余{0}个字]]CCommonTool.GetTxtData(995).m_str, m_DeclarationMaxLength - length);
+end
+
+-- 取消按钮点击事件
+function OnCancelButtonClick(gameObject)
+    InitInputValue();
+end
+
+-- 保存按钮点击事件
+function OnSaveButtonClick(gameObject)
+    error("OnSaveButtonClick");
+    if m_SelectTag == 1 then
+        local content = m_NoticeInput.value;
+        if #content == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDINFO_ANNOUNCEMEMT_NOT_NULL);
+        elseif strlen(CCommonTool.IsLegitimacyByText(content,ENUM_SHILED_AREA.CHAT)) > 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_LLEGAL_CHARACTER);
+        elseif strlen(content) > m_NoticeMaxLength then
+            ShowSystemFlowTips(string_format(CCommonTool.GetTxtData(50426).m_str, m_NoticeMaxLength), 1);
+        else
+            GuildProtocol.RequestEditNotice(content);
+        end
+    else
+        local content = m_DeclarationInput.value;
+        if #content == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILDAFFAIRS_CONENT_NOT_NULL);
+        elseif string.len(CCommonTool.IsLegitimacyByText(content,ENUM_SHILED_AREA.GUILD)) > 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_LLEGAL_CHARACTER);
+        elseif strlen(content) > m_DeclarationMaxLength then
+            ShowSystemFlowTips(string_format(--[[[ff2b2b]宣言最多{0}字符]]CCommonTool.GetTxtData(1162).m_str, m_DeclarationMaxLength), 1);
+        else
+            GuildProtocol.RequestSaveProclamation(content);
+        end
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 更新宣言内容
+function RefreshDeclaration()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER) == 1 then
+        if m_PanelObject.activeInHierarchy == true then
+            InitDeclarationInput();
+        end
+    end
+end
+
+-- 更新公告内容
+function RefreshNotice()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_MANAGER) == 1 then
+        if m_PanelObject.activeInHierarchy == true then
+            InitNoticeInput();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {index = m_SelectTag};
+end
+
+function SetJumpCloseData(paramTable)
+    m_SelectTag = paramTable.index;
+end

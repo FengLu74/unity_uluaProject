@@ -1,0 +1,147 @@
+﻿module('VipPrivilegePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'VipPrivilegePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 至尊卡
+local m_TogglePath = "Sub_Top/Sub_Tabs/Toggle_";
+-- 钻石卡
+local m_TogglePath2 = "Sub_Top/Sub_Tabs/Toggle_2";
+-- 黄金卡
+local m_TogglePath3 = "Sub_Top/Sub_Tabs/Toggle_3";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 加注释
+local m_UIGridPath = "Sub_PrivilegeList/UIGrid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_UIGrid = nil;
+
+local m_selectTagNum = 1;
+local m_lastSelectTagNum = 1;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_UIGrid = nil;
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_VIP);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_UIGrid = GetComponent(m_PanelObject, m_UIGridPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_UIGrid:SetInitCallback(OnUIGridViewInit);
+    m_UIGrid:SetClickCallback(OnUIGridViewClick);
+
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_TogglePath..Index, OnTabClick, m_PanelObject);
+    end
+end
+
+-- 初始化显示信息
+function InitShow()
+    -- 初始化标签状态
+    for Index = 1, 3 do
+        SetButtonActiveState(Index, Index == m_selectTagNum)
+    end
+    InitVipPrivilege(m_selectTagNum);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 点击页签
+function OnTabClick(e)
+    local currentName = e.name;
+    local selectTagNum = tonumber(string.sub(currentName, 8));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        InitVipPrivilege(selectTagNum);
+        SetButtonActiveState(selectTagNum, true);
+        SetButtonActiveState(m_lastSelectTagNum, false);
+    end
+end
+
+-- 特权显示
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    for i = 1, 12 do
+        local num = data["VIPNum"..i];
+        if num > 0 then 
+            SetLabelContent("lb_"..i, num, go);
+        else
+            SetLabelContent("lb_"..i, "", go);
+        end
+        SetGameObjectState("lb_"..i.."/sp_Sign", num == 0, go);
+        SetGameObjectState("lb_"..i.."/sp_SignNo", num < 0, go);
+    end
+    SetLabelContent("lb_0", GetTextToId(data.TXT), go);
+end
+
+-- 加注释
+function OnUIGridViewClick(listView, cell, go)
+    
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 修改标签 
+function SetButtonActiveState(Index, actived)
+    SetGameObjectState(m_TogglePath..Index.."/Sprite_Deactive", not actived, m_PanelObject);
+    SetGameObjectState(m_TogglePath..Index.."/Sprite_Active", actived, m_PanelObject);
+end
+
+-- 显示特权d
+function InitVipPrivilege(Index)
+    local allData = VIPPrivilegeDisplayTable.GetAll();
+    if allData == nil then return end
+    local tempData = {};
+    for i,v in pairs(allData) do
+        if v.VIPCardID == Index then 
+            table.insert(tempData, v);
+        end
+    end
+    m_UIGrid:RemoveAll();
+    for i,v in pairs(tempData) do
+        m_UIGrid:AddData(v);
+    end
+    
+end

@@ -1,0 +1,15 @@
+﻿module("DrinkWinePanelProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 玩家剩余饮酒次数
+    network.Register(GMI_STOC_LEFTDRINKWINETIMES, OnLeftDrinkWineTimes);
+end
+
+-- 刷新成就信息
+function OnLeftDrinkWineTimes(protocolId, buffer)
+    local times = buffer:ReadInt();
+    DrinkWinePanel.RefreshLeftTimes(times);
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------

@@ -1,0 +1,160 @@
+﻿module('ActivityCalenderPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityCalenderPanel';
+---------------------------------------label路径---------------------------------------
+-- 星期
+local m_TitlePath = "Title";
+-- 活动名称
+local m_NamePath = "/Name";
+-- 活动时间
+local m_TimePath = "/Time";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonPath = "Content/CloseButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 选中
+local m_SelectPath = "Select";
+----------------------------------gameobject所在的路径---------------------------------
+-- 周一
+local m_Weekday1Path = "Content/Weekdays/Weekday1";
+-- 周二
+local m_Weekday2Path = "Content/Weekdays/Weekday2";
+-- 周三
+local m_Weekday3Path = "Content/Weekdays/Weekday3";
+-- 周四
+local m_Weekday4Path = "Content/Weekdays/Weekday4";
+-- 周五
+local m_Weekday5Path = "Content/Weekdays/Weekday5";
+-- 周六
+local m_Weekday6Path = "Content/Weekdays/Weekday6";
+-- 周日
+local m_Weekday7Path = "Content/Weekdays/Weekday7";
+-- 活动1
+local m_Activity1Path = "Activity1";
+-- 活动2
+local m_Activity2Path = "Activity2";
+-- 活动3
+local m_Activity3Path = "Activity3";
+-- 活动4
+local m_Activity4Path = "Activity4";
+-- 活动5
+local m_Activity5Path = "Activity5";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 周一
+local m_Weekday1 = nil;
+-- 周二
+local m_Weekday2 = nil;
+-- 周三
+local m_Weekday3 = nil;
+-- 周四
+local m_Weekday4 = nil;
+-- 周五
+local m_Weekday5 = nil;
+-- 周六
+local m_Weekday6 = nil;
+-- 周日
+local m_Weekday7 = nil;
+
+local m_WeekdayObjects = nil;
+local m_ActivityPaths = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Weekday1 = nil;
+	m_Weekday2 = nil;
+	m_Weekday3 = nil;
+	m_Weekday4 = nil;
+	m_Weekday5 = nil;
+	m_Weekday6 = nil;
+	m_Weekday7 = nil;
+    m_WeekdayObjects = nil;
+    m_ActivityPaths = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANAEL_ACTIVITYCALENDERPANEL);
+    m_Weekday1 = child(m_PanelObject, m_Weekday1Path).gameObject;
+    m_Weekday2 = child(m_PanelObject, m_Weekday2Path).gameObject;
+    m_Weekday3 = child(m_PanelObject, m_Weekday3Path).gameObject;
+    m_Weekday4 = child(m_PanelObject, m_Weekday4Path).gameObject;
+    m_Weekday5 = child(m_PanelObject, m_Weekday5Path).gameObject;
+    m_Weekday6 = child(m_PanelObject, m_Weekday6Path).gameObject;
+    m_Weekday7 = child(m_PanelObject, m_Weekday7Path).gameObject;
+
+    m_WeekdayObjects = {m_Weekday1,m_Weekday2,m_Weekday3,m_Weekday4,m_Weekday5,m_Weekday6,m_Weekday7};
+    m_ActivityPaths = {m_Activity1Path,m_Activity2Path,m_Activity3Path,m_Activity4Path,m_Activity5Path};
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_CloseButtonPath, OnCloseClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local list = CCommonTool.GetAllActivityWeeklyInfo();
+    local count = list.Count;
+    local weekday = ActivityManager.GetWeekday();
+    for i, go in ipairs(m_WeekdayObjects) do
+        local info = list[i-1];
+        SetLabelTextByID(m_TitlePath, info.WeekTextId, go);
+        SetLabelColor(m_TitlePath, i == weekday and "ffffff" or "9b9170", go);
+        SetGameObjectState(m_SelectPath, i == weekday, go);
+        for j, path in ipairs(m_ActivityPaths) do
+            local activityId = info["ActivityId"..j]
+            local actData = ActivityManager.GetActivity(activityId);
+            local visible = actData ~= nil;
+            SetGameObjectState(path, visible, go);
+            if visible then
+                SetLabelTextByID(path..m_NamePath, actData.info.Name, go);
+                SetLabelColor(path..m_NamePath, i == weekday and "ffffff" or "929292", go);
+                SetLabelTextByID(path..m_TimePath, info["TimeTextId"..j], go);
+                -- 策划改需求, 点击活动不跳转
+                --SetGameObjectEvent(path, function() OnActivityClick(activityId); end, go);
+            end
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANAEL_ACTIVITYCALENDERPANEL);
+end
+
+function OnActivityClick(activityId)
+    ActivityDetailPanel.Show(activityId);
+    closePanel(ENUMPANELID.ENUM_PANAEL_ACTIVITYCALENDERPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

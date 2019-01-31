@@ -1,0 +1,622 @@
+﻿module("BagProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 删除道具返回
+    network.Register(GMI_STOC_REMOVEUIITEM, RemoveItemReturn);
+    -- 添加道具
+    network.Register(GMI_STOC_ADDUIITEM, AddItemReturn);
+    -- 道具超链接
+    network.Register(GMI_STOC_QUERY_ITEM_INFO_RETURN, QueryItemInfo);
+    -- 物品在面板之间移动消息
+    network.Register(GMI_STOC_UPDATEUIITEMPOS, UpdateItemReturn);
+    -- 物品数量修改
+    network.Register(GMI_STOC_UPDATEITEMCONTAIN, UpdateItemNumReturn);
+    -- 更新物品信息
+    network.Register(GMI_STOC_UPDATEUIITEM, RefreshItemAlreadyExist);
+    -- 服务器通知删除背包所有信息
+    network.Register(GMI_STOC_PLAYER_CLEAR_BAG, ClearAllBag);
+    -- 背包格子解锁返回
+    network.Register(GMI_STOC_RETURN_BAGCELL_RESULT, BagCellOpen);
+    -- 通知客户端背包整理结果
+    network.Register(GMI_STOC_PANEL_SORT_DATA, BagSortOver);
+    -- 通知客户端背包初始化数据发送完成
+    network.Register(GMI_STOC_SENDBAGINIT_OK, BagInitOver);
+end
+
+-- 背包删除道具返回
+function RemoveItemReturn(protocolId, buffer)
+    -- error("RemoveItemReturn");
+    -- 操作的原因
+    local DeleteReason = buffer:ReadUShort();
+    -- 道具CRID
+    local DeleteItemID = buffer:ReadInt();
+    -- 面板号
+    local DeleteItemPanelID = buffer:ReadByte();
+    -- 面板上的位置
+    local DeleteItemPanelPos = buffer:ReadByte();
+    -- 道具的excelID
+    local item = G_BagMng:GetGoodsItem(DeleteItemID);
+    if item == nil then
+        error("删除道具失败，背包中没有此道具");
+        return;
+    end
+    local excelID = item.ExcelID;
+    G_BagMng:RemoveGoodsItem(item);
+    BagPanel.RemoveItemInBag(DeleteItemPanelID, DeleteItemPanelPos);
+    RoleBeyond3DPanel.InitEquipInfoOut();
+    -- 吃药数量检测
+    Main_RightBottom.RefreshUseMedNumOut(excelID);
+    -- 自动吃药检测
+    G_UseMedMng:AutoUpdateSettingMed(item);
+    -- 主界面进阶信息检测
+    Main_MiddleBottom.InitPlayerCultivate();
+    -- 道具移除调用红点检测
+    RedHintMng.ItemUpdate(excelID,DeleteItemPanelID);
+    local itemCategory = item:GetItemCategory();
+    if itemCategory == ItemCategory.IC_ActivityItem then
+        ActivityTimesItemPanel.RefreshItem(excelID);
+    end
+    if G_BagMng.IsBagDataInit then
+        RecommondUseItemPanel.RemoveItem(item.CRID);
+    end
+end
+
+-- 收到添加道具的信息
+function AddItemReturn(protocolId, buffer)
+    -- 读取道具的面板号
+    local panelType = buffer:ReadUShort();
+    -- 读取道具的数量
+    local ItemNum = buffer:ReadUShort();
+    local itemCrid = nil;
+    local excelID = nil;
+    local item = nil;
+    local petNextFightTime = nil;
+    if panelType == ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN then
+        if ItemNum > G_BagMng.BagCount then
+            error("Error(s发送的格子数大于c的格子数):::當前面板類型::" .. panelType .. ":::長度::" .. ItemNum);
+        else
+            Logger.Log("當前面板類型::" .. panelType .. ":::長度::" .. ItemNum);
+        end
+    end
+    for Index = 1, ItemNum do
+        item, petNextFightTime = ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_ADD);
+        if petNextFightTime ~= nil then
+            PetManager.m_aPetFightTimeData[item.PakID] = petNextFightTime;
+            error("posId:" .. item.PakID .. ", petNextFightTime:"..petNextFightTime);
+        end
+        G_BagMng:AddGoodsItem(item);
+        itemCrid = item.CRID;
+        excelID = item.ExcelID;
+    end
+    if G_BagMng.IsBagDataInit then
+        if nil ~= itemCrid and nil ~= excelID and nil ~= item then
+            -- 添加道具一定是一个个的加，不会一次性发多个，只有初始化才会
+            BagPanel.AddItemInBag(item);
+            if item.PanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+                RoleBeyond3DPanel.InitEquipInfoOut();
+            end
+            local itemCategory = item:GetItemCategory();
+            if itemCategory == ItemCategory.IC_MedBackItem or itemCategory == ItemCategory.IC_PlayerMedBackItem or itemCategory == ItemCategory.IC_StoreMedBackItem then
+                -- 自动吃药检测
+                G_UseMedMng:AddItemCheckUseMed(excelID);
+            elseif itemCategory == ItemCategory.IC_ActivityItem then
+                ActivityTimesItemPanel.RefreshItem(excelID);
+            end
+
+            -- 道具添加调用红点检测
+            RedHintMng.ItemUpdate(excelID,item.PanelPos);
+            if itemCategory == ItemCategory.IC_SpriteStoneItem then
+                -- 主界面进阶信息检测
+                Main_MiddleBottom.InitPlayerCultivate();
+            end
+            local itemType = item:GetItemType();
+            -- 先检测是否自动使用
+            if itemType == ITEMTYPE.IT_Prop then
+                local itemInfo = item:GetItemInfo();
+                if itemInfo ~= nil and itemInfo.AddInBagUse == 1 then
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_USEUIITEM);
+                    buffer:WriteUInt(G_UserInfo.RoleAttribute.CRID);
+                    buffer:WriteByte(item.PanelPos);
+                    buffer:WriteByte(item.PakID);
+                    buffer:WriteByte(1);
+                    G_NetWorkMng:SendMessage(buffer);
+                elseif itemInfo ~= nil and itemInfo.ShowRecommondPanel == 1 then
+                    -- 推荐使用道具
+                    RecommondUseItemPanel.CheckItem(itemCrid, excelID);
+                end
+            elseif itemType == ITEMTYPE.IT_Equip then
+                -- 推荐使用道具
+                RecommondUseItemPanel.CheckItem(itemCrid, excelID);
+            elseif itemType == ITEMTYPE.IT_Pet then 
+                -- 如果是宠物不管是否使用都提示获得
+                local petMainInfo = CCommonTool.GetPetMainInfo(excelID);
+                modelID = petMainInfo.AdultModelID;
+                modelName = GetTextToId(petMainInfo.NameTextID);
+                ShowOffPanel.ShowGetModel(modelID, modelName);
+            end
+        end
+    end
+    --新增道具-刷新 打开快捷购买界面的上个界面数据，有可优化地方当新增道具是消耗类型且是配置表中的道具才执行--start
+    if isQuickbuyItemByID(excelID) then
+        MaterialExchangePanel.RefreshNeedItem();
+    end
+end
+--根据excelID判定是否为快捷购买配置表中的道具
+function isQuickbuyItemByID(excelID)
+
+    if type(excelID) ~= 'number' or excelID <=0 then
+        return false;
+    end
+
+    if CCommonTool.GetQuickToBuyByExcelID(excelID)~=nil then
+        return true;
+    end
+    return false;
+end
+
+function QueryItemInfo(protocolId, buffer)
+    --读取64int 的Key
+    local n64Key = buffer:ReadInt64ToString();
+    local nItemBufferSize = buffer:ReadUShort();
+    -- 如果nItemBufferSize为0，那么说明未查找到
+    if nItemBufferSize > 0 then 
+        local item = nil;
+        item = ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_ONLY_SERIALIZE);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CHAT) == 1 then 
+            local paraTable = {};
+            paraTable.PanelID = ENUMPANELID.ENUM_PANEL_CHAT;
+            paraTable.IsRealItem = true;
+            paraTable.ItemData = item;
+            paraTable.IsEquiped = false;
+            paraTable.IsOtherPlayerEquip = false;
+            OnItemToolTipsPanelClick(nil,paraTable);
+        end
+    else
+        ShowSystemFlowTips(9612);
+    end
+end
+
+-- 外部调用更新道具位置的信息
+function UpdateItemReturn(protocolId, buffer)
+    -- 读取道具的数量
+    local ItemNum = buffer:ReadUShort();
+    -- 道具CRID
+    local ItemCRID1 = buffer:ReadInt();
+    -- 面板号
+    local ItemPanelID1 = buffer:ReadByte();
+    -- 面板上的位置
+    local ItemPanelPos1 = buffer:ReadByte();
+    if ItemNum == 1 then
+        -- 得到之前的面板号，位置号
+        local FormerInfo = G_BagMng:GetGoodsItem(ItemCRID1);
+        local FormerPanelPos = FormerInfo.PanelPos;
+        local FormerPakID = FormerInfo.PakID;
+        G_BagMng:UpdateItemPosOnlyOne(ItemCRID1, ItemPanelID1, ItemPanelPos1);
+        local BaseInfo = G_BagMng:GetGoodsItem(ItemCRID1);
+        -- 更新道具信息调用红点检测
+        if FormerPanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF or ItemPanelID1 == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            RedHintMng.RefreshItemInfo(BaseInfo.ExcelID, ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF);
+        end
+        if FormerPanelPos == ENUM_UI_PANEL.UI_PANEL_ITEM_PET or ItemPanelID1 == ENUM_UI_PANEL.UI_PANEL_ITEM_PET then
+            RedHintMng.RefreshItemInfo(BaseInfo.ExcelID, ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+        end
+        BagPanel.UpdateOneItemPos(FormerPanelPos, FormerPakID, ItemPanelID1, ItemCRID1);
+        if G_BagMng.IsBagDataInit then
+            RecommondUseItemPanel.RemoveItem(ItemCRID1);
+        end
+    elseif ItemNum == 2 then
+        local ItemCRID2 = buffer:ReadInt();
+        local ItemPanelID2 = buffer:ReadByte();
+        local ItemPanelPos2 = buffer:ReadByte();
+        G_BagMng:ChangeItemPos(ItemCRID1, ItemCRID2);
+        local BaseInfo = G_BagMng:GetGoodsItem(ItemCRID1);
+        local BaseInfo2 = G_BagMng:GetGoodsItem(ItemCRID2);
+        -- 更新道具信息调用红点检测
+        RedHintMng.RefreshItemInfo(BaseInfo.ExcelID, ItemPanelID1);
+        RedHintMng.RefreshItemInfo(BaseInfo2.ExcelID, ItemPanelID2);
+        BagPanel.UpdateTwoItemPos(ItemPanelID1, ItemCRID1, ItemPanelID2, ItemCRID2);
+        if G_BagMng.IsBagDataInit then
+            RecommondUseItemPanel.RemoveItem(ItemCRID1);
+            RecommondUseItemPanel.RemoveItem(ItemCRID2);
+        end
+    end
+    RoleBeyond3DPanel.InitEquipInfoOut();
+end
+
+-- 外部调用更新道具数量
+function UpdateItemNumReturn(protocolId, buffer)
+    -- error("UpdateItemNumReturn");
+    -- 道具的crid
+    local ItemCRID = buffer:ReadInt();
+    -- 道具格子的数目显示
+    local ItemNum = buffer:ReadByte();
+    local BaseInfo = G_BagMng:GetGoodsItem(ItemCRID);
+    if nil == BaseInfo then
+        error("client dosn't contain this equip:::which item CRID is::::" .. ItemCRID);
+        return;
+    end
+    local excelID = BaseInfo.ExcelID;
+    G_BagMng:UpdateItemNum(BaseInfo.PanelPos, BaseInfo.ExcelID, BaseInfo.ItemNum, ItemNum, false, false);
+    local isAdd = false;
+    if ItemNum > BaseInfo.ItemNum then
+        isAdd = true;
+    end
+    BaseInfo.ItemNum = ItemNum;
+    -- 技能界面货币信息更新
+    --DungeonInfoPanel.UpdateItemNum();
+    BagPanel.UpdateItemNum(BaseInfo.PanelPos, BaseInfo.PakID, ItemNum);
+    -- 吃药数量检测
+    Main_RightBottom.RefreshUseMedNumOut(excelID);
+    -- 道具数量更新调用红点检测
+    RedHintMng.ItemUpdate(excelID,BaseInfo.PanelPos);
+    -- 主界面进阶信息检测
+    Main_MiddleBottom.InitPlayerCultivate();
+    if isAdd then
+        if G_BagMng.IsBagDataInit then
+            local itemType = BaseInfo:GetItemType();
+            if itemType == ITEMTYPE.IT_Prop then
+                local itemInfo = BaseInfo:GetItemInfo();
+                if itemInfo ~= nil and itemInfo.AddInBagUse == 1 then
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_USEUIITEM);
+                    buffer:WriteUInt(G_UserInfo.RoleAttribute.CRID);
+                    buffer:WriteByte(BaseInfo.PanelPos);
+                    buffer:WriteByte(BaseInfo.PakID);
+                    buffer:WriteByte(1);
+                    G_NetWorkMng:SendMessage(buffer);
+                elseif itemInfo ~= nil and itemInfo.ShowRecommondPanel == 1 then
+                    -- 推荐使用道具
+                    RecommondUseItemPanel.CheckItem(BaseInfo.CRID, BaseInfo.ExcelID);
+                end
+            end
+        end
+    end
+    local itemCategory = BaseInfo:GetItemCategory();
+    if itemCategory == ItemCategory.IC_ActivityItem then
+        ActivityTimesItemPanel.RefreshItem(excelID);
+    end
+    if isQuickbuyItemByID(excelID) then
+        MaterialExchangePanel.RefreshNeedItem();
+    end
+end
+
+-- 更新道具信息
+function RefreshItemAlreadyExist(protocolId, buffer)
+    -- error("RefreshItemAlreadyExist");
+    local panelType = buffer:ReadUShort();
+    -- 读取道具的面板号
+    ItemNum = buffer:ReadUShort();
+    if ItemNum ~= 1 then error("道具更新信息消息结构有错误,发送的道具数量为::" .. ItemNum); end
+    local excelID = nil;
+    local panelNum = nil;
+    for Index = 1, ItemNum do
+        local item, petNextFightTime = ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_UPDATE);
+        if petNextFightTime ~= nil then
+            PetManager.m_aPetFightTimeData[item.PakID] = petNextFightTime;
+            error("posId:" .. item.PakID .. ", petNextFightTime:"..petNextFightTime);
+        end
+        BagPanel.RefreshItem(item.PanelPos, item.PakID, item);
+    end
+    -- 更新道具信息调用红点检测
+    RedHintMng.RefreshItemInfo(excelID, panelNum);
+end
+
+-- 背包开启格子消息处理
+function BagCellOpen(protocolId, buffer)
+    local ifSuccess = buffer:ReadByte();
+    if ifSuccess == 1 then
+        local bagCellNum = buffer:ReadByte();
+        G_TimerMng:RemoveTimeTask("BagMngUnlock");
+        local oldOpenCellNum = G_BagMng.BagCount;
+        local openNum = bagCellNum - 1 - G_BagMng.BagCount;
+        G_BagMng.BagCount = bagCellNum - 1;
+        G_BagMng.EmptyCellCount = G_BagMng.EmptyCellCount + openNum;
+        G_BagMng.UnlockTime = -1;
+        G_BagMng.IsUnlockingCell = false;
+        BagPanel.BagCellOpenOut(oldOpenCellNum);
+        BagPanel.RefreshBagRedHint();
+        BagPanel.AutoUnlock();
+    elseif ifSuccess == 2 then
+    end
+end
+
+-- 背包整理结束
+function BagSortOver(protocolId, buffer)
+    local hasNum = buffer:ReadByte();
+    local crid = nil;
+    local pos = nil;
+    local item = nil;
+    for index = 1, hasNum do
+        crid = buffer:ReadUInt();
+        pos = index - 1;
+        num = buffer:ReadByte();
+        item = G_BagMng:GetGoodsItem(crid);
+        item.PakID = pos;
+        G_BagMng:UpdateItemNum(item.PanelPos, item.ExcelID, item.ItemNum, num, false, false);
+        item.ItemNum = num;
+    end
+    local deleteNum = buffer:ReadByte();
+    for index = 1, deleteNum do
+        crid = buffer:ReadUInt();
+        item = G_BagMng:GetGoodsItem(crid);
+        G_BagMng:RemoveGoodsItem(item);
+    end
+    G_BagMng:BagSortOverRefreshPosUse(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, hasNum);
+    BagPanel.BagSortOver();
+end
+
+-- 清理背包所有信息
+function ClearAllBag(protocolId, buffer)
+    G_BagMng:ClearBagDataByServer();
+end
+
+-- 通知背包数据初始化完成
+function BagInitOver(protocolId, buffer)
+    G_BagMng.IsBagDataInit = true;
+    error("通知背包数据初始化完成")
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function ItemSerialize(buffer, Type)
+    ----------------------------新版本的道具信息begin
+    -------道具基础属性
+
+    local wCommonFlag = buffer:ReadUShort();
+    -- 道具基础数据Flag，对应枚举ENUM_UPDATEITEM_COMMON_FLAG       --2
+    local ItemCRID = buffer:ReadUInt();
+    -- 6
+    local item = nil;
+    if Type == ENUM_ITEM_SERIALIZE.ITEM_UPDATE then
+        item = G_BagMng:GetGoodsItem(ItemCRID);
+    elseif Type == ENUM_ITEM_SERIALIZE.ITEM_ADD then
+        item = ItemAttribute.New(0);
+        item.CRID = ItemCRID;
+    elseif Type == ENUM_ITEM_SERIALIZE.ITEM_ONLY_SERIALIZE then
+        item = ItemAttribute.New(0);
+        item.CRID = ItemCRID;
+    else
+        error("Type不存在" .. Type);
+    end
+    if item == nil then
+        error("道具序列化类型::"..Type.."得到的item是空");
+        return item;
+    end
+    item.ExcelID = buffer:ReadUInt();
+    -- 10
+    item.PanelPos = buffer:ReadByte();
+    -- 11
+    item.PakID = buffer:ReadByte();
+    -- 12
+    local ItemSingleNum = 1;
+    if bit:IsEnumFlagOpen(wCommonFlag, ENUM_UPDATEITEM_COMMON_FLAG.ENUM_UPDATEITEM_COMMON_FLAG_CONTAIN_IS_ONE) == false then
+        ItemSingleNum = buffer:ReadByte();
+        -- 13
+    end
+    if Type == ENUM_ITEM_SERIALIZE.ITEM_UPDATE then
+        G_BagMng:UpdateItemNum(item.PanelPos, item.ExcelID, item.ItemNum, ItemSingleNum, false, false);
+    elseif Type == ENUM_ITEM_SERIALIZE.ITEM_ADD then
+        --
+    elseif Type == ENUM_ITEM_SERIALIZE.ITEM_ONLY_SERIALIZE then
+        --
+    else
+        error("Type不存在" .. Type);
+    end
+    item.ItemNum = ItemSingleNum;
+    -- 是否绑定
+    item.ItemDealType = buffer:ReadByte();
+    -- 14
+    -- 升星等级
+    item.StarItemLevel = 0;
+    if bit:IsEnumFlagOpen(wCommonFlag, ENUM_UPDATEITEM_COMMON_FLAG.ENUM_UPDATEITEM_COMMON_FLAG_STAR_IS_ZERO) == false then
+        item.StarItemLevel = buffer:ReadByte();
+    end
+    -- 冶炼等级
+    item.LevelupItemLevel = 0;
+    if bit:IsEnumFlagOpen(wCommonFlag, ENUM_UPDATEITEM_COMMON_FLAG.ENUM_UPDATEITEM_COMMON_FLAG_UPDATELEVEL_IS_ZERO) == false then
+        item.LevelupItemLevel = buffer:ReadByte();
+    end
+    -- 道具来源
+    item.ItemOrigin = buffer:ReadUInt();
+    -- 18
+    -- 解锁时间(其实没啥用了，暂留，不知道以后是否有这种属性)
+    item.UnlockTime = buffer:ReadUInt();
+    -- 22
+    -- 道具交易冷却时间
+    item.SellChilling = buffer:ReadInt64();
+    -- 道具经验
+    item.Experience = 0;
+    if bit:IsEnumFlagOpen(wCommonFlag, ENUM_UPDATEITEM_COMMON_FLAG.ENUM_UPDATEITEM_COMMON_FLAG_EXP_IS_ZERO) == false then
+        item.Experience = buffer:ReadUInt();
+    end
+    -- 装备幸运值
+    item.CurrentForceLvTime = 0;
+    if bit:IsEnumFlagOpen(wCommonFlag, ENUM_UPDATEITEM_COMMON_FLAG.ENUM_UPDATEITEM_COMMON_FLAG_LUCK_IS_ZERO) == false then
+        item.CurrentForceLvTime = buffer:ReadUShort();
+        -- 26
+    end
+    -------2道具附加效果属性
+    local m_yIsHaveEquipAttr = buffer:ReadByte();
+    if m_yIsHaveEquipAttr == 1 then
+        -- 用这个控制属性个数
+        item:InitEquipAttribute();
+        local itemEquipAttrList = item.AllEquipAttribute;
+        local aItemEffectTypeFlag = { };
+        for i = ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_BEGIN, ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_NUM - 1 do
+            local dwValue = buffer:ReadUInt();
+            aItemEffectTypeFlag[i] = dwValue;
+        end
+        -- 控制属性ID值是否超过255
+        local wEffectFlag = buffer:ReadUShort();
+        -- 36
+        -- 存放属性数组
+        local equipRandomAttrClass = EquipRandomAttribute.New();
+        itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT] = equipRandomAttrClass;
+        local allEquipRandomAttrs = equipRandomAttrClass.EquipRandomAttrs;
+        -- 所有装备的随机属性
+        -- 随机属性(洗练)
+        -- 随机属性ID WORD
+        if bit:IsEnumFlagOpen(wEffectFlag, ENUM_UPDATEITEM_EFFECT_FLAG.ENUM_UPDATEITEM_EFFECT_FLAG_RANDOMEFFECTIDISBYTE) then
+            for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+                if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT], bit:_lshift(1, i)) then
+                    local attrID = buffer:ReadByte();
+                    allEquipRandomAttrs[i].EffectRandomAttrID = attrID;
+                else
+                    allEquipRandomAttrs[i].EffectRandomAttrID = 0;
+                end
+            end
+        else
+            for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+                if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT], bit:_lshift(1, i)) then
+                    local attrID = buffer:ReadUShort();
+                    allEquipRandomAttrs[i].EffectRandomAttrID = attrID;
+                else
+                    allEquipRandomAttrs[i].EffectRandomAttrID = 0;
+                end
+            end
+        end
+
+        -- 随机属性值 float
+        for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+            if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT], bit:_lshift(1, i)) then
+                allEquipRandomAttrs[i].EffectRandomAttrValue = buffer:ReadFloat();
+            else
+                allEquipRandomAttrs[i].EffectRandomAttrValue = 0;
+            end
+        end
+
+        -- 随机属性组ID WORD
+        for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+            if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT], bit:_lshift(1, i)) then
+                allEquipRandomAttrs[i].EffectRandomGroupID = buffer:ReadUShort();
+            else
+                allEquipRandomAttrs[i].EffectRandomGroupID = 0;
+            end
+        end
+
+        -- 随机属性组索引 BYTE
+        for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+            if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT], bit:_lshift(1, i)) then
+                allEquipRandomAttrs[i].EffectRandomGroupIndex = buffer:ReadByte();
+            else
+                allEquipRandomAttrs[i].EffectRandomGroupIndex = 0;
+            end
+        end
+
+        local m_yIsHasRandomNoReplacementValue = buffer:ReadByte();
+        if m_yIsHasRandomNoReplacementValue == 1 then
+            equipRandomAttrClass.IsHasRandomNoReplacementValue = true;
+        else
+            equipRandomAttrClass.IsHasRandomNoReplacementValue = false;
+        end
+        if m_yIsHasRandomNoReplacementValue == 1 then
+            -- 随机属性未替换的值 float
+            for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+                if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT], bit:_lshift(1, i)) then
+                    allEquipRandomAttrs[i].EffectRandomNoReplaceValue = buffer:ReadFloat();
+                else
+                    allEquipRandomAttrs[i].EffectRandomNoReplaceValue = 0;
+                end
+            end
+        end
+
+        -- 套装属性
+        local equipSuitAttrClass = EquipSuitAttribute.New();
+        itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_TAOZHUANG] = equipSuitAttrClass;
+        local allEquipSuitAttrs = equipSuitAttrClass.EquipSuitAttrs;
+        -- 套装属性值 float
+        for i = 0, MAX_ITEM_EFFECT_TAOZHUANG_NUMBER - 1 do
+            if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_TAOZHUANG], bit:_lshift(1, i)) then
+                local fEffectRandomAttrValue = buffer:ReadFloat();
+                allEquipSuitAttrs[i].EquipSuitAttrValue = fEffectRandomAttrValue;
+            end
+        end
+
+        if bit:IsEnumFlagOpen(wEffectFlag, ENUM_UPDATEITEM_EFFECT_FLAG.ENUM_UPDATEITEM_EFFECT_FLAG_TAOZHUANGNUMISBYTE) then
+            for i = 0, MAX_ITEM_EFFECT_TAOZHUANG_NUMBER - 1 do
+                if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_TAOZHUANG], bit:_lshift(1, i)) then
+                    local attrID = buffer:ReadByte();
+                    allEquipSuitAttrs[i].EquipSuitAttrID = attrID;
+                end
+            end
+        else
+            for i = 0, ITEM_MAX_RANDOM_EFFECT_MAX_NUM - 1 do
+                if bit:IsEnumFlagOpen(aItemEffectTypeFlag[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_TAOZHUANG], bit:_lshift(1, i)) then
+                    local attrID = buffer:ReadUShort();
+                    allEquipSuitAttrs[i].EquipSuitAttrID = attrID;
+                end
+            end
+        end
+    end
+    local nextFightTime = nil;
+    if bit:IsEnumFlagOpen(wCommonFlag, ENUM_UPDATEITEM_COMMON_FLAG.ENUM_UPDATEITEM_COMMON_FLAG_HAVEPETINFO) == true then
+        local petAttr = PetAttribute.New();
+        item.AllPetAttribute = petAttr;
+        local m_nPetState = buffer:ReadByte();
+        petAttr.PetState = m_nPetState;
+        local m_yPetSex = buffer:ReadByte();
+        petAttr.PetSex = m_yPetSex;
+        local m_nPetLevel = buffer:ReadInt();
+        petAttr.PetLevel = m_nPetLevel;
+        local m_n64PetExp = buffer:ReadInt64();
+        petAttr.PetExp = m_n64PetExp;
+        local m_nPetIntimateNum = buffer:ReadInt();
+        petAttr.PetIntimateNum = m_nPetIntimateNum;
+        local m_nPetIntimateTime = buffer:ReadInt();
+        petAttr.PetIntimateTime = m_nPetIntimateTime;
+        local m_nPetStar = buffer:ReadInt();
+        petAttr.PetStar = m_nPetStar;
+        local m_nSavvyNum = buffer:ReadInt();
+        petAttr.SavvyNum = m_nSavvyNum;
+        -- 复活时间
+        local m_nNextCanOutTime = buffer:ReadInt();
+        petAttr.NextCanOutTime = m_nNextCanOutTime;
+        -- 出战时间
+        nextFightTime = buffer:ReadInt();
+        local m_yIsHaveNotSavedQuality = buffer:ReadByte();
+        if m_yIsHaveNotSavedQuality == 1 then
+            petAttr.IsHaveNotSavedQulaityInfo = true;
+        else
+            petAttr.IsHaveNotSavedQulaityInfo = false;
+        end
+        for Index = 1,PET_ENUM.PET_ALL_QUALITY_NUM do
+            local m_nQualityMin = buffer:ReadInt();
+            petAttr.PetQualityInfo[Index - 1].QualityMin = m_nQualityMin;
+            local m_nQualityMax = buffer:ReadInt();
+            petAttr.PetQualityInfo[Index - 1].QualityMax = m_nQualityMax;
+            local m_nQualityCur = buffer:ReadInt();
+            petAttr.PetQualityInfo[Index - 1].QualityCur = m_nQualityCur;
+            if petAttr.IsHaveNotSavedQulaityInfo then
+                local m_nQualityNotSavedMin = buffer:ReadInt();
+                petAttr.PetQualityInfo[Index - 1].QualityMinNotSaved = m_nQualityNotSavedMin;
+                local m_nQualityNotSavedMax = buffer:ReadInt();
+                petAttr.PetQualityInfo[Index - 1].QualityMaxNotSaved = m_nQualityNotSavedMax;
+            end
+        end
+        for Index = 1,PET_ENUM.PET_ADD_QUALITY_USEITEM_NUM do
+            local useItemCount = buffer:ReadInt();
+            petAttr.PetAddQualityUseItemInfo[Index - 1] = useItemCount;
+        end
+        for Index = 1,PET_ENUM.PET_ALL_SKILL_NUM do
+            local skillID = buffer:ReadInt();
+            local skillType = buffer:ReadByte();
+            petAttr.PetAllSkillInfo[Index - 1].SkillID = skillID;
+            petAttr.PetAllSkillInfo[Index - 1].SkillType = skillType;
+        end
+    end
+    return item, nextFightTime;
+    -----------------------------------新版本的道具信息end
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理请求协议 START-------------------------------------------------------
+-- 请求聊天要显示的物品信息
+function RequestChatShowItem(itemShowID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_QUERY_ITEM_INFO);
+    buffer:WriteInt64(itemShowID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理请求协议 END-------------------------------------------------------

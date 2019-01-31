@@ -1,0 +1,77 @@
+﻿module("TipsManager", package.seeall)
+
+-- 初始化
+function Init()
+    -- 添加tooltip事件
+    if CUITooltip.onTooltip == nil then
+        CUITooltip.onTooltip = OnTooltip;
+    else
+        CUITooltip.onTooltip = CUITooltip.onTooltip + OnTooltip;
+    end
+end
+
+-- Tips事件
+-- @param tooltip CUITooltip组件
+-- @param visible 是否可见
+function OnTooltip(tooltip, visible)
+    if tooltip == nil then
+        return;
+    end
+    -- tips数据
+    local data = tooltip.data;
+    -- 面板ID
+    local panelId = tooltip.panelId;
+    if visible == false then
+        closePanel(panelId);
+    else
+        local panelName = CCommonTool.GetLuaPanelName(panelId);
+        if panelName ~= nil and #panelName > 0 then
+            local panel = _G[panelName];
+            if type(panel) == "table" and type(panel.SetTipsData) == "function" then
+                panel.SetTipsData(tooltip.position, data);
+            end
+        end
+        createPanel(panelId);
+    end
+end
+
+-- 设置道具Tips
+-- @param gameObject 要添加tips的对象
+-- @param itemId 道具ID
+function ItemTips(gameObject, itemId)
+    local tooltip = CUITooltip.Get(gameObject);
+    tooltip.panelId = ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL;
+    tooltip.data = {itemId = itemId};
+end
+
+-- 设置技能Tips
+-- @param gameObject 要添加tips的对象
+-- @param skillId 技能ID skill_main表ID
+-- @param subSkillId 子技能ID
+-- @param skillLevel 技能等级
+-- @param unlocked 是否解锁
+function SkillTips(gameObject, skillId, subSkillId, skillLevel, unlocked)
+    local tooltip = CUITooltip.Get(gameObject);
+    tooltip.panelId = ENUMPANELID.ENUM_PANEL_SKILLTOOLTIPPANEL;
+    tooltip.data = {id = skillId, subId = subSkillId, level = skillLevel or 1, unlocked = unlocked};
+end
+--func 先检查函数是否有必要继续进行
+function SkillTipsTwo(gameObject, skillId, subSkillId, skillLevel, unlocked,func)
+    if func~= nil then
+        local  isContinue = func(gameObject);
+        if isContinue == false then
+            return;
+        end
+    end
+    local tooltip = CUITooltip.Get(gameObject);
+    tooltip.panelId = ENUMPANELID.ENUM_PANEL_SKILLTOOLTIPPANEL;
+    tooltip.data = {id = skillId, subId = subSkillId, level = skillLevel or 1, unlocked = unlocked};
+end
+-- 设置天赋Tips
+-- @param gameObject 要添加tips的对象
+-- @param talentId 天赋ID
+function TalentTips(gameObject, talentId)
+    local tooltip = CUITooltip.Get(gameObject);
+    tooltip.panelId = ENUMPANELID.ENUM_PANEL_TALENTTOOLTIPPANEL;
+    tooltip.data = {id = talentId};
+end

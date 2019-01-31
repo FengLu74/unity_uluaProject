@@ -1,0 +1,239 @@
+﻿module("GrowFundTwoPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 需要花费的红钻数量
+local m_NeedMoneyStr = "Top/Button_Buy/Label";
+-- 已经购买的文本
+local m_AlreadyBuyStr = "Top/Label_AlreadyBuy";
+-----------------------------------------按钮路径--------------------------------------
+-- 购买基金按钮
+local m_BuyButtonStr = "Top/Button_Buy";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- UIListView所在的位置
+local m_ListViewCompStr = "Reward/ScrollView/Grid";
+----------------------------------通用的名称路径---------------------------------------
+-- 等级文本
+local m_LevelStr = "Label_Level";
+-- 领取按钮
+local m_GetButtonStr = "Button_Get";
+-- 已领取按钮
+local m_AlreadyGetButtonStr = "Button_AlreadyGet";
+-- 道具所在的位置
+local m_ItemStr = "ItemTable/";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- UIListView
+local m_ListViewComp = nil;
+-- 表数据
+local m_GrowFundTwoTableData = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    ValidatePanel();
+    InitTableData();
+    InitObjects();
+    InitEvent();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitTableData()
+    if m_GrowFundTwoTableData == nil then
+        m_GrowFundTwoTableData = CCommonTool.GetAllGrowFund2Info();
+    end
+end
+
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GROWFUNDTWOPANEL);
+    m_ListViewComp = GetComponent(m_panelObject, m_ListViewCompStr, "UIListView");
+end
+
+function InitEvent()
+    m_ListViewComp:SetInitCallback(OnListViewInit);
+    m_ListViewComp:SetClickCallback(OnListViewClick);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitTopContent();
+    m_ListViewComp:RemoveAll();
+    for Index = 1, m_GrowFundTwoTableData.Count do
+        m_ListViewComp:AddData(m_GrowFundTwoTableData[Index - 1]);
+    end
+end
+
+function InitTopContent()
+    if GrowFundManager.HasBoughtGrowFundTwo then
+        SetGameObjectState(m_AlreadyBuyStr, true, m_panelObject);
+        SetGameObjectState(m_BuyButtonStr, false, m_panelObject);
+    else
+        if G_UserInfo.RoleAttribute.Level < GrowFundTwoCanBuyLevel then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_BuyButtonStr).gameObject, true);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_BuyButtonStr).gameObject, false);
+        end
+        SetGameObjectState(m_AlreadyBuyStr, false, m_panelObject);
+        SetGameObjectState(m_BuyButtonStr, true, m_panelObject);
+    end
+    SetLabelContent(m_NeedMoneyStr, GrowFundManager.GrowFundTwoCostMoney, m_panelObject);
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent(m_LevelStr, data.Level, go);
+    local itemTable = {
+        [1] = { ExcelID = data.Item1ID, ItemNum = data.Item1Num },
+        [2] = { ExcelID = data.Item2ID, ItemNum = data.Item2Num },
+        [3] = { ExcelID = data.Item3ID, ItemNum = data.Item3Num },
+        [4] = { ExcelID = data.Item4ID, ItemNum = data.Item4Num }
+    }
+    for Index = 1, 4 do
+        if itemTable[Index].ExcelID > 0 then
+            SetGameObjectState(m_ItemStr .. Index, true, go);
+            SetItemShowByExcelIDV04(go, m_ItemStr .. Index, itemTable[Index].ExcelID, itemTable[Index].ItemNum, false, 110, ENUMPANELID.ENUM_PANEL_GROWFUNDTWOPANEL);
+            SetItemToolTipsEvent(go, m_ItemStr .. Index, ENUMPANELID.ENUM_PANEL_GROWFUNDTWOPANEL, false, itemTable[Index].ExcelID);
+        else
+            SetGameObjectState(m_ItemStr .. Index, false, go);
+        end
+    end
+    if not GrowFundManager.HasBoughtGrowFundTwo then
+        SetGameObjectState(m_GetButtonStr, false, go);
+        SetGameObjectState(m_AlreadyGetButtonStr, false, go);
+    else
+        if G_UserInfo.RoleAttribute.Level < data.Level then
+            SetGameObjectState(m_GetButtonStr, false, go);
+            SetGameObjectState(m_AlreadyGetButtonStr, false, go);
+        else
+            if GrowFundManager.GetGrowFundTwoState[data.Id] == nil then
+                SetGameObjectState(m_GetButtonStr, true, go);
+                SetGameObjectState(m_AlreadyGetButtonStr, false, go);
+            else
+                SetGameObjectState(m_GetButtonStr, false, go);
+                SetGameObjectState(m_AlreadyGetButtonStr, true, go);
+            end
+        end
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_BuyButtonStr, OnBuyButtonClick, m_panelObject);
+end
+
+function BuyGrowFundSelect()
+    local DoAction = function(isOk)
+        if isOk then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_REQUEST_TO_BUY_GROWFUND);
+            buffer:WriteInt(GrowFundType.GROW_FUND_TYPE_2);
+            G_NetWorkMng:SendMessage(buffer);
+        else
+            ParameterToMessageTextBox.OnCloseClick();
+        end
+    end
+    ParameterToMessageTextBox.ShowConfirm(nil, string_format(CCommonTool.GetTxtData(1613).m_str,GrowFundManager.GrowFundTwoCostMoney), DoAction, true);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnBuyButtonClick()
+    if G_UserInfo.RoleAttribute.Level < GrowFundTwoCanBuyLevel then
+        error("等级不足，无法购买基金");
+        return;
+    end
+    if G_UserInfo.NotBindDiamond < GrowFundManager.GrowFundTwoCostMoney then
+        error("红钻不足，无法购买基金");
+        StorePanel.OpenPanelRecharge();
+        return;
+    end
+    BuyGrowFundSelect();
+end
+
+function OnListViewClick(listView, cell, go)
+    if go.name == m_GetButtonStr then
+        local data = listView:GetData(cell.dataIndex);
+        local itemTable = {
+            [1] = { ExcelID = data.Item1ID, ItemNum = data.Item1Num },
+            [2] = { ExcelID = data.Item2ID, ItemNum = data.Item2Num },
+            [3] = { ExcelID = data.Item3ID, ItemNum = data.Item3Num },
+            [4] = { ExcelID = data.Item4ID, ItemNum = data.Item4Num }
+        }
+        local checkItemTable = { };
+        local itemID = 0;
+        local itemNum = 0;
+        local itemCount = 0;
+        for Index = 1, 4 do
+            itemID = itemTable[Index].ExcelID;
+            if itemID > 0 then
+                if itemID ~= G_ItemToolTipDefine.BINDMONEY and itemID ~= G_ItemToolTipDefine.BINDDIAMOND and
+                    itemID ~= G_ItemToolTipDefine.NOTBINDMONEY and itemID ~= G_ItemToolTipDefine.NOTBINDDIAMOND then
+                    if checkItemTable[itemID] ~= nil then
+                        checkItemTable[itemID] = checkItemTable[itemID] + itemTable[Index].ItemNum;
+                    else
+                        checkItemTable[itemID] = itemTable[Index].ItemNum;
+                        itemCount = itemCount + 1;
+                    end
+                end
+            else
+                break;
+            end
+        end
+        local itemList = G_BagMng:GetCanPickUpListItem(checkItemTable);
+        -- 判断背包格子数是否足够
+        if itemList.Count < itemCount then
+            error("背包已满，无法领取！！！");
+            ShowSystemFlowTips(103);
+        else
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_REQUEST_GET_GROWFUND_REWARD);
+            buffer:WriteInt(GrowFundType.GROW_FUND_TYPE_2);
+            buffer:WriteInt(data.Id);
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    end
+	--福利-基金购买上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10019);
+	end
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+
+-- 检测界面是否需要开启
+function ValidatePanel()
+    local data =
+    {
+        PanelId = ENUMPANELID.ENUM_LEVEL_UP_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel", data);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshPanelOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GROWFUNDTWOPANEL) == 1 then
+        InitTopContent();
+        m_ListViewComp:Refresh();
+    end
+end

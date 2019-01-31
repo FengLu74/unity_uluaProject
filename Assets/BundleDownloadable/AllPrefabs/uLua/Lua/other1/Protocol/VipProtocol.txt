@@ -1,0 +1,212 @@
+﻿module("VipProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- VIP系统开关，
+    network.Register(GMI_STOC_VIP_SWITCH, OnRecieveVipSwitch);
+    --[[ 废弃
+    -- 接收VIP系统等级配置开始
+    network.Register(GMI_STOC_VIP_LEVEL_CFG_BEGIN, OnRecieveVipDataBegin);
+    -- 接收VIP系统等级配置
+    network.Register(GMI_STOC_VIP_LEVEL_CFG, OnRecieveVipData);
+    -- 接收VIP系统等级配置结束
+    network.Register(GMI_STOC_VIP_LEVEL_CFG_END, OnRecieveVipDataEnd);
+    ]]--
+    -- 接收VIP属性
+    network.Register(GMI_STOC_VIP_ATTR, OnRecieveVipAttr);
+    -- VIP小飞鞋消息返回
+    network.Register(GMI_STOC_LGS_VIP_SHOES_SUCC, OnRecieveVipFlyShoe);
+    -- VIP卡时间信息
+    network.Register(GMI_STOC_VIP_CARD_INFO, OnRecieveVipCardInfo);
+    -- VIP卡过期通知客户端
+    network.Register(GMI_STOC_VIPCARD_PASS_TIME, OnRecieveVipCardEnd);
+    -- 设置品质返回
+    network.Register(GMI_STOC_LGS_SET_VIP_RESOLVE, OnSetResolvePZ);
+    -- 拍卖税率，跟上架个数
+    network.Register(GMI_STOC_LGS_SET_AUCTIONSELL_TAX, OnAuctionInfo);
+
+end
+
+function OnRecieveVipSwitch(protocolId, buffer)
+    local vipSwitch = buffer:ReadUShort(); --1：VIP系统开放0：VIP系统关闭
+    local vipPrivilegeSwitch = buffer:ReadUShort(); --  1：VIP特权系统开放0：VIP特权系统关闭
+    VipManager.VipSwitchData = {
+            vipSwitch = vipSwitch,
+            vipPrivilegeSwitch = vipPrivilegeSwitch,
+        };
+end
+
+-- 接收VIP系统等级配置开始并清空之前存储的vip数据
+--function OnRecieveVipDataBegin(protocolId, buffer)
+--    buffer:ReadByte();--过滤无效字节
+--    VipManager.VipData = {};
+--end
+
+--function OnRecieveVipData(protocolId, buffer)
+--    local vipNum = buffer:ReadByte(); -- 一次消息的VIP个数(数组大小) 最大100
+--    if VipManager.VipData == nil then VipManager.VipData = {}; end
+--    for i = 0, vipNum do
+--        local vipLv = buffer:ReadByte();  -- VIP等级
+--        local isOpen = buffer:ReadByte(); -- 开启关闭
+--        local tempData = {
+--            vipLv = vipLv,
+--            isOpen = isOpen,
+--        };
+--        table.insert(VipManager.VipData, tempData);
+--    end
+--    table.sort(VipManager.VipData, function(a,b) return a.vipLv < b.vipLv end);
+--end
+
+--function OnRecieveVipDataEnd(protocolId, buffer)
+--    buffer:ReadByte();--过滤无效字节
+--    VipManager.VipData = {};
+--end
+
+function OnRecieveVipAttr(protocolId, buffer)
+    if VipManager.MyVipData == nil then VipManager.MyVipData = {}; end
+    local vipLv = buffer:ReadByte();
+    local vipExp = buffer:ReadInt();
+    local vipExpToday = buffer:ReadInt();
+    local vipRewardTake = buffer:ReadInt();
+    local vipEveryDayReward = buffer:ReadByte();
+    local vipResolvePinZhi = buffer:ReadInt();
+    local tempData = {
+            vipLv = vipLv,                 -- vip等級
+            vipExp = vipExp,               -- vip经验
+            vipExpToday = vipExpToday,     -- vip今日的增长经验
+            vipRewardTake = vipRewardTake, -- vip奖励领取标示
+            vipEveryDayReward = vipEveryDayReward, -- 每日领取奖励1为领取过0为未领取
+            vipResolvePinZhi = vipResolvePinZhi, -- 装备自动分解品质
+        };
+    VipManager.MyVipData = tempData;
+    VipPanel.RefreshVipPanel();
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        Main_MiddleTop.InitVipLv();
+    end
+end
+
+function OnRecieveVipFlyShoe(protocolId, buffer)
+    local isNow = buffer:ReadUShort();  -- 是否立刻执行 0是非立刻生效
+    local sceneId = buffer:ReadUShort();-- 场景ID
+    VipManager.isNow = isNow;
+    VipManager.TargetPosSceneID = sceneId;
+    error("接到飞鞋成功返回");
+    print("isNow =",isNow,"sceneId =",sceneId);
+    VipManager.AddFlyShoeTimer();
+end
+
+function OnRecieveVipCardInfo(protocolId, buffer)
+    --[[local num = buffer:ReadByte();
+    VipManager.VipCardTimeInfo = {};
+    for i = 1, num do 
+        VipManager.VipCardTimeInfo[i] = {};
+        VipManager.VipCardTimeInfo[i].cardID = buffer:ReadInt();
+        VipManager.VipCardTimeInfo[i].timeNum = buffer:ReadInt();
+    end
+    VipPanel.RefreshVipPanel();
+    ]]
+    -- 新修改 2018921
+    VipManager.VipCardTimeInfo = {};
+    for i = 1, 3 do 
+        VipManager.VipCardTimeInfo[i] = {};
+    end
+    local m_VipCardId1 = buffer:ReadInt();
+    local m_VipCardIdTime1 = buffer:ReadInt();
+    local m_VipCardIdProductId1 = buffer:ReadInt();
+    ------------------第一張卡---------------------
+    VipManager.VipCardTimeInfo[1].cardID = m_VipCardId1;
+    VipManager.VipCardTimeInfo[1].timeNum = m_VipCardIdTime1;
+    VipManager.VipCardTimeInfo[1].ProductID = m_VipCardIdProductId1;
+    --error("第一個卡-> cardID:"..m_VipCardId1.." timeNum:"..m_VipCardIdTime1.." ProductID:"..m_VipCardIdProductId1);
+    -----------------第二張卡---------------------
+    local m_VipCardId2 = buffer:ReadInt();
+    local m_VipCardIdTime2 = buffer:ReadInt();
+    local m_VipCardIdProductId2 = buffer:ReadInt();
+    local m_CardOldKRWMoney2 = buffer:ReadInt();
+    local m_CardOldUSDMoney2 = buffer:ReadInt();
+    local m_CardCurKRWMoney2 = buffer:ReadInt();
+    local m_CardCurUSDMoney2 = buffer:ReadInt();
+    VipManager.VipCardTimeInfo[2].cardID = m_VipCardId2;
+    VipManager.VipCardTimeInfo[2].timeNum = m_VipCardIdTime2;
+    VipManager.VipCardTimeInfo[2].ProductID = m_VipCardIdProductId2;
+    VipManager.VipCardTimeInfo[2].OldKRWMoney = m_CardOldKRWMoney2;
+    VipManager.VipCardTimeInfo[2].OldUSDMoney = m_CardOldUSDMoney2;
+    VipManager.VipCardTimeInfo[2].CurKRWMoney = m_CardCurKRWMoney2;
+    VipManager.VipCardTimeInfo[2].CurUSDMoney = m_CardCurUSDMoney2;
+    --error("第二個卡-> cardID:"..m_VipCardId2.." timeNum:"..m_VipCardIdTime2.." ProductID:"..m_VipCardIdProductId2.." OldKRWMoney:"..m_CardOldKRWMoney2.." OldUSDMoney:"..m_CardOldUSDMoney2
+        --.." CurKRWMoney:"..m_CardCurKRWMoney2.." CurUSDMoney:"..m_CardCurUSDMoney2);
+    ---------------------第三張-------------------------
+    local m_VipCardId3 = buffer:ReadInt();
+    local m_VipCardIdTime3 = buffer:ReadInt();
+    local m_VipCardIdProductId3 = buffer:ReadInt();
+    local m_CardOldKRWMoney3 = buffer:ReadInt();
+    local m_CardOldUSDMoney3 = buffer:ReadInt();
+    local m_CardCurKRWMoney3 = buffer:ReadInt();
+    local m_CardCurUSDMoney3 = buffer:ReadInt();
+    VipManager.VipCardTimeInfo[3].cardID = m_VipCardId3;
+    VipManager.VipCardTimeInfo[3].timeNum = m_VipCardIdTime3;
+    VipManager.VipCardTimeInfo[3].ProductID = m_VipCardIdProductId3;
+    VipManager.VipCardTimeInfo[3].OldKRWMoney = m_CardOldKRWMoney3;
+    VipManager.VipCardTimeInfo[3].OldUSDMoney = m_CardOldUSDMoney3;
+    VipManager.VipCardTimeInfo[3].CurKRWMoney = m_CardCurKRWMoney3;
+    VipManager.VipCardTimeInfo[3].CurUSDMoney = m_CardCurUSDMoney3;
+    --error("第3個卡-> cardID:"..m_VipCardId3.." timeNum:"..m_VipCardIdTime3.." ProductID:"..m_VipCardIdProductId3.." OldKRWMoney:"..m_CardOldKRWMoney3.." OldUSDMoney:"..m_CardOldUSDMoney3
+        --.." CurKRWMoney:"..m_CardCurKRWMoney3.." CurUSDMoney:"..m_CardCurUSDMoney3);
+    VipPanel.RefreshVipPanel();
+end
+
+function OnRecieveVipCardEnd(protocolId, buffer)
+    local cardID = buffer:ReadByte();
+    ParameterToMessageTextBox.OnVipCardEnd(cardID);
+end
+
+function OnSetResolvePZ(protocolId, buffer)
+   VipManager.MyVipData.vipResolvePinZhi = buffer:ReadInt();
+   PlayerSettingPanel.RefreshResolve();
+end
+
+function OnAuctionInfo(protocolId, buffer)
+    local taxRate = buffer:ReadFloat();
+    AuctionManager.AuctionTaxRate = taxRate;
+    AuctionManager.PutawayMax = buffer:ReadUShort(); -- 可上架个数
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- VIP小飞鞋传送
+-- @param missionType 类型(任务、世界BOSS等) missionID 类型的数值(任务ID、世界BOSSID等)
+function RequestFly(missionType, missionID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_CHANGE_ROOM_BY_VIP_FLY_SHOES);
+    buffer:WriteInt(0);
+    buffer:WriteInt(missionID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 客户端请求领取VIP奖励 是否是每日奖励1为是0为否
+function RequestGetReward(vipLV, rewardType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_VIP_TAKE_PRIZE);
+    buffer:WriteByte(vipLV);
+    buffer:WriteByte(rewardType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 客户端请求购买特权卡
+function RequestBuyVipCard(vipCard)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_BUY_VIP_CARD);
+    buffer:WriteByte(vipCard);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 玩家设置分解品质
+function RequestSetResolvePZ(id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SET_VIP_RESOLVE);
+    buffer:WriteInt(id);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

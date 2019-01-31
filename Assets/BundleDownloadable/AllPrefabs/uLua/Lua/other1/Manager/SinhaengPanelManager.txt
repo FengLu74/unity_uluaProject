@@ -1,0 +1,264 @@
+﻿module("SinhaengPanelManager", package.seeall)
+
+-- 玩家神行数据信息
+LogicData_SinhaengPlayerInfo = {};
+-- 初始化god table
+function ConstructData()
+
+    LogicData_SinhaengPlayerInfo = {};
+    --神行
+    LogicData_SinhaengPlayerInfo.GodInfos = {};
+    --技能
+    LogicData_SinhaengPlayerInfo.SkillInfos = {};
+    --星魂
+    LogicData_SinhaengPlayerInfo.StarInfos = {};
+    --当前使用的神行id
+    LogicData_SinhaengPlayerInfo.CurSinhaengID = 0;
+    -- 星魂开启等级
+    LogicData_SinhaengPlayerInfo.DavidsOpenNeedLv = 0;
+end
+function getCurSinhaengID()
+    if LogicData_SinhaengPlayerInfo.CurSinhaengID ~=nil then
+        return LogicData_SinhaengPlayerInfo.CurSinhaengID;
+    end
+end
+function getMinState()
+    if LogicData_SinhaengPlayerInfo.DavidsOpenNeedLv ~=nil then
+        return LogicData_SinhaengPlayerInfo.DavidsOpenNeedLv ;
+    end
+end
+function DavidsOpenNeedLvAttr(lvl)
+    if lvl == nil then
+        return LogicData_SinhaengPlayerInfo.DavidsOpenNeedLv;
+    end
+    LogicData_SinhaengPlayerInfo.DavidsOpenNeedLv = lvl
+end
+-- 得到阶数，星数，经验数
+function getPlayerGodData()
+    if LogicData_SinhaengPlayerInfo.GodInfos ~= nil then
+        return LogicData_SinhaengPlayerInfo.GodInfos.StageLvl,LogicData_SinhaengPlayerInfo.GodInfos.StarLvl,LogicData_SinhaengPlayerInfo.GodInfos.Exp;
+    end
+    return nil,nil,nil;
+end
+-- 得到 技能组数据
+function getPlayerSkillData()
+    if LogicData_SinhaengPlayerInfo.SkillInfos ~= nil then
+        return LogicData_SinhaengPlayerInfo.SkillInfos;
+    end
+end
+-- 刷新神行数据
+function RefreshGodInfos(exp,star_lvl,stage_lvl,god_id)
+    local stage_change = false;
+    local god_change = false;
+    if exp ~= nil then
+        LogicData_SinhaengPlayerInfo.GodInfos.Exp = exp;
+    end
+    if star_lvl ~=nil then
+        LogicData_SinhaengPlayerInfo.GodInfos.StarLvl = star_lvl;
+    end
+    if stage_lvl ~= nil then
+        if stage_lvl ~=LogicData_SinhaengPlayerInfo.GodInfos.StageLvl then
+            stage_change = true;
+        end
+        LogicData_SinhaengPlayerInfo.GodInfos.StageLvl = stage_lvl;
+    end
+    if god_id ~= nil then
+        if god_id ~=LogicData_SinhaengPlayerInfo.CurSinhaengID then
+            god_change = true;
+        end
+        LogicData_SinhaengPlayerInfo.CurSinhaengID = god_id;
+    end
+    SinhaengPanel.RefreshSinhaengPanel(stage_change,god_change);
+end
+function inserSkillTab(tab)
+    if LogicData_SinhaengPlayerInfo.SkillInfos ~=nil then
+        table.insert(LogicData_SinhaengPlayerInfo.SkillInfos,tab);
+    end
+end
+--排序，填充技能数组
+function pullSkillTab()
+    local skillTab = LogicData_SinhaengPlayerInfo.SkillInfos;
+    if #skillTab >= 6 then
+        table.sort( skillTab, sortFunc1);
+        return;
+    end
+    for i= #skillTab+1 , 6  do
+        local tab = 
+        {
+            id = 0,
+            lvl = 0,
+            index = i,
+        };
+        table.insert(skillTab,tab);
+    end
+    table.sort( skillTab, sortFunc1);
+end
+function RefreshPlayerSkillTab(tab)
+    local curSkillTab = LogicData_SinhaengPlayerInfo.SkillInfos;
+    local refresh = false;
+    for i=1,#curSkillTab do
+        if curSkillTab[i].index == tab.index then
+            curSkillTab[i].id = tab.id;
+            curSkillTab[i].lvl = tab.lvl;
+            refresh = true;
+            break;
+        end
+    end
+    if refresh == true then
+        SinhaengPanel.RefreshSinhaengPanel(nil,true);
+    else
+        error("[神行技能刷新error],技能的index：-->"..tab.index);
+    end
+end
+--升序
+function sortFunc1(a,b)
+    if a.index ~= nil and b.index~=nil then
+        return a.index < b.index;
+    end
+end
+-- 技能数据发生变化
+--[[function RefreshSkillDatas(index,id,lvl)
+     local skillTab = LogicData_SinhaengPlayerInfo.SkillInfos;
+     local canFind = false;
+     for i=1,#skillTab do
+         if index == skillTab[i].index then
+            canFind = true;
+            skillTab[i].id = id;
+            skillTab[i].lvl = lvl;
+         end
+     end
+     if canFind == false then
+        error("[神行]异常。。id为："..id.."找不到对应的数据组");
+     end
+end
+]]
+-- -----------------------------------------刷新星魂数据------------------------------------------
+function getStarTabDatas()
+    local starTab = LogicData_SinhaengPlayerInfo.StarInfos ;
+    if starTab == nil or #starTab<7 then
+        error("[神行]星魂属性培养数据error");
+        return;
+    end
+    return starTab;
+end
+function RefreshStarInfos(tab)
+    local starTab = LogicData_SinhaengPlayerInfo.StarInfos ;
+    if starTab == nil or #starTab<7 then
+        error("[神行]星魂属性培养数据error");
+        return;
+    end
+    --error("星魂属性升级返回：types::"..tab.types.." 属性等级：："..tab.level.." 属性星阶：："..tab.star_lvl.." 属性培养经验::"..tab.exp);
+    local canFind = false;
+    for i=1,#starTab do
+        if starTab[i].types == tab.types then
+            canFind =true;
+            starTab[i].level = tab.level;
+            starTab[i].star_lvl = tab.star_lvl;
+            starTab[i].exp = tab.exp;
+            break;
+        end
+    end
+    if canFind == true then
+        SinhaengPanel.RefreshSinhaengPanel();
+    else
+        error("[神行]【星魂】培养属性值types::"..tab.types.." 找不到匹配的数据table");
+    end
+
+end
+-- 初始化星魂数据
+function insertStarAttr(i,types,level,star_lvl,exp)
+    local starTab = LogicData_SinhaengPlayerInfo.StarInfos ;
+    if starTab ~= nil then
+        starTab[i] = {};
+        starTab[i].types = types;
+        starTab[i].level = level;
+        starTab[i].star_lvl = star_lvl;
+        starTab[i].exp = exp;
+    end
+end
+function sortStarInfo()
+    local starTab = LogicData_SinhaengPlayerInfo.StarInfos ;
+    if starTab == nil or #starTab<7 then
+        error("[神行]星魂属性培养数据error");
+        return;
+    end
+    table.sort( starTab, sortfunction2 );
+end
+function sortfunction2(a,b)
+    if a ~= nil and b ~=nil then
+        local a_AttrsCfg = DavidsAttrTable.Get(a.types);
+        local b_AttrsCfg = DavidsAttrTable.Get(b.types);
+        if  a_AttrsCfg~= nil and b_AttrsCfg~=nil then
+            return a_AttrsCfg.Value>b_AttrsCfg.Value;
+        end
+    end
+    return a.types > b.types;
+end
+---------------------我要变强分数神行计算需要--------------
+--总神行数据分数=神行分数+星魂分数=【神行(所有的阶数的对应的培养等级)*m_QualityScoreTable[i]】+【（[星魂阶数-1]*5+星魂星数)*m_QualityScoreTable2[1]】
+-- 品质系数写死
+m_QualityScoreTable2 =
+{
+    --for ceshi
+    [1]=90,
+--    [1] = 1, 
+
+}
+--神行对应的每一阶单星对应的系数
+m_QualityScoreTable =
+{
+    --for ceshi
+--    [1] = 1, 
+--    [2] = 1,
+--    [3] = 1, 
+--    [4] = 1, 
+--    [5] = 1, 
+--    [6] = 1, 
+--    [7] = 1, 
+--    [8] = 1, 
+--    [9] = 1, 
+--    [10] = 1, 
+--    [11] = 1, 
+--    [12] = 1, 
+    [1] = 58, 
+    [2] = 116,
+    [3] = 174, 
+    [4] = 232, 
+    [5] = 290, 
+    [6] = 348, 
+    [7] = 406, 
+    [8] = 464, 
+    [9] = 522, 
+    [10] = 580, 
+    [11] = 638, 
+    [12] = 696, 
+}
+
+-- 得到变强界面系统的品质系数对应的分数
+function GetScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_Sinah) == false then return score end
+    --神行分数
+	local Infos =LogicData_SinhaengPlayerInfo.GodInfos;
+    if Infos.StageLvl<=0 then
+        score = 0;
+    end
+    for index=1,Infos.StageLvl do
+        if index~=Infos.StageLvl then
+            score=score+m_QualityScoreTable[index]*10;   --10:神行培养10级升阶
+        else
+            score=score+m_QualityScoreTable[index]*Infos.StarLvl;
+        end
+    end
+    --星魂分数
+    local ChangeInfos= LogicData_SinhaengPlayerInfo.StarInfos;
+    if ChangeInfos~=nil and #ChangeInfos>0  then
+        for index=1,#ChangeInfos do  --7个星魂
+            if ChangeInfos[index].level>0 then
+                score=score+((ChangeInfos[index].level-1)*5+ChangeInfos[index].star_lvl)*m_QualityScoreTable2[1];
+            end
+        end
+    end
+    return score;
+end
+------------------

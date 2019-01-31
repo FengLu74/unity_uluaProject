@@ -1,0 +1,1441 @@
+﻿module("GodShapeShiftPanel", package.seeall)
+-------------------------------- ----神将变身系统---------------------------------------
+
+---------------------------------------label路径---------------------------------------
+-- 右侧神将名称
+local m_rightGodNameStr = "Right/Top/Label_Name";
+-- 多少阶
+local m_LevelStr = "Right/Top/Label_Level";
+-- 右侧上部神将激活的位置
+local m_RightTopActiveStr = "Right/Top/Active";
+-- 右侧上部神将未激活的位置
+local m_RightTopNotActiveStr = "Right/Top/NotActive";
+-- 战斗力文本位置
+local m_FightValueNumStr = "/Label_FightValue";
+-- 等级格子所在的位置
+local m_LevelGridStr = "Right/Top/Active/Progress/Sprite";
+----------------------------
+-- 基础属性所在的位置
+local m_baseAttrStr = "Right/Middle/FosterAttrs/";
+-- 特殊属性所在的位置
+local m_speacialAttrStr = "Right/Middle/SpecificAttrs/";
+-- 属性文本
+local m_AttrNameStr = "/Label_Attr";
+-- 属性值所在的位置
+local m_AttrValueStr = "/Label_Num";
+-- 属性解锁的位置
+local m_AttrActiveStr = "/Active";
+-- 属性未解锁的位置
+local m_AttrNotActiveStr = "/NotActive";
+-- 多少阶解锁所在的位置
+local m_ActiveLevelStr = "/Label";
+-- 当前属性值所在的位置
+local m_CurAttrValueStr = "/Label_CurValue";
+
+-- 有下一级的位置
+local m_AttrHasNextLevelStr = "/Add";
+-- 上箭头所在的位置
+local m_UpArrowStr = "/Sprite";
+-- 下一级属性值所在的位置
+local m_NextLevelAttrValueStr = "/Label_NextValue";
+-- 下一级属性值所在的位置
+local m_NextLevelAttrAddValueStr = "/Label_AddValue";
+--------------------------
+-- 特性{0}所在的位置
+local m_SpecialIndexLabelStr = "/Label";
+--------------------------
+-- 进阶条件所在的位置
+local m_levelUpStr = "Right/Bottom/NotMaxLevel/NeedLevelUp";
+-- 培养条件所在的位置
+local m_FosterStr = "Right/Bottom/NotMaxLevel/NeedFoster";
+-- 激活条件所在的位置
+local m_ActiveStr = "Right/Bottom/NotMaxLevel/NeedActive";
+-- 满阶所在的位置
+local m_FullLevelStr = "Right/Bottom/MaxLevel";
+-- 不满阶所在的位置
+local m_NotFullLevelStr = "Right/Bottom/NotMaxLevel";
+----------------------------
+-- 右侧下方道具所在的位置
+local m_itemPositionStr = "Right/Bottom/NotMaxLevel/Items/Item";
+-- 是否可激活
+local m_CanAcitveStr = "Label_CanActive";
+-------------------------------------------------------------
+
+--右侧神将属性1,2,3,4
+local m_rightGodAttrStr = "Right/Middle/Attrs";
+--属性图标
+local m_rightAttrSprStr = "/Attr_Sprite";
+-- 属性名称
+local m_rightAttrNameStr = "/Attr_Name";
+-- 属性值
+local m_rightAttrValueStr = "/Attr_Value";
+-- 升阶条件
+local m_rightLvlUpStr = "Right/Bottom/NotMaxLevel/Prompt_Label";
+--
+-----------------------------------------按钮路径--------------------------------------
+-- 激活按钮所在的路径
+local m_activeButtonObjStr = "Right/Bottom/NotMaxLevel/NeedActive/Button_Active";
+-- 培养1次按钮所在的路径
+local m_fosterButtonObjStr = "Right/Bottom/NotMaxLevel/NeedFoster/Button_Foster1";
+-- 培养10次按钮所在的路径
+local m_fosterTenButtonObjStr = "Right/Bottom/NotMaxLevel/NeedFoster/Button_Foster10";
+-- 进阶按钮所在的路径
+local m_levelUpButtonObjStr = "Right/Bottom/NotMaxLevel/NeedLevelUp/Button_LevelUp";
+-- 可以装备按钮
+local m_rightEquipBtnStr = "Right/Middle/Button_Equip";
+--“装备神将”显示
+local m_middleLabelStr = "Right/Middle/Button_Equip/Label";
+--“已装备”显示
+local m_middleLabel1Str = "Right/Middle/Button_Equip/Label1";
+-----------------------------------
+
+
+--最大阶
+local m_rightMaxLvlStr = "Right/Bottom/EquiPrompt";
+-- 未满阶
+local m_rightNotMaxLvlStr = "Right/Bottom/NotMaxLevel";
+-- 升阶按钮
+local m_rightLvlUpBtn2Str = "Right/Bottom/NeedBreach";
+-- 升阶按钮
+local m_rightLvlUpBtnStr = "Right/Bottom/NeedBreach/Button_Breach";
+--
+local m_rightLvlUpBtnTenStr = "Right/Bottom/NeedBreach/Button_Breach10";
+-- 问号按钮
+local m_ExplainBtnStr = "Middle/Button_Explain";
+----------------------------------------公共路径---------------------------------------
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+-- 红点路径
+local Sprite_RedHint = "/Sprite_RedHint";
+--
+--
+local m_ItemsUITableCompStr = "Right/Bottom/NotMaxLevel/Items";
+--
+local m_skillUITableCompStr = "Middle/Skills";
+--
+local m_leftUIGodCompStr = "Left/Gods/WingList";
+-- 新增
+local m_middleSkillBgStr = "Middle/BG1";
+
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 技能格子
+local m_middleSkillStr = "Middle/Skills/Item";
+--
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左侧UIListView组件
+local m_leftUIListViewComp = nil;
+-- 左侧选择的是第几个神将
+local m_leftSelectIndex = 1;
+-- 左侧选中的神将的ID
+local m_leftSelectId = -1;
+-- 消耗道具的UITable的组件
+local m_itemsUITableComp = nil;
+-- 展示的技能图标组件
+local m_skillUITableComp = nil;
+-- 货币是否满足
+local m_CoinIsEnough = true;
+--道具是否满足
+local m_MatIsEnough = true;
+--当前神将培养消耗的道具excelid 
+local m_ItemDataId = -1;
+-- 当前神将拥有的技能组
+local m_CurGodSkillTables = {};
+-- 当前神将是否可以升阶
+local m_CurGodCanLvlUp = false;
+-- 当前神将是否可以装备/卸下
+local m_CurGodCanEquip = false;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 神将配置表数据
+local m_GodShapeShiftCfg = {};
+-- 显示道具的table
+local m_showItemTable = { };
+local m_showDataTable = { };
+
+--GenieTable
+local GenieTableData={};
+--GenieAttrTable
+local GenieAttrTableData={};
+--GenieFosterTable
+local GenieFosterTableData={};
+
+
+local ENUM_MOUNT_STATE =
+{
+    ACTIVE = -1,
+    NOTACTIVE = 0,
+    CANFOSTER = 1,
+    CANLEVELUP = 2,
+    LEVELMAX = 3,
+}
+-- 神将的状态
+local ENUM_GOD_STATE =
+{
+    NOTACTIVE = 0,    -- 未激活（锁住状态）
+    CANFOSTER = 1,    -- 可以培养（可培养状态）
+    CANLEVELUP = 2,    -- 可以突破    （可突破状态）
+    LEVELMAX=3,      -- 最大等阶状态
+
+    HADEQUIP = 4,     -- 已经装备了
+    CANEQUIP = 5,    -- 可以装备
+}
+local cur_GodState = nil;
+-- 右侧消耗道具table
+local m_rightCostItemTable = {}
+--
+local MAXSTAGE = 10;
+
+---------------------------------------
+-- 激活按钮
+local m_activeButtonObj = nil;
+-- 当前的点按钮的状态(false:条件不足，true:条件ok)
+local m_clickButtonState = true;
+-- 培养1次按钮
+local m_fosterButtonObj = nil;
+-- 培养10次按钮
+local m_fosterTenButtonObj = nil;
+-- 进阶按钮
+local m_levelUpButtonObj = nil;
+--装备按钮
+local m_rightEquipBtnObj=nil;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    IninalData();
+    InitShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        IninalData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_leftSelectIndex = 1;
+    m_leftSelectId = -1;
+    m_CoinIsEnough = true;
+    m_MatIsEnough = true;
+    m_ItemDataId = -1;
+    m_CurGodSkillTables = {};
+    m_CurGodCanLvlUp = false;
+    m_GodShapeShiftCfg = {};
+    m_CurGodCanEquip = false;
+    cur_GodState = nil;
+    Hide3DModel();
+    m_rightCostItemTable = {};
+
+    --------------------------
+    m_clickButtonState = true;
+end
+
+function OnDestroy()
+     m_GodShapeShiftCfg = {};
+     m_showDataTable = { };
+     m_panelObject = nil;
+    -- 面板是否初始化完成
+     m_panelInitAlready = false;
+    -- 左侧UIListView组件
+     m_leftUIListViewComp = nil;
+    -- 左侧选择的是第几个神将
+     m_leftSelectIndex = 1;
+    -- 左侧选中的神将的ID
+     m_leftSelectId = -1;
+    -- 消耗道具的UITable的组件
+     m_itemsUITableComp = nil;
+    -- 展示的技能图标组件
+     m_skillUITableComp = nil;
+    -- 货币是否满足
+     m_CoinIsEnough = true;
+    --道具是否满足
+     m_MatIsEnough = true;
+    --当前神将培养消耗的道具excelid 
+     m_ItemDataId = -1;
+    -- 当前神将拥有的技能组
+     m_CurGodSkillTables = {};
+    -- 当前神将是否可以升阶
+     m_CurGodCanLvlUp = false;
+     m_CurGodCanEquip = false;
+     cur_GodState = nil;
+     Hide3DModel();
+     m_rightCostItemTable = {};
+     --------------------------------
+     m_activeButtonObj = nil;
+     m_fosterButtonObj = nil;
+     m_fosterTenButtonObj = nil;
+     m_levelUpButtonObj = nil;
+     m_rightEquipBtnObj=nil;
+
+end
+-- object
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+    -- 右侧uitable
+    m_itemsUITableComp = GetComponent(m_panelObject,m_ItemsUITableCompStr, "UITable");
+    -- skill
+    m_skillUITableComp = GetComponent(m_panelObject,m_skillUITableCompStr, "UITable");
+    --左侧uilistview
+    m_leftUIListViewComp = GetComponent(m_panelObject,m_leftUIGodCompStr, "UIListView");
+    ---------------------------------
+    --激活按钮
+    m_activeButtonObj = child(m_panelObject, m_activeButtonObjStr).gameObject;
+    --培养一次
+    m_fosterButtonObj = child(m_panelObject, m_fosterButtonObjStr).gameObject;
+    --培养十次
+    m_fosterTenButtonObj = child(m_panelObject, m_fosterTenButtonObjStr).gameObject;
+    --升阶
+    m_levelUpButtonObj = child(m_panelObject, m_levelUpButtonObjStr).gameObject;
+    --装备按钮
+    m_rightEquipBtnObj = child(m_panelObject, m_rightEquipBtnStr).gameObject;
+
+
+end
+-- 事件
+function InitEvents()
+    -- left list view
+    m_leftUIListViewComp:SetInitCallback(OnGodCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnGodCloneClick);
+
+    -- 显示提示
+    SetGameObjectEvent(m_ExplainBtnStr,ShowExplainPanel,m_panelObject);
+
+    -----------------------------------
+    SetGameObjectEvent(m_activeButtonObjStr, OnActiveBtnClick, m_panelObject);
+    SetGameObjectEvent(m_fosterButtonObjStr, FosterMountClick, m_panelObject);
+    SetGameObjectEvent(m_fosterTenButtonObjStr, FosterMountClick, m_panelObject);
+    SetGameObjectEvent(m_levelUpButtonObjStr, LevelUpMountClick, m_panelObject);
+    SetGameObjectEvent(m_rightEquipBtnStr,OnEquipGodBtnClick,m_panelObject);
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_itemPositionStr .. Index .. m_itemGetsWay, OnItemGetWayClick, m_panelObject);
+    end
+
+end
+
+-- 显示提示面板
+function ShowExplainPanel()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT,1);
+end
+function OnItemGetWayClick(e)
+    local selectTag = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    if m_rightCostItemTable[selectTag] ~=nil then
+        GetWayPanel.Show(m_showItemTable[selectTag].excelID,ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+    end
+end
+
+-- 点击技能图标事件
+function OnSkillTipClick()
+    
+end
+
+function InitShow()
+    InitLeftContent();
+    InitMiddleContent();
+    InitRightContent();
+end
+
+function IninalData()
+    --GenieTable
+    GenieTableData=GenieTable.GetAll();
+    --table.sort(GenieTableData,sortfunction1);
+    --GenieAttrTable
+    GenieAttrTableData=GenieAttrTable.GetAll();
+    --GenieFosterTable
+    GenieFosterTableData=GenieFosterTable.GetAll();
+end
+
+-- 降序
+function sortfunction1(f1,f2)
+    if f1.Value and f2.Value then
+        return f1.Value < f2.Value;
+    end
+end
+--初始化左边的内容
+function InitLeftContent()
+    m_leftUIListViewComp:RemoveAll();
+--    for index=1,#GenieTableData do
+--        m_leftUIListViewComp:AddData(GenieTableData[index]);
+--    end
+
+    --先假设 G_UserInfo.RoleAttribute.GodId;
+--    if m_isJumpPanelSave == true then
+--        m_leftSelectIndex = m_JumpPanelParamsTable[1];
+--        --m_leftSelectId = m_JumpPanelParamsTable[2];
+--    else
+--        local curGodID = GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId;
+--        if curGodID <= 0 then  -- 未装备神将
+--            m_leftSelectIndex = 1;
+--        else
+--            local find = false;
+--            for index=1,#GenieTableData do
+--                if curGodID == GenieTableData[index].Id then
+--                    m_leftSelectIndex = index;
+--                    find = true;
+--                    break;
+--                end
+--            end
+--            if find == false then
+--                m_leftSelectIndex = 1;
+--            end
+--        end
+--    end
+--    m_leftUIListViewComp:LookAt(m_leftSelectIndex-1,true);
+--    m_isJumpPanelSave = false;
+    ----------
+    m_showDataTable={ };
+    for Index = 1, #GenieTableData do
+        local DataInfo = GenieTableData[Index];
+        table.insert(m_showDataTable, DataInfo);
+    end
+    if #m_showDataTable == 0 then
+        error("没有一个满足条件显示的");
+        return false;
+    end
+    table.sort(m_showDataTable,SortFunc);
+    for index=1,#m_showDataTable do
+        m_leftUIListViewComp:AddData(m_showDataTable[index]);
+    end
+    InitLeftSelect(m_showDataTable);
+    Hide3DModel();
+    LoadModel(m_showDataTable[m_leftSelectIndex].Modelres);
+end
+function LoadModel(modelID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+    buffer:WriteInt(modelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+function SortFunc(data1,data2)
+    local noactive = ENUM_MOUNT_STATE.NOTACTIVE;
+    local State1, canActive1 = GetStateAndActive(data1);
+    local State2, canActive2 = GetStateAndActive(data2);
+
+    if State1 == noactive and State2 ~= noactive then
+        return false;
+    elseif State1 ~= noactive and State2 == noactive then
+        return true;
+    elseif canActive1 ~= canActive2 then
+        return canActive1;
+    else
+        return data1.Value > data2.Value;
+    end
+end
+
+function GetStateAndActive(DataInfo)
+    local curLevel = 0;
+    local i=0;
+    for index=1,#GenieTableData do
+        if DataInfo.Id  == GenieTableData[index].Id then
+            i = index;
+            break;
+        end
+    end
+    local curGodCfg = GenieTableData[i];
+    local curPlayerData =GodShapeShiftManager.GetPlayerGodByInfo(curGodCfg); 
+    --基础属性数据
+    local AttrData=0;
+    if curPlayerData.CurLvl==0 then
+        AttrData=GenieFosterTable.Get(curGodCfg.Id+1);
+    else
+        AttrData=GenieFosterTable.Get(curGodCfg.Id+curPlayerData.CurLvl);
+    end
+    local State = ENUM_MOUNT_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        State  = ENUM_MOUNT_STATE.NOTACTIVE;
+    else
+        for Index = 1, baseAttrNum do
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, AttrData);
+            if curLevel >= activeLevel then
+                if curPlayerData.CurStage < 10 then
+                    State  = ENUM_MOUNT_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if State  ~= ENUM_MOUNT_STATE.CANFOSTER then
+            if curLevel >= curGodCfg.NumMax then
+                State  = ENUM_MOUNT_STATE.LEVELMAX;
+            else
+                State  = ENUM_MOUNT_STATE.CANLEVELUP;
+            end
+        end
+    end
+    local canActive = true;
+    if State  == ENUM_MOUNT_STATE.NOTACTIVE then
+        if curGodCfg.Type == 1 then
+            if curGodCfg.Key3 > 0 then
+                if G_UserInfo.BindCoin < curGodCfg.Key3 then
+                    canActive = false;
+                end
+            end
+            if curGodCfg.Key1 > 0 and curGodCfg.Key2 > 0 then
+                local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, curGodCfg.Key1);
+                if hasNum < curGodCfg.Key2 then
+                    canActive = false;
+                end
+            end
+        else
+            error("this get  condition does not design by GameDesigner SongBo");
+            canActive = false;
+        end
+    else
+        canActive = false;
+    end
+    return State , canActive;
+end
+function InitLeftSelect(m_showDataTable)
+    if m_isJumpPanelSave then
+        m_leftSelectIndex = m_JumpPanelParamsTable[1];
+        local selectId = m_JumpPanelParamsTable[3];
+        if selectId ~= nil and selectId > 0 then
+            for Index = 1,#m_showDataTable do
+                if m_showDataTable[Index].Id == selectId then
+                    m_leftSelectIndex = Index;
+                    break;
+                end
+            end
+        end
+    else
+        m_leftSelectIndex = 1;
+        for Index = 1,#m_showDataTable do
+            if m_showDataTable[Index].Id == GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId then
+                m_leftSelectIndex = Index;
+                break;
+            end
+        end
+    end
+    m_leftUIListViewComp:LookAt(m_leftSelectIndex - 1,true);
+end
+--中部 内容
+function InitMiddleContent()
+    Hide3DModel();
+    local curGodCfg = m_showDataTable[m_leftSelectIndex];
+    if curGodCfg == nil then
+        return;
+    end
+    local infos = curGodCfg.Modelres;
+    --local model_id = CCommonTool.GetUI3dresInfo(infos).ModelId;
+    Load3DModel(infos);
+    -- 该神将拥有的技能
+    m_CurGodSkillTables = GetSkillsByGodId(curGodCfg.ShapeShiftingId);
+    SetCurGodSkills();
+    
+end
+------------------------------------
+-- 初始化右侧的显示
+function InitRightContent()
+    --error("m_leftSelectIndex="..m_leftSelectIndex.."***#m_showDataTable="..#m_showDataTable);
+    local curGodCfg = m_showDataTable[m_leftSelectIndex];
+    --error("m_leftSelectIndex="..m_leftSelectIndex.."***Id="..curGodCfg.Id);
+    local curPlayerData = GodShapeShiftManager.GetPlayerGodByInfo(curGodCfg);
+    --基础属性数据
+    local AttrData=0;
+    if curPlayerData.CurLvl==0 then
+        AttrData=GenieFosterTable.Get(curGodCfg.Id+1);
+    else
+        AttrData=GenieFosterTable.Get(curGodCfg.Id+curPlayerData.CurLvl);
+    end
+    --特殊属性数据
+    local SpecialAttrData =GenieAttrTable.Get(curGodCfg.Id);
+
+    -- 初始化右边上面的阶数进度条的显示，即培养等级
+    local curLevel = 0;
+    if curPlayerData ~= nil then
+        curLevel = curPlayerData.CurLvl;
+    else
+        curPlayerData = { };
+        curPlayerData.CurLvl = 0;
+        curPlayerData.CurStage = 0;
+    end
+    cur_GodState = ENUM_GOD_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        cur_GodState = ENUM_GOD_STATE.NOTACTIVE;
+    else
+        for Index = 1, 5 do
+            --activeLevel:属性1激活阶数（填255表示不激活）	AttrIndex:属性1类型（不成长）	AttrSingleValue:属性1增加的属性值
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, AttrData);
+            if curLevel >= activeLevel then
+                if curPlayerData.CurStage < 10 then
+                    cur_GodState = ENUM_GOD_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if cur_GodState ~= ENUM_GOD_STATE.CANFOSTER then
+            if curLevel >= curGodCfg.NumMax then
+                cur_GodState = ENUM_GOD_STATE.LEVELMAX;
+            else
+                cur_GodState = ENUM_GOD_STATE.CANLEVELUP;
+            end
+        end
+    end
+    --NumRide:可装备阶段
+    if curLevel>=curGodCfg.NumRide then
+        --error("可装备阶段");
+        CCommonTool.SetGameObjectGrey(m_rightEquipBtnObj, false);
+    else
+        --error("不可装备阶段");
+        CCommonTool.SetGameObjectGrey(m_rightEquipBtnObj, true);
+    end
+    --当前装备的神将
+    if GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId==curGodCfg.Id then
+        SetGameObjectState(m_middleLabelStr,false,m_panelObject);
+        SetGameObjectState(m_middleLabel1Str,true,m_panelObject);
+    else
+        SetGameObjectState(m_middleLabelStr,true,m_panelObject);
+        SetGameObjectState(m_middleLabel1Str,false,m_panelObject);
+    end
+    -- 初始化右部分上方的情况
+    SetLabelTextByID(m_rightGodNameStr,curGodCfg.Name,m_panelObject);
+    if cur_GodState == ENUM_GOD_STATE.NOTACTIVE then
+        --阶[未激活]
+        SetLabelTextByID(m_LevelStr,905,m_panelObject);
+        local fightValue = 0;
+        SetLabelContent(m_RightTopActiveStr..m_FightValueNumStr,"+"..fightValue,m_panelObject);
+        for i = 1, 10 do
+            SetGameObjectState(m_LevelGridStr .. i, false, m_panelObject);
+        end
+    else
+        --阶[{0}阶	{0}阶]
+        SetLabelContent(m_LevelStr,string_format(GetTextToId(8040),curPlayerData.CurLvl),m_panelObject);
+        local fightValue = CalcFightValue(curGodCfg);           
+        SetLabelContent(m_RightTopActiveStr..m_FightValueNumStr,"+"..fightValue,m_panelObject);
+        for i = 1,curPlayerData.CurStage do                                              
+            SetGameObjectState(m_LevelGridStr .. i, true, m_panelObject);
+        end
+        for i = curPlayerData.CurStage + 1, 10 do
+            SetGameObjectState(m_LevelGridStr .. i, false, m_panelObject);
+        end
+    end
+    for Index = 1, 5 do
+        --activeLevel:属性1激活阶数（填255表示不激活）	AttrIndex:属性1类型（不成长）	AttrSingleValue:属性1增加的属性值
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, AttrData);
+        SetLabelContent(m_baseAttrStr .. Index .. m_AttrNameStr, CCommonTool.GetAttrNameByAttrID(AttrIndex), m_panelObject);
+        --error(Index.."--"..curLevel.."--"..activeLevel);
+        if curLevel < activeLevel then
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr, false, m_panelObject);
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrNotActiveStr, true, m_panelObject);
+            --[{0}阶解锁	{0}阶解锁]
+            SetLabelContent(m_baseAttrStr .. Index .. m_AttrNotActiveStr .. m_ActiveLevelStr,string_format(GetTextToId(1074),activeLevel),m_panelObject);
+            SetLabelColor(m_baseAttrStr .. Index .. m_AttrNameStr, "807F7E", m_panelObject);
+        else
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr, true, m_panelObject);
+            SetGameObjectState(m_baseAttrStr .. Index .. m_AttrNotActiveStr, false, m_panelObject);
+            SetLabelColor(m_baseAttrStr .. Index .. m_AttrNameStr, "FFFED6", m_panelObject);
+            local value =((curLevel - activeLevel) * 10 + curPlayerData.CurStage) * AttrSingleValue;
+            local nextValue = value + AttrSingleValue;
+            local attrInfo = CCommonTool.GetAttrIndexInfo(AttrIndex);
+            if attrInfo.Ratio < 1 then
+                local valuePercent = attrInfo.Ratio * value;
+                local nextValuePercent = attrInfo.Ratio * nextValue;
+                value = string.format("%1d", valuePercent * 100).."%";
+                nextValue = string.format("%1d", nextValuePercent * 100).."%";
+            end
+            SetLabelContent(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_CurAttrValueStr, value, m_panelObject);
+            if cur_GodState == ENUM_GOD_STATE.LEVELMAX then
+                SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr, false, m_panelObject);
+            else
+                SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr, true, m_panelObject);
+                SetLabelContent(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrValueStr, nextValue, m_panelObject);
+                if cur_GodState == ENUM_GOD_STATE.CANLEVELUP then
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_UpArrowStr, false, m_panelObject);
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrAddValueStr, false, m_panelObject);
+                else
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_UpArrowStr, true, m_panelObject);
+                    SetGameObjectState(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrAddValueStr, true, m_panelObject);
+                    SetLabelContent(m_baseAttrStr .. Index .. m_AttrActiveStr .. m_AttrHasNextLevelStr .. m_NextLevelAttrAddValueStr, AttrSingleValue, m_panelObject);
+                end
+            end
+        end
+    end
+    -- 初始化右部分中间的情况
+    for Index = 1, 4 do
+        --[特性{0}	特性{0}]
+        SetLabelContent(m_speacialAttrStr .. Index .. m_SpecialIndexLabelStr,string_format(GetTextToId(1075),Index),m_panelObject);
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrSpecialValueByIndex(Index, SpecialAttrData);
+        if activeLevel == 255 then
+            SetGameObjectState(m_speacialAttrStr .. Index, false, m_panelObject);
+        else
+            SetGameObjectState(m_speacialAttrStr .. Index, true, m_panelObject);
+            SetLabelContent(m_speacialAttrStr .. Index .. m_AttrNameStr, CCommonTool.GetAttrNameByAttrID(AttrIndex), m_panelObject);
+            local attrInfo = CCommonTool.GetAttrIndexInfo(AttrIndex);
+            if attrInfo.Ratio < 1 then
+                local valuePercent = attrInfo.Ratio * AttrSingleValue;
+                AttrSingleValue = string.format("%1d", valuePercent * 100).."%";
+            end
+            SetLabelContent(m_speacialAttrStr .. Index .. m_CurAttrValueStr, "+"..AttrSingleValue, m_panelObject);
+            --[{0}阶解锁	{0}阶解锁]
+            SetLabelContent(m_speacialAttrStr .. Index .. m_AttrNotActiveStr .. m_ActiveLevelStr,string_format(GetTextToId(1074),activeLevel),m_panelObject);
+            if curLevel < activeLevel then
+                SetLabelColor(m_speacialAttrStr .. Index .. m_SpecialIndexLabelStr, "807F7E", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_AttrNameStr, "807F7E", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_CurAttrValueStr, "807F7E", m_panelObject);
+                SetGameObjectState(m_speacialAttrStr .. Index .. m_AttrNotActiveStr, true, m_panelObject);
+            else
+                SetLabelColor(m_speacialAttrStr .. Index .. m_SpecialIndexLabelStr, "FFEE78", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_AttrNameStr, "FFEE78", m_panelObject);
+                SetLabelColor(m_speacialAttrStr .. Index .. m_CurAttrValueStr, "A0A9B5", m_panelObject);
+                SetGameObjectState(m_speacialAttrStr .. Index .. m_AttrNotActiveStr, false, m_panelObject);
+            end
+        end
+    end
+
+
+    -- 初始化激活的条件
+    m_showItemTable = { };
+    if cur_GodState == ENUM_GOD_STATE.NOTACTIVE then
+        SetGameObjectState(m_NotFullLevelStr, true, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_ActiveStr, true, m_panelObject);
+        SetGameObjectState(m_FosterStr, false, m_panelObject);
+        SetGameObjectState(m_levelUpStr, false, m_panelObject);
+        if curGodCfg.Type == 1 then
+            if curGodCfg.Key3 > 0 then
+                local itemTable = { };
+                itemTable.excelID = G_ItemToolTipDefine.BINDMONEY;
+                itemTable.Type = 1;
+                itemTable.Num = curGodCfg.Key3;
+                table.insert(m_showItemTable, itemTable);
+            end
+            if curGodCfg.Key1 > 0 and curGodCfg.Key2 > 0 then
+                local itemTable = { };
+                itemTable.excelID = curGodCfg.Key1;
+                itemTable.Type = 0;
+                itemTable.Num = curGodCfg.Key2;
+                table.insert(m_showItemTable, itemTable);
+            end
+            ShowItem(m_showItemTable);
+        else
+            error("this get ride condition does not design by GameDesigner");
+            return false;
+        end
+        if m_clickButtonState then
+            CCommonTool.SetGameObjectGrey(m_activeButtonObj, false);
+        else
+            CCommonTool.SetGameObjectGrey(m_activeButtonObj, true);
+        end
+        -- 如果是培养
+    elseif cur_GodState == ENUM_GOD_STATE.CANFOSTER then
+        curGenieGodInfo=GenieFosterTable.Get(curGodCfg.Id + curLevel);
+        SetGameObjectState(m_NotFullLevelStr, true, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_FosterStr, true, m_panelObject);
+        SetGameObjectState(m_levelUpStr, false, m_panelObject);
+        if curGenieGodInfo.GroomGold > 0 then
+            local itemTable = { };
+            itemTable.excelID = G_ItemToolTipDefine.BINDMONEY;
+            itemTable.Type = 1;
+            itemTable.Num = curGenieGodInfo.GroomGold;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if curGenieGodInfo.GroomItem1 > 0 and curGenieGodInfo.GroomItem1Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = curGenieGodInfo.GroomItem1;
+            itemTable.Type = 0;
+            itemTable.Num = curGenieGodInfo.GroomItem1Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if curGenieGodInfo.GroomItem2 > 0 and curGenieGodInfo.GroomItem2Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = curGenieGodInfo.GroomItem2;
+            itemTable.Type = 0;
+            itemTable.Num = curGenieGodInfo.GroomItem2Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        ShowItem(m_showItemTable);
+        if m_clickButtonState then
+            CCommonTool.SetGameObjectGrey(m_fosterButtonObj, false);
+            CCommonTool.SetGameObjectGrey(m_fosterTenButtonObj, false);
+        else
+            CCommonTool.SetGameObjectGrey(m_fosterButtonObj, true);
+            CCommonTool.SetGameObjectGrey(m_fosterTenButtonObj, true);
+        end
+    elseif cur_GodState == ENUM_GOD_STATE.CANLEVELUP then
+        curGenieGodInfo=GenieFosterTable.Get(curGodCfg.Id + curLevel);
+        SetGameObjectState(m_NotFullLevelStr, true, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_FosterStr, false, m_panelObject);
+        SetGameObjectState(m_levelUpStr, true, m_panelObject);
+        if curGenieGodInfo.UpgradeGold > 0 then
+            local itemTable = { };
+            itemTable.excelID = G_ItemToolTipDefine.BINDMONEY;
+            itemTable.Type = 1;
+            itemTable.Num = curGenieGodInfo.UpgradeGold;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if curGenieGodInfo.UpgradeItem1 > 0 and curGenieGodInfo.UpgradeItem1Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = curGenieGodInfo.UpgradeItem1;
+            itemTable.Type = 0;
+            itemTable.Num = curGenieGodInfo.UpgradeItem1Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        if curGenieGodInfo.UpgradeItem2 > 0 and curGenieGodInfo.UpgradeItem2Num > 0 then
+            local itemTable = { };
+            itemTable.excelID = curGenieGodInfo.UpgradeItem2;
+            itemTable.Type = 0;
+            itemTable.Num = curGenieGodInfo.UpgradeItem2Num;
+            table.insert(m_showItemTable, itemTable);
+        end
+        ShowItem(m_showItemTable);
+        if m_clickButtonState then
+            CCommonTool.SetGameObjectGrey(m_levelUpButtonObj, false);
+        else
+            CCommonTool.SetGameObjectGrey(m_levelUpButtonObj, true);
+        end
+    else
+        SetGameObjectState(m_NotFullLevelStr, false, m_panelObject);
+        SetGameObjectState(m_FullLevelStr, true, m_panelObject);
+    end
+end
+----------------------------------
+-- 根据索引值得到基础属性信息
+function GetLvAttridAttrValueByIndex(Index, AttrData)
+    if Index == 1 then
+        return 1, AttrData.TypeAttr1, AttrData.ValueAttr1;
+    elseif Index == 2 then
+        return 1, AttrData.TypeAttr2, AttrData.ValueAttr2;
+    elseif Index == 3 then
+        return 1, AttrData.TypeAttr3, AttrData.ValueAttr3;
+    elseif Index == 4 then
+        return 1, AttrData.TypeAttr4, AttrData.ValueAttr4;
+    elseif Index == 5 then
+        return 1, AttrData.TypeAttr5, AttrData.ValueAttr5;
+    else
+        return -1, -1, -1;
+    end
+end
+
+-- 根据索引值得到特殊属性信息
+function GetLvAttridAttrSpecialValueByIndex(Index, AttrData)
+    if Index == 1 then
+        return AttrData.ActivateSenior1, AttrData.TypeSenior1, AttrData.ValueSenior1;
+    elseif Index == 2 then
+        return AttrData.ActivateSenior2, AttrData.TypeSenior2, AttrData.ValueSenior2;
+    elseif Index == 3 then
+        return AttrData.ActivateSenior3, AttrData.TypeSenior3, AttrData.ValueSenior3;
+    elseif Index == 4 then
+        return AttrData.ActivateSenior4, AttrData.TypeSenior4, AttrData.ValueSenior4;
+    else
+        return -1, -1, -1;
+    end
+end
+----------------------------------
+function CalcFightValue(curGodCfg)
+    local playerData = GodShapeShiftManager.GetPlayerGodByInfo(curGodCfg);
+    if playerData == nil then
+        return 0;
+    end
+    local fightTable = {};
+    local curLevel = playerData.CurLvl;
+    local SpecialAttrData =GenieAttrTable.Get(curGodCfg.Id);
+    local AttrData=GenieFosterTable.Get(curGodCfg.Id+curLevel);
+    for Index = 1,5 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, AttrData);
+        if curLevel >= activeLevel then
+            local value =((curLevel - activeLevel) * 10 + playerData.CurStage) * AttrSingleValue;
+            AddFightValueTable(fightTable,AttrIndex,value);
+        end
+    end
+    for Index = 1, 4 do
+        local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrSpecialValueByIndex(Index, SpecialAttrData);
+        if curLevel >= activeLevel then
+            AddFightValueTable(fightTable,AttrIndex,AttrSingleValue);
+        end
+    end
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, false) + 0.5);
+    return curFightValue;
+end
+-- 对战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end
+-------------------------------------------------------
+-- 需要道具的展示
+function ShowItem(itemTable)
+    m_clickButtonState = true;
+    for Index = 1, #itemTable do
+        SetSpriteApptitudeV04(m_itemPositionStr .. Index .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_itemPositionStr .. Index .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(itemTable[Index].excelID), m_panelObject);
+        SetSpriteByAtlasID(m_itemPositionStr .. Index .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(itemTable[Index].excelID), m_panelObject, true);
+        SetItemToolTipsEvent(m_panelObject, m_itemPositionStr .. Index, ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT, false, itemTable[Index].excelID);
+        if itemTable[Index].Type == 1 then
+            SetLabelContent(m_itemPositionStr .. Index .. m_itemNumStr, itemTable[Index].Num, m_panelObject);
+            SetGameObjectState(m_itemPositionStr .. Index .. m_itemGetsWay, false, m_panelObject);
+            if G_UserInfo.BindCoin < itemTable[Index].Num then
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                m_clickButtonState = false;
+				m_CoinIsEnough = false;
+            else
+				m_CoinIsEnough = true;
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+            end
+        elseif itemTable[Index].Type == 0 then
+            local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable[Index].excelID);
+			m_ItemDataId = itemTable[Index].excelID;
+            SetLabelContent(m_itemPositionStr .. Index .. m_itemNumStr, hasNum .. "/" .. itemTable[Index].Num, m_panelObject);
+            if hasNum >= itemTable[Index].Num then
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "FFFFFF", m_panelObject);
+                SetGameObjectState(m_itemPositionStr .. Index .. m_itemGetsWay, false, m_panelObject);
+				m_MatIsEnough = true;
+            else
+                SetLabelColor(m_itemPositionStr .. Index .. m_itemNumStr, "D83232", m_panelObject);
+                SetGameObjectState(m_itemPositionStr .. Index .. m_itemGetsWay, true, m_panelObject);
+                m_clickButtonState = false;
+				m_MatIsEnough = false;
+            end
+        end
+        SetGameObjectState(m_itemPositionStr .. Index, true, m_panelObject);
+        SetItemToolTipsEvent(m_panelObject, m_itemPositionStr .. Index, ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT, false, itemTable[Index].excelID);
+    end
+    for Index = #itemTable + 1, 3 do
+        SetGameObjectState(m_itemPositionStr .. Index, false, m_panelObject);
+    end
+    m_itemsUITableComp:Reposition();
+end
+
+------------------------------------
+-- 根据当前的神将配置得到 神将状态
+function GetGodStateByInfo(godsInfo)
+    local state = ENUM_GOD_STATE.NOTACTIVE;
+    if godsInfo == nil then
+        --error("未激活状态");
+        return state;
+    end
+    local player_info = GodShapeShiftManager.GetPlayerGodByInfo(godsInfo);
+    if player_info == nil then
+        --error("未激活状态");
+        return state;
+    end
+    if player_info.CurLvl<1 then
+        --error("未激活状态");
+        state = ENUM_GOD_STATE.NOTACTIVE;
+        return state;
+    end
+    -- 判定是否装备上身了
+    if GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId == godsInfo.Id then
+        state = ENUM_GOD_STATE.HADEQUIP; 
+        --error("已装备身上");
+        return state;
+    end
+    -- 判定是否激活了完成了
+    if player_info.CurLvl  >= 1 then
+        --error("激活状态");
+        state = ENUM_GOD_STATE.CANEQUIP;
+        return state;
+    end
+    return state;
+end
+
+-- 设置神将技能
+function SetCurGodSkills()
+    local num = 0;
+    for index=1,4 do
+        if index <= #m_CurGodSkillTables then
+            SetGameObjectState(m_middleSkillStr..index,true,m_panelObject);
+            --设置图片
+            local skillMainInfo = CCommonTool.GetSkillMainData(m_CurGodSkillTables[index]);
+            if skillMainInfo ~= nil then
+                local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                if skillDataInfo ~= nil then
+                    SetSpriteByAtlasID(m_middleSkillStr..index.."/Sprite_Icon", skillDataInfo.Icon, m_panelObject);
+                    local go = child(m_panelObject,m_middleSkillStr..index).gameObject;
+                    --error("该技能id： "..m_CurGodSkillTables[index].." 子技能id ："..skillMainInfo.SonSkill0);
+                    TipsManager.SkillTips(go, m_CurGodSkillTables[index], skillMainInfo.SonSkill0, 0, true)
+                end
+            end
+            num = num+1;
+        else
+            SetGameObjectState(m_middleSkillStr..index,false,m_panelObject);
+        end
+    end
+    SetSpriteWidth(m_middleSkillBgStr,500-(4-num)*120,m_panelObject);
+    m_skillUITableComp:Reposition();
+end
+-- 隐藏,删除3d模型
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+end
+-- 加载显示3d模型
+function Load3DModel(model_id)
+    local buffer = ByteBuffer.New();  
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);   -- ENUM_PANEL_CULTIVATECHANGEPANEL进阶的    
+    buffer:WriteInt(model_id); -- model_id
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+-- 左侧神将图标数据初始化
+function OnGodCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local culInfo = data;
+    local state = GetGodStateByInfo(culInfo);
+    local isLock = state == ENUM_GOD_STATE.NOTACTIVE ;
+    local isWear = state == ENUM_GOD_STATE.HADEQUIP ;
+    SetGameObjectState("Equip", true, go);
+    SetGameObjectState("Sprite_Mask", isLock == true, go);
+    SetGameObjectState("Wear", isWear == true, go);
+    SetSpriteByAtlasID(m_leftUIGodCompStr.."/_Content/"..go.name.."/Equip/Sprite_Icon",tonumber(culInfo.IconID),m_panelObject,true);
+    --SetItemShowByExcelIDV04(go, "Equip", culInfo.IconID, 1, false, 11, ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+    -- 是否显示红点
+    if IsCanOperate(culInfo) == true then
+        SetGameObjectState("Equip"..Sprite_RedHint,true,go);
+    else
+        SetGameObjectState("Equip"..Sprite_RedHint,false,go);
+    end
+    --可以激活 字体显示
+    local curPlayerGodByInfo=GodShapeShiftManager.GetPlayerGodByInfo(culInfo);
+    if  curPlayerGodByInfo~=nil and curPlayerGodByInfo.CurLvl<1 and IsCanActive(culInfo)==true then
+       SetGameObjectState(m_CanAcitveStr,true,go)
+    else
+       SetGameObjectState(m_CanAcitveStr,false,go)
+    end
+end
+-- 左侧神将图标点击事件
+function OnGodCloneClick(listView, cell, go)
+    m_leftSelectIndex = cell.dataIndex+1;
+    -- 设置middle 内容
+    InitMiddleContent();
+    -- 设置右侧展示的属性
+    InitRightContent();
+end
+
+-- 消耗道具数量== 绑定+非绑定
+function GetBindAndNotNumById(unBind_id)
+    local unBind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, unBind_id);
+    local bind_Id = WrapBindExceId(unBind_id);
+    local bind_Num = 0;
+    if bind_Id >0 then
+        bind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bind_Id);
+    end   
+    return unBind_Num+bind_Num;
+end
+--根据得到非绑定id 得到绑定id
+function WrapBindExceId(unBind_id)
+    local num = -1;
+    local  datas = CCommonTool.GetTradableInfo(unBind_id);
+    if datas ~=nil then
+        num =   datas.UntradableItemID; -- 绑定id
+    else
+        --error("非绑定id："..unBind_id.." 得到不对应的绑定id");
+    end   
+    return num
+end
+-- 根据神将获得神将配置表 消耗道具 信息
+function GetCostItemsByInfo(godsInfo)
+    local costInfo = {};
+   -- local godsInfo = CCommonTool.xxxxx(index);
+    if costInfo == nil then
+        error("[lua] 请核查Genie_data表 index: ".. index);
+        return costInfo;
+    end
+    local item1 = { };
+    item1.excelID = G_ItemToolTipDefine.BINDMONEY;
+    item1.Type = 1;
+    item1.Num = godsInfo.Key3;
+    table.insert(costInfo, item1);
+
+    local item2 = {};
+    item2.excelID = godsInfo.Key1;
+    item2.Type = 0;
+    item2.Num = godsInfo.Key2;
+    table.insert(costInfo, item2);
+
+    return costInfo;
+end
+-- 根据神将获得神将配置表属性配置
+function GetGodAttrsInfo(godsInfo)
+    local attrsInfo = {};
+   -- local godsInfo = CCommonTool.xxxxx(index);
+    if godsInfo == nil then
+        error("[lua] 请核查Genie_data表 index: ");
+        return attrsInfo;
+    end
+    --神将培养暂定为5条属性
+    for i=1,5 do
+        attrsInfo[i] = {};
+        if i == 1 then
+            attrsInfo[i].attr_id = godsInfo.AttId1;
+            attrsInfo[i].attr_add = godsInfo.AttEach1;
+            attrsInfo[i].attr_num = godsInfo.AttNum1;
+            attrsInfo[i].picture_id = godsInfo.PictureId1;
+        end
+         if i == 2 then
+            attrsInfo[i].attr_id = godsInfo.AttId2;
+            attrsInfo[i].attr_add = godsInfo.AttEach2;
+            attrsInfo[i].attr_num = godsInfo.AttNum2;
+            attrsInfo[i].picture_id = godsInfo.PictureId2;
+        end
+         if i == 3 then
+            attrsInfo[i].attr_id = godsInfo.AttId3;
+            attrsInfo[i].attr_add = godsInfo.AttEach3;
+            attrsInfo[i].attr_num = godsInfo.AttNum3;
+            attrsInfo[i].picture_id = godsInfo.PictureId3;
+        end
+         if i == 4 then
+            attrsInfo[i].attr_id = godsInfo.AttId4;
+            attrsInfo[i].attr_add = godsInfo.AttEach4;
+            attrsInfo[i].attr_num = godsInfo.AttNum4;
+            attrsInfo[i].picture_id = godsInfo.PictureId4;
+        end
+         if i == 5 then
+            attrsInfo[i].attr_id = godsInfo.AttId5;
+            attrsInfo[i].attr_add = godsInfo.AttEach5;
+            attrsInfo[i].attr_num = godsInfo.AttNum5;
+            attrsInfo[i].picture_id = godsInfo.PictureId5;
+        end
+    end
+
+    return attrsInfo;
+end
+
+
+-- 根据神将id 得到对应的技能
+function GetSkillsByGodId(god_id)
+    local shapesInfo = CCommonTool.GetShapeshiftingInfoByIndex(god_id);
+    if shapesInfo == nil then
+        error("[lua] shapeshift 表 主键id： "..god_id.." 为空");
+        return {} ;
+    end
+    local skills = {};
+    if shapesInfo.transformSkill1 >0 then
+        table.insert(skills,shapesInfo.TransformSkill1);
+    end
+    if shapesInfo.transformSkill2 >0 then
+        table.insert(skills,shapesInfo.TransformSkill2);
+    end
+    if shapesInfo.transformSkill3 >0 then
+        table.insert(skills,shapesInfo.TransformSkill3);
+    end
+    if shapesInfo.transformSkill4 >0 then
+        table.insert(skills,shapesInfo.TransformSkill4);
+    end
+    if shapesInfo.transformSkill5 >0 then
+        table.insert(skills,shapesInfo.TransformSkill5);
+    end
+    if shapesInfo.transformSkill6 >0 then
+        table.insert(skills,shapesInfo.TransformSkill6);
+    end
+    return skills;
+end
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_leftSelectIndex;  -- 当前选中第几个
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 关闭按钮事件
+function OnCloseClick(e)
+    closePanel(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+end
+-- server返回培养，进阶数据时刷新
+-- refreshRed 是否需要重新设置小红点
+function RefreshGodShow(refreshRed)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT) == 1 then
+
+        if m_leftUIListViewComp ~=nil then  
+            m_leftUIListViewComp:Refresh();   -- 会重新调用一次:Init方法
+        end
+        InitRightContent();
+    end
+
+    if refreshRed == nil then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GODSHAPESHIFT,GodShapeShiftPanel.IsShowRedHintRide());
+    end 
+end
+
+-- 在 ServerSendInitAllSysDataOK调用即可
+function IsShowRedHintRide()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_GOD) == false then
+        return false;
+    end
+
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT) == 1 then
+
+        if m_leftUIListViewComp ~=nil then  
+            m_leftUIListViewComp:Refresh();   -- 会重新调用一次:Init方法？？？？？
+        end
+        InitRightContent();
+    end
+    IninalData();
+    -- 是否神将界面可操作
+    for index=1,#GenieTableData do
+        if IsCanOperate(GenieTableData[index]) == true  then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可操作
+function IsCanOperate(curGodCfg)
+
+    local curPlayerData = GodShapeShiftManager.GetPlayerGodByInfo(curGodCfg);
+    --基础属性数据
+    local AttrData=0;
+    if curPlayerData.CurLvl==0 then
+        AttrData=GenieFosterTable.Get(curGodCfg.Id+1);
+    else
+        AttrData=GenieFosterTable.Get(curGodCfg.Id+curPlayerData.CurLvl);
+    end
+    --特殊属性数据
+    local SpecialAttrData =GenieAttrTable.Get(curGodCfg.Id);
+
+    local curLevel = 0;
+    if curPlayerData ~= nil then
+        curLevel = curPlayerData.CurLvl;
+    else
+        curPlayerData = { };
+        curPlayerData.CurLvl = 0;
+        curPlayerData.CurStage = 0;
+    end
+    ---
+    local godState = ENUM_MOUNT_STATE.NOTACTIVE;
+    if curLevel < 1 then
+        godState = ENUM_MOUNT_STATE.NOTACTIVE;
+    else
+        for Index = 1, 5 do
+            local activeLevel, AttrIndex, AttrSingleValue = GetLvAttridAttrValueByIndex(Index, AttrData);
+            if curLevel >= activeLevel then
+                if curPlayerData.CurStage < 10 then
+                    godState = ENUM_MOUNT_STATE.CANFOSTER;
+                    break;
+                end
+            end
+        end
+        if godState ~= ENUM_MOUNT_STATE.CANFOSTER then
+            if curLevel >= curGodCfg.NumMax then
+                godState = ENUM_MOUNT_STATE.LEVELMAX;
+            else
+                godState = ENUM_MOUNT_STATE.CANLEVELUP;
+            end
+        end
+    end
+    local canOperate = false;
+    if godState == ENUM_MOUNT_STATE.NOTACTIVE then
+        canOperate = IsCanActive(curGodCfg);
+
+    elseif godState == ENUM_MOUNT_STATE.CANFOSTER then
+        canOperate = IsCanFoster(curGodCfg,curLevel);
+
+    elseif godState == ENUM_MOUNT_STATE.CANLEVELUP then
+        canOperate = IsCanLevelUp(curGodCfg,curLevel);
+
+    elseif godState == ENUM_MOUNT_STATE.LEVELMAX then
+        canOperate = false;
+
+    end
+    return canOperate;
+end
+
+function IsCanActive(curGodCfg)
+    if curGodCfg.Type == 1 then
+        if curGodCfg.Key3 > 0 then
+            if G_UserInfo.BindCoin < curGodCfg.Key3 then
+                return false;
+            end
+        else
+        end
+        if curGodCfg.Key1 > 0 and curGodCfg.Key2 > 0 then
+            local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, curGodCfg.Key1);
+            if hasNum < curGodCfg.Key2 then
+                return false;
+            end
+        end
+    else
+        error("this get ride condition does not design by GameDesigner ");
+        return false;
+    end
+    return true;
+end
+
+function IsCanFoster(curGodCfg,curLevel)
+    local FosterInfo =GenieFosterTable.Get(curGodCfg.Id + curLevel);
+    if FosterInfo.GroomGold > 0 then
+        if G_UserInfo.BindCoin < FosterInfo.GroomGold then
+            return false;
+        end
+    end
+    if FosterInfo.GroomItem1 > 0 and FosterInfo.GroomItem1Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, FosterInfo.GroomItem1);
+        if hasNum < FosterInfo.GroomItem1Num then
+            return false;
+        end
+    end
+    if FosterInfo.GroomItem2 > 0 and FosterInfo.GroomItem2Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, FosterInfo.GroomItem2);
+        if hasNum < FosterInfo.GroomItem2Num then
+            return false;
+        end
+    end
+    return true;
+end
+
+function IsCanLevelUp(curGodCfg,curLevel)
+    local FosterInfo =GenieFosterTable.Get(curGodCfg.Id + curLevel);
+    if FosterInfo.UpgradeGold > 0 then
+        if G_UserInfo.BindCoin < FosterInfo.UpgradeGold then
+            return false;
+        end
+    end
+    if FosterInfo.UpgradeItem1 > 0 and FosterInfo.UpgradeItem1Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, FosterInfo.UpgradeItem1);
+        if hasNum < FosterInfo.UpgradeItem1Num then
+            return false;
+        end
+    end
+    if FosterInfo.UpgradeItem2 > 0 and FosterInfo.UpgradeItem2Num > 0 then
+        local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, FosterInfo.UpgradeItem2);
+        if hasNum < FosterInfo.UpgradeItem2Num then
+            return false;
+        end
+    end
+    return true;
+end
+--------------------------------
+-- 激活 神将
+function OnActiveBtnClick()
+    if  m_clickButtonState  then
+        if cur_GodState ~= ENUM_GOD_STATE.NOTACTIVE     then
+            --error("【lua】 当前神将已激活！！！");
+            return;
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_SHO_JIHUO );
+        --local god_Id = m_GodShapeShiftCfg[m_leftSelectIndex].ShapeShiftingId;
+        local player_info = GodShapeShiftManager.GetPlayerGodByInfo(m_showDataTable[m_leftSelectIndex]);
+        buffer:WriteInt(player_info.Id);
+        --buffer:WriteInt(god_Id);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+        --[不满足该神将的激活条件]
+        ShowSystemFlowTips(5121);
+        G_MusicMng:OnLoadMusic(4011);
+    end
+    ReportManager.RequestReportPanel(10305);
+end
+
+-- 神将培养按钮
+function FosterMountClick(e)
+    if m_clickButtonState  then
+        if cur_GodState ~= ENUM_GOD_STATE.CANFOSTER  then
+            local curGodCfg = m_showDataTable[m_leftSelectIndex];
+            if curGodCfg ~=nil then
+                local lvl = curGodCfg.LevelId;
+                 -- 需要等级达到{0}级才能培养
+                ShowSystemFlowTips(9628,nil,{lvl});
+            end
+            return;
+        end
+        if m_CoinIsEnough == false or m_MatIsEnough ==false then
+            ShowSystemFlowTips(9623);
+            --error("金钱或材料不足！");
+            return;
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_SHO_PEIYANG);
+        local player_info = GodShapeShiftManager.GetPlayerGodByInfo(m_showDataTable[m_leftSelectIndex]);
+        --local god_Id = m_GodShapeShiftCfg[m_leftSelectIndex].ShapeShiftingId;
+        buffer:WriteInt(player_info.Id);
+        local index = tonumber(string.sub(e.name,14,string.len(e.name)));
+        if index ~=nil and index >= 10 then
+            buffer:WriteByte(10);  -- 一键培养
+        else
+            buffer:WriteByte(1);   -- 培养一次
+        end
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+		CheckConditionIsEnough();
+
+    end
+
+end
+--突破、升阶神将按钮
+function LevelUpMountClick(e)
+    if m_clickButtonState then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_SHO_JINJIE);
+        buffer:WriteInt(m_showDataTable[m_leftSelectIndex].Id);
+        G_NetWorkMng:SendMessage(buffer);
+        G_MusicMng:OnLoadMusic(4010);
+    else
+		CheckConditionIsEnough();
+        --ShowSystemFlowTips(5133);
+        --G_MusicMng:OnLoadMusic(4011);
+    end
+end
+
+-- 点击装备 神将事件
+function OnEquipGodBtnClick()
+    local player_info = GodShapeShiftManager.GetPlayerGodByInfo(m_showDataTable[m_leftSelectIndex]);
+    if player_info.id ==GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId    then
+        --error("【lua】当前装备神将ID="..player_info.id);
+        -- [该神将已经装备]
+        ShowSystemFlowTips(9629);
+        return;
+    end
+    if cur_GodState == ENUM_GOD_STATE.NOTACTIVE then
+        --error("【lua】 当前神将未激活，尚不能装备或卸下！！！");
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHO_USE );
+    --local god_Id = m_GodShapeShiftCfg[m_leftSelectIndex].ShapeShiftingId;
+    buffer:WriteInt(player_info.Id);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+-----------
+--检查是哪种情况不满足
+function CheckConditionIsEnough()
+	if m_CoinIsEnough ~=true then
+		log("银币不足，跳转到货币兑换界面");
+        MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+		return;
+	end
+	if m_MatIsEnough ~=true then
+		log("材料不足，跳转到材料快捷购买界面");
+        if m_ItemDataId>0 and  CCommonTool.GetQuickToBuyByExcelID(m_ItemDataId)~=nil then
+            MaterialExchangePanel.ShowPanel(m_ItemDataId,ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+            return;       
+        end  
+	end
+	
+	ShowSystemFlowTips(5126);
+    G_MusicMng:OnLoadMusic(4011);
+end

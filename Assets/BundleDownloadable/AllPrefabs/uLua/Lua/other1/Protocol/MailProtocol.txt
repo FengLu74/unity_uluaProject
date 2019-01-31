@@ -1,0 +1,201 @@
+﻿module("MailProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 更新玩家的邮件
+    network.Register(GMI_STOC_MAIL_INFO, OnUpdateMailInfo);
+end
+
+-- 邮件系统更新
+function OnUpdateMailInfo(protocolId, buffer)
+    local newInfo = buffer:ReadUShort();
+    MailManger.m_IsNewMail = 0;
+    -- error("update === OnUpdateMailInfo newInfo " .. newInfo);
+    -- 是否是刷新
+    if newInfo == E_STOC_MAILMSG_TYPE.ESMT_NEWINFO then
+        -- 是否是系统邮件
+        local m_system = buffer:ReadUShort();
+        -- 下面参数无用
+        local mType = buffer:ReadUShort();
+        OnAddMailBaseContent(buffer);
+        MailManger.m_IsNewMail = 0;
+    elseif newInfo == E_STOC_MAILMSG_TYPE.ESMT_BASEINFO then
+        -- 后续邮件
+        local m_system = buffer:ReadUShort();
+        -- 下面参数无用
+        local mType = buffer:ReadUShort();
+        OnAddMailBaseContent(buffer);
+        MailManger.m_IsNewMail = 0;
+    elseif newInfo == E_STOC_MAILMSG_TYPE.ESMT_CONTENT then
+        OnMailContent(buffer);
+    elseif newInfo == E_STOC_MAILMSG_TYPE.ESMT_UNREAD_AND_TOTAL_COUNT then
+        MailManger.mailTable = { };
+        MailManger.mailContentTable = { };
+        MailManger.mailItemTabel = { };
+    elseif newInfo == E_STOC_MAILMSG_TYPE.ESMT_FEEDBACK then
+        -- 反馈消息
+        local m_system = buffer:ReadUShort();
+        if m_system == E_STOC_MAILMSG_FEEDBACK.ESMF_GETCONTENT_HAVEDELETED then
+            -- 增加提示（此邮件已经删除）
+            error("邮件已删除");
+            return;
+        elseif m_system == E_STOC_MAILMSG_FEEDBACK.ESMF_GETBASEINFO_FAILED then
+            error("邮件获取失败");
+            return;
+        end
+        local mType = buffer:ReadUShort();
+        -- 删除ID
+        local m_mailID = buffer:ReadInt64ToString();
+        -- 更新UI
+        PlayerMailPanel.DeleteMailReturn(m_mailID);
+    elseif newInfo == E_STOC_MAILMSG_TYPE.ESMT_TAKEAFFIXRESULT then
+        -- 获取附件
+        local m_system = buffer:ReadUShort();
+        local mType = buffer:ReadUShort();
+        PlayerMailPanel.IsMailSuccess(m_system);
+        -- 展示获得的道具显示--
+    elseif newInfo == E_STOC_MAILMSG_TYPE.ESMT_UNREAD_NEW_COUNT then
+        local mailCount = buffer:ReadUShort();
+        -- 邮件数量
+        local mType = buffer:ReadUShort();
+        MailManger.m_IsNewMail = mailCount;
+        PlayerMailPanel.IsShowRedHintMail();
+        RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_MAIL, PlayerMailPanel.IsShowRedHintMail());
+        -- error("MailManger.m_IsNewMail::::" .. MailManger.m_IsNewMail);
+    end
+end
+
+-- 解析 添加邮件内容
+function OnAddMailBaseContent(buffer)
+    -- 是否是新邮件
+    local isNewMail = buffer:ReadInt();
+    local size = buffer:ReadByte();
+    if size < 0 then
+        return;
+    end
+    local isHave = false;
+    -- error("size:::" .. size);
+    -- error(":::" .. #MailManger.mailTable);
+    for Index = 1, size do
+        local mailInfo = MailInfo(buffer);
+        if #MailManger.mailTable > 0 then
+            for Index = 1, #MailManger.mailTable do
+                if mailInfo.mailID == MailManger.mailTable[Index].mailID then
+                    isHave = true;
+                    break;
+                end
+            end
+            if isHave == false then
+                table.insert(MailManger.mailTable, mailInfo);
+            end
+        else
+            table.insert(MailManger.mailTable, mailInfo);
+        end
+    end
+    -- error("MailManger.mailTable:::" .. #MailManger.mailTable);
+    PlayerMailPanel.OnUpdateMailInfo();
+end
+
+-- 解析邮件显示的内容
+function OnMailContent(buffer)
+    local mailInfo = nil;
+    mailInfo = MailContent(buffer);
+    table.insert(MailManger.mailContentTable, mailInfo);
+    PlayerMailPanel.OnMailContent(mailInfo.ItemNum, mailInfo.MailMoney, mailInfo.MailTongBao, mailInfo.MailDingMoney, mailInfo.MailDingTongBao);
+end
+
+-- 邮件内容信息
+function MailContent(buffer)
+    local ItmeInfo = nil;
+    local ContentTable = { };
+    local mType = buffer:ReadUShort();
+    local mNone = buffer:ReadUShort();
+    ContentTable.MailType = mType;
+    --error("mType:::" .. mType);
+    ContentTable.MailID = buffer:ReadInt64ToString();
+    -- error("ContentTable.MailID：：：" .. ContentTable.MailID);
+    local len = buffer:ReadInt();
+    -- // 邮件内容
+    ContentTable.MailContent = buffer:ReadString(len);
+    -- //非绑定游戏币
+    ContentTable.MailMoney = buffer:ReadInt();
+    -- error("ContentTable.MailMoney::" .. ContentTable.MailMoney);
+    -- //绑定游戏币
+    ContentTable.MailDingMoney = buffer:ReadInt();
+    -- error("ContentTable.MailBingMoney:::" .. ContentTable.MailDingMoney);
+    -- //非绑定元宝
+    ContentTable.MailTongBao = buffer:ReadInt();
+    -- error("ContentTable.MailBingTongBao:::" .. ContentTable.MailTongBao);
+    -- //绑定元宝
+    ContentTable.MailDingTongBao = buffer:ReadInt();
+    -- error("ContentTable.MailTongBao::" .. ContentTable.MailDingTongBao);
+    -- 道具个数
+    ContentTable.ItemNum = buffer:ReadByte();
+    -- error("ContentTable.ItemNum：：" .. ContentTable.ItemNum);
+    ContentTable.mailItemTable = { };
+    if ContentTable.ItemNum > 0 then
+        for Index = 1, ContentTable.ItemNum do
+            if PlayerMailPanel.isSystemMailType(mType) == true and mType ~= ENUM_MAIL_TYPE.MT_SYS_AUCTION_WITH_DATA and mType ~= ENUM_MAIL_TYPE.MT_System_Return
+                and mType ~= ENUM_MAIL_TYPE.MT_SYS_TOOL_BACK and mType ~= ENUM_MAIL_TYPE.MT_SYS_TOOL_GIVE then
+                -- //道具ID;
+                MailManger.m_itemID = buffer:ReadUInt();
+                -- //道具数量
+                MailManger.m_itemCount = buffer:ReadUInt();
+                MailManger.m_itemAttr = nil;
+            else
+                -- 反序列化
+                local item = BagProtocol.ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_ONLY_SERIALIZE);
+                MailManger.m_itemID = item.ExcelID;
+                MailManger.m_itemCount = item.ItemNum;
+                MailManger.m_itemAttr = item;
+            end
+            ItmeInfo = MailItemInfo(ContentTable.MailID, MailManger.m_itemID, MailManger.m_itemCount, MailManger.m_itemAttr)
+            table.insert(MailManger.mailItemTabel, ItmeInfo);
+        end
+    end
+    return ContentTable;
+end
+
+-- 邮件道具信息
+function MailItemInfo(mailId, ItemId, count, item)
+    local mailItem = { };
+    mailItem.ID = mailId;
+    mailItem.itemid = ItemId;
+    mailItem.num = count;
+    mailItem.itemAttr = item;
+    return mailItem;
+end
+
+-- 邮件信息
+function MailInfo(buffer)
+    local mailInfo = { };
+    -- id
+    mailInfo.mailID = buffer:ReadInt64ToString()
+    -- 邮件类型
+    mailInfo.mailType = buffer:ReadByte();
+    -- 邮件标题
+    local len = buffer:ReadByte();
+    mailInfo.mailTitle = buffer:ReadString(len);
+    -- 发件人名字
+    local len1 = buffer:ReadByte();
+    mailInfo.Name = buffer:ReadString(len1);
+    -- 发件人id
+    mailInfo.Id = buffer:ReadInt();
+    mailInfo.sendTime = buffer:ReadInt();
+    -- error("sendtime:::" .. mailInfo.sendTime);
+    -- 倒计时
+    mailInfo.invalidTime = buffer:ReadInt();
+    -- 邮件状态
+    mailInfo.mailState = buffer:ReadUShort();
+    -- error("state:::" .. mailInfo.mailState);
+    -- 是否为新邮件
+    if bit:IsEnumFlagOpen(mailInfo.mailState, ENUM_MAIL_STATE.MS_Read) == true then
+        mailInfo.isNewMail = 0;
+    else
+        mailInfo.isNewMail = 1;
+    end
+    -- error("mailInfo.isNewMail::" .. mailInfo.isNewMail);
+    return mailInfo;
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------

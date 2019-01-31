@@ -1,0 +1,124 @@
+﻿module("ExchangeItemProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 服务器通知客户端限时兑换道具数据
+    network.Register(GMI_STOC_SEND_CLIENT_EXCHANGE_ITEM_TIME_INIT, OnExchangeItemTimeInit);
+    -- 服务器通知客户端限时兑换道具领取返回
+    network.Register(GMI_STOC_REQUEST_GET_EXCHANGE_ITEM_TIME_RETURN, OnExchangeItemReturn);
+    -- 服务器通知客户端限时兑换道具领取活动结束返回
+    network.Register(GMI_STOC_REQUEST_GET_EXCHANGE_ITEM_TIME_END, OnExchangeItemEnd);
+end
+
+-- 服务器通知客户端限时兑换道具数据
+function OnExchangeItemTimeInit(protocolId, buffer)
+    FragmentExchangeManger.rechargeTable = { };
+    local m_nVersion = buffer:ReadInt();
+    -- error("m_nVersion::" .. m_nVersion);
+    local m_n64StartTime = buffer:ReadInt64();
+    -- error("m_n64StartTime::" .. m_n64StartTime);
+    -- 开始时间
+    FragmentExchangeManger.beginTime = m_n64StartTime;
+    local m_n64EndTime = buffer:ReadInt64();
+    -- error("m_n64EndTime::" .. m_n64EndTime);
+    -- 结束时间
+    FragmentExchangeManger.endTime = m_n64EndTime;
+    local nItemLen = buffer:ReadInt();
+    -- error("nItemLen::" .. nItemLen);
+    local m_szDes = buffer:ReadString(nItemLen);
+    -- error("m_szDes::" .. m_szDes);
+    FragmentExchangeManger.txtId = m_szDes;
+    local m_nPicID = buffer:ReadInt();
+    FragmentExchangeManger.picterId = m_nPicID;
+    -- error("m_nPicID::" .. m_nPicID);
+    local dataCount = buffer:ReadByte();
+    -- error("dataCount::" .. dataCount);
+    for Index = 1, dataCount do
+        local acuAwardInfo = ItemExchangeContent(buffer);
+        table.insert(FragmentExchangeManger.rechargeTable, acuAwardInfo);
+    end
+    FragmentExchangePanel.InitInfoOut();
+end
+
+-- 服务器通知客户端限时兑换道具领取返回
+function OnExchangeItemReturn(protocolId, buffer)
+    local m_nID = buffer:ReadInt();
+    --error("m_nID::" .. m_nID);
+    local m_nExchangeTimes = buffer:ReadInt();
+    --error("m_nExchangeTimes::" .. m_nExchangeTimes);
+    local count = #FragmentExchangeManger.rechargeTable;
+    local tableList = FragmentExchangeManger.rechargeTable;
+    if count > 0 then
+        for index = 1, count do
+            if m_nID == tableList[index].ExchangeID then
+                tableList[index].CurNum = m_nExchangeTimes;
+            end
+        end
+    end
+    FragmentExchangePanel.InitInfoOut();
+end
+
+-- 服务器通知客户端限时兑换道具领取活动结束返回
+function OnExchangeItemEnd(protocolId, buffer)
+    --error("OnExchangeItemEnd::");
+    FragmentExchangeManger.rechargeTable = { };
+end
+
+-- 充值内容信息
+function ItemExchangeContent(buffer)
+    local ContentTable = { };
+    ContentTable.ExchangeID = buffer:ReadInt();
+    -- error("ExchangeID::" .. ContentTable.ExchangeID)
+    ContentTable.AllNum = buffer:ReadInt();
+    --error("AllNum::" .. ContentTable.AllNum);
+    ContentTable.CurNum = buffer:ReadInt();
+    --error("CurNum::" .. ContentTable.CurNum)
+    -- 需要道具
+    ContentTable.NeedNum = buffer:ReadByte();
+    ContentTable.needItemTable = { };
+    if ContentTable.NeedNum > 0 then
+        for Index = 1, ContentTable.NeedNum do
+            -- //道具ID;
+            local itemID = buffer:ReadInt();
+            -- //道具数量
+            local itemCount = buffer:ReadInt();
+            ItmeInfo = ItemExchangeInfo(ContentTable.ExchangeID, itemID, itemCount)
+            table.insert(ContentTable.needItemTable, ItmeInfo);
+        end
+    end
+    -- 获得道具
+    ContentTable.ItemNum = buffer:ReadByte();
+    ContentTable.contentTable = { };
+    if ContentTable.ItemNum > 0 then
+        for Index = 1, ContentTable.ItemNum do
+            -- //道具ID;
+            local itemID = buffer:ReadInt();
+            -- //道具数量
+            local itemCount = buffer:ReadInt();
+
+            ItmeInfo = ItemExchangeInfo(ContentTable.ExchangeID, itemID, itemCount)
+            table.insert(ContentTable.contentTable, ItmeInfo);
+        end
+    end
+    return ContentTable;
+end
+-- 道具信息
+function ItemExchangeInfo(Id, ItemId, count)
+    local acuAwardItem = { };
+    acuAwardItem.ID = Id;
+    acuAwardItem.itemid = ItemId;
+    acuAwardItem.num = count;
+    return acuAwardItem;
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+-- 请求兑换
+function RequestItemList(nID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_EXCHANGE_ITEM_TIME);
+    buffer:WriteInt(nID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

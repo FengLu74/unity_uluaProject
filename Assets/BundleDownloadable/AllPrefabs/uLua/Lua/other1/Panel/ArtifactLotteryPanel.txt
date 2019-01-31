@@ -1,0 +1,677 @@
+﻿module("ArtifactLotteryPanel", package.seeall)
+-- 本面板名称
+local m_curPanelName = "ArtifactLotteryPanel";
+---------------------------------------label路径---------------------------------------
+-- 此次抽奖花费金额
+local m_curCostNum = "MessagePanel/Others/Label_Cost";
+-- 此次抽奖次数
+local m_curSelectNum = "MessagePanel/Others/Label_Num";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 金币一次抽奖
+local m_oneCoinExtractButton = "CoinDraw/OneButton";
+-- 金币十次抽奖
+local m_TenCoinExtractButton = "CoinDraw/TenButton";
+-- 钻石一次抽奖
+local m_oneStoneExtractButton = "StoneDraw/OneButton";
+-- 钻石十次抽奖
+local m_TenStoneExtractButton = "StoneDraw/TenButton";
+
+-- 确认抽奖按钮
+local m_rewardEnser = "MessagePanel/Button-QueDing";
+-- 取消抽奖按钮
+local m_rewardCancle = "MessagePanel/Button-FanHui";
+
+-- 金币说明按钮
+local m_coinExplainButton = "CoinDraw/Button";
+-- 钻石说明按钮
+local m_stoneExplainButton = "StoneDraw/Button";
+----------------------------------------Sprite路径------------------------------------
+-- 此次抽奖花费类型
+local m_curCostSprite = "MessagePanel/Others/Label_Cost/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+-- 消息确认面板
+local m_messagePanel = "MessagePanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 本次免费
+local m_curFreeLabel = "/Label_Free";
+-- 次数文本
+local m_curNumlabel = "/Label";
+-- 倒计时
+local m_labelTime = "/Label_Time";
+-- 领取次数
+local m_labelTimesNum = "/Label_FreeTime/TimesNum";
+-- 抽奖花费
+local m_labelCostNum = "/Label_Cost";
+-- 花费类型图片
+local m_spriteCost = "/Label_Cost/Sprite";
+-- 抽取次数文本
+local m_labelExNum = "/Label_FreeTime";
+-- 金币抽奖
+local m_CoinExtract = "CoinDraw";
+-- 钻石抽奖
+local m_StoneExtract = "StoneDraw";
+-- 点击抽奖播放的特效
+local m_clickEffect = "/OpenEffect";
+-- 不点击按钮是显示的特效
+local m_notClickEffect = "/NotOpenEffect";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 抽奖信息表
+local m_capsuleTable = { };
+-- 免费抽取剩余次数
+local m_surplusNum = nil;
+-- 距免费领取的剩余时间
+local m_surplusTime = nil;
+-- 当前选择类型 
+local m_currentSelect = nil;
+-- 已用次数 
+local m_useTimes = 0;
+-- 开始时间
+local downTime = 0;
+-- 金币点击特效
+local m_CoinClickEff = nil;
+-- 钻石点击时的特效
+local m_StoneClickEff = nil;
+-- 特效时间
+local m_effectTime = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 金币足够时显示的文本颜色
+local m_enoughColor = "FFFFFF";
+-- 金币不足时显示的文本颜色
+local m_notEnoughColor = "D83232";
+-- 抽取一次所用的空格数
+local m_oneNeedBagCount = 2;
+-- 抽取十次所用的空格数
+local m_tenNeedBagCount = 11;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitObjects();
+    InitAllInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("CoinFreeRewardSurplusTime");
+    G_TimerMng:RemoveTimeTask("StoneFreeRewardSurplusTime");
+    Timer.Instance:StopTimer(m_effectTime);
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_capsuleTable = { };
+    m_surplusTime = nil;
+    m_currentSelect = nil;
+    m_useTimes = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL);
+    m_panelObject = child(m_panelObject, m_curPanelName).gameObject;
+end
+
+-- 初始化的所有数据信息
+function InitAllInfo()
+    InitData();
+    InitShow();
+    -- 初始化点击事件
+    InitOnClick();
+end
+
+-- 初始化所有的数据
+function InitData()
+    m_capsuleTable = CCommonTool.GetCapsuleInfo();
+end
+
+-- 初始化信息显示
+function InitShow()
+    local rewardInfo;
+    local deltaTime = 0;
+    if m_capsuleTable ~= nil then
+        for Index = 5, m_capsuleTable.Count do
+            -- 一次抽取
+            if Index == 5 or Index == 7 then
+                local path1 = nil;
+                for k, v in ipairs(GetRewardManger.rewardsList) do
+                    if v.Id == m_capsuleTable[Index - 1].Id then
+                        rewardInfo = v;
+                        downTime = G_TimerMng:SetTime(rewardInfo.beginTime);
+                    end
+                end
+                -- 距免费领取的剩余时间 rewardInfo.beginTime上次抽奖时间
+                if rewardInfo.beginTime > 0 then
+                    m_surplusTime = math.floor((G_TimerMng:GetCurrentTime().Ticks) / 10000000 - downTime / 10000000);
+                else
+                    m_surplusTime = 0;
+                end
+                local isFree = false;
+                if Index == 5 then
+                    path1 = m_oneCoinExtractButton;
+                elseif Index == 7 then
+                    path1 = m_oneStoneExtractButton;
+                end
+                if m_capsuleTable[Index - 1].FreeNum > 0 then
+                    if m_surplusTime < m_capsuleTable[Index - 1].FreeTime and rewardInfo.rewardNum <= m_capsuleTable[Index - 1].FreeNum and rewardInfo.beginTime ~= 0 then
+                        isFree = true;
+                    end
+                end
+                -- 免费领取倒计时
+                if isFree == true then
+                    if m_surplusTime < 0 then
+                        deltaTime = m_capsuleTable[Index - 1].FreeTime + m_surplusTime;
+                    else
+                        deltaTime = m_capsuleTable[Index - 1].FreeTime - m_surplusTime;
+                    end
+                    if Index == 5 then
+                        AddTimerEvent("CoinFreeRewardSurplusTime", deltaTime, CoinCountDownCallBackOver, ETimeShowType.TypeNumberFour, CoinCountDownCallBack);
+                    elseif Index == 7 then
+                        AddTimerEvent("StoneFreeRewardSurplusTime", deltaTime, StoneCountDownCallBackOver, ETimeShowType.TypeNumberFour, StoneCountDownCallBack);
+                    end
+                    SetGameObjectState(path1 .. m_labelExNum, false, m_panelObject);
+                    SetGameObjectState(path1 .. m_labelTime, true, m_panelObject);
+                    SetGameObjectState(path1 .. m_curFreeLabel, false, m_panelObject);
+                    SetGameObjectState(path1 .. m_curNumlabel, true, m_panelObject);
+                    SetGameObjectState(path1 .. m_labelCostNum, true, m_panelObject);
+                    SetLabelContent(path1 .. m_labelCostNum, m_capsuleTable[Index - 1].CostNum, m_panelObject);
+                else
+                    if m_capsuleTable[Index - 1].FreeNum > 0 and rewardInfo.rewardNum < m_capsuleTable[Index - 1].FreeNum then
+                        SetGameObjectState(path1 .. m_curFreeLabel, true, m_panelObject);
+                        SetGameObjectState(path1 .. m_curNumlabel, false, m_panelObject);
+                        SetGameObjectState(path1 .. m_labelCostNum, false, m_panelObject);
+                        SetLabelContent(path1 .. m_labelCostNum, m_capsuleTable[Index - 1].CostNum, m_panelObject);
+                        -- 剩余次数
+                        local m_downTimes = m_capsuleTable[Index - 1].FreeNum - rewardInfo.rewardNum;
+                        if m_downTimes < 0 then
+                            m_downTimes = 0;
+                        end
+                        SetLabelContent(path1 .. m_labelTimesNum, m_downTimes .. "/" .. m_capsuleTable[Index - 1].FreeNum, m_panelObject);
+                        SetGameObjectState(path1 .. m_labelExNum, true, m_panelObject);
+                        SetGameObjectState(path1 .. m_labelTime, false, m_panelObject);
+                    else
+                        SetGameObjectState(path1 .. m_curFreeLabel, false, m_panelObject);
+                        SetGameObjectState(path1 .. m_curNumlabel, true, m_panelObject);
+                        SetGameObjectState(path1 .. m_labelCostNum, true, m_panelObject);
+                        SetGameObjectState(path1 .. m_labelExNum, false, m_panelObject);
+                        SetGameObjectState(path1 .. m_labelTime, false, m_panelObject);
+                        SetLabelContent(path1 .. m_labelCostNum, m_capsuleTable[Index - 1].CostNum, m_panelObject);
+                    end
+                end
+                -- 设置花费类型图标
+                SetCostSprite(path1, m_capsuleTable[Index - 1].CostType, m_capsuleTable[Index - 1].CostNum);
+                -- 十次抽取
+            elseif Index == 8 or Index == 6 then
+                local path = nil;
+                if Index == 6 then
+                    path = m_TenCoinExtractButton;
+                elseif Index == 8 then
+                    path = m_TenStoneExtractButton;
+                end
+                if path ~= nil then
+                    SetLabelContent(path .. m_labelCostNum, m_capsuleTable[Index - 1].CostNum, m_panelObject);
+                    -- 设置花费类型图标
+                    SetCostSprite(path, m_capsuleTable[Index - 1].CostType, m_capsuleTable[Index - 1].CostNum);
+                end
+            end
+        end
+    end
+    -- 界面显示特效
+    SetGameObjectState(m_CoinExtract .. m_clickEffect, false, m_panelObject);
+    SetGameObjectState(m_CoinExtract .. m_notClickEffect, true, m_panelObject);
+    SetGameObjectState(m_StoneExtract .. m_clickEffect, false, m_panelObject);
+    SetGameObjectState(m_StoneExtract .. m_notClickEffect, true, m_panelObject);
+    --  关闭提示面板
+    SetGameObjectState(m_messagePanel, false, m_panelObject);
+end
+
+
+-- 设置花费类型图标 花费金额文本颜色  path 路径 costType 花费类型 , costNum 花费金额
+function SetCostSprite(path, costType, costNum)
+    -- 设置花费类型图片  花费类型 1.绑定金币 2,非绑定金币 3 非绑定钻石 4 绑定钻石
+    local SpriteId = nil;
+    local labelColor = nil;
+    if costType == 1 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+        if G_UserInfo.BindCoin >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    elseif costType == 2 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiSpriteID):GetIntContent();
+        if G_UserInfo.NotBindCoin >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    elseif costType == 3 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent();
+        if G_UserInfo.BindDiamond >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    elseif costType == 4 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeHongZuanSpriteID):GetIntContent();
+        if G_UserInfo.NotBindDiamond >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    end
+    -- 图标
+    if SpriteId ~= nil then
+        SetSpriteByAtlasID(path .. m_spriteCost, SpriteId, m_panelObject, true);
+    end
+    -- 文本颜色
+    if labelColor ~= nil then
+        SetLabelColor(path .. m_labelCostNum, labelColor, m_panelObject);
+    end
+end
+
+-- 金币免费领取时间回调
+function CoinCountDownCallBack(time)
+    SetLabelContent(m_oneCoinExtractButton .. m_labelTime, time, m_panelObject);
+end
+-- 金币倒计时结束回调
+function CoinCountDownCallBackOver()
+    SetGameObjectState(m_oneCoinExtractButton .. m_labelExNum, true, m_panelObject);
+end
+-- 钻石免费领取回调
+function StoneCountDownCallBack(time)
+    SetLabelContent(m_oneStoneExtractButton .. m_labelTime, time, m_panelObject);
+end
+-- 钻石倒计时 结束回调
+function StoneCountDownCallBackOver()
+    SetGameObjectState(m_oneStoneExtractButton .. m_curFreeLabel, true, m_panelObject);
+end
+-- 初始化按钮事件
+function InitOnClick()
+    SetGameObjectEvent(m_oneCoinExtractButton, CoinOneExtractClick, m_panelObject);
+    SetGameObjectEvent(m_TenCoinExtractButton, CoinTenExtractClick, m_panelObject);
+    SetGameObjectEvent(m_oneStoneExtractButton, StoneOneExtractClick, m_panelObject);
+    SetGameObjectEvent(m_TenStoneExtractButton, StoneTenExtractClick, m_panelObject);
+
+    SetGameObjectEvent(m_rewardCancle, OnGetRewardCanel, m_panelObject);
+    SetGameObjectEvent(m_rewardEnser, OnGetRewardEnser, m_panelObject);
+
+    SetGameObjectEvent(m_coinExplainButton, OnCoinExplain, m_panelObject);
+    SetGameObjectEvent(m_stoneExplainButton, OnStoneExplain, m_panelObject);
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 金币一次领取
+function CoinOneExtractClick()
+    m_currentSelect = 5;
+    if m_capsuleTable == nil then
+        return
+    end
+    local cost = m_capsuleTable[m_currentSelect - 1].CostNum;
+    local id = m_capsuleTable[m_currentSelect - 1].Id;
+    -- 花费类型
+    local moneyType = m_capsuleTable[m_currentSelect - 1].CostType;
+    -- 是否可领取
+    local isCan = false;
+    local surplusTime = 0;
+    local isFree = false;
+    -- 判断背包空格是否足够
+    if G_BagMng.EmptyCellCount < m_oneNeedBagCount then
+        ShowSystemFlowTips(103);
+        return;
+    end
+    for k, v in ipairs(GetRewardManger.rewardsList) do
+        if v.Id == m_capsuleTable[m_currentSelect - 1].Id then
+            rewardInfo = v;
+            downTime = G_TimerMng:SetTime(rewardInfo.beginTime);
+            break;
+        end
+    end
+    if rewardInfo.beginTime > 0 and rewardInfo.rewardNum < m_capsuleTable[m_currentSelect - 1].FreeNum then
+        surplusTime = math.floor((G_TimerMng:GetCurrentTime().Ticks) / 10000000 - downTime / 10000000);
+    end
+    -- 免费领取
+    if m_capsuleTable[m_currentSelect - 1].FreeNum > 0 then
+        if surplusTime > m_capsuleTable[m_currentSelect - 1].FreeTime or rewardInfo.beginTime == 0 then
+            isFree = true;
+        end
+    end
+    if isFree == true then
+        if id > 0 then
+            SetGameObjectState(m_CoinExtract .. m_clickEffect, true, m_panelObject);
+            SetGameObjectState(m_CoinExtract .. m_notClickEffect, false, m_panelObject);
+            m_effectTime = Timer.Instance:AddTimer(1.4, 0, EffectCallBackOver);
+        end
+        -- 判断玩家绑定金币是否足够
+    else
+        if MoneyExchangePanel.CheckIsEnoughMoney(CostType(moneyType), math.floor(cost), ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, OnExchangeMoneyCallBack, id, m_currentSelect) then
+            if id > 0 then
+                if cost ~= nil then
+                    -- 金额
+                    SetLabelContent(m_curCostNum, cost, m_panelObject);
+                end
+                -- 类型
+                if moneyType ~= nil then
+                    GetCostSprite(moneyType, m_curCostSprite)
+                end
+                SetLabelContent(m_curSelectNum, 1, m_panelObject);
+                SetGameObjectState(m_messagePanel, true, m_panelObject);
+            end
+        end
+    end
+    GetRewardManger.rewardId = id;
+	--神器宝藏-金币1次
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10010);
+	end
+end
+
+-- 金币十次抽取
+function CoinTenExtractClick()
+    m_currentSelect = 6;
+    SetGameObjectState(m_CoinExtract .. m_clickEffect, false, m_panelObject);
+    if m_capsuleTable == nil then
+        return
+    end
+    local cost = m_capsuleTable[m_currentSelect - 1].CostNum;
+    local id = m_capsuleTable[m_currentSelect - 1].Id;
+    -- 花费类型
+    local moneyType = m_capsuleTable[m_currentSelect - 1].CostType;
+    -- 判断背包空格是否足够
+    if G_BagMng.EmptyCellCount < m_tenNeedBagCount then
+        ShowSystemFlowTips(103);
+        return;
+    end
+    -- 判断玩家绑定金币是否足够
+    if MoneyExchangePanel.CheckIsEnoughMoney(CostType(moneyType), math.floor(cost), ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, OnExchangeMoneyCallBack, id, m_currentSelect) then
+        if id > 0 then
+            if cost ~= nil then
+                -- 金额
+                SetLabelContent(m_curCostNum, cost, m_panelObject);
+            end
+            -- 类型
+            if moneyType ~= nil then
+                GetCostSprite(moneyType, m_curCostSprite)
+            end
+            SetLabelContent(m_curSelectNum, 10, m_panelObject);
+            SetGameObjectState(m_messagePanel, true, m_panelObject);
+            GetRewardManger.rewardId = id;
+        end
+    end
+	--神器宝藏-金币10次
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10011);
+	end
+end
+
+-- 钻石一次领取
+function StoneOneExtractClick()
+    m_currentSelect = 7;
+    SetGameObjectState(m_StoneExtract .. m_clickEffect, false, m_panelObject);
+    if m_capsuleTable == nil then
+        return
+    end
+    local cost = m_capsuleTable[m_currentSelect - 1].CostNum;
+    local id = m_capsuleTable[m_currentSelect - 1].Id;
+    -- 花费类型
+    local moneyType = m_capsuleTable[m_currentSelect - 1].CostType;
+    -- 是否可领取
+    local isCan = false;
+    local isFree = false;
+    -- 判断背包空格是否足够
+    if G_BagMng.EmptyCellCount < m_oneNeedBagCount then
+        ShowSystemFlowTips(103);
+        return;
+    end
+    for k, v in ipairs(GetRewardManger.rewardsList) do
+        if v.Id == m_capsuleTable[m_currentSelect - 1].Id then
+            rewardInfo = v;
+            downTime = G_TimerMng:SetTime(rewardInfo.beginTime);
+            break;
+        end
+    end
+    local surplusTime = 0;
+    if rewardInfo.beginTime > 0 and rewardInfo.rewardNum < m_capsuleTable[m_currentSelect - 1].FreeNum then
+        surplusTime = math.floor((G_TimerMng:GetCurrentTime().Ticks) / 10000000 - downTime / 10000000);
+    end
+    -- 免费领取
+    if m_capsuleTable[m_currentSelect - 1].FreeNum > 0 then
+        if surplusTime > m_capsuleTable[m_currentSelect - 1].FreeTime or rewardInfo.beginTime == 0 then
+            isFree = true;
+        end
+    end
+    if isFree == true then
+        if id > 0 then
+            SetGameObjectState(m_StoneExtract .. m_clickEffect, true, m_panelObject);
+            SetGameObjectState(m_StoneExtract .. m_notClickEffect, false, m_panelObject);
+            m_effectTime = Timer.Instance:AddTimer(1.4, 0, EffectCallBackOver);
+        end
+        -- 判断玩家非绑定钻石是否足够
+    else
+        if MoneyExchangePanel.CheckIsEnoughMoney(CostType(moneyType), math.floor(cost), ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, OnExchangeMoneyCallBack, id, m_currentSelect) then
+            if id > 0 then
+                if cost ~= nil then
+                    -- 金额
+                    SetLabelContent(m_curCostNum, cost, m_panelObject);
+                end
+                -- 类型
+                if moneyType ~= nil then
+                    GetCostSprite(moneyType, m_curCostSprite)
+                end
+                -- 次数
+                SetLabelContent(m_curSelectNum, 1, m_panelObject);
+                SetGameObjectState(m_messagePanel, true, m_panelObject);
+            end
+        else
+            StorePanel.OpenPanelRecharge();
+        end
+    end
+    GetRewardManger.rewardId = id;
+	--神器宝藏-钻石1次
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10012);
+	end
+end
+
+-- 钻石十次抽取
+function StoneTenExtractClick()
+    m_currentSelect = 8;
+    SetGameObjectState(m_StoneExtract .. m_clickEffect, false, m_panelObject);
+    if m_capsuleTable == nil then
+        return
+    end
+    local cost = m_capsuleTable[m_currentSelect - 1].CostNum;
+    local id = m_capsuleTable[m_currentSelect - 1].Id;
+    -- 花费类型
+    local moneyType = m_capsuleTable[m_currentSelect - 1].CostType;
+    -- 判断背包空格是否足够
+    if G_BagMng.EmptyCellCount < m_tenNeedBagCount then
+        ShowSystemFlowTips(103);
+        return;
+    end
+    -- -- 判断玩家非绑定钻石是否足够
+    if MoneyExchangePanel.CheckIsEnoughMoney(CostType(moneyType), math.floor(cost), ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, OnExchangeMoneyCallBack, id, m_currentSelect) then
+        if id > 0 then
+            if cost ~= nil then
+                -- 金额
+                SetLabelContent(m_curCostNum, cost, m_panelObject);
+            end
+            -- 类型
+            if moneyType ~= nil then
+                GetCostSprite(moneyType, m_curCostSprite)
+            end
+
+            SetLabelContent(m_curSelectNum, 10, m_panelObject);
+            SetGameObjectState(m_messagePanel, true, m_panelObject);
+            GetRewardManger.rewardId = id;
+        end
+    else
+        StorePanel.OpenPanelRecharge();
+    end
+	--神器宝藏-钻石10次
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10013);
+	end
+end
+
+-- 抽奖确认按钮
+function OnGetRewardEnser()
+    local path = nil;
+    if m_currentSelect == 5 or m_currentSelect == 6 then
+        path = m_CoinExtract;
+    elseif m_currentSelect == 7 or m_currentSelect == 8 then
+        path = m_StoneExtract;
+    end
+    if path ~= nil then
+        SetGameObjectState(path .. m_clickEffect, true, m_panelObject);
+        SetGameObjectState(path .. m_notClickEffect, false, m_panelObject);
+        m_effectTime = Timer.Instance:AddTimer(1.4, 0, EffectCallBackOver);
+        SetGameObjectState(m_messagePanel, false, m_panelObject);
+    end
+end
+
+-- 抽奖取消按钮
+function OnGetRewardCanel()
+    SetGameObjectState(m_messagePanel, false, m_panelObject);
+end
+
+-- Id 抽奖类型id    moneyType 金币类型
+function OnExchangeMoneyCallBack(id, index)
+    if id > 0 then
+        GetRewardProtocol.RequestExtractID(Id);
+        if index == 1 or index == 2 then
+            SetGameObjectState(m_CoinExtract .. m_clickEffect, true, m_panelObject);
+            SetGameObjectState(m_CoinExtract .. m_notClickEffect, false, m_panelObject);
+        elseif index == 3 or index == 4 then
+            SetGameObjectState(m_StoneExtract .. m_clickEffect, true, m_panelObject);
+            SetGameObjectState(m_StoneExtract .. m_notClickEffect, false, m_panelObject);
+        end
+        m_effectTime = Timer.Instance:AddTimer(1.4, 0, EffectCallBackOver);
+        GetRewardManger.rewardId = id;
+    end
+end
+
+-- 结束回调
+function EffectCallBackOver()
+    GetRewardProtocol.RequestExtractID(GetRewardManger.rewardId);
+    Timer.Instance:StopTimer(m_effectTime);
+end
+
+-- 花费类型
+function CostType(moneyType)
+    local costType = nil;
+    if moneyType == 1 then
+        -- 绑定金币
+        costType = MONEY_NEW_TYPE.BIND_COIN;
+    elseif moneyType == 2 then
+        -- 非绑定金币
+        costType = MONEY_NEW_TYPE.NOTBIND_COIN;
+    elseif moneyType == 3 then
+        -- 绑定钻石
+        costType = MONEY_NEW_TYPE.BIND_DIAMOND;
+    elseif moneyType == 4 then
+        -- 非绑定钻石
+        costType = MONEY_NEW_TYPE.NOTBIND_DIAMOND;
+    end
+    if costType ~= nil then
+        return costType;
+    end
+end
+
+function GetCostSprite(costType, path)
+    -- 设置花费类型图片  花费类型 1.绑定金币 2,非绑定金币 3 非绑定钻石 4 绑定钻石
+    local SpriteId = nil;
+    if costType == 1 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+    elseif costType == 2 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiSpriteID):GetIntContent(); belColor = m_notEnoughColor;
+    elseif costType == 3 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent();
+    elseif costType == 4 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeHongZuanSpriteID):GetIntContent();
+    end
+    -- 图标
+    if SpriteId ~= nil then
+        SetSpriteByAtlasID(path, SpriteId, m_panelObject, true);
+    end
+end
+-- 金币抽奖说明
+function OnCoinExplain()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, 21)
+end
+
+-- 钻石抽奖免费
+function OnStoneExplain()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL, 22)
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 外部调用更新数据
+function UpDateTime(beginTime, userTimes)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL) == 1 and m_panelInitAlready then
+        InitAllInfo();
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_TREAURE, IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_ARTFACTLOTTERY, IsShowRedHint());
+    end
+end
+
+
+-- 红点触发
+function IsShowRedHint()
+    local m_capsuleTable = CCommonTool.GetCapsuleInfo();
+    local rewardTable = GetRewardManger.rewardsList;
+    local rewardInfo;
+    local downTime = 0;
+    local surplusTime = 0;
+    if m_capsuleTable ~= nil and rewardTable ~= nil then
+        for Index = 5, m_capsuleTable.Count do
+            for k, v in ipairs(rewardTable) do
+                if v.Id == m_capsuleTable[Index - 1].Id then
+                    rewardInfo = v;
+                    downTime = G_TimerMng:SetTime(rewardInfo.beginTime);
+                    break;
+                end
+            end
+            if rewardInfo.beginTime > 0 and rewardInfo.rewardNum < m_capsuleTable[Index - 1].FreeNum then
+                surplusTime = math.floor((G_TimerMng:GetCurrentTime().Ticks) / 10000000 - downTime / 10000000);
+            end
+            -- 免费领取
+            if m_capsuleTable[Index - 1].FreeNum > 0 then
+                if surplusTime > m_capsuleTable[Index - 1].FreeTime or rewardInfo.beginTime == 0 then
+                    return true;
+                    -- 判断玩家绑定金币是否足够
+                end
+                --            else
+                --                -- 花费类型 1.绑定金币 2,非绑定金币 3 非绑定钻石 4 绑定钻石
+                --                if m_capsuleTable[Index - 1].CostType == 1 then
+                --                    if G_UserInfo.BindCoin >= m_capsuleTable[Index - 1].CostNum then
+                --                        return true;
+                --                    end
+                --                elseif m_capsuleTable[Index - 1].CostType == 2 then
+                --                    if G_UserInfo.NotBindCoin >= m_capsuleTable[Index - 1].CostNum then
+                --                        return true;
+                --                    end
+                --                elseif m_capsuleTable[Index - 1].CostType == 3 then
+                --                    if G_UserInfo.BindDiamond >= m_capsuleTable[Index - 1].CostNum then
+                --                        return true;
+                --                    end
+                --                elseif m_capsuleTable[Index - 1].CostType == 4 then
+                --                    if G_UserInfo.NotBindDiamond >= m_capsuleTable[Index - 1].CostNum then
+                --                        return true;
+                --                    end
+                --                else
+                --                    return false;
+                --                end
+            end
+        end
+    end
+    return false;
+end

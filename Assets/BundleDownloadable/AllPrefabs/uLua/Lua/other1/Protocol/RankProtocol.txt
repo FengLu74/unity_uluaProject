@@ -1,0 +1,137 @@
+﻿module("RankProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 排行榜数据返回
+    network.Register(GMI_STOC_RANK_DATA_ACK, RankInfoReturn);
+    network.Register(GMI_STOC_COMMONRANK_DATA_ACK, RankDataReturn);
+    network.Register(GMI_STOC_RANK_SELF_GOALRANKING, PersonalRankDataReturn)
+    -- 宠物道具tips
+    network.Register(GMI_STOC_REQUEST_RANK_PET_INFO_RETURN, PetRankReturn);
+end
+
+-- 排行榜消息返回
+function RankInfoReturn(protocolId, buffer)
+    -- error("排行榜消息返回")
+    local version = buffer:ReadInt();
+    -- error("排行榜消息1:::客户端版本号::::"..version);
+    local myRank = buffer:ReadInt();
+    local rankType = buffer:ReadByte();
+    if rankType == RANK_TYPE.CAMPRANK then
+        CampInfoPanel.CampRankDataReturn(buffer, version, myRank);
+    end
+end
+
+-- 排行榜消息返回
+function RankDataReturn(protocolId, buffer)
+    local players = {};
+    RankManger.rankPlayerDict = { };
+    -- 客户端版本号
+    RankManger.rankVersion = 0;
+    RankManger.rankVersion = buffer:ReadUInt();
+    -- 排行榜大类型
+    local rankType = buffer:ReadInt();
+    RankManger.rankFirstType = rankType;
+    -- 排行榜二级类型
+    local rankSubType = buffer:ReadInt();
+    RankManger.rankSecendType = rankSubType;
+    -- 排行榜人数
+    local rankCount = buffer:ReadUShort();
+    RankManger.rankAllNum = rankCount;
+    -- 我的排名
+    local myRank = buffer:ReadUShort();
+    RankManger.myRank = myRank;
+    -- 排行榜的详细数据
+    local count = buffer:ReadInt();
+    for i = 1, count do
+        local rankInfo = RankInfo(buffer);
+        table.insert(players, rankInfo);
+    end
+    -- 更新排行榜数据
+    RankPanel.RankDataReturn(players, version, rankType, rankSubType, rankCount, myRank);
+end
+
+-- 返回自己的排行榜数据
+function PersonalRankDataReturn(protocolId, buffer)
+    local myRank = buffer:ReadInt();
+    local rankType = buffer:ReadByte();
+    local rankSubType = buffer:ReadByte();
+    if rankType == RANK_TYPE.CAMP_WEEKLYFEATS then
+        CampBeyond3DPanel.OnRankRefresh(myRank);
+    elseif rankType == RANK_TYPE.BATTLEFIELD then
+        BattleFieldManager.OnRankRefresh(myRank);
+    else
+        error("得到的数据为空");
+    end
+end
+
+-- 排行榜详细数据
+function RankInfo(buffer)
+    local rankInfo = { };
+    -- id
+    rankInfo.Rank = buffer:ReadUInt()
+    --error(" rankInfo.m_Rank:::" .. rankInfo.Rank);
+    -- 名字1
+    rankInfo.Name1 = buffer:ReadStringByByte();
+    -- error("rankInfo.Name1::" .. rankInfo.Name1);
+    -- 名字2
+    rankInfo.Name2 = buffer:ReadStringByByte();
+    -- error("rankInfo.Name2::" .. rankInfo.Name2);
+    -- 排行榜数据1
+    rankInfo.Value = buffer:ReadInt();
+    -- error("rankInfo.Value :::" .. rankInfo.Value);
+    -- 排行榜数据2
+    rankInfo.Value1 = buffer:ReadInt();
+    -- error("rankInfo.Value1:::" .. rankInfo.Value1)
+    -- 排行榜数据3
+    rankInfo.Value2 = buffer:ReadInt();
+    -- error("rankInfo.Value2 :::" .. rankInfo.Value2);
+    -- 排行榜数据4
+    rankInfo.Value3 = buffer:ReadInt64ToString();
+    -- error("rankInfo.m_Value3:::" .. rankInfo.Value3);
+    return rankInfo;
+end
+
+-- 宠物排行榜消息返回
+function PetRankReturn(protocolId, buffer)
+    local itemAttr = BagProtocol.ItemSerialize(buffer, ENUM_ITEM_SERIALIZE.ITEM_ONLY_SERIALIZE);
+    SetRealItemTipsEvent(itemAttr, ENUMPANELID.ENUM_PANEL_RANKPANEL);
+end
+
+
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+
+-------------------------------------------------------发送协议 START-------------------------------------------------------
+-- 请求排行榜数据
+-- @param rankType 左侧排行榜类型
+-- @param rankSubType 右侧排行榜类型
+-- @param lastRankId  最后一个排行榜的ID
+-- @param recivedCount  接收的排行榜的个数
+-- @param version 版本号
+function RequestRankList(rankType, rankSubType, lastRankId, recivedCount, version)
+    -- error("rankType:::" .. rankType .. "rankSubType:::" .. rankSubType);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_REQ_RANK_DATA);
+    buffer:WriteInt(version)
+    buffer:WriteByte(rankType);
+    buffer:WriteByte(rankSubType);
+    buffer:WriteUShort(lastRankId);
+    buffer:WriteUShort(recivedCount);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+
+-- 请求某一排行榜的自己的排名
+-- @param rankType 左侧排行榜类型
+-- @param rankSubType 右侧排行榜类型
+function RequestRank(rankType, rankSubType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_RANKING_SELF);
+    buffer:WriteByte(rankType);
+    buffer:WriteByte(rankSubType);
+    G_NetWorkMng:SendMessage(buffer);
+end-------------------------------------------------------发送协议 END-------------------------------------------------------

@@ -1,0 +1,144 @@
+﻿module("BatchUseItemPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 当前使用道具数量
+local m_curUseItemNumStr = "Num/Label";
+-- 文本描述
+local m_curDesLabelStr = "Label_Des";
+-----------------------------------------按钮路径--------------------------------------
+-- 减号按钮
+local m_MinusButtonStr = "Button_Minus";
+-- 加号按钮
+local m_AddButtonStr = "Button_Add";
+-- 最大按钮
+local m_MaxButtonStr = "Button_Max";
+-- 使用按钮
+local m_UseButtonStr = "Button_Use";
+-- 取消按钮
+local m_CancelButtonStr = "Button_Cancel";
+-- 遮罩
+local m_ShadowButtonStr = "ZheZhao";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 道具的位置
+local m_ItemStr = "Item";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前显示的道具
+local m_itemData = nil;
+-- 当前要使用的道具数量
+local m_curUseItemNum = 1;
+-- 当前道具的总数量
+local m_curTotalItemNum = 0;
+-- 批量使用的最大数量
+local m_curBatchItemNum = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    -- 初始化点击事件
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BATCHUSEITEM);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    local itemInfo = m_itemData:GetItemInfo();
+    if itemInfo ~= nil then
+        SetItemShowByExcelIDV04(m_panelObject, m_ItemStr, m_itemData.ExcelID, m_itemData.ItemNum, false, 215, ENUMPANELID.ENUM_PANEL_BATCHUSEITEM);
+        SetItemToolTipsEvent(m_panelObject, m_ItemStr, ENUMPANELID.ENUM_PANEL_BATCHUSEITEM, false, m_itemData.ExcelID);
+        m_curTotalItemNum = m_itemData.ItemNum;
+        m_curBatchItemNum = itemInfo.BatchUse;
+        --m_curUseItemNum = math.min(m_curTotalItemNum,m_curBatchItemNum);
+        m_curUseItemNum=m_curTotalItemNum;
+        SetLabelContent(m_curUseItemNumStr, m_curUseItemNum, m_panelObject);
+        --SetLabelContent(m_curDesLabelStr, string_format(CCommonTool.GetTxtData(1558).m_str, m_curBatchItemNum), m_panelObject);
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_MinusButtonStr, OnMinusClick, m_panelObject);
+    SetGameObjectEvent(m_AddButtonStr, OnAddClick, m_panelObject);
+    SetGameObjectEvent(m_MaxButtonStr, OnMaxClick, m_panelObject);
+    SetGameObjectEvent(m_UseButtonStr, OnUseClick, m_panelObject);
+    SetGameObjectEvent(m_CancelButtonStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_ShadowButtonStr, OnCloseClick, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_BATCHUSEITEM);
+end
+
+function OnMinusClick()
+    if m_curUseItemNum > 1 then
+        m_curUseItemNum = m_curUseItemNum - 1;
+        SetLabelContent(m_curUseItemNumStr, m_curUseItemNum, m_panelObject);
+    end
+end
+
+function OnAddClick()
+    if m_curUseItemNum >= m_curTotalItemNum then
+        return;
+    else
+        m_curUseItemNum = m_curUseItemNum + 1;
+        SetLabelContent(m_curUseItemNumStr, m_curUseItemNum, m_panelObject);
+    end
+end
+
+function OnMaxClick()
+    --m_curUseItemNum = math.min(m_curTotalItemNum, m_curBatchItemNum);
+    m_curUseItemNum=m_curTotalItemNum;
+    SetLabelContent(m_curUseItemNumStr, m_curUseItemNum, m_panelObject);
+end
+
+function OnUseClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_USEUIITEM);
+    buffer:WriteUInt(G_UserInfo.RoleAttribute.CRID);
+    buffer:WriteByte(m_itemData.PanelPos);
+    buffer:WriteByte(m_itemData.PakID);
+    buffer:WriteByte(m_curUseItemNum);
+    G_NetWorkMng:SendMessage(buffer);
+    closePanel(ENUMPANELID.ENUM_PANEL_BATCHUSEITEM);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetData(itemAttr)
+    m_itemData = itemAttr;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATCHUSEITEM) == 1 then
+        InitAllInfo();
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_BATCHUSEITEM);
+    end
+end

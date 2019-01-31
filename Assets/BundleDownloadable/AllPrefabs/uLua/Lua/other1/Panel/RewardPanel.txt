@@ -1,0 +1,229 @@
+﻿--module("RewardPanel", package.seeall)
+
+--require "Panel/EverydayLoginPanel";
+--require "Panel/OnlineTimePanel";
+--require "Panel/LevelupPanel";
+--require "Panel/OfflinePanel";
+
+-----------------------------------------label·��---------------------------------------
+
+-------------------------------------------Sprite·��------------------------------------
+
+-------------------------------------------��ť·��--------------------------------------
+---- �رհ�ť
+--local m_buttonClose = "Others/Button_Close";
+------------------------------------gameobject���ڵ�·��---------------------------------
+---- ���߾�����ǩ·��
+--local m_offlineToggleStr = "Sprite-Left/4Toggle_Offline";
+------------------------------------ͨ�õ�����·��---------------------------------------
+---- ������ʱ����ʾ������
+--local m_activeContentStr = "/Active";
+---- δ������ʱ����ʾ������
+--local m_deactiveContentStr = "/Deactive";
+---- ��ť��·��
+--local m_buttonStr = "Sprite-Left/";
+-------------------------------------���õĶ���------------------------------------------
+---- ��������
+--local m_panelObject = nil;
+---- �����Ƿ���ʼ������
+--local m_panelInitAlready = false;
+---- ���·�ѡ���ı�ǩ��1Ϊ�������ģ��������ң�
+--local m_selectTagNum = 1;
+---- ��һ��ѡ���ı�ǩ
+--local m_lastSelectTagNum = 1;
+---- ���߾�����ǩ����
+--local m_offlineObject = nil;
+---- �Ƿ�����ת����������
+--local m_isJumpPanelSave = false;
+---- ��ת���������ò���
+--local jumpParamsTable = {};
+-------------------------------------һЩд���Ĺ涨--------------------------------------
+---- toggles���ɵ�table����
+--local m_toggleTable = {
+--    [1] = { name = "1Toggle_EverydayLogin", panelName = "EverydayLoginPanel", isFirstOpen = true, luaFileName = RewardEverydayLoginPanel },
+--    [2] = { name = "2Toggle_OnlineTime", panelName = "OnlineTimePanel", isFirstOpen = true, luaFileName = RewardOnlineTimePanel },
+--    [3] = { name = "3Toggle_Levelup", panelName = "LevelupPanel", isFirstOpen = true, luaFileName = RewardLevelupPanel },
+--    [4] = { name = "4Toggle_Offline", panelName = "OfflinePanel", isFirstOpen = true, luaFileName = RewardOfflinePanel },
+--};
+
+--------------------------------------BaseLua���õ�ͬ������------------------------------
+---- ��ʼ�������ݷ���start������
+--function Start()
+--    -- ��ʼ��object����
+--    InitObjects();
+--    -- ��ʼ����������ʾ
+--    InitPanelShow();
+--    -- ��ʼ������������Ϣ
+--    InitAllInfo();
+--    -- ��ʼ�������¼�
+--    InitOnClick();
+--    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+--    m_toggleTable[m_selectTagNum].luaFileName.Start();
+--    m_panelInitAlready = true;
+--end
+
+--function OnEnable()
+--    if true == m_panelInitAlready then
+--        InitPanelShow();
+--        InitAllInfo();
+--        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+--    end
+--end
+--function Update()
+
+--end
+--function OnDisable()
+--    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+--end
+
+--function OnDestroy()
+--    m_selectObject = nil;
+--    for Index = 1, #m_toggleTable do
+--        m_toggleTable[Index].luaFileName.OnDestroy();
+--        m_toggleTable[Index].isFirstOpen = true;
+--    end
+--    m_selectTagNum = 1;
+--    m_lastSelectTagNum = 1;
+--    m_panelObject = nil;
+--    m_offlineObject = nil;
+--    m_panelInitAlready = false;
+--end
+-------------------------------------��lua�ļ��Ե��÷���--------------------------------
+---- ��ʼ����ť����ʾ
+--function InIntButtonList()
+
+--end
+
+---- ��ʼ��object����
+--function InitObjects()
+--    -- ��������
+--    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_REWARDPANEL);
+--    m_offlineObject = child(m_panelObject, m_offlineToggleStr).gameObject;
+--    SetToggleDisappear();
+--end
+
+---- ��ʼ����������ʾ
+--function InitPanelShow()
+--    for Index = 1, #m_toggleTable do
+--        local isShow = false;
+--        local notShow = true;
+--        if Index == m_selectTagNum then
+--            SetGameObjectState(m_buttonStr .. m_toggleTable[Index].name .. m_activeContentStr, true, m_panelObject);
+--            SetGameObjectState(m_buttonStr .. m_toggleTable[Index].name .. m_deactiveContentStr, false, m_panelObject);
+--            SetGameObjectState(m_toggleTable[Index].panelName, true, m_panelObject);
+--        else
+--            SetGameObjectState(m_buttonStr .. m_toggleTable[Index].name .. m_activeContentStr, false, m_panelObject);
+--            SetGameObjectState(m_buttonStr .. m_toggleTable[Index].name .. m_deactiveContentStr, true, m_panelObject);
+--            SetGameObjectState(m_toggleTable[Index].panelName, false, m_panelObject);
+--        end
+--    end
+--end
+
+---- ��ʼ���е���Ϣ
+--function InitAllInfo()
+--end
+
+---- ͨ��tag�Ĵ������������Լ�ִ��lua�߼�
+--function OpenPanelByTag()
+--    -- �����ݿ���
+--    SetGameObjectState(m_buttonStr .. m_toggleTable[m_selectTagNum].name .. m_activeContentStr, true, m_panelObject);
+--    SetGameObjectState(m_buttonStr .. m_toggleTable[m_selectTagNum].name .. m_deactiveContentStr, false, m_panelObject);
+--    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_panelObject);
+--    -- �����ݹر�
+--    SetGameObjectState(m_buttonStr .. m_toggleTable[m_lastSelectTagNum].name .. m_activeContentStr, false, m_panelObject);
+--    SetGameObjectState(m_buttonStr .. m_toggleTable[m_lastSelectTagNum].name .. m_deactiveContentStr, true, m_panelObject);
+--    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_panelObject);
+--    -- ִ�е�lua�߼�
+--    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+--    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+--    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+--        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+--        m_toggleTable[m_selectTagNum].luaFileName.Start();
+--    end
+--end
+
+---- ��ʼ�������¼�
+--function InitOnClick()
+--    for Index = 1, #m_toggleTable do
+--        SetGameObjectEvent(m_buttonStr .. m_toggleTable[Index].name, OnButtonClick, m_panelObject);
+--    end
+--    SetGameObjectEvent(m_buttonClose, OnCloseClick, m_panelObject);
+--end
+----------------------------------------��ť�¼�����------------------------------------
+---- �رհ�ť�¼�
+--function OnCloseClick(e)
+--    if e == nil then
+--        if m_selectTagNum == 4 then
+--            if RewardOfflinePanel.m_GetRewardPanelIsOn then
+--                RewardOfflinePanel.OnGetRewardCanel();
+--                return;
+--            end
+--        end
+--        closePanel(ENUMPANELID.ENUM_PANEL_REWARDPANEL);
+--    end
+--    -- �رյ�ǰ����
+--    closePanel(ENUMPANELID.ENUM_PANEL_REWARDPANEL);
+--end
+
+----  �����¼�����
+--function OnButtonClick(e)
+--    local currentName = e.name;
+--    local currentData = nil;
+--    local btnObj = child(m_panelObject, m_buttonStr .. currentName).gameObject;
+--    local selectTagNum = tonumber(string.sub(currentName, 1, 1));
+--    if m_selectTagNum ~= selectTagNum then
+--        m_lastSelectTagNum = m_selectTagNum;
+--        m_selectTagNum = selectTagNum;
+--        OpenPanelByTag();
+--    end
+--end
+
+---- ����װ���������¼�
+--function Kong()
+--end
+
+----------------------------�ⲿ���õ�(���ڲ�)���´˽�����Ϣ�ķ���----------------------
+---- �򿪴˽��沢��ͨ���������򿪵ڼ�����ǩҳ������
+--function OpenThisPanelByTag(index, causePanelId)
+--    if m_panelInitAlready == false then
+--        m_selectTagNum = index;
+--        m_lastSelectTagNum = index;
+--    else
+--        if m_selectTagNum ~= index then
+--            m_lastSelectTagNum = m_selectTagNum;
+--            m_selectTagNum = index;
+--            OpenPanelByTag();
+--        end
+--    end
+--    createPanel(ENUMPANELID.ENUM_PANEL_REWARDPANEL, causePanelId);
+--end
+
+--function ChangeSelectTagNum(num)
+--    m_selectTagNum = num;
+--end
+---- �ȼ�С��25��<���߾���>��ǩ����ʾ
+--function SetToggleDisappear()
+--    local levelLimited = CCommonTool.GetDefineInfo(EDefineContentID.OFFLINE_PANEL_LEVEL_LIMITED):GetIntContent();
+--    if m_offlineObject ~= nil then
+--        if Ioo.SceneManager.UserInfo.RoleAttribute.Level >= levelLimited then
+--            m_offlineObject:SetActive(true);
+--        else
+--            m_offlineObject:SetActive(false);
+--        end
+--    end
+--end
+
+---- ��ת������ȡ����
+--function GetJumpCloseData()
+--    local jumpParamsTable = {m_selectTagNum};
+--    --jumpParamsTable[2] = m_toggleTable[m_selectTagNum].luaFileName.GetJumpCloseData();
+--    return jumpParamsTable;
+--end
+
+---- ��ת������������
+--function SetJumpCloseData(paramTable)
+--    m_isJumpPanelSave = true;
+--    jumpParamsTable = paramTable;
+--    m_selectTagNum = jumpParamsTable[1];
+--    --m_toggleTable[m_selectTagNum].luaFileName.SetJumpCloseData(jumpParamsTable[2]);
+--end

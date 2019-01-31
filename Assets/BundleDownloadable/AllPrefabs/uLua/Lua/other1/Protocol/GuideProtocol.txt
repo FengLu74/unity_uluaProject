@@ -1,0 +1,66 @@
+﻿module("GuideProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 服务器验证新手引导示范可以进行下一步 然后发下一步的ID
+    network.Register(GMI_STOC_ROOKIEGUIDE_FINISH_AFFIRM, OnSetNextGuideID);
+    -- 服务器通知引导开始，发送引导ID  WORD
+    network.Register(GMI_STOC_SHOW_ROOKIE_GUIDE, OnStartPlayerGuide);
+end
+
+-- 服务器验证新手引导示范可以进行下一步 然后发下一步的ID
+function OnSetNextGuideID(protocolId, buffer)
+    local startID = buffer:ReadUShort();
+    -- error("startID === "..startID);
+    -- 设置引导ID
+    -- NewPlayerGuideManager.OnSetGuideID(startID);
+end
+
+-- 服务器通知引导开始，发送引导ID  WORD 是否是大引导段开始
+function OnStartPlayerGuide(protocolId, buffer)
+    local startID = buffer:ReadUShort();
+    local isNewStart = buffer:ReadByte();
+    --error("<color=#00FF00>服务器触发引导ID::</color>"..startID);
+    NewPlayerGuideManager.OnSetGuideID(startID);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+
+-------------------------------------------------------处理发送协议 START-------------------------------------------------------
+
+-- 发送跳过信息
+function SendSkipMessage(stepId)
+    if stepId == GreenHandGuildStepId then
+        return;
+    end
+	local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_END_GUIDE);
+    buffer:WriteUShort(stepId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 发送验证步骤消息(没有用到)
+function SendVerificationStepMessage(stepId)
+    if stepId == GreenHandGuildStepId then
+        return;
+    end
+	local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GUIDE_SERVER_CAN_PASS_AFFIRM);
+    buffer:WriteUShort(stepId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 发送引导步骤消息
+function SendPivotalStepMessage(stepId)
+    if stepId == GreenHandGuildStepId then
+        return;
+    end
+	local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ROOKIE_GUIDE_FINISH);
+    buffer:WriteUShort(stepId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理发送协议 END-------------------------------------------------------

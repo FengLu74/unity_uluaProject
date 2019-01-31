@@ -1,0 +1,495 @@
+﻿module('PlayerRevivePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'PlayerRevivePanel';
+---------------------------------------label路径---------------------------------------
+-- 失败描述
+local m_DescPath = "Content/Team/Desc";
+-- 原地复活花费
+local m_PlaceCostLabelPath = "Content/ButtonGrid/Place/PlaceCostLabel";
+-- 原地复活次数
+local m_PlaceTimesLabelPath = "Content/ButtonGrid/Place/PlaceTimesLabel";
+-- 复活点复活CD
+local m_SpawnLabelPath = "Content/ButtonGrid/Spawn/SpawnLabel";
+-- 回主城复活CD
+local m_BackCityLabelPath = "Content/ButtonGrid/BackCity/BackCityLabel";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 原地复活按钮
+local m_PlaceButtonPath = "Content/ButtonGrid/Place/PlaceButton";
+-- 复活点复活次数
+local m_SpawnButtonPath = "Content/ButtonGrid/Spawn/SpawnButton";
+-- 回主城复活按钮
+local m_BackCityButtonPath = "Content/ButtonGrid/BackCity/BackCityButton";
+-- 等待救援按钮
+local m_WaitHelpButtonPath = "Content/ButtonGrid/WaitHelp/WaitHelpButton";
+-- 放弃副本按钮
+local m_GiveupButtonPath = "Content/ButtonGrid/Giveup/GiveupButton";
+-- 主界面的复活按钮
+local m_ReviveButtonPath = "ReviveButton";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 按钮列表/描述等容器
+local m_ContentPath = "Content";
+-- 原地复活父结点
+local m_PlacePath = "Content/ButtonGrid/Place";
+-- 复活点复活父结点
+local m_SpawnPath = "Content/ButtonGrid/Spawn";
+-- 回主城复活父结点
+local m_BackCityPath = "Content/ButtonGrid/BackCity";
+-- 等待救援父结点
+local m_WaitHelpPath = "Content/ButtonGrid/WaitHelp";
+-- 放弃副本父结点
+local m_GiveupPath = "Content/ButtonGrid/Giveup";
+-- 队伍成员面板
+local m_TeamPath = "Content/Team";
+-- 列表1
+local m_Item1Path = "Item1";
+-- 列表2
+local m_Item2Path = "Item2";
+-- 列表3
+local m_Item3Path = "Item3";
+-- 系统介绍面板
+local m_SystemPath = "Content/System";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 按钮Grid
+local m_ButtonGridPath = "Content/ButtonGrid";
+-- 好友Grid
+local m_FriendGridPath = "Content/Team/Friends/Grid";
+-- 系统Grid
+local m_SystemGridPath = "Content/System/Content/Grid";
+-- 遮罩
+local m_MaskPath = "BackPanel/Mask";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 按钮列表/描述等容器
+local m_Content = nil;
+-- 按钮Grid
+local m_ButtonGrid = nil;
+-- 原地复活父结点
+local m_Place = nil;
+-- 原地复活花费
+local m_PlaceCostLabel = nil;
+-- 原地复活次数
+local m_PlaceTimesLabel = nil;
+-- 原地复活父结点
+local m_Spawn = nil;
+-- 复活点复活次数
+local m_SpawnLabel = nil;
+-- 回主城复活父结点
+local m_BackCity = nil;
+-- 回主城复活CD
+local m_BackCityLabel = nil;
+-- 等待救援父结点
+local m_WaitHelp = nil;
+-- 放弃副本父结点
+local m_Giveup = nil;
+-- 放弃副本按钮
+local m_GiveupButton = nil;
+-- 主界面的复活按钮
+local m_ReviveButton = nil;
+-- 队伍面板
+local m_Team = nil;
+-- 好友Grid
+local m_FriendGrid = nil;
+-- 系统面板
+local m_System = nil;
+-- 系统Grid
+local m_SystemGrid = nil;
+
+
+-- 复活数据
+local m_Data = nil;
+-- 复活按钮CD状态
+local m_CdStates = nil;
+-- 原地复活消耗
+local m_SpaceCost = 0;
+-- 三个列表项路径
+local m_ItemPaths = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+local m_TimerEventName = "PlayerRevivePanelTimer";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    CCommonTool.SetPanelsGrayscaleMode(m_PanelObject);
+    CCommonTool.HandleGrayscale(true);
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    CCommonTool.HandleGrayscale(false);
+    CCommonTool.RevertPanelsGrayscaleMode();
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_Content = nil;
+	m_ButtonGrid = nil;
+	m_Place = nil;
+	m_PlaceCostLabel = nil;
+    m_PlaceTimesLabel = nil;
+	m_Spawn = nil;
+	m_SpawnLabel = nil;
+	m_BackCity = nil;
+	m_BackCityLabel = nil;
+	m_WaitHelp = nil;
+    m_Giveup = nil;
+	m_GiveupButton = nil;
+    m_ReviveButton = nil;
+    m_Team = nil;
+	m_FriendGrid = nil;
+	m_System = nil;
+	m_SystemGrid = nil;
+    m_CdStates = nil;
+    m_ItemPaths = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL);
+    m_Content = child(m_PanelObject, m_ContentPath).gameObject;
+    m_ButtonGrid = GetComponent(m_PanelObject, m_ButtonGridPath, "UIGrid");
+    m_Place = child(m_PanelObject, m_PlacePath).gameObject;
+    m_PlaceCostLabel = GetComponent(m_PanelObject, m_PlaceCostLabelPath, "UILabel");
+    m_PlaceTimesLabel = GetComponent(m_PanelObject, m_PlaceTimesLabelPath, "UILabel");
+    m_Spawn = child(m_PanelObject, m_SpawnPath).gameObject;
+    m_SpawnLabel = GetComponent(m_PanelObject, m_SpawnLabelPath, "UILabel");
+    m_BackCity = child(m_PanelObject, m_BackCityPath).gameObject;
+    m_BackCityLabel = GetComponent(m_PanelObject, m_BackCityLabelPath, "UILabel");
+    m_WaitHelp = child(m_PanelObject, m_WaitHelpPath).gameObject;
+    m_Giveup = child(m_PanelObject, m_GiveupPath).gameObject;
+    m_ReviveButton = child(m_PanelObject, m_ReviveButtonPath).gameObject;
+    m_Team = child(m_PanelObject, m_TeamPath).gameObject;
+    m_FriendGrid = GetComponent(m_PanelObject, m_FriendGridPath, "UIGrid");
+    m_System = child(m_PanelObject, m_SystemPath).gameObject;
+    m_SystemGrid = GetComponent(m_PanelObject, m_SystemGridPath, "UIGrid");
+
+    SetLabelContent(m_DescPath, CCommonTool.GetTxtData(2016).m_str, m_PanelObject);
+    m_SpaceCost = CCommonTool.GetDefineInfo(2303):GetIntContent();
+    m_ItemPaths = {m_Item1Path, m_Item2Path, m_Item3Path};
+    
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_PlaceButtonPath, OnPlaceButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_SpawnButtonPath, OnSpawnButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_BackCityButtonPath, OnBackCityButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_WaitHelpButtonPath, OnWaitHelpButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_GiveupButtonPath, OnGiveupButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+    UIEventListener.Get(m_ReviveButton).onClick = LuaHelper.OnClick(OnReviveButtonClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+--    local data = {};
+--    data.remainTimes = buffer:ReadInt();               -- 原地复活剩余次数
+--    data.forceRebornTime = buffer:ReadInt();           -- 强制复活剩余时间(秒数)
+--    data.revivePointCD = buffer:ReadInt();             -- 复活点复活CD(秒数)
+--    data.backCityCD = buffer:ReadInt();                -- 回主城复活CD(秒数)
+--    data.attackerType = buffer:ReadInt();              -- 攻击者类型
+--    data.attackerName = buffer:ReadStringByByte();     -- 攻击者名字
+    if m_Data == nil then
+        closePanel(ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL);
+        error("复活界面数据为nil");
+        return;
+    end
+    ChangeViewState(false);
+    InitButtons();
+    InitMiddleItems();
+end
+
+function InitButtons()
+    local sceneId = G_SceneMng.SceneID;
+    local mapdataInfo = CCommonTool.GetMapdateInfo(sceneId);
+    
+    local data = m_Data;
+    m_CdStates = {};
+    -- 原地复活
+    if mapdataInfo ~= nil and mapdataInfo.IsCanInTactReborn == 1 then
+        m_Place:SetActive(true);
+        if data.remainTimes > 0 then
+            m_PlaceCostLabel.gameObject:SetActive(false);
+            m_PlaceTimesLabel.gameObject:SetActive(true);
+            m_PlaceTimesLabel.text = string_format(--[[免费复活{0}/{1}]]CCommonTool.GetTxtData(1058).m_str, data.remainTimes, mapdataInfo.FreeRebornTimes);
+        else
+            m_PlaceCostLabel.gameObject:SetActive(true);
+            m_PlaceTimesLabel.gameObject:SetActive(false);
+            if m_SpaceCost <= G_UserInfo.BindDiamond then
+                m_PlaceCostLabel.text = tostring(m_SpaceCost);
+            else
+                m_PlaceCostLabel.text = string_format("[FF0000]{0}[-]", m_SpaceCost);
+            end
+        end
+    else
+        m_Place:SetActive(false);
+    end
+
+    -- 复活点复活
+    if mapdataInfo ~= nil and mapdataInfo.IsCanRelivePosReborn == 1 then
+        m_Spawn:SetActive(true);
+        local seconds = data.revivePointCD or 0;
+        m_CdStates.spawnPointVisible = seconds > 0;
+    else
+        m_Spawn:SetActive(false);
+    end
+
+    -- 回主城复活
+    if mapdataInfo ~= nil and mapdataInfo.IsCanCenterCityReborn == 1 then
+        m_BackCity:SetActive(true);
+        m_CdStates.backCityVisible = true;
+    else
+        m_BackCity:SetActive(false);
+    end
+
+    -- 等待救援复活
+    if mapdataInfo ~= nil and mapdataInfo.IsCanUseRebornSkill == 1 then
+        m_WaitHelp:SetActive(true);
+    else
+        m_WaitHelp:SetActive(false);
+    end
+    
+    -- 放弃副本
+    if mapdataInfo ~= nil and mapdataInfo.Category == 2 then
+        m_Giveup:SetActive(true);
+    else
+        m_Giveup:SetActive(false);
+    end
+
+    UpdateCdLabel();
+    AddTimerEvent(m_TimerEventName, 100000, nil, nil, OnTimerUpdate);
+    m_ButtonGrid:Reposition();
+end
+
+function InitMiddleItems()
+    local isTeam = DungeonManager.IsTeamDungeon(G_SceneMng.ActivityID);
+    if isTeam and TeamManager.GetTeamMemberCount() > 1 then
+        m_Team:SetActive(true);
+        m_System:SetActive(false);
+        local members = TeamManager.GetTeamMembersExceptSelf();
+        local go = m_FriendGrid.gameObject;
+        for i = 1, 3 do
+            local path = m_ItemPaths[i];
+            if i <= #members then
+                local mem = members[i];
+                SetGameObjectState(path, true, go);
+                SetLabelContent(path.."/Member/Name", mem.name, go);
+                SetProfessionIcon(path.."/Member/Icon", mem.proId, go);
+                SetLabelContent(path.."/Member/Level", mem.level, go);
+                SetLabelContent(path.."/Member/Level", mem.level, go);
+                SetGameObjectState(path.."/Member/Add", FriendsData.IsFriend(mem.id) == false, go);
+                if FriendsData.IsFriend(mem.id) == false then
+                    SetGameObjectEvent(path, function() OnTeamAddMemberClick(mem.id); end, go, nil);
+                else
+                    SetGameObjectEvent(path, function() OnTeamMemberClick(mem.id); end, go, nil);
+                end
+            else
+                SetGameObjectState(path, false, go);
+            end
+        end
+        m_FriendGrid:Reposition();
+    else
+        m_Team:SetActive(false);
+        m_System:SetActive(true);
+        local go = m_SystemGrid.gameObject;
+        for i = 1, 3 do
+            local path = m_ItemPaths[i];
+            local prompts = RandomSystemItems();
+            if i <= #prompts then
+                local data = prompts[i];
+                SetGameObjectState(path, true, go);
+                SetLabelTextByID(path.."/Name", data.NameId, go);
+                SetSpriteByAtlasID(path.."/Icon", data.PictureId, go);
+                SetLabelTextByID(path.."/Desc", data.DescribeId, go);
+            else
+                SetGameObjectState(path, false, go);
+            end
+        end
+        m_SystemGrid:Reposition();
+    end
+end
+
+-- 随机失败系统提示数据
+function RandomSystemItems()
+    local clist = CCommonTool.GetAllLosePromptInfo();
+    local count = clist.Count;
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local items = {};
+    for i = 0, count - 1 do
+        local info = clist[i];
+        if userLevel >= info.LevelMin and userLevel <= info.LevelMax then
+            table.insert(items, info);
+        end
+    end
+    while #items > 3 do
+        table.remove(items, math.random(1, #items))
+    end
+    return items;
+end
+
+-- Timer更新事件
+function OnTimerUpdate()
+    if m_Data == nil then
+        G_TimerMng:RemoveTimeTask(m_TimerEventName);
+        return;
+    end
+    if m_Data.revivePointCD > 0 then
+        m_Data.revivePointCD = m_Data.revivePointCD - 1;
+    end
+    if m_Data.backCityCD > 0 then
+        m_Data.backCityCD = m_Data.backCityCD - 1;
+    end
+    UpdateCdLabel()
+end
+
+-- 更新复活CD
+function UpdateCdLabel()
+    local coolingDown = false;
+    if m_CdStates.spawnPointVisible == true then
+        local seconds = m_Data.revivePointCD;
+        if seconds > 0 then
+            coolingDown = true;
+            m_SpawnLabel.text = string_format(--[[{0}秒]]CCommonTool.GetTxtData(861).m_str, seconds);
+        else
+            m_SpawnLabel.text = "";
+            m_CdStates.spawnPointVisible = false;
+        end
+    end
+    
+    if m_CdStates.backCityVisible == true then
+        local seconds = m_Data.backCityCD;
+        if seconds > 0 then
+            coolingDown = true;
+            m_BackCityLabel.text = string_format(--[[{0}秒]]CCommonTool.GetTxtData(861).m_str, seconds);
+        else
+            m_BackCityLabel.text = "";
+            m_CdStates.backCityVisible = false;
+        end
+    end
+    if coolingDown == false then
+        G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    end
+    return coolingDown;
+end
+
+-- 显示界面状态
+-- @param isMainState true:只显示一个复活按钮 
+--                    false:隐藏复活按钮, 显示复活主面板
+function ChangeViewState(isMainState)
+    m_Content:SetActive(isMainState ~= true);
+    m_ReviveButton:SetActive(isMainState == true);
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 原地复活按钮点击事件
+function OnPlaceButtonClick(gameObject)
+    if m_Data.remainTimes <= 0 and not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND,m_SpaceCost,ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL,OnExchangeMoneyCallBack) then
+        -- error("绑定钻石不够，无法原地复活");
+        --ShowSystemFlowTips(2201);
+        return;
+    end
+    SceneProtocol.RequestRevive(ENUM_RELIVE_TYPE.ENUM_RELIVE_TYPE_INTACT);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    SceneProtocol.RequestRevive(ENUM_RELIVE_TYPE.ENUM_RELIVE_TYPE_INTACT);
+end
+
+-- 复活点复活按钮点击事件
+function OnSpawnButtonClick(gameObject)
+    if m_Data.revivePointCD > 0 then
+        ShowSystemFlowTips(2203);
+        error("复活点复活CD中");
+        return;
+    end
+    SceneProtocol.RequestRevive(ENUM_RELIVE_TYPE.ENUM_RELIVE_TYPE_RELIVE_POS);
+end
+
+-- 回主城复活按钮点击事件
+function OnBackCityButtonClick(gameObject)
+    if m_Data.backCityCD > 0 then
+        ShowSystemFlowTips(2203);
+        error("回主城复活CD中");
+        return;
+    end
+    SceneProtocol.RequestRevive(ENUM_RELIVE_TYPE.ENUM_RELIVE_TYPE_CENTER_CITY);
+end
+
+-- 等待救援按钮点击事件
+function OnWaitHelpButtonClick(gameObject)
+    ChangeViewState(true);
+end
+
+-- 放弃副本按钮点击事件
+function OnGiveupButtonClick(gameObject)
+    local activityID = G_SceneMng.ActivityID;
+    -- 猎魔大师活动结算要单独处理,跳过倒计时过程直接弹出胜利界面
+    if activityID == ENUM_AOT_ID.AOT_ID_DUNGEON_HUNT_ACTIVITY then
+        DungeonProtocol.RequestLeaveDungeon(ENUM_HUNT_QUIT_TYPE.HUNT_QUIT_TYPE_DIE);
+    else
+        DungeonProtocol.RequestLeaveDungeon();
+    end
+    CloseThisPanel();
+end
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    ChangeViewState(true);
+end
+
+-- 主界面复活按钮
+function OnReviveButtonClick(gameObject)
+    ChangeViewState(false);
+end
+
+-- 队伍成员点击事件
+function OnTeamAddMemberClick(globalId)
+    local isFriend = FriendsData.IsFriend(globalId);
+    if isFriend then
+        ShowSystemFlowTips(2904);
+    else
+        FriendsProtocol.RequestApply(globalId);
+    end
+end
+function OnTeamMemberClick(globalId)
+    ShowSystemFlowTips(2904);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function CloseThisPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL);
+    m_Data = nil;
+end
+
+-- 显示复活界面
+function Show(data)
+    m_Data = data;
+    error(SerializeTable(data));
+    if G_SceneMng.isInGame then
+        createPanel(ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL);
+    end
+end

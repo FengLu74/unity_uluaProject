@@ -1,0 +1,1349 @@
+﻿module("PetPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 宠物等级
+local m_PetLevelStr = "Middle/Adult/Level/Label_Level";
+-- 右侧幼年宠物名称
+local m_RightChildPetNameStr = "Right/Child/Top/Label_Name";
+-- 右侧幼年宠物等级
+local m_RightChildPetLevelStr = "Right/Child/Middle/Level/Label_Value";
+-- 右侧幼年宠物亲密度
+local m_RightChildPetIntimateStr = "Right/Child/Middle/Intimate/Label_Value";
+-- 右侧幼年宠物悟性
+local m_RightChildPetSavvyStr = "Right/Child/Middle/Savvy/Label_Value";
+-- 幼年宠物战斗力
+local m_ChildPetFightValueStr = "Right/Child/Top/FightValue/Label_Content";
+-- 幼年宠物类型
+local m_ChildPetTypeStr = "Right/Child/Top/FightType/Label_Type";
+-- 右侧成年宠物名称
+local m_RighAdulttPetNameStr = "Right/Adult/AttrPanel/Top/Label_Name";
+-- 成年宠物战斗力
+local m_AdultPetFightValueStr = "Right/Adult/AttrPanel/Top/FightValue/Label_Content";
+-- 成年宠物类型
+local m_AdultPetTypeStr = "Right/Adult/AttrPanel/Top/FightType/Label_Type";
+-----------------------------------------按钮路径--------------------------------------
+-- 图鉴按钮
+local m_CollectButtonStr = "Left/Button_Collect";
+-- 布阵
+local m_OrderButtonStr = "Left/Button_Order";
+-- 进化
+local m_EvolutionButtonStr = "Middle/Button_Evolution";
+-- 升级按钮
+local m_LevelUpButtonStr = "Middle/Adult/Button_LevelUp";
+-- 出战
+local m_FightButtonStr = "Middle/Button_Fight";
+-- 变成道具
+local m_ChangeToItemButtonStr = "Middle/Button_ChangeItem";
+-- 放生按钮点击
+local m_DecomposeButtonStr = "Middle/Button_Decompose";
+-- 问号按钮
+local m_ExplainButtonStr = "Middle/Button_Explain";
+--幼年宠物提示语
+local  m_childPromptStr = "Middle/Child_Prompt";
+-- 升级按钮
+local m_RightChildLevelUpButtonStr = "Right/Child/Bottom/Button_LevelUp";
+-- 悟性提升按钮
+local m_RightSavvyButtonStr = "Right/Child/Bottom/Button_Savvy";
+-- 亲密度提升按钮
+local m_RightIntimateButtonStr = "Right/Child/Bottom/Button_Intimate";
+
+-- 宠物属性按钮
+local m_RightAttrButtonStr = "Right/Adult/Toggle_Attr";
+-- 宠物成长资质按钮
+local m_RightQualityButtonStr = "Right/Adult/Toggle_Quality";
+
+-- 详细属性
+local m_RightDetailButtonStr = "Right/Adult/AttrPanel/Bottom/Button_Detail";
+-- 升星按钮
+local m_StarUpButtonStr = "Right/Adult/AttrPanel/Bottom/Button_StarUp";
+
+-- 资质提升按钮
+local m_AdultQualityAddButtonStr = "Right/Adult/QualityPanel/Bottom/Button_QualityAdd";
+-- 洗练资质按钮
+local m_AdultQualityRefreshButtonStr = "Right/Adult/QualityPanel/Bottom/Button_QualityRefresh";
+-- 学习技能按钮
+local m_AdultLearnSkillButtonStr = "Right/Adult/QualityPanel/Bottom/Button_LearnSkill";
+-----------------------------------------Sprite路径------------------------------------
+-- 幼年宠物类型
+local m_ChildPetFightTypeIconStr = "Right/Child/Top/FightType/Sprite_FightType";
+-- 成年宠物类型
+local m_AdultPetFightTypeIconStr = "Right/Adult/AttrPanel/Top/FightType/Sprite_FightType";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧UIListView组件所在的位置
+local m_leftUIListViewCompStr = "Left/PetsList/Grid";
+-- 中间内容所在的位置
+local m_RealDataMiddleStr = "Middle";
+-- 中间成年内容所在的位置
+local m_RealDataMiddleAdultStr = "Middle/Adult";
+-- 右侧内容所在的位置
+local m_RealDataRightStr = "Right";
+-- 没有宠物显示的内容
+local m_NotHavePetStr = "NotHave";
+-- 是否是变异
+local m_RealDataVarietyStr = "Right/Child/Top/Variety";
+-- 经验进度条
+local m_RealDataExpProStr = "Middle/Adult/Level/ExpProgress";
+
+-- 成年是否是变异
+local m_RealDataAdultVarietyStr = "Right/Adult/AttrPanel/Top/Variety";
+-- 成年经验进度条
+local m_RealDataAdultExpProStr = "Right/Adult/AttrPanel/Top/ExpProgress";
+
+-- 资质所在位置
+local m_RealDataQualityStr = "Right/Child/Middle/Qualitys/";
+-- 技能所在位置
+local m_RealDataSkillStr = "Right/Child/Middle/Skills/";
+
+-- 亲密度进度
+local m_RealDataIntimateProStr = "Right/Child/Bottom/Intimate/Sprite_Pro";
+-- 悟性进度
+local m_RealDataSavvyProStr = "Right/Child/Bottom/Savvy/Sprite_Pro";
+
+-- 右侧幼年位置
+local m_RightChildStr = "Right/Child";
+-- 右侧成年位置
+local m_RightAdultStr = "Right/Adult";
+
+-- 右侧成年属性位置
+local m_RightAdultAttrStr = "Right/Adult/AttrPanel";
+-- 右侧成年资质位置
+local m_RightAdultQualityStr = "Right/Adult/QualityPanel";
+
+-- 成年资质所在位置
+local m_RealDataAdultQualityStr = "Right/Adult/QualityPanel/Top/Qualitys/";
+
+-- 天赋技能所在位置
+local m_AdultSkillStr = "Right/Adult/Skills/";
+
+-- 属性所在位置
+local m_AttrStr = "Right/Adult/AttrPanel/Middle/Attrs/Attr";
+
+-- 宠物等级进度
+local m_ChildLevelProStr = "Right/Child/Middle/Level";
+-- 宠物亲密度进度
+local m_ChildIntimateProStr = "Right/Child/Middle/Intimate";
+-- 宠物悟性进度
+local m_ChildSavvyProStr = "Right/Child/Middle/Savvy";
+
+-- 详细属性
+local m_RightBottomButtonStr = "Right/Adult/AttrPanel/Bottom";
+----------------------------------通用的名称路径---------------------------------------
+-- 宠物图标
+local m_IconStr = "Sprite_Icon";
+-- 图标品质
+local m_QualityStr = "Sprite_Quality";
+-- 是否出战
+local m_OutStateStr = "Label_State";
+-- 是否合体
+local m_IsCombineStr = "Label_Combine";
+-- CD
+local m_CdStr = "Label_Cd";
+local m_MaskStr = "Sprite_Mask";
+
+-- 选择
+local m_SelectStr = "Sprite_Select";
+-- 红点
+local m_ItemRedHintStr = "Sprite_RedHint";
+
+-- 资质数值
+local m_QualityNumStr = "/Label_CurValue";
+-- 技能图标所在的位置
+local m_SkillIconStr = "/Sprite_Icon";
+
+-- 出战文本
+local m_FightLabelStr = "/Label";
+
+-- 右侧顶部按钮亮的位置
+local m_ActiveStr = "/Active";
+-- 右侧顶部按钮暗的位置
+local m_DeactiveStr = "/Deactive";
+
+-- 右侧经验进度条
+local m_AdultQualityPro = "/ExpProgress";
+
+-- 属性名称
+local m_AttrNameStr = "/Label_AttrName";
+-- 属性数值
+local m_AttrValueStr = "/Label_AttrValue";
+
+-- 红点路径
+local m_RedHintStr = "/Sprite_RedHint";
+
+-- 幼年星级位置
+local m_ChildStarStr = "Right/Child/Top/Stars/Star{0}/Sprite";
+-- 成年星级位置
+local m_AdultStarStr = "Right/Adult/AttrPanel/Top/Stars/Star{0}/Sprite";
+
+-- 进度
+local m_ProgressStr = "/Progress/Pro";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左侧UIlistView组件
+local m_leftUIListViewComp = nil;
+-- 所有宠物
+local m_PetList = nil;
+-- 当前选中的宠物
+local m_SelectedPet = nil;
+-- 成年宠物右侧上方状态(1代表宠物属性，2代表成长资质)
+local m_AdultSelectState = 1;
+-- 当前选中的宠物是否在复活Cd
+local m_CurPetIsInReborn = false;
+-- 左侧选中的是第几个
+local m_leftSelect = 0;
+-- 左侧所有数据
+local m_LeftShowTable = {};
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+
+local m_TimerData = nil;
+local m_PetTimeData = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+CharacterToTxtTable =
+{
+    [1] = 1238,
+    [2] = 1239,
+    [3] = 1240,
+    [4] = 1241,
+    [5] = 1242,
+    [6] = 1243,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    --G_TimerMng:RemoveTimeTask("PetRebornTask");
+    --G_TimerMng:RemoveTimeTask("PetOutTask");
+    ClearTimer();
+    m_CurPetIsInReborn = false;
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnPetCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnPetCloneClick);
+end
+
+function InitData()
+    if m_isJumpPanelSave then
+        m_SelectedPet = m_JumpPanelParamsTable[1];
+        m_AdultSelectState = m_JumpPanelParamsTable[2];
+        m_isJumpPanelSave = false;
+    else
+        m_leftSelect = 0;
+        m_SelectedPet = nil;
+        m_AdultSelectState = 1;
+    end
+end
+
+-- 初始化显示
+function InitShow()
+    InitLeftContent(true);
+    InitMiddleContent();
+    InitRightContent();
+    Hide3DModel();
+    LoadModel();
+end
+
+-- 初始化左侧的显示
+function InitLeftContent(needReset)
+    m_leftUIListViewComp:RemoveAll();
+    m_LeftShowTable = {};
+    m_PetList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+    for Index = 1, m_PetList.Count do
+        if Index > PET_ENUM.PET_PANEL_MAX_NUM then
+            break;
+        end
+        local itemAttr = m_PetList[Index - 1];
+        m_LeftShowTable[Index] = {};
+        m_LeftShowTable[Index].ItemAttr = itemAttr;
+        m_LeftShowTable[Index].FightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(itemAttr,1) + 0.5);
+    end
+    for Index = m_PetList.Count + 1,PET_ENUM.PET_PANEL_MAX_NUM do
+        m_LeftShowTable[Index] = {};
+        m_LeftShowTable[Index].ItemAttr = nil;
+        m_LeftShowTable[Index].FightValue = -1;
+    end
+    table.sort(m_LeftShowTable,SortFunc);
+    local findSameSelect = false;
+    for Index = 1, #m_LeftShowTable do
+        m_leftUIListViewComp:AddData(m_LeftShowTable[Index]);
+        if m_LeftShowTable[Index].ItemAttr == nil then
+            m_leftUIListViewComp:SetDisable(Index - 1);
+        else
+            if m_SelectedPet ~= nil and m_SelectedPet == m_LeftShowTable[Index].ItemAttr then
+                findSameSelect = true;
+                m_leftSelect = Index;
+            end
+        end
+    end
+    if not findSameSelect then
+        m_SelectedPet = nil;
+        m_leftSelect = 0;
+    end
+    if m_SelectedPet == nil then
+        if PetManager.m_yIsSetPetOut then
+            for Index = 1, #m_LeftShowTable do
+                if m_LeftShowTable[Index].ItemAttr ~= nil and PetManager.m_yPetPanelPos == m_LeftShowTable[Index].ItemAttr.PakID then
+                    m_SelectedPet = m_LeftShowTable[Index].ItemAttr;
+                    m_leftSelect = Index;
+                end
+            end
+        else
+            if m_LeftShowTable[1].ItemAttr ~= nil then
+                m_leftSelect = 1;
+                m_SelectedPet = m_LeftShowTable[1].ItemAttr;
+            end
+        end
+    end
+    InitLeftSelect(needReset);
+    InitPetTimeData();
+end
+
+function SortFunc(data1,data2)
+    return data1.FightValue > data2.FightValue;
+end
+
+function InitPetTimeData()
+    ClearTimer();
+    local petTimeData = {};
+    local now = G_TimerMng:GetCurrentSeconds();
+    for _, data in ipairs(m_LeftShowTable) do
+        if data.ItemAttr ~= nil then
+            if data.ItemAttr.AllPetAttribute.NextCanOutTime - now > 0 then
+                table.insert(petTimeData, data);
+            elseif PetManager.GetPetFightTime(data.ItemAttr.PakID) - now > 0 then
+                table.insert(petTimeData, data);
+            end
+        end
+    end
+    if #petTimeData > 0 then
+        m_PetTimeData = petTimeData;
+        m_TimerData = Timer.Instance:AddTimer(1, -1, OnTimer);
+        OnTimer();
+        error("time data : " .. SerializeTable(petTimeData));
+    end
+end
+
+function ClearTimer()
+    if m_TimerData ~= nil then
+        Timer.Instance:StopTimer(m_TimerData);
+        m_TimerData = nil;
+        m_PetTimeData = nil;
+    end
+end
+
+function OnTimer()
+    if m_PetTimeData == nil or #m_PetTimeData == 0 then
+        ClearTimer();
+        return;
+    end
+    local now = G_TimerMng:GetCurrentSeconds();
+    for Index = #m_PetTimeData, 1, -1 do
+        local data = m_PetTimeData[Index];
+        local itemAttr = data.ItemAttr;
+        local rebornDeltaTime = itemAttr.AllPetAttribute.NextCanOutTime - now;
+        local fightDeltaTime = PetManager.GetPetFightTime(itemAttr.PakID) - now;
+        local cell = m_leftUIListViewComp:GetCellByData(data);
+        InitCellTime(cell, data);
+        if itemAttr == m_SelectedPet then
+            InitMiddleTime();
+        end
+        if rebornDeltaTime <= 0 and fightDeltaTime <= 0 then
+            table.remove(m_PetTimeData, Index);
+        end
+    end
+end
+
+function InitCellTime(cell, data)
+    if cell == nil then
+        return;
+    end
+    local go = cell.gameObject;
+    if data.ItemAttr == nil then
+        SetLabelContent(m_CdStr, "", go);
+        SetGameObjectState(m_MaskStr, false, go);
+        return;
+    end
+    local itemAttr = data.ItemAttr;
+    local now = G_TimerMng:GetCurrentSeconds();
+    local rebornDeltaTime = itemAttr.AllPetAttribute.NextCanOutTime - now;
+    local fightDeltaTime = PetManager.GetPetFightTime(itemAttr.PakID) - now;
+    local isCurFightPet = PetManager.m_yIsSetPetOut and PetManager.m_yPetPanelPos == itemAttr.PakID;
+    if rebornDeltaTime > 0 then
+        SetLabelContent(m_CdStr, rebornDeltaTime, go);
+        SetGameObjectState(m_MaskStr, true, go);
+    elseif fightDeltaTime > 0 and not isCurFightPet then
+        SetLabelContent(m_CdStr, fightDeltaTime, go);
+        SetGameObjectState(m_MaskStr, true, go);
+    else
+        SetLabelContent(m_CdStr, "", go);
+        SetGameObjectState(m_MaskStr, false, go);
+    end
+end
+
+function InitMiddleTime()
+    local itemAttr = m_SelectedPet;
+    if itemAttr == nil then
+        return;
+    end
+    local now = G_TimerMng:GetCurrentSeconds();
+    local rebornDeltaTime = itemAttr.AllPetAttribute.NextCanOutTime - now;
+    local fightDeltaTime = PetManager.GetPetFightTime(itemAttr.PakID) - now;
+    local isCurFightPet = PetManager.m_yIsSetPetOut and PetManager.m_yPetPanelPos == itemAttr.PakID;
+    m_CurPetIsInReborn = false;
+    if fightDeltaTime <= 0 and rebornDeltaTime <= 0 then
+        -- 没有CD
+        if isCurFightPet == true then
+            
+            SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1305, m_panelObject);
+        else
+            SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+        end
+    elseif rebornDeltaTime > 0 then
+        -- 显示复活CD
+        m_CurPetIsInReborn = true;
+        SetLabelContent(m_FightButtonStr .. m_FightLabelStr, string_format(CCommonTool.GetTxtData(1307).m_str,rebornDeltaTime), m_panelObject);
+    elseif fightDeltaTime > 0 then
+        if isCurFightPet == true then
+            SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1305, m_panelObject);
+            m_CurPetIsInReborn = false;
+        else
+            -- 显示出战CD
+            SetLabelContent(m_FightButtonStr .. m_FightLabelStr, string_format(CCommonTool.GetTxtData(1306).m_str.."({0}s)",fightDeltaTime), m_panelObject);
+        end
+    end
+end
+
+function InitLeftSelect(needReset)
+    if m_PetList.Count <= 0 then
+        m_leftUIListViewComp:LookAt(-1, false);
+        return;
+    end
+    if needReset then
+        if m_leftSelect <= 5 then
+            m_leftUIListViewComp:LookAt(-1, true);
+        else
+            m_leftUIListViewComp:LookAt(PET_ENUM.PET_PANEL_MAX_NUM - 1, true);
+        end
+        m_leftUIListViewComp:SetSelect(m_leftSelect - 1, true);
+    else
+        m_leftUIListViewComp:SetSelect(m_leftSelect - 1, true);
+    end
+end
+
+-- 左侧宠物初始化
+function OnPetCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local itemPetAttr = data.ItemAttr;
+    InitCellTime(cell, data);
+    if itemPetAttr == nil then
+        SetGameObjectState(m_IconStr,false,go);
+        SetGameObjectState(m_QualityStr,false,go);
+        SetGameObjectState(m_OutStateStr,false,go);
+        SetGameObjectState(m_IsCombineStr,false,go);
+        SetGameObjectState(m_SelectStr,false,go);
+        SetGameObjectState(m_ItemRedHintStr,false,go);
+        return;
+    else
+        SetGameObjectState(m_ItemRedHintStr,PetManager.IsShowRedHintSingle(itemPetAttr),go);
+    end
+    SetGameObjectState(m_IconStr,true,go);
+    SetGameObjectState(m_QualityStr,true,go);
+    SetGameObjectState(m_OutStateStr,true,go);
+    SetGameObjectState(m_IsCombineStr,false,go);
+    SetSpriteByAtlasID(m_IconStr, itemPetAttr:GetImageIdById(), go);
+    SetSpriteApptitudeV04(m_QualityStr, itemPetAttr:GetAptitudeID(), go);
+    if PetManager.m_yIsSetPetOut then
+        if PetManager.m_yPetPanelPos == itemPetAttr.PakID then
+            SetGameObjectState(m_OutStateStr, true, go);
+        else
+            SetGameObjectState(m_OutStateStr, false, go);
+        end
+    else
+        SetGameObjectState(m_OutStateStr, false, go);
+    end
+    SetGameObjectState(m_IsCombineStr,PetManager.PetIsInCombine(itemPetAttr),go);
+end
+
+function InitMiddleContent()
+    if m_PetList.Count == 0 then
+        SetGameObjectState(m_RealDataMiddleStr, false, m_panelObject);
+        SetGameObjectState(m_RealDataRightStr, false, m_panelObject);
+        SetGameObjectState(m_NotHavePetStr,true,m_panelObject);
+        m_SelectedPet = nil;
+        return false;
+    else
+        SetGameObjectState(m_RealDataMiddleStr, true, m_panelObject);
+        SetGameObjectState(m_RealDataRightStr, true, m_panelObject);
+        SetGameObjectState(m_NotHavePetStr,false,m_panelObject);
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    if m_SelectedPet == nil then
+        SetGameObjectState(m_RealDataMiddleStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_RealDataMiddleStr, true, m_panelObject);
+        local petATT = m_SelectedPet.AllPetAttribute;
+        if petATT == nil then
+            error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_SelectedPet.CRID);
+            return false;
+        end
+        local canEvolution = false;
+        if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            if petATT.PetLevel >= PetChildMaxLevel then
+                if petATT.PetIntimateNum >= petMainInfo.IntimateMaxNum then
+                    canEvolution = true;
+                end
+            end
+        end
+        SetGameObjectState(m_EvolutionButtonStr, canEvolution, m_panelObject);
+        --G_TimerMng:RemoveTimeTask("PetRebornTask");
+        --G_TimerMng:RemoveTimeTask("PetOutTask");
+        if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            SetGameObjectState(m_RealDataMiddleAdultStr,false,m_panelObject);
+            m_CurPetIsInReborn = false;
+            if PetManager.m_yIsSetPetOut then
+                if PetManager.m_yPetPanelPos == m_SelectedPet.PakID then
+                    SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1305, m_panelObject);
+                else
+                    SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+                end
+            else
+                SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+            end
+			SetLabelTextByID(m_childPromptStr,9122,m_panelObject);
+            SetGameObjectState(m_childPromptStr,true,m_panelObject);
+        else
+			SetGameObjectState(m_childPromptStr,false,m_panelObject);
+            SetGameObjectState(m_RealDataMiddleAdultStr,true,m_panelObject);
+            SetLabelContent(m_PetLevelStr, "Lv."..petATT.PetLevel, m_panelObject);
+            local curExp = petATT.PetExp - CCommonTool.GetEXPIndexInfo(petATT.PetLevel - 1).PetNeedExp;
+            local maxExp = CCommonTool.GetEXPIndexInfo(petATT.PetLevel).PetNeedExp - CCommonTool.GetEXPIndexInfo(petATT.PetLevel - 1).PetNeedExp;
+            SetSpriteFillAmount(m_RealDataExpProStr, curExp / maxExp, m_panelObject);
+            SetGameObjectState(m_LevelUpButtonStr..m_RedHintStr,PetManager.PetCanUseLevelUpItem(m_SelectedPet),m_panelObject);
+            InitMiddleTime();
+            --[[
+            local rebornTime = petATT.NextCanOutTime;
+            local fightTime = PetManager.GetPetFightTime(m_SelectedPet.PakID);
+            local now = G_TimerMng:GetCurrentSeconds();
+            local rebornDeltaTime = math.floor(rebornTime - now);
+            local fightDeltaTime = math.floor(fightTime - now);
+            if fightDeltaTime <= 0 and rebornDeltaTime <= 0 then
+                -- 没有CD
+                if PetManager.m_yIsSetPetOut then
+                    if PetManager.m_yPetPanelPos == m_SelectedPet.PakID then
+                        SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1305, m_panelObject);
+                        m_CurPetIsInReborn = false;
+                    else
+                        SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+                    end
+                else
+                    SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+                end
+            elseif rebornDeltaTime > 0 then
+                -- 显示复活CD
+                m_CurPetIsInReborn = true;
+                SetLabelContent(m_FightButtonStr .. m_FightLabelStr, string_format(CCommonTool.GetTxtData(1307).m_str,rebornDeltaTime), m_panelObject);
+                AddTimerEvent("PetRebornTask", rebornDeltaTime, OnPetRebornCallOver, ETimeShowType.TypeNumberSeven, OnPetRebornUpdate);
+            elseif fightDeltaTime > 0 then
+                if PetManager.m_yIsSetPetOut and PetManager.m_yPetPanelPos == m_SelectedPet.PakID then
+                    SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1305, m_panelObject);
+                    m_CurPetIsInReborn = false;
+                else
+                    -- 显示出战CD
+                    SetLabelContent(m_FightButtonStr .. m_FightLabelStr, string_format(CCommonTool.GetTxtData(1306).m_str.."({0}s)",fightDeltaTime), m_panelObject);
+                    AddTimerEvent("PetOutTask", fightDeltaTime, OnCanClickPetOutButtonCallOver, ETimeShowType.TypeNumberSeven, OnCanClickPetOutButtonUpdate);
+                end
+            end
+            ]]
+        end
+    end
+end
+
+--[[
+function OnCanClickPetOutButtonUpdate(time)
+    SetLabelContent(m_FightButtonStr .. m_FightLabelStr, string_format(CCommonTool.GetTxtData(1306).m_str.."({0}s)",time), m_panelObject);
+end
+
+function OnCanClickPetOutButtonCallOver()
+    SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+end
+]]
+
+-- 初始化右侧的显示
+function InitRightContent()
+    if m_PetList.Count == 0 then
+        return false;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    local petATT = m_SelectedPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_SelectedPet.CRID);
+        return false;
+    end
+    if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+        SetGameObjectState(m_RightChildStr, true, m_panelObject);
+        SetGameObjectState(m_RightAdultStr, false, m_panelObject);
+        InitRightChildContent();
+    else
+        SetGameObjectState(m_RightChildStr, false, m_panelObject);
+        SetGameObjectState(m_RightAdultStr, true, m_panelObject);
+        InitRightAdultContent();
+    end
+end
+
+function InitRightChildContent()
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    local petATT = m_SelectedPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_SelectedPet.CRID);
+        return false;
+    end
+    SetLabelTextByID(m_RightChildPetNameStr, petMainInfo.NameTextID, m_panelObject);
+    if petMainInfo.IsVariety == 1 then
+        SetGameObjectState(m_RealDataVarietyStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_RealDataVarietyStr, false, m_panelObject);
+    end
+    SetLabelContent(m_ChildPetFightValueStr,m_LeftShowTable[m_leftSelect].FightValue,m_panelObject);
+    SetSpriteByAtlasID(m_ChildPetFightTypeIconStr,petMainInfo.FightTypeIconID,m_panelObject);
+    SetLabelTextByID(m_ChildPetTypeStr,petMainInfo.FightTypeID,m_panelObject);
+    for Index = 1,petATT.PetStar do
+        SetGameObjectState(string_format(m_ChildStarStr,Index),true,m_panelObject);
+    end
+    for Index = petATT.PetStar + 1,10 do
+        SetGameObjectState(string_format(m_ChildStarStr,Index),false,m_panelObject);
+    end
+    SetLabelContent(m_RightChildPetLevelStr,petATT.PetLevel.."/"..PetChildMaxLevel,m_panelObject);
+    local pro = petATT.PetLevel/PetChildMaxLevel;
+    SetProByValue(m_ChildLevelProStr,pro);
+    SetGameObjectState(m_RightChildLevelUpButtonStr..m_RedHintStr,PetManager.PetCanUseLevelUpItem(m_SelectedPet),m_panelObject);
+    SetLabelContent(m_RightChildPetIntimateStr,petATT.PetIntimateNum.."/"..petMainInfo.IntimateMaxNum,m_panelObject);
+    pro = petATT.PetIntimateNum / petMainInfo.IntimateMaxNum;
+    SetProByValue(m_ChildIntimateProStr,pro);
+    SetGameObjectState(m_RightIntimateButtonStr..m_RedHintStr,PetManager.PetCanIntimateUp(m_SelectedPet),m_panelObject);
+    SetLabelContent(m_RightChildPetSavvyStr,petATT.SavvyNum.."/"..PET_ENUM.PET_SAVVY_MAXNUM,m_panelObject);
+    pro = petATT.SavvyNum / PET_ENUM.PET_SAVVY_MAXNUM;
+    SetProByValue(m_ChildSavvyProStr,pro);
+    SetGameObjectState(m_RightSavvyButtonStr..m_RedHintStr,PetManager.PetCanSavvyUp(m_SelectedPet),m_panelObject);
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curValue;
+    local maxValue;
+    for Index = 1, PET_ENUM.PET_ALL_QUALITY_NUM do
+        curValue = petQualityInfo[Index - 1].QualityMin + petQualityInfo[Index - 1].QualityCur;
+        maxValue = petQualityInfo[Index - 1].QualityMax;
+        SetLabelContent(m_RealDataQualityStr .. Index .. m_QualityNumStr, curValue .. "/" .. maxValue, m_panelObject);
+    end
+    local skillID;
+    for Index = 1, PET_ENUM.PET_ALL_SKILL_NUM do
+        if Index > 5 then
+            break;
+        end
+        skillID = petATT.PetAllSkillInfo[Index - 1].SkillID;
+        if skillID <= 0 then
+            SetGameObjectState(m_RealDataSkillStr .. Index .. m_SkillIconStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_RealDataSkillStr .. Index .. m_SkillIconStr, true, m_panelObject);
+            local skillMainInfo = CCommonTool.GetSkillMainData(skillID);
+            if skillMainInfo ~= nil then
+                local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                if skillDataInfo ~= nil then
+                    SetSpriteByAtlasID(m_RealDataSkillStr .. Index .. m_SkillIconStr, skillDataInfo.Icon, m_panelObject);
+                    local go = child(m_panelObject,m_RealDataSkillStr .. Index .. m_SkillIconStr).gameObject;
+                    TipsManager.SkillTips(go, skillID, skillMainInfo.SonSkill0, 0, true)
+                end
+            end
+        end
+    end
+    m_CurPetIsInReborn = false;
+end
+
+function SetProByValue(str,pro)
+    for Index = 1,20 do
+        if pro >= Index * 0.05 then
+            SetGameObjectState(str..m_ProgressStr..Index,true,m_panelObject);
+        else
+            SetGameObjectState(str..m_ProgressStr..Index,false,m_panelObject);
+        end
+    end
+    
+end
+
+function InitRightAdultContent()
+    InitTopButtonState();
+    if m_AdultSelectState == 1 then
+        SetGameObjectState(m_RightAdultAttrStr, true, m_panelObject);
+        SetGameObjectState(m_RightAdultQualityStr, false, m_panelObject);
+        InitAdultAttrContent();
+    else
+        SetGameObjectState(m_RightAdultAttrStr, false, m_panelObject);
+        SetGameObjectState(m_RightAdultQualityStr, true, m_panelObject);
+        InitAdultQualityContent();
+    end
+    InitAdultSkillsContent();
+    local canQualityAdd = PetManager.PetCanQualityAdd(m_SelectedPet);
+    SetGameObjectState(m_RightQualityButtonStr..m_RedHintStr,canQualityAdd,m_panelObject);
+    SetGameObjectState(m_AdultQualityAddButtonStr..m_RedHintStr,canQualityAdd,m_panelObject);
+end
+
+function InitTopButtonState()
+    if m_AdultSelectState == 1 then
+        SetGameObjectState(m_RightAttrButtonStr .. m_ActiveStr, true, m_panelObject);
+        SetGameObjectState(m_RightAttrButtonStr .. m_DeactiveStr, false, m_panelObject);
+        SetGameObjectState(m_RightQualityButtonStr .. m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_RightQualityButtonStr .. m_DeactiveStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_RightAttrButtonStr .. m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_RightAttrButtonStr .. m_DeactiveStr, true, m_panelObject);
+        SetGameObjectState(m_RightQualityButtonStr .. m_ActiveStr, true, m_panelObject);
+        SetGameObjectState(m_RightQualityButtonStr .. m_DeactiveStr, false, m_panelObject);
+    end
+end
+
+function InitAdultAttrContent()
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    local petATT = m_SelectedPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_SelectedPet.CRID);
+        return false;
+    end
+    SetLabelTextByID(m_RighAdulttPetNameStr, petMainInfo.NameTextID, m_panelObject);
+    if petMainInfo.IsVariety == 1 then
+        SetGameObjectState(m_RealDataAdultVarietyStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_RealDataAdultVarietyStr, false, m_panelObject);
+    end
+    SetLabelContent(m_AdultPetFightValueStr,m_LeftShowTable[m_leftSelect].FightValue,m_panelObject);
+    SetSpriteByAtlasID(m_AdultPetFightTypeIconStr,petMainInfo.FightTypeIconID,m_panelObject);
+    SetLabelTextByID(m_AdultPetTypeStr,petMainInfo.FightTypeID,m_panelObject);
+    for Index = 1,petATT.PetStar do
+        SetGameObjectState(string_format(m_AdultStarStr,Index),true,m_panelObject);
+    end
+    for Index = petATT.PetStar + 1,10 do
+        SetGameObjectState(string_format(m_AdultStarStr,Index),false,m_panelObject);
+    end
+    InitAdultAttrDetailContent();
+    if G_UserInfo.RoleAttribute.Level < PetCanStarUpLevel then
+        SetGameObjectState(m_StarUpButtonStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_StarUpButtonStr,true,m_panelObject);
+    end
+    RepositionUITableComp(m_RightBottomButtonStr,m_panelObject);
+end
+
+function OnPetRebornUpdate(timeTxt)
+    SetLabelContent(m_FightButtonStr .. m_FightLabelStr, string_format(CCommonTool.GetTxtData(1307).m_str,timeTxt), m_panelObject);
+end
+
+function OnPetRebornCallOver()
+    m_CurPetIsInReborn = false;
+    if PetManager.m_yIsSetPetOut then
+        if PetManager.m_yPetPanelPos == m_SelectedPet.PakID then
+            SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1305, m_panelObject);
+        else
+            SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+        end
+    else
+        SetLabelTextByID(m_FightButtonStr .. m_FightLabelStr, 1306, m_panelObject);
+    end
+end
+
+function InitAdultQualityContent()
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    local petATT = m_SelectedPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_SelectedPet.CRID);
+        return false;
+    end
+    local petAttrInfo = CCommonTool.GetPetAttrInfo(petMainInfo.RoleAttrID);
+    local maxQualityTable = {[1] = petAttrInfo.LifeQualityMax,[2] = petAttrInfo.AttackQualityMax,[3] = petAttrInfo.DefenceQualityMax,[4] = petAttrInfo.AngerQualityMax,[5] = petAttrInfo.AgileQualityMax}
+    local petQualityInfo = petATT.PetQualityInfo;
+    local curValue;
+    local maxValue;
+    for Index = 1, PET_ENUM.PET_ALL_QUALITY_NUM do
+        curValue = petQualityInfo[Index - 1].QualityMin + petQualityInfo[Index - 1].QualityCur;
+        maxValue = petQualityInfo[Index - 1].QualityMax;
+        if maxValue >= PetHighQualityPercent*maxQualityTable[Index] then
+            SetLabelContent(m_RealDataAdultQualityStr .. Index .. m_QualityNumStr,"[F5F4E8]"..curValue .."/[-][C791FF]"..maxValue,m_panelObject);
+            SetSpriteGradientColor(m_RealDataAdultQualityStr .. Index .. m_AdultQualityPro, "774CBEFF", "8E70FEFF", m_panelObject);
+        else
+            SetLabelContent(m_RealDataAdultQualityStr .. Index .. m_QualityNumStr,"[F5F4E8]"..curValue .."/"..maxValue,m_panelObject);
+            SetSpriteGradientColor(m_RealDataAdultQualityStr .. Index .. m_AdultQualityPro, "2050A8FF", "6AB0E6FF", m_panelObject);
+        end
+        SetSpriteFillAmount(m_RealDataAdultQualityStr .. Index .. m_AdultQualityPro, curValue / maxValue, m_panelObject);
+    end
+end
+
+function InitAdultSkillsContent()
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    local petATT = m_SelectedPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_SelectedPet.CRID);
+        return false;
+    end
+    local skillID;
+    for Index = 1, PET_ENUM.PET_ALL_SKILL_NUM do
+        skillID = petATT.PetAllSkillInfo[Index - 1].SkillID;
+        if skillID == 0 then
+            SetGameObjectState(m_AdultSkillStr .. Index .. m_SkillIconStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_AdultSkillStr .. Index .. m_SkillIconStr, true, m_panelObject);
+            local skillMainInfo = CCommonTool.GetSkillMainData(skillID);
+            if skillMainInfo ~= nil then
+                local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                if skillDataInfo ~= nil then
+                    SetSpriteByAtlasID(m_AdultSkillStr .. Index .. m_SkillIconStr, skillDataInfo.Icon, m_panelObject);
+                    local go = child(m_panelObject,m_AdultSkillStr .. Index .. m_SkillIconStr).gameObject;
+                    TipsManager.SkillTips(go, skillID, skillMainInfo.SonSkill0, 0, true)
+                end
+            end
+        end
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CollectButtonStr,OnCollectClick,m_panelObject);
+    SetGameObjectEvent(m_OrderButtonStr,OnOrderClick,m_panelObject);
+
+    SetGameObjectEvent(m_EvolutionButtonStr, OnEvolutionClick, m_panelObject);
+    SetGameObjectEvent(m_LevelUpButtonStr, OnLevelUpClick, m_panelObject);
+    SetGameObjectEvent(m_FightButtonStr, OnFightClick, m_panelObject);
+    SetGameObjectEvent(m_ChangeToItemButtonStr, OnChangeToItemClick, m_panelObject);
+    SetGameObjectEvent(m_DecomposeButtonStr, OnDecomposeButtonClick, m_panelObject);
+    SetGameObjectEvent(m_ExplainButtonStr, OnExplainButtonClick, m_panelObject);
+
+    SetGameObjectEvent(m_RightChildLevelUpButtonStr, OnLevelUpClick, m_panelObject);
+    SetGameObjectEvent(m_RightSavvyButtonStr, OnSavvyClick, m_panelObject);
+    SetGameObjectEvent(m_RightIntimateButtonStr, OnIntimateClick, m_panelObject);
+
+    SetGameObjectEvent(m_RightAttrButtonStr, OnRightAttrButtonClick, m_panelObject);
+    SetGameObjectEvent(m_RightQualityButtonStr, OnRightQualityButtonClick, m_panelObject);
+
+    SetGameObjectEvent(m_RightDetailButtonStr, OnDetailClick, m_panelObject);
+    SetGameObjectEvent(m_StarUpButtonStr, OnStarUpClick, m_panelObject);
+
+    SetGameObjectEvent(m_AdultQualityRefreshButtonStr, OnQualityRefreshClick, m_panelObject);
+    SetGameObjectEvent(m_AdultQualityAddButtonStr, OnQualityAddClick, m_panelObject);
+    SetGameObjectEvent(m_AdultLearnSkillButtonStr, OnLearSkillClick, m_panelObject);
+end
+
+function LoadModel()
+    if m_SelectedPet == nil then
+        return;
+    end
+    local petATT = m_SelectedPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+    if petMainInfo == nil then
+        return;
+    end
+    local modelID;
+    if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+        modelID = petMainInfo.ChildModelID;
+    else
+        modelID = petMainInfo.AdultModelID;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_PETPANEL);
+    buffer:WriteInt(modelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+-- 删除boss3d模型
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+
+function InitAdultAttrDetailContent()
+    local attrIndex = 0;
+    local personClass = PetManager.ChangePetItemIntoCLGPerson(m_SelectedPet,1);
+    -- 生命
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[1]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(1)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(1)..m_AttrValueStr,math.floor(personClass:GetMaxHp()),m_panelObject);
+
+    -- 外攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[2]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(2)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(2)..m_AttrValueStr,math.floor(personClass:GetAp()),m_panelObject);
+
+    -- 内攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[3]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(3)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(3)..m_AttrValueStr,math.floor(personClass:GetMap()),m_panelObject);
+
+    -- 魔法
+    attrIndex = 151;
+    SetLabelTextByID(m_AttrStr..tostring(4)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(4)..m_AttrValueStr,math.floor(personClass:GetMaxMp()),m_panelObject);
+
+    -- 外防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[5]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(5)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(5)..m_AttrValueStr,math.floor(personClass:GetDp()),m_panelObject);
+
+    -- 内防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[6]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(6)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(6)..m_AttrValueStr,math.floor(personClass:GetMdp()),m_panelObject);
+
+    -- 暴击
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[7]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(7)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(7)..m_AttrValueStr,math.floor(personClass:GetAc()),m_panelObject);
+
+    -- 命中
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[8]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(8)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(8)..m_AttrValueStr,math.floor(personClass:GetAh()),m_panelObject);
+
+    -- 韧性
+    attrIndex = 91;
+    SetLabelTextByID(m_AttrStr..tostring(9)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(9)..m_AttrValueStr,math.floor(personClass:GetDc()),m_panelObject);
+
+    -- 闪避
+    attrIndex = 61;
+    SetLabelTextByID(m_AttrStr..tostring(10)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(10)..m_AttrValueStr,math.floor(personClass:GetDh()),m_panelObject);
+end
+
+function CheckMaxLevel()
+    if m_SelectedPet == nil then
+        return 0;
+    end
+    local petATT = m_CurSelectPet.m_SelectedPet;
+    if petATT == nil then
+        return 0;
+    end
+    if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+        return math.min(G_UserInfo.UnlockLevel,G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel,PetChildMaxLevel);
+    else
+        return math.min(G_UserInfo.UnlockLevel,G_UserInfo.RoleAttribute.Level + PetMaxOverPlayerLevel);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCollectClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_PETINTROPANEL,ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10312);
+
+    ReportManager.RequestReportPanel(10319);
+end
+
+function OnOrderClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_PET_FIGHT_ORDER, ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10311);
+end
+
+-- 点击宠物
+function OnPetCloneClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if data.ItemAttr == nil then
+        return;
+    end
+    local selectPet = data.ItemAttr;
+    if selectPet == m_SelectedPet then
+        return;
+    else
+        m_leftSelect = cell.dataIndex + 1;
+        m_AdultSelectState = 1;
+        m_SelectedPet = m_LeftShowTable[m_leftSelect].ItemAttr;
+        InitMiddleContent();
+        InitRightContent();
+        Hide3DModel();
+        LoadModel();
+    end
+end
+
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+
+function OnChangeToItemClick()
+    if m_CurPetIsInReborn then
+        ShowSystemFlowTips(7816);
+        return;
+    end
+    if PetManager.PetIsInCombine(m_SelectedPet) then
+        ShowSystemFlowTips(7882);
+        return;
+    end
+    local pos = G_BagMng:GetPanelNoUsePos(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+    if pos == -1 then
+        ShowSystemFlowTips(7817);
+        return;
+    end
+    local tempTable = { };
+    table.insert(tempTable, 1, "");
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(1502).m_str);
+    table.insert(tempTable, 3, OnChangeToItemOkClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable, ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10314);
+end
+
+function OnChangeToItemOkClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    local pos = G_BagMng:GetPanelNoUsePos(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_CHANGE_TO_ITEM);
+    buffer:WriteByte(m_SelectedPet.PanelPos);
+    buffer:WriteByte(m_SelectedPet.PakID);
+    buffer:WriteByte(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM);
+    buffer:WriteByte(pos);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnDecomposeButtonClick()
+--    if m_CurPetIsInReborn then
+--        ShowSystemFlowTips(7818);
+--        return;
+--    end
+--    local tempTable = { };
+--    table.insert(tempTable, 1, "");
+--    table.insert(tempTable, 2, CCommonTool.GetTxtData(1308).m_str);
+--    table.insert(tempTable, 3, OnDecomposeButtonOkClick);
+--    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+--    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+--    table.insert(tempTable, 6, CCommonTool.GetTxtData(8066).m_str);
+--    table.insert(tempTable, 10, true);
+--    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable, ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ResolvePanel.OpenResolvePanelByTag(1, 2,ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10315);
+end
+
+function OnExplainButtonClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_PETPANEL, 1);
+end
+
+function OnDecomposeButtonOkClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    if m_CurPetIsInReborn then
+        ShowSystemFlowTips(7818);
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_DECOMPOSE);
+    buffer:WriteByte(1);
+    buffer:WriteInt(m_SelectedPet.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnLevelUpClick()
+    PetLevelUpPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETLEVELUPPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10316);
+end
+
+function OnSavvyClick()
+    PetSavvyPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETSAVVYPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10317);
+end
+
+function OnIntimateClick()
+    PetIntimatePanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETINTIMATEPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+    ReportManager.RequestReportPanel(10318);
+end
+
+function OnFightClick()
+    if m_CurPetIsInReborn then
+        log("宠物正在复活，无法出战或休息");
+        return;
+    end
+    if PetManager.PetIsInCombine(m_SelectedPet) then
+        ShowSystemFlowTips(7881);
+        return;
+    end
+    local isPetOut = false;
+    if PetManager.m_yIsSetPetOut then
+        if PetManager.m_yPetPanelPos == m_SelectedPet.PakID then
+            isPetOut = false;
+        else
+            isPetOut = true;
+        end
+    else
+        isPetOut = true;
+    end
+    if isPetOut then
+        local outTime = PetManager.GetPetFightTime(m_SelectedPet.PakID);
+        if G_TimerMng:GetCurrentSeconds() < outTime then
+            log("玩家点击出战按钮CD");
+            return;
+        end
+        local petMainInfo = CCommonTool.GetPetMainInfo(m_SelectedPet.ExcelID);
+        if G_UserInfo.RoleAttribute.Level < petMainInfo.NeedLv then
+            log(string_format("玩家需要达到{0}级才能出战此宠物",petMainInfo.NeedLv));
+            ShowSystemFlowTips(7820,nil,{petMainInfo.NeedLv});
+            return;
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_SET_OUTPET_ID);
+        buffer:WriteInt(m_SelectedPet.CRID);
+        G_NetWorkMng:SendMessage(buffer);
+        --PetManager.m_nNextCanClickOutButtonTime = G_TimerMng:GetCurrentSeconds() + PetNextCanOutTime;
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_REST_OUTPET_ID);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+    ReportManager.RequestReportPanel(10313);
+end
+
+function OnEvolutionClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_GROW_TO_ADULT);
+    buffer:WriteInt(m_SelectedPet.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnDetailClick()
+    PetAttrDetailsPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETATTRDETAILSPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+
+function OnStarUpClick()
+    PetStarUpPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+
+function OnRightAttrButtonClick()
+    if m_AdultSelectState == 2 then
+        m_AdultSelectState = 1;
+        InitRightAdultContent();
+    end
+end
+
+function OnRightQualityButtonClick()
+    if m_AdultSelectState == 1 then
+        m_AdultSelectState = 2;
+        InitRightAdultContent();
+    end
+end
+
+function OnQualityRefreshClick()
+    PetQualityRefreshPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETQUALITYREFRESHPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+
+function OnQualityAddClick()
+    PetQualityAddPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETQUALITYADDPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+
+function OnLearSkillClick()
+    PetLearnSkillPanel.m_CurSelectPet = m_SelectedPet;
+    createPanel(ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL, ENUMPANELID.ENUM_PANEL_PETPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshPanelAfterAddExp(levelChanged)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        if levelChanged == 1 then
+            InitLeftContent(false);
+        else
+            m_leftUIListViewComp:Refresh();
+        end
+        InitMiddleContent();
+        InitRightContent();
+    end
+    PetLevelUpPanel.OnRefresh();
+end
+
+function RefreshPanelAfterRelease()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitData();
+        InitShow();
+    end
+end
+
+function RefreshPanelAfterChangeToItem()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitData();
+        InitShow();
+    end
+end
+
+function RefreshPanelAfterAddSavvy()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitRightContent();
+    end
+    PetSavvyPanel.OnRefresh();
+end
+
+function RefreshPanelAfterAddIntimate()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitPetTimeData();
+        InitMiddleContent();
+        InitRightContent();
+    end
+    PetIntimatePanel.OnRefresh();
+end
+
+function RefreshPanelAfterSetPetOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitPetTimeData();
+        InitMiddleContent();
+    end
+end
+
+function RefreshPanelAfterRestPetOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitPetTimeData();
+        InitMiddleContent();
+    end
+end
+
+function RefreshPanelAfterEvolutionOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitMiddleContent();
+        InitRightContent();
+        Hide3DModel();
+        LoadModel();
+    end
+end
+
+function RefreshPanelAfterQualityAddOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitLeftContent(false);
+        InitRightContent();
+    end
+    PetQualityAddPanel.OnRefresh();
+end
+
+function RefreshPanelAfterQualityRefreshOut()
+    PetQualityRefreshPanel.OnRefresh();
+end
+
+function RefreshPanelAfterQualitySaveOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitLeftContent(false);
+        InitRightContent();
+    end
+    PetQualityRefreshPanel.OnRefresh();
+end
+
+function RefreshPanelAfterSetOutAddExp(levelChanged)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        if m_SelectedPet ~= nil then
+            if m_SelectedPet.PakID == PetManager.m_yPetPanelPos then
+                if levelChanged then
+                    InitLeftContent(false);
+                else
+                    m_leftUIListViewComp:Refresh();
+                end
+                InitMiddleContent();
+                InitRightContent();
+                PetLevelUpPanel.OnRefresh();
+            end
+        end
+    end
+end
+
+function RefreshPanelAfterSetOutAddIntimate()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        if m_SelectedPet ~= nil then
+            m_leftUIListViewComp:Refresh();
+            InitPetTimeData();
+            if m_SelectedPet.PakID == PetManager.m_yPetPanelPos then
+                InitMiddleContent();
+                InitRightContent();
+                PetIntimatePanel.OnRefresh();
+            end
+        end
+    end
+end
+
+function RefreshPanelAfterDecompose(allItemTable)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitData();
+        InitShow();
+    end
+    PetDecomposePanel.SetData(allItemTable);
+end
+
+function RefreshPanelAfterStarUp(result)
+    if result == 1 then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+            InitLeftContent(false);
+            InitRightContent();
+        end
+    end
+    PetStarUpPanel.OnRefresh(result);
+end
+
+function DealRebornLogic()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        if m_SelectedPet ~= nil then
+            InitPetTimeData();
+            if m_SelectedPet.PakID == PetManager.m_yPetPanelPos then
+                InitMiddleContent();
+            end
+        end
+    end
+end
+
+function RefreshPanelAfterLearnSkill()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETPANEL) == 1 then
+        InitLeftContent(false);
+        InitRightContent();
+    end
+    PetLearnSkillPanel.OnRefresh();
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_SelectedPet;
+    jumpParamsTable[2] = m_AdultSelectState;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

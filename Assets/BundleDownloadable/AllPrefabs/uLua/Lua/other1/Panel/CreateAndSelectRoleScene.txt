@@ -1,0 +1,1378 @@
+﻿module("CreateAndSelectRoleScene", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 创建角色所在的场景中的路径位置
+local m_CreateRolesStr = "Scene_Create/Roles";
+-- 选择角色所在的场景中的路径位置
+local m_SelectRolesStr = "Scene_SelectRole/Roles";
+-- 创建所在的场景中的路径位置
+local m_CreateStr = "Scene_Create";
+-- 选择所在的场景中的路径位置
+local m_SelectStr = "Scene_SelectRole";
+-- 创建召唤兽所在的场景中的路径位置
+local m_CreateSummonStr = "Scene_Create/Summoning";
+
+-- 创建摄像机的动画组件
+local m_CameraCreateAnimatorCompStr = "CJ_CAMERA";
+-- 创建所在的场景中的摄像机的固定点的位置
+local m_CameraCreateStaticPosStr = "Scene_Create/StaticCreateCameraPos";
+-- 创建所在的场景中的摄像机母对象位置
+local m_CameraCreateParentStr = "CJ_CAMERA/CAMERA";
+-- 创建所在的场景中的摄像机位置
+local m_CameraCreateStr = "Scene_Create/StaticCreateCameraPos/MainCamera_CreateRole";
+-- 选择所在的场景中的摄像机位置
+local m_CameraSelectStr = "/MainCamera_SelectRole";
+
+
+-- 龙战士职业下的龙战士创建角色所在的位置
+local m_WarriorStr = "/DragonWarrior";
+-- 菲利巴职业下模型创建角色所在的位置
+local m_FeiLiBaStr = "/FeiLiBa";
+-- 刺客职业下模型创建角色所在的位置
+local m_AssassinStr = "/Assassin";
+-- 萝莉职业下模型创建角色所在的位置
+local m_LoliStr = "/Loli";
+-- 龙战士职业下的龙战士创建角色所在的位置高模
+local m_WarriorHighModuleStr = "/DragonWarrior_HighModule";
+-- 菲利巴职业下模型创建角色所在的位置高模
+local m_FeiLiBaHighModuleStr = "/FeiLiBa_HighModule";
+-- 刺客职业下模型创建角色所在的位置高模
+local m_AssassinHighModuleStr = "/Assassin_HighModule";
+-- 萝莉职业下模型创建角色所在的位置高模
+local m_LoliHighModuleStr = "/Loli_HighModule";
+-- 创建召唤兽1所在的位置
+local m_Summon1Str = "/A_LL_ZHS_01";
+-- 创建召唤兽2所在的位置
+local m_Summon2Str = "/A_LL_ZHS_02";
+-- 创建召唤兽3所在的位置
+local m_Summon3Str = "/A_LL_ZHS_03";
+
+-- 选择角色场景下龙战士所在的位置
+local m_DragonWarriorCreateRoleStr = "AllProObjs/DragonWarrior";
+-- 选择角色场景下女主角菲利巴所在的位置
+local m_FeiLiBaCreateRoleStr = "AllProObjs/FeiLiBa";
+-- 选择角色场景下刺客所在的位置
+local m_AssassinCreateRoleStr = "AllProObjs/Assassin";
+-- 选择角色场景下萝莉所在的位置
+local m_LoliCreateRoleStr = "AllProObjs/Loli";
+
+-- 技能预览界面背景位置
+local m_SkillPreviewStr = "UI_SkillPrivewBg";
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 当前默认选择的职业
+local m_profession = PROFESSION_ID.WARDRAGONWHITE;
+
+-- 创建角色下龙战士模型
+local m_WarriorObj = nil;
+-- 龙战士模型动画组件
+local m_WarriorAni = nil;
+-- 龙战士换装组件
+local m_WarriorChangeEquip = nil;
+
+-- 创建角色下菲力巴模型
+local m_FeiLiBaObj = nil;
+-- 女主角模型下的动画组件
+local m_FeiLiBaAni = nil;
+-- 女主角换装组件
+local m_FeiLiBaChangeEquip = nil;
+
+-- 创建角色下刺客模型
+local m_AssassinObj = nil;
+-- 刺客模型下的动画组件
+local m_AssassinAni = nil;
+-- 刺客换装组件
+local m_AssassinChangeEquip = nil;
+
+-- 创建角色下萝莉模型
+local m_LoliObj = nil;
+-- 萝莉模型下的动画组件
+local m_LoliAni = nil;
+-- 萝莉换装组件
+local m_LoliChangeEquip = nil;
+
+-- 创建角色下龙战士模型高模
+local m_WarriorHighModuleObj = nil;
+-- 龙战士模型动画组件高模
+local m_WarriorHighModuleAni = nil;
+
+-- 创建角色下菲力巴模型高模
+local m_FeiLiBaHighModuleObj = nil;
+-- 女主角模型下的动画组件高模
+local m_FeiLiBaHighModuleAni = nil;
+
+-- 创建角色下刺客模型高模
+local m_AssassinHighModuleObj = nil;
+-- 刺客模型下的动画组件高模
+local m_AssassinHighModuleAni = nil;
+
+-- 创建角色下萝莉模型高模
+local m_LoliHighModuleObj = nil;
+-- 萝莉模型下的动画组件高模
+local m_LoliHighModuleAni = nil;
+
+-- 选择角色1下模型
+local m_SelectOneObj = nil;
+-- 选择角色2下模型
+local m_SelectTwoObj = nil;
+-- 选择角色3下模型
+local m_SelectThreeObj = nil;
+-- 选择角色4下模型
+local m_SelectFourObj = nil;
+-- 选择角色1下换装组件
+local m_SelectOneChangeEquipComp = nil;
+-- 选择角色2下换装组件
+local m_SelectTwoChangeEquipComp = nil;
+-- 选择角色3下换装组件
+local m_SelectThreeChangeEquipComp = nil;
+-- 选择角色4下换装组件
+local m_SelectFourChangeEquipComp = nil;
+-- 选择角色1下模型动画组件
+local m_SelectOneAni = nil;
+-- 选择角色2下模型动画组件
+local m_SelectTwoAni = nil;
+-- 选择角色3下模型动画组件
+local m_SelectThreeAni = nil;
+-- 选择角色4下模型动画组件
+local m_SelectFourAni = nil;
+
+-- 召唤兽1下模型
+local m_Summon1Obj = nil;
+-- 召唤兽1下动画组件
+local m_Summon1Ani = nil;
+
+-- 召唤兽2下模型
+local m_Summon2Obj = nil;
+-- 召唤兽2下动画组件
+local m_Summon2Ani = nil;
+
+-- 召唤兽3下模型
+local m_Summon3Obj = nil;
+-- 召唤兽3下动画组件
+local m_Summon3Ani = nil;
+
+-- 创建摄像机的动画组件
+local m_CameraCreateAnimatorComp = nil;
+-- 创建摄像机的动画组件对象
+local m_CameraCreateAnimatorObj = nil;
+-- 创建所在的场景中的摄像机的固定点
+local m_CameraCreateStaticPos = nil;
+-- 创建所在的场景中的摄像机母对象
+local m_CameraCreateParent = nil;
+-- 创建角色摄像机
+local m_CreateRoleCamera = nil;
+-- 选择角色摄像机
+local m_SelectRoleCamera = nil;
+-- 所有模型的table
+local m_ModelTable = nil;
+local changeEquipComps = { };
+
+local m_proTable = { - 1, - 1, - 1, - 1 };
+
+local m_createCameraOriginalPos = nil;
+-- 角色信息列表
+local m_roleListTable = { };
+
+-- 技能预览界面背景
+local m_skillPreview = nil;
+
+-- 这是第几次创建所有角色
+local m_CreateObjsTime = 0;
+-----------------------------------一些写死的规定--------------------------------------
+-- 翅膀根节点枚举
+local m_ENUMBip_W_GEN = 28;
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化模型以及回调事件
+function Init()
+    ShutDown();
+    InitObjs();
+    -- 找到所有模型obj,并将所有模型的layer置为notrender
+    -- 找到白龙模型和动画组件
+    m_ModelTable = { };
+    local Index = 0;
+    -- 找到战士模型和动画组件
+    m_WarriorObj = find(m_CreateRolesStr .. m_WarriorStr);
+    CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+    if m_WarriorObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_WarriorObj);
+        m_WarriorAni = GetComponent(m_WarriorObj, "", "Animator");
+        m_WarriorChangeEquip = GetComponent(m_WarriorObj, "", "CPlayerChangeEquip");
+    else
+        error("does not find obj:::: which path is::::" .. m_CreateRolesStr .. m_WarriorStr);
+    end
+
+
+    -- 找到菲利巴模型
+    m_FeiLiBaObj = find(m_CreateRolesStr .. m_FeiLiBaStr);
+    CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+
+    if m_FeiLiBaObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_FeiLiBaObj);
+        m_FeiLiBaAni = GetComponent(m_FeiLiBaObj, "", "Animator");
+        m_FeiLiBaChangeEquip = GetComponent(m_FeiLiBaObj, "", "CPlayerChangeEquip");
+    end
+
+    -- 找到刺客模型
+    m_AssassinObj = find(m_CreateRolesStr .. m_AssassinStr);
+    CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+
+    if m_AssassinObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_AssassinObj);
+        m_AssassinAni = GetComponent(m_AssassinObj, "", "Animator");
+        m_AssassinChangeEquip = GetComponent(m_AssassinObj, "", "CPlayerChangeEquip");
+    end
+
+    -- 找到萝莉模型
+    m_LoliObj = find(m_CreateRolesStr .. m_LoliStr);
+    CCommonTool.SetLayer(m_LoliObj, "NotRender");
+
+    if m_LoliObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_LoliObj);
+        m_LoliAni = GetComponent(m_LoliObj, "", "Animator");
+        m_LoliChangeEquip = GetComponent(m_LoliObj, "", "CPlayerChangeEquip");
+    end
+
+    -- 找到战士模型高模
+    m_WarriorHighModuleObj = find(m_CreateRolesStr .. m_WarriorHighModuleStr);
+    CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+    if m_WarriorHighModuleObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_WarriorHighModuleObj);
+        m_WarriorHighModuleAni = GetComponent(m_WarriorHighModuleObj, "", "Animator");
+    else
+        error("does not find obj:::: which path is::::" .. m_CreateRolesStr .. m_WarriorStr);
+    end
+
+
+    -- 找到菲利巴模型高模
+    m_FeiLiBaHighModuleObj = find(m_CreateRolesStr .. m_FeiLiBaHighModuleStr);
+    CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+
+    if m_FeiLiBaHighModuleObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_FeiLiBaHighModuleObj);
+        m_FeiLiBaHighModuleAni = GetComponent(m_FeiLiBaHighModuleObj, "", "Animator");
+    end
+
+    -- 找到刺客模型高模
+    m_AssassinHighModuleObj = find(m_CreateRolesStr .. m_AssassinHighModuleStr);
+    CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+
+    if m_AssassinHighModuleObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_AssassinHighModuleObj);
+        m_AssassinHighModuleAni = GetComponent(m_AssassinHighModuleObj, "", "Animator");
+    end
+
+    -- 找到萝莉模型高模
+    m_LoliHighModuleObj = find(m_CreateRolesStr .. m_LoliHighModuleStr);
+    CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+
+    if m_LoliHighModuleObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_LoliHighModuleObj);
+        m_LoliHighModuleAni = GetComponent(m_LoliHighModuleObj, "", "Animator");
+    end
+
+    -- 找到选择角色1位置模型和动画组件
+    m_SelectOneObj = find(m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "1");
+    CCommonTool.SetLayer(m_SelectOneObj, "NotRender");
+    if m_SelectOneObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_SelectOneObj);
+        m_SelectOneAni = GetComponent(m_SelectOneObj, "", "Animator");
+        m_SelectOneChangeEquipComp = GetComponent(m_SelectOneObj, "", "CPlayerChangeEquip");
+        SetModel(m_SelectOneChangeEquipComp, 1);
+    else
+        error("does not find m_SelectOneObj which path is::::" .. m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "1");
+    end
+    -- 找到选择角色2位置模型和动画组件
+    m_SelectTwoObj = find(m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "2");
+    CCommonTool.SetLayer(m_SelectTwoObj, "NotRender");
+    if m_SelectTwoObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_SelectTwoObj);
+        m_SelectTwoAni = GetComponent(m_SelectTwoObj, "", "Animator");
+        m_SelectTwoChangeEquipComp = GetComponent(m_SelectTwoObj, "", "CPlayerChangeEquip");
+        SetModel(m_SelectTwoChangeEquipComp, 2);
+    else
+        error("does not find m_SelectTwoObj which path is::::" .. m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "2");
+    end
+    -- 找到选择角色3位置模型和动画组件
+    m_SelectThreeObj = find(m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "3");
+    CCommonTool.SetLayer(m_SelectThreeObj, "NotRender");
+    if m_SelectThreeObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_SelectThreeObj);
+        m_SelectThreeAni = GetComponent(m_SelectThreeObj, "", "Animator");
+        m_SelectThreeChangeEquipComp = GetComponent(m_SelectThreeObj, "", "CPlayerChangeEquip");
+        SetModel(m_SelectThreeChangeEquipComp, 3);
+    else
+        error("does not find m_SelectOneObj which path is::::" .. m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "3");
+    end
+    -- 找到选择角色4位置模型和动画组件
+    m_SelectFourObj = find(m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "4");
+    CCommonTool.SetLayer(m_SelectFourObj, "NotRender");
+    if m_SelectFourObj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_SelectFourObj);
+        m_SelectFourAni = GetComponent(m_SelectFourObj, "", "Animator");
+        m_SelectFourChangeEquipComp = GetComponent(m_SelectFourObj, "", "CPlayerChangeEquip");
+        SetModel(m_SelectFourChangeEquipComp, 4);
+    else
+        error("does not find m_SelectOneObj which path is::::" .. m_SelectRolesStr .. "/" .. m_CreateObjsTime .. "_" .. "4");
+    end
+
+    -- 初始化召唤兽的模型和动画组件
+    InitSummon(Index);
+
+    -- 创建所在的场景中的摄像机的固定点
+    if m_CameraCreateStaticPos == nil then
+        m_CameraCreateStaticPos = find(m_CameraCreateStaticPosStr);
+    end
+    if m_CameraCreateStaticPos == nil then
+        error("cannot find gameobject :::" .. m_CameraCreateStaticPosStr .. "is nil");
+    end
+    -- 创建摄像机的动画组件
+    if m_CameraCreateAnimatorObj == nil then
+        m_CameraCreateAnimatorObj = find(m_CameraCreateAnimatorCompStr);
+    end
+    if m_CameraCreateAnimatorObj == nil then
+        error("cannot find gameobject :::" .. m_CameraCreateAnimatorCompStr .. "is nil");
+    else
+        m_CameraCreateAnimatorComp = GetComponent(m_CameraCreateAnimatorObj, "", "Animator");
+        if m_CameraCreateAnimatorComp == nil then
+            error("cannot find Animator :::" .. m_CameraCreateAnimatorComp .. "is nil");
+        end
+    end
+    -- 创建所在的场景中的摄像机母对象
+    if m_CameraCreateParent == nil then
+        m_CameraCreateParent = find(m_CameraCreateParentStr);
+    end
+    if m_CameraCreateParent == nil then
+        error("cannot find gameobject :::" .. m_CameraCreateParentStr .. "is nil");
+    end
+
+    -- 选择角色摄像机
+    if LoginManager.Instance ~= nil then
+        m_CreateRoleCamera = LoginManager.Instance.CreateRoleCamera;
+    end
+    --    if m_CreateRoleCamera == nil then
+    --        m_CreateRoleCamera = find(m_CameraCreateStr);
+    --    end
+    --    if m_CreateRoleCamera == nil then
+    --        error("cannot find gameobject :::" .. m_CameraCreateStr .. "is nil");
+    --    end
+    -- 创建角色摄像机
+    if LoginManager.Instance ~= nil then
+        m_SelectRoleCamera = LoginManager.Instance.SelectRoleCamera;
+    end
+    --    if m_SelectRoleCamera == nil then
+    --        m_SelectRoleCamera = find(m_SelectStr .. m_CameraSelectStr);
+    --    end
+    --    if m_SelectRoleCamera == nil then
+    --        error("cannot find gameobject :::" .. m_SelectStr .. m_CameraSelectStr .. "is nil");
+    --    end
+
+    -- 创建角色技能预览
+    m_skillPreview = find(m_SkillPreviewStr)
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+    -- 给所有模型obj设置动画回调
+    for index = 1, #m_ModelTable do
+        local cPlayerOnLoginComponent = GetComponent(m_ModelTable[index], "", "CPlayerOnLoginAnim");
+        if cPlayerOnLoginComponent == nil then
+            error("does not find CPlayerOnLoginAnim Compoment:::which obj is:::" .. m_ModelTable[index].name);
+        else
+            cPlayerOnLoginComponent:Init();
+        end
+    end
+    m_CreateObjsTime = m_CreateObjsTime + 1;
+    log("Init AllModels' anim and effect Ok");
+end
+
+-- 初始化召唤兽的模型和动画组件
+function InitSummon(Index)
+    -- 找到召唤兽1模型
+    m_Summon1Obj = find(m_CreateSummonStr .. m_Summon1Str);
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    if m_Summon1Obj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_Summon1Obj);
+        m_Summon1Ani = GetComponent(m_Summon1Obj, "", "Animator");
+    end
+    -- 找到召唤兽2模型
+    m_Summon2Obj = find(m_CreateSummonStr .. m_Summon2Str);
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    if m_Summon2Obj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_Summon2Obj);
+        m_Summon2Ani = GetComponent(m_Summon2Obj, "", "Animator");
+    end
+    -- 找到召唤兽3模型
+    m_Summon3Obj = find(m_CreateSummonStr .. m_Summon3Str);
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+    if m_Summon3Obj ~= nil then
+        Index = Index + 1;
+        table.insert(m_ModelTable, Index, m_Summon3Obj);
+        m_Summon3Ani = GetComponent(m_Summon3Obj, "", "Animator");
+    end
+
+end
+
+
+function InitObjs()
+    local posObj = find(m_SelectRolesStr);
+    local obj = nil;
+    local newObj = nil;
+    for index = 1, #m_proTable do
+        if m_proTable[index] == -1 or m_proTable[index] == PROFESSION_ID.WARDRAGONWHITE then
+            obj = find(m_DragonWarriorCreateRoleStr);
+            newObj = newobject(obj);
+            newObj.transform.parent = posObj.transform;
+            newObj.transform.localPosition = Vector3.zero;
+            newObj.transform.localEulerAngles = Vector3.zero;
+            newObj.transform.localScale = Vector3.one;
+            newObj.name = m_CreateObjsTime .. "_" .. index;
+            newObj.tag = "Player";
+        elseif m_proTable[index] == PROFESSION_ID.FEILIBA then
+            obj = find(m_FeiLiBaCreateRoleStr);
+            newObj = newobject(obj);
+            newObj.transform.parent = posObj.transform;
+            newObj.transform.localPosition = Vector3.zero;
+            newObj.transform.localEulerAngles = Vector3.zero;
+            newObj.transform.localScale = Vector3.New(0.95, 0.95, 0.95);
+            -- 2017.7.5 按照要求缩放0.95
+            newObj.name = m_CreateObjsTime .. "_" .. index;
+            newObj.tag = "Player";
+        elseif m_proTable[index] == PROFESSION_ID.ASSASSIN then
+            obj = find(m_AssassinCreateRoleStr);
+            newObj = newobject(obj);
+            newObj.transform.parent = posObj.transform;
+            newObj.transform.localPosition = Vector3.zero;
+            newObj.transform.localEulerAngles = Vector3.zero;
+            newObj.transform.localScale = Vector3.one;
+            newObj.name = m_CreateObjsTime .. "_" .. index;
+            newObj.tag = "Player";
+        elseif m_proTable[index] == PROFESSION_ID.LOLI then
+            obj = find(m_LoliCreateRoleStr);
+            newObj = newobject(obj);
+            newObj.transform.parent = posObj.transform;
+            newObj.transform.localPosition = Vector3.zero;
+            newObj.transform.localEulerAngles = Vector3.zero;
+            newObj.transform.localScale = Vector3.one;
+            newObj.name = m_CreateObjsTime .. "_" .. index;
+            newObj.tag = "Player";
+        end
+    end
+end
+
+-- 删除事件
+function ShutDown()
+    changeEquipComps = { };
+    m_ModelTable = nil;
+    m_WarriorAni = nil;
+    m_WarriorObj = nil;
+    m_WarriorChangeEquip = nil;
+    m_FeiLiBaObj = nil;
+    m_FeiLiBaAni = nil;
+    m_FeiLiBaChangeEquip = nil;
+    m_AssassinObj = nil;
+    m_AssassinAni = nil;
+    m_AssassinChangeEquip = nil;
+    m_LoliObj = nil;
+    m_LoliAni = nil;
+    m_LoliChangeEquip = nil;
+    m_WarriorHighModuleObj = nil;
+    m_WarriorHighModuleAni = nil;
+    m_FeiLiBaHighModuleObj = nil;
+    m_FeiLiBaHighModuleAni = nil;
+    m_AssassinHighModuleObj = nil;
+    m_AssassinHighModuleAni = nil;
+    m_LoliHighModuleObj = nil;
+    m_LoliHighModuleAni = nil;
+    m_SelectOneChangeEquipComp = nil;
+    m_SelectTwoChangeEquipComp = nil;
+    m_SelectThreeChangeEquipComp = nil;
+    m_SelectFourChangeEquipComp = nil;
+    if m_SelectOneObj ~= nil then
+        GameObject.Destroy(m_SelectOneObj);
+        m_SelectOneObj = nil;
+    end
+    if m_SelectTwoObj ~= nil then
+        GameObject.Destroy(m_SelectTwoObj);
+        m_SelectTwoObj = nil;
+    end
+    if m_SelectThreeObj ~= nil then
+        GameObject.Destroy(m_SelectThreeObj);
+        m_SelectThreeObj = nil;
+    end
+    if m_SelectFourObj ~= nil then
+        GameObject.Destroy(m_SelectFourObj);
+        m_SelectFourObj = nil;
+    end
+    --[[
+    destroy(m_SelectOneObj);
+    destroy(m_SelectTwoObj);
+    destroy(m_SelectThreeObj);
+    destroy(m_SelectFourObj);
+    m_SelectOneObj = nil;
+    m_SelectTwoObj = nil;
+    m_SelectThreeObj = nil;
+    m_SelectFourObj = nil;
+    ]]
+    m_SelectOneAni = nil;
+    m_SelectTwoAni = nil;
+    m_SelectThreeAni = nil;
+    m_SelectFourAni = nil;
+    m_CameraCreateAnimatorComp = nil;
+    m_CameraCreateAnimatorObj = nil;
+    m_CameraCreateStaticPos = nil;
+    m_CameraCreateParent = nil;
+    m_CreateRoleCamera = nil;
+    m_SelectRoleCamera = nil;
+    m_Summon1Obj = nil;
+    m_Summon1Ani = nil;
+    m_Summon2Obj = nil;
+    m_Summon2Ani = nil;
+    m_Summon3Obj = nil;
+    m_Summon3Ani = nil;
+    m_skillPreview = nil;
+    m_createCameraOriginalPos = nil;
+
+    m_profession = PROFESSION_ID.WARDRAGONWHITE;
+end
+
+-- 通过位置得到1个table依次为角色动画组件,角色翅膀动画组件，角色obj
+function GetObjsByPos(pos)
+    local objTable = { };
+    if pos == 1 then
+        table.insert(objTable, 1, m_SelectOneAni);
+        table.insert(objTable, 2, m_SelectOneObj);
+    end
+    if pos == 2 then
+        table.insert(objTable, 1, m_SelectTwoAni);
+        table.insert(objTable, 2, m_SelectTwoObj);
+    end
+    if pos == 3 then
+        table.insert(objTable, 1, m_SelectThreeAni);
+        table.insert(objTable, 2, m_SelectThreeObj);
+    end
+    if pos == 4 then
+        table.insert(objTable, 1, m_SelectFourAni);
+        table.insert(objTable, 2, m_SelectFourObj);
+    end
+    return objTable;
+end
+-- 将选择界面4个模型的objects不显示以及特效
+function SetObjsNotRender()
+    CCommonTool.SetLayer(m_SelectOneObj, "NotRender");
+    m_SelectOneObj.transform.localEulerAngles = Vector3.zero;
+    CCommonTool.SetLayer(m_SelectTwoObj, "NotRender");
+    m_SelectTwoObj.transform.localEulerAngles = Vector3.zero;
+    CCommonTool.SetLayer(m_SelectThreeObj, "NotRender");
+    m_SelectThreeObj.transform.localEulerAngles = Vector3.zero;
+    CCommonTool.SetLayer(m_SelectFourObj, "NotRender");
+    m_SelectFourObj.transform.localEulerAngles = Vector3.zero;
+    -- 不显示三个召唤物的object
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    m_Summon1Obj.transform.localEulerAngles = Vector3.zero;
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    m_Summon2Obj.transform.localEulerAngles = Vector3.zero;
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+    m_Summon3Obj.transform.localEulerAngles = Vector3.zero;
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+    SetCreateRoleEffectsOff();
+end
+
+-- 将创建角色所有职业下的特效关闭
+function SetCreateRoleEffectsOff()
+    for index = 1, #m_ModelTable do
+        local cPlayerOnLoginComponent = GetComponent(m_ModelTable[index], "", "CPlayerOnLoginAnim");
+        -- 判断脚本存不存在
+        if cPlayerOnLoginComponent ~= nil then
+            cPlayerOnLoginComponent:CloseAllEffects();
+        end
+    end
+end
+
+-- 根据子技能信息改变角色播放的特效
+function SetRoleSkillEffect(profession, skillInfo)
+    local posX = CCommonTool.GetDefineInfo(6207):GetIntContent();
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        local cPlayerOnLoginComponent = GetComponent(m_WarriorObj, "", "CPlayerOnLoginAnim");
+        cPlayerOnLoginComponent:SetSubSkillData(skillInfo, Vector3.New(posX, 0, 0));
+    elseif profession == PROFESSION_ID.FEILIBA then
+        local cPlayerOnLoginComponent = GetComponent(m_FeiLiBaObj, "", "CPlayerOnLoginAnim");
+        cPlayerOnLoginComponent:SetSubSkillData(skillInfo, Vector3.New(posX, 0, 0));
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        local cPlayerOnLoginComponent = GetComponent(m_AssassinObj, "", "CPlayerOnLoginAnim");
+        cPlayerOnLoginComponent:SetSubSkillData(skillInfo, Vector3.New(posX, 0, 0));
+    elseif profession == PROFESSION_ID.LOLI then
+        local cPlayerOnLoginComponent = GetComponent(m_LoliObj, "", "CPlayerOnLoginAnim");
+        cPlayerOnLoginComponent:SetSubSkillData(skillInfo, Vector3.New(posX, 0, 0));
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 进入创建角色界面开始执行的事件
+function CreateRoleStart()
+    if Constants.RegionalId ~= 2 then
+        CreateRole.OnRandomNameClick();
+    end
+    m_CreateRoleCamera.transform.parent = m_CameraCreateParent.transform;
+    m_CreateRoleCamera.transform.localPosition = Vector3.zero;
+    m_CreateRoleCamera.transform.localEulerAngles = Vector3.New(0, 180, 0);
+    m_CreateRoleCamera.transform.localScale = Vector3.one;
+    m_CreateRoleCamera:SetActive(true);
+    m_SelectRoleCamera:SetActive(false);
+    CCommonTool.SetLayer(m_SelectOneObj, "NotRender");
+    CCommonTool.SetLayer(m_SelectTwoObj, "NotRender");
+    CCommonTool.SetLayer(m_SelectThreeObj, "NotRender");
+    CCommonTool.SetLayer(m_SelectFourObj, "NotRender");
+
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+
+    SetCreateRoleEffectsOff();
+    if m_profession == PROFESSION_ID.WARDRAGONWHITE then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "Player");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_CameraCreateAnimatorComp:Play("ZS_01_mirror", 0, 0);
+        m_WarriorHighModuleAni:Play("CreateIdle02_mirror", 0, 0);
+    elseif m_profession == PROFESSION_ID.FEILIBA then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "Player");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_CameraCreateAnimatorComp:Play("FS_01_mirror", 0, 0);
+        m_FeiLiBaHighModuleAni:Play("CreateIdle02_mirror", 0, 0);
+    elseif m_profession == PROFESSION_ID.ASSASSIN then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "Player");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_CameraCreateAnimatorComp:Play("CK_01_mirror", 0, 0);
+        m_AssassinHighModuleAni:Play("CreateIdle02_mirror", 0, 0);
+    elseif m_profession == PROFESSION_ID.LOLI then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "Player");
+        m_CameraCreateAnimatorComp:Play("LL_01_mirror", 0, 0);
+        m_LoliHighModuleAni:Play("CreateIdle02_mirror", 0, 0);
+    end
+end
+-- 添加角色信息 info为从服务器读取过来的角色信息
+function AddRoleListInfo(info)
+    m_roleListTable = info;
+end
+
+-- 停止选择角色的动画播放
+function StopSelectRoleAnim()
+    m_SelectOneAni:Play("CreateIdle01_mirror");
+    m_SelectTwoAni:Play("CreateIdle01_mirror");
+    m_SelectThreeAni:Play("CreateIdle01_mirror");
+    m_SelectFourAni:Play("CreateIdle01_mirror");
+
+end
+
+-- 进入选择角色界面开始执行的事件
+function SelectRoleStart()
+    m_SelectRoleCamera:SetActive(true);
+    m_CreateRoleCamera:SetActive(false);
+    CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+    CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+    CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+    CCommonTool.SetLayer(m_LoliObj, "NotRender");
+    CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+    CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+    CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+    CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+
+    StopSelectRoleAnim();
+    SetObjsNotRender();
+    PlaySelectRoleAni();
+end
+
+function PlaySelectRoleAni()
+    local SelectRolePos = PlayerPrefs.GetInt(SelectRoleIndex) + 1;
+    local ObjTable = GetObjsByPos(SelectRolePos);
+    if SelectRolePos ~= 0 then
+        if ObjTable[1] ~= nil then
+            ObjTable[1]:Play("CreateIdle03_mirror");
+        end
+        if ObjTable[2] ~= nil then
+            CCommonTool.SetLayer(ObjTable[2], "Player");
+        else
+            error("ObjTable[2] is nil");
+        end
+    end
+end
+
+function GetDefaultEquip(professionId)
+    local defineWeaponId, defineBreastplateId = 0, 0
+    if professionId == 1 then
+        -- 男行者
+        defineWeaponId = 1321
+        defineBreastplateId = 1322
+    elseif professionId == 2 then
+        -- 女法师
+        defineWeaponId = 1311
+        defineBreastplateId = 1312
+    elseif professionId == 3 then
+        -- 龙战士
+        defineWeaponId = 1301
+        defineBreastplateId = 1302
+    elseif professionId == 4 then
+        -- 龙战士
+        defineWeaponId = 1341
+        defineBreastplateId = 1342
+    end
+    local define = CCommonTool.GetDefineInfo(defineWeaponId);
+    if define ~= nil then weaponId = define:GetIntContent() end
+    local define = CCommonTool.GetDefineInfo(defineBreastplateId);
+    if define ~= nil then breastplateId = define:GetIntContent() end
+    return weaponId, breastplateId;
+end
+
+-- 设置模型显示
+function SetModel(changeEquipComp, index)
+    local roleData = m_roleListTable[index];
+    if roleData == nil or changeEquipComp == nil or index <= 0 then
+        return
+    end
+    changeEquipComps[changeEquipComp] = true;
+    changeEquipComp.UI3DLayer = "NotRender";
+    local individuationMng = G_SceneMng.IndividuationMng;
+    if nil ~= individuationMng then
+        -- 发型
+        if roleData.FashionHairId > 0 then
+            local hairModelId = 0;
+            local hairColorModelId = 0;
+            local fashionInfo = CCommonTool.GetFashion(roleData.FashionHairId);
+            if fashionInfo ~= nil then
+                hairModelId = fashionInfo.ModelresId;
+                hairColorModelId = fashionInfo.MaterialId;
+            end
+            changeEquipComp:SetChangeEquip(hairModelId);
+            changeEquipComp:SetChangeEquip(hairColorModelId);
+        else
+            local hairId = roleData.HairID;
+            local hairModelId = individuationMng:GetHairResID(roleData.Pro, hairId);
+            changeEquipComp:SetChangeEquip(hairModelId);
+            -- 发色
+            local fairColorModelID = individuationMng:GetHairColorResID(roleData.Pro, roleData.HairID, roleData.HairColorID);
+            changeEquipComp:SetChangeEquip(fairColorModelID);
+        end
+        -- 脸型
+        local faceModelId = 0;
+        if roleData.FashionFaceId > 0 then
+            local fashionInfo = CCommonTool.GetFashion(roleData.FashionFaceId);
+            if fashionInfo ~= nil then
+                faceModelId = fashionInfo.ModelresId;
+            end
+        else
+            faceModelId = individuationMng:GetHeadResID(roleData.Pro, roleData.FaceID);
+        end
+        changeEquipComp:SetChangeEquip(faceModelId);
+    end
+
+    -- 武器和胸甲默认值
+    local weaponId, breastplateId = GetDefaultEquip(roleData.Pro);
+    if roleData.WeaponID > 0 then
+        weaponId = roleData.WeaponID;
+    end
+    local weaponModelId = 0;
+    if weaponId > 0 then
+        if IsFashion(weaponId) == true then
+            local fashionInfo = CCommonTool.GetFashion(weaponId);
+            if fashionInfo ~= nil then
+                weaponModelId = fashionInfo.ModelresId;
+            end
+        else
+            local equipInfo = CCommonTool.GetEquipInfo(weaponId);
+            if equipInfo ~= nil then
+                weaponModelId = equipInfo.ModelResourceID;
+            end
+            -- 武器特效
+            local equipId = roleData.WeaponID;
+            local forceLevel = roleData.WeaponLevel;
+            local effectManager = Ioo.SceneManager.EquipEffectMng;
+            effectManager:SetEquipEffect(0, equipId, forceLevel, changeEquipComp.gameObject, "Effect");
+        end
+    end
+    changeEquipComp:SetChangeEquip(weaponModelId);
+    -- 胸甲
+    if roleData.BreastplateID > 0 then
+        breastplateId = roleData.BreastplateID;
+    end
+    local breastplateModelId = 0;
+    if breastplateId > 0 then
+        if IsFashion(breastplateId) == true then
+            local fashionInfo = CCommonTool.GetFashion(breastplateId);
+            if fashionInfo ~= nil then
+                breastplateModelId = fashionInfo.ModelresId;
+            end
+        else
+            local equipInfo = CCommonTool.GetEquipInfo(breastplateId);
+            if equipInfo ~= nil then
+                breastplateModelId = equipInfo.ModelResourceID;
+            end
+            -- 胸甲特效
+            local equipId = roleData.BreastplateID;
+            local forceLevel = roleData.BreastplateLevel;
+            local effectManager = Ioo.SceneManager.EquipEffectMng;
+            effectManager:SetEquipEffect(5, equipId, forceLevel, changeEquipComp.gameObject, "Effect");
+        end
+    end
+    changeEquipComp:SetChangeEquip(breastplateModelId);
+
+    -- 头盔
+    local equipInfo = CCommonTool.GetEquipInfo(roleData.HelmetID);
+    if equipInfo ~= nil then
+        local modelID = equipInfo.ModelResourceID;
+        changeEquipComp:SetChangeEquip(modelID);
+    end
+
+    -- 翅膀
+    local wingId = 0;
+    if roleData.WingID > 0 then
+        wingId = roleData.WingID;
+    end
+    local wingModelId = 0;
+    if wingId > 0 then
+        if IsFashion(wingId) == true then
+            local fashionInfo = CCommonTool.GetFashion(wingId);
+            if fashionInfo ~= nil then
+                wingModelId = fashionInfo.ModelresId;
+            end
+            --        else
+            --            local equipInfo = CCommonTool.GetEquipInfo(wingId);
+            --            if equipInfo ~= nil then
+            --                wingModelId = equipInfo.ModelResourceID;
+            --            end
+        end
+    end
+    changeEquipComp:SetChangeEquip(wingModelId);
+end
+-- 判断当前Id是否是时装
+function IsFashion(id)
+    if id >= 1000000 and id <= 3299999 then
+        return false;
+    end
+    return true;
+end
+
+-- 创建角色界面进入游戏
+function CreateRoleGoIntoGame(profession)
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        m_WarriorObj.transform.eulerAngles = Vector3.zero;
+    elseif profession == PROFESSION_ID.FEILIBA then
+        m_FeiLiBaObj.transform.eulerAngles = Vector3.zero;
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        m_AssassinObj.transform.eulerAngles = Vector3.zero;
+    elseif profession == PROFESSION_ID.LOLI then
+        m_LoliObj.transform.eulerAngles = Vector3.zero;
+    end
+end
+
+-- 创建角色技能预览播放动作
+function CreateRoleShowSkill(profession, aniName)
+
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        m_WarriorAni:Play(aniName, -1, 0);
+    elseif profession == PROFESSION_ID.FEILIBA then
+        m_FeiLiBaAni:Play(aniName, -1, 0);
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        m_AssassinAni:Play(aniName, -1, 0);
+    elseif profession == PROFESSION_ID.LOLI then
+        m_LoliAni:Play(aniName, -1, 0);
+        local posX = CCommonTool.GetDefineInfo(6207):GetIntContent();
+
+        if aniName == "SP01" then
+            -- 坐标
+            m_Summon1Obj.transform.localPosition = Vector3.New(posX, 0, 0);
+            -- 角度
+            m_Summon1Obj.transform.eulerAngles = Vector3.zero;
+            CCommonTool.SetLayer(m_Summon1Obj, "Monster");
+            CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+            CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+            m_Summon1Ani:Play("Born01_mirror", -1, 0);
+        elseif aniName == "SP05" then
+            -- 坐标
+            m_Summon2Obj.transform.localPosition = Vector3.New(posX, 0, 0);
+            -- 角度
+            m_Summon2Obj.transform.eulerAngles = Vector3.zero;
+            CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+            CCommonTool.SetLayer(m_Summon2Obj, "Monster");
+            CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+            m_Summon2Ani:Play("Born01_mirror", -1, 0)
+        elseif aniName == "SP06" then
+            -- 坐标
+            m_Summon3Obj.transform.localPosition = Vector3.New(posX, 0, 0);
+            -- 角度
+            m_Summon3Obj.transform.eulerAngles = Vector3.zero;
+            CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+            CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+            CCommonTool.SetLayer(m_Summon3Obj, "Monster");
+            m_Summon3Ani:Play("Born01_mirror", -1, 0);
+        end
+    end
+end
+-- 停止创建角色的动画播放
+function StopCreateRoleAnim()
+    if m_WarriorAni == nil then
+        error("m_WarriorAni is nil");
+        return;
+    end
+    m_WarriorAni:Play("CreateIdle01_mirror");
+    m_FeiLiBaAni:Play("CreateIdle01_mirror");
+    m_AssassinAni:Play("CreateIdle01_mirror");
+    m_LoliAni:Play("CreateIdle01_mirror");
+    m_WarriorHighModuleAni:Play("CreateIdle01_mirror");
+    m_FeiLiBaHighModuleAni:Play("CreateIdle01_mirror");
+    m_AssassinHighModuleAni:Play("CreateIdle01_mirror");
+    m_LoliHighModuleAni:Play("CreateIdle01_mirror");
+
+end
+
+-- 切换技能流派的时候将所有的召唤兽不显示
+function CloseAllSummon()
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+end
+-- 创建角色技能预览
+function CreatRoleSkillPreview(isShow)
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+    if isShow == true then
+        CCommonTool.SetLayer(m_skillPreview, "Player");
+    end
+end
+-- 创建角色选择职业的事件
+function CreateRoleClickBack(profession)
+    m_profession = profession;
+    SetCreateRoleEffectsOff();
+    StopCreateRoleAnim();
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "Player");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_CameraCreateAnimatorComp:Play("ZS_01_mirror");
+        m_WarriorHighModuleAni:Play("CreateIdle02_mirror");
+        m_WarriorObj.transform.eulerAngles = Vector3.zero;
+        m_WarriorHighModuleObj.transform.eulerAngles = Vector3.zero;
+    elseif profession == PROFESSION_ID.FEILIBA then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "Player");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_CameraCreateAnimatorComp:Play("FS_01_mirror");
+        m_FeiLiBaHighModuleAni:Play("CreateIdle02_mirror");
+        m_FeiLiBaObj.transform.eulerAngles = Vector3.zero;
+        m_FeiLiBaHighModuleObj.transform.eulerAngles = Vector3.zero;
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "Player");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_CameraCreateAnimatorComp:Play("CK_01_mirror");
+        m_AssassinHighModuleAni:Play("CreateIdle02_mirror");
+        m_AssassinObj.transform.eulerAngles = Vector3.zero;
+        m_AssassinHighModuleObj.transform.eulerAngles = Vector3.zero;
+    elseif profession == PROFESSION_ID.LOLI then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "Player");
+        m_CameraCreateAnimatorComp:Play("LL_01_mirror");
+        m_LoliHighModuleAni:Play("CreateIdle02_mirror");
+        m_LoliObj.transform.eulerAngles = Vector3.zero;
+        m_LoliHighModuleObj.transform.eulerAngles = Vector3.zero;
+    end
+    -- m_CreateRoleCamera:SetActive(true);
+end
+
+-- 获取模型id<proID-职业ID id-服装模型id >
+function GetModelData(proID, id)
+    if proID == PROFESSION_ID.FEILIBA then
+        m_FeiLiBaChangeEquip:SetChangeEquip(id);
+    elseif proID == PROFESSION_ID.WARDRAGONWHITE then
+        m_WarriorChangeEquip:SetChangeEquip(id);
+    elseif proID == PROFESSION_ID.ASSASSIN then
+        m_AssassinChangeEquip:SetChangeEquip(id);
+    elseif proID == PROFESSION_ID.LOLI then
+        m_LoliChangeEquip:SetChangeEquip(id);
+    end
+end
+
+-- 技能预览界面模型服装和武器显示啊
+function GetSkillModle(proID, clothesID, weaponID)
+    if proID == PROFESSION_ID.FEILIBA then
+        -- 时装
+        m_FeiLiBaChangeEquip:SetChangeEquip(clothesID);
+        -- 武器
+        m_FeiLiBaChangeEquip:SetChangeEquip(weaponID);
+    elseif proID == PROFESSION_ID.WARDRAGONWHITE then
+        -- 时装
+        m_WarriorChangeEquip:SetChangeEquip(clothesID);
+        -- 武器
+        m_WarriorChangeEquip:SetChangeEquip(weaponID);
+    elseif proID == PROFESSION_ID.ASSASSIN then
+        -- 时装
+        m_AssassinChangeEquip:SetChangeEquip(clothesID);
+        -- 武器
+        m_AssassinChangeEquip:SetChangeEquip(weaponID);
+    elseif proID == PROFESSION_ID.LOLI then
+        -- 时装
+        m_LoliChangeEquip:SetChangeEquip(clothesID);
+        -- 武器
+        m_LoliChangeEquip:SetChangeEquip(weaponID);
+    end
+end
+
+-- 技能预览界面切换天赋时角色回到战斗准备状态
+function SetSkillRoleIdle()
+    m_WarriorAni:Play("Idle01");
+    m_FeiLiBaAni:Play("Idle01");
+    m_AssassinAni:Play("Idle01");
+    m_LoliAni:Play("Idle01");
+end
+
+-- 细节定制按钮点击事件
+function DetailSetClick(profession)
+    m_CreateRoleCamera.transform.parent = m_CameraCreateStaticPos.transform;
+    m_CreateRoleCamera.transform.localPosition = Vector3.New(-0.05, 1.07, 3.22);
+    m_CreateRoleCamera.transform.localEulerAngles = Vector3.New(3, 180, 0);
+    m_CreateRoleCamera.transform.localScale = Vector3.one;
+    m_CreateRoleCamera:SetActive(true);
+    SetCreateRoleEffectsOff();
+    StopCreateRoleAnim();
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+    local tweenPos = GetComponent(m_CreateRoleCamera, "", "TweenPosition");
+    tweenPos:ResetToBeginning();
+    tweenPos.from = Vector3.New(-0.05, 1.07, 3.22);
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        CCommonTool.SetLayer(m_WarriorObj, "Player");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        tweenPos.to = Vector3.New(-0.05, 1.5, 1.5);
+        CCommonTool.SetCameraControlMaxY(m_CreateRoleCamera, 1.5);
+        local boxCollider = GetComponent(m_WarriorObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+    elseif profession == PROFESSION_ID.FEILIBA then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "Player");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        tweenPos.to = Vector3.New(-0.05, 1.5, 1.5);
+        CCommonTool.SetCameraControlMaxY(m_CreateRoleCamera, 1.5);
+        local boxCollider = GetComponent(m_FeiLiBaObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "Player");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        tweenPos.to = Vector3.New(-0.05, 1.5, 1.5);
+        CCommonTool.SetCameraControlMaxY(m_CreateRoleCamera, 1.5);
+        local boxCollider = GetComponent(m_AssassinObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+    elseif profession == PROFESSION_ID.LOLI then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "Player");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        tweenPos.to = Vector3.New(0, 1.15, 1.5);
+        CCommonTool.SetCameraControlMaxY(m_CreateRoleCamera, 1.15);
+        local boxCollider = GetComponent(m_LoliObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+    end
+    tweenPos:PlayForward();
+end
+
+function SetChangeEquip(proID, modelId)
+    if proID == PROFESSION_ID.WARDRAGONWHITE then
+        m_WarriorChangeEquip:SetChangeEquip(modelId);
+    elseif proID == PROFESSION_ID.FEILIBA then
+        m_FeiLiBaChangeEquip:SetChangeEquip(modelId);
+    elseif proID == PROFESSION_ID.ASSASSIN then
+        m_AssassinChangeEquip:SetChangeEquip(modelId);
+    elseif proID == PROFESSION_ID.LOLI then
+        m_LoliChangeEquip:SetChangeEquip(modelId);
+    end
+
+end
+
+-- 时装预览按钮点击事件
+function FashionSetClick(profession)
+    m_CreateRoleCamera.transform.parent = m_CameraCreateStaticPos.transform;
+    m_CreateRoleCamera.transform.localPosition = Vector3.New(-0.05, 1.15, 1.5);
+    m_CreateRoleCamera.transform.localEulerAngles = Vector3.New(3, 180, 0);
+    m_CreateRoleCamera.transform.localScale = Vector3.one;
+    m_CreateRoleCamera:SetActive(true);
+    SetCreateRoleEffectsOff();
+    StopCreateRoleAnim();
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+    CCommonTool.SetLayer(m_skillPreview, "NotRender");
+    local tweenPos = GetComponent(m_CreateRoleCamera, "", "TweenPosition");
+    tweenPos:ResetToBeginning();
+    tweenPos.from = Vector3.New(-0.05, 1.3, 1.5);
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        CCommonTool.SetLayer(m_WarriorObj, "Player");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        local boxCollider = GetComponent(m_WarriorObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+        tweenPos.to = Vector3.New(-0.05, 1.06, 3.27);
+    elseif profession == PROFESSION_ID.FEILIBA then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "Player");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        local boxCollider = GetComponent(m_FeiLiBaObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+        tweenPos.to = Vector3.New(-0.05, 1.06, 3.27);
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "Player");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        local boxCollider = GetComponent(m_AssassinObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+        tweenPos.to = Vector3.New(-0.05, 1.06, 3.27);
+    elseif profession == PROFESSION_ID.LOLI then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "Player");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        local boxCollider = GetComponent(m_LoliObj, "", "BoxCollider");
+        boxCollider.enabled = true;
+        tweenPos.to = Vector3.New(-0.05, 1.06, 3.27);
+    end
+    tweenPos:PlayForward();
+end
+
+-- 技能预览按钮点击事件
+function TalentSkillSetClick(profession)
+    -- local tweenPos = GetComponent(m_CreateRoleCamera, "", "TweenPosition");
+    -- tweenPos:ResetToBeginning();
+    m_CreateRoleCamera.transform.parent = m_CameraCreateStaticPos.transform;
+    m_CreateRoleCamera.transform.localPosition = Vector3.New(-1, 3, 6.5)
+    m_CreateRoleCamera.transform.localEulerAngles = Vector3.New(18, 180, 0);
+    m_CreateRoleCamera.transform.localScale = Vector3.one;
+    m_CreateRoleCamera:SetActive(true);
+    SetCreateRoleEffectsOff();
+    StopCreateRoleAnim();
+    CCommonTool.SetLayer(m_Summon1Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon2Obj, "NotRender");
+    CCommonTool.SetLayer(m_Summon3Obj, "NotRender");
+    CCommonTool.SetLayer(m_skillPreview, "Player");
+
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        CCommonTool.SetLayer(m_WarriorObj, "Player");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_WarriorAni:Play("Idle01", 0, 0);
+        m_WarriorObj.transform.localEulerAngles = Vector3.New(0, -90, 0);
+        local boxCollider = GetComponent(m_WarriorObj, "", "BoxCollider");
+        boxCollider.enabled = false;
+    elseif profession == PROFESSION_ID.FEILIBA then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "Player");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_FeiLiBaAni:Play("Idle01", 0, 0);
+        m_FeiLiBaObj.transform.localEulerAngles = Vector3.New(0, -90, 0);
+        local boxCollider = GetComponent(m_FeiLiBaObj, "", "BoxCollider");
+        boxCollider.enabled = false;
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "Player");
+        CCommonTool.SetLayer(m_LoliObj, "NotRender");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_AssassinAni:Play("Idle01", 0, 0);
+        m_AssassinObj.transform.localEulerAngles = Vector3.New(0, -90, 0);
+        local boxCollider = GetComponent(m_AssassinObj, "", "BoxCollider");
+        boxCollider.enabled = false;
+    elseif profession == PROFESSION_ID.LOLI then
+        CCommonTool.SetLayer(m_WarriorObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliObj, "Player");
+        CCommonTool.SetLayer(m_WarriorHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_FeiLiBaHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_AssassinHighModuleObj, "NotRender");
+        CCommonTool.SetLayer(m_LoliHighModuleObj, "NotRender");
+        m_LoliAni:Play("Idle01", 0, 0);
+        m_LoliObj.transform.localEulerAngles = Vector3.New(0, -90, 0);
+        local boxCollider = GetComponent(m_LoliObj, "", "BoxCollider");
+        boxCollider.enabled = false;
+    end
+end
+
+-- 恢复摄像机位置
+function DetailSetBackClick()
+    m_WarriorObj.transform.localEulerAngles = Vector3.zero;
+    m_FeiLiBaObj.transform.localEulerAngles = Vector3.zero;
+    m_AssassinObj.transform.localEulerAngles = Vector3.zero;
+    m_LoliObj.transform.localEulerAngles = Vector3.zero;
+    m_WarriorHighModuleObj.transform.localEulerAngles = Vector3.zero;
+    m_FeiLiBaHighModuleObj.transform.localEulerAngles = Vector3.zero;
+    m_AssassinHighModuleObj.transform.localEulerAngles = Vector3.zero;
+    m_LoliHighModuleObj.transform.localEulerAngles = Vector3.zero;
+    local tweenPos = GetComponent(m_CreateRoleCamera, "", "TweenPosition");
+    tweenPos.enabled = false;
+    CreateRoleStart();
+end
+-- 设置模型显示样式（proID-职业ID，id-模型ID）
+function SetModelStyle(proID, id)
+    if proID == PROFESSION_ID.WARDRAGONWHITE then
+        m_WarriorChangeEquip:SetChangeEquip(id);
+    elseif proID == PROFESSION_ID.FEILIBA then
+        m_FeiLiBaChangeEquip:SetChangeEquip(id);
+    elseif proID == PROFESSION_ID.ASSASSIN then
+        m_AssassinChangeEquip:SetChangeEquip(id);
+    elseif proID == PROFESSION_ID.LOLI then
+        m_LoliChangeEquip:SetChangeEquip(id);
+    end
+end
+
+-- 选择角色3个栏位的职业信息，参数1：第几个栏位，参数2：职业ID
+function SetRoleListInfo(index, pro)
+    m_proTable[index] = pro;
+end
+
+-- 重置选择角色栏位的职业信息
+function InitProTable()
+    m_proTable = { - 1, - 1, - 1, - 1 };
+end
+
+-- 装备换装完成
+function EquipChangeCompleted()
+    if changeEquipComps then
+        for comp, v in pairs(changeEquipComps) do
+            if comp.ChangingCount > 0 then
+                return false
+            end
+        end
+    end
+    return true
+end
+
+-- 设置当前选择职业
+function SetProfession(pro)
+    m_profession = pro;
+end

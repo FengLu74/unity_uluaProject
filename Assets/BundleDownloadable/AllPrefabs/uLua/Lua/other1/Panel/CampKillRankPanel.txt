@@ -1,0 +1,257 @@
+﻿module('CampKillRankPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'CampKillRankPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 系统说明
+local m_BtnTipsPath = "Sub_MyInfo/Sub_Title/btn_Tips";
+-- 关闭按钮
+local m_BtnClosePath = "CampKillRank/btn_Close";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 加注释
+local m_RewardLisPath = "Sub_RewardList/UIGrid";
+
+-- 加注释
+local m_RankPath = "CampKillRank/Sub_RanklList/UIGrid";
+
+local m_SubInfoPath = "Sub_MyInfo/Sub_Info/";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_RewardList = nil;
+
+-- 加注释
+local m_Rank = nil;
+
+local m_RankTable = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("CampKillRankPanel");
+    m_RankTable = nil;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_RewardList = nil;
+
+	m_Rank = nil;
+    m_RankTable = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT);
+    m_PanelObject = child(m_PanelObject, "CampKillRankPanel").gameObject;
+    m_RewardList = GetComponent(m_PanelObject, m_RewardLisPath, "UIListView");
+
+    m_Rank = GetComponent(m_PanelObject, m_RankPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_RewardList:SetInitCallback(OnUIGridViewInit);
+    m_RewardList:SetClickCallback(OnUIGridViewClick);
+
+	SetGameObjectEvent(m_BtnTipsPath, OnBtnTipsClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+
+    m_Rank:SetInitCallback(OnRankViewInit);
+    m_Rank:SetClickCallback(OnRankViewClick);
+    m_Rank:SetDownScrollCallback(OnRankViewDownScroll);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local RewadData = LimitTimeActMng.getRewardInfo(RANK_TYPE.E_RANKTYPE_LIMIT_UNION_SD);
+    m_RewardList:RemoveAll();
+    for i, data in ipairs(RewadData) do
+        m_RewardList:AddData(data);
+    end
+
+    if LimitTimeActMng.RankCampKill ~= nil then 
+        local RankData = LimitTimeActMng.RankCampKill;
+        LimitTimeActPanel.SetCountDownTime(RankData.time,"CampKillRankPanel");
+
+        SetLabelContent(m_SubInfoPath.."Sub_Compare/lb_NumBlue", RankData.union, m_PanelObject);
+        SetLabelContent(m_SubInfoPath.."Sub_Compare/lb_NumRed", RankData.tribe, m_PanelObject);
+
+
+        if RankData.campID == ENUM_CAMP_TYPE.ENUM_UNIT_TYPE_NULL then 
+            SetGameObjectState(m_SubInfoPath.."lb_NoCamp", true, m_PanelObject);
+            SetGameObjectState(m_SubInfoPath.."Sub_CampBlue", false, m_PanelObject);
+            SetGameObjectState(m_SubInfoPath.."Sub_CampRed", false, m_PanelObject);
+
+            SetLabelTextByID(m_SubInfoPath.."lb_CampName", 8126, m_PanelObject);
+            SetLabelTextByID(m_SubInfoPath.."lb_MyKillRankNum", 8126, m_PanelObject);
+            SetLabelTextByID(m_SubInfoPath.."lb_MyKillNum", 8126, m_PanelObject);
+        else
+            SetGameObjectState(m_SubInfoPath.."lb_NoCamp", false, m_PanelObject);
+            SetGameObjectState(m_SubInfoPath.."Sub_CampBlue", RankData.campID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG, m_PanelObject);
+            SetGameObjectState(m_SubInfoPath.."Sub_CampRed", RankData.campID == ENUM_CAMP_TYPE.ENUM_UNIT_BULUO, m_PanelObject);    
+
+            SetLabelContent(m_SubInfoPath.."lb_MyKillRankNum", RankData.rankIndex, m_PanelObject);
+            if RankData.campID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then 
+                SetLabelTextByID(m_SubInfoPath.."lb_CampName", 1140, m_PanelObject);
+            else
+                SetLabelTextByID(m_SubInfoPath.."lb_CampName", 1141, m_PanelObject);
+            end
+            SetLabelContent(m_SubInfoPath.."lb_MyKillNum", RankData.campKillValue, m_PanelObject);
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 排行榜奖励
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelTextByID("lb_Name", data.DescribeId, go);
+    -- 奖励
+    local m_RewardListPath = "Items/Scroll View/Grid";
+    local m_RewardList = GetComponent(go, m_RewardListPath, "UIListView");
+    m_RewardList:SetInitCallback(OnRewardListInit);
+
+    local rewardID = data.Reward;
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardID);
+    local itemTable = { };
+    if rewardInfo ~= nil then
+        local list = rewardInfo:GetAllItem();
+        local count = list.Count;
+        for i = 1, count do
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = 10000;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            table.insert(itemTable, { excelId = excelId, num = itemData.ItemNum });
+        end
+        m_RewardList:RemoveAll();
+        for i, v in pairs(itemTable) do
+            m_RewardList:AddData(v);
+        end
+    end
+end
+
+-- 加注释
+function OnUIGridViewClick(listView, cell, go)
+    
+end
+
+-- 奖励列表 
+function OnRewardListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.excelId;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, data.num, false, 11, ENUMPANELID.ENUM_PANEL_LIMITTIMEACT);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_PANEL_LIMITTIMEACT, false, excelId);
+end
+
+-- 奖励列表点击
+function OnRewardListClick(listView, cell, go)
+    
+end
+
+-- 系统解释
+function OnBtnTipsClick(gameObject)
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT, 5);
+end
+
+-- 关闭按钮
+function OnBtnCloseClick(gameObject)
+    SetGameObjectState("CampKillRank", false, m_PanelObject);
+end
+
+function OpenRankList(data)
+    SetGameObjectState("CampKillRank", true, m_PanelObject);
+    if m_RankTable == nil then 
+        m_Rank:RemoveAll();
+        m_RankTable = {};
+        for index = 1, #data do
+            table.insert(m_RankTable, data[index]);
+            m_Rank:AddData(data[index]);
+        end
+    else
+        local isNewInfo = false;
+        for index = 1, #data do
+            for i = 1, #m_RankTable do
+                if data[index].Rank == m_RankTable[i].Rank then 
+                    isNewInfo = true;
+                end
+            end
+            if isNewInfo == false then 
+                table.insert(m_RankTable, data[index]);
+                m_Rank:AddData(data[index]);
+            else
+                isNewInfo = false;
+            end
+        end
+    end
+end
+
+function OnRankViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelContent("lb_Rank", cell.dataIndex + 1, go); 
+    SetLabelContent("lb_Name", data.Name1, go);         -- 玩家名字
+    SetLabelContent("lb_Level", data.Value, go);        -- 玩家等级
+    local proName = LimitTimeActMng.getProfessionalName(data.Value1);
+    SetLabelContent("lb_Professional", proName, go);    -- 玩家职业
+    SetLabelContent("lb_FightValue", data.Value3, go);  -- 击杀数量
+
+    if cell.dataIndex + 1 < 4 then 
+        SetGameObjectState("sp_Bg", false, go);
+        SetGameObjectState("sp_AnotherBg", true, go);
+        SetSpriteColor("sp_AnotherBg", colorTable[cell.dataIndex + 1], go);
+    else
+        SetGameObjectState("sp_Bg", true, go);
+        SetGameObjectState("sp_AnotherBg", false, go);
+    end
+end
+
+function OnRankViewClick(listView, cell, go)
+    
+end
+
+function OnRankViewDownScroll(listView)
+    if LimitTimeActMng.players ~= nil then
+        local receivedCount = #LimitTimeActMng.players;
+        -- 总的排行榜个数 + 1（请求下一个的第一个数据）
+        local count = receivedCount + 1;
+        if LimitTimeActMng.rankAllNum > receivedCount then
+            local lastRankdId = LimitTimeActMng.players[receivedCount].Rank;
+            LimitTimeActProtocol.RequestRankList(RANK_TYPE.E_RANKTYPE_LIMIT_UNION_SD, 0, lastRankdId, count, LimitTimeActMng.rankVersion);
+        end
+    end
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

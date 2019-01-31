@@ -1,0 +1,171 @@
+﻿module("GetRewardProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 抽奖结果返回 领取状态消息返回
+    network.Register(GMI_STOC_LOTTERY_DRAW_INFO, RewardStateReturn);
+    -- 单个道具信息
+    network.Register(GMI_STOC_LOTTERY_SINGLE_INFO, OneItemRewardInfo);
+    -- 零点重置和上线消息返回
+    network.Register(GMI_STOC_LOTTERY_DRAW_LOGIN_UPDATE_INFO, OnExtractInit);
+end
+
+-- 领取状态消息返回
+--  1.抽完奖会给你发奖品信息和本次抽奖的数据信息，抽奖次数，抽奖时间等，你来做本地数据更新和界面更新，抽奖ID不为零
+--  2.打开抽奖界面也会给你发是否有上次没领取完的奖品信息，你根据size做判断，如果为零根据本地数据显示抽奖界面，不为零则根据道具信息显示抽奖结果界面，抽奖ID为零
+function RewardStateReturn(protocolId, buffer)
+    GetRewardManger.itemList = { };
+    -- //抽奖Id
+    GetRewardManger.rewardId = buffer:ReadInt();
+    -- error("idd:::::" .. GetRewardManger.rewardId);
+    -- //上次抽奖的时间
+    GetRewardManger.beginTime = buffer:ReadInt();
+    -- 冷却时间
+    GetRewardManger.coolTime = buffer:ReadInt();
+    -- //抽奖的总次数
+    GetRewardManger.rewardAllNum = buffer:ReadInt();
+    -- //抽奖的次数
+    GetRewardManger.rewardNum = buffer:ReadByte();
+    --error("rewardNum:::" .. GetRewardManger.rewardNum);
+    -- //道具数量
+    GetRewardManger.allItemsNum = buffer:ReadByte();
+    for Index = 1, GetRewardManger.allItemsNum do
+        local ItemInfo = ItemInfo(buffer);
+        table.insert(GetRewardManger.itemList, ItemInfo);
+    end
+    for _, info in ipairs(GetRewardManger.rewardsList) do
+        if info.Id == GetRewardManger.rewardId and GetRewardManger.beginTime > 0 then
+            info.beginTime = GetRewardManger.beginTime;
+            info.rewardNum = GetRewardManger.rewardNum;
+            info.Id = GetRewardManger.rewardId;
+            break;
+        end
+    end
+    -- 更新抽奖信息
+    GetRewardPanel.UpDateTime(GetRewardManger.beginTime, GetRewardManger.rewardNum);
+    --  判断上次是否未翻开的牌
+    ExtractRollOverCardPanel.UpdateRewardID(GetRewardManger.rewardId, GetRewardManger.allItemsNum);
+end
+
+-- 单个道具的领取信息
+function OneItemRewardInfo(protocolId, buffer)
+    -- //道具Id
+    GetRewardManger.itemId = buffer:ReadInt();
+    -- //道具个数
+    GetRewardManger.itemNum = buffer:ReadInt();
+    -- 道具状态
+    GetRewardManger.itemState = buffer:ReadInt();
+end
+
+-- 零点重置和上线消息返回
+function OnExtractInit(protocolId, buffer)
+    GetRewardManger.rewardsList = { };
+    -- //进行了几次抽奖的数量
+    local count = buffer:ReadByte();
+    -- //记录上次抽奖的时间点,如果有未领取就不为零,你用不到,可忽略
+    local time = buffer:ReadInt64();
+    GetRewardManger.rewardStateNum = count;
+    -- 将所有的原始数据添加到tabel中，然后将服务器发送的消息与之进行替换
+    local m_capsuleTable = CCommonTool.GetCapsuleInfo();
+    for Index = 1, m_capsuleTable.Count do
+        local allRewardInfo = AllRewardInfo(Index);
+        table.insert(GetRewardManger.rewardsList, allRewardInfo);
+    end
+    for index = 1, count do
+        local rewardInfo = RewardInfo(buffer);
+        for _, info in ipairs(GetRewardManger.rewardsList) do
+            if info.Id == rewardInfo.Id then
+                info.beginTime = rewardInfo.beginTime;
+                info.rewardNum = rewardInfo.rewardNum;
+                break;
+            end
+        end
+    end
+end
+
+
+-- 单个道具详细数据
+function ItemInfo(buffer)
+    local m_capsuleTable = CCommonTool.GetCapsuleInfo();
+    local ExtractInfo = { };
+    -- id
+    ExtractInfo.itemId = buffer:ReadInt()
+    -- num
+    ExtractInfo.itemNum = buffer:ReadUShort();
+    -- state
+    ExtractInfo.itemState = buffer:ReadInt();
+    return ExtractInfo;
+end
+
+-- 所有抽奖类型的原始数据
+function AllRewardInfo(index)
+    local allRewardInfo = { };
+    local m_capsuleTable = CCommonTool.GetCapsuleInfo();
+    -- 抽奖id
+    allRewardInfo.Id = m_capsuleTable[index - 1].Id;
+    -- 上一次抽奖的时间点
+    allRewardInfo.beginTime = m_capsuleTable[index - 1].BeginTime;
+    -- 冷却时间
+    allRewardInfo.coolTime = m_capsuleTable[index - 1].FreeTime;
+    -- 抽取这种类型奖励的总次数
+    allRewardInfo.allNum = m_capsuleTable[index - 1].FreeNum;
+    -- 今天抽了几次奖
+    allRewardInfo.rewardNum = m_capsuleTable[index - 1].UseNum;
+    return allRewardInfo;
+end
+
+
+-- 抽奖详细数据
+function RewardInfo(buffer)
+    local rewardInfo = { };
+    -- 抽奖id
+    rewardInfo.Id = buffer:ReadInt();
+    -- 上一次抽奖的时间点
+    rewardInfo.beginTime = buffer:ReadInt();
+    -- 冷却时间
+    rewardInfo.coolTime = buffer:ReadInt();
+    -- 抽取这种类型奖励的总次数
+    rewardInfo.allNum = buffer:ReadInt();
+    -- 今天抽了几次奖
+    rewardInfo.rewardNum = buffer:ReadByte();
+    return rewardInfo;
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+
+-------------------------------------------------------发送协议 START-------------------------------------------------------
+
+-- 请求抽奖ID
+function RequestExtractID(Id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LOTTERY_DRAW);
+    buffer:WriteInt(Id);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 上次抽奖有未点击的卡牌 发送这个消息
+function RequestExtractState()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LOTTERY_LAST_RESULT);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击翻牌是 请求奖励信息
+function RequestRewardInfo(itemId, itemNum)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LOTTERY_SINGLE_GET_AWARD);
+    buffer:WriteInt(itemId);
+    buffer:WriteInt(itemNum);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 翻开所有的牌之后 请求领取所有道具
+function RequestReceiveItems()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LOTTERY_ALL_GET_AWARD);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------发送协议 END-------------------------------------------------------

@@ -1,0 +1,879 @@
+﻿module("MoneyExchangePanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 指定数量的数量文本
+local m_SpecifyNumStr = "/Label_CurNum";
+-- 兑换界面玩家剩余货币数量路径
+local m_PlayerRemainNumStr = "/Label_Num";
+-- 兑换界面玩家剩余货币名称路径
+local m_PlayerRemainHeaderStr = "/Sprite/Label_Header";
+-- 货币不足界面标题
+local m_LackMoneyTitleStr = "/BG/Label_Title";
+-----------------------------------------按钮路径--------------------------------------
+-- 加按钮
+local m_AddButtonStr = "/Add_Button";
+-- 减按钮
+local m_MinusButtonStr = "/Minus_Button";
+-- 输入框
+local m_InputButtonStr = "/Num_Button";
+-- 取消按钮
+local m_CancelButtonStr = "/Cancel_Button";
+-- 兑换按钮
+local m_ExchangeButtonStr = "/Enter_Button";
+
+-- 使用金币按钮
+local m_UseNotBindMoneyButtonStr = "/UseNotBindMoney_Button";
+-- 使用钻石按钮
+local m_UseNotBindDiamondButtonStr = "/UseNotBindDiamond_Button";
+-- 使用绑钻按钮
+local m_UseBindDiamondButtonStr = "/UseBindDiamond_Button";
+
+-- 关闭按钮
+local m_CloseButtonStr = "/Close_Button";
+
+-- 自动兑换按钮
+local m_AutoExchangeButtonStr = "/Select_Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 打勾的图片
+local m_CheckMarkStr = "/Sprite_Select";
+-- 兑换界面玩家剩余货币图标路径
+local m_PlayerRemainMoneyIconStr = "/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+-- 缺少金币的兑换界面路径
+local m_LackMoneyExchange = "LackMoneyExchange";
+-- 指定数量金币的兑换界面路径
+local m_SpecifyMoneyExchange = "SpecifyMoneyExchange";
+----------------------------------通用的名称路径---------------------------------------
+-- 指定数量下的非绑定兑换
+local m_NotBindMoneyExchange = "/NotBindMoney";
+-- 指定数量下的绑定兑换
+local m_BindMoneyExchange = "/BindMoney";
+-- 玩家剩余数量
+local m_PlayerRemainStr = "/Num_Player";
+
+-- 缺少数量下的绑定兑换
+local m_LackBindMoneyExchange = "/LackBindMoney";
+-- 缺少数量下的非绑定兑换
+local m_LackNotBindMoneyExchange = "/LackNotBindMoney";
+
+-- 缺少数量下的需要兑换的货币的UITable
+local m_LackMoneyUITable = "/LackMoney_UITable";
+
+-- 非绑定钻石的UITable
+local m_NotBindDiamondUITable = "/NotBindDiamond_UITable";
+-- 非绑定金币的UITable
+local m_NotBindMoneyUITable = "/NotBindMoney_UITable";
+-- 绑钻的UITtable
+local m_BindDiamondUITable = "/BindDiamond_UITable";
+
+-- 绑定金币位置的UITable
+local m_BindMoneyUITable = "/BindMoney_UITable";
+-- 非绑定位置的UITable
+local m_NotBindUITable = "/NotBind_UITable";
+
+-- 图标位置
+local IconStr = "/Sprite";
+-- 数量位置
+local NumStr = "/Label_Num";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否创建
+local m_bCreateSuccess = false;
+-- 要兑换的类型
+local m_ExchangeType = MONEY_EXCHANGE_TYPE.NOTBIND_MONEY;
+-- 是否是缺少金币的兑换
+local m_IsLackOfMoney = false;
+-- 需要兑换的金币数量
+local m_NeedExchangeMoneyNum = 0;
+
+-- 当前想要兑换的次数
+local m_ExchangeTimes = 1;
+
+-- 是否是使用金币兑换
+local m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY;
+
+-- 当前所需货币是否充足
+local m_IsCanExchange = false;
+
+-- 兑换绑定金币所需的非绑定金币数量
+local m_NotBindMoneyToBindMoneyNeedNum = 0;
+-- 兑换绑定金币所需的非绑定钻石数量
+local m_NotBindDiamondToBindMoneyNeedNum = 0;
+-- 兑换绑定金币所需的绑钻数量
+local m_BindDiamondToBindMoneyNeedNum = 0;
+
+-- 兑换绑定金币所需的非绑定金币数量是否足够
+local m_NotBindMoneyToBindMoneyIsEnough = false;
+-- 兑换绑定金币所需的非绑定钻石数量
+local m_NotBindDiamondToBindMoneyIsEnough = false;
+-- 兑换绑定金币所需的绑定钻石数量
+local m_BindDiamondToBindMoneyIsEnough = false;
+
+-- 兑换绑定金币使用钻石后是否还需要使用金币的回调
+local m_AfterUseDiamondFunc = nil;
+-- 回调数据
+local m_AfterUseDiamondFuncData = nil;
+
+-- 兑换全部发送完毕后的回调
+local m_AfterAllExchangeCallBack = nil;
+-- 兑换全部发送完毕后的回调参数
+local m_AfterAllExchangeCallBackParam = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够的颜色
+local m_EnoughColor = "FFFFFF";
+-- 不够的颜色
+local m_NotEnoughColor = "FF3D3D";
+
+-- 输入框最大值
+local m_MaxNum = 999999;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitStaticShow();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_ExchangeTimes = 1;
+    if m_AfterUseDiamondFunc ~= nil then
+        m_AfterUseDiamondFunc = nil;
+    end
+    if m_AfterAllExchangeCallBack ~= nil then
+        m_AfterAllExchangeCallBack = nil;
+    end
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+end
+
+function InitStaticShow()
+    SetSpriteByAtlasID(m_SpecifyMoneyExchange .. m_NotBindMoneyExchange .. m_NotBindDiamondUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject);
+    SetSpriteByAtlasID(m_SpecifyMoneyExchange .. m_NotBindMoneyExchange .. m_NotBindMoneyUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY).ImageSmallID,m_panelObject);
+    SetSpriteByAtlasID(m_SpecifyMoneyExchange .. m_BindMoneyExchange .. m_BindMoneyUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDMONEY).ImageSmallID,m_panelObject);
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable ..IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject);
+end
+
+function InitShow()
+    if m_IsLackOfMoney then
+        SetGameObjectState(m_LackMoneyExchange,true,m_panelObject);
+        SetGameObjectState(m_SpecifyMoneyExchange,false,m_panelObject);
+        InitAutoExchangeShow();
+        InitLackMoneyShow();
+    else
+        SetGameObjectState(m_LackMoneyExchange,false,m_panelObject);
+        SetGameObjectState(m_SpecifyMoneyExchange,true,m_panelObject);
+        InitSpecifyMoneyShow();
+    end
+end
+
+-- 货币不足界面-自动兑换是否勾选
+function InitAutoExchangeShow()
+    if _G.LogicData_IsAutoExchangeMoney then
+        SetGameObjectState(m_LackMoneyExchange .. m_AutoExchangeButtonStr .. m_CheckMarkStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_LackMoneyExchange .. m_AutoExchangeButtonStr .. m_CheckMarkStr,false,m_panelObject);
+    end
+end
+
+-- 初始化货币不足界面信息
+function InitLackMoneyShow()
+    if m_ExchangeType == MONEY_EXCHANGE_TYPE.NOTBIND_MONEY then
+        SetGameObjectState(m_LackMoneyExchange..m_LackNotBindMoneyExchange,true,m_panelObject);
+        SetGameObjectState(m_LackMoneyExchange..m_LackBindMoneyExchange,false,m_panelObject);
+        SetLabelContent(m_LackMoneyExchange..m_LackMoneyTitleStr, --[[金币不足]]CCommonTool.GetTxtData(1415).m_str, m_panelObject);
+        m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND;
+        InitLackNotBindMoneyShow();
+    elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_DIAMOND then
+        SetGameObjectState(m_LackMoneyExchange..m_LackNotBindMoneyExchange, true, m_panelObject);
+        SetGameObjectState(m_LackMoneyExchange..m_LackBindMoneyExchange, false, m_panelObject);
+        SetLabelContent(m_LackMoneyExchange..m_LackMoneyTitleStr, --[[蓝钻不足]]CCommonTool.GetTxtData(1416).m_str, m_panelObject);
+        m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND;
+        InitLackBindDiamondShow();
+    elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_MONEY then
+        SetGameObjectState(m_LackMoneyExchange..m_LackNotBindMoneyExchange,false,m_panelObject);
+        SetGameObjectState(m_LackMoneyExchange..m_LackBindMoneyExchange,true,m_panelObject);
+        SetLabelContent(m_LackMoneyExchange..m_LackMoneyTitleStr, --[[银币不足]]CCommonTool.GetTxtData(674).m_str, m_panelObject);
+        InitLackBindMoneyShow();
+    else
+        error("货币兑换，不存在的兑换货币类型%>_<%...." .. m_ExchangeType);
+    end
+end
+
+-- 货币不足界面-金币兑换
+function InitLackNotBindMoneyShow()
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackMoneyUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY).ImageSmallID,m_panelObject);
+    SetLabelContent(m_LackMoneyExchange .. m_LackMoneyUITable .. NumStr,m_NeedExchangeMoneyNum,m_panelObject);
+    m_ExchangeTimes = math.ceil(m_NeedExchangeMoneyNum/GoldToNotBindMoney);
+    SetLabelContent(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable .. NumStr,m_ExchangeTimes,m_panelObject);
+    if m_ExchangeTimes <= G_UserInfo.NotBindDiamond then
+        m_IsCanExchange = true;
+        SetLabelColor(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable ..  NumStr,m_EnoughColor,m_panelObject);
+    else
+        m_IsCanExchange = false;
+        SetLabelColor(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable ..  NumStr,m_NotEnoughColor,m_panelObject);
+    end
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackMoneyUITable,m_panelObject);
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable,m_panelObject);
+end
+
+-- 货币不足界面-绑钻兑换
+function InitLackBindDiamondShow()
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackMoneyUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDDIAMOND).ImageSmallID,m_panelObject);
+    SetLabelContent(m_LackMoneyExchange .. m_LackMoneyUITable .. NumStr,m_NeedExchangeMoneyNum,m_panelObject);
+    m_ExchangeTimes = math.ceil(m_NeedExchangeMoneyNum/DiamondToBindDiamond);
+    SetLabelContent(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable .. NumStr, m_ExchangeTimes, m_panelObject);
+    if m_ExchangeTimes <= G_UserInfo.NotBindDiamond then
+        m_IsCanExchange = true;
+        SetLabelColor(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable ..  NumStr, m_EnoughColor, m_panelObject);
+    else
+        m_IsCanExchange = false;
+        SetLabelColor(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable ..  NumStr,m_NotEnoughColor,m_panelObject);
+    end
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackMoneyUITable, m_panelObject);
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_NotBindDiamondUITable,m_panelObject);
+end
+
+-- 货币不足界面-金币兑换
+function InitLackBindMoneyShow()
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackMoneyUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDMONEY).ImageSmallID,m_panelObject);
+    SetLabelContent(m_LackMoneyExchange .. m_LackMoneyUITable .. NumStr, m_NeedExchangeMoneyNum, m_panelObject);
+    
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindMoneyUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY).ImageSmallID,m_panelObject);
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_BindDiamondUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDDIAMOND).ImageSmallID,m_panelObject);
+    SetSpriteByAtlasID(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindDiamondUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject);
+
+    -- 非绑石 -> 绑定金币
+    m_NotBindDiamondToBindMoneyNeedNum = math.ceil(m_NeedExchangeMoneyNum/GoldToBindMoney);
+    SetLabelContent(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindDiamondUITable .. NumStr,m_NotBindDiamondToBindMoneyNeedNum,m_panelObject);
+    if m_NotBindDiamondToBindMoneyNeedNum <= G_UserInfo.NotBindDiamond then
+        m_NotBindDiamondToBindMoneyIsEnough = true;
+        SetLabelColor(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindDiamondUITable .. NumStr,m_EnoughColor,m_panelObject);
+    else
+        m_NotBindDiamondToBindMoneyIsEnough = false;
+        SetLabelColor(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindDiamondUITable .. NumStr,m_NotEnoughColor,m_panelObject);
+    end
+
+    -- 绑钻 -> 绑定金币
+    m_BindDiamondToBindMoneyNeedNum = math.ceil(m_NeedExchangeMoneyNum/BindDiamondToBindMoney);
+    SetLabelContent(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_BindDiamondUITable .. NumStr, m_BindDiamondToBindMoneyNeedNum,m_panelObject);
+    if m_BindDiamondToBindMoneyNeedNum <= G_UserInfo.BindDiamond then
+        m_BindDiamondToBindMoneyIsEnough = true;
+        SetLabelColor(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_BindDiamondUITable .. NumStr,m_EnoughColor,m_panelObject);
+    else
+        m_BindDiamondToBindMoneyIsEnough = false;
+        SetLabelColor(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_BindDiamondUITable .. NumStr,m_NotEnoughColor,m_panelObject);
+    end
+
+    -- 非绑金币 -> 绑定金币
+    m_NotBindMoneyToBindMoneyNeedNum = math.ceil(m_NeedExchangeMoneyNum/NotBindMoneyToBindMoney);
+    SetLabelContent(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindMoneyUITable .. NumStr,m_NotBindMoneyToBindMoneyNeedNum,m_panelObject);
+    if m_NotBindMoneyToBindMoneyNeedNum <= G_UserInfo.NotBindCoin then
+        m_NotBindMoneyToBindMoneyIsEnough = true;
+        SetLabelColor(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindMoneyUITable .. NumStr,m_EnoughColor,m_panelObject);
+    else
+        m_NotBindMoneyToBindMoneyIsEnough = false;
+        SetLabelColor(m_LackMoneyExchange .. m_LackBindMoneyExchange.. m_NotBindMoneyUITable .. NumStr,m_NotEnoughColor,m_panelObject);
+    end
+
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackMoneyUITable,m_panelObject);
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackBindMoneyExchange .. m_NotBindDiamondUITable,m_panelObject);
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackBindMoneyExchange .. m_NotBindMoneyUITable,m_panelObject);
+    RepositionUITableComp(m_LackMoneyExchange .. m_LackBindMoneyExchange .. m_BindDiamondUITable,m_panelObject);
+end
+
+-- 初始化货币兑换界面
+function InitSpecifyMoneyShow()
+    if m_ExchangeType == MONEY_EXCHANGE_TYPE.NOTBIND_MONEY then
+        SetGameObjectState(m_SpecifyMoneyExchange..m_NotBindMoneyExchange,true,m_panelObject);
+        SetGameObjectState(m_SpecifyMoneyExchange..m_BindMoneyExchange,false,m_panelObject);
+        m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND;
+        InitSpecifyNotBindMoneyShow();
+    elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_MONEY then
+        SetGameObjectState(m_SpecifyMoneyExchange..m_NotBindMoneyExchange,false,m_panelObject);
+        SetGameObjectState(m_SpecifyMoneyExchange..m_BindMoneyExchange,true,m_panelObject);
+        m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY;
+        InitSpecifyBindMoneyShow();
+    else
+        error("货币兑换，不存在的兑换货币类型%>_<%...." .. m_ExchangeType);
+        return;
+    end
+end
+
+-- 货币兑换界面-兑换非绑金币
+function InitSpecifyNotBindMoneyShow()
+    local tempPath = m_SpecifyMoneyExchange .. m_NotBindMoneyExchange;
+    SetLabelContent(m_SpecifyMoneyExchange..m_SpecifyNumStr,m_ExchangeTimes,m_panelObject);
+    SetLabelContent(tempPath .. m_NotBindDiamondUITable .. NumStr, m_ExchangeTimes,m_panelObject);
+    if m_ExchangeTimes <= G_UserInfo.NotBindDiamond then
+        m_IsCanExchange = true;
+        SetLabelColor(tempPath .. m_NotBindDiamondUITable .. NumStr,m_EnoughColor,m_panelObject);
+    else
+        m_IsCanExchange = false;
+        SetLabelColor(tempPath .. m_NotBindDiamondUITable .. NumStr,m_NotEnoughColor,m_panelObject);
+    end
+    SetLabelContent(tempPath .. m_NotBindMoneyUITable .. NumStr, m_ExchangeTimes * GoldToNotBindMoney,m_panelObject);
+    if m_ExchangeTimes <= G_UserInfo.NotBindDiamond then
+        SetLabelColor(tempPath .. m_NotBindMoneyUITable .. NumStr,m_EnoughColor,m_panelObject);
+    else
+        SetLabelColor(tempPath .. m_NotBindMoneyUITable .. NumStr,m_NotEnoughColor,m_panelObject);
+    end
+    RepositionUITableComp(tempPath .. m_NotBindDiamondUITable,m_panelObject);
+    RepositionUITableComp(tempPath .. m_NotBindMoneyUITable,m_panelObject);
+    InitPlayerMoneyRemainCount();
+end
+
+-- 货币兑换界面-兑换银币
+function InitSpecifyBindMoneyShow()
+    InitUseTypeShow();
+    InitSpecifyBindMoneyNumShow();
+    InitPlayerMoneyRemainCount();
+end
+
+-- 兑换界面-银币兑换类型
+function InitUseTypeShow()
+    local tempPath = m_SpecifyMoneyExchange..m_BindMoneyExchange;
+    if m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY then
+        SetGameObjectState(tempPath .. m_UseNotBindMoneyButtonStr .. m_CheckMarkStr, true, m_panelObject);
+        SetGameObjectState(tempPath .. m_UseNotBindDiamondButtonStr .. m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(tempPath .. m_UseBindDiamondButtonStr .. m_CheckMarkStr, false, m_panelObject);
+        SetSpriteByAtlasID(tempPath .. m_NotBindUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY).ImageSmallID,m_panelObject);
+    elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND then
+        SetGameObjectState(tempPath .. m_UseNotBindMoneyButtonStr .. m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(tempPath .. m_UseNotBindDiamondButtonStr .. m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(tempPath .. m_UseBindDiamondButtonStr .. m_CheckMarkStr, true, m_panelObject);
+        SetSpriteByAtlasID(tempPath .. m_NotBindUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDDIAMOND).ImageSmallID,m_panelObject);
+    elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND then
+        SetGameObjectState(tempPath .. m_UseNotBindMoneyButtonStr .. m_CheckMarkStr, false, m_panelObject);
+        SetGameObjectState(tempPath .. m_UseNotBindDiamondButtonStr .. m_CheckMarkStr, true, m_panelObject);
+        SetGameObjectState(tempPath .. m_UseBindDiamondButtonStr .. m_CheckMarkStr, false, m_panelObject);
+        SetSpriteByAtlasID(tempPath .. m_NotBindUITable .. IconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject);
+    else
+        error("货币兑换，不存在的使用货币类型%>_<%...." .. m_UseMoneyType);
+    end
+end
+
+-- 兑换界面-兑换数量信息
+function InitSpecifyBindMoneyNumShow()
+    local tempPath = m_SpecifyMoneyExchange .. m_BindMoneyExchange;
+    SetLabelContent(m_SpecifyMoneyExchange..m_SpecifyNumStr,m_ExchangeTimes, m_panelObject);
+    SetLabelContent(tempPath .. m_NotBindUITable .. NumStr, m_ExchangeTimes, m_panelObject);
+    local rate = nil;
+    if m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY then
+        rate = NotBindMoneyToBindMoney;
+        m_IsCanExchange = m_ExchangeTimes <= G_UserInfo.NotBindCoin;
+    elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND then
+        rate = BindDiamondToBindMoney;
+        m_IsCanExchange = m_ExchangeTimes <= G_UserInfo.BindDiamond;
+    elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND then
+        rate = GoldToBindMoney;
+        m_IsCanExchange = m_ExchangeTimes <= G_UserInfo.NotBindDiamond;
+    else
+        error("货币兑换，不存在的使用货币类型%>_<%...." .. m_UseMoneyType);
+    end
+    if rate ~= nil then
+        local color = m_IsCanExchange and m_EnoughColor or m_NotEnoughColor;
+        SetLabelColor(tempPath .. m_NotBindUITable .. NumStr, color, m_panelObject);
+        SetLabelColor(tempPath .. m_BindMoneyUITable .. NumStr, color, m_panelObject);
+        SetLabelContent(tempPath .. m_BindMoneyUITable .. NumStr, m_ExchangeTimes * rate,m_panelObject);
+    end
+
+    RepositionUITableComp(tempPath .. m_NotBindUITable,m_panelObject);
+    RepositionUITableComp(tempPath .. m_BindMoneyUITable,m_panelObject);
+end
+
+-- 货币兑换界面玩家剩余数量
+function InitPlayerMoneyRemainCount()
+    local basePath = m_SpecifyMoneyExchange .. m_PlayerRemainStr;
+    if m_ExchangeType == MONEY_EXCHANGE_TYPE.NOTBIND_MONEY then
+        -- 兑换金币, 只能用红钻
+        SetSpriteByAtlasID(basePath .. m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject);
+        SetLabelContent(basePath .. m_PlayerRemainHeaderStr, --[[剩余红钻:]]CCommonTool.GetTxtData(1417).m_str, m_panelObject);
+        SetLabelContent(basePath .. m_PlayerRemainNumStr, G_UserInfo.NotBindDiamond, m_panelObject);
+    elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_MONEY then
+        if m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND then
+            SetSpriteByAtlasID(basePath .. m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDDIAMOND).ImageSmallID,m_panelObject);
+            SetLabelContent(basePath .. m_PlayerRemainHeaderStr, --[[剩余红钻:]]CCommonTool.GetTxtData(1417).m_str, m_panelObject);
+            SetLabelContent(basePath .. m_PlayerRemainNumStr, G_UserInfo.NotBindDiamond, m_panelObject);
+        elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND then
+            SetSpriteByAtlasID(basePath .. m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.BINDDIAMOND).ImageSmallID,m_panelObject);
+            SetLabelContent(basePath .. m_PlayerRemainHeaderStr, --[[剩余蓝钻:]]CCommonTool.GetTxtData(1418).m_str, m_panelObject);
+            SetLabelContent(basePath .. m_PlayerRemainNumStr, G_UserInfo.BindDiamond, m_panelObject);
+        elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY then
+            SetSpriteByAtlasID(basePath .. m_PlayerRemainMoneyIconStr,CCommonTool.GetItemInfo(G_ItemToolTipDefine.NOTBINDMONEY).ImageSmallID,m_panelObject);
+            SetLabelContent(basePath .. m_PlayerRemainHeaderStr, --[[剩余金币:]]CCommonTool.GetTxtData(1419).m_str, m_panelObject);
+            SetLabelContent(basePath .. m_PlayerRemainNumStr, G_UserInfo.NotBindCoin, m_panelObject);
+        end
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_AddButtonStr, OnAddClick, m_panelObject);
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_MinusButtonStr, OnMinusClick, m_panelObject);
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_InputButtonStr, OnInputClick, m_panelObject);
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_CancelButtonStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_ExchangeButtonStr, OnEnterClick, m_panelObject);
+
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_BindMoneyExchange .. m_UseNotBindMoneyButtonStr, OnUseNotBindMoneyClick, m_panelObject);
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_BindMoneyExchange .. m_UseNotBindDiamondButtonStr, OnUseNotBindDiamondClick, m_panelObject);
+    SetGameObjectEvent(m_SpecifyMoneyExchange .. m_BindMoneyExchange .. m_UseBindDiamondButtonStr, OnUseBindDiamondClick, m_panelObject);
+
+    SetGameObjectEvent(m_LackMoneyExchange .. m_CloseButtonStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_LackMoneyExchange .. m_LackNotBindMoneyExchange .. m_UseNotBindDiamondButtonStr, OnEnterClick, m_panelObject);
+
+    SetGameObjectEvent(m_LackMoneyExchange .. m_LackBindMoneyExchange .. m_UseNotBindDiamondButtonStr, OnLackUseNotBindDiamondClick, m_panelObject);
+    SetGameObjectEvent(m_LackMoneyExchange .. m_LackBindMoneyExchange .. m_UseNotBindMoneyButtonStr, OnLackUseNotBindMoneyClick, m_panelObject);
+    SetGameObjectEvent(m_LackMoneyExchange .. m_LackBindMoneyExchange .. m_UseBindDiamondButtonStr, OnLackUseBindDiamondClick, m_panelObject);
+
+    SetGameObjectEvent(m_LackMoneyExchange .. m_AutoExchangeButtonStr,OnAutoExchangeButtonClick,m_panelObject);
+end
+
+function InitSpecifyNumShow()
+    if m_ExchangeType == MONEY_EXCHANGE_TYPE.NOTBIND_MONEY then
+        InitSpecifyNotBindMoneyShow();
+    elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_MONEY then
+        InitSpecifyBindMoneyNumShow();
+    else
+        error("货币兑换，不存在的兑换货币类型%>_<%...." .. m_ExchangeType);
+    end
+end
+
+function SendAfterUseDiamond()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+    buffer:WriteByte(m_AfterUseDiamondFuncData[1]);
+    buffer:WriteByte(m_AfterUseDiamondFuncData[2]);
+    buffer:WriteInt(m_AfterUseDiamondFuncData[3]);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnAddClick()
+    if m_ExchangeTimes < m_MaxNum then
+        m_ExchangeTimes = m_ExchangeTimes + 1;
+        InitSpecifyNumShow();
+    end
+end
+
+function OnMinusClick()
+    if m_ExchangeTimes > 1 then
+        m_ExchangeTimes = m_ExchangeTimes - 1;
+        InitSpecifyNumShow();
+    end
+end
+
+function OnInputClick()
+    local data = 
+    {
+        X = 0;
+        Y = -535;
+        --Text = m_ExchangeTimes;
+    };
+    SmallKeyboardPanel.InputCallback = OnSmallKeyboardNumClick;
+    SmallKeyboardPanel.ConfirmCallback = OnSmallKeyboardConfirmClick;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+end
+
+--小键盘数字按下回调
+--@param data 数据信息
+function OnSmallKeyboardNumClick(data)
+    if data ~= nil then
+        m_ExchangeTimes = data.Num;
+        if m_ExchangeTimes < 1 then
+            m_ExchangeTimes = 1;
+        elseif m_ExchangeTimes > m_MaxNum then
+            m_ExchangeTimes = m_MaxNum;
+        end
+        InitSpecifyNumShow();
+    end
+end
+
+--小键盘确定按钮回调
+function OnSmallKeyboardConfirmClick()
+    
+end
+
+function OnEnterClick()
+    if m_IsCanExchange then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+        buffer:WriteByte(m_ExchangeType);
+        buffer:WriteByte(m_UseMoneyType);
+        buffer:WriteInt(m_ExchangeTimes);
+        G_NetWorkMng:SendMessage(buffer);
+        if m_AfterUseDiamondFunc ~= nil then
+            m_AfterUseDiamondFunc();
+            m_AfterUseDiamondFunc = nil;
+        end
+        if m_AfterAllExchangeCallBack ~= nil then
+            m_AfterAllExchangeCallBack(unpack(m_AfterAllExchangeCallBackParam));
+            m_AfterAllExchangeCallBack = nil;
+        end
+    else
+        if m_ExchangeType == MONEY_EXCHANGE_TYPE.NOTBIND_MONEY then
+            StorePanel.OpenPanelRecharge();
+            error("钻石兑换非绑定金币，钻石不足");
+        elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_MONEY then
+            if m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND then
+                StorePanel.OpenPanelRecharge();
+                error("钻石兑换绑定金币，钻石不足");
+            elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND then
+                local needNum = m_ExchangeTimes;
+                m_AfterUseDiamondFuncData = {MONEY_EXCHANGE_TYPE.BIND_MONEY,MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND,needNum};
+                m_AfterUseDiamondFunc = SendAfterUseDiamond;
+                ShowPanel(MONEY_EXCHANGE_TYPE.BIND_DIAMOND,true,m_ExchangeTimes-G_UserInfo.BindDiamond);
+                return;
+            elseif m_UseMoneyType == MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY then
+                --[[
+                local needNum = m_ExchangeTimes;
+                m_AfterUseDiamondFuncData = {MONEY_EXCHANGE_TYPE.BIND_MONEY,MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY,needNum};
+                m_AfterUseDiamondFunc = SendAfterUseDiamond;
+                ShowPanel(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY,true,m_ExchangeTimes-G_UserInfo.NotBindCoin);
+                ]]
+                -- 提示 金币不足
+                ShowSystemFlowTips(8008);
+                return;
+            else
+                error("货币兑换，不存在的使用货币类型%>_<%...." .. m_UseMoneyType);
+            end
+        elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_DIAMOND then
+            StorePanel.OpenPanelRecharge();
+            error("钻石兑换绑定钻石，钻石不足");
+        else
+            error("货币兑换，不存在的兑换货币类型%>_<%...." .. m_ExchangeType);
+        end
+    end
+    if m_AfterUseDiamondFunc ~= nil then
+        m_AfterUseDiamondFunc = nil;
+    end
+    if m_AfterAllExchangeCallBack ~= nil then
+        m_AfterAllExchangeCallBack = nil;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+end
+
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+end
+
+function OnUseNotBindMoneyClick()
+    m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY;
+    InitSpecifyBindMoneyShow();
+end
+
+function OnUseNotBindDiamondClick()
+   m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND;
+   InitSpecifyBindMoneyShow();
+end
+
+function OnUseBindDiamondClick()
+    m_UseMoneyType = MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND;
+   InitSpecifyBindMoneyShow();
+end
+
+function OnLackUseNotBindDiamondClick()
+    if m_NotBindDiamondToBindMoneyIsEnough then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+        buffer:WriteByte(m_ExchangeType);
+        buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND);
+        buffer:WriteInt(m_NotBindDiamondToBindMoneyNeedNum);
+        G_NetWorkMng:SendMessage(buffer);
+        if m_AfterUseDiamondFunc ~= nil then
+            m_AfterUseDiamondFunc();
+            m_AfterUseDiamondFunc = nil;
+        end
+        if m_AfterAllExchangeCallBack ~= nil then
+            m_AfterAllExchangeCallBack(unpack(m_AfterAllExchangeCallBackParam));
+            m_AfterAllExchangeCallBack = nil;
+        end
+    else
+        error("钻石兑换绑定金币，钻石不足");
+        StorePanel.OpenPanelRecharge();
+    end
+    if m_AfterUseDiamondFunc ~= nil then
+        m_AfterUseDiamondFunc = nil;
+    end
+    if m_AfterAllExchangeCallBack ~= nil then
+        m_AfterAllExchangeCallBack = nil;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+end
+
+function OnLackUseNotBindMoneyClick()
+    if m_NotBindMoneyToBindMoneyIsEnough then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+        buffer:WriteByte(m_ExchangeType);
+        buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY);
+        buffer:WriteInt(m_NotBindMoneyToBindMoneyNeedNum);
+        G_NetWorkMng:SendMessage(buffer);
+        if m_AfterAllExchangeCallBack ~= nil then
+            m_AfterAllExchangeCallBack(unpack(m_AfterAllExchangeCallBackParam));
+            m_AfterAllExchangeCallBack = nil;
+        end
+        if m_AfterAllExchangeCallBack ~= nil then
+            m_AfterAllExchangeCallBack = nil;
+        end
+        closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+    else
+        --[[
+        local needNum = m_NotBindMoneyToBindMoneyNeedNum;
+        m_AfterUseDiamondFuncData = {MONEY_EXCHANGE_TYPE.BIND_MONEY,MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY,needNum};
+        m_AfterUseDiamondFunc = SendAfterUseDiamond;
+        ShowPanel(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY,true,m_NotBindMoneyToBindMoneyNeedNum-G_UserInfo.NotBindCoin);
+        ]]
+        -- 韩国版本不能兑换金币, 直接提示金币不足
+        -- 提示 金币不足
+        ShowSystemFlowTips(8008);
+        closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+    end
+end
+
+-- 货币不足界面-使用绑钻兑换
+function OnLackUseBindDiamondClick()
+    if m_BindDiamondToBindMoneyIsEnough then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+        buffer:WriteByte(m_ExchangeType);
+        buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND);
+        buffer:WriteInt(m_BindDiamondToBindMoneyNeedNum);
+        G_NetWorkMng:SendMessage(buffer);
+        if m_AfterAllExchangeCallBack ~= nil then
+            m_AfterAllExchangeCallBack(unpack(m_AfterAllExchangeCallBackParam));
+            m_AfterAllExchangeCallBack = nil;
+        end
+        if m_AfterAllExchangeCallBack ~= nil then
+            m_AfterAllExchangeCallBack = nil;
+        end
+        closePanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL);
+    else
+        local needNum = m_BindDiamondToBindMoneyNeedNum;
+        m_AfterUseDiamondFuncData = {MONEY_EXCHANGE_TYPE.BIND_MONEY,MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND,needNum};
+        m_AfterUseDiamondFunc = SendAfterUseDiamond;
+        ShowPanel(MONEY_EXCHANGE_TYPE.BIND_DIAMOND,true,m_BindDiamondToBindMoneyNeedNum-G_UserInfo.BindDiamond);
+    end
+end
+
+function OnAutoExchangeButtonClick()
+    _G.LogicData_IsAutoExchangeMoney = not _G.LogicData_IsAutoExchangeMoney;
+    InitAutoExchangeShow();
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 打开货币兑换界面
+-- @param1 兑换货币类型
+-- @param2 是否是缺少货币的类型
+-- @param3 缺少的金钱数量
+function ShowPanel(exchangeType,isLack,moneyNum,causePanelID)
+    m_ExchangeType = exchangeType;
+    m_IsLackOfMoney = isLack;
+    m_NeedExchangeMoneyNum = moneyNum;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL) == 1 then
+        InitShow();
+    else
+        if causePanelID == nil then
+            causePanelID = -1;
+        end
+        createPanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL,causePanelID);
+    end
+end
+
+-- 检测金币是否充足，如果没开自动兑换，金钱不足弹出兑换的界面，开了的话兑换后足够，则兑换
+-- @param1 金钱类型
+-- @param2 金钱数量
+-- @param3 玩家手动兑换后回调的函数
+-- @param4 回调函数的参数
+function CheckIsEnoughMoney(moneyType,moneyNum,causePanelID,callBack,...)
+    error("moneyType:"..tostring(moneyType) .. ", moneyNum:" .. tostring(moneyNum));
+    if moneyNum <= 0 then
+        return true;
+    end
+    if moneyType == MONEY_NEW_TYPE.BIND_COIN then
+        if moneyNum <= G_UserInfo.BindCoin then
+            return true;
+        else
+            if _G.LogicData_IsAutoExchangeMoney then
+                local isEnoughNotBindCoin = false;
+                local needElseNotBindCoinNum = math.ceil((moneyNum - G_UserInfo.BindCoin)/NotBindMoneyToBindMoney);
+                if needElseNotBindCoinNum <= G_UserInfo.NotBindCoin then
+                    isEnoughNotBindCoin = true;
+                else
+                    isEnoughNotBindCoin = false;
+                end
+                -- 兑换方式 1:金币->银币  2:绑钻->银币 3:红钻->金币->银币
+                if isEnoughNotBindCoin then
+                    -- 1:金币->银币
+                    error("-- 1:金币->银币");
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+                    buffer:WriteByte(MONEY_EXCHANGE_TYPE.BIND_MONEY);
+                    buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY);
+                    buffer:WriteInt(needElseNotBindCoinNum);
+                    G_NetWorkMng:SendMessage(buffer);
+                    return true;
+                end
+                local isEnoughBindDiamond = false;
+                local needElseBindDiamondNum = math.ceil((moneyNum - G_UserInfo.BindDiamond)/BindDiamondToBindMoney);
+                if needElseBindDiamondNum <= G_UserInfo.BindDiamond then
+                    isEnoughBindDiamond = true;
+                else
+                    isEnoughBindDiamond = false;
+                end
+                if isEnoughBindDiamond then
+                    -- 2:绑钻->银币
+                    error("-- 2:绑钻->银币");
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+                    buffer:WriteByte(MONEY_EXCHANGE_TYPE.BIND_MONEY);
+                    buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_BIND_DIAMOND);
+                    buffer:WriteInt(needElseBindDiamondNum);
+                    G_NetWorkMng:SendMessage(buffer);
+                    return true;
+                end
+                local needElseNotBindDiamondNum = math.ceil((needElseNotBindCoinNum - G_UserInfo.NotBindCoin)/GoldToNotBindMoney);
+                if needElseNotBindDiamondNum <= G_UserInfo.NotBindDiamond then
+                    error("-- 3:红钻->金币->银币");
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+                    buffer:WriteByte(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY);
+                    buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND);
+                    buffer:WriteInt(needElseNotBindDiamondNum);
+                    G_NetWorkMng:SendMessage(buffer);
+                    local buffer2 = ByteBuffer.New();
+                    buffer2:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+                    buffer2:WriteByte(MONEY_EXCHANGE_TYPE.BIND_MONEY);
+                    buffer2:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_MONEY);
+                    buffer2:WriteInt(needElseNotBindCoinNum);
+                    G_NetWorkMng:SendMessage(buffer2);
+                    return true;
+                else
+                    return false;
+                end
+            else
+                if callBack ~= nil then
+                    m_AfterAllExchangeCallBack = callBack;
+                    m_AfterAllExchangeCallBackParam = {...};
+                end
+                ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY,true,moneyNum-G_UserInfo.BindCoin,causePanelID);
+                return false;
+            end
+        end
+    elseif moneyType == MONEY_NEW_TYPE.BIND_DIAMOND then
+        if moneyNum <= G_UserInfo.BindDiamond then
+            return true;
+        else
+            if _G.LogicData_IsAutoExchangeMoney then
+                local needElseNotBindDiamondNum = math.ceil((moneyNum - G_UserInfo.BindDiamond)/DiamondToBindDiamond);
+                if needElseNotBindDiamondNum <= G_UserInfo.NotBindDiamond then
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+                    buffer:WriteByte(MONEY_EXCHANGE_TYPE.BIND_DIAMOND);
+                    buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND);
+                    buffer:WriteInt(needElseNotBindDiamondNum);
+                    G_NetWorkMng:SendMessage(buffer);
+                    return true;
+                else
+                    return false;
+                end
+            else
+                if callBack ~= nil then
+                    m_AfterAllExchangeCallBack = callBack;
+                    m_AfterAllExchangeCallBackParam = {...};
+                end
+                ShowPanel(MONEY_EXCHANGE_TYPE.BIND_DIAMOND,true,moneyNum-G_UserInfo.BindDiamond,causePanelID);
+                return false;
+            end
+        end
+    elseif moneyType == MONEY_NEW_TYPE.NOTBIND_COIN then
+        if moneyNum <= G_UserInfo.NotBindCoin then
+            return true;
+        else
+            if _G.LogicData_IsAutoExchangeMoney then
+                local needElseNotBindDiamondNum = math.ceil((moneyNum - G_UserInfo.NotBindCoin)/GoldToNotBindMoney);
+                if needElseNotBindDiamondNum <= G_UserInfo.NotBindDiamond then
+                    local buffer = ByteBuffer.New();
+                    buffer:WriteUShort(GMI_CTOS_LGS_MONEY_EXCHANGE);
+                    buffer:WriteByte(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY);
+                    buffer:WriteByte(MONEY_EXCHANGE_USE_TYPE.USE_NOTBIND_DIAMOND);
+                    buffer:WriteInt(needElseNotBindDiamondNum);
+                    G_NetWorkMng:SendMessage(buffer);
+                    return true;
+                else
+                    return false;
+                end
+            else
+                if callBack ~= nil then
+                    m_AfterAllExchangeCallBack = callBack;
+                    m_AfterAllExchangeCallBackParam = {...};
+                end
+                -- 韩国版本不能兑换金币, 此功能暂停关闭
+                --ShowPanel(MONEY_EXCHANGE_TYPE.NOTBIND_MONEY,true,moneyNum-G_UserInfo.NotBindCoin,causePanelID);
+                -- 提示 金币不足
+                ShowSystemFlowTips(8008);
+                return false;
+            end
+        end
+    elseif moneyType == MONEY_NEW_TYPE.NOTBIND_DIAMOND then
+        if moneyNum <= G_UserInfo.NotBindDiamond then
+            return true;
+        else
+            return false;
+        end
+    else
+        return false;
+    end
+end
+
+-- 角色货币更改时刷新界面
+function OnPlayerMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MONEY_EXCHANGE_PANEL) == 1 then
+        if m_IsLackOfMoney ~= true then
+            if m_ExchangeType == MONEY_EXCHANGE_TYPE.NOTBIND_MONEY then
+                InitSpecifyNotBindMoneyShow();
+            elseif m_ExchangeType == MONEY_EXCHANGE_TYPE.BIND_MONEY then
+                InitSpecifyBindMoneyShow();
+            end
+            InitPlayerMoneyRemainCount();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = {};
+    jumpParamsTable[1] = m_ExchangeType;
+    jumpParamsTable[2] = m_IsLackOfMoney;
+    jumpParamsTable[3] = m_NeedExchangeMoneyNum;
+    jumpParamsTable[4] = m_ExchangeTimes;
+    jumpParamsTable[5] = m_AfterUseDiamondFunc;
+    jumpParamsTable[6] = m_AfterUseDiamondFuncData;
+    jumpParamsTable[7] = m_AfterAllExchangeCallBack;
+    jumpParamsTable[8] = m_AfterAllExchangeCallBackParam;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_ExchangeType = paramTable[1];
+    m_IsLackOfMoney = paramTable[2];
+    m_NeedExchangeMoneyNum = paramTable[3];
+    m_ExchangeTimes = paramTable[4];
+    m_AfterUseDiamondFunc = paramTable[5];
+    m_AfterUseDiamondFuncData = paramTable[6];
+    m_AfterAllExchangeCallBack = paramTable[7];
+    m_AfterAllExchangeCallBackParam = paramTable[8];
+end

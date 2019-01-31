@@ -1,0 +1,358 @@
+﻿module("BattleRewardPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 本赛季剩余天数
+local m_SeasonLeftDaysLabelStr = "Label";
+-----------------------------------------按钮路径--------------------------------------
+-- 离开按钮
+local m_CloseButtonStr = "Button_Close";
+-- 每日奖励按钮
+local m_EveryDayRewardButtonStr = "Button_EveryDayReward";
+-- 赛季奖励按钮
+local m_SeasonRewardButtonStr = "Button_SeasonReward";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- UIListView组件所在的位置
+local m_EveryDayRewardListViewCompStr = "EveryDayRewardPanel/Grid";
+-- UIListView组件所在的位置
+local m_SeasonRewardListViewCompStr = "SeasonRewardPanel/Grid";
+-- 每日奖励面板
+local m_EveryDayRewardPanelStr = "EveryDayRewardPanel";
+-- 赛季奖励面板
+local m_SeasonRewardPanelStr = "SeasonRewardPanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 按钮激活
+local m_ButtonActiveStr = "/Active";
+-- 按钮未激活
+local m_ButtonDeactiveStr = "/Deactive";
+
+-- 段位图标
+local m_RankIconStr = "Sprite_Rank";
+-- 段位名字
+local m_RankNameStr = "Label_Name";
+-- 段位积分
+local m_RankScoreStr = "Label_Score";
+
+-- 奖励路径
+local m_rewardItemStr = "ItemTable/";
+-- 领取按钮
+local m_ButtonGetStr = "Button_Get";
+-- 未达成
+local m_NotReachLabelStr = "Button_Get/Label_NotReach";
+-- 可领取
+local m_CanGetLabelStr = "Button_Get/Label_Get";
+-- 已领取
+local m_AlreadyGetLabelStr = "Button_Get/Label_AlreadyGet";
+
+-- 第几个
+local m_IdNumStr = "Label_Num";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+local m_EveryDayRewardListViewComp = nil;
+local m_SeasonRewardListViewComp = nil;
+-- 上方选中的状态(1.代表每日奖励，2.代表赛季奖励)
+local m_TopSelectState = 1;
+-- 当前阶位
+local curRank = 1;
+-- 不是无法领取的最小段位
+local getLowestRank = rankNum;
+-----------------------------------一些写死的规定--------------------------------------
+-- 段位文字颜色
+RankLabelColor = 
+{
+    [1] = {Top = "f2f4d0",Bottom = "a69898"};
+    [2] = {Top = "fffff7",Bottom = "a7babe"};
+    [3] = {Top = "fffddb",Bottom = "cbb06f"};
+    [4] = {Top = "ffffff",Bottom = "b2eeff"};
+    [5] = {Top = "ffffff",Bottom = "ffd0c2"};
+    [6] = {Top = "ffffff",Bottom = "d8c0ff"};
+}
+
+-- 赛季奖励底图
+SeasonRewardIcon = 
+{
+    [1] = 8841,[2] = 8842,[3] = 8843,[4] = 8844,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    InitEvent();
+    InitData();
+    InitContent();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+        InitContent();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_BottomIndex = 1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL);
+    m_EveryDayRewardListViewComp = GetComponent(m_panelObject, m_EveryDayRewardListViewCompStr, "UIListView");
+    m_SeasonRewardListViewComp = GetComponent(m_panelObject, m_SeasonRewardListViewCompStr, "UIListView");
+end
+
+function InitEvent()
+    m_EveryDayRewardListViewComp:SetInitCallback(OnEveryDayRewardCloneInit);
+--    m_EveryDayRewardListViewComp:SetClickCallback(OnEveryDayRewardCloneClick);
+    m_SeasonRewardListViewComp:SetInitCallback(OnSeasonRewardCloneInit);
+end
+
+function InitData()
+    m_TopSelectState = 1;
+end
+
+function InitContent()
+    InitTopSelect();
+    InitMiddleContent();
+end
+
+function InitTopSelect()
+    if m_TopSelectState == 1 then
+        SetGameObjectState(m_EveryDayRewardButtonStr..m_ButtonActiveStr,true,m_panelObject);
+        SetGameObjectState(m_EveryDayRewardButtonStr..m_ButtonDeactiveStr,false,m_panelObject);
+        SetGameObjectState(m_SeasonRewardButtonStr..m_ButtonActiveStr,false,m_panelObject);
+        SetGameObjectState(m_SeasonRewardButtonStr..m_ButtonDeactiveStr,true,m_panelObject);
+        SetGameObjectState(m_EveryDayRewardPanelStr,true,m_panelObject);
+        SetGameObjectState(m_SeasonRewardPanelStr,false,m_panelObject);
+    else
+        SetGameObjectState(m_EveryDayRewardButtonStr..m_ButtonActiveStr,false,m_panelObject);
+        SetGameObjectState(m_EveryDayRewardButtonStr..m_ButtonDeactiveStr,true,m_panelObject);
+        SetGameObjectState(m_SeasonRewardButtonStr..m_ButtonActiveStr,true,m_panelObject);
+        SetGameObjectState(m_SeasonRewardButtonStr..m_ButtonDeactiveStr,false,m_panelObject);
+        SetGameObjectState(m_EveryDayRewardPanelStr,false,m_panelObject);
+        SetGameObjectState(m_SeasonRewardPanelStr,true,m_panelObject);
+    end
+end
+
+function InitMiddleContent()
+    if m_TopSelectState == 1 then
+        local seasonScore = BattleFieldManager.SeasonScore;
+        local rankNum = BattleFieldManager.BattleFieldRankNum;
+        local tableData = BattleFieldManager.BattleFieldTableData;
+        local getTable = BattleFieldManager.IsGetBattleRewardDay;
+        curRank = BattleFieldManager.GetCurRank();
+        RefreshLowestRank();
+        
+        m_EveryDayRewardListViewComp:RemoveAll();
+        for Index = rankNum,1,-1 do
+            if tableData[Index] ~= nil then
+                m_EveryDayRewardListViewComp:AddData(tableData[Index]);
+            end
+        end
+    else
+        local tableData = BattleFieldManager.BattleFieldSeasonRewardTableData;
+        m_SeasonRewardListViewComp:RemoveAll();
+        for Index = 1,#tableData do
+            if tableData[Index] ~= nil then
+                m_SeasonRewardListViewComp:AddData(tableData[Index]);
+            end
+        end
+    end
+    SetLabelContent(m_SeasonLeftDaysLabelStr,string_format(CCommonTool.GetTxtData(54669).m_str,BattleFieldManager.SeasonLeftDays),m_panelObject);
+end
+
+function RefreshLowestRank()
+    local rankNum = BattleFieldManager.BattleFieldRankNum;
+    local getTable = BattleFieldManager.IsGetBattleRewardDay;
+    getLowestRank = rankNum;
+    for Index = 1,rankNum do
+        if getTable[Index] ~= BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANNOTGET then
+            getLowestRank = Index;
+            break;
+        end
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_CloseButtonStr,OnCloseClick,m_panelObject);
+    SetGameObjectEvent(m_EveryDayRewardButtonStr,OnEveryDayRewardButtonClick,m_panelObject);
+    SetGameObjectEvent(m_SeasonRewardButtonStr,OnSeasonRewardButtonClick,m_panelObject);
+end
+
+function OnEveryDayRewardCloneInit(listView, cell, data)
+    local rowData = data;
+    local go = cell.gameObject;
+    SetSpriteByAtlasID(m_RankIconStr,rowData.BigPicID,go,true);
+    SetLabelTextByID(m_RankNameStr,rowData.NameID,go);
+    SetLabelGradientColor(RankLabelColor[rowData.Id].Top,RankLabelColor[rowData.Id].Bottom,m_RankNameStr,go);
+    if rowData.Id == BattleFieldManager.BattleFieldRankNum then
+        SetLabelContent(m_RankScoreStr,(BattleFieldManager.BattleFieldTableData[rowData.Id - 1].Score+1).."+",go);
+    elseif rowData.Id == 1 then
+        SetLabelContent(m_RankScoreStr,BattleFieldManager.BattleFieldInitScore.."-"..rowData.Score,go);
+    else
+        SetLabelContent(m_RankScoreStr,(BattleFieldManager.BattleFieldTableData[rowData.Id - 1].Score+1).."-"..rowData.Score,go);
+    end
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rowData.EveryDayReward);
+    if rewardInfo ~= nil then
+        SetGameObjectState(m_rewardItemStr,true,go);
+        local list = rewardInfo:GetAllItem();
+        local count = list.count;
+        local itemData = nil;
+        local path = nil;
+        if count > 3 then
+            error("the rewards item num is more than 3,wrong!!!!!");
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                path = m_rewardItemStr .. i;
+                SetGameObjectState(path, true, go);
+                itemData = list[i - 1];
+                if itemData.ItemDealType == 3 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+                elseif itemData.ItemDealType == 4 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+                if m_itemExcelID ~= nil then
+                    SetItemShowByExcelIDV04(go, path, m_itemExcelID, itemData.ItemNum, false, 11, ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL);
+                    SetItemToolTipsEvent(go, path, ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL, false, m_itemExcelID);
+                end
+            end
+            for i = count + 1, 3 do
+                path = m_rewardItemStr .. i;
+                SetGameObjectState(path, false, go);
+            end
+        end
+    else
+        SetGameObjectState(m_rewardItemStr,false,go);
+    end
+    RepositionUITableComp(m_rewardItemStr,go);
+--    if rowData.Id < getLowestRank then
+--        SetGameObjectState(m_ButtonGetStr,false,go);
+--    else
+--        SetGameObjectState(m_ButtonGetStr,true,go);
+--        if rowData.Id > curRank then
+--            CCommonTool.SetGameObjectGrey(child(go,m_ButtonGetStr).gameObject,true);
+--            SetGameObjectState(m_NotReachLabelStr,true,go);
+--            SetGameObjectState(m_CanGetLabelStr,false,go);
+--            SetGameObjectState(m_AlreadyGetLabelStr,false,go);
+--        elseif BattleFieldManager.IsGetBattleRewardDay[rowData.Id] == BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANGETBUTNOTGET then
+--            CCommonTool.SetGameObjectGrey(child(go,m_ButtonGetStr).gameObject,false);
+--            SetGameObjectState(m_NotReachLabelStr,false,go);
+--            SetGameObjectState(m_CanGetLabelStr,true,go);
+--            SetGameObjectState(m_AlreadyGetLabelStr,false,go);
+--        else
+--            CCommonTool.SetGameObjectGrey(child(go,m_ButtonGetStr).gameObject,true);
+--            SetGameObjectState(m_NotReachLabelStr,false,go);
+--            SetGameObjectState(m_CanGetLabelStr,false,go);
+--            SetGameObjectState(m_AlreadyGetLabelStr,true,go);
+--        end
+--    end
+end
+
+function OnSeasonRewardCloneInit(listView, cell, data)
+    local rowData = data;
+    local go = cell.gameObject;
+    if rowData.Id < 4 then
+        SetSpriteByAtlasID(m_RankIconStr,SeasonRewardIcon[rowData.Id],go);
+    else
+        SetSpriteByAtlasID(m_RankIconStr,SeasonRewardIcon[4],go);
+    end
+    SetLabelContent(m_IdNumStr,rowData.Id,go);
+    if rowData.LowestRank == rowData.HighestRank then
+        SetLabelContent(m_RankNameStr,string_format(CCommonTool.GetTxtData(1129).m_str,rowData.LowestRank),go);
+    else
+        SetLabelContent(m_RankNameStr,string_format(CCommonTool.GetTxtData(54667).m_str,rowData.LowestRank,rowData.HighestRank),go);
+    end
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rowData.SeasonRewardID);
+    if rewardInfo ~= nil then
+        SetGameObjectState(m_rewardItemStr,true,go);
+        local list = rewardInfo:GetAllItem();
+        local count = list.count;
+        local itemData = nil;
+        local path = nil;
+        if count > 4 then
+            error("the rewards item num is more than 4,wrong!!!!!");
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                path = m_rewardItemStr .. i;
+                SetGameObjectState(path, true, go);
+                itemData = list[i - 1];
+                if itemData.ItemDealType == 3 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+                elseif itemData.ItemDealType == 4 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+                if m_itemExcelID ~= nil then
+                    SetItemShowByExcelIDV04(go, path, m_itemExcelID, itemData.ItemNum, false, 11, ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL);
+                    SetItemToolTipsEvent(go, path, ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL, false, m_itemExcelID);
+                end
+            end
+            for i = count + 1, 4 do
+                path = m_rewardItemStr .. i;
+                SetGameObjectState(path, false, go);
+            end
+        end
+    else
+        SetGameObjectState(m_rewardItemStr,false,go);
+    end
+    RepositionUITableComp(m_rewardItemStr,go);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL);
+end
+
+--function OnEveryDayRewardCloneClick(listView, cell, go)
+--    if go.name == m_ButtonGetStr then
+--        local rowData = listView:GetData(cell.dataIndex);
+--        if BattleFieldManager.IsGetBattleRewardDay[rowData.Id] == BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANGETBUTNOTGET then
+--            local buffer = ByteBuffer.New();
+--            buffer:WriteUShort(GMI_CTOS_REQUEST_BATTLEFIELD_GETEVERYDAYREWARD);
+--            buffer:WriteInt(rowData.Id - 1);
+--            G_NetWorkMng:SendMessage(buffer);
+--        else
+--            error("无法领取");
+--        end
+--    end
+--end
+
+function OnEveryDayRewardButtonClick()
+    if m_TopSelectState ~= 1 then
+        m_TopSelectState = 1;
+        InitTopSelect();
+        InitMiddleContent();
+    end
+end
+
+function OnSeasonRewardButtonClick()
+    if m_TopSelectState ~= 2 then
+        m_TopSelectState = 2;
+        InitTopSelect();
+        InitMiddleContent();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_BATTLEREWARDPANEL) == 1 then
+        RefreshLowestRank();
+        m_EveryDayRewardListViewComp:Refresh();
+    end
+end

@@ -1,0 +1,289 @@
+﻿module('GuildWarWeaponAssignmentPanel', package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 减
+local m_MinusButtonPath = "Right/Minus_Button";
+-- 加
+local m_AddButtonPath = "Right/Add_Button";
+-- 输入数量
+local m_NumButtonPath = "Right/Num_Button";
+-- 购买
+local m_BuyButtonPath = "Right/Buy_Button";
+-- 当前购买的数量
+local m_CurNumLabelStr = "Right/Label_CurNum";
+-- 当前消耗数量
+local m_CurCostLabelStr = "Right/Cost/Label_Num";
+-- 当前拥有数量
+local m_CurHaveLabelStr = "Right/Have/Label_Num";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 右侧信息
+local m_RightPath = "Right";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 物品列表路径
+local m_ItemListPath = "ItemPanel/Grid";
+-- 道具的位置
+local m_itemStr = "Item";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 物品列表
+local m_ItemList = nil;
+-- 当前物品数据
+local m_CurItemData = nil;
+-- 中间道具选择的是第几个
+m_middleItemSelect = 1;
+-- 当前购买的数量
+local m_curBuyNums = 1;
+-- 当前能够购买的数量
+local m_canBuyNums = 0;
+-- 当前显示的战具数据
+local m_curWeaponData = nil;
+-- 当前选中的战具index
+local m_curChooseWeapon = 1;
+-- 当前选中的buff卷轴index
+local m_curChooseBuff = 1;
+-- 当前选中的数据
+local m_curChooseData = nil;
+-- 左侧小页签:1:战具 2:buff
+local leftTag = 1;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够钱
+local m_CanBuyColor = "F3F1E4";
+-- 不够钱
+local m_CannotBuyColor = "D83232";
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_ItemList = nil;
+    m_CurItemData = nil;
+    m_middleItemSelect = 1;
+    m_curBuyNums = 1;
+    m_canBuyNums = 0;
+    m_curWeaponData = nil;
+    m_curChooseWeapon = 1;
+    m_curChooseBuff = 1;
+    m_curChooseData = nil;
+    leftTag = 1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+    m_PanelObject = child(m_PanelObject, "Sub_WeaponAssignment").gameObject;
+    m_ItemList = GetComponent(m_PanelObject, m_ItemListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_ItemList:SetInitCallback(OnItemListViewInit);
+    m_ItemList:SetClickCallback(OnItemListViewClick);
+	SetGameObjectEvent(m_MinusButtonPath, OnMinusButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_AddButtonPath, OnAddButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_NumButtonPath, OnNumButtonClick, m_PanelObject);
+	SetGameObjectEvent(m_BuyButtonPath, OnBuyButtonClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local tempData = {};
+    for i,v in pairs(m_curWeaponData) do
+        local weaponData = CCommonTool.GetActivityWarWeaponInfoIndex(v.weaponID);
+        if weaponData == nil then return end
+        if leftTag == 1 then 
+            if weaponData.Type ~= 3 then 
+                table.insert(tempData, v);
+            end
+        elseif leftTag == 2 then
+            if weaponData.Type == 3 then 
+                table.insert(tempData, v);
+            end
+        end
+    end
+    
+    m_ItemList:RemoveAll();
+    for i,v in pairs(tempData) do
+        m_ItemList:AddData(v);
+    end
+    if leftTag == 1 then 
+        m_curChooseData = tempData[m_curChooseWeapon];
+        m_ItemList:LookAt(m_curChooseWeapon, true);
+        InitRightShow(tempData[m_curChooseWeapon]);
+    elseif leftTag == 2 then
+        m_curChooseData = tempData[m_curChooseBuff];
+        m_ItemList:LookAt(m_curChooseBuff, true);
+        InitRightShow(tempData[m_curChooseBuff]);
+    end
+end
+
+-- 初始化右侧信息
+function InitRightShow(data)
+    local weaponData = CCommonTool.GetActivityWarWeaponInfoIndex(data.weaponID);
+    if weaponData == nil then return end
+    SetLabelTextByID(m_RightPath .. "/Label_Name", weaponData.NameID, m_PanelObject);
+    SetLabelPinZhi(m_RightPath .. "/Label_Name", CCommonTool.GetAptitudeIDByExcelID(weaponData.NameID), m_PanelObject);
+    SetLabelTextByID(m_RightPath .. "/Label_Des", weaponData.TextID, m_PanelObject);
+    SetLabelContent(m_RightPath .. "/Limit/Label_LimitNum",(weaponData.Maxnum - data.weaponOwnNum) .."/".. weaponData.Maxnum, m_PanelObject);
+    InitMoneyShow();
+end
+
+function InitMoneyShow()
+    local weaponData = CCommonTool.GetActivityWarWeaponInfoIndex(m_curChooseData.weaponID);
+    if weaponData == nil then return end
+    SetLabelContent(m_CurNumLabelStr,m_curBuyNums,m_PanelObject);
+    m_curNeedCostNum = weaponData.Price * m_curBuyNums;
+    local guildMoney = GuildManager.myGuild.money;
+    if guildMoney >= m_curNeedCostNum then
+        SetLabelColor(m_CurCostLabelStr,m_CanBuyColor,m_PanelObject);
+    else
+        SetLabelColor(m_CurCostLabelStr,m_CannotBuyColor,m_PanelObject);
+    end
+    SetLabelContent(m_CurCostLabelStr,m_curNeedCostNum,m_PanelObject);
+    SetLabelContent(m_CurHaveLabelStr,guildMoney,m_PanelObject);
+end
+
+------------------------------------------事件方法------------------------------------
+-- 物品列表显示
+function OnItemListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local weaponData = CCommonTool.GetActivityWarWeaponInfoIndex(data.weaponID);
+    if weaponData == nil then return end
+    SetItemShowByExcelIDV04(go,m_itemStr,weaponData.Id,1,true,11, ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+    SetItemToolTipsEvent(go, m_itemStr, ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL, false, weaponData.Id);
+    SetLabelContent("Cost/Label", weaponData.Price, go);
+    SetLabelContent("Label_Limit", (weaponData.Maxnum - data.weaponOwnNum) .. "/"..weaponData.Maxnum, go);
+end
+
+-- 物品列表点击
+function OnItemListViewClick(listView, cell, go)
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    local data = listView:GetData(cell.dataIndex);
+    local weaponData = CCommonTool.GetActivityWarWeaponInfoIndex(data.weaponID);
+    if weaponData == nil then return end
+    m_curChooseData = data;
+    InitRightShow(data);
+    if leftTag == 1 then 
+        m_curChooseWeapon = index;
+    elseif leftTag == 2 then
+        m_curChooseBuff = index;
+    end
+
+    m_canBuyNums = weaponData.Maxnum - data.weaponOwnNum;
+end
+
+-- 购买按钮
+function OnBuyButtonClick(gameObject)
+    local guildMoney = GuildManager.myGuild.money;
+    if guildMoney < m_curNeedCostNum then
+        ShowSystemFlowTips(2791);
+    else
+        GuildProtocol.RequestBuyWeapon(m_curChooseData.weaponID, m_curBuyNums);
+    end
+end
+
+-- 减
+function OnMinusButtonClick(gameObject)
+    print("减");
+    if m_curBuyNums > 1 then
+        m_curBuyNums = m_curBuyNums - 1;
+        InitMoneyShow();
+    end
+end
+
+-- 加
+function OnAddButtonClick(gameObject)
+    -- 这里还需要看限购数量
+    print("加");
+    if m_curBuyNums < m_canBuyNums then
+        m_curBuyNums = m_curBuyNums + 1;
+    end
+    InitMoneyShow();
+end
+
+-- 输入数量按钮
+function OnNumButtonClick(gameObject)
+    local data = 
+    {
+        X = 640;
+        Y = -100;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnSmallKeyboardNumClick;
+    SmallKeyboardPanel.ConfirmCallback = OnSmallKeyboardConfirmClick;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+end
+
+--小键盘数字按下回调
+--@param data 数据信息
+function OnSmallKeyboardNumClick(data)
+    if data ~= nil then
+        print("小键盘数字按下",data.Num);
+        m_curBuyNums = data.Num;
+        if m_curBuyNums < 1 then
+            m_curBuyNums = 1;
+        end
+        if m_curBuyNums > m_canBuyNums then
+            m_curBuyNums = m_canBuyNums;
+        end
+        
+        InitMoneyShow();
+    end
+end
+
+--小键盘确定按钮回调
+function OnSmallKeyboardConfirmClick()
+    
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 打开或更新该界面
+function OnShowWeaponAssignment(weaponType, data)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL) then 
+        m_curWeaponData = data;
+        print("m_curWeaponData = ",SerializeTable(m_curWeaponData));
+        if #data > 0 then 
+            if m_CreateSuccess then 
+                InitShow();
+            else
+                Start(); 
+            end
+        else
+            return
+        end
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+    end
+end
+
+-- 小页签切换更新页面数据
+function RefreshShow(tag)
+    leftTag = tag;
+    InitShow();
+end

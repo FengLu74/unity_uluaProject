@@ -1,0 +1,23 @@
+﻿module("FirstChargeManager",package.seeall)
+
+-----------------------------------引用的对象------------------------------------------
+
+--首次充值领取标记（0没充值过1可领2领过了）
+FirstChargeTakeGoldState = 0;
+
+--充值奖励数据信息
+ChargeRewardDatas = {};
+
+
+-----------------------------------外部调用方法------------------------------------------
+--通过提取类型获取对应数据信息
+function GetChargeRewardDatas(receiveType)
+    local dataType = receiveType + 1; 
+    return ChargeRewardDatas[dataType];
+end
+
+-- 清空数据 
+function ClearData()
+    ChargeRewardDatas = {};
+    FirstChargeTakeGoldState = 0;
+end

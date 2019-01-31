@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:background="@drawable/xy_bg_dialog">
+        <RelativeLayout android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/xy_bg_dialog_title">
+            <TextView android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="@string/xy_realname_title"
+                android:textColor="@color/xy_color_c1"
+                android:textSize="20sp"/>
+
+            <ImageButton android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/xy_realname_back"
+                android:src="@drawable/xy_btn_back"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:visibility="gone"
+                android:background="@null"/>
+
+
+            <ImageButton android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/xy_realname_close"
+                android:src="@drawable/xy_btn_close"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="@dimen/xy_common_margin_5dip"
+                android:background="@null"/>
+        </RelativeLayout>
+
+        <ScrollView
+            android:id="@+id/xy_realname_body_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:background="@null">
+            <RelativeLayout android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingTop="28dp"
+                android:paddingBottom="28dp">
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/xy_realname_layout_1"
+                    android:orientation="vertical">
+                    <EditText
+                        android:id="@+id/xy_realname_name"
+                        style="@style/xy_edit_text"
+                        android:layout_width="match_parent"
+                        android:drawableLeft="@drawable/xy_ic_user"
+                        android:drawablePadding="4dp"
+                        android:hint="@string/xy_input_realname"
+                        android:textCursorDrawable="@null"/>
+
+                    <EditText
+                        android:id="@+id/xy_realname_idcard"
+                        style="@style/xy.edit.text.id"
+                        android:layout_width="match_parent"
+                        android:layout_marginTop="8dp"
+                        android:drawableLeft="@drawable/xy_ic_idcard"
+                        android:drawablePadding="4dp"
+                        android:hint="@string/xy_input_idcard"
+                        android:digits="@string/xy_idcard_regex"
+                        android:maxLength="20"
+                        android:textCursorDrawable="@null"/>
+
+                    <Button
+                        android:id="@+id/xy_realname_auth"
+                        style="@style/xy.button.positive"
+                        android:layout_marginTop="30dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                        android:text="@string/xy_realname_auth"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/xy_realname_layout_2"
+                    android:layout_centerInParent="true"
+                    android:paddingBottom="20dp"
+                    android:visibility="invisible"
+                    android:orientation="vertical">
+                    <ImageView android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/xy_realname_success_info"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/xy_realname_layout_3"
+                    android:layout_centerInParent="true"
+                    android:visibility="invisible"
+                    android:orientation="vertical">
+                    <ImageView android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:src="@drawable/xy_realname_defeat_info"/>
+
+                    <Button
+                        android:id="@+id/xy_realname_edit"
+                        style="@style/xy.button.positive"
+                        android:layout_width="200dp"
+                        android:layout_height="@dimen/xy_common_xlarge_btn_height"
+                        android:layout_marginTop="42dp"
+                        android:layout_gravity="center_horizontal"
+                        android:text="@string/xy_realname_edit"/>
+                </LinearLayout>
+            </RelativeLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</RelativeLayout>

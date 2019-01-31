@@ -1,0 +1,519 @@
+﻿module("Main_Interface", package.seeall)
+---------------------------------------label路径---------------------------------------
+-----------------------------------------按钮路径--------------------------------------
+-- 左下打开弹板按钮
+local m_ButtonInterfaceStr = "Interface/Button_Interface";
+-- 关闭弹板按钮
+local m_ButtonInterfaceCloseStr = "Interface/Button_CloseInterface";
+-----------------------------------------Sprite路径------------------------------------
+-- 弹板背景图
+local m_SpriteInterfaceStr = "Interface/Tween/BG/Sprite";
+----------------------------------gameobject所在的路径---------------------------------
+-- tween所在的位置
+local m_tweenPosCompStr = "Interface/Tween";
+
+-- 摇杆所在的位置
+local m_JoystickStr = "Joystick";
+-- 下方内容所在的位置
+local m_MiddleBottomContentStr = "MiddleBottom";
+-- 右侧技能组
+local m_RightBottmSkillStr = "RightBottom/Skill";
+-- 底下按钮的挂点所在的位置
+local m_FirstButtonsBindObjStr = "Interface/Tween/FirstTableBind";
+-- 二级按钮的挂点所在的位置
+local m_SecondButtonsBindObjStr = "Interface/Tween/SecondTableBind";
+
+-- 一级按钮的克隆对象所在的位置
+local m_FirstButtonCloneObjStr = "Interface/Tween/Clone/FirstButton";
+-- 二级的table的克隆对象所在的位置
+local m_SecondTableCloneObjStr = "Interface/Tween/Clone/SecondTable";
+-- 二级按钮的克隆对象所在的位置
+local m_SecondButtonCloneObjStr = "Interface/Tween/Clone/SecondButton";
+
+-- 弹板
+local m_InterFaceStr = "Interface";
+----------------------------------通用的名称路径---------------------------------------
+-- 一级按钮图标所在的位置
+local m_FirstButtonIconStr = "Sprite_Icon";
+-- 一级按钮箭头所在的位置
+local m_FirstButtonArrowStr = "Sprite_Arrow";
+-- 一级按钮文本所在的位置
+local m_FirstButtonNameStr = "Label_Name";
+
+-- 二级按钮文本所在的位置
+local m_SecondButtonNameStr = "Label_Name";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 是否正在播放动画中
+local m_IsPlayingTween = false;
+-- tweenPosition组件
+local m_tweenPosComp = nil;
+-- interface状态
+local m_InterfaceState = false;
+-- 播放动画的gameobject挂点
+local m_tweenObj = nil;
+-- 底下按钮的挂点
+local m_FirstButtonsBindObj = nil;
+-- 二级按钮的挂点
+local m_SecondButtonsBindObj = nil;
+-- 底下按钮的挂点UITable组件
+local m_FirstButtonsBindUITableComp = nil;
+-- 二级按钮的挂点UITable组件
+local m_SecondButtonsBindUITableComp = nil;
+
+-- 一级按钮的克隆对象
+local m_FirstButtonCloneObj = nil;
+-- 二级的table的克隆对象
+local m_SecondTableCloneObj = nil;
+-- 二级按钮的克隆对象
+local m_SecondButtonCloneObj = nil;
+
+-- 当前弹开的二级弹板的索引0代表无
+local m_CurSecondTableIndex = 0;
+-- 当前弹开的二级弹板的开关状态
+local m_CurSecondTableOpenState = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitData();
+    InitObjects();
+    InitEvent();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_IsPlayingTween = false;
+    m_tweenPosComp = nil;
+    m_InterfaceState = false;
+    m_tweenObj = nil;
+    m_CurSecondTableIndex = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化所有按钮的开启状态
+function InitData()
+    for k, v in pairs(G_MainPanel_InterfaceData) do
+        if v.ButtonsData ~= nil then
+            local buttonsDataTable = v.ButtonsData;
+            for k, v in pairs(buttonsDataTable) do
+                if v.OpenCondition == ENUM_MAIN_INTERFACE_OPENCONDI.ALWAYSOPEN then
+                    v.OpenState = true;
+                elseif v.OpenCondition == ENUM_MAIN_INTERFACE_OPENCONDI.NEEDSYSTEMOPEN then
+                    if SystemOpenMng.IsSystemUnlock(v.ConditionData) then
+                        v.OpenState = true;
+                    else
+                        v.OpenState = false;
+                    end
+                elseif v.OpenCondition == ENUM_MAIN_INTERFACE_OPENCONDI.EQUIPOPEN then
+                    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPFORCE) or
+                        SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTARUP) or
+                        SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) or
+                        SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) or
+                        SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPRANDEFF) or
+                        SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPINHERIT) then
+                        v.OpenState = true;
+                    else
+                        v.OpenState = false;
+                    end
+                else
+                    v.OpenState = false;
+                end
+            end
+        end
+    end
+end
+
+-- 初始化obj
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    -- 播放动画的gameobject挂点
+    m_tweenObj = child(m_panelObject, m_tweenPosCompStr).gameObject;
+    -- TweenPosition组件
+    m_tweenPosComp = GetComponent(m_panelObject, m_tweenPosCompStr, "TweenPosition");
+    -- 底下按钮的挂点
+    m_FirstButtonsBindObj = child(m_panelObject, m_FirstButtonsBindObjStr).gameObject;
+    -- 二级按钮的挂点
+    m_SecondButtonsBindObj = child(m_panelObject, m_SecondButtonsBindObjStr).gameObject;
+
+    -- 底下按钮的挂点UITable组件
+    m_FirstButtonsBindUITableComp = GetComponent(m_panelObject, m_FirstButtonsBindObjStr, "UITable");
+    -- 二级按钮的挂点UITable组件
+    m_SecondButtonsBindUITableComp = child(m_panelObject, m_SecondButtonsBindObjStr, "UITable");
+
+    -- 一级按钮的克隆对象
+    m_FirstButtonCloneObj = child(m_panelObject, m_FirstButtonCloneObjStr).gameObject;
+    -- 二级的table的克隆对象
+    m_SecondTableCloneObj = child(m_panelObject, m_SecondTableCloneObjStr).gameObject;
+    -- 二级按钮的克隆对象
+    m_SecondButtonCloneObj = child(m_panelObject, m_SecondButtonCloneObjStr).gameObject;
+
+    for Index = 1, #G_MainPanel_InterfaceData do
+        local firstButtonObj = newobject(m_FirstButtonCloneObj);
+        firstButtonObj.name = "FirstButton" .. Index;
+        firstButtonObj.transform.parent = m_FirstButtonsBindObj.transform;
+        firstButtonObj.transform.localScale = Vector3.one;
+        G_MainPanel_InterfaceData[Index].FirstButtonObj = firstButtonObj;
+        local buttonsData = G_MainPanel_InterfaceData[Index].ButtonsData;
+        SetGameObjectEvent("", OnFirstButtonClick, firstButtonObj);
+    end
+    for Index = 1, #G_MainPanel_InterfaceData do
+        local secondTableObj = newobject(m_SecondTableCloneObj);
+        local xPos = G_MainPanel_InterfaceData[Index].FirstButtonObj.transform.localPosition.x;
+        local yPos = 0;
+        secondTableObj.name = "SecondTable" .. Index;
+        secondTableObj.transform.parent = m_SecondButtonsBindObj.transform;
+        secondTableObj.transform.localScale = Vector3.one;
+        G_MainPanel_InterfaceData[Index].SecondTableObj = secondTableObj;
+        secondTableObj:SetActive(true);
+        local buttonsData = G_MainPanel_InterfaceData[Index].ButtonsData;
+        for k, v in pairs(buttonsData) do
+            local secondButtonObj = newobject(m_SecondButtonCloneObj);
+            secondButtonObj.name = "SecondButton" .. k;
+            secondButtonObj.transform.parent = secondTableObj.transform;
+            secondButtonObj.transform.localScale = Vector3.one;
+            v.SecondButtonObj = secondButtonObj;
+            secondButtonObj:SetActive(v.OpenState);
+            SetGameObjectEvent("", OnSecondButtonClick, secondButtonObj);
+        end
+    end
+end
+
+-- 初始化事件
+function InitEvent()
+    CCommonTool.TweenPositionOriginalOnFinishEvent(m_tweenObj, TweenPositionOnFinished, 1);
+end
+
+-- 动画播放完成的事件回调
+function TweenPositionOnFinished()
+    m_IsPlayingTween = false;
+    m_InterfaceState = not m_InterfaceState;
+    if m_InterfaceState == false then
+        SetGameObjectState(m_ButtonInterfaceStr, true, m_panelObject);
+        SetGameObjectState(m_JoystickStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleBottomContentStr, true, m_panelObject);
+        SetGameObjectState(m_RightBottmSkillStr, true, m_panelObject);
+
+        SetGameObjectState(m_ButtonInterfaceCloseStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_ButtonInterfaceCloseStr, true, m_panelObject);
+    end
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitTweenShow();
+    InitButtonsShow();
+end
+
+-- 初始化动画显示
+function InitTweenShow()
+    m_IsPlayingTween = false;
+    m_tweenPosComp.enabled = false;
+    if m_InterfaceState then
+        m_tweenPosComp.transform.localPosition = Vector3.New(0, 314, 0);
+        SetGameObjectState(m_ButtonInterfaceStr, false, m_panelObject);
+        SetGameObjectState(m_JoystickStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleBottomContentStr, false, m_panelObject);
+        SetGameObjectState(m_RightBottmSkillStr, false, m_panelObject);
+        SetGameObjectState(m_ButtonInterfaceCloseStr, true, m_panelObject);
+    else
+        -- 判断是不是Iphone10的分辨率
+        if Constants.ISIos10Resolution == true then
+            m_tweenPosComp.transform.localPosition = Vector3.New(0, -25, 0);
+        else
+            m_tweenPosComp.transform.localPosition = Vector3.zero;
+        end
+        SetGameObjectState(m_ButtonInterfaceStr, true, m_panelObject);
+        SetGameObjectState(m_JoystickStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleBottomContentStr, true, m_panelObject);
+        SetGameObjectState(m_RightBottmSkillStr, true, m_panelObject);
+        SetGameObjectState(m_ButtonInterfaceCloseStr, false, m_panelObject);
+    end
+    -- 判断是不是Iphone10的分辨率
+    if Constants.ISIos10Resolution == true then
+        SetSpriteHeight(m_InterFaceStr, 193, m_panelObject);
+        -- 背景图片的高
+        SetSpriteHeight(m_SpriteInterfaceStr, 325, m_panelObject);
+        -- 设置背景图片的位置
+        SetGameObjectPos(m_SpriteInterfaceStr, Vector3.New(0, 11, 0), m_panelObject);
+        -- 设置一级按钮的位置
+        SetGameObjectPos(m_FirstButtonsBindObjStr, Vector3.New(-930, -290, 0), m_panelObject);
+        -- 设置二级按钮的位置
+        SetGameObjectPos(m_SecondButtonsBindObjStr, Vector3.New(-950, -4, 0), m_panelObject);
+    end
+
+end
+
+-- 初始化按钮的显示
+function InitButtonsShow()
+    for k, v in pairs(G_MainPanel_InterfaceData) do
+        SetSpriteByAtlasID(m_FirstButtonIconStr, v.IconID, v.FirstButtonObj);
+        SetLabelTextByID(m_FirstButtonNameStr, v.TxtID, v.FirstButtonObj);
+        local showButtonCount = 0;
+        for m, n in pairs(v.ButtonsData) do
+            if n.OpenState then
+                showButtonCount = showButtonCount + 1;
+            end
+        end
+        v.FirstButtonObj:SetActive(true);
+        if showButtonCount == 0 then
+            -- v.FirstButtonObj:SetActive(false);
+            CCommonTool.SetGameObjectGreyWithValue(v.FirstButtonObj,true,0.5,0.2,0.5,0.2);
+            SetGameObjectState(m_FirstButtonArrowStr, false, v.FirstButtonObj);
+        else
+            -- v.FirstButtonObj:SetActive(true);
+            CCommonTool.SetGameObjectGreyWithValue(v.FirstButtonObj,false,0.5,0.2,0.5,0.2);
+            if showButtonCount == 1 then
+                SetGameObjectState(m_FirstButtonArrowStr, false, v.FirstButtonObj);
+            else
+                SetGameObjectState(m_FirstButtonArrowStr, true, v.FirstButtonObj);
+            end
+        end
+    end
+    m_FirstButtonsBindUITableComp:Reposition();
+    for k, v in pairs(G_MainPanel_InterfaceData) do
+        local buttonsData = v.ButtonsData;
+        local secondTableObj = v.SecondTableObj;
+        local xPos = v.FirstButtonObj.transform.localPosition.x;
+        local yPos = -4;
+        secondTableObj.transform.localPosition = Vector3.New(xPos, yPos, 0);
+        secondTableObj.transform.localScale = Vector3.one;
+        for m, n in pairs(buttonsData) do
+            local secondButtonObj = n.SecondButtonObj;
+            SetLabelTextByID(m_SecondButtonNameStr, n.TxtID, secondButtonObj);
+            secondButtonObj:SetActive(n.OpenState);
+        end
+        local tableComp = GetComponent(secondTableObj, "", "UITable");
+        tableComp:Reposition();
+        secondTableObj.transform.localScale = Vector3.New(1, 0, 1);
+    end
+
+    for k, v in pairs(G_MainPanel_InterfaceData) do
+        if k == m_CurSecondTableIndex then
+            v.SecondTableObj.transform.localScale = Vector3.New(1, 1, 1);
+        else
+            v.SecondTableObj.transform.localScale = Vector3.New(1, 0, 1);
+        end
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonInterfaceStr, OnInterfaceButtonClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonInterfaceCloseStr, OnInterfaceCloseButtonClick, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击左下摊开面板的按钮
+function OnInterfaceButtonClick()
+    if m_IsPlayingTween then
+        return;
+    end
+    m_IsPlayingTween = true;
+    if m_InterfaceState == false then
+        SetGameObjectState(m_ButtonInterfaceStr, false, m_panelObject);
+        SetGameObjectState(m_JoystickStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleBottomContentStr, false, m_panelObject);
+        SetGameObjectState(m_RightBottmSkillStr, false, m_panelObject);
+        m_tweenPosComp:PlayForward();
+    end
+end
+
+-- 关闭面板的按钮
+function OnInterfaceCloseButtonClick()
+    if m_IsPlayingTween then
+        return;
+    end
+    m_IsPlayingTween = true;
+    SetGameObjectState(m_ButtonInterfaceCloseStr, false, m_panelObject);
+    m_tweenPosComp:PlayReverse();
+    if m_CurSecondTableIndex ~= 0 then
+        local tweenCloseComp = GetComponent(G_MainPanel_InterfaceData[m_CurSecondTableIndex].SecondTableObj, "", "TweenScale");
+        tweenCloseComp:PlayReverse();
+        m_CurSecondTableIndex = 0;
+        m_CurSecondTableOpenState = false;
+    end
+end
+
+-- 一级按钮点击事件
+function OnFirstButtonClick(e)
+    for k, v in pairs(G_MainPanel_InterfaceData) do
+        if v.FirstButtonObj == e then
+            local buttonData = v.ButtonsData;
+            local secondButtonShowCount = 0;
+            local eventID = 0;
+            for m, n in pairs(buttonData) do
+                if n.OpenState then
+                    if secondButtonShowCount == 0 then
+                        eventID = n.EventID;
+                    end
+                    secondButtonShowCount = secondButtonShowCount + 1;
+                end
+            end
+            if secondButtonShowCount == 0 then
+                if v.UnlockType == ENUM_MAIN_INTERFACE_UNLOCKTYPE.ALWAYSOPEN then
+                    -- do nothing
+                elseif v.UnlockType == ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDLEVEL then
+                    ShowSystemFlowTips(2680,nil,{v.UnlockPara1});
+                elseif v.UnlockType == ENUM_MAIN_INTERFACE_UNLOCKTYPE.NEEDMISSION then
+                    ShowSystemFlowTips(2681,nil,{G_MissionMng:GetMissionName(v.UnlockPara1)});
+                end
+                return;
+            elseif secondButtonShowCount == 1 then
+                EventExcute(eventID);
+            else
+                local tweenComp = GetComponent(v.SecondTableObj, "", "TweenScale");
+                if k == m_CurSecondTableIndex then
+                    if m_CurSecondTableOpenState then
+                        tweenComp:PlayReverse();
+                        m_CurSecondTableIndex = 0;
+                    else
+                        tweenComp:PlayForward();
+                        m_CurSecondTableIndex = k;
+                    end
+                    m_CurSecondTableOpenState = not m_CurSecondTableOpenState;
+                else
+                    if m_CurSecondTableIndex ~= 0 and m_CurSecondTableOpenState then
+                        local tweenCloseComp = GetComponent(G_MainPanel_InterfaceData[m_CurSecondTableIndex].SecondTableObj, "", "TweenScale");
+                        tweenCloseComp:PlayReverse();
+                    end
+                    tweenComp:PlayForward();
+                    m_CurSecondTableOpenState = true;
+                    m_CurSecondTableIndex = k;
+                end
+            end
+        end
+    end
+end
+
+-- 二级按钮点击事件
+function OnSecondButtonClick(e)
+    for k, v in pairs(G_MainPanel_InterfaceData) do
+        local buttonData = v.ButtonsData;
+        for m, n in pairs(buttonData) do
+            if n.SecondButtonObj == e then
+                EventExcute(n.EventID);
+                return;
+            end
+        end
+    end
+end
+
+function EventExcute(eventID)
+    if eventID == 1 then
+        createPanel(ENUMPANELID.ENUM_PANEL_ROLE);
+        ReportManager.RequestReportPanel(10283);
+    elseif eventID == 2 then
+        createPanel(ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+        ReportManager.RequestReportPanel(10288);
+    elseif eventID == 3 then
+        createPanel(ENUMPANELID.ENUM_PANEL_PETPANEL);
+        ReportManager.RequestReportPanel(10289);
+    elseif eventID == 4 then
+        createPanel(ENUMPANELID.ENUM_PANAEL_FASHION);
+        ReportManager.RequestReportPanel(10284);
+    elseif eventID == 5 then
+        createPanel(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+        ReportManager.RequestReportPanel(10284);
+    elseif eventID == 6 then
+        createPanel(ENUMPANELID.ENUM_PANEL_LIFESKILL);
+    elseif eventID == 7 then
+        createPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        ReportManager.RequestReportPanel(10285);
+    elseif eventID == 8 then
+        OnGuildClick();
+        ReportManager.RequestReportPanel(10292);
+    elseif eventID == 9 then
+        OnCampClick();
+        ReportManager.RequestReportPanel(10291);
+    elseif eventID == 10 then
+        createPanel(ENUMPANELID.ENUM_PANEL_SETPANEL);
+        ReportManager.RequestReportPanel(10294);
+    elseif eventID == 11 then
+        createPanel(ENUMPANELID.ENUM_PANEL_FRIENDSPANEL);
+        ReportManager.RequestReportPanel(10293);
+    elseif eventID == 12 then
+        createPanel(ENUMPANELID.ENUM_PANEL_ACHIEVE);
+        ReportManager.RequestReportPanel(10285);
+    elseif eventID == 13 then
+        createPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+        ReportManager.RequestReportPanel(10290);
+    -- 神翼
+    elseif eventID == 14 then
+        createPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL);
+        ReportManager.RequestReportPanel(10333);
+    -- 神将
+   elseif eventID == 15 then
+        createPanel(ENUMPANELID.ENUM_PANEL_GODSHAPESHIFT);
+    -- 宝珠
+    elseif eventID == 16 then
+        createPanel(ENUMPANELID.ENUM_PANEL_JEWEPANEL);
+    -- 神行
+    elseif eventID == 17 then
+        createPanel(ENUMPANELID.ENUM_SINHAENGPANEL);
+    elseif eventID == 18 then
+        createPanel(ENUMPANELID.ENUM_MatrixPANEL);
+    end
+
+end
+
+-- 点击公会
+function OnGuildClick()
+    local nGlobalId = G_UserInfo.GlobalDBID;
+    local joinCampType = G_UserInfo.RoleAttribute.JoinCampType;
+    if joinCampType == 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_GUILD_NO_CAMP);
+    else
+        local mType = GuildManager.guildId > 0;
+        if mType == false then
+            createPanel(ENUMPANELID.ENUM_PANEL_GUILD_CREATE_PANEL);
+        elseif mType == true then
+            createPanel(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+        end
+    end
+end
+
+-- 点击阵营
+function OnCampClick()
+--    local m_joinCampType = G_UserInfo.RoleAttribute.JoinCampType;
+--    if m_joinCampType ~= nil and tonumber(m_joinCampType) == ENUM_CAMP_TYPE.ENUM_UNIT_TYPE_NULL then
+--        JoinCampPanel.OnGetRecommendCamp()
+--    else
+--        CampProtocol.RequestCampInfo();
+--    end
+    local zuoqi= FirstChargeJobidMatchModleidTable.Get(1).ModelId;
+    ShowOffPanel.ShowGetModel(zuoqi, "11111111111111");
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 系统解锁刷新按钮显示
+function InitButtonsShowOut()
+    InitData();
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitButtonsShow();
+    end
+end
+
+function IsInterfaceOpen()
+    if m_IsPlayingTween then
+        return false;
+    else
+        return m_InterfaceState;
+    end
+end

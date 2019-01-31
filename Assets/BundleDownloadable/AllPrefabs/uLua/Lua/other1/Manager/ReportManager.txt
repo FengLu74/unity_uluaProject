@@ -1,0 +1,145 @@
+﻿module("ReportManager", package.seeall)
+
+-------------------------日志上报操作模块公共属性条目---------------------------------------------------
+
+-- 渠道id
+local m_GcommonChannelId = nil;
+ -- 得到android_original
+ local m_GStartAndroidOrg = nil;
+  -- 得到 idfa_original 
+local m_GStartIdfaOrg = nil;
+  -- 本次启动产生的标准UUID
+local m_CurStartUuid = nil;
+ --得到 iemi_original 
+local m_GStartIemiOrg = nil;
+--------------------------日志上报启动阶段属性条目--------------------------------------------------------
+
+
+--------------------------供外部调用的公共方法-------------------------------------------------------------
+--固定值：TrackEvent
+local function GetGic()
+    return ReportIC;
+end
+-- 固定值 ：Client
+local function GetGcat()
+    return ReportCat;
+end
+-- 得到 阶段 act 
+local function GetGact(types)
+    error("types--->"..types);
+    if types == ReportType.GameStart then
+        return ReportActStart;
+    elseif type == ReportType.GamePanel then
+        return ReportActPanel;
+    end
+end
+--渠道id
+local function GetGchannelId()
+    if m_GcommonChannelId==nil then
+        m_GcommonChannelId = CSDKManager.GetInt("getMasterId", "");
+    end
+    --error("getMasterId----->"..CSDKManager.GetInt("getMasterId", ""));
+    return m_GcommonChannelId;
+end
+--应用id
+local function GetGAppId()
+    return (Platform == ios and ReportAppIdIOS) or ReportAppIdAndroid ;
+end
+--------------------------启动阶段方法-------------------------------------------------------------
+
+--得到10位unix时间戳
+local function GetGStarTimeStamp()
+   -- local logns = G_TimerMng:GetCurrentClientMilliSeconds();
+   -- return logns;
+   return os.time();
+end
+
+-- 发起www get请求
+local function ReportApplicationDatas(table)
+    if Constants.branch == "cn" then 
+        --error("CSDKManager.sdkName == >>"..CSDKManager.sdkName);
+        GameReportManager.AddReportData(ReportAppRequestUrl,table);
+    end
+   
+end
+---得到上报系统，游戏启动阶段对象
+--[[function RequestReportStart(s_step)
+    if Constants.branch == "cn" and CSDKManager.sdkName =="xiyou" then 
+        --error("CSDKManager.sdkName == >>"..CSDKManager.sdkName);
+        GameReportManager.AddReportData(s_step);
+    end
+end
+]]
+--------------------------点击玩家面板阶段方法-------------------------------------------------------------
+-- 得到服务器id
+local function GetGamePanelServerId()
+    if STOCTables.LoginReturn~=nil then
+        return STOCTables.LoginReturn.m_wZoneID ;
+    end
+    return "";
+end
+-- 得到当前服务器id
+local function GetGamePanelCserverId()
+    if STOCTables.LoginReturn~=nil then
+        return STOCTables.LoginReturn.m_wZoneID ;
+    end
+    return "";
+end
+local function GetGStartUserId()
+    if STOCTables.LoginReturn~=nil then
+        return STOCTables.LoginReturn.m_dwSDKUserID;
+    end 
+    return "";
+ end
+-- 得到角色id
+local function GetGamePanelRoleId()
+    if G_UserInfo.RoleAttribute~=nil then
+        return G_UserInfo.RoleAttribute.GlobalDBID;
+    end
+    return "";
+end
+-- 得到角色名称
+local function GetGamePanelRoleName()
+    if G_UserInfo.RoleAttribute~=nil then
+        return G_UserInfo.RoleAttribute.Name;
+    end
+    return "";
+end
+-- 游戏ip地址
+local function GetGStartClientIp()
+     return Util.GetClientIpAddress();
+ end
+-- 得到log_id
+local function GetGamePanelLogId()
+    local content = GetGchannelId()..GetGAppId()..GetGamePanelServerId().."RolePanelOP"..GetGStarTimeStamp()..GetGStartUserId()..GetGamePanelRoleId();
+    return Util.md5(content);
+end
+-----------------游戏阶段--------------------
+function RequestReportPanel(buttonid)
+    if Platform ~= "android" or Platform ~= "ios" then
+        return ;
+    end
+    local tables = {};
+    tables = 
+    {
+        ic = GetGic(),
+        cat = GetGcat(),
+        act = ReportActPanel,
+        channel_id = GetGchannelId(),
+        app_id = GetGAppId(),
+        server_id = GetGamePanelServerId(),
+        cserver_id = GetGamePanelCserverId(),
+        user_id = GetGStartUserId(),
+        role_id = GetGamePanelRoleId(),
+        role_name = GetGamePanelRoleName(),
+        client_ip = GetGStartClientIp(),
+        event_time = GetGStarTimeStamp(),
+        log_id = GetGamePanelLogId(),
+        button_id = buttonid,
+    };
+    --error("role_name--urlEncodeStr-->"..Util.GetUrlEncodeStr(Get_GamePanel_role_name()));
+    ReportApplicationDatas(tables);
+end
+
+
+

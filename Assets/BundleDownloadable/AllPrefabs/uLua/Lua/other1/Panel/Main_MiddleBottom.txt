@@ -1,0 +1,1055 @@
+﻿module("Main_MiddleBottom", package.seeall)
+-- 当前所在面板名字
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- 经验百分比文本
+local m_ExperiencePercent = "MiddleBottom/PhoneAndExpInfo/Exp/Label_Percent";
+-- 经验值文本
+local m_ExperienceNum = "MiddleBottom/PhoneAndExpInfo/Exp/Label_Num";
+-- 当前时间文本
+local m_CurTimeLabelStr = "MiddleBottom/PhoneAndExpInfo/Label_Time";
+-- 当前频道名称
+local m_ChannelNameStr = "MiddleBottom/ChannelButton/Label";
+
+-- 对方等级所在的位置
+local m_otherLevelStr = "MiddleBottom/TargetHud/Content/Label_Level";
+-- 对方名字所在的位置
+local m_otherNameStr = "MiddleBottom/TargetHud/Content/Label_Name";
+-----------------------------------------按钮路径--------------------------------------
+-- 背包按钮的路径
+local m_buttonBagStr = "MiddleBottom/BagButton";
+-- 聊天框
+local m_UIChatButtonStr = "MiddleBottom/UIChat/Content/Widget";
+-- 公会频道录音按钮
+local m_GuildRecordStr = "MiddleBottom/Buttons/GuildButton";
+-- 队伍频道录音按钮
+local m_TeamRecordStr = "MiddleBottom/Buttons/TeamButton";
+-- 世界频道录音按钮
+local m_WorldRecordStr = "MiddleBottom/Buttons/WorldButton";
+-- 录音按钮容器
+local m_RecordButtonsStr = "MiddleBottom/Buttons";
+-- 录音按钮
+local m_ButtonChannelStr = "MiddleBottom/ChannelButton";
+-- 组队频道
+local m_ButtonChatTeamStr = "MiddleBottom/Button_ChatTeam";
+-- 公会频道
+local m_ButtonChatGuildStr = "MiddleBottom/Button_ChatGuild";
+-- 好友频道 
+local m_ButtonChatFriendStr = "MiddleBottom/Button_ChatFriend";
+
+-- 坐骑按钮
+local m_RideButtonStr = "MiddleBottom/Button_Ride";
+-- 飞行按钮
+local m_FlyButtonStr = "MiddleBottom/Button_Wing";
+
+-- 宠物捕捉的按钮
+local m_PetCaptureStr = "MiddleBottom/Button_CapturePet";
+
+-- 点击对方hud信息的按钮
+local m_OtherHudButtonStr = "MiddleBottom/TargetHud";
+
+-- 采集按钮
+local m_CollectButtonStr = "MiddleBottom/CollectSkill";
+
+-- 下载按钮
+local m_DownloadButtonStr = "MiddleBottom/Button_Download";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 网络连接状态的图片
+local m_NetworkStatePingValue = "MiddleBottom/PhoneAndExpInfo/NetworkState/Label_Ping";
+-- 网络连接WIFI的图片
+local m_NetworkStateWifi = "MiddleBottom/PhoneAndExpInfo/NetworkState/LocalArea";
+-- 网络连接运营商的图片
+local m_NetworkStateCarrier = "MiddleBottom/PhoneAndExpInfo/NetworkState/CarrierData";
+-- 网络连接无的图片
+local m_NetworkStateNotReach = "MiddleBottom/PhoneAndExpInfo/NetworkState/NotReachable";
+
+-- 宠物捕捉图标
+local m_CapturePetIconStr = "MiddleBottom/Button_CapturePet/Sprite_Icon";
+-- 宠物捕捉数量
+local m_CapturePetNumStr = "MiddleBottom/Button_CapturePet/Label_Num";
+-- 捕捉加号
+local m_CaptureAddStr = "MiddleBottom/Button_CapturePet/Sprite_Add";
+
+-- 对方头像所在的位置
+local m_OtherAvatarStr = "MiddleBottom/TargetHud/Content/Sprite_Avatar";
+-- 对方阵营模式所在的位置
+local m_OtherPKModeStr = "MiddleBottom/TargetHud/Content/Sprite_PKModel";
+----------------------------------gameobject所在的路径---------------------------------
+-- 经验条的对象
+local m_Experience = "MiddleBottom/PhoneAndExpInfo/Exp/Bar_1";
+-- 2倍经验条
+local m_Experience1 = "MiddleBottom/PhoneAndExpInfo/Exp/Bar_2";
+-- 3倍经验条
+local m_Experience2 = "MiddleBottom/PhoneAndExpInfo/Exp/Bar_3";
+-- 电池电量UISlider组件
+local m_UISliderBatteryCompStr = "MiddleBottom/PhoneAndExpInfo/Battery";
+-- UIChat下的listView所在的位置
+local m_chatListViewStr = "MiddleBottom/UIChat/Content/Grid";
+-- 宠物捕捉读条进度
+local m_petLoadProStr = "MiddleBottom/Button_CapturePet/LoadBar";
+
+-- 对方头像所在位置
+local m_othersHud = "MiddleBottom/TargetHud";
+-- 对方血条的UIProgressBarComp所在的位置
+local m_otherHpProBarCompStr = "MiddleBottom/TargetHud/Content/Sprite_Hp";
+-- 对方血条的UILabel所在的位置
+local m_otherHpLabelCompStr = "MiddleBottom/TargetHud/Content/Label_CurHp";
+-- 对方蓝条的UIProgressBarComp所在的位置
+local m_otherMpProBarCompStr = "MiddleBottom/TargetHud/Content/Sprite_Mp";
+
+-- 背包满特效所在位置
+local m_BagFullEffectStr = "MiddleBottom/BagButton/Sprite_Icon/Bag_Full_Effect";
+
+-- 进阶按钮
+local m_CultivateBtnStr = "MiddleBottom/Button_Cultivate";
+-- 进阶材料不足的跳转按钮
+local m_CultivateGoBtnStr = "MiddleBottom/Button_CultivateGo";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 录音组件路径
+local m_RecordStr = "MiddleBottom/Record";
+-- 按钮按钮组缓动组件
+local m_RecordTweenScaleStr = "MiddleBottom/Buttons";
+-- 对方头像透明动画
+local m_HudTweenAlphaStr = "MiddleBottom/TargetHud";
+-- 对方头像位置动画
+local m_HudTweenPosistionStr = "MiddleBottom/TargetHud";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 经验条的滑动组件
+local m_expSliderComp = nil;
+-- 2倍经验条滑动组件
+local m_expSliderComp1 = nil;
+-- 3倍经验条滑动组件
+local m_expSliderComp2 = nil;
+-- 电池电量UISlider组件
+local m_UISliderBatteryComp = nil;
+-- 聊天内容
+local m_chatMessages = { };
+-- 录音按钮对象
+local m_RecordButton = nil;
+-- 录音按钮组件
+local m_RecordOperate = nil;
+-- 录音按钮缓动组件
+local m_RecordTweenScale = nil;
+-- 录音按钮Grid
+local m_RecordButtonGrid = nil;
+-- 频道是否展开
+local m_ChannelIsOpen = false;
+
+-- 对方血条的UIProgressBarComp
+local m_otherHpProBarComp = nil;
+-- 对方血条的UILabel组件
+local m_otherHpLabelComp = nil;
+-- 对方蓝条的UIProgressBarComp
+local m_otherMpProBarComp = nil;
+-- 对方头像透明度动画组件
+local m_HudTweenAlpha = nil;
+-- 对方头像位置动画动画组件
+local m_HudTweenPosistion = nil;
+
+local m_OtherPlayerData = nil;
+
+-- 是否正在捕捉宠物
+m_IsCollectingPet = false;
+
+-- 下载管理器
+local m_DownloadManager = nil;
+-- 界面关闭时记录下载状态
+--local m_IsLoadingWhenDisable = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvent();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+    AutoSelectRecordChannel();
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    CCommonTool.AddOrRemoveOnPassMinuteEvent(RefreshCurTime, false);
+    --m_IsLoadingWhenDisable = m_DownloadManager:IsLoading();
+    --m_DownloadManager:StopDownload();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_expSliderComp = nil;
+    m_expSliderComp1 = nil;
+    m_expSliderComp2 = nil;
+    m_UISliderBatteryComp = nil;
+    m_RecordButton = nil;
+    m_RecordOperate = nil;
+    m_RecordTweenScale = nil;
+    m_RecordButtonGrid = nil;
+    m_ChannelIsOpen = false;
+    m_IsCollectingPet = false;
+    m_otherHpProBarComp = nil;
+    m_otherHpLabelComp = nil;
+    m_otherMpProBarComp = nil;
+    m_OtherPlayerData = nil;
+    m_HudTweenAlpha = nil;
+    m_HudTweenPosistion = nil;
+    m_DownloadManager = nil
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_expSliderComp = GetComponent(m_panelObject, m_Experience, "UISlider");
+    m_expSliderComp1 = GetComponent(m_panelObject, m_Experience1, "UISlider");
+    m_expSliderComp2 = GetComponent(m_panelObject, m_Experience2, "UISlider");
+    m_UISliderBatteryComp = GetComponent(m_panelObject, m_UISliderBatteryCompStr, "UISlider");
+    m_chatListView = GetComponent(m_panelObject, m_chatListViewStr, "UIListView");
+    m_RecordOperate = GetComponent(m_panelObject, m_RecordStr, "UIRecordOperate");
+    m_RecordOperate.gameObject:SetActive(false);
+    --m_RecordOperate.callback = OnVoiceCallback;
+    m_RecordButton = child(m_panelObject, m_ButtonChannelStr).gameObject;
+    m_RecordTweenScale = GetComponent(m_panelObject, m_RecordTweenScaleStr, "TweenScale");
+    m_RecordButtonGrid = GetComponent(m_panelObject, m_RecordButtonsStr, "UIGrid");
+
+    m_otherHpProBarComp = GetComponent(m_panelObject, m_otherHpProBarCompStr, "UIProgressBar");
+    m_otherHpLabelComp = GetComponent(m_panelObject, m_otherHpLabelCompStr, "UILabel");
+    m_otherMpProBarComp = GetComponent(m_panelObject, m_otherMpProBarCompStr, "UIProgressBar");
+
+    m_HudTweenAlpha = GetComponent(m_panelObject, m_HudTweenAlphaStr, "TweenAlpha");
+    m_HudTweenPosistion = GetComponent(m_panelObject, m_HudTweenPosistionStr, "TweenPosition");
+
+    m_DownloadManager = CWebBundleManager.Instance;
+end
+function InitEvent()
+    m_chatListView:SetInitCallback(OnChatListViewInit);
+end
+function OnEquipWingButton()
+	createPanel(ENUMPANELID.ENUM_PANEL_WINGPANEL);
+end
+-- 初始化显示信息
+function InitShow()
+    -- 初始化经验
+    InitExp();
+    -- 初始化当前时间
+    InitTime();
+    -- 初始化电量
+    InitBatteryLevel();
+    -- 初始化ping的显示
+    InitPingShow();
+    -- 初始化网络状态
+    InitNetworkState(0);
+    -- 初始化乘骑按钮
+    InitRideButtonShow();
+    -- 初始化飞行按钮
+    InitFlyButtonShow();
+    -- 初始化聊天内容
+    InitChatListView();
+    -- 初始化宠物捕捉内容
+    InitPetCaptureShow();
+    -- 初始化聊天未读消息数量
+    InitUnreadMessage();
+    -- 初始化其他玩家的信息
+    -- ShowTargetHud();
+    InitOthersHud(m_OtherPlayerData);
+    -- 初始化背包满的特效
+    InitBagFullEffect();
+    -- 初始化下载
+    InitDownload();
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    -- 背包
+    SetGameObjectEvent(m_buttonBagStr, OnBagClick, m_panelObject);
+    -- UI聊天框
+    SetGameObjectEvent(m_UIChatButtonStr, OnUIChatClick, m_panelObject);
+    -- 公会频道按钮
+    SetGameObjectEvent(m_GuildRecordStr, OnGuildChannelClick, m_panelObject);
+    -- 组队频道按钮
+    SetGameObjectEvent(m_TeamRecordStr, OnTeamChannelClick, m_panelObject);
+    -- 世界频道按钮
+    SetGameObjectEvent(m_WorldRecordStr, OnWorldChannelClick, m_panelObject);
+    -- 频道按下事件
+    SetGameObjectEvent(m_ButtonChannelStr, OnChannelPress, m_panelObject, Button_Delegate.onPress);
+    -- 捕捉宠物按钮
+    SetGameObjectEvent(m_PetCaptureStr, OnPetCaptureButtonStr, m_panelObject);
+    -- 组队频道未读消息按钮
+    SetGameObjectEvent(m_ButtonChatTeamStr, OnChatTeamClick, m_panelObject);
+    -- 公会频道未读消息按钮
+    SetGameObjectEvent(m_ButtonChatGuildStr, OnChatGuildClick, m_panelObject);
+    -- 好友频道未读消息按钮
+    SetGameObjectEvent(m_ButtonChatFriendStr, OnChatFriendClick, m_panelObject);
+    -- 显示其他玩家信息按钮
+    SetGameObjectEvent(m_OtherHudButtonStr, OnInteractWithOtherClick, m_panelObject);
+    -- 进阶跳转按钮
+    SetGameObjectEvent(m_CultivateBtnStr, OnCultivateBtnClick, m_panelObject);
+    -- 进阶升级按钮
+    SetGameObjectEvent(m_CultivateGoBtnStr, OnCultivateGoBtnClick, m_panelObject);
+    -- 下载按钮
+    SetGameObjectEvent(m_DownloadButtonStr, OnDownloadBtnClick, m_panelObject);
+end
+
+local hudPressFrame = 0;
+-- 初始化对方的Hud
+function InitOthersHud(data)
+    if data == nil then
+        HideOthersHud();
+        return;
+    end
+    m_OtherPlayerData = data;
+    SetLabelContent(m_otherNameStr, data.name, m_panelObject);
+    SetLabelContent(m_otherLevelStr, "Lv." .. data.level, m_panelObject);
+    local roleData = CCommonTool.GetPartnerInfo(data.proId);
+    if roleData == nil then return end
+    SetSpriteByAtlasID(m_OtherAvatarStr, roleData.HeadRes, m_panelObject, true);
+
+    hudPressFrame = Time.frameCount;
+    if UICamera.onPress == nil then
+        UICamera.onPress = OnUIPress;
+    else
+        UICamera.onPress = LuaDelegateUtil.Remove(UICamera.onPress, OnUIPress);
+        UICamera.onPress = LuaDelegateUtil.Combine(UICamera.onPress, OnUIPress);
+    end
+    
+    SetGameObjectState(m_othersHud, true, m_panelObject);
+    m_HudTweenAlpha:ResetToBeginning();
+    m_HudTweenPosistion:ResetToBeginning();
+    m_HudTweenAlpha:PlayForward();
+    m_HudTweenPosistion:PlayForward();
+end
+
+-- 初始化背包满的特效
+function InitBagFullEffect()
+    if G_BagMng.EmptyCellCount <= BagFullEffectTriggerEmptyCell then
+        SetGameObjectState(m_BagFullEffectStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_BagFullEffectStr,false,m_panelObject);
+    end
+end
+
+function OnUIPress(go, pressed)
+    if go == child(m_panelObject, m_OtherHudButtonStr).gameObject then
+        return;
+    end
+
+    if pressed then
+        if Time.frameCount == hudPressFrame then
+            return;
+        end
+        HideOthersHud();
+    end
+end
+
+-- 隐藏对方的Hud
+function HideOthersHud()
+    m_OtherPlayerData = nil;
+    SetGameObjectState(m_othersHud, false, m_panelObject);
+    UICamera.onPress = LuaDelegateUtil.Remove(UICamera.onPress, OnUIPress);
+end
+
+-- 初始化经验条显示
+function InitExp()
+    local percent = G_UserInfo.RoleAttribute:GetCurExpPercent();
+    local expNum = G_UserInfo.RoleAttribute:GetCurExp();
+    SetLabelContent(m_ExperienceNum, expNum, m_panelObject);
+    SetLabelContent(m_ExperiencePercent, string.format("%0.2f", percent * 100) .. "%", m_panelObject);
+
+    if percent <= 1 then
+        m_expSliderComp.value = percent;
+    elseif percent <= 2 then
+        m_expSliderComp1.value = percent - 1;
+    else
+        m_expSliderComp2.value = percent - 2;
+    end
+    m_expSliderComp.gameObject:SetActive(percent <= 1);
+    m_expSliderComp1.gameObject:SetActive(percent > 1 and percent <= 2);
+    m_expSliderComp2.gameObject:SetActive(percent > 2 and percent <= 3);
+
+    -- 初始化进阶按钮
+    SetPlayerCultivateInfo();
+end
+
+function SetPlayerCultivateInfo()
+    local canUp = CultivateChangePanel.IsCanCultivateLevelUp(true);
+    if canUp == true then
+        SetGameObjectState(m_CultivateBtnStr, true, m_panelObject);
+        SetGameObjectState(m_CultivateGoBtnStr, false, m_panelObject);
+    else
+        local btnVisible = false;
+        local percent = G_UserInfo.RoleAttribute:GetCurExpPercent();
+        if percent > 1 then
+            local playerRoleDate = CCommonTool.GetRoleDateInfo(G_UserInfo.RoleAttribute.ProID);
+            if playerRoleDate ~= nil then
+                local PlayerCultivateID = playerRoleDate.CultivateId + G_UserInfo.RoleAttribute.CultivateLv - 1;
+                local cultivateInfo = CCommonTool.GetRoleCultivateInfo(PlayerCultivateID);
+                if cultivateInfo ~= nil then
+                    local roleLevel = G_UserInfo.RoleAttribute.Level;
+                    local m_maxCultivateLevel = 11;
+                    local cultivateLevel = cultivateInfo.attribute_lv;
+                    if cultivateLevel < m_maxCultivateLevel then
+                        local nextExpInfo = CCommonTool.GetEXPIndexInfo(roleLevel + 1);
+                        if nextExpInfo ~= nil then
+                            if nextExpInfo.NeedQualityLevel > cultivateLevel then
+                                btnVisible = true;
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        SetGameObjectState(m_CultivateBtnStr, false, m_panelObject);
+        SetGameObjectState(m_CultivateGoBtnStr, btnVisible, m_panelObject);
+    end
+end
+
+-- 初始化时间显示
+function InitTime()
+    SetLabelContent(m_CurTimeLabelStr, CalculateTime(G_TimerMng:GetCurrentTime()), m_panelObject);
+    CCommonTool.AddOrRemoveOnPassMinuteEvent(RefreshCurTime, true);
+end
+
+-- 初始化电量
+function InitBatteryLevel()
+    if m_UISliderBatteryComp ~= nil then
+        m_UISliderBatteryComp.value = CCommonTool.GetBatteryLevel();
+    end
+end
+
+-- 刷新当前时间
+function RefreshCurTime(hour, minute)
+    local strValue;
+    if hour < 10 then
+        strValue = "0" .. hour .. ":";
+    else
+        strValue = hour .. ":";
+    end
+    if minute < 10 then
+        strValue = strValue .. "0" .. minute;
+    else
+        strValue = strValue .. minute;
+    end
+    SetLabelContent(m_CurTimeLabelStr, strValue, m_panelObject);
+    if m_UISliderBatteryComp ~= nil then
+        m_UISliderBatteryComp.value = CCommonTool.GetBatteryLevel();
+    end
+end
+
+-- 计算当前时间的显示文本
+function CalculateTime(time)
+    local strValue;
+    if time.Hour < 10 then
+        strValue = "0" .. time.Hour .. ":";
+    else
+        strValue = time.Hour .. ":";
+    end
+    if time.Minute < 10 then
+        strValue = strValue .. "0" .. time.Minute;
+    else
+        strValue = strValue .. time.Minute;
+    end
+    return strValue;
+end
+
+-- 初始化ping的显示
+function InitPingShow()
+    if Constants.IsShowPingValue then
+        SetGameObjectState(m_NetworkStatePingValue, true, m_panelObject);
+        SetLabelContent(m_NetworkStatePingValue,"PING 30",m_panelObject);
+    else
+        SetGameObjectState(m_NetworkStatePingValue, false, m_panelObject);
+    end
+end
+
+-- 初始化网络状态
+function InitNetworkState(pingValue)
+    local networkState = CCommonTool.GetNetworkState();
+    if m_panelObject == nil then
+        return;
+    end
+    if networkState == 0 then
+        SetGameObjectState(m_NetworkStateWifi, false, m_panelObject);
+        SetGameObjectState(m_NetworkStateCarrier, false, m_panelObject);
+        SetGameObjectState(m_NetworkStateNotReach, true, m_panelObject);
+        SetLabelContent(m_NetworkStatePingValue,"PING ∞",m_panelObject);
+    elseif networkState == 1 then
+        SetGameObjectState(m_NetworkStateWifi, false, m_panelObject);
+        SetGameObjectState(m_NetworkStateCarrier, true, m_panelObject);
+        SetGameObjectState(m_NetworkStateNotReach, false, m_panelObject);
+        if pingValue <= 100 then
+            SetSpriteFillAmountTwo(m_NetworkStateCarrier,1,m_panelObject);
+        elseif pingValue <= 200 then
+            SetSpriteFillAmountTwo(m_NetworkStateCarrier,2/3,m_panelObject);
+        else
+            SetSpriteFillAmountTwo(m_NetworkStateCarrier,1/3,m_panelObject);
+        end
+    elseif networkState == 2 then
+        SetGameObjectState(m_NetworkStateWifi, true, m_panelObject);
+        SetGameObjectState(m_NetworkStateCarrier, false, m_panelObject);
+        SetGameObjectState(m_NetworkStateNotReach, false, m_panelObject);
+        if pingValue <= 100 then
+            SetGameObjectState(m_NetworkStateWifi.."/1", true, m_panelObject);
+            SetGameObjectState(m_NetworkStateWifi.."/2", false, m_panelObject);
+            SetGameObjectState(m_NetworkStateWifi.."/3", false, m_panelObject);
+        elseif pingValue <= 200 then
+            SetGameObjectState(m_NetworkStateWifi.."/1", false, m_panelObject);
+            SetGameObjectState(m_NetworkStateWifi.."/2", true, m_panelObject);
+            SetGameObjectState(m_NetworkStateWifi.."/3", false, m_panelObject);
+        else
+            SetGameObjectState(m_NetworkStateWifi.."/1", false, m_panelObject);
+            SetGameObjectState(m_NetworkStateWifi.."/2", false, m_panelObject);
+            SetGameObjectState(m_NetworkStateWifi.."/3", true, m_panelObject);
+        end
+    end
+end
+
+-- 初始化乘骑按钮
+function InitRideButtonShow()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RIDE) and not BattleFieldManager.IsInBattleFieldScene() and not EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_RideButtonStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_RideButtonStr, false, m_panelObject);
+    end
+end
+
+-- 初始化飞行按钮
+function InitFlyButtonShow()
+    if not G_UserInfo.RoleAttribute.IsChangeModelState then
+        if G_UserInfo.RoleAttribute.Level >= G_OpenWingLevel then
+            SetGameObjectState(m_FlyButtonStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_FlyButtonStr, false, m_panelObject);
+        end
+    else
+        SetGameObjectState(m_FlyButtonStr, false, m_panelObject);
+    end
+end
+
+-- 主界面聊天列表初始化
+function OnChatListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local msgType = data.msgType;
+    if msgType == 2 then
+        -- 系统消息
+        local emojiComp = GetComponent(go, "Label-Content", "EmojiComponent");
+        emojiComp.text = data.content;
+    elseif msgType == 1 then
+        -- 语音消息
+        SetLabelContent("Label-Content", data.content, go);
+        SetGameObjectState("Label-Content", #data.content > 1, go);
+        local voice = child(go, "Voice").gameObject;
+        SetLabelContent("Label1", math.ceil(data.seconds / 1000) .. "\"", voice);
+        SetLabelContent("Label-Name", data.header, go);
+    else
+        -- 普通消息
+        local emojiComp = GetComponent(go, "Label-Content", "EmojiComponent");
+        emojiComp.text = data.content;
+    end
+end
+
+-- 显示在主界面的聊天内容
+function InitMainChatMessage(channelId, msgData)
+    -- 聊天频道与内容
+    local channelName = ChatManager.GetChannelNameWithColor(channelId, true);
+    local content = nil;
+    local header = nil;
+    if msgData.msgType == 2 then
+        -- 系统消息
+        content = msgData.wcsChat;
+        if not content then error("system message is nil:"); return; end
+        content = channelName .. " [ffffd3]" .. content .. "[-]";
+    elseif msgData.msgType == 1 then
+        -- 语音消息
+        content = msgData.wcsChat;
+        header = channelName .. " [ffffd3]" .. msgData.wSpkName .. ": ";
+    elseif msgData.msgType == 0 then
+        -- 文字消息
+        content = msgData.wSpkName .. ": " .. msgData.wcsChat;
+        content = channelName .. " [ffffd3]" .. content .. "[-]";
+    elseif msgData.msgType == 10 then
+        -- 物品展示消息
+        content = msgData.wSpkName .. ": " .. msgData.wcsChat;
+        content = channelName .. " [ffffd3]" .. content .. "[-]";
+    end
+    table.insert(m_chatMessages, { content = content, header = header, msgType = msgData.msgType, seconds = (msgData.voiceSecend or 0) });
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 then
+        return;
+    end
+    InitChatListView();
+end
+
+-- 初始化聊天的信息
+function InitChatListView()
+    if #m_chatMessages > 5 then
+        table.remove(m_chatMessages, 1);
+    end
+    local count = #m_chatMessages;
+    m_chatListView:RemoveAll();
+    for i = 1, count do
+        local data = m_chatMessages[i];
+        m_chatListView:AddData(data, data.msgType == 1 and "voice" or "");
+    end
+    m_chatListView:LookAt(count - 1, false);
+end
+
+-- 初始化宠物捕捉信息
+function InitPetCaptureShow()
+    if G_UserInfo.CapturePetList.Count <= 0 then
+        SetGameObjectState(m_PetCaptureStr, false, m_panelObject);
+    else
+        SetSpriteFillAmount(m_petLoadProStr, 0, m_panelObject);
+        SetGameObjectState(m_PetCaptureStr, true, m_panelObject);
+        local petCaptureId = G_UserInfo.CapturePetList[0].MonsterAttribute.CapturePetID;
+        local petCaptureInfo = CCommonTool.GetPetCaptureInfo(petCaptureId);
+        if petCaptureInfo == nil then
+            return;
+        end
+        local needItemID = petCaptureInfo.CaptureNeedExcelID;
+        SetSpriteByAtlasID(m_CapturePetIconStr, CCommonTool.GetImageIDByExcelID(needItemID), m_panelObject);
+        local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemID);
+        local tradableInfo = CCommonTool.GetTradableInfo(needItemID);
+        if tradableInfo ~= nil then
+            local bindItemExcelID = tradableInfo.UntradableItemID;
+            itemNum = itemNum + G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bindItemExcelID);
+        end
+        SetLabelContent(m_CapturePetNumStr, itemNum, m_panelObject);
+        local iconObj = child(m_panelObject, m_CapturePetIconStr).gameObject;
+        if itemNum <= 0 then
+            CCommonTool.SetGameObjectGrey(iconObj, true);
+            SetGameObjectState(m_CaptureAddStr,true,m_panelObject);
+        else
+            CCommonTool.SetGameObjectGrey(iconObj, false);
+            SetGameObjectState(m_CaptureAddStr,false,m_panelObject);
+        end
+    end
+end
+
+-- 初始化主界面聊天未读消息数量
+function InitUnreadMessage()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 then
+        return;
+    end
+    local paths = { m_ButtonChatTeamStr, m_ButtonChatGuildStr, m_ButtonChatFriendStr };
+    local channelIds = { CHAT_CHANNEL_ID.CHAT_JOIN_ID, CHAT_CHANNEL_ID.CHAT_GUILD_ID, CHAT_CHANNEL_ID.CHAT_ALONE_ID };
+    local go = m_panelObject;
+    for i, path in ipairs(paths) do
+        local channelId = channelIds[i];
+        local unreadCount = ChatManager.GetUnreadMessageCount(channelId);
+        if unreadCount > 0 then
+            SetGameObjectState(path, true, go);
+            SetLabelContent(path .. "/Sprite_RedHint/Num", unreadCount > 99 and "99" or unreadCount, go);
+            SetGameObjectState(path .. "/Sprite_RedHint/More", unreadCount > 99, go);
+        else
+            SetGameObjectState(path, false, go);
+        end
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+
+-- 点击对方头像Hud的事件
+function OnInteractWithOtherClick()
+    if m_OtherPlayerData ~= nil then
+        local data = m_OtherPlayerData;
+        ParameterToMessageTextBox.OpenOtherButtonListPanel(
+        data.globalId, data.name, data.level, data.proId, data.guildId);
+    end
+    HideOthersHud();
+end
+
+-- 背包按钮
+function OnBagClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_BAGPANEL);
+    ReportManager.RequestReportPanel(10276);
+end
+
+-- 打开聊天界面
+function OnUIChatClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_CHAT);
+    ReportManager.RequestReportPanel(10277);
+end
+
+-- 公会频道按钮点击事件
+function OnGuildChannelClick(go)
+    if ChatManager.IsOpenedGuildChannel(true) then
+        -- 切换到公会频道
+        ChangeRecordChannel(CHAT_CHANNEL_ID.CHAT_GUILD_ID);
+    end
+    TweenChannelButtons();
+end
+
+-- 组队频道按钮点击事件
+function OnTeamChannelClick(go)
+    if ChatManager.IsOpenedTeamChannel(true) then
+        -- 切换到组队频道
+        ChangeRecordChannel(CHAT_CHANNEL_ID.CHAT_JOIN_ID);
+    end
+    TweenChannelButtons();
+end
+
+-- 世界频道按钮点击事件
+function OnWorldChannelClick(go)
+    ChangeRecordChannel(CHAT_CHANNEL_ID.CHAT_WORLD_ID);
+    TweenChannelButtons();
+end
+
+
+-- 自动选择频道按钮
+function AutoSelectRecordChannel()
+    if not m_bCreateSuccess then
+        return;
+    end
+    if ChatManager.IsOpenedTeamChannel(false) then
+        ChangeRecordChannel(CHAT_CHANNEL_ID.CHAT_JOIN_ID);
+    elseif ChatManager.IsOpenedGuildChannel(false) then
+        ChangeRecordChannel(CHAT_CHANNEL_ID.CHAT_GUILD_ID);
+    else
+        ChangeRecordChannel(CHAT_CHANNEL_ID.CHAT_WORLD_ID);
+    end
+end
+
+-- 聊天录音频道改变时, 设置当前频道名称并向录音组件重新注册事件
+function ChangeRecordChannel(channelId)
+    m_RecordOperate:RegisterButton(m_RecordButton, channelId);
+    local str = "";
+    local channelName = ChatManager.GetChannelName(channelId);
+    if channelName then
+        str = str .. channelName;
+    end
+    SetLabelContent(m_ChannelNameStr, string_format(CCommonTool.GetTxtData(1061).m_str, str), m_panelObject);
+    SetGameObjectState(m_GuildRecordStr, channelId ~= CHAT_CHANNEL_ID.CHAT_GUILD_ID, m_panelObject);
+    SetGameObjectState(m_TeamRecordStr, channelId ~= CHAT_CHANNEL_ID.CHAT_JOIN_ID, m_panelObject);
+    SetGameObjectState(m_WorldRecordStr, channelId ~= CHAT_CHANNEL_ID.CHAT_WORLD_ID, m_panelObject);
+    m_RecordButtonGrid:Reposition();
+end
+
+-- 录音按钮按下时间, 处理触发录间还是点击事件
+local channelPressTime = 0;
+function OnChannelPress(go, pressed)
+    local time = UnityEngine.Time.unscaledTime;
+    if pressed then
+        channelPressTime = time;
+    else
+        if time - channelPressTime < 0.4 then
+            TweenChannelButtons();
+        end
+    end
+    -- SwapChannelButtons();
+end
+
+-- 播放录音按钮组的缓动效果
+function TweenChannelButtons()
+    if m_ChannelIsOpen then
+        m_RecordTweenScale:PlayReverse();
+        m_ChannelIsOpen = false;
+    else
+        m_RecordTweenScale:PlayForward();
+        m_ChannelIsOpen = true;
+    end
+
+end
+
+--[[
+-- 语音聊天回调方法
+function OnVoiceCallback(recordComp, voicedata)
+end
+]]
+
+-- 宠物捕捉按钮
+function OnPetCaptureButtonStr()
+    if m_IsCollectingPet then
+        ShowSystemFlowTips(7834);
+        return;
+    end
+    local pos = G_BagMng:GetPetPanelNoUsePos();
+    if pos == -1 then
+        if G_BagMng:GetPanelNoUsePos(ENUM_UI_PANEL.UI_PANEL_ITEM_BEGIN) == -1 then
+            ShowSystemFlowTips(7835);
+            return;
+        end
+    end
+    local agentMonster = G_UserInfo.CapturePetList[0];
+    if agentMonster == nil then
+        return;
+    end
+    local petCaptureId = agentMonster.MonsterAttribute.CapturePetID;
+    local petCaptureInfo = CCommonTool.GetPetCaptureInfo(petCaptureId);
+    if petCaptureInfo == nil then
+        return;
+    end
+    local needItemID = petCaptureInfo.CaptureNeedExcelID;
+    local itemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemID);
+    local tradableInfo = CCommonTool.GetTradableInfo(needItemID);
+    if tradableInfo ~= nil then
+        local bindItemExcelID = tradableInfo.UntradableItemID;
+        itemNum = itemNum + G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bindItemExcelID);
+    end
+    if itemNum <= 0 then
+        if needItemID>0 and CCommonTool.GetQuickToBuyByExcelID(needItemID)~=nil then            
+            MaterialExchangePanel.ShowPanel(needItemID,ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL);  
+            return;
+        end   
+        GetWayPanel.Show(needItemID,ENUMPANELID.ENUM_PANEL_MAIN);
+--        local nameID = CCommonTool.GetNameIDByExcelID(needItemID);
+--        ShowSystemFlowTips(7864, nil, { CCommonTool.GetTxtData(nameID).m_str });
+        return;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_PET) then
+        ShowSystemFlowTips(9067);
+        return;
+    end
+    local nCrid = agentMonster.BaseAttribute.CRID;
+    local m_fPosX = agentMonster.Position.x;
+    local m_fPosZ = agentMonster.Position.z;
+    local m_fDir = 0;
+    G_NetWorkMng:SendTouchMsgToServer(nCrid, m_fPosX, m_fPosZ, m_fDir);
+end
+
+-- 组队频道未读消息按钮
+function OnChatTeamClick()
+    ChatPanel.OpenThisPanelByTag(CHAT_CHANNEL_ID.CHAT_JOIN_ID, ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 公会频道未读消息按钮
+function OnChatGuildClick()
+    ChatPanel.OpenThisPanelByTag(CHAT_CHANNEL_ID.CHAT_GUILD_ID, ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 好友频道未读消息按钮
+function OnChatFriendClick()
+    local data = ChatManager.GetChannelRecords(CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+    FriendsRecentPanel.selectId = data[#data].dwSpkGlobleID;
+    FriendsPanel.OpenThisPanelByTag(1);
+end
+
+-- 进阶升级按钮
+function OnCultivateBtnClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL);
+end
+
+-- 进阶跳转按钮
+function OnCultivateGoBtnClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_CULTIVATECHANGEPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--[[
+-- 显示目标Hud信息
+function ShowHudOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        ShowTargetHud();
+    end
+end
+]]
+
+-- 显示其它玩家头像信息
+-- @parma globalId 玩家GlobalDBID
+-- @param name 玩家名称
+-- @param level 玩家等级
+-- @param proId 职业ID
+-- @param guildId 公会ID
+function ShowHudOut(globalId, name, level, proId, guildId)
+    log("显示其它玩家头像信息" .. tostring(name));
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        local data = { globalId = globalId, name = name, level = level, proId = proId, guildId = guildId };
+        InitOthersHud(data);
+    end
+end
+
+-- 隐藏其它玩家头像信息
+function HideHudOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        HideOthersHud();
+    end
+end
+
+-- 更新目标蓝量
+function OnUpdateTargetMp(baseAttribute, isBossHud)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if not isBossHud then
+            -- UpdateOthersMp(baseAttribute);
+        end
+    end
+end
+-- 更新目标血量
+function OnUpdateTargetHp(baseAttribute)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        -- UpdateOthersHp(baseAttribute);
+    end
+end
+
+-- 更新目标等级
+function UpdateTargetLevel(Level)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if m_OtherPlayerData ~= nil then
+            m_OtherPlayerData.level = level;
+            InitOthersHud(m_OtherPlayerData);
+        end
+    end
+end
+
+-- 更新其他玩家的战斗模式
+function OnUpdateOtherPlayerPKMode(mType)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        for k, v in pairs(G_PKModePicID) do
+            if v.Mode == mType then
+                SetSpriteByAtlasID(m_OtherPKModeStr, v.PicID, m_panelObject, true);
+                break;
+            end
+        end
+    end
+end
+-- 初始化经验条信息
+function InitExpOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitExp();
+    end
+end
+
+-- 显示聊天消息
+function ShowLiaoTianData(channelId, msgData)
+    InitMainChatMessage(channelId, msgData);
+    ShowSceneChatMessage(channelId, msgData);
+    InitUnreadMessage();
+end
+
+-- 显示在角色头顶的聊天内容
+function ShowSceneChatMessage(channelId, msgData)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 then
+        return;
+    end
+    if channelId == 2 and msgData.msgType ~= 1 then
+        local m_AgentPlayers = G_SceneMng.AgentManager:GetAgentPlayers();
+        for i = 1, m_AgentPlayers.Count do
+            local m_currentPlayer = m_AgentPlayers[i - 1];
+            if m_currentPlayer ~= nil and m_currentPlayer.RoleAttribute.GlobalDBID == msgData.dwSpkGlobleID then
+                m_currentPlayer.HUD:SetLiaoTianPromptState(true);
+                local m_byteStr = CCommonTool.GetStringByteLength(msgData.wcsChat);
+                m_currentPlayer.HUD:SetLiaoTianPromptContent(msgData.wcsChat);
+                AddTimerEvent("OnHideLiaoTianPrompt" .. msgData.dwSpkGlobleID, 5, OnWaitingSeverCallBackOver, ETimeShowType.TypeNumberThree, OnWaitingSeverCallBack, m_currentPlayer.HUD);
+            end
+        end
+    end
+end
+
+-- 等待服务器的每秒的回调
+function OnWaitingSeverCallBack()
+end
+
+-- 5s过后等待服务器消息的回调
+function OnWaitingSeverCallBackOver(hud)
+    if hud ~= nil then
+        hud:SetLiaoTianPromptContent("");
+        hud:SetLiaoTianPromptState(false);
+    end
+end
+
+-- 初始化乘骑按钮
+function InitRideButtonShowOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitRideButtonShow();
+    end
+end
+
+-- 初始化飞行按钮显示
+function InitFlyButtonShowOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitFlyButtonShow();
+    end
+end
+
+function RefreshCapturePetInfo()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPetCaptureShow();
+    end
+end
+
+function UpdatePetCollectBar(value)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetSpriteFillAmount(m_petLoadProStr, value, m_panelObject);
+    end
+end
+
+function InterruptPetcaptureBar()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetSpriteFillAmount(m_petLoadProStr, 0, m_panelObject);
+        InitPetCaptureShow();
+    end
+    m_IsCollectingPet = false;
+end
+
+-- 更新主界面聊天未读消息数量
+function UpdateUnreadMessage()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitUnreadMessage();
+    end
+end
+
+-- 下线清空聊天记录
+function ClearChatRecord()
+    m_chatMessages = { };
+end
+
+-- 关闭采集按钮
+function ClosCollterButton()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        SetGameObjectState(m_CollectButtonStr, false, m_panelObject);
+    end
+end
+
+-- 显示背包满的特效
+function ShowBagFullEffectOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitBagFullEffect();
+    end
+end
+
+-- 刷新ping显示
+function InitPingShowOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitPingShow();
+    end
+end
+
+-- 检测玩家进阶状态
+function InitPlayerCultivate()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitExp();
+    end
+end
+
+
+-----------------------------------------------下载相关逻辑-----------------------------------------------
+-- 初始化下载
+function InitDownload()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        if m_DownloadManager == nil then
+            return;
+        end
+        -- 下载是否完成
+        if m_DownloadManager:IsComplete() == true then
+            SetGameObjectState(m_DownloadButtonStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_DownloadButtonStr, true, m_panelObject);
+            --if m_IsLoadingWhenDisable == true then
+            --    m_DownloadManager:StartDownload();
+            --end
+        end
+    end
+end
+
+-- 下载按钮点击事件
+function OnDownloadBtnClick()
+    WebDownloadPanel.Show();
+end

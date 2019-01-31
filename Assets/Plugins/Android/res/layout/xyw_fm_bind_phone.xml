@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/xyw_fm_phone_number_et"
+        style="@style/xy.edit.text.phone"
+        android:layout_width="match_parent"
+        android:layout_marginTop="5dp"
+        android:drawablePadding="4dp"
+        android:drawableLeft="@drawable/xyw_iphone_icon"
+        android:imeOptions="actionDone"/>
+
+    <LinearLayout
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditText
+            android:id="@+id/xyw_fm_phone_code_et"
+            style="@style/xy.edit.text.captcha"
+            android:layout_weight="2"
+            android:layout_width="0dip"
+            android:drawableLeft="@drawable/xy_ic_sms"
+            android:drawablePadding="4dp"
+            android:textSize="15sp"
+            android:hint="验证码" />
+
+        <Button
+            android:id="@+id/xyw_fm_phone_getcode_bt"
+            style="@style/xy.button.border"
+            android:layout_width="0dip"
+            android:layout_weight="1"
+            android:textSize="15sp"
+            android:layout_marginLeft="@dimen/xy_common_margin_5dip"
+            android:layout_gravity="center_horizontal|bottom"
+            android:text="获取验证码"
+            android:layout_height="40dip" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/xyw_fm_phone_bind_bt"
+        style="@style/xy.button.positive"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="15dp"
+        android:text="@string/xy_account_bind_bind"
+        android:layout_marginBottom="15dp" />
+</LinearLayout>

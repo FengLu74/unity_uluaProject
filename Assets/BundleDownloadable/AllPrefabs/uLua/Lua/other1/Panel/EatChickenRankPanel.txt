@@ -1,0 +1,172 @@
+﻿module('EatChickenRankPanel', package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 我的排名
+local m_RankOrderStr = "Label_RankNum";
+-- 我的击杀
+local m_KillNumStr = "Label_KillNum";
+-- 我的积分
+local m_ScoreNumStr = "Label_ScoreNum";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClose = "Button_Close";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- UIListView组件所在的位置
+local m_UIListViewCompStr = "RecordPanel/Grid";
+----------------------------------通用的名称路径---------------------------------------
+-- 玩家名称
+local m_PlayerNameStr = "Label_Name";
+-- 玩家等级
+local m_PlayerLevelStr = "Label_Level";
+-- 玩家战斗力
+local m_PlayerFightValueStr = "Label_FightValue";
+-- 玩家击杀
+local m_PlayerKillStr = "Label_Kill";
+-- 玩家分数
+local m_PlayerScoreStr = "Label_Score";
+-- 玩家存活
+local m_PlayerLiveStr = "State/Label_Live";
+-- 玩家死亡
+local m_PlayerDeadStr = "State/Label_Dead";
+-- 玩家排行
+local m_PlayerRankStr = "Label_Rank";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- UIListView组件
+local m_UIListViewComp = nil;
+-- Timer
+local m_SendRequestRankTimer = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    StartTimer();
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    Timer.Instance:StopTimer(m_SendRequestRankTimer);
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function StartTimer()
+    m_SendRequestRankTimer = Timer.Instance:AddTimer(3, -1, RequestRank);
+    RequestRank();
+end
+
+function RequestRank()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASK_EAT_CHICKEN_SCENE_ALL_PLAYER_INFO);
+    buffer:WriteInt(EatChickenManager.nVersion);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EATCHICKENRANKPANEL);
+    m_UIListViewComp = GetComponent(m_PanelObject, m_UIListViewCompStr, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_UIListViewComp:SetInitCallback(OnCloneInit);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local rankTable = EatChickenManager.RankData;
+    m_UIListViewComp:RemoveAll();
+    for Index = 1,#rankTable do
+        m_UIListViewComp:AddData(Index);
+    end
+    m_UIListViewComp:LookAt(-1,false);
+    InitSelfData();
+end
+
+-- 初始化
+function OnCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local rankData = EatChickenManager.RankData[data];
+    if rankData == nil then
+        return;
+    end
+    if rankData.RankOrder <= 0 then
+        SetLabelContent(m_PlayerRankStr,"-",go);
+        SetGameObjectState(m_PlayerLiveStr,true,go);
+        SetGameObjectState(m_PlayerDeadStr,false,go);
+    else
+        SetLabelContent(m_PlayerRankStr,rankData.RankOrder,go);
+        SetGameObjectState(m_PlayerLiveStr,false,go);
+        SetGameObjectState(m_PlayerDeadStr,true,go);
+    end
+    SetLabelContent(m_PlayerNameStr,rankData.Name,go);
+    SetLabelContent(m_PlayerLevelStr,rankData.Level,go);
+    SetLabelContent(m_PlayerFightValueStr,rankData.FightValue,go);
+    SetLabelContent(m_PlayerKillStr,rankData.KillNum,go);
+    SetLabelContent(m_PlayerScoreStr,rankData.Score,go);
+end
+
+function InitSelfData()
+    local rankData = EatChickenManager.RankData;
+    local isFindSelf = false;
+    for k,v in ipairs(rankData) do
+        if v.GlobalID == G_UserInfo.GlobalDBID then
+            if v.RankOrder <= 0 then
+                SetLabelContent(m_RankOrderStr,"-",m_PanelObject);
+            else
+                SetLabelContent(m_RankOrderStr,v.RankOrder,m_PanelObject);
+            end
+            SetLabelContent(m_KillNumStr,v.KillNum,m_PanelObject);
+            SetLabelContent(m_ScoreNumStr,v.Score,m_PanelObject);
+            isFindSelf = true;
+            break;
+        end
+    end
+    if not isFindSelf then
+        SetLabelContent(m_RankOrderStr,"-",m_PanelObject);
+        SetLabelContent(m_KillNumStr,"-",m_PanelObject);
+        SetLabelContent(m_ScoreNumStr,"-",m_PanelObject);
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonClose,OnCloseClick,m_PanelObject);
+end
+------------------------------------------事件方法------------------------------------
+-- 关闭界面事件
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_EATCHICKENRANKPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function UpdatePanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EATCHICKENRANKPANEL) == 1 then
+        local startIndex = m_UIListViewComp.dataCount;
+        local endIndex = #EatChickenManager.RankData;
+        for Index = startIndex + 1,endIndex do
+            m_UIListViewComp:AddData(Index);
+        end
+        m_UIListViewComp:Refresh();
+        InitSelfData();
+    end
+end

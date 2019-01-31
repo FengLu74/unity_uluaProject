@@ -1,0 +1,545 @@
+﻿module("SelectServer", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 右侧服务器维护状态
+local m_defendState = "ServerDefendState";
+-- 右侧服务器流畅状态
+local m_fluencyState = "ServerFluencyState";
+-- 右侧服务器爆满状态
+local m_busyState = "ServerBusyState";
+-- 右侧服务器拥挤状态
+local m_crowdState = "ServerCrowdState";
+-- 右侧服务器是新服务器
+local m_newServer = "Select-State2";
+-- 右侧服务器是推荐服务器
+local m_recommendServer = "Select-State1";
+-- 服务器名字
+-- 区号
+local m_serverName1 = "Label-Name1";
+-- 名字
+local m_serverName2 = "Label-Name2";
+
+-- 左侧战区文本
+local m_leftZoneName = "/Label";
+-- 选中状态
+local m_selectState = "Background";
+-- 非选中状态
+local m_notSelelctSate = "Checkmark";
+
+-- 类别选中
+local m_CategorySelect = "Active";
+-- 类别未选中
+local m_CategoryNotSelect = "Deactive";
+-- 类别名称
+local m_CategoryLabelName = "/Label_Name";
+----------------------------------gameobject所在的路径---------------------------------
+-- 右侧grid对象所在的位置
+local m_rightGridObjStr = "Content-Right/RightServer/ScrollView/Grid";
+-- 右侧item对象所在的位置
+local m_rightItemObjStr = "Content-Right/RightServer/ScrollView/Grid/Server1";
+
+-- 左侧区域
+local m_LeftZone = "Content-Left";
+-- 右侧区域
+local m_RightZone = "Content-Right/SelectServer";
+-- 左侧推荐区域
+local m_RecZone = "Content-Right/RightServer";
+
+-- 右侧单个控件所在位置
+local m_FuWuQiNumStr = "Content-Right/SelectServer/ScrollView/Grid/Server";
+--  右侧推荐战区的单个控件所在的位置
+local m_RecommendStr = "Content-Right/RecommendServer/ScrollView/Grid/Server";
+
+-- 左侧grid对象所在的位置
+local m_leftGridObjStr = "Content-Left/ScrollView/Grid";
+-- 左侧item对象所在的位置
+local m_leftItemObjStr = "Content-Left/ScrollView/Grid/Zone";
+
+-- 左侧Categorygrid对象所在的位置
+local m_CategoryGridObjStr = "CategoryList/Grid";
+-- 左侧Categoryitem对象所在的位置
+local m_CategoryItemObjStr = "CategoryList/Category";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_BackButtonStr = "Button-Back";
+----------------------------------一些写死的规定---------------------------------------
+-- 当前服务器3个状态的对应变量
+local m_curServerStateTable = { [1] = m_defendState, [2] = m_busyState, [3] = m_fluencyState, [4] = m_crowdState }
+-----------------------------------引用的对象------------------------------------------
+-- 战区信息
+local m_vZoneInfo = { };
+-- 战区行信息
+local m_vZoneLineInfo = { };
+-- 战区信息大小
+local m_yZoneInfoSize = nil;
+local m_wLineInfoSize = nil;
+local panelGameObject = nil;
+-- 选择大区ID
+local m_SelectBigZoneId = 1;
+-- 大区数量
+local bigZoneCount = 0;
+-- 最大大区数量
+local maxBigZoneNum = 4;
+-- 每个大区最大战区数
+local maxZoneNum = 10;
+-- 战区table
+local m_zoneTable = { };
+-- 登录过的战区
+local m_saveZoneInfo = { };
+-- 右侧战区列表
+local m_rightListView = nil;
+-- 左侧战区列表
+local m_leftListView = nil;
+-- 左侧分类列表
+local m_leftCategoryView = nil;
+-- 左侧战区表
+local m_leftTable = { };
+-- 选择推荐还是登陆过的战区
+local m_clickZone = 0;
+-- 选择的分类的战区
+local m_SelectCategoryIndex = 1;
+-- 分类列表
+local m_CategoryList = nil;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化所有信息
+    InitAllInfo();
+    -- 按钮事件
+    InitOnClick();
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    panelGameObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SELECTSERVER);
+    -- 右侧组件
+    m_rightListView = GetComponent(panelGameObject, m_rightGridObjStr, "UIListView");
+    m_rightListView:SetInitCallback(OnRightListViewInit);
+    m_rightListView:SetClickCallback(OnRightListViewSelected);
+
+    -- 左侧组件
+    m_leftListView = GetComponent(panelGameObject, m_leftGridObjStr, "UIListView");
+    m_leftListView:SetInitCallback(OnLeftListViewInit);
+    m_leftListView:SetSelectedCallback(OnLeftListViewSelected);
+
+    -- 组件
+    m_leftCategoryView = GetComponent(panelGameObject, m_CategoryGridObjStr, "UIListView");
+    m_leftCategoryView:SetInitCallback(OnLeftCategoryViewInit);
+    m_leftCategoryView:SetSelectedCallback(OnLeftCategorySelected);
+end
+
+-- 初始化所有信息
+function InitAllInfo()
+    InitCategoryInfo();
+    zoneInfo();
+    leftZoneInfo();
+end
+
+-- 初始化类别
+function InitCategoryInfo()
+    m_CategoryList = LuaGameManager.GetZoneCategoryList();
+    m_leftCategoryView:RemoveAll();
+    local categoryCount = 0;
+    for k,v in ipairs(m_CategoryList) do
+        m_leftCategoryView:AddData(v);
+        categoryCount = categoryCount + 1;
+    end
+    m_leftCategoryView:LookAt(m_SelectCategoryIndex - 1,true);
+    if CSDKManager.sdkName == "xiyou" then
+        m_vZoneInfo = {};
+        local groupsTable = m_CategoryList[m_SelectCategoryIndex].groups;
+        table.sort(groupsTable,SortGroups);
+        local zoneInfoTable = loadstring("return " .. Const.m_vZoneInfo);
+        zoneInfoTable = zoneInfoTable();
+        for k,v in ipairs(groupsTable) do
+            m_vZoneInfo[k] = {};
+            m_vZoneInfo[k].name = v.name;
+            local servers = v.list;
+            table.sort(servers,SortServers);
+            for x,y in ipairs(servers) do
+                local isFindRealServer = false;
+                for m,n in ipairs(zoneInfoTable) do
+                    if y.serverid == n.ZoneID then
+                        y.ZoneID = n.ZoneID;
+                        y.ZoneName = y.servername;
+                        if y.status == 1 then
+                            y.ZoneState = ZONE_ENUM.ZONE_CLOSE;
+                        else
+                            y.ZoneState = n.ZoneState;
+                        end
+                        y.ZoneLine = n.ZoneLine;
+                        if y.iscommend == 0 then
+                            y.ZoneAttrib = n.ZoneAttrib;
+                        else
+                            y.ZoneAttrib = ZONE_ENUM.ZONE_RECOMMEND;
+                        end
+                        y.ChargeType = n.ChargeType;
+                        y.BigZoneID = n.BigZoneID;
+                        y.CurVersion = n.CurVersion;
+                        y.IsRealServer = true;
+                        isFindRealServer = true;
+                        break;
+                    end
+                end
+                if isFindRealServer == false then
+                    y.ZoneID = y.serverid;
+                    y.ZoneName = y.servername;
+                    if y.status == 1 then
+                        y.ZoneState = ZONE_ENUM.ZONE_CLOSE;
+                    else
+                        y.ZoneState = ZONE_ENUM.ZONE_OPEN;
+                    end
+                    y.ZoneLine = 0;
+                    if y.iscommend == 0 then
+                        y.ZoneAttrib = 0;
+                    else
+                        y.ZoneAttrib = ZONE_ENUM.ZONE_RECOMMEND;
+                    end
+                    y.ChargeType = 1;
+                    y.BigZoneID = 0;
+                    y.CurVersion = 0;
+                    y.IsRealServer = false;
+                end
+                table.insert(m_vZoneInfo[k], y);
+            end
+        end
+        SetGameObjectState(m_CategoryGridObjStr,categoryCount > 1,panelGameObject);
+        bigZoneCount = #groupsTable;
+    else
+        SetGameObjectState(m_CategoryGridObjStr,false,panelGameObject);
+        bigZoneCount = math.ceil(m_yZoneInfoSize / maxZoneNum);
+    end
+    m_SelectBigZoneId = bigZoneCount;
+end
+
+function SortGroups(data1,data2)
+    return data1.page < data2.page;
+end
+
+function SortServers(data1,data2)
+    return data1.serverid < data2.serverid;
+end
+
+-- 左侧大战区显示信息
+function leftZoneInfo()
+    m_leftTable = { };
+    m_leftListView:RemoveAll();
+    SetGameObjectState(m_RightZone, true, panelGameObject);
+    local zoneCount = 0;
+    for k, v in ipairs(m_vZoneInfo) do
+        -- 判断战区信息不为空
+        if m_vZoneInfo[k] ~= nil then
+            for d, g in ipairs(m_vZoneInfo[k]) do
+                -- 判断该战区是不是隐藏战区
+                if bit:IsEnumFlagOpen(g.ZoneState, ZONE_ENUM.ZONE_HIDE) == false then
+                    zoneCount = zoneCount + 1;
+                end
+            end
+        end
+    end
+    if CSDKManager.sdkName ~= "xiyou" then
+        bigZoneCount = math.ceil(zoneCount / maxZoneNum);
+    end
+    bigZoneCount = bigZoneCount + 2;
+    for index = 1, bigZoneCount do
+        table.insert(m_leftTable, index);
+    end
+    for i, data in ipairs(m_leftTable) do
+        m_leftListView:AddData(data);
+    end
+
+    -- 默认选中推荐战区
+    m_leftListView:LookAt(1, true);
+    m_clickZone = 2;
+end
+
+function OnLeftListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    local index = cell.dataIndex + 1;
+    if index == 1 then
+        SetLabelContent(m_selectState .. m_leftZoneName, CCommonTool.GetTxtData(36).m_str, go);
+        SetLabelContent(m_notSelelctSate .. m_leftZoneName, CCommonTool.GetTxtData(36).m_str, go);
+    elseif index == 2 then
+        SetLabelContent(m_selectState .. m_leftZoneName, CCommonTool.GetTxtData(37).m_str, go);
+        SetLabelContent(m_notSelelctSate .. m_leftZoneName, CCommonTool.GetTxtData(37).m_str, go);
+    else
+        if CSDKManager.sdkName == "xiyou" then
+            index = bigZoneCount - cell.dataIndex;
+            SetLabelContent(m_selectState .. m_leftZoneName, m_vZoneInfo[index].name, go);
+            SetLabelContent(m_notSelelctSate .. m_leftZoneName, m_vZoneInfo[index].name, go);
+        else
+            index = bigZoneCount - cell.dataIndex;
+            local prezonenum =((index - 1) * maxZoneNum) + 1;
+            local laterzonenum = index * maxZoneNum;
+            local textContent = CCommonTool.GetTxtData(8021).m_str;
+            local zoneNameText = string_format(textContent, string.format("%02d", prezonenum), tostring(laterzonenum));
+            SetLabelContent(m_selectState .. m_leftZoneName, zoneNameText, go);
+            SetLabelContent(m_notSelelctSate .. m_leftZoneName, zoneNameText, go);
+        end
+    end
+end
+
+function OnLeftCategoryViewInit(listView, cell, data)
+    local go = cell.gameObject
+    if data.categoryindex == m_SelectCategoryIndex then
+        SetGameObjectState(m_CategorySelect,true,go);
+        SetGameObjectState(m_CategoryNotSelect,false,go);
+    else
+        SetGameObjectState(m_CategorySelect,false,go);
+        SetGameObjectState(m_CategoryNotSelect,true,go);
+    end
+    SetLabelContent(m_CategorySelect..m_CategoryLabelName,data.categoryname,go);
+    SetLabelContent(m_CategoryNotSelect..m_CategoryLabelName,data.categoryname,go);
+end
+
+function OnLeftListViewSelected(listView, dataIndex)
+    m_clickZone = dataIndex + 1;
+    m_SelectBigZoneId = bigZoneCount - dataIndex;
+    -- 刷新推荐和登录过的战区信息
+    zoneInfo();
+end
+
+function OnLeftCategorySelected(listView, dataIndex)
+    if dataIndex + 1 == m_SelectCategoryIndex then
+        return;
+    end
+    m_SelectCategoryIndex = dataIndex + 1;
+    InitAllInfo();
+end
+
+-- 初始化界面中按钮的点击事件
+function InitOnClick()
+    -- 给返回按钮添加返回事件
+    SetGameObjectEvent(m_BackButtonStr, OnBackClick, panelGameObject);
+end
+
+-- 显示推荐战区信息
+function zoneInfo()
+    m_zoneTable = { };
+    m_rightListView:RemoveAll();
+    local zoneCount = 0;
+    for k, v in ipairs(m_vZoneInfo) do
+        -- 判断战区信息不为空
+        if m_vZoneInfo[k] ~= nil then
+            for d, g in ipairs(m_vZoneInfo[k]) do
+                -- 判断该战区是不是隐藏战区
+                if bit:IsEnumFlagOpen(g.ZoneState, ZONE_ENUM.ZONE_HIDE) == false then
+                    zoneCount = zoneCount + 1;
+                end
+            end
+        end
+    end
+    local count = math.ceil(zoneCount / maxZoneNum);
+    local isBig = false;
+    -- 自己登陆过的战区
+    if m_clickZone == 1 then
+        for index = 1, 10 do
+            local loginZone = string_format("LoginZone{0}", index);
+            local zoneDate = PlayerPrefs.GetString(loginZone);
+            if zoneDate ~= nil then
+                for index = 1, count do
+                    -- 判断战区信息是否为空
+                    if m_vZoneInfo[index] ~= nil then
+                        for k, v in ipairs(m_vZoneInfo[index]) do
+                            if v.ZoneName == zoneDate then
+                                table.insert(m_zoneTable, v);
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        -- 推荐战区
+    elseif m_clickZone == 2 then
+        for index = 1, count do
+            -- 判断战区信息是否为空
+            if (m_vZoneInfo[index] ~= nil) then
+                for k, v in ipairs(m_vZoneInfo[index]) do
+                    if bit:IsEnumFlagOpen(v.ZoneAttrib, ZONE_ENUM.ZONE_RECOMMEND) == true then
+                        table.insert(m_zoneTable, v);
+                    end
+                    -- 判断推荐战区的数量是否大于一个大战区可显示战区的最大数量（最大数量是10）
+                    if #m_zoneTable >= maxZoneNum then
+                        isBig = true;
+                        break;
+                    end
+                end
+            end
+            if isBig == true then
+                break;
+            end
+        end
+    else
+        for i = 1, maxZoneNum do
+            SetGameObjectState(m_FuWuQiNumStr .. i, false, panelGameObject);
+        end
+        -- 判断选择大战区信息是否为空
+        if (m_vZoneInfo[m_SelectBigZoneId] ~= nil) then
+            for k, v in ipairs(m_vZoneInfo[m_SelectBigZoneId]) do
+                local zoneStateTable = { };
+                caculateBinary(v.ZoneState, zoneStateTable, 1);
+                -- 该战区是否是关闭状态 (1 开启 0 关闭）
+                if bit:IsEnumFlagOpen(v.ZoneState, ZONE_ENUM.ZONE_HIDE) == false then
+                    -- -- 根据Sdk发来的一个状态来判断是内部人员还是用户来显示此状态的战区
+                    if zoneStateTable[6] == 1 or zoneStateTable[7] == 1 then
+                        -- 是否是内部测试人员
+                        if CSDKManager.isTestUser == true then
+                            table.insert(m_zoneTable, v);
+                        end
+                    else
+                        table.insert(m_zoneTable, v);
+                    end
+                end
+            end
+        end
+    end
+    GameReportManager.AddReportData(9166,true);
+    for i, data in ipairs(m_zoneTable) do
+        m_rightListView:AddData(data);
+    end
+end
+
+
+function OnRightListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    local index = cell.dataIndex + 1;
+    SetLabelContent(m_serverName1, data.ZoneID .. CCommonTool.GetTxtData(959).m_str, go);
+    SetLabelContent(m_serverName2, data.ZoneName, go);
+    local zoneStateTable = { };
+    caculateBinary(data.ZoneState, zoneStateTable, 1);
+    if zoneStateTable[1] == 0 then
+        -- 这是维护状态
+        SetZoneState(1, go);
+    elseif zoneStateTable[1] == 1 then
+        -- 这是开启状态
+        if zoneStateTable[2] == 1 then
+            -- 这是繁忙状态
+            SetZoneState(4, go);
+        elseif zoneStateTable[3] == 1 then
+            -- 这是爆满状态
+            SetZoneState(2, go);
+        elseif (zoneStateTable[2] == 0 or zoneStateTable[2] == nil) and(zoneStateTable[3] == 0 or zoneStateTable[3] == nil) then
+            -- 这是流畅状态
+            SetZoneState(3, go);
+        else
+            -- 其他的默认全是繁忙状态
+            SetZoneState(4, go);
+        end
+    end
+    if bit:IsEnumFlagOpen(data.ZoneAttrib, ZONE_ENUM.ZONE_RECOMMEND) == true then
+        SetGameObjectState(m_newServer, false, go);
+        SetGameObjectState(m_recommendServer, true, go);
+    elseif bit:IsEnumFlagOpen(data.ZoneAttrib, ZONE_ENUM.ZONE_NEW) == true then
+        SetGameObjectState(m_newServer, true, go);
+        SetGameObjectState(m_recommendServer, false, go);
+    else
+        SetGameObjectState(m_newServer, false, go);
+        SetGameObjectState(m_recommendServer, false, go);
+    end
+
+end
+
+-- 战区点击选择
+function OnRightListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local num = cell.dataIndex + 1;
+    local zoneStateTable = { };
+    caculateBinary(data.ZoneState, zoneStateTable, 1);
+    if zoneStateTable[1] == 0 then
+        ParameterToMessageTextBox.ServerIsUnderMaintenance();
+        return;
+    end
+    if data.IsRealServer == false then
+        ParameterToMessageTextBox.ServerIsNotReal();
+        return;
+    end
+    PlayerPrefs.SetInt(SelectZoneId, data.ZoneID);
+    PlayerPrefs.SetString(SelectZoneName, data.ZoneName);
+    PlayerPrefs.SetInt(BigZoneId, data.BigZoneID);
+    ComeInGame.OnInitData();
+    OnBackClick(num);
+end
+
+-- 根据type的数值将其转换为二进制存成table
+function caculateBinary(num, resultTable, count)
+    local mod = math.fmod(num, 2);
+    local times = math.floor(num / 2);
+    table.insert(resultTable, count, mod);
+    if times > 0 then
+        caculateBinary(times, resultTable, count + 1);
+    else
+        return resultTable;
+    end
+end
+
+-- 设置所选服务器的状态
+function RefreshRightContent(slelctServer, num)
+    for Index = 1, #m_curServerStateTable do
+        if slelctServer == Index then
+            SetGameObjectState(m_FuWuQiNumStr .. num .. "/" .. m_curServerStateTable[Index], true, panelGameObject);
+        else
+            SetGameObjectState(m_FuWuQiNumStr .. num .. "/" .. m_curServerStateTable[Index], false, panelGameObject);
+        end
+    end
+end
+
+-- 设置啊此战区的流畅状态
+function SetZoneState(slelctServer, path)
+    for Index = 1, #m_curServerStateTable do
+        if slelctServer == Index then
+            SetGameObjectState(m_curServerStateTable[Index], true, path);
+        else
+            SetGameObjectState(m_curServerStateTable[Index], false, path);
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 返回进入游戏界面，隐藏当前选择战区面板
+function OnBackClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+    closePanel(ENUMPANELID.ENUM_PANEL_SELECTSERVER);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnUnCompressZLSInfo(zoneInfo, zoneLineInfo)
+    if CSDKManager.sdkName ~= "xiyou" then
+        m_vZoneInfo = zoneInfo;
+        m_yZoneInfoSize = LuaGameManager.GetZoneNum();
+    end
+    m_vZoneLineInfo = zoneLineInfo;
+    m_wLineInfoSize = Const.m_vZoneLineInfoSize;
+end
+
+-- 存储登陆过的战区
+function SaveMyZone(zoneName)
+    local ZoneData = { };
+    if ZoneData[zoneName] ~= nil then
+        ZoneData[zoneName] = nil;
+    end
+    for index = 1, 10 do
+        local loginZone = string_format("LoginZone{0}", index);
+        local zonedate = PlayerPrefs.GetString(loginZone);
+        if zonedate ~= nil then
+            table.insert(ZoneData, zonedate);
+        end
+    end
+    for index = 1, #ZoneData do
+        if ZoneData[index] == zoneName or #ZoneData > 10 then
+            table.remove(ZoneData, index);
+        else
+            if #ZoneData > 10 then
+                table.remove(ZoneData, 10);
+            end
+        end
+    end
+    table.insert(ZoneData, 1, zoneName);
+    local length = GetTableLength(ZoneData);
+    for index = 1, length do
+        local loginZone = string_format("LoginZone{0}", index);
+        PlayerPrefs.SetString(loginZone, ZoneData[index]);
+    end
+
+end

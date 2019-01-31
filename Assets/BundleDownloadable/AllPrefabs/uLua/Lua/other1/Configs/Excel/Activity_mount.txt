@@ -1,0 +1,191 @@
+﻿--[[
+    field=Id, type=word, desc=主键ID，层数
+    field=Index, type=byte, desc=所属活动副本ID的序号
+    field=Item1, type=int, desc=道具奖励1
+    field=Item1Num, type=int, desc=道具奖励1个数
+    field=Item2, type=int, desc=道具奖励2
+    field=Item2Num, type=int, desc=道具奖励2个数
+    field=Item3, type=int, desc=道具奖励3
+    field=Item3Num, type=int, desc=道具奖励3个数
+    field=FirstItem1, type=int, desc=首次奖励1
+    field=FirstItem1Num, type=int, desc=首次奖励1个数
+    field=FirstItem2, type=int, desc=首次奖励2
+    field=FirstItem2Num, type=int, desc=首次奖励2个数
+    field=FirstItem3, type=int, desc=首次奖励3
+    field=FirstItem3Num, type=int, desc=首次奖励3个数
+    field=LevelName, type=int, desc=关卡类型文本ID
+    field=MaxTime, type=word, desc=副本最大时间/s
+    field=ActivateTime, type=word, desc=激活下一层时间/s
+    field=ActivateLv, type=word, desc=等级
+    field=Fight, type=int, desc=战力
+]]
+module("ActivityMountTable", package.seeall)
+local list={
+    {Id=1,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22207,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=32,Fight=18000},
+    {Id=2,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22207,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=35,Fight=19500},
+    {Id=3,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22207,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=38,Fight=21100},
+    {Id=4,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22207,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=41,Fight=22700},
+    {Id=5,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22207,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=44,Fight=24300},
+    {Id=6,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=47,Fight=25900},
+    {Id=7,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=50,Fight=27500},
+    {Id=8,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=53,Fight=29100},
+    {Id=9,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=55,Fight=31100},
+    {Id=10,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=57,Fight=32400},
+    {Id=11,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=59,Fight=33600},
+    {Id=12,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22210,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=61,Fight=35900},
+    {Id=13,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=63,Fight=36750},
+    {Id=14,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=65,Fight=37800},
+    {Id=15,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=67,Fight=38700},
+    {Id=16,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=69,Fight=39950},
+    {Id=17,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=71,Fight=41000},
+    {Id=18,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=73,Fight=42005},
+    {Id=19,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=75,Fight=42955},
+    {Id=20,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=77,Fight=44205},
+    {Id=21,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22204,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=79,Fight=45405},
+    {Id=22,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=81,Fight=47705},
+    {Id=23,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=83,Fight=48955},
+    {Id=24,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=85,Fight=50005},
+    {Id=25,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=87,Fight=51255},
+    {Id=26,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=89,Fight=52305},
+    {Id=27,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=91,Fight=55155},
+    {Id=28,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=93,Fight=56593},
+    {Id=29,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=95,Fight=57973},
+    {Id=30,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=97,Fight=60618},
+    {Id=31,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22202,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=99,Fight=62056},
+    {Id=32,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=101,Fight=63609},
+    {Id=33,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=103,Fight=65459},
+    {Id=34,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=105,Fight=66667},
+    {Id=35,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=107,Fight=68105},
+    {Id=36,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=109,Fight=69773},
+    {Id=37,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=111,Fight=72740},
+    {Id=38,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=113,Fight=74178},
+    {Id=39,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=115,Fight=76823},
+    {Id=40,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22205,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=117,Fight=78261},
+    {Id=41,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=119,Fight=80125},
+    {Id=42,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=121,Fight=81645},
+    {Id=43,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=123,Fight=83095},
+    {Id=44,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=125,Fight=85595},
+    {Id=45,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=127,Fight=89155},
+    {Id=46,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=129,Fight=90881},
+    {Id=47,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=131,Fight=94055},
+    {Id=48,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=133,Fight=95781},
+    {Id=49,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=135,Fight=97645},
+    {Id=50,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=137,Fight=100687},
+    {Id=51,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22218,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=139,Fight=102341},
+    {Id=52,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=141,Fight=105044},
+    {Id=53,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=143,Fight=107248},
+    {Id=54,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=145,Fight=109351},
+    {Id=55,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=147,Fight=112976},
+    {Id=56,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=4,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=149,Fight=118138},
+    {Id=57,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=151,Fight=120641},
+    {Id=58,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22215,FirstItem1Num=5,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=153,Fight=125243},
+    {Id=59,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=155,Fight=127746},
+    {Id=60,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=157,Fight=130449},
+    {Id=61,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=159,Fight=134860},
+    {Id=62,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=161,Fight=137258},
+    {Id=63,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=163,Fight=141177},
+    {Id=64,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=165,Fight=144593},
+    {Id=65,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=167,Fight=147853},
+    {Id=66,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=169,Fight=153472},
+    {Id=67,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=171,Fight=161473},
+    {Id=68,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=173,Fight=165353},
+    {Id=69,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=175,Fight=172486},
+    {Id=70,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=177,Fight=176366},
+    {Id=71,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22219,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=179,Fight=180556},
+    {Id=72,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=181,Fight=187393},
+    {Id=73,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=183,Fight=191829},
+    {Id=74,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=185,Fight=199079},
+    {Id=75,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=187,Fight=205399},
+    {Id=76,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=189,Fight=211430},
+    {Id=77,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=191,Fight=221825},
+    {Id=78,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=193,Fight=236627},
+    {Id=79,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=195,Fight=243805},
+    {Id=80,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=197,Fight=257001},
+    {Id=81,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=199,Fight=264179},
+    {Id=82,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=271931},
+    {Id=83,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=285263},
+    {Id=84,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22217,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=293913},
+    {Id=85,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=308051},
+    {Id=86,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=320375},
+    {Id=87,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=332135},
+    {Id=88,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=352405},
+    {Id=89,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=381269},
+    {Id=90,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=395266},
+    {Id=91,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=420998},
+    {Id=92,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=439302},
+    {Id=93,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=459070},
+    {Id=94,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=493067},
+    {Id=95,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=515125},
+    {Id=96,Index=0,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=6,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=551177},
+    {Id=97,Index=1,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=22208,FirstItem1Num=8,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=582603},
+    {Id=98,Index=2,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=0,FirstItem1Num=0,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54407,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=612591},
+    {Id=99,Index=3,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=0,FirstItem1Num=0,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54406,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=664280},
+    {Id=100,Index=4,Item1=22001,Item1Num=1,Item2=22101,Item2Num=1,Item3=0,Item3Num=0,FirstItem1=0,FirstItem1Num=0,FirstItem2=22001,FirstItem2Num=5,FirstItem3=22101,FirstItem3Num=1,LevelName=54408,MaxTime=70,ActivateTime=70,ActivateLv=200,Fight=717678}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10],[11]=list[11],[12]=list[12],[13]=list[13],[14]=list[14],[15]=list[15],[16]=list[16],[17]=list[17],[18]=list[18],[19]=list[19],[20]=list[20],[21]=list[21],[22]=list[22],[23]=list[23],[24]=list[24],[25]=list[25],[26]=list[26],[27]=list[27],[28]=list[28],[29]=list[29],[30]=list[30],[31]=list[31],[32]=list[32],[33]=list[33],[34]=list[34],[35]=list[35],[36]=list[36],[37]=list[37],[38]=list[38],[39]=list[39],[40]=list[40],[41]=list[41],[42]=list[42],[43]=list[43],[44]=list[44],[45]=list[45],[46]=list[46],[47]=list[47],[48]=list[48],[49]=list[49],[50]=list[50],[51]=list[51],[52]=list[52],[53]=list[53],[54]=list[54],[55]=list[55],[56]=list[56],[57]=list[57],[58]=list[58],[59]=list[59],[60]=list[60],[61]=list[61],[62]=list[62],[63]=list[63],[64]=list[64],[65]=list[65],[66]=list[66],[67]=list[67],[68]=list[68],[69]=list[69],[70]=list[70],[71]=list[71],[72]=list[72],[73]=list[73],[74]=list[74],[75]=list[75],[76]=list[76],[77]=list[77],[78]=list[78],[79]=list[79],[80]=list[80],[81]=list[81],[82]=list[82],[83]=list[83],[84]=list[84],[85]=list[85],[86]=list[86],[87]=list[87],[88]=list[88],[89]=list[89],[90]=list[90],[91]=list[91],[92]=list[92],[93]=list[93],[94]=list[94],[95]=list[95],[96]=list[96],[97]=list[97],[98]=list[98],[99]=list[99],[100]=list[100]};
+
+count = 100;
+Count = 100;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

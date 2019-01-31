@@ -1,0 +1,56 @@
+﻿
+--------------------排行榜数据----------------------
+-- 阵营排行榜的逻辑数据
+LogicData_CampRankTable = { };
+-- 排行榜数据表信息(key:排行榜数据行号，value:排行榜数据信息)
+LogicData_RankTable = { };
+--------------------坐骑数据信息--------------------
+-- 坐骑数据表信息(key:坐骑数据行号，value:坐骑数据信息)
+LogicData_MountsTable = { };
+-- 玩家身上坐骑的数据(key:坐骑的ID，value:table(level = 阶数，attrTable = (属性的table([1] = 第一个属性的个数，[2] = 第二个属性的个数，[3] = 第三个属性的个数)))
+LogicData_RideData = { };
+-------------------饮酒的界面数据-------------------
+-- 饮酒界面在服务器中是否打开着
+LogicData_IsDrinkWinePanelOpen = false;
+-- 当前饮的酒的ID
+LogicData_CurDrinkItemId = 0;
+-- 当前饮酒界面的状态(1代表设置饮用那个酒界面，2代表继续饮酒的界面，3代表读条的界面)
+LogicData_CurDrinkPanelState = 0;
+-- 当前饮酒界面剩余的次数
+LogicData_CurLeftDrinkTimes = 0;
+-- 是否开启宴会(1表示开启， 0表示未开启)
+LogicData_CurDrinkPartyState = 0;
+-----------------炼金术数据------------------------
+-- 玩家今天已经购买的次数
+LogicData_CurGetCoinBuyTimes = 0;
+-- 玩家今天最大购买的次数
+LogicData_GetCoinBuyMaxTimes = 0;
+-- 获得金币的情况
+LogicData_GetCoinLogTable = { };
+-----------------副本通关数据----------------------
+LogicData_PassDungeon = nil;
+-----------------当前追踪的任务ID------------------
+LogicData_CurTraceTaskID = 0;
+-----------------主界面提示的队列------------------
+-- {Data = 每种类型的不同数据，DataType = 1.组队邀请，2.公会邀请}
+LogicData_TipsTable = { };
+-- 目前只用于显示领地战通知
+LogicData_TipsWarTable = { };
+----------------帝国悬赏--------------------------
+LogicData_EmpireBountyStarLv = 0;
+----------------货币兑换是否自动兑换---------------
+LogicData_IsAutoExchangeMoney = false;
+----------------背包分解是选中的道具信息---------------
+LogicData_ResolveData = { };
+----------------限时活动提示数据---------------
+LogicData_TimeLimitedActivityData = { };
+---------------- 坐骑副本信息显示数据----------------
+-- 坐骑副本信息界面否打开着
+LogicData_IsRideDuneonOpen = false;
+----------------帝国悬赏是否自动提交---------------
+LogicData_IsAutoSubmit= true;
+----------------多时间段活动信息---------------
+MultipleTimeActInfo = {};
+----------------限时抽奖数据---------------
+TimeLimitDrawVersion = -1;
+TimeLimitDrawRewardIndex = -1;

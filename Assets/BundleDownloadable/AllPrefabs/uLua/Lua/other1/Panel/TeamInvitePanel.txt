@@ -1,0 +1,242 @@
+﻿module('TeamInvitePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamInvitePanel';
+---------------------------------------label路径---------------------------------------
+-- 刷新按钮时间
+local m_RefreshTimeLabelPath = "Content/RefreshButton/RefreshTimeLabel";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 好友标签
+local m_MenuItem1Path = "Content/Menu/Grid/MenuItem1";
+-- 公会标签
+local m_MenuItem2Path = "Content/Menu/Grid/MenuItem2";
+-- 附近标签
+local m_MenuItem3Path = "Content/Menu/Grid/MenuItem3";
+-- 刷新按钮
+local m_RefreshButtonPath = "Content/RefreshButton";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "Content/ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 好友标签
+local m_MenuItem1 = nil;
+-- 公会标签
+local m_MenuItem2 = nil;
+-- 附近标签
+local m_MenuItem3 = nil;
+-- 列表
+local m_List = nil;
+-- 刷新按钮
+local m_RefreshButton = nil;
+-- 刷新按钮时间
+local m_RefreshTimeLabel = nil;
+
+-- 选中的标签
+local m_selectTagNum = 1;
+-- 上一次选择标签
+local m_lastSelectTagNum = 1;
+-- 计时对象
+local m_TimerObject = nil;
+-- 刷新结束时间
+local m_RefreshEndTime = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = m_MenuItem1Path},
+    [2] = { name = m_MenuItem2Path},
+    [3] = { name = m_MenuItem3Path}
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_MenuItem1 = nil;
+	m_MenuItem2 = nil;
+	m_MenuItem3 = nil;
+	m_List = nil;
+	m_RefreshButton = nil;
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL);
+    m_MenuItem1 = child(m_PanelObject, m_MenuItem1Path).gameObject;
+    m_MenuItem2 = child(m_PanelObject, m_MenuItem2Path).gameObject;
+    m_MenuItem3 = child(m_PanelObject, m_MenuItem3Path).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_RefreshButton = child(m_PanelObject, m_RefreshButtonPath).gameObject;
+    m_RefreshTimeLabel = GetComponent(m_PanelObject, m_RefreshTimeLabelPath, "UILabel");
+    for i = 1, 3 do
+        SetGameObjectState(m_toggleTable[i].name .. "/Toggle", false, m_PanelObject);
+    end
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+    UIEventListener.Get(m_MenuItem1).onClick = LuaHelper.OnClick(OnMenuItem1Click);
+    UIEventListener.Get(m_MenuItem2).onClick = LuaHelper.OnClick(OnMenuItem2Click);
+    UIEventListener.Get(m_MenuItem3).onClick = LuaHelper.OnClick(OnMenuItem3Click);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+    UIEventListener.Get(m_RefreshButton).onClick = LuaHelper.OnClick(OnRefreshButtonClick);
+    SetGameObjectEvent("CloseButton", OnCloseClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    OpenPanelByTag();
+    AddTimer();
+end
+
+function ClearTimer()
+    if m_TimerObject ~= nil then
+        Timer.Instance:StopTimer(m_TimerObject);
+        m_TimerObject = nil;
+    end
+end
+
+function AddTimer()
+    ClearTimer();
+    m_TimerObject = Timer.Instance:AddTimer(1, -1, OnTimer);
+end
+
+function OnTimer()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL) == 1 then
+        m_List:Refresh();
+        local now = os.time();
+        if now >= m_RefreshEndTime then
+            m_RefreshTimeLabel.text = "";
+            CCommonTool.SetGameObjectGrey(m_RefreshButton, false);
+        else
+            m_RefreshTimeLabel.text = "(" .. (m_RefreshEndTime - now) .. ")";
+            CCommonTool.SetGameObjectGrey(m_RefreshButton, true);
+        end
+    end
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Toggle", false, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].name .. "/Background", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Toggle", true, m_PanelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].name .. "/Background", false, m_PanelObject);
+    InitList();
+end
+
+function InitList()
+    local items = TeamManager.GetInviteList(m_selectTagNum);
+    m_List:RemoveAll();
+    for i, data in ipairs(items) do
+        m_List:AddData(data);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL);
+end
+
+-- 好友标签点击事件
+function OnMenuItem1Click(gameObject)
+    OnTabClick(1);
+end
+
+-- 公会标签点击事件
+function OnMenuItem2Click(gameObject)
+    OnTabClick(2);
+end
+
+-- 附近标签点击事件
+function OnMenuItem3Click(gameObject)
+    OnTabClick(3);
+end
+
+function OnTabClick(index)
+    if m_selectTagNum ~= index then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = index;
+        OpenPanelByTag();
+    end
+end
+
+-- 列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetSpriteByAtlasID("Icon", CCommonTool.GetRoleDateInfo(data.proId).HeadRes, go, true);
+    SetLabelContent("Name", data.name, go);
+    SetLabelContent("Level", data.level, go);
+    error(data.campType);
+    SetCampIcon("CampIcon", data.campType, go);
+    SetLabelContent("FightPower", string_format(--[[战斗力 {0}]]CCommonTool.GetTxtData(994).m_str, data.fightPower), go);
+    local invited = TeamManager.IsInvitedPlayer(data.id);
+    SetGameObjectState("InviteButton", not invited, go);
+    SetGameObjectState("InvitedButton", invited, go);
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "InviteButton" then
+        TeamProtocol.RequestInvitePlayer(data.id);
+        TeamManager.UpdateInvitePlayerTime(data.id);
+        m_List:Refresh();
+    end
+end
+
+-- 刷新按钮点击事件
+function OnRefreshButtonClick(gameObject)
+    local now = os.time();
+    if now < m_RefreshEndTime then
+        return;
+    end
+    m_RefreshEndTime = now + TeamManager.listRefreshDuration;
+    OnTimer();
+    OpenPanelByTag();
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新界面
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL) == 1 then
+        OpenPanelByTag();
+    end
+end

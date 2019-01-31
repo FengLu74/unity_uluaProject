@@ -1,0 +1,104 @@
+﻿module("GodShapeShiftManager", package.seeall)
+--------------------------------------------神将系统---------------------------------------------------------------------
+-- 玩家神将数据信息
+LogicData_GodPlayerInfo = {};
+
+-- 神将当前冷却cd 
+localGod_DataCdTime  = nil;
+-- 神将大招总冷却时间
+localGod_TotalCDTime = nil;
+
+
+-- 初始化god table
+function ConstructData()
+	LogicData_GodPlayerInfo = {};
+	LogicData_GodPlayerInfo.GodInfos = {};
+	LogicData_GodPlayerInfo.CurEquipGodId = -1;
+end
+-- 根据神将数据得到玩家对应的id的数据
+function GetPlayerGodByInfo(godsInfo)
+    local god_id = godsInfo.Id;
+    if LogicData_GodPlayerInfo == nil or LogicData_GodPlayerInfo.GodInfos == nil then
+        return;
+    end
+    local playerInfo = LogicData_GodPlayerInfo.GodInfos;
+    for index=1,#playerInfo do
+        if playerInfo[index].Id == god_id then
+        	return playerInfo[index];
+        end
+    end
+    error("GetPlayerGodByInfo 找不到Id："..god_id);
+    return nil;
+end
+------------------------------------------给外部调用-------------------------------------------
+function GetCurGodEquipId()
+    
+    if LogicData_GodPlayerInfo ~= nil then
+        if LogicData_GodPlayerInfo.CurEquipGodId ~=nil then
+            return LogicData_GodPlayerInfo.CurEquipGodId;
+        end
+    end 
+    return 0;
+end
+-- 设置主界面神将按钮
+function SetMain_RightBottm(times)
+    --Main_RightBottom.InitGodBtnCdShow(deltaTime);
+    if times > GodShapeShiftManager.localGod_TotalCDTime then
+        times = GodShapeShiftManager.localGod_TotalCDTime;
+    end
+    if times > 0 then
+        AddTimerEvent("GodCdTaskInMainPanel", times, OnGodCdCallOver, ETimeShowType.TypeNumberSeven, OnGodCdUpdate);
+    else
+        OnGodCdCallOver();
+    end
+
+end
+function OnGodCdCallOver()
+    Main_RightBottom.OnGodCdCallOver();
+    --[[SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,0,m_panelObject);
+    SetLabelContent(m_GodBtnCDStr,"",m_panelObject);]]
+end
+function OnGodCdUpdate(timeTxt)
+    Main_RightBottom.OnGodCdUpdate(timeTxt);
+    --[[local total_time = GodShapeShiftManager.localGod_TotalCDTime;
+    local curtime = tonumber(timeTxt);
+    SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,curtime/total_time,m_panelObject);
+    SetLabelContent(m_GodBtnCDStr,timeTxt,m_panelObject);]]
+end
+function RefreshMain_RightBottom()
+   Main_RightBottom.InitGodBtnShow(1);
+end
+---------------------我要变强分数神将计算需要--------------
+-- 品质系数写死
+m_QualityScoreTable =
+{
+    [1] = 33, 
+    [2] = 67, 
+    [3] = 101, 
+    [4] = 135, 
+    [5] = 169, 
+    [6] = 202, 
+    [7] = 236, 
+    [8] = 270, 
+    [9] = 304, 
+    [10] =338, 
+    [11] =371,
+}
+
+-- 得到变强界面系统的品质系数对应的分数
+function GetScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_GOD) == false then return score end
+	local player_Gods = GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos;
+    for index=1,#player_Gods do
+        if player_Gods[index].Active==1 then
+            if player_Gods[index].CurLvl==1 then
+                score=score+10*m_QualityScoreTable[index];--正好当前阶分数score=score+当前阶培养等级*系数
+            else
+                score=score+player_Gods[index].CurStage*m_QualityScoreTable[index];--正好当前阶分数score=score+当前阶培养等级*系数
+            end
+        end
+    end
+    return score;
+end
+------------------

@@ -1,0 +1,675 @@
+﻿module("ActivityProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 服务器推送所有活动(日常和公会)
+    network.Register(GMI_STOC_ACTIVITY_OPEN_TIME_INFO_ALL, OnRecieveActivityList);
+    -- 更新活动次数(日常和公会)
+    network.Register(GMI_STOC_ACTIVITY_RESETACTIVITY_NUM, OnUpdateActivityTimes);
+    -- 更新活跃度值
+    network.Register(GMI_STOC_UPDATE_ACTIVE_INFO, OnUpdateActiveValue);
+    -- 发送世界Boss信息
+    network.Register(GMI_STOC_LGS_WORLDBOSS, OnRecieveWorldBossList);
+    -- 世界BOSS状态改变
+    network.Register(CMI_STOC_LGS_WORLD_BOSSSTATE_CHANGE, OnWorldBossStateChange);
+    -- 更新BOSS血量
+    network.Register(GMI_STOC_WORLDBOSS_HP_INFO, OnWorldBossHpUpdate);
+    -- 限时活动剩余时间(分钟)
+    network.Register(GMI_STOC_SEND_LIMITTIMEACTIVITY_INFO, OnActivitysLimitTimeReturn);
+    -- 通知哪个活动次数不足(队长发起进入活动, 自己的次数不足时)
+    network.Register(GMI_STOC_ERASE_ACTIVITY_COUNT, OnActivityTimesLack);
+    -- 通知客户端增加活动次数或时间成功
+    network.Register(GMI_STOC_ERASE_ACTIVITY_COUNT_SUCC, OnAddActivityTimesSucc);
+
+    -- 请求打开公会押镖面板
+    network.Register(GMI_STOC_PERSONAL_PROTECT_NPC_OPEN_UI, OnOpenActivityEscortPanel);
+    -- 上线同步公会押镖相关数据
+    network.Register(GMI_STOC_PERSONAL_PROTECT_NPC_ONLINE_UPDATE, OnGetEscortData);
+    -- 刷新镖车品质返回
+    network.Register(GMI_STOC_PERSONAL_PROTECT_NPC_REFRES_BACK, OnGetEscortRefresh);
+    -- 开始运镖返回
+    network.Register(GMI_STOC_PERSONAL_PROTECT_NPC_START_BACK, OnGetEscortBack);
+    -- 猎魔活动，服务器请求弹出messagebox用于询问玩家下一步操作
+    network.Register(GMI_STOC_HUNT_MAGIC_INFORM_CLIENT_SHOW_PANLE, OnGetHunt);
+    -- 猎魔大师活动，没有队伍时通知前端弹版
+    network.Register(GMI_STOC_HUNT_MAGIC_NO_TEAM_INFORM_CLIENT, OnOpenHuntChoose);
+
+    -- 开启活动通知客户端弹窗提示
+    network.Register(GMI_STOC_NOTIFY_CLIENT_OPEN_ACTIVITY, OnShowActivity);
+
+    -- 获取骑士荣誉信息
+    network.Register(GMI_STOC_REPLY_HONOUR_INFO_TOCLIENT, OnGetHonorInfo);
+
+     -- 猎魔印记货币改变时通知
+    network.Register(GMI_STOC_HUNTMAGIC_MONEYCHANGE, OnHuntMoneyChange);
+    -- 女神之泪货币改变时通知
+    network.Register(GMI_STOC_GOD_MONEYCHANGE, OnGodNessTearChange);
+    -- 通知客户端打开活动消息界面
+    network.Register(GMI_STOC_SEND_ACTIVITY_MSG, OnOpenActivityMessagePanel);
+    -- 多个时间段的活动完成情况
+    network.Register(GMI_STOC_ACTIVITY_TILI_INFO, onGetMultipleTimeActInfo);
+end
+
+-- 服务器推送所有活动(日常和公会)(上线和充值VIP时都会发送)
+function OnRecieveActivityList(protocolId, buffer)
+    ActivityManager.activities = { }
+    ActivityManager.activityDict = { };
+    buffer:ReadByte();
+    -- Version
+    local count = buffer:ReadByte();
+    for i = 1, count do
+        local data = { };
+        -- 活动ID
+        data.id = buffer:ReadInt();
+        --error("服务器推送所有活动(日常和公会)ID="..data.id);
+        -- 玩家当天已参加次数
+        data.times = buffer:ReadByte();
+        -- 玩家每周参加次数
+        data.weekTimes = buffer:ReadUShort();
+        -- 玩家当天最大参加次数
+        data.maxTimes = buffer:ReadByte();
+        -- 玩家每周最大参加次数
+        data.maxWeekTimes = buffer:ReadUShort();
+        data.timeInfo = { };
+        -- 每周的哪几天开放(7位的整形数值表示一周七天1开启，0关闭)
+        data.timeInfo.week = buffer:ReadInt();
+        data.timeInfo.weekdays = ActivityManager.GetWeekDays(data.timeInfo.week);
+        data.timeInfo.dayTimes = { };
+        -- 每天开放时间段
+        local size = buffer:ReadByte();
+        for i = 1, size do
+            local time = { };
+            time.beginTime = buffer:ReadInt();
+            time.endTime = buffer:ReadInt();
+            table.insert(data.timeInfo.dayTimes, time);
+        end
+
+        -- 开放等级
+        data.openLevel = buffer:ReadShort();
+        if data.openLevel <= 0 then data.openLevel = 1; end
+        -- 活动开放的最大等级(1000表示不限制等级)
+        data.maxLevel = buffer:ReadShort();
+        if data.maxLevel <= 0 then data.maxLevel = 1000; end
+
+        -- 活跃度
+        data.liveness = buffer:ReadUShort();
+        -- 活动是否在列表中显示 1显示 2不显示
+        data.showState = buffer:ReadByte();
+        -- 出战人数,组队、特殊副本生效
+        data.teamNum = buffer:ReadUShort();
+        -- 共享每日次数活动ID，没有填0
+        data.shareActivityId = buffer:ReadInt();
+
+        -- 限时活动剩余时间(分钟)
+        data.maxLimitMinute = buffer:ReadInt();
+        -- 是否为服务器限时活动
+        data.isServerLimit = data.maxLimitMinute > 0;
+        -- 限时活动最大时间(分钟)
+        data.remainLimitMinute = 0;
+        -- 限时活动结束时间
+        data.limitEndTime = 0;
+
+        -- 增加活动次数的道具ID
+        data.addTimesItemId = buffer:ReadInt();
+        -- 每天可增加的最大次数 --理解：购买VIP后会送次数，这些次数还不可以用，需要再用钱币购买
+        data.addMaxTimes = buffer:ReadInt();
+        -- 已使用道具增加的次数 --理解：已经用钱币购买后用掉的次数
+        data.timesByUseItem = buffer:ReadInt();
+
+        data.passed = ActivityManager.IsPassed(data);
+        if data.showState == 1 and (data.id <3000 or (data.id>=5000 and data.id<6000) or data.id > 7000)  then  --装备boss不放在活动列表activity_list里面，在副本表dungeon里面
+            data.info = CCommonTool.GetActivityListDataInfo(data.id);
+        end
+        table.insert(ActivityManager.activities, data);   
+        ActivityManager.activityDict[data.id] = data;
+        if data.showState == 1 and data.info == nil and data.id < 10000  and (data.id <3000 or (data.id>=5000 and data.id<6000) or data.id > 7000) then
+            error(string_format("服务器发送的活动ID:{0}, Activity_list表不存在!", data.id));
+        end
+    end
+    -- 收到所有活动数据后请求限时活动剩余时间
+    RequestActivitysLimitTime();
+end
+
+-- 更新活动次数
+function OnUpdateActivityTimes(protocolId, buffer)
+    --    //每日参加次数修改类型
+    --    enum E_ACTIVITY_DAILYCOUNT_CHANGE_TYPE
+    --    {
+    --     E_ACTIVITY_DAILYCOUNT_CHANGE_TYPE_DAY_ZERO		=	0,	//每日清0处理
+    --     E_ACTIVITY_DAILYCOUNT_CHANGE_TYPE_WEEK_ZERO		=	1,	//每周清0处理
+    --     E_ACTIVITY_DAILYCOUNT_CHANGE_TYPE_CAHGE			=	2,	//单纯修改
+    --    };
+
+    local msgType = buffer:ReadByte();
+    local count = buffer:ReadUShort();
+    local hasBattleActivity = false;
+    for i = 1, count do
+        local activityId = buffer:ReadInt();
+        if msgType == 0 then
+            -- 每日次数清0
+            ActivityManager.ResetActivityTimes(activityId, 0);
+        elseif msgType == 1 then
+            -- 每周次数清0
+            ActivityManager.ResetActivityTimes(activityId, 1);
+        elseif msgType == 2 then
+            -- 次数更新
+            local times = buffer:ReadByte();
+            --error("times="..times);
+            -- 参加次数
+            local maxTimes = buffer:ReadByte();
+            --error("maxTimes="..maxTimes);
+            -- 今日最大次数
+            local weekTimes = buffer:ReadByte();
+            -- 本周参加次数
+            local maxWeekTimes = buffer:ReadByte();
+            -- 已使用道具增加的次数
+            local timesByUseItem = buffer:ReadInt();
+            -- 本周最大次数
+            ActivityManager.UpdateActivityTimes(activityId, times, maxTimes, weekTimes, maxWeekTimes, timesByUseItem);
+        end
+
+        if hasBattleActivity == false and (activityId == ENUM_AOT_ID.AOT_ID_BATTLE_FIELD or activityId == ENUM_AOT_ID.AOT_ID_BATTLE_FIELD_NIGHT) then
+            hasBattleActivity = true;
+        end
+    end
+    ActivityDailyPanel.Refresh();
+    ActivityGuildPanel.Refresh();
+    if hasBattleActivity == true then
+        BattlePanel.RefreshPanel();
+    end 
+	RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_ACTIVITY, ActivityManager.HasUndoneActive());
+end
+
+-- 更新活跃度值
+function OnUpdateActiveValue(protocolId, buffer)
+    local liveness = ActivityManager.GetLiveness()
+    liveness.value = buffer:ReadUShort();
+    local boxes = liveness.boxes;
+    local len = buffer:ReadByte();
+    for index = 1, len do
+        local index = buffer:ReadByte();
+        -- 宝箱状态 1:已领取 0:未领取
+        local state = buffer:ReadByte();
+        for _, box in ipairs(boxes) do
+            if box.index == index then
+                box.state = state;
+            end
+        end
+    end
+    ActivityLivenessPanel.Refresh();
+    RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_ACTIVITY, ActivityManager.CanGetLivenessReward());
+end
+
+-- 发送世界Boss信息
+function OnRecieveWorldBossList(protocolId, buffer)
+    local count = buffer:ReadInt();
+    for i = 1, count do
+        local bossId = buffer:ReadInt();
+        local state = buffer:ReadByte();
+        ActivityManager.UpdateWorldBossState(bossId, state);
+    end
+    WorldBossPanel.Refresh();
+    --ActivityBossPanel.Refresh();
+end
+
+-- 世界BOSS状态改变
+function OnWorldBossStateChange(protocolId, buffer)
+    local bossId = buffer:ReadInt();
+    -- state 1:已刷新 0:未刷新
+    local state = buffer:ReadByte();
+    -- error("收到世界Boss状态更改 bossId：" .. bossId .. "状态" ..state);
+    ActivityManager.UpdateWorldBossState(bossId, state);
+    WorldBossPanel.OnBossStateChange();
+    --ActivityBossPanel.OnBossStateChange();
+end
+
+-- 世界BOSS血量信息(活动UI)
+function OnWorldBossHpUpdate(protocolId, buffer)
+    local count = buffer:ReadInt();
+    error(string_format("更新BOSS血量:{0}", count));
+    for i = 1, count do
+        local bossId = buffer:ReadInt();
+        local hp = buffer:ReadFloat();
+        local maxHp = buffer:ReadFloat();
+        ActivityManager.UpdateWorldBossHp(bossId, hp, maxHp);
+    end
+    WorldBossPanel.Refresh();
+    --ActivityBossPanel.Refresh();
+end
+
+-- 限时活动剩余时间(分钟)
+function OnActivitysLimitTimeReturn(protocolId, buffer)
+    -- 剩余时间(分钟)
+    local count = buffer:ReadByte();
+    local now = os.time();
+    for i = 1, count do
+        local activityId = buffer:ReadInt();
+        local remainLimitMinute = buffer:ReadInt();
+        -- 限时活动剩余时间(分钟)
+        local maxLimitMinute = buffer:ReadInt();
+        -- 已使用道具增加的次数
+        local timesByUseItem = buffer:ReadInt();
+        -- 限时活动最大时间(分钟)
+        local limitEndTime = now + remainLimitMinute * 60;
+        -- 限时活动结束时间
+        local data = ActivityManager.GetActivity(activityId);
+        if data ~= nil then
+            data.isServerLimit = true;
+            data.remainLimitMinute = remainLimitMinute;
+            data.maxLimitMinute = maxLimitMinute;
+            data.limitEndTime = limitEndTime;
+            data.timesByUseItem = timesByUseItem;
+            data.passed = ActivityManager.IsPassed(data);
+        end
+    end
+    if ActivityManager.activityDict ~= nil then
+        -- 这里处理没有收到的限时活动时间, 默认置为最大值
+        for id, data in pairs(ActivityManager.activityDict) do
+            if data.isServerLimit == true then
+                if data.limitEndTime == 0 then
+                    data.remainLimitMinute = data.maxLimitMinute;
+                    data.limitEndTime = now + data.remainLimitMinute * 60;
+                    data.passed = ActivityManager.IsPassed(data);
+                end
+            end
+        end
+    end
+    ActivityDailyPanel.Refresh();
+    ActivityGuildPanel.Refresh();
+end
+
+-- 通知哪个活动次数不足(队长发起进入活动, 自己的次数不足时)
+function OnActivityTimesLack(protocolId, buffer)
+    local activityId = buffer:ReadInt();
+    error("通知哪个活动次数不足:: ID" .. activityId);
+    local data = ActivityManager.GetActivity(activityId);
+    if data ~= nil then
+        local passed = ActivityManager.IsPassed(data);
+        if not passed then
+            ActivityTimesItemPanel.Show(activityId);
+        end
+    end
+end
+
+-- 通知客户端增加活动次数或时间成功
+function OnAddActivityTimesSucc(protocolId, buffer)
+    local activityId = buffer:ReadInt();
+    local data = ActivityManager.GetActivity(activityId);
+    if data ~= nil then
+        local info = data.info;
+        local activityName = CCommonTool.GetTxtData(info.Name).m_str;
+        local times = data.times;
+        local maxTimes = data.maxTimes;
+        ShowSystemFlowTips(9310, nil, {activityName, times, maxTimes});
+    end
+end
+
+-- 打开公会押镖面板
+function OnOpenActivityEscortPanel(protocolId, buffer)
+    createPanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_ESCORT_PANEL);
+end
+
+-- 上线时押镖相关数据
+function OnGetEscortData(protocolId, buffer)
+    local isHaveEscort = buffer:ReadInt();
+    -- 上次是否有已经刷新出的镖车但是还没开始运输（0代表上次没有刷新过）
+    local restTimes = buffer:ReadByte();
+    -- 剩余运镖次数
+    local refreshTimes = buffer:ReadByte();
+    -- 剩余免费刷新次数
+    local tokenID = buffer:ReadInt();
+    -- 贸易券ID
+    if ActivityManager.activityEscort == nil then
+        ActivityManager.activityEscort = { };
+    end
+    ActivityManager.activityEscort.isHaveEscort = isHaveEscort;
+    ActivityManager.activityEscort.restTimes = restTimes;
+    ActivityManager.activityEscort.refreshTimes = refreshTimes;
+    ActivityManager.activityEscort.tokenID = tokenID;
+end
+
+-- 刷新镖车品质返回
+function OnGetEscortRefresh(protocolId, buffer)
+    local camionExcelID = buffer:ReadInt();
+    -- 刷新的镖车excelID
+    local refreshTimes = buffer:ReadByte();
+    -- 剩余免费刷新次数
+    local tokenID = buffer:ReadInt();
+    -- 剩余贸易券数量
+
+    ActivityEscortPanel.GetEscortRefresh(camionExcelID, refreshTimes, tokenID);
+
+    -- 更新押镖活动管理器数据
+    if ActivityManager.activityEscort == nil then
+        ActivityManager.activityEscort = { };
+    end
+
+    ActivityManager.activityEscort.isHaveEscort = camionExcelID;
+    ActivityManager.activityEscort.refreshTimes = refreshTimes;
+    ActivityManager.activityEscort.tokenID = tokenID;
+end
+
+-- 开始运镖返回
+function OnGetEscortBack(protocolId, buffer)
+    local restTimes = buffer:ReadByte();
+    -- 剩余运镖次数
+    local isHaveEscort = buffer:ReadInt();
+    -- 镖车excelID
+
+    -- 更新押镖活动管理器数据
+    if ActivityManager.activityEscort == nil then
+        ActivityManager.activityEscort = { };
+    end
+
+    ActivityManager.activityEscort.isHaveEscort = isHaveEscort;
+    ActivityManager.activityEscort.restTimes = restTimes;
+    -- 设置镖车自动跟随
+    EveryDayTaskManager.isCamionFollowing = true;
+    EveryDayTaskManager.SetIsStopAutoFight();
+    Main_MiddleTop.InitCamionFollowing();
+end
+
+-- 猎魔大师请求弹出messagebox
+function OnGetHunt(protocolId, buffer)
+    local id = buffer:ReadByte();
+    if id == nil then return end
+    local tempTable = { };
+    table.insert(tempTable, 1, GetTextToId(949));
+    if id == 1 then
+        -- 是否跟随队长开始猎魔大师任务
+        table.insert(tempTable, 2, GetTextToId(141322));
+        table.insert(tempTable, 3, OnHide);
+    elseif id == 2 then
+        -- 是否退出当前副本，进行猎魔大师活动
+        table.insert(tempTable, 2, GetTextToId(141323));
+        table.insert(tempTable, 3, OnConfirmClick);
+    elseif id == 3 then
+        -- 是否继续进行下一环猎魔大师活动
+        table.insert(tempTable, 2, GetTextToId(141324));
+        table.insert(tempTable, 3, OnHide);
+    elseif id == 4 then
+        -- 跳转到商城猎魔印记兑换界面
+        ShopManager.OpenShopPanelWithTag(ShopManager.ShopID.HountDemonShop);
+        return;
+    elseif id == 5 then
+        -- 新队员入队，请求进入到队伍所在的副本场景
+        table.insert(tempTable, 2, GetTextToId(141330));
+        table.insert(tempTable, 3, RequesHunt);
+        table.insert(tempTable, 4, GetTextToId(375));
+        table.insert(tempTable, 5, OnConfirmClick);
+        table.insert(tempTable, 6, GetTextToId(407));
+        table.insert(tempTable, 7, true);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+        return;
+    end
+    table.insert(tempTable, 4, GetTextToId(375));
+    table.insert(tempTable, 5, RequestContinueHunt);
+    table.insert(tempTable, 6, GetTextToId(407));
+    table.insert(tempTable, 7, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable);
+end
+
+function OnConfirmClick()
+    DungeonProtocol.RequestLeaveDungeon();
+end
+
+function OnHide()
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+function OnShowActivity(protocolId, buffer)
+    local activityID = buffer:ReadInt();
+    -- 活动ID
+    local startTime = buffer:ReadInt64();
+    -- 开始时间
+    local endTime = buffer:ReadInt64();
+    -- 结束时间
+    local nowTime = G_TimerMng:GetCurrentSeconds();
+    if startTime < nowTime then return end
+    startTime = ActivityManager.SecondToString(startTime);
+    endTime = ActivityManager.SecondToString(endTime);
+    local activityOpening = _G.LogicData_TimeLimitedActivityData.OPENING;
+    if activityOpening == nil then _G.LogicData_TimeLimitedActivityData.OPENING = { } end
+    local temp = { ID = activityID, isFixedTime = false };
+    table.insert(_G.LogicData_TimeLimitedActivityData.OPENING, temp);
+
+    if _G.LogicData_TimeLimitedActivityData.UnFixed == nil then _G.LogicData_TimeLimitedActivityData.UnFixed = { }; end
+    local temp = { ID = activityID, startTime = startTime, endTime = endTime };
+    table.insert(_G.LogicData_TimeLimitedActivityData.UnFixed, temp);
+
+    if IsOpenPanel(ENUMPANELID.ENUM_TIME_LIMITED_ACTIVITY_PANEL) == 0 then
+        Main_Middle.InitTimeLimitedActivity();
+    end
+end
+
+function OnOpenHuntChoose(args)
+    ParameterToMessageTextBox.ChooseHuntMissionType();
+end
+
+function OnHuntMoneyChange(protocolId, buffer)
+    local changeValue = buffer:ReadInt();
+    local endValue = buffer:ReadInt();
+    G_UserInfo.RoleAttribute.HuntMagicMoney = endValue;
+    if changeValue > 0 then
+        local str = string_format(GetTextToId(102376), changeValue);
+        ShowSystemFlowTips(str, true);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+    end
+    CoinPanel.RefreshContentOut();
+end
+
+function OnGodNessTearChange(protocolId, buffer)
+    local changeValue = buffer:ReadInt();
+    local endValue = buffer:ReadInt();
+    G_UserInfo.RoleAttribute.GodNessTear = endValue;
+    if changeValue > 0 then
+        local str = string_format(GetTextToId(102377), changeValue);
+        ShowSystemFlowTips(str, true);
+        ChatManager.ShowSystemMessage(CHAT_CHANNEL_ID.CHAT_SYSTEM_ID, str, false, true);
+    end
+    CoinPanel.RefreshContentOut();
+end
+
+-- 获取骑士荣誉面板信息
+function OnGetHonorInfo(protocolId, buffer)
+    ActivityManager.activityHonor = { };
+    local size = buffer:ReadInt();
+    error("size:::" .. size);
+    for index = 1, size do
+        local data = { };
+        -- 主键id
+        data.keyID = buffer:ReadInt();
+        error("data.keyID:::::" .. data.keyID);
+        -- 活动id
+        data.eventId = buffer:ReadInt();
+        --error("data.eventId:::" .. data.eventId);
+        -- 类型id
+        data.typeId = buffer:ReadInt();
+        --error("data.typeId:::" .. data.typeId);
+        -- 次数
+        data.Count = buffer:ReadInt();
+        --error("data.Count:::" .. data.Count);
+        -- 勋章数
+        data.MedalNum = buffer:ReadInt();
+        error("data.MedalNum:::" .. data.MedalNum);
+        -- 经验数
+        data.ExpNum = buffer:ReadInt();
+        error("data.ExpNum:::" .. data.ExpNum);
+        table.insert(ActivityManager.activityHonor, data);
+    end
+    ActivityHonorPanel.Refresh();
+end
+
+-- 通知客户端打开活动消息界面
+function OnOpenActivityMessagePanel(protocolId, buffer)
+    local data = {};
+    -- 操作类型
+    -- 1: 通用活动前往操作(活动主界面的前往)
+    -- 2: 通用活动前往操作(指定前往操作类型)
+    data.opType = buffer:ReadInt();
+    data.activityId = buffer:ReadInt(); -- 活动ID
+    data.activityData = ActivityManager.GetActivity(data.activityId);
+    if data.activityData == nil then
+        error("活动数据不存在, ID:"..data.activityId);
+        return;
+    end
+    if data.opType == 1 then
+    elseif data.opType == 2 then
+        data.jumpType = buffer:ReadInt();   -- 前往操作类型
+        data.jumpValue = buffer:ReadStringByByte(); -- 前往操作值
+    end
+    data.contentTextId = buffer:ReadInt();  -- 提示内容文本ID
+    data.countdown = buffer:ReadInt();  -- 关闭界面倒计时(0:不倒计时)
+    ActivityMessagePanel.Show(data);
+end
+
+-- 多个时间段的活动完成情况
+function onGetMultipleTimeActInfo(protocolId, buffer)
+    error("onGetMultipleTimeActInfo::::::::::::::::::::::::::::::::::::::");
+    local tempTable = {};
+    local actID = buffer:ReadInt();
+    local count = buffer:ReadByte();
+    local dayTimes = {};
+    for i = 1, count do
+        dayTimes[i] = {};
+        dayTimes[i].beginTime = buffer:ReadInt(); -- 开始时间
+        dayTimes[i].endTime = buffer:ReadInt(); -- 结束时间
+        dayTimes[i].isGet = buffer:ReadInt(); -- <=0 为没有完成
+    end
+    tempTable.actID = actID;
+    tempTable.dayTimes = dayTimes;
+    if _G.MultipleTimeActInfo ~= nil then
+        if #_G.MultipleTimeActInfo > 0 then 
+            for i, v in pairs(_G.MultipleTimeActInfo) do
+                if v.actID == actID then 
+                    _G.MultipleTimeActInfo[i] = tempTable;
+                end
+            end
+        else
+            table.insert(_G.MultipleTimeActInfo, tempTable);   
+        end 
+    end
+    error("_G.MultipleTimeActInfo = "..SerializeTable(_G.MultipleTimeActInfo));
+end
+-------------------------------------------------------处理接收协议 END---------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求领取活跃度宝箱
+function RequestLivenessBoxReward(index)
+    error("请求领取活跃度宝箱" .. index);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_DAILY_TASK_AWARD);
+    buffer:WriteByte(index);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求世界BOSS信息, 刷新BOSS血量
+function RequestBossList()
+    -- error("请求世界BOSS信息");
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PANELSTATE);
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    buffer:WriteByte(1);
+    buffer:WriteInt(3);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求进去活动副本
+-- @param id 活动副本ID
+--[[
+function RequestEnterActivityRoom(id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_ENTEY_INFO);
+    buffer:WriteInt(id);
+    --buffer:WriteInt(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+]]
+
+-- 请求进入无尽天梯
+-- @param id 活动副本ID
+-- @param layer 第几层
+function RequestEnterActivityStairRoom(id, layer)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_ENTEY_INFO);
+    buffer:WriteInt(id);
+    buffer:WriteInt(layer);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求进入危险场景(地主之地)
+-- @param sceneId 危险场景ID
+-- @param activityId 活动ID
+--[[
+function RequestDangerousScene(sceneId, activityId)
+--    local buffer = ByteBuffer.New();
+--    buffer:WriteUShort(GMI_CTOS_LGS_BOSS_REFRESH_MSG);
+--    buffer:WriteByte(1);
+--    buffer:WriteInt(id);
+--    buffer:WriteInt(activityId);
+--    G_NetWorkMng:SendMessage(buffer);
+    SceneProtocol.RequestDangerSceneTransfer(sceneId, activityId);
+end
+]]
+
+-- 客户端请求限时活动时间
+function RequestActivitysLimitTime()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_LIMIT_TIME_ACTIVITY_DATA);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求刷新镖车品质: 1代表打开页面直接刷 2代表点击刷新按钮刷
+function RequestRefreshEscort(num)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_REFRES_CAMION_QUALITY);
+    buffer:WriteByte(num);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求开始运镖
+function RequestStartEscort()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_REFRES_TRANSPORT_CAMION);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求继续猎魔大师活动
+function RequestContinueHunt()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_HUNT_MAGIC_IS_CONTINUE);
+    G_NetWorkMng:SendMessage(buffer);
+
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+-- 新队员入队，请求进入到队伍所在的副本场景
+function RequesHunt()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_ENTER_TEAM_FB_SCENE);
+    G_NetWorkMng:SendMessage(buffer);
+
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+--  荣誉骑士界面请求数据
+function RequestHonorData()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_HONOURINFO_RECORD);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--  请求活动次数增加
+function RequestIncreaseActNumData(nActivityID,nGold)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ERASE_ACTIVITY_COUNT);
+    buffer:WriteInt(nActivityID);
+    buffer:WriteInt(nGold);
+    G_NetWorkMng:SendMessage(buffer);
+    error("SendMessage:nActivityID="..nActivityID.."***nGold="..nGold);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

@@ -1,0 +1,318 @@
+﻿module("FriendsChatPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+local m_ItemlvStr = "Level/Label1";
+-----------------------------------------按钮路径--------------------------------------
+-- 表情按钮路径 
+local m_FaceButtonPath = "InputBox/FaceButton";
+-- 发送按钮路径
+local m_SendButtonPath = "InputBox/SendButton"
+-- 录音按钮路径
+local m_RecordButtonPath = "InputBox/RecordButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 背景遮罩路径
+local m_CloseFacePanelPath = "FacePanel/ZheZhao";
+----------------------------------gameobject所在的路径---------------------------------
+-- 录音组件路径
+local m_RecordOperatePath = "Record";
+
+-- 输入入框路径
+local m_InputPath = "InputBox/InputField";
+-- 聊天表情prefab路径
+local m_ItemFaceStr = "FacePanel/Clone-Face";
+-- 聊天表情框Grid路径
+local m_FaceGridPath = "FacePanel/ScrollView/Grid";
+-- ListView
+local m_listViewPath = "ScrollView/Grid";
+-- 聊天表情面板
+local m_FacePanelPath = "FacePanel";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 表情数量
+local m_faceCount = 51;
+-- 聊天表情item
+local m_itemFacePrefab = nil;
+-- 聊天表情框对象
+local m_FaceGrid = nil;
+-- 表情框
+local m_FacePanel = nil;
+-- 表情面板是否开启
+m_FacePanelIsOpen = false;
+-- 输入框
+local m_Input = nil;
+-- 私聊CD
+local m_MinChatTime = 0;
+-- 聊天语音item
+local m_itemVoicePrefab = nil;
+-- 录音按钮
+local m_RecordButton = nil;
+-- 录音操作组件
+local m_RecordOperate = nil;
+-- 聊天列表
+local m_listView = nil;
+
+local inited = false;
+local friendData = nil;
+local gameObject = nil;
+local m_playingVoiceData = nil;
+
+selectId = 0;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitPanel(go)
+    gameObject = go;
+    Init();
+end
+
+function HidePanel()
+    selectId = 0;
+    if inited then
+        gameObject:SetActive(false);
+    end
+end
+
+function ShowPanel(data)
+    if inited then
+        selectId = data.guid;
+        gameObject:SetActive(true);
+        friendData = data;
+        --ChatManager.SetChannelIdAndTarget(CHAT_CHANNEL_ID.CHAT_ALONE_ID, friendData);
+        InitList();
+    end
+end
+
+function OnDestroy()
+    inited = false;
+    selectId = 0;
+    gameObject = nil;
+    friendData = nil;
+    m_playingVoiceData = nil;
+end
+
+function Init()
+    inited = true;
+    -- 私聊CD
+    if CCommonTool.GetDefineInfo(EDefineContentID.TYPE_CHAT_PRIVATE_CD) ~= nil then
+        m_MinChatTime = CCommonTool.GetDefineInfo(EDefineContentID.TYPE_CHAT_PRIVATE_CD):GetIntContent();
+    end
+    m_itemFacePrefab = child(gameObject, m_ItemFaceStr).gameObject;
+    -- 表情框
+    m_FacePanel = child(gameObject, m_FacePanelPath).gameObject;
+    -- 输入框
+    m_Input = GetComponent(gameObject, m_InputPath, "UIInput");
+    m_Input.characterLimit = ChatManager.GetCharacterLimit();
+    m_Input.defaultText = CCommonTool.GetTxtData(385).m_str;
+    -- 录音按钮
+    m_RecordButton = child(gameObject, m_RecordButtonPath).gameObject;
+    -- 初始化录音组件
+    m_RecordOperate = child(gameObject, m_RecordOperatePath).gameObject:GetComponent("UIRecordOperate");
+    m_RecordOperate.gameObject:SetActive(false);
+    m_RecordOperate.callback = OnVoiceCallback;
+    m_RecordOperate:RegisterButton(m_RecordButton, CHAT_CHANNEL_ID.CHAT_ALONE_ID);
+    -- 表情框对象
+    m_FaceGrid = GetComponent(gameObject, m_FaceGridPath, "UIGrid");
+    -- 隐藏表情面板
+    m_FacePanelIsOpen = false;
+    m_FacePanel:SetActive(m_FacePanelIsOpen);
+
+    m_listView = GetComponent(gameObject, m_listViewPath, "UIListView");
+    m_listView:SetInitCallback(OnListViewInit);
+    m_listView:SetClickCallback(OnListViewClick);
+
+    InitEvents();
+    InitFaceInfo();
+end
+
+function InitList()
+    m_listView:RemoveAll();
+    local records = FriendsData.GetChatRecord(friendData.guid);
+    for i, data in ipairs(records) do
+        AddListData(data);
+    end
+    m_listView:JumpToIndex(m_listView.dataCount - 1);
+end
+
+function AddListData(data)
+    if friendData.guid == data.srcId then
+        m_listView:AddData(data, "player");
+    else
+        m_listView:AddData(data, "self");
+    end
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local isOpppRecord = friendData.guid == data.srcId;
+    if isOpppRecord then
+        SetLabelContent("Name",string_format(GetTextToId(8920),friendData.name), cell);
+        SetSpriteByAtlasID("HeadIcon", friendData.headIcon, cell, true);
+        SetGameObjectState("UnionIcon", false, go);
+        local objectName = child(go, "Name").gameObject;
+        SetGameObjectPos("Name", Vector3.New(-482,objectName.transform.localPosition.y, 0),go);
+        SetLabelContent(m_ItemlvStr, "Lv." ..  friendData.level, go);
+    else
+        SetLabelContent("Name", string_format(GetTextToId(8919),friendData.name), cell);
+        if CCommonTool.GetRoleDateInfo(G_UserInfo.RoleAttribute.ProID) ~= nil then 
+            SetSpriteByAtlasID("HeadIcon", CCommonTool.GetRoleDateInfo(G_UserInfo.RoleAttribute.ProID).HeadRes, cell, true);
+        end
+        SetLabelContent(m_ItemlvStr, "Lv." ..  G_UserInfo.RoleAttribute.Level, go);
+        SetGameObjectState("UnionIcon", false, go);
+        local objectName = child(go, "Name").gameObject;
+        SetGameObjectPos("Name", Vector3.New(324,objectName.transform.localPosition.y, 0),go);
+    end
+    
+    local label = GetComponent(cell, "Message", "UILabel");
+    local voiceItem = child(cell, "Voice").gameObject;
+    voiceItem:SetActive(data.msgData.msgType == 1);
+    if data.msgData.msgType == 1 then
+        local voiceSecend = math.ceil(data.msgData.seconds / 1000);
+        SetLabelContent("Label1", voiceSecend .. "\"", voiceItem);
+        local msg = data.msgData.msg;
+        if #msg < 5 then msg = msg .. "      ";end--占位, 拉宽背景
+        label.gameObject:GetComponent("EmojiComponent").text = "[E8DA9B]" .. msg .. "[-]";
+        --SetButtonObjEvent(label.gameObject, OnPlayVoiceClick);
+        local spriteAni = GetComponent(voiceItem, "Background", "CUIVoiceAnimation");
+        spriteAni.enabled = data.msgData.fileId == CVoiceManager.Instance.playingFileId;
+    else
+        label.gameObject:GetComponent("EmojiComponent").text = "[E8DA9B]" .. data.msgData.msg .. "[-]";
+    end
+end
+
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Message" then
+        if data.msgData.msgType == 1 then
+            local fileId = data.msgData.fileId;
+            if CVoiceManager.Instance.playingFileId == fileId then
+                ChatVoiceManager.StopVoice(fileId);
+                m_listView:Refresh();
+            else
+                ChatVoiceManager.PlayVoice(fileId);
+            end
+        end
+    end
+end
+
+function InitEvents()
+    inited = true;
+    -- 发送按钮
+    SetGameObjectEvent(m_SendButtonPath, OnSendClick, gameObject, nil);
+    -- 表情按钮
+    SetGameObjectEvent(m_FaceButtonPath, OnFaceClick, gameObject, nil);
+    -- 设置表情面板的关闭事件
+    SetGameObjectEvent(m_CloseFacePanelPath, OnFacePanelClose, gameObject);
+
+end
+
+-- 初始化聊天表情
+function InitFaceInfo()
+    for i = 1, m_faceCount do
+        local m_singleFace = CCommonTool.GetCFaceInfo(i);
+        -- 实例化聊天item
+        local m_LiaoTianFaceItem = newobject(m_itemFacePrefab);
+        -- 赋值位置
+        m_LiaoTianFaceItem.transform.parent = m_FaceGrid.gameObject.transform;
+        -- 赋值名字
+        m_LiaoTianFaceItem.name = i;
+        -- 显示item
+        m_LiaoTianFaceItem:SetActive(true);
+        -- 设置Sprite内容
+        local m_UISprite = m_LiaoTianFaceItem:GetComponent("UISprite");
+        local altasManager = G_PanelMng:GetUIAtlasManager();
+        local m_UISpriteAnimation = m_LiaoTianFaceItem:GetComponent("UISpriteAnimation");
+        if m_singleFace ~= nil then
+            -- 先注释，等美术表情图片出来后，策划配完表
+            SetSpriteByAtlasID("", m_singleFace.PictureStart, m_LiaoTianFaceItem);
+            local m_UISpriteAnimation = m_LiaoTianFaceItem:GetComponent("UISpriteAnimation");
+            m_UISpriteAnimation.namePrefix = m_singleFace.PictureName;
+        end
+        -- 点击表情图片
+        SetButtonObjEvent(m_LiaoTianFaceItem, OnClickFace, nil);
+    end
+    m_FaceGrid:Reposition();
+end
+
+-- 语音聊天回调方法
+function OnVoiceCallback(recordComp, data)
+    local state = data.state;
+    if state == UIRecordOperate.RECORD_START then
+        data.data = friendData.guid;
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 聊天表情点击
+function OnClickFace(go)
+    local m_singleFace = CCommonTool.GetCFaceInfo(tonumber(go.name));
+    if m_singleFace ~= nil then
+        -- 先注释，等美术出表情图片策划配完表
+        local m_faceName = GetTextToId(m_singleFace.MemberNum);
+        m_Input.value = m_Input.value .. m_faceName;
+    end
+    -- m_FacePanel:SetActive(false);
+    -- m_Input.isSelected = true;
+end
+
+-- 发送按钮
+function OnSendClick()
+    if not ChatManager.CanChat(CHAT_CHANNEL_ID.CHAT_ALONE_ID) then
+        return;
+    end
+    -- 输入内容
+    local message = ReplaceIllegalChars(m_Input.value);
+    local sent = ChatManager.SendMessage(CHAT_CHANNEL_ID.CHAT_ALONE_ID, message, friendData, 0);
+    if sent then
+        m_Input.value = "";
+        FriendsData.AddRecent(friendData);
+        -- 对话的好友离线时，将信息存到本地并显示在聊天面板
+        if friendData.onlineState ~= 1 then 
+            local msgData = {msg=tostring(message), msgType=0};
+            FriendsData.AddChatRecord(friendData.guid, G_UserInfo.GlobalDBID, msgData);
+            FriendsPanel.OnReceiveChatMessage(friendData.guid);
+        end
+        InitList();
+    end
+end
+
+-- 递归替换非法文字
+function ReplaceIllegalChars(message)
+    local len = 0
+    repeat
+        local illegalChars = CCommonTool.IsLegitimacyByText(message,ENUM_SHILED_AREA.CHAT);
+        len = string.len(illegalChars)
+        if len > 0 then
+            message = string.gsub(message, illegalChars, "*");
+        end
+    until len == 0;
+    return message;
+end
+
+-- 表情按钮
+function OnFaceClick()
+    m_FacePanelIsOpen = not m_FacePanel.activeSelf;
+    m_FacePanel:SetActive(m_FacePanelIsOpen);
+end
+
+-- 关闭表情面板
+function OnFacePanelClose()
+    m_FacePanelIsOpen = false;
+    m_FacePanel:SetActive(m_FacePanelIsOpen);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 语音播放开始回调
+function OnRecordedFileStartPlay(fileId, fileLength)
+    if inited == true and gameObject.activeInHierarchy == true then
+        m_listView:Refresh();
+    end
+end
+
+-- 语音播放完成回调
+function OnRecordedFilePlayEnd(fileId)
+    if inited == true and gameObject.activeInHierarchy == true then
+        m_listView:Refresh();
+    end
+end

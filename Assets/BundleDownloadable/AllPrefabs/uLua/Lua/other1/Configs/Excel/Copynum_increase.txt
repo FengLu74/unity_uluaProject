@@ -1,0 +1,99 @@
+﻿--[[
+    field=Id, type=byte, desc=主键ID，活动ID*100+次数
+    field=MoneyType, type=byte, desc=增加次数所需货币类型，1=红钻，2=蓝钻
+    field=UpgradeNeed, type=int, desc=货币所需数量
+]]
+module("CopynumIncreaseTable", package.seeall)
+local list={
+    {Id=10101,MoneyType=1,UpgradeNeed=188},
+    {Id=10102,MoneyType=1,UpgradeNeed=388},
+    {Id=10103,MoneyType=1,UpgradeNeed=388},
+    {Id=10104,MoneyType=1,UpgradeNeed=388},
+    {Id=10105,MoneyType=1,UpgradeNeed=388},
+    {Id=10106,MoneyType=1,UpgradeNeed=388},
+    {Id=10107,MoneyType=1,UpgradeNeed=388},
+    {Id=10108,MoneyType=1,UpgradeNeed=388},
+    {Id=10109,MoneyType=1,UpgradeNeed=388},
+    {Id=10110,MoneyType=1,UpgradeNeed=388},
+    {Id=10201,MoneyType=1,UpgradeNeed=38},
+    {Id=10202,MoneyType=1,UpgradeNeed=48},
+    {Id=10203,MoneyType=1,UpgradeNeed=48},
+    {Id=10204,MoneyType=1,UpgradeNeed=48},
+    {Id=10205,MoneyType=1,UpgradeNeed=48},
+    {Id=10206,MoneyType=1,UpgradeNeed=48},
+    {Id=10207,MoneyType=1,UpgradeNeed=48},
+    {Id=10208,MoneyType=1,UpgradeNeed=48},
+    {Id=10209,MoneyType=1,UpgradeNeed=48},
+    {Id=10210,MoneyType=1,UpgradeNeed=48},
+    {Id=210101,MoneyType=1,UpgradeNeed=0},
+    {Id=220101,MoneyType=1,UpgradeNeed=0},
+    {Id=230101,MoneyType=1,UpgradeNeed=0},
+    {Id=240101,MoneyType=1,UpgradeNeed=0}
+};
+local map = {[10101]=list[1],[10102]=list[2],[10103]=list[3],[10104]=list[4],[10105]=list[5],[10106]=list[6],[10107]=list[7],[10108]=list[8],[10109]=list[9],[10110]=list[10],[10201]=list[11],[10202]=list[12],[10203]=list[13],[10204]=list[14],[10205]=list[15],[10206]=list[16],[10207]=list[17],[10208]=list[18],[10209]=list[19],[10210]=list[20],[210101]=list[21],[220101]=list[22],[230101]=list[23],[240101]=list[24]};
+
+count = 24;
+Count = 24;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

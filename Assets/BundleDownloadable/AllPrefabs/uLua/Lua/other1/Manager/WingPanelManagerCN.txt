@@ -1,0 +1,279 @@
+﻿module("WingPanelManagerCN", package.seeall)
+
+-- 玩家神翼数据信息
+LogicData_WingPlayerInfo = {};
+-- 化灵图标个数
+tableRow = 5;
+-- 当前启用职业数量暂定4
+roleUseNum=4;
+-- 初始化god table
+function ConstructData()
+    LogicData_WingPlayerInfo = {};
+    --神翼
+    LogicData_WingPlayerInfo.GodInfos = {};
+    --技能
+    LogicData_WingPlayerInfo.SkillInfos = {};
+    --化灵
+    LogicData_WingPlayerInfo.StarInfos = {};
+    --当前使用的神翼id
+    LogicData_WingPlayerInfo.CurWingID = 0;
+    -- 化灵开启等级
+    LogicData_WingPlayerInfo.DavidsOpenNeedLv = 0;
+end
+function getCurWingID()
+    if LogicData_WingPlayerInfo.CurWingID ~=nil then
+        --error("_LogicData_WingPlayerInfo.CurWingID="..LogicData_WingPlayerInfo.CurWingID);
+        return LogicData_WingPlayerInfo.CurWingID;
+    end
+end
+function getMinState()
+    if LogicData_WingPlayerInfo.DavidsOpenNeedLv ~=nil then
+        return LogicData_WingPlayerInfo.DavidsOpenNeedLv ;
+    end
+end
+function DavidsOpenNeedLvAttr(lvl)
+    if lvl == nil then
+        return LogicData_WingPlayerInfo.DavidsOpenNeedLv;
+    end
+    LogicData_WingPlayerInfo.DavidsOpenNeedLv = lvl
+end
+-- 得到阶数，星数，经验数
+function getPlayerGodData()
+    if LogicData_WingPlayerInfo.GodInfos ~= nil then
+        return LogicData_WingPlayerInfo.GodInfos.StageLvl,LogicData_WingPlayerInfo.GodInfos.StarLvl,LogicData_WingPlayerInfo.GodInfos.Exp;
+    end
+    return nil,nil,nil;
+end
+-- 得到 技能组数据
+function getPlayerSkillData()
+    if LogicData_WingPlayerInfo.SkillInfos ~= nil then
+        return LogicData_WingPlayerInfo.SkillInfos;
+    end
+end
+-- 刷新神翼数据
+function RefreshGodInfos(exp,star_lvl,stage_lvl,god_id)
+    local stage_change = false;
+    local god_change = false;
+    if exp ~= nil then
+        LogicData_WingPlayerInfo.GodInfos.Exp = exp;
+    end
+    if star_lvl ~=nil then
+        LogicData_WingPlayerInfo.GodInfos.StarLvl = star_lvl;
+    end
+    if stage_lvl ~= nil then
+        if stage_lvl ~=LogicData_WingPlayerInfo.GodInfos.StageLvl then
+            stage_change = true;
+        end
+        LogicData_WingPlayerInfo.GodInfos.StageLvl = stage_lvl;
+    end
+    if god_id ~= nil then
+        if god_id ~=LogicData_WingPlayerInfo.CurWingID then
+            god_change = true;
+        end
+        LogicData_WingPlayerInfo.CurWingID = god_id;
+    end
+    --error(string_format("god_change={3}***CurWingID={0}***stage_lvl={1}***star_lvl={2}",LogicData_WingPlayerInfo.CurWingID,LogicData_WingPlayerInfo.GodInfos.StageLvl,LogicData_WingPlayerInfo.GodInfos.StarLvl,god_change));
+    WingPanelCN.RefreshWingPanel(stage_change,god_change);
+end
+-- 刷新神翼技能数据
+function inserSkillTab(tab)
+    if LogicData_WingPlayerInfo.SkillInfos ~=nil then
+        table.insert(LogicData_WingPlayerInfo.SkillInfos,tab);
+    end
+end
+-- 排序，填充技能数组
+function pullSkillTab()
+    local skillTab = LogicData_WingPlayerInfo.SkillInfos;
+    if #skillTab >= 6 then
+        table.sort( skillTab, sortFunc1);
+        return;
+    end
+    for i= #skillTab+1 , 6  do
+        local tab = 
+        {
+            id = 0,
+            lvl = 0,
+            index = i,
+        };
+        table.insert(skillTab,tab);
+    end
+    table.sort( skillTab, sortFunc1);
+end
+function RefreshPlayerSkillTab(tab)
+    local curSkillTab = LogicData_WingPlayerInfo.SkillInfos;
+    local refresh = false;
+    for i=1,#curSkillTab do
+        if curSkillTab[i].index == tab.index then
+            curSkillTab[i].id = tab.id;
+            curSkillTab[i].lvl = tab.lvl;
+            refresh = true;
+            break;
+        end
+    end
+    if refresh == true then
+        WingPanelCN.RefreshWingPanel(nil,true);
+    else
+        error("[神翼技能刷新error],技能的index：-->"..tab.index);
+    end
+end
+-- 升序
+function sortFunc1(a,b)
+    if a.index ~= nil and b.index~=nil then
+        return a.index < b.index;
+    end
+end
+-- 技能数据发生变化
+--[[function RefreshSkillDatas(index,id,lvl)
+     local skillTab = LogicData_WingPlayerInfo.SkillInfos;
+     local canFind = false;
+     for i=1,#skillTab do
+         if index == skillTab[i].index then
+            canFind = true;
+            skillTab[i].id = id;
+            skillTab[i].lvl = lvl;
+         end
+     end
+     if canFind == false then
+        error("[神翼]异常。。id为："..id.."找不到对应的数据组");
+     end
+end
+]]
+-- 获取当前数据十位数
+function getModfA(X)
+    if X~=nil and X>0 then
+        local A,B=math.modf(X/10); 
+        return A;
+    else
+        error(string_format( "not correct num={0}",X));
+    end
+end
+-- -----------------------------------------刷新化灵数据------------------------------------------
+function getStarTabDatas()
+    local starTab = LogicData_WingPlayerInfo.StarInfos;
+    if starTab == nil or #starTab<tableRow then
+        error("[神翼]化灵属性培养数据error");
+        return;
+    end
+    return starTab;
+end
+function RefreshStarInfos(tab)
+    local starTab = LogicData_WingPlayerInfo.StarInfos;
+    if starTab == nil or #starTab<tableRow then
+        error("[神翼]化灵属性培养数据error");
+        return;
+    end
+    --error("化灵属性升级返回：types::"..tab.types.." 属性等级：："..tab.level.." 属性星阶：："..tab.star_lvl.." 属性培养经验::"..tab.exp);
+    local canFind = false;
+    for i=1,#starTab do
+        if starTab[i].types == tab.types then
+            canFind =true;
+            starTab[i].level = tab.level;
+            starTab[i].star_lvl = tab.star_lvl;
+            starTab[i].exp = tab.exp;
+            break;
+        end
+    end
+    if canFind == true then
+        WingPanelCN.RefreshWingPanel();
+    else
+        error("[神翼]【化灵】培养属性值types::"..tab.types.." 找不到匹配的数据table");
+    end
+
+end
+-- 初始化化灵数据
+function insertStarAttr(i,types,level,star_lvl,exp)
+    local starTab = LogicData_WingPlayerInfo.StarInfos ;
+    if starTab ~= nil then
+        starTab[i] = {};
+        starTab[i].types = types;
+        starTab[i].level = level;
+        starTab[i].star_lvl = star_lvl;
+        starTab[i].exp = exp;
+    end
+end
+function sortStarInfo()
+    local starTab = LogicData_WingPlayerInfo.StarInfos ;
+    if starTab == nil or #starTab<tableRow then
+        error("[神翼]化灵属性培养数据error");
+        return;
+    end
+    table.sort( starTab, sortfunction2 );
+end
+function sortfunction2(a,b)
+    if a ~= nil and b ~=nil then
+        local a_AttrsCfg = WingSpiritAttrTable.Get(a.types);
+        local b_AttrsCfg = WingSpiritAttrTable.Get(b.types);
+        if  a_AttrsCfg~= nil and b_AttrsCfg~=nil then
+            return a_AttrsCfg.Value>b_AttrsCfg.Value;
+        end
+    end
+    return a.types > b.types;
+end
+---------------------我要变强分数神翼计算需要--------------
+--总神翼数据分数=神翼分数+化灵分数=【神翼(所有的阶数的对应的培养等级)*m_QualityScoreTable[i]】+【（[化灵阶数-1]*5+化灵星数)*m_QualityScoreTable2[1]】
+-- 品质系数写死
+m_QualityScoreTable2 =
+{
+    --for ceshi
+    [1]=90,
+--    [1] = 1, 
+
+}
+--神翼对应的每一阶单星对应的系数
+m_QualityScoreTable =
+{
+    --for ceshi
+--    [1] = 1, 
+--    [2] = 1,
+--    [3] = 1, 
+--    [4] = 1, 
+--    [5] = 1, 
+--    [6] = 1, 
+--    [7] = 1, 
+--    [8] = 1, 
+--    [9] = 1, 
+--    [10] = 1, 
+--    [11] = 1, 
+--    [12] = 1, 
+    [1] = 58, 
+    [2] = 116,
+    [3] = 174, 
+    [4] = 232, 
+    [5] = 290, 
+    [6] = 348, 
+    [7] = 406, 
+    [8] = 464, 
+    [9] = 522, 
+    [10] = 580, 
+    [11] = 638, 
+    [12] = 696, 
+}
+
+-- 得到变强界面系统的品质系数对应的分数
+function GetScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_WING) == false then return score end
+    --神翼分数
+	local Infos =LogicData_WingPlayerInfo.GodInfos;
+    if Infos.StageLvl<=0 then
+        score = 0;
+    end
+    for index=1,Infos.StageLvl do
+        if index~=Infos.StageLvl then
+            score=score+m_QualityScoreTable[index]*10;   --10:神翼培养10级升阶
+        else
+            score=score+m_QualityScoreTable[index]*Infos.StarLvl;
+        end
+    end
+    --化灵分数
+    local ChangeInfos= LogicData_WingPlayerInfo.StarInfos;
+    if ChangeInfos~=nil and #ChangeInfos>0  then
+        for index=1,#ChangeInfos do  --tableRow个化灵
+            if ChangeInfos[index].level>0 then
+                score=score+((ChangeInfos[index].level-1)*5+ChangeInfos[index].star_lvl)*m_QualityScoreTable2[1];
+            end
+        end
+    end
+    return score;
+end
+------------------

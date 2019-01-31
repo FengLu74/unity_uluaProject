@@ -1,0 +1,109 @@
+﻿--[[
+    field=Id, type=int, desc=主键
+    field=Lv, type=int, desc=等级
+    field=MaxLv, type=int, desc=最大等级
+    field=Name, type=int, desc=名称
+    field=Describe, type=int, desc=描述
+    field=UpDescribe, type=int, desc=提升后描述
+    field=IconID, type=int, desc=图标
+    field=BuffId, type=int, desc=效果ID
+    field=NeedId, type=int, desc=升级消耗
+    field=NeedNum, type=int, desc=消耗数量
+    field=OpenLevel, type=int, desc=开启等级
+    field=Fight, type=int, desc=战力
+    field=SkillId, type=int, desc=技能ID
+]]
+module("JewelSkillTable", package.seeall)
+local list={
+    {Id=1000,Lv=0,MaxLv=5,Name=127601,Describe=127605,UpDescribe=127613,IconID=2612,BuffId=630,NeedId=21332,NeedNum=1,OpenLevel=2,Fight=0,SkillId=6210},
+    {Id=1001,Lv=1,MaxLv=5,Name=127601,Describe=127605,UpDescribe=127613,IconID=2612,BuffId=630,NeedId=21332,NeedNum=3,OpenLevel=2,Fight=100,SkillId=6210},
+    {Id=1002,Lv=2,MaxLv=5,Name=127601,Describe=127605,UpDescribe=127613,IconID=2612,BuffId=630,NeedId=21332,NeedNum=6,OpenLevel=2,Fight=300,SkillId=6210},
+    {Id=1003,Lv=3,MaxLv=5,Name=127601,Describe=127605,UpDescribe=127613,IconID=2612,BuffId=630,NeedId=21332,NeedNum=10,OpenLevel=2,Fight=500,SkillId=6210},
+    {Id=1004,Lv=4,MaxLv=5,Name=127601,Describe=127605,UpDescribe=127613,IconID=2612,BuffId=630,NeedId=21332,NeedNum=15,OpenLevel=2,Fight=700,SkillId=6210},
+    {Id=1005,Lv=5,MaxLv=5,Name=127601,Describe=127605,UpDescribe=127613,IconID=2612,BuffId=630,NeedId=21332,NeedNum=0,OpenLevel=0,Fight=900,SkillId=6210},
+    {Id=2000,Lv=0,MaxLv=5,Name=127602,Describe=127606,UpDescribe=127614,IconID=2611,BuffId=631,NeedId=21333,NeedNum=1,OpenLevel=4,Fight=0,SkillId=6211},
+    {Id=2001,Lv=1,MaxLv=5,Name=127602,Describe=127606,UpDescribe=127614,IconID=2611,BuffId=631,NeedId=21333,NeedNum=3,OpenLevel=4,Fight=100,SkillId=6211},
+    {Id=2002,Lv=2,MaxLv=5,Name=127602,Describe=127606,UpDescribe=127614,IconID=2611,BuffId=631,NeedId=21333,NeedNum=6,OpenLevel=4,Fight=300,SkillId=6211},
+    {Id=2003,Lv=3,MaxLv=5,Name=127602,Describe=127606,UpDescribe=127614,IconID=2611,BuffId=631,NeedId=21333,NeedNum=10,OpenLevel=4,Fight=500,SkillId=6211},
+    {Id=2004,Lv=4,MaxLv=5,Name=127602,Describe=127606,UpDescribe=127614,IconID=2611,BuffId=631,NeedId=21333,NeedNum=15,OpenLevel=4,Fight=700,SkillId=6211},
+    {Id=2005,Lv=5,MaxLv=5,Name=127602,Describe=127606,UpDescribe=127614,IconID=2611,BuffId=631,NeedId=21333,NeedNum=0,OpenLevel=0,Fight=900,SkillId=6211},
+    {Id=3000,Lv=0,MaxLv=5,Name=127603,Describe=127607,UpDescribe=127615,IconID=2613,BuffId=632,NeedId=21334,NeedNum=1,OpenLevel=6,Fight=0,SkillId=6212},
+    {Id=3001,Lv=1,MaxLv=5,Name=127603,Describe=127607,UpDescribe=127615,IconID=2613,BuffId=632,NeedId=21334,NeedNum=3,OpenLevel=6,Fight=100,SkillId=6212},
+    {Id=3002,Lv=2,MaxLv=5,Name=127603,Describe=127607,UpDescribe=127615,IconID=2613,BuffId=632,NeedId=21334,NeedNum=6,OpenLevel=6,Fight=300,SkillId=6212},
+    {Id=3003,Lv=3,MaxLv=5,Name=127603,Describe=127607,UpDescribe=127615,IconID=2613,BuffId=632,NeedId=21334,NeedNum=10,OpenLevel=6,Fight=500,SkillId=6212},
+    {Id=3004,Lv=4,MaxLv=5,Name=127603,Describe=127607,UpDescribe=127615,IconID=2613,BuffId=632,NeedId=21334,NeedNum=15,OpenLevel=6,Fight=700,SkillId=6212},
+    {Id=3005,Lv=5,MaxLv=5,Name=127603,Describe=127607,UpDescribe=127615,IconID=2613,BuffId=632,NeedId=21334,NeedNum=0,OpenLevel=0,Fight=900,SkillId=6212},
+    {Id=4000,Lv=0,MaxLv=5,Name=127604,Describe=127608,UpDescribe=127616,IconID=2614,BuffId=633,NeedId=21335,NeedNum=1,OpenLevel=8,Fight=0,SkillId=6213},
+    {Id=4001,Lv=1,MaxLv=5,Name=127604,Describe=127608,UpDescribe=127616,IconID=2614,BuffId=633,NeedId=21335,NeedNum=3,OpenLevel=8,Fight=100,SkillId=6213},
+    {Id=4002,Lv=2,MaxLv=5,Name=127604,Describe=127608,UpDescribe=127616,IconID=2614,BuffId=633,NeedId=21335,NeedNum=6,OpenLevel=8,Fight=300,SkillId=6213},
+    {Id=4003,Lv=3,MaxLv=5,Name=127604,Describe=127608,UpDescribe=127616,IconID=2614,BuffId=633,NeedId=21335,NeedNum=10,OpenLevel=8,Fight=500,SkillId=6213},
+    {Id=4004,Lv=4,MaxLv=5,Name=127604,Describe=127608,UpDescribe=127616,IconID=2614,BuffId=633,NeedId=21335,NeedNum=15,OpenLevel=8,Fight=700,SkillId=6213},
+    {Id=4005,Lv=5,MaxLv=5,Name=127604,Describe=127608,UpDescribe=127616,IconID=2614,BuffId=633,NeedId=21335,NeedNum=0,OpenLevel=0,Fight=900,SkillId=6213}
+};
+local map = {[1000]=list[1],[1001]=list[2],[1002]=list[3],[1003]=list[4],[1004]=list[5],[1005]=list[6],[2000]=list[7],[2001]=list[8],[2002]=list[9],[2003]=list[10],[2004]=list[11],[2005]=list[12],[3000]=list[13],[3001]=list[14],[3002]=list[15],[3003]=list[16],[3004]=list[17],[3005]=list[18],[4000]=list[19],[4001]=list[20],[4002]=list[21],[4003]=list[22],[4004]=list[23],[4005]=list[24]};
+
+count = 24;
+Count = 24;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

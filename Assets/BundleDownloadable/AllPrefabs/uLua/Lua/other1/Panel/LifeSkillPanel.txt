@@ -1,0 +1,1489 @@
+﻿module('LifeSkillPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'LifeSkillPanel';
+---------------------------------------label路径---------------------------------------
+-- 学习技能的名称Label
+local m_LearnTitlePath = "Learn/Centre/Up/Exp/Title";
+-- 学习技能的等级Label路径
+local m_LearnLevelPath = "Learn/Centre/Up/Exp/LearnLevel";
+-- 学习技能的经验Label路径
+local m_LearnExpProgressPath = "Learn/Centre/Up/Exp/LearnExpProgress";
+-- 学习技能所需的角色等级Label路径
+local m_LearnBreakLevelPath = "Learn/Centre/Centre/BreakLevel";
+-----------------------------------------按钮路径--------------------------------------
+-- 系统说明按钮
+local m_SystemExlpainStr = "Learn/Centre/Button";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 菜单按钮1路径
+local m_MenuItem1Path = "MainMenu/Grid/MenuItem1";
+-- 菜单按钮2路径
+local m_MenuItem2Path = "MainMenu/Grid/MenuItem2";
+-- 学习技能窗口
+local m_LearnPath = "Learn";
+-- 学习技能Item
+local m_LearnUpItemPath = "Learn/Centre/Up/LearnUpItem";
+-- 学习下一级技能所需的解锁items
+local m_LearnGridPath = "Learn/Centre/Centre/Items/Scroll View/Grid";
+-- 产出列表按钮事件
+local m_OutputButtonPath = "Learn/Centre/Centre/OutputButton";
+-- 激活技能按钮
+local m_ActivationButtonPath = "Learn/Centre/Centre/Buttons/ActivationButton";
+-- 学习技能按钮组
+local m_LearnButtonsPath = "Learn/Centre/Centre/Buttons/Learns";
+-- 学习一次按钮
+local m_LearnOneButtonPath = "Learn/Centre/Centre/Buttons/Learns/LearnOneButton";
+-- 学习十次按钮
+local m_LearnTenButtonPath = "Learn/Centre/Centre/Buttons/Learns/LearnTenButton";
+-- 突破技能按钮
+local m_BreakButtonPath = "Learn/Centre/Centre/Buttons/BreakButton";
+-- 制造界面
+local m_ProductionPath = "Production";
+-- 制造激活界面
+local m_ProductionActivatePath = "Production/Activate";
+-- 制造未激活界面
+local m_ProductionInactivePath = "Production/Inactive";
+-- 制造技能正常界面
+local m_ProductionUpNormalPath = "Production/Activate/Centre/Up/Normal";
+-- 制造技能特殊界面
+local m_ProductionUpSpecialPath = "Production/Activate/Centre/Up/Special";
+-- 制造技能1装备部位选择按钮
+local m_ProductionSkillOnePartButtonPath = "Production/Activate/Centre/Up/Special/SkillOne/Part";
+-- 制造技能1装备等级选择按钮
+local m_ProductionSkillOneLevelButtonPath = "Production/Activate/Centre/Up/Special/SkillOne/Level";
+-- 制造技能2装备部位选择按钮
+local m_ProductionSkillTwoPartButtonPath = "Production/Activate/Centre/Up/Special/SkillTwo/Part";
+--  制造描述1
+local m_MakeDescribePath1 = "Production/Activate/Centre/Centre/Title/Label1";
+--  制造描述1
+local m_MakeDescribePath2 = "Production/Activate/Centre/Centre/Title/Label2";
+-- 制造按钮
+local m_MakeButtonPath = "Production/Activate/Centre/MakeButton";
+-- 产出列表界面
+local m_OutputViewPath = "OutputView";
+-- 产出界面关闭
+local m_OutputViewMaskPath = "OutputView/Mask";
+-- 产出列表的技能Item
+local m_OutputViewItemPath = "OutputView/Centre/OutputViewItem";
+-- 产出界面关闭按钮
+local m_OutputViewCloseButtonPath = "OutputView/OutputViewCloseButton";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 需要学习技能菜单列表路径
+local m_LearnMenuPath = "Learn/Left/Menu/Scroll View/LearnMenu";
+-- 学习技能的等级经验
+local m_LearnExpSliderPath = "Learn/Centre/Up/Exp/LearnExpSlider";
+-- 学习技能所需的材料List
+local m_LearnUpgradeItemListPath = "Learn/Right/Items/Scroll View/LearnUpgradeItemList";
+-- 制造技能Menu列表
+local m_ProductionMenuPath = "Production/Activate/Left/Menu/Scroll View/ProductionMenu";
+-- 制造后可随机产出的item列表1
+local m_ProductionItemListPath1 = "Production/Activate/Centre/Centre/Items/Scroll View/ProductionItemList1";
+-- 制造后可随机产出的item列表1
+local m_ProductionItemListPath2 = "Production/Activate/Centre/Centre/Items/Scroll View/ProductionItemList2";
+-- 制造所需的升级材料列表
+local m_ProductionUpgradeItemListPath = "Production/Activate/Right/Items/Scroll View/ProductionUpgradeItemList";
+-- 产出列表菜单列表
+local m_OutputViewMenuPath = "OutputView/Menu/Scroll View/OutputViewMenu";
+-- 产出列表的Item列表
+local m_OutputViewItemListPath = "OutputView/Items/Scroll View/OutputViewItemList";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 菜单按钮1
+local m_MenuItem1 = nil;
+-- 菜单按钮2
+local m_MenuItem2 = nil;
+-- 学习技能窗口
+local m_Learn = nil;
+-- 需要学习技能菜单列表
+local m_LearnMenu = nil;
+-- 学习技能Item
+local m_LearnUpItem = nil;
+-- 学习技能名称
+local m_LearnTitle = nil;
+-- 学习技能的等级
+local m_LearnLevel = nil;
+-- 学习技能的经验进度
+local m_LearnExpSlider = nil;
+-- 学习技能的经验Label
+local m_LearnExpProgress = nil;
+-- 学习技能所需的角色等级Label路径
+local m_LearnBreakLevel = nil;
+-- 学习下一级技能所需的解锁items
+local m_LearnGrid = nil;
+-- 产出列表按钮事件
+local m_OutputButton = nil;
+-- 激活技能按钮
+local m_ActivationButton = nil;
+-- 学习一次按钮
+local m_LearnOneButton = nil;
+-- 学习十次按钮
+local m_LearnTenButton = nil;
+-- 突破技能
+local m_BreakButton = nil;
+-- 学习技能所需的材料List
+local m_LearnUpgradeItemList = nil;
+-- 生成制造界面
+local m_Production = nil;
+-- 生成制造界面
+local m_Production = nil;
+-- 制造激活界面
+local m_ProductionActivate = nil;
+-- 制造未激活界面
+local m_ProductionInactive = nil;
+-- 制造技能Menu列表
+local m_ProductionMenu = nil;
+-- 制造技能正常界面
+local m_ProductionUpNormal = nil;
+-- 制造技能特殊界面
+local m_ProductionUpSpecial = nil;
+-- 制造技能1装备部位选择按钮
+local m_ProductionSkillOnePartButton = nil;
+-- 制造技能1装备等级选择按钮
+local m_ProductionSkillOneLevelButton = nil;
+-- 制造技能道具部位选择按钮
+local m_ProductionSkillTwoPartButton = nil;
+-- 制造后可随机产出的item列表1
+local m_ProductionItemList1 = nil;
+-- 制造后可随机产出的item列表2
+local m_ProductionItemList2 = nil;
+-- 制造按钮
+local m_MakeButton = nil;
+-- 制造所需的升级材料列表
+local m_ProductionUpgradeItemList = nil;
+-- 产出列表界面
+local m_OutputView = nil;
+-- 产出界面关闭
+local m_OutputViewMask = nil;
+-- 产出列表菜单列表
+local m_OutputViewMenu = nil;
+-- 产出列表的技能Item
+local m_OutputViewItem = nil;
+-- 产出列表的Item列表
+local m_OutputViewItemList = nil;
+-- 产出列表关闭按钮
+local m_OutputViewCloseButton = nil;
+-- 产出列表界面
+local m_OutputViewIsOpen = false;
+-----------------------------------一些写死的规定--------------------------------------
+--生活技能数据
+local m_LifeSkillData = {};
+--技能学习数据信息
+local m_LearnSkillData = {};
+--学习技能所需材料条件信息
+local m_LearnSkillLvupData = {};
+--技能制造菜单数据信息
+local m_ProductionMenuData = {};
+--技能制造数据信息
+local m_ProductionSkillData = {};
+--技能制造选择的部位
+local m_SkillPartIndex = 0;
+--技能1制造选择的等级
+local m_SkillOneLevel = 0;
+--当前制造数据
+local m_ProductionData = {};
+--当前制造的技能Id
+local m_CurSkillCreateId = 0;
+local m_OpenData = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+--主菜单指针
+local m_MenuIndex = 2;
+--子菜单指针
+local m_ProductionSkillIndex = 0;
+local m_LearnSkillIndex = 0;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    LifeSkillManager.LoadTexts();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_MenuItem1 = nil;
+	m_MenuItem2 = nil;
+    m_Learn = nil;
+	m_LearnMenu = nil;
+	m_LearnUpItem = nil;
+	m_LearnLevel = nil;
+	m_LearnExpSlider = nil;
+	m_LearnExpProgress = nil;
+	m_LearnBreakLevel = nil;
+	m_OutputButton = nil;
+    m_ActivationButton = nil;
+	m_LearnOneButton = nil;
+	m_LearnTenButton = nil;
+    m_BreakButton = nil;
+	m_LearnUpgradeItemList = nil;
+	m_Production = nil;
+    m_ProductionActivate = nil;
+    m_ProductionInactive = nil;
+	m_ProductionMenu = nil;
+	m_ProductionUpNormal = nil;
+	m_ProductionUpSpecial = nil;
+	m_ProductionItemList1 = nil;
+	m_ProductionItemList2 = nil;
+    m_ProductionSkillOnePartButton = nil;
+    m_ProductionSkillOneLevelButton = nil;
+    m_ProductionSkillTwoPartButton = nil;
+	m_MakeButton = nil;
+    m_ProductionUpgradeItemList = nil;
+	m_OutputView = nil;
+    m_OutputViewMask = nil;
+	m_OutputViewMenu = nil;
+	m_OutputViewItem = nil;
+	m_OutputViewItemList = nil;
+	m_OutputViewCloseButton = nil;
+
+    m_LifeSkillData = {};
+    m_LearnSkillData = {};
+    m_LearnSkillLvupData = {};
+    m_ProductionMenuData = {};
+    m_ProductionSkillData = {};
+    m_SkillPartIndex = 0;
+    m_SkillOneLevel = 0;
+    m_ProductionData = {};
+    m_CurSkillCreateId = 0;
+    m_MenuIndex = 2;
+    m_ProductionSkillIndex = 0;
+    m_LearnSkillIndex = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_LIFESKILL);
+    -- 菜单按钮1
+    m_MenuItem1 = child(m_PanelObject, m_MenuItem1Path).gameObject;
+    -- 菜单按钮2
+    m_MenuItem2 = child(m_PanelObject, m_MenuItem2Path).gameObject;
+
+    -- 初始化技能学习Objects
+    InitLearnObjects();
+    -- 初始化制造Object
+    InitProductionObjects();
+
+    -- 产出列表界面
+    m_OutputView = child(m_PanelObject, m_OutputViewPath).gameObject;
+    -- 产出界面关闭
+    m_OutputViewMask = child(m_PanelObject, m_OutputViewMaskPath).gameObject;
+    -- 产出列表菜单列表
+    m_OutputViewMenu = GetComponent(m_PanelObject, m_OutputViewMenuPath, "UIListView");
+    -- 产出列表的技能Item
+    m_OutputViewItem = child(m_PanelObject, m_OutputViewItemPath).gameObject;
+    -- 产出列表的Item列表
+    m_OutputViewItemList = GetComponent(m_PanelObject, m_OutputViewItemListPath, "UIListView");
+    -- 产出列表的关闭按钮
+    m_OutputViewCloseButton = child(m_PanelObject, m_OutputViewCloseButtonPath).gameObject;
+
+end
+-- 初始化技能学习Objects
+function InitLearnObjects()
+    -- 学习界面
+    m_Learn = child(m_PanelObject, m_LearnPath).gameObject;
+    -- 学习技能菜单
+    m_LearnMenu = GetComponent(m_PanelObject, m_LearnMenuPath, "UIListView");
+    -- 学习技能Item
+    m_LearnUpItem = child(m_PanelObject, m_LearnUpItemPath).gameObject;
+    -- 学习技能名称
+    m_LearnTitle = GetComponent(m_PanelObject, m_LearnTitlePath, "UILabel");
+    -- 学习技能等级
+    m_LearnLevel = GetComponent(m_PanelObject, m_LearnLevelPath, "UILabel");
+    -- 学习技能经验UISlider
+    m_LearnExpSlider = GetComponent(m_PanelObject, m_LearnExpSliderPath, "UISlider");
+    -- 学习技能的经验显示 
+    m_LearnExpProgress = GetComponent(m_PanelObject, m_LearnExpProgressPath, "UILabel");  
+    -- 学习技能所需的角色等级Label路径  
+    m_LearnBreakLevel = GetComponent(m_PanelObject, m_LearnBreakLevelPath, "UILabel");
+    -- 学习下一级技能所需的解锁items
+    m_LearnGrid  = GetComponent(m_PanelObject, m_LearnGridPath, "UIGrid");
+    -- 产出列表按钮事件
+    m_OutputButton = child(m_PanelObject, m_OutputButtonPath).gameObject;
+    -- 激活技能按钮
+    m_ActivationButton = child(m_PanelObject, m_ActivationButtonPath).gameObject;
+    -- 学习一次按钮
+    m_LearnOneButton = child(m_PanelObject, m_LearnOneButtonPath).gameObject;
+    -- 学习十次按钮
+    m_LearnTenButton = child(m_PanelObject, m_LearnTenButtonPath).gameObject;
+    -- 突破技能按钮
+    m_BreakButton = child(m_PanelObject, m_BreakButtonPath).gameObject;
+    -- 学习技能所需的材料List
+    m_LearnUpgradeItemList = GetComponent(m_PanelObject, m_LearnUpgradeItemListPath, "UIListView");
+end
+-- 初始化制造Objects
+function InitProductionObjects()
+    -- 生成制造界面
+    m_Production = child(m_PanelObject, m_ProductionPath).gameObject;
+    -- 制造激活界面
+    m_ProductionActivate = child(m_PanelObject, m_ProductionActivatePath).gameObject;
+    -- 制造未激活界面
+    m_ProductionInactive = child(m_PanelObject, m_ProductionInactivePath).gameObject;
+    -- 制造技能Menu列表
+    m_ProductionMenu = GetComponent(m_PanelObject, m_ProductionMenuPath, "UIListView");
+    -- 制造技能正常界面
+    m_ProductionUpNormal = child(m_PanelObject, m_ProductionUpNormalPath).gameObject;    
+    -- 制造技能特殊界面
+    m_ProductionUpSpecial = child(m_PanelObject, m_ProductionUpSpecialPath).gameObject;
+    -- 制造技能1装备部位选择按钮
+    m_ProductionSkillOnePartButton = child(m_PanelObject, m_ProductionSkillOnePartButtonPath).gameObject;
+    -- 制造技能1装备等级选择按钮
+    m_ProductionSkillOneLevelButton = child(m_PanelObject, m_ProductionSkillOneLevelButtonPath).gameObject;
+    -- 制造技能2装备部位选择按钮
+    m_ProductionSkillTwoPartButton = child(m_PanelObject, m_ProductionSkillTwoPartButtonPath).gameObject;
+    -- 制造后可随机产出的item列表1
+    m_ProductionItemList1 = GetComponent(m_PanelObject, m_ProductionItemListPath1, "UIListView");
+    -- 制造后可随机产出的item列表1
+    m_ProductionItemList2 = GetComponent(m_PanelObject, m_ProductionItemListPath2, "UIListView");
+    -- 制造按钮
+    m_MakeButton = child(m_PanelObject, m_MakeButtonPath).gameObject;
+    -- 制造所需的升级材料列表
+    m_ProductionUpgradeItemList = GetComponent(m_PanelObject, m_ProductionUpgradeItemListPath, "UIListView");
+end
+
+-- 初始化对象事件
+function InitEvents()
+    -- 主菜单按钮1
+    UIEventListener.Get(m_MenuItem1).onClick = LuaHelper.OnClick(OnMenuItemClick);
+    -- 主菜单按钮2
+    UIEventListener.Get(m_MenuItem2).onClick = LuaHelper.OnClick(OnMenuItemClick);
+    -- 学习技能菜单
+    m_LearnMenu:SetInitCallback(OnLearnMenuViewInit);
+    m_LearnMenu:SetClickCallback(OnLearnMenuViewClick);
+    -- 产出列表按钮事件
+    UIEventListener.Get(m_OutputButton).onClick = LuaHelper.OnClick(OnOutputButtonClick);
+    -- 激活技能按钮
+    UIEventListener.Get(m_ActivationButton).onClick = LuaHelper.OnClick(OnActivationButtonClick);
+    -- 学习一次按钮
+    UIEventListener.Get(m_LearnOneButton).onClick = LuaHelper.OnClick(OnLearnOneButtonClick);
+    -- 学习十次按钮
+    UIEventListener.Get(m_LearnTenButton).onClick = LuaHelper.OnClick(OnLearnTenButtonClick);
+    -- 突破技能按钮
+    UIEventListener.Get(m_BreakButton).onClick = LuaHelper.OnClick(OnBreakButtonClick);
+    -- 学习技能所需的材料List
+    m_LearnUpgradeItemList:SetInitCallback(OnLearnUpgradeItemListViewInit);
+    m_LearnUpgradeItemList:SetClickCallback(OnLearnUpgradeItemListViewClick);
+    -- 制造技能Menu列表
+    m_ProductionMenu:SetInitCallback(OnProductionMenuViewInit);
+    m_ProductionMenu:SetClickCallback(OnProductionMenuViewClick);
+    -- 制造后可随机产出的item列表1
+    m_ProductionItemList1:SetInitCallback(OnProductionItemListViewInit);
+    m_ProductionItemList1:SetClickCallback(OnProductionItemListViewClick);
+    -- 制造后可随机产出的item列表2
+    m_ProductionItemList2:SetInitCallback(OnProductionItemListViewInit);
+    m_ProductionItemList2:SetClickCallback(OnProductionItemListViewClick);
+    -- 制造技能1装备部位选择按钮
+    UIEventListener.Get(m_ProductionSkillOnePartButton).onClick = LuaHelper.OnClick(OnSkillOnePartButtonClick);
+    -- 制造技能1装备等级选择按钮
+    UIEventListener.Get(m_ProductionSkillOneLevelButton).onClick = LuaHelper.OnClick(OnSkillOneLevelButtonClick);
+    -- 制造技能2装备部位选择按钮
+    UIEventListener.Get(m_ProductionSkillTwoPartButton).onClick = LuaHelper.OnClick(OnSkillTwoPartButtonClick);
+    -- 制造按钮
+    UIEventListener.Get(m_MakeButton).onClick = LuaHelper.OnClick(OnMakeButtonClick);
+    -- m_ProductionUpgradeItemList
+    m_ProductionUpgradeItemList:SetInitCallback(OnProductionUpgradeItemListViewInit);
+    m_ProductionUpgradeItemList:SetClickCallback(OnProductionUpgradeItemListViewClick);
+    -- 产出列表菜单列表
+    m_OutputViewMenu:SetInitCallback(OnOutputViewMenuViewInit);
+    m_OutputViewMenu:SetClickCallback(OnOutputViewMenuViewClick);
+    -- 产出列表的Item列表
+    m_OutputViewItemList:SetInitCallback(OnOutputViewItemListViewInit);
+    m_OutputViewItemList:SetClickCallback(OnOutputViewItemListViewClick);
+
+    -- 产出界面关闭
+    UIEventListener.Get(m_OutputViewMask).onClick = LuaHelper.OnClick(OnOutputViewCloseButtonClick);
+    -- 关闭产出列表界面
+    UIEventListener.Get(m_OutputViewCloseButton).onClick = LuaHelper.OnClick(OnOutputViewCloseButtonClick);
+
+    SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    InitData();
+    InitSkillData();
+    SetLifeSkillView();
+end
+
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_MenuIndex = m_JumpPanelParamsTable[1];
+        m_ProductionSkillIndex = m_JumpPanelParamsTable[2];
+        m_LearnSkillIndex = m_JumpPanelParamsTable[3];
+        m_isJumpPanelSave = false;
+    else
+        if m_MenuIndex == nil then
+            m_MenuIndex = 2;
+        end
+        if m_LearnSkillIndex == nil or m_LearnSkillIndex == 0 then
+            m_LearnSkillIndex = 1;
+        end
+        if m_ProductionSkillIndex == nil or m_ProductionSkillIndex == 0 then
+            m_ProductionSkillIndex = 1;
+        end
+    end
+    if m_OpenData ~= nil then
+        m_MenuIndex = m_OpenData.MenuIndex;
+        if m_MenuIndex == 1 then 
+            m_LearnSkillIndex = m_OpenData.SkillIndex;
+        else
+            m_ProductionSkillIndex = m_OpenData.SkillIndex;
+        end
+        m_OpenData = nil;
+    end
+end
+
+--设置当前显示界面状态
+function SetLifeSkillView()
+    SetMainMenu(m_MenuIndex);
+    SetLearnMenuData(m_LearnSkillIndex)
+    SetProductionMenuData(m_ProductionSkillIndex);
+end
+
+-- 设置主菜单状态
+-- @param index 主菜单的index
+function SetMainMenu(index)
+    SetGameObjectState(m_MenuItem1Path.."/Select", index == 1, m_PanelObject);
+    SetGameObjectState(m_MenuItem2Path.."/Select", index == 2, m_PanelObject);
+    SetGameObjectState(m_LearnPath, index == 1, m_PanelObject);
+    SetGameObjectState(m_ProductionPath, index == 2, m_PanelObject);
+end
+-- 初始化生活技能信息
+function InitSkillData()
+    m_LifeSkillData = {};
+    for index = 1 , 7 do
+        local lifeSkillInfo = G_LifeSkillManager:GetLifeSkill(index);
+        local lifeSkillParts = G_LifeSkillManager:GetLifeSkillParts(index);
+        local data = 
+        {
+            Index = index;
+            SkillInfo = lifeSkillInfo;
+            Level = 0;
+            Exp = 0;
+            Parts = lifeSkillParts;
+        };
+        if LifeSkillManager.LifeskillDatas ~= nil then
+            local length = GetTableLength(LifeSkillManager.LifeskillDatas);
+            if length > 0 then
+                local lifeskillData = LifeSkillManager.LifeskillDatas[index];
+                if lifeskillData ~= nil then
+                    data.Level = lifeskillData.Level;
+                    data.Exp = lifeskillData.Exp;
+                end
+            end
+        end
+        m_LifeSkillData[index] = data;
+    end
+    InitLearnSkillMenu();
+    InitProductionSkillMenu();
+    InitOutputViewMenu();
+end
+
+-- 需要学习技能数据初始化
+function InitLearnSkillMenu()
+    m_LearnMenu:RemoveAll();
+    for key, var in pairs(m_LifeSkillData) do
+        local data = 
+        {
+            Index = var.Index;
+        };
+        m_LearnMenu:AddData(data);
+    end
+    --SetLearnMenuData(m_LearnSkillIndex);
+end
+--设置学习菜单选择信息
+-- @param index 菜单指针
+function SetLearnMenuData(index)
+    m_LearnMenu:LookAt(index - 1,true);
+    SetLearnMenuView(m_LifeSkillData[index]);
+end
+-- 需要生成数据初始化
+function InitProductionSkillMenu()
+    m_ProductionMenuData = {};
+    for key, var in pairs(m_LifeSkillData) do
+        if var.Level > 0 then
+            table.insert(m_ProductionMenuData,var);
+        end
+    end
+    m_ProductionMenu:RemoveAll();
+    local length = GetTableLength(m_ProductionMenuData);
+    if length > 0 then
+        for key, var in pairs(m_ProductionMenuData) do
+            local data = 
+            {
+                Index = var.Index;
+            };
+            m_ProductionMenu:AddData(data);
+        end
+        --SetProductionMenuData(m_ProductionSkillIndex);
+    end
+    SetGameObjectState(m_ProductionActivatePath, length > 0, m_PanelObject);
+    SetGameObjectState(m_ProductionInactivePath, length <= 0, m_PanelObject);
+end
+--设置生成菜单选择信息
+-- @param index 菜单指针
+function SetProductionMenuData(index)
+    m_ProductionMenu:LookAt(index - 1,true);
+    SetProductionMenuView(m_ProductionMenuData[index]);
+end
+-- 初始化产出列表信息
+function InitOutputViewMenu()
+    m_OutputViewMenu:RemoveAll();
+    for key, var in pairs(m_LifeSkillData) do
+        local data = 
+        {
+            Index = var.Index;
+        };
+        m_OutputViewMenu:AddData(data);
+    end
+    SetOutputViewMenu(1);
+end
+-- 设置产出点击Menu按钮信息
+-- @param index 菜单指针
+function SetOutputViewMenu(index)
+    m_OutputViewMenu:LookAt(index - 1,true);
+    SetOutputView(m_LifeSkillData[index]);
+end
+-- 设置学习技能解锁需要的Items
+function SetUnlockSkillItems(unlockItems)
+    local count = GetTableLength(unlockItems);
+    for index = 1 , 3 do
+        local itemPath = m_LearnGridPath.."/Item"..index;
+        if index <= count then
+            local excelId = CCommonTool.GetProfessionItemId(unlockItems[index]);
+            SetItemToolTipsEvent(m_PanelObject,itemPath,ENUMPANELID.ENUM_PANEL_LIFESKILL,false,excelId);
+            SetItemShowByExcelIDV04(m_PanelObject,itemPath.."/Prop",excelId,1,false,11,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+            local suitId = CCommonTool.GetEquipSuitID(excelId);
+            SetGameObjectState(itemPath.."/Prop/Sprite_Suit", suitId > 0, m_PanelObject);
+        end
+        SetGameObjectState(itemPath, index <= count, m_PanelObject);
+    end
+    m_LearnGrid:Reposition();
+end
+-- 学习技能所需的材料List初始化
+function InitLearnUpgradeItemList(index,level,skillState)
+    m_LearnSkillLvupData = {};
+    m_LearnUpgradeItemList:RemoveAll();
+    local skillLvupData = LifeSkillManager.GetLifeSkillLvupData(index,level);
+    if skillState == 3 then
+        skillLvupData = LifeSkillManager.GetLifeSkillBreakData(index,level);
+    end
+    m_LearnSkillLvupData = skillLvupData;
+    if skillLvupData ~= nil then
+        if skillLvupData.Materials ~= nil then
+            local length = GetTableLength(skillLvupData.Materials);
+            if length > 0 then
+                for index = 1 , length do
+                    local data = 
+                    {
+                        Index = index;
+                        Info = skillLvupData.Materials[index];
+                    };
+                    m_LearnUpgradeItemList:AddData(data);
+                end
+                m_LearnUpgradeItemList:LookAt(0,true);
+            end
+        end
+        -- 突破等级
+        if skillState == 3 then
+            local playerLevel = G_UserInfo.RoleAttribute.Level;
+            local breakLevel = skillLvupData.BreakLevel;
+            SetGameObjectState(m_LearnBreakLevelPath, playerLevel < breakLevel, m_PanelObject);
+            SetLabelContent(m_LearnBreakLevelPath,string_format("[D83232]{0}:{1}[-]",GetTextToId(1010),breakLevel),m_PanelObject);
+        end
+    end
+end
+------------------------------------------事件方法------------------------------------
+-- 主菜单响应事件
+function OnMenuItemClick(gameObject)
+    LifeSkillManager.Log("OnMenuItemClick");
+    local index = string.gsub(gameObject.name, "MenuItem", "");
+    local index_Number = tonumber(index);
+    LifeSkillManager.Log("OnMenuItemClick index : "..index_Number);
+    m_MenuIndex = index_Number;
+    SetMainMenu(index_Number);
+    if index_Number == 1 then
+        if m_LearnSkillData ~= nil then
+            SetLearnMenuView(m_LearnSkillData);
+        end
+    elseif index_Number == 2 then
+        if m_ProductionSkillData ~= nil then
+            SetProductionMenuView(m_ProductionSkillData);
+        end
+        SetProductionData();
+    end
+end
+-- 需要学习的技能列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnLearnMenuViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local index = data.Index;
+    local lifeSkillData = m_LifeSkillData[index];
+    local nameId = lifeSkillData.SkillInfo.NameId;
+    SetLabelTextByID("Name",nameId,item);
+    local maxLevel = lifeSkillData.SkillInfo.MaxLevel;
+    local level = lifeSkillData.Level;
+    SetLabelContent("Level","Lv."..level,item);
+    local imageId = lifeSkillData.SkillInfo.PicId;
+    SetSpriteByAtlasID("Icon/Image", imageId, item);
+    SetGameObjectState("Lock", IsLockTab(lifeSkillData.SkillInfo), item);
+end
+-- 学习的技能列表响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnLearnMenuViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    local index = data.Index;
+    m_LearnSkillIndex = index;
+    local lifeSkillData = m_LifeSkillData[index];
+    SetLearnMenuView(lifeSkillData);
+end
+--通过生活技能Id设置显示信息
+-- @param data 技能数据
+function SetLearnMenuView(data)
+    LifeSkillManager.Log("SetLearnMenuView");
+    m_LearnSkillData = data;
+    --图标
+    local imageId = data.SkillInfo.PicId;
+    SetSpriteByAtlasID("Icon/Image", imageId, m_LearnUpItem);
+    --名称
+    local nameId = data.SkillInfo.NameId;
+    SetLabelTextByID(m_LearnTitlePath,nameId,m_PanelObject);
+    --等级
+    local level = data.Level;
+    SetLabelContent(m_LearnLevelPath,level..GetTextToId(7042),m_PanelObject);
+    --经验
+    local curExp = data.Exp;
+    local needExp = LifeSkillManager.GetLifeSkillLvupExp(data.Index,level);
+    local expValue = 0;
+    if needExp <= 0 then
+        expValue = 1;
+    else
+        expValue = curExp/needExp;
+    end
+    m_LearnExpSlider.value = expValue;
+    SetLabelContent(m_LearnExpProgressPath,curExp.."/"..needExp,m_PanelObject);
+    --按钮状态
+    local index = data.Index;
+    SetLearnButton(index,level,curExp,needExp);
+    --解锁后可生成的物品
+    local unlockItems = LifeSkillManager.GetLifeSkillLvupUnlockItems(index,level);
+    SetUnlockSkillItems(unlockItems);
+
+    CCommonTool.SetGameObjectGrey(m_LearnOneButton, IsLockTab(data.SkillInfo));
+    CCommonTool.SetGameObjectGrey(m_LearnTenButton, IsLockTab(data.SkillInfo));
+end
+--设置学习技能按钮显示状态
+-- @param level 技能等级
+-- @param curExp 当前经验
+-- @param needExp 升级所需要的经验
+function SetLearnButton(index,level,curExp,needExp)
+    local buttonType = 1;
+    if level == 0 then
+        buttonType = 1;
+    else
+        if curExp < needExp then
+            buttonType = 2;
+        else
+            buttonType = 3;
+        end
+    end
+    SetGameObjectState(m_ActivationButtonPath, buttonType == 1, m_PanelObject);
+    SetGameObjectState(m_LearnButtonsPath, buttonType == 2, m_PanelObject);
+    SetGameObjectState(m_BreakButtonPath, buttonType == 3, m_PanelObject);
+    SetGameObjectState(m_LearnBreakLevelPath, false, m_PanelObject);
+    InitLearnUpgradeItemList(index,level,buttonType);
+end
+
+-- 产出列表按钮事件
+function OnOutputButtonClick(gameObject)
+    LifeSkillManager.Log("OnOutputButtonClick");
+    local index = 1;
+    if m_LearnSkillData ~= nil then
+        index = m_LearnSkillData.Index;
+    end
+    SetOutputViewMenu(index);
+    m_OutputViewIsOpen = true;
+    SetGameObjectState(m_OutputViewPath, m_OutputViewIsOpen, m_PanelObject);
+end
+-- 学习技能消息协议
+function RequestLifeSkillLvup(num,lvupType)
+    if m_LearnSkillLvupData ~= nil then
+        local menuData = m_LearnMenu:GetData(m_LearnMenu.selectedIndex);
+        local lifeSkillData = m_LifeSkillData[menuData.Index];
+        if IsLockTab(lifeSkillData.SkillInfo) == true then
+            ShowSystemFlowTips(2680, nil, {lifeSkillData.SkillInfo.LockLevel});
+            return;
+        end
+        local breakLevel = m_LearnSkillLvupData.BreakLevel;
+        local level = G_UserInfo.RoleAttribute.Level;
+        if level >= breakLevel then
+            local count = LifeSkillManager.GetLearnSkillLvupCount(m_LearnSkillLvupData.Materials);
+            if count >= 1 then
+                LifeSkillManager.Log("RequestLifeSkillLvup 发送激活");
+                if count < num then
+                    num = count;
+                end
+                local data = 
+                {
+                    SkillId = m_LearnSkillData.Index;
+                    Num = num;
+                };
+                LifeSkillProtocol.RequestLifeSkillLevelUp(data); 
+            else
+                LifeSkillManager.Log("RequestLifeSkillLvup 当前材料不足！");
+				local isReturn = false;
+                if lvupType == 1 then
+					isReturn = DoSomeThingByCondition();
+					if isReturn then
+						return;
+					end
+                    ShowSystemFlowTips(7600);
+                elseif lvupType == 2 then
+					isReturn = DoSomeThingByCondition();
+					if isReturn then
+						return;
+					end
+					
+                    ShowSystemFlowTips(7602);
+                else
+                    ShowSystemFlowTips(7604);
+                end
+                
+            end
+        else
+            LifeSkillManager.Log("RequestLifeSkillLvup 当前等级不足");
+            ShowSystemFlowTips(7605);
+        end
+    end
+end
+
+--刷新右侧体力和材料数据信息
+function RefreshRightLearnMat()
+	if m_CreateSuccess then
+		--SetProductionMaterials(m_CurSkillCreateId);
+		--m_LearnMenu:Refresh();
+		SetLearnMenuData(m_LearnSkillIndex)
+	end
+end
+
+--根据条件不足情况做出操作
+function DoSomeThingByCondition()
+
+	local money_enough , mat_enough = false;
+	
+	local excel_Id = -1;
+	
+	local is_return = false;
+	
+	money_enough,mat_enough,excel_Id= ChechLearnSkillMatNum(m_LearnSkillLvupData.Materials);
+	if money_enough~=true then --钱不够
+		MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+		is_return = true;
+		return is_return;
+	end
+	if mat_enough ~=true then  --材料不够
+		
+		if excel_Id>0 and  CCommonTool.GetQuickToBuyByExcelID(excel_Id)~=nil then
+			MaterialExchangePanel.ShowPanel(excel_Id,ENUMPANELID.ENUM_PANEL_RIDEPANEL);
+			is_return = true;
+			return is_return;      
+		end  
+	end
+	
+	return is_return;
+end
+--检查技能学习所需材料是否满足
+function ChechLearnSkillMatNum(materials)
+	local money_enough , mat_enough = false;
+	local excel_Id = -1;
+	local materialCount = GetTableLength(materials);
+	for index = 1, materialCount do
+		local needNum = materials[index].Num;
+		local itemType = materials[index].Type;
+		if itemType == 1 then
+			--numData[index] = math.floor(G_UserInfo.BindCoin/needNum);
+			money_enough = (G_UserInfo.BindCoin>needNum or G_UserInfo.BindCoin==needNum);
+		else
+			local excelId = CCommonTool.GetProfessionItemId(materials[index].ExcelId);
+			excel_Id = excelId;
+			local curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,excelId);
+			--numData[index] = math.floor(curNum/needNum);
+			mat_enough = (curNum>needNum or curNum==needNum);
+		end
+	end
+	return money_enough,mat_enough,excel_Id;
+end
+-- 激活技能按钮响应事件
+function OnActivationButtonClick(gameObject)
+    LifeSkillManager.Log("OnActivationButtonClick");
+    RequestLifeSkillLvup(1,1);
+end
+-- 学习一次响应事件
+function OnLearnOneButtonClick(gameObject)
+    LifeSkillManager.Log("OnLearnOneButtonClick");
+    RequestLifeSkillLvup(1,2);
+end
+-- 学习十次响应事件
+function OnLearnTenButtonClick(gameObject)
+    LifeSkillManager.Log("OnLearnTenButtonClick");
+    RequestLifeSkillLvup(10,2);
+end
+-- 突破技能按钮
+function OnBreakButtonClick(gameObject)
+    LifeSkillManager.Log("OnBreakButtonClick");
+    RequestLifeSkillLvup(1,3);
+end
+-- 学习技能所需的材料List
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnLearnUpgradeItemListViewInit(listView, cell, data)
+    local dataIndex = cell.dataIndex;
+    local item = cell.gameObject;
+    local excelId = CCommonTool.GetProfessionItemId(data.Info.ExcelId);
+    local needNum = data.Info.Num;
+    --SetItemToolTipsEvent(item,"Prop",ENUMPANELID.ENUM_PANEL_LIFESKILL,false,excelId);
+    SetItemShowByExcelIDV04(item,"Prop",excelId,1,true,11,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    SetGameObjectState("Prop/Sprite_Suit", suitId > 0, item);
+    local itemType = data.Info.Type;
+    if itemType == 1 then
+        if G_UserInfo.BindCoin >= needNum then
+            SetLabelContent("Num",needNum,item);
+        else
+            SetLabelContent("Num",string_format("[D83232]{0}[-]",needNum),item);
+        end
+        SetGameObjectState("Prop/Sprite_Mask", G_UserInfo.BindCoin < needNum , item);
+    else
+        local curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,excelId);
+        if curNum >= needNum then
+            SetLabelContent("Num",string_format("{0}/{1}",curNum,needNum),item);
+        else
+            SetLabelContent("Num",string_format("[D83232]{0}[-]/{1}",curNum,needNum),item);
+        end
+        SetGameObjectState("Prop/Sprite_Mask", curNum < needNum , item);
+    end
+end
+-- 学习技能所需的材料List响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnLearnUpgradeItemListViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    --if go.name == "Button" then
+        local excelId = CCommonTool.GetProfessionItemId(data.Info.ExcelId);
+        local itemType = data.Info.Type;
+        if itemType == 1 then
+            if excelId == G_ItemToolTipDefine.BINDMONEY then
+                MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+            else
+                GetWayPanel.Show(excelId, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+            end
+        else
+            GetWayPanel.Show(excelId,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+        end
+    --end
+end
+-- 制造技能Menu列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnProductionMenuViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local index = data.Index;
+    local lifeSkillData = m_LifeSkillData[index];
+    local nameId = lifeSkillData.SkillInfo.NameId;
+    SetLabelTextByID("Name",nameId,item);
+    local maxLevel = lifeSkillData.SkillInfo.MaxLevel;
+    local level = lifeSkillData.Level;
+    SetLabelContent("Level","Lv."..level,item);
+    local imageId = lifeSkillData.SkillInfo.PicId;
+    SetSpriteByAtlasID("Icon/Image", imageId, item);
+    SetGameObjectState("Lock", IsLockTab(lifeSkillData.SkillInfo), item);
+end
+-- 制造技能Menu列表响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnProductionMenuViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    local index = data.Index;
+    m_ProductionSkillIndex = index;
+    local lifeSkillData = m_LifeSkillData[index];
+    SetProductionMenuView(lifeSkillData);
+	error("dataIndex-->"..dataIndex);
+	--技能-生产制造上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10200+tonumber(dataIndex));
+	end
+end
+
+function IsLockTab(skillInfo)
+    local lockLevel = skillInfo.LockLevel;
+    local playerLevel = G_UserInfo.RoleAttribute.Level;
+    return playerLevel < lockLevel;
+end
+
+--通过生活技能Id设置显示信息
+-- @param data 技能数据
+function SetProductionMenuView(data)
+    LifeSkillManager.Log("SetProductionMenuView");
+    if data ~= nil then
+        m_ProductionSkillData = data;
+        local index = data.Index;
+        SetProductionItemView(index);
+        m_SkillPartIndex = 0;
+        m_SkillOneLevel = 0;
+        if index == 1 or index == 2 then
+            local partIndex = data.Parts[0];
+            m_SkillPartIndex = partIndex;
+            SetSkillOnePartInfo(partIndex);
+            local skillLevel = data.Level;
+            local levels = G_LifeSkillManager:GetLifeSkillLevels(index,skillLevel,partIndex);
+            if levels ~= nil and levels.count > 0 then
+                local level = levels[levels.count-1];
+                m_SkillOneLevel = level;
+                SetSkillOneLevelInfo(level);
+            end
+        
+    --    elseif index == 2 then
+    --        local partIndex = data.Parts[0];
+    --        SetSkillTwoPartInfo(partIndex);
+        end
+        SetProductionData();
+        CCommonTool.SetGameObjectGrey(m_MakeButton, IsLockTab(data.SkillInfo));
+    end
+end
+
+--设置产出道具相关
+function SetProductionData()
+    if m_ProductionSkillData ~= nil then
+        local skillId = m_ProductionSkillData.Index;
+        local skillLevel = m_ProductionSkillData.Level;
+        local equipLevel = m_SkillOneLevel;
+        local equipPart = m_SkillPartIndex;
+        local lifeSkillsCreate = nil;
+    --    error(skillId.."/"..equipLevel.."/"..equipPart);
+        if skillId == 1 or skillId == 2 then
+            lifeSkillsCreate = G_LifeSkillManager:GetItemLevelToLifeSkillsCreate(skillId,equipLevel,equipPart);
+        else     
+            lifeSkillsCreate = G_LifeSkillManager:GetSkillLevelToLifeSkillsCreate(skillId,skillLevel,equipPart);
+        end
+        SetGameObjectState(m_ProductionUpNormalPath.."/Item/effect_ui_new_shengchan_01", false, m_PanelObject);
+        SetGameObjectState(m_ProductionUpNormalPath.."/Item/effect_ui_new_shengchan_02", false, m_PanelObject);
+        SetGameObjectState(m_ProductionUpSpecialPath.."/Item/effect_ui_new_shengchan_01", false, m_PanelObject);
+        SetGameObjectState(m_ProductionUpSpecialPath.."/Item/effect_ui_new_shengchan_02", false, m_PanelObject);
+        if lifeSkillsCreate ~= nil then
+            local skillCreateId = lifeSkillsCreate.ID;
+            m_CurSkillCreateId = skillCreateId;
+            SetProductionItem(skillId,lifeSkillsCreate);
+            SetOutputItems(skillCreateId,skillLevel);
+            SetProductionMaterials(skillCreateId);
+        end
+    end
+end
+--设置产出Item
+function SetProductionItem(skillId,lifeSkillsCreate,itemId)
+    local itemPath = m_ProductionUpNormalPath.."/Item";
+    if skillId == 1 or skillId == 2 then
+        itemPath = m_ProductionUpSpecialPath.."/Item";
+    end
+    SetGameObjectState(itemPath.."/QuesItem", itemId == nil, m_PanelObject);
+    SetGameObjectState(itemPath.."/Prop", itemId ~= nil, m_PanelObject);
+    if itemId ~= nil then
+        SetItemToolTipsEvent(m_PanelObject,itemPath.."/Prop",ENUMPANELID.ENUM_PANEL_LIFESKILL,false,itemId);
+        SetItemShowByExcelIDV04(m_PanelObject,itemPath.."/Prop",itemId,1,true,11,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+        local suitId = CCommonTool.GetEquipSuitID(itemId);
+        SetGameObjectState(itemPath.."/Prop/Sprite_Suit", suitId > 0, m_PanelObject);
+        local quality = CCommonTool.GetAptitudeIDByExcelID(itemId);
+        SetGameObjectState(itemPath.."/effect_ui_new_shengchan_01", false, m_PanelObject);
+        SetGameObjectState(itemPath.."/effect_ui_new_shengchan_01", quality < 4, m_PanelObject);
+        SetGameObjectState(itemPath.."/effect_ui_new_shengchan_02", false, m_PanelObject);
+        SetGameObjectState(itemPath.."/effect_ui_new_shengchan_02", quality >= 4, m_PanelObject);
+    else
+        local nameId = lifeSkillsCreate.TxtItem;
+        SetLabelTextByID(itemPath.."/QuesItem/Name",nameId,m_PanelObject);
+    end
+end
+--设置产出物品列表
+function SetOutputItems(skillCreateId,skillLevel)
+    local outputItems = G_LifeSkillManager:GetOutputItems(skillCreateId);
+    m_ProductionItemList1:RemoveAll();
+    m_ProductionItemList2:RemoveAll();
+    local count = outputItems.Count;
+    for index = 1, count do
+        local data = 
+        {
+            Index = index;
+            Level = skillLevel;
+            Info = outputItems[index-1];
+        };
+        if count >= 4 then
+            m_ProductionItemList1:AddData(data);
+        else
+            m_ProductionItemList2:AddData(data);
+        end
+    end
+end
+--设置技能制造所需的材料
+function SetProductionMaterials(skillCreateId)
+    local productionMaterials = LifeSkillManager.GetLifeSkillProductionMaterials(skillCreateId);
+    local length = GetTableLength(productionMaterials);
+    m_ProductionData = {};
+    m_ProductionUpgradeItemList:RemoveAll();
+    if length > 0 then
+        for index = 1, length do
+            local data = 
+            {
+                Index = index;
+                Info = productionMaterials[index - 1];
+            };
+            m_ProductionData[index] = data;
+            m_ProductionUpgradeItemList:AddData(data);
+        end
+    end
+end
+
+-- 设置制作生成Item显示
+-- @param isNormal 是否是默认界面
+function SetProductionItemView(skillId)
+    if skillId == 1 or skillId == 2 then
+        SetGameObjectState(m_ProductionUpNormalPath, false, m_PanelObject);
+        SetGameObjectState(m_ProductionUpSpecialPath, true, m_PanelObject);
+        SetGameObjectState(m_ProductionUpSpecialPath.."/SkillOne", true, m_PanelObject);
+        SetGameObjectState(m_ProductionUpSpecialPath.."/SkillTwo", false, m_PanelObject);
+        SetGameObjectState(m_MakeDescribePath1, false, m_PanelObject);
+        SetGameObjectState(m_MakeDescribePath2, true, m_PanelObject);
+--    elseif skillId == 2 then
+--        SetGameObjectState(m_ProductionUpNormalPath, false, m_PanelObject);
+--        SetGameObjectState(m_ProductionUpSpecialPath, true, m_PanelObject);
+--        SetGameObjectState(m_ProductionUpSpecialPath.."/SkillOne", false, m_PanelObject);
+--        SetGameObjectState(m_ProductionUpSpecialPath.."/SkillTwo", true, m_PanelObject);
+    else
+        SetGameObjectState(m_ProductionUpNormalPath, true, m_PanelObject);
+        SetGameObjectState(m_ProductionUpSpecialPath, false, m_PanelObject);
+        SetGameObjectState(m_MakeDescribePath1, true, m_PanelObject);
+        SetGameObjectState(m_MakeDescribePath2, false, m_PanelObject);
+    end
+end
+--设置部位信息
+function SetSkillOnePartInfo(index)
+    m_SkillPartIndex = index;
+    SetSkillOnePartText(LifeSkillManager.PartMenuTexts[index]);
+end
+--设置部位文本
+function SetSkillOnePartText(text)
+    local labelPath = m_ProductionSkillOnePartButtonPath.."/Label";
+    SetLabelContent(labelPath, text, m_PanelObject);
+    SetLabelColor(labelPath, "FFFFFF", m_PanelObject);
+end
+--设置技能1部位信息
+function SetSkillOneLevelInfo(level)
+    m_SkillOneLevel = level;
+    local text = string_format(--[[{0}级]]CCommonTool.GetTxtData(939).m_str, level);
+    SetSkillOneLevelText(text);
+end
+--设置技能1等级
+function SetSkillOneLevelText(text)
+    local labelPath = m_ProductionSkillOneLevelButtonPath.."/Label";
+    SetLabelContent(labelPath, text, m_PanelObject);
+    SetLabelColor(labelPath, "FFFFFF", m_PanelObject);
+end
+--设置技能2部位信息
+function SetSkillTwoPartInfo(index)
+    m_SkillPartIndex = index;
+    SetSkillTwoPartText(LifeSkillManager.PartMenuTexts[index]);
+end
+--设置技能2部位文本
+function SetSkillTwoPartText(text)
+    local labelPath = m_ProductionSkillTwoPartButtonPath.."/Label";
+    SetLabelContent(labelPath, text, m_PanelObject);
+    SetLabelColor(labelPath, "FFFFFF", m_PanelObject);
+end
+-- 制造后可随机产出的item列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnProductionItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local level = data.Level;
+    SetGameObjectState("Lock", true, item);
+    if level >= data.Info.Level then
+        SetGameObjectState("Lock", false, item);
+    end
+    local excelId = CCommonTool.GetProfessionItemId(data.Info.ExcelId);
+    SetItemToolTipsEvent(item,"",ENUMPANELID.ENUM_PANEL_LIFESKILL,false,excelId);
+    SetItemShowByExcelIDV04(item,"Prop",excelId,1,false,21,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    SetGameObjectState("Prop/Sprite_Suit", suitId > 0, item);
+end
+-- 制造后可随机产出的item列表响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnProductionItemListViewClick(listView, cell, go)
+    
+end
+
+-- 制造技能1装备部位选择按钮
+function OnSkillOnePartButtonClick(gameObject)
+    LifeSkillManager.Log("OnSkillOnePartButtonClick : ");
+    if m_ProductionSkillData ~= nil then
+        local parts = m_ProductionSkillData.Parts;
+        if parts ~= nil then
+            local count = parts.count;
+            local menuTextInfos = {};
+            for index = 1,count do
+                local data =
+                {
+                    Index = parts[index-1];
+                    Type = 1;
+                    TextId = -1;
+                    Text = LifeSkillManager.PartMenuTexts[parts[index-1]];
+                };
+                table.insert(menuTextInfos, data);
+            end
+            AuctionSelectMenuPanel.Callback = OnSkillOnePartCallback;
+            createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+        end
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnSkillOnePartCallback(data)
+    SetSkillOnePartInfo(data.Index);
+    SetProductionData();
+end
+
+-- 制造技能1装备等级选择按钮
+function OnSkillOneLevelButtonClick(gameObject)
+    LifeSkillManager.Log("OnSkillOneLevelButtonClick : ");
+    if m_ProductionSkillData ~= nil then
+        local index = m_ProductionSkillData.Index;
+        local skillLevel = m_ProductionSkillData.Level;
+        local levels = G_LifeSkillManager:GetLifeSkillLevels(index,skillLevel,m_SkillPartIndex);
+        if levels ~= nil and levels.count > 0 then
+            local count = levels.count;
+            local menuTextInfos = {};
+            for index = 1,count do
+                local data =
+                {
+                    Index = levels[index-1];
+                    Type = 1;
+                    TextId = -1;
+                    Text = string_format(--[[{0}级]]CCommonTool.GetTxtData(939).m_str, levels[index-1]);
+                };
+                table.insert(menuTextInfos, data);
+            end
+            AuctionSelectMenuPanel.Callback = OnSkillOneLevelCallback;
+            createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+        end
+    end
+
+end
+--选择菜单回调
+--@param data 数据信息
+function OnSkillOneLevelCallback(data)
+    SetSkillOneLevelInfo(data.Index);
+    SetProductionData();
+end
+
+-- 制造技能2装备部位选择按钮
+function OnSkillTwoPartButtonClick(gameObject)
+    LifeSkillManager.Log("OnSkillTwoPartButtonClick : ");
+    if m_ProductionSkillData ~= nil then
+        local parts = m_ProductionSkillData.Parts;
+        if parts ~= nil then
+            local count = parts.count;
+            local menuTextInfos = {};
+            for index = 1,count do
+                local data =
+                {
+                    Index = parts[index-1];
+                    Type = 1;
+                    TextId = -1;
+                    Text = LifeSkillManager.PartMenuTexts[parts[index-1]];
+                };
+                table.insert(menuTextInfos, data);
+            end
+            AuctionSelectMenuPanel.Callback = OnSkillTwoPartCallback;
+            createPanelExx(ENUMPANELID.ENUM_PANEL_AUCTIONSELECTMUNUPANEL,menuTextInfos,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+        end
+    end
+end
+--选择菜单回调
+--@param data 数据信息
+function OnSkillTwoPartCallback(data)
+    SetSkillTwoPartInfo(data.Index);
+    SetProductionData();
+end
+
+-- 制造按钮
+function OnMakeButtonClick(gameObject)
+    LifeSkillManager.Log("OnMakeButtonClick");
+    if m_ProductionData ~= nil then
+        local menuData = m_ProductionMenu:GetData(m_ProductionMenu.selectedIndex);
+        local lifeSkillData = m_LifeSkillData[menuData.Index];
+        if IsLockTab(lifeSkillData.SkillInfo) == true then
+            ShowSystemFlowTips(2680, nil, {lifeSkillData.SkillInfo.LockLevel});
+            return;
+        end
+		--error("[#m_ProductionData]---->"..#m_ProductionData);
+        local num = LifeSkillManager.GetProductionCount(m_ProductionData);
+        if num > 0 then
+            LifeSkillManager.Log("OnMakeButtonClick 发送信息");
+            LifeSkillProtocol.RequestLifeSkillProduct(m_CurSkillCreateId);
+        else
+			local Is_Enough,Excel_Id = MakeMatIsEnough(m_ProductionData);
+			if Is_Enough~=true then
+				if Excel_Id>0 and  CCommonTool.GetQuickToBuyByExcelID(Excel_Id)~=nil then
+            
+					MaterialExchangePanel.ShowPanel(Excel_Id,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+					
+					return;
+				end
+			end
+			
+			LifeSkillManager.Log("OnMakeButtonClick 当前材料不足");
+			ShowSystemFlowTips(7608);
+        end
+    end
+end
+-- 判定生产制造，是否缺少材料
+function MakeMatIsEnough(datas)
+	
+	for i,v in pairs(datas) do
+		local index = v.Index;
+        local needNum = v.Info.Num;
+        local itemType = v.Info.Type;
+		if itemType ~=1 then
+			local excelId = CCommonTool.GetProfessionItemId(v.Info.ExcelId);
+            local curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,excelId);
+            if curNum>needNum or needNum==curNum then
+				return true,excelId;
+			else
+				return false,excelId;
+			end
+		end
+	end
+	return true,0;
+end
+--刷新右侧体力和材料数据信息
+function RefreshRightMat()
+	if m_CreateSuccess then
+		SetProductionMaterials(m_CurSkillCreateId);
+	end
+end
+
+-- 制造所需的升级材料列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnProductionUpgradeItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = CCommonTool.GetProfessionItemId(data.Info.ExcelId);
+    local needNum = data.Info.Num;
+    --SetItemToolTipsEvent(item,"Prop",ENUMPANELID.ENUM_PANEL_LIFESKILL,false,excelId);
+    SetItemShowByExcelIDV04(item,"Prop",excelId,1,true,11,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+    local suitId = CCommonTool.GetEquipSuitID(excelId);
+    SetGameObjectState("Prop/Sprite_Suit", suitId > 0, item);
+    local itemType = data.Info.Type;
+    if itemType == 1 then
+        if G_UserInfo.RoleAttribute.Thew >= needNum then
+            SetLabelContent("Num",needNum,item);
+        else
+            SetLabelContent("Num",string_format("[D83232]{0}[-]",needNum),item);
+        end
+        SetGameObjectState("Prop/Sprite_Mask", G_UserInfo.RoleAttribute.Thew < needNum , item);
+    else
+        local curNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM,excelId);
+        if curNum >= needNum then
+            SetLabelContent("Num",string_format("{0}/{1}",curNum,needNum),item);
+        else
+            SetLabelContent("Num",string_format("[D83232]{0}[-]/{1}",curNum,needNum),item);
+        end
+        SetGameObjectState("Prop/Sprite_Mask", curNum < needNum , item);
+    end
+end
+-- 制造所需的升级材料列表响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnProductionUpgradeItemListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    --if go.name == "Button" then
+        local itemType = data.Info.Type;
+        if itemType == 1 then
+            CoinPanel.OnAddThew();
+        else
+            local excelId = CCommonTool.GetProfessionItemId(data.Info.ExcelId);
+            GetWayPanel.Show(excelId,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+        end
+    --end
+end
+-- 产出列表菜单列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnOutputViewMenuViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local index = data.Index;
+    local lifeSkillData = m_LifeSkillData[index];
+    local nameId = lifeSkillData.SkillInfo.NameId;
+    SetLabelTextByID("Background/Label",nameId,item);
+    SetLabelTextByID("Toggle/Label",nameId,item);
+end
+
+-- 产出列表菜单列表响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnOutputViewMenuViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    local index = data.Index;
+    local lifeSkillData = m_LifeSkillData[index];
+    SetOutputView(lifeSkillData);
+end
+--设置产出界面信息
+function SetOutputView(data)
+    local imageId = data.SkillInfo.PicId;
+    SetSpriteByAtlasID(m_OutputViewItemPath.."/Icon/Image", imageId, m_PanelObject);
+    local descId = data.SkillInfo.ExplainId;
+    SetLabelTextByID(m_OutputViewItemPath.."/Desc",descId,m_PanelObject);
+    InitOutputViewItemList(data.Index);
+end
+--产出物品列表
+function InitOutputViewItemList(index)
+    local previewOutputItems = LifeSkillManager.GetLifeSkillsLvupOutputItems(index);
+    m_OutputViewItemList:RemoveAll();
+    local length = GetTableLength(previewOutputItems);
+    if length > 0 then
+        for index = 1, length do
+            local data = 
+            {
+                Index = index;
+                Info = previewOutputItems[index];
+            };
+            m_OutputViewItemList:AddData(data);
+        end
+        m_OutputViewItemList:LookAt(0,true);
+    end
+end
+-- 产出列表的Item列表
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnOutputViewItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = CCommonTool.GetProfessionItemId(data.Info.ExcelId);
+    local level = data.Info.Level;
+    SetLabelContent("Unlock",string_format(--[[{0}级解锁]]CCommonTool.GetTxtData(880).m_str, level),item);
+    SetItemToolTipsEvent(item,"",ENUMPANELID.ENUM_PANEL_LIFESKILL,false,excelId);
+    SetItemShowByExcelIDV04(item,"Prop",excelId,1,false,51,ENUMPANELID.ENUM_PANEL_LIFESKILL);
+end
+-- 产出列表的Item列表响应事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnOutputViewItemListViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+
+end
+-- 产出列表关闭按钮
+function OnOutputViewCloseButtonClick(gameObject)
+    m_OutputViewIsOpen = false;
+    SetGameObjectState(m_OutputViewPath, m_OutputViewIsOpen, m_PanelObject);
+end
+
+--关闭拍卖行
+function OnCloseClick()
+    if m_OutputViewIsOpen then
+        OnOutputViewCloseButtonClick();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_LIFESKILL);
+end
+
+-- 系统说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_LIFESKILL, 2);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--刷新技能信息
+function RefreshLifeSkillData(data)
+    m_LifeSkillData[data.Id].Level = data.Level;
+    m_LifeSkillData[data.Id].Exp = data.Exp;
+    SetLearnMenuView(m_LifeSkillData[data.Id]);
+    m_LearnMenu:Refresh();
+    InitProductionSkillMenu();
+end
+--刷新技能信息
+function RefreshProductionItem(itemId)
+    SetProductionMaterials(m_CurSkillCreateId);
+    SetProductionItem(m_ProductionSkillData.Index,nil,itemId);
+end
+
+-- 打开生活技能界面
+-- @param menuIndex 主菜单index
+-- @param skillIndex 对应的技能选择index
+function Open(menuIndex,skillIndex, causePanelId)
+    local data = 
+    {
+        MenuIndex = menuIndex;
+        SkillIndex = skillIndex;
+    };
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIFESKILL) == 0 then
+        m_OpenData = data;
+        createPanel(ENUMPANELID.ENUM_PANEL_LIFESKILL, causePanelId);
+        if m_CreateSuccess == true then
+            InitShow();
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_MenuIndex;
+    jumpParamsTable[2] = m_ProductionSkillIndex;
+    jumpParamsTable[3] = m_LearnSkillIndex;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

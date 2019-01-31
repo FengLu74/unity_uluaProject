@@ -1,0 +1,125 @@
+﻿module('NewTitlePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'NewTitlePanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_LbTitlePath = "Sub_Content/lb_Title";
+-- 加注释
+local m_LbTitleTypePath = "Sub_Content/lb_TitleType";
+-- 加注释
+local m_BtnEquipPath = "Sub_Content/btn_Equip";
+-- 加注释
+local m_BtnClosePath = "Sub_Content/btn_Close";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_BtnEquip = nil;
+-- 加注释
+local m_BtnClose = nil;
+
+-- 当前开启的称号ID
+local curTitleID = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_BtnEquip = nil;
+	m_BtnClose = nil;
+    curTitleID = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_NEWTITLE);
+    m_BtnEquip = child(m_PanelObject, m_BtnEquipPath).gameObject;
+    m_BtnClose = child(m_PanelObject, m_BtnClosePath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_BtnEquip).onClick = LuaHelper.OnClick(OnBtnEquipClick);
+    UIEventListener.Get(m_BtnClose).onClick = LuaHelper.OnClick(OnBtnCloseClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if curTitleID ~= nil  then 
+        local data = CCommonTool.GetTitleInfo(curTitleID);
+        SetLabelTextByID(m_LbTitlePath, data.TitleValue, m_PanelObject);
+        if data.Time > 0 then
+            local day, hour, minute = 0, 0, 0;
+            day = math.floor(data.Time / 86400);
+            seconds = math.fmod(data.Time, 86400);
+            hour = math.floor(data.Time / 3600);
+            seconds = math.fmod(data.Time, 3600);
+            minute = math.floor(data.Time / 60);
+            seconds = math.fmod(data.Time, 60);
+            if day > 0 then
+                SetLabelContent(m_LbTitleTypePath, string_format(CCommonTool.GetTxtData(1602).m_str, day, hour), go);--{0}天{1}小时
+            elseif hour > 0 then
+                SetLabelContent(m_LbTitleTypePath, string_format(CCommonTool.GetTxtData(1603).m_str, hour, minute), go);--{0}小时{1}分钟
+            else
+                SetLabelContent(m_LbTitleTypePath, string_format(CCommonTool.GetTxtData(1604).m_str, minute, seconds), go);--{0}分钟{1}秒
+            end
+        else
+            SetLabelTextByID(m_LbTitleTypePath, 1600, m_PanelObject);
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 装备称号
+function OnBtnEquipClick(gameObject)
+    TitleProtocol.RequestEquipTitle(curTitleID, true);
+    if TitleManager.IsNewTitle(curTitleID) == true then
+        TitleManager.CancelNewTitleState(curTitleID);
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_NEWTITLE);
+end
+
+-- 关闭界面
+function OnBtnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_NEWTITLE);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OpenNewTitlePanel(titleID)
+    curTitleID = titleID;
+    createPanel(ENUMPANELID.ENUM_PANEL_NEWTITLE)
+end

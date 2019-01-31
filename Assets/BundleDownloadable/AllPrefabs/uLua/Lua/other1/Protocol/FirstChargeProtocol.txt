@@ -1,0 +1,141 @@
+﻿module ("FirstChargeProtocol",package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function  RegisterProtocols()
+    -- 发送首冲提取，月累计，周累计信息
+    network.Register(GMI_STOC_TAKE_GOLD_AWARD_MSG,OnTakeGoldAwardCfg);
+end
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+--首冲提取，月累计，周累计信息
+function OnTakeGoldAwardCfg(protocolId, buffer)
+    --error("OnTakeGoldAwardCfg_发送首冲提取，月累计，周累计信息");
+    local msgType = buffer:ReadUShort();
+    --error("msgType::"..msgType)
+    local para1 = buffer:ReadUShort();
+    --error("para1::"..para1)
+    local para2 = buffer:ReadUShort();
+    --error("para2::"..para2)
+    if msgType == ENUM_TAKE_GOLD_AWARD_MSG.TAKE_GOLD_MSG_CFG then
+        local yCount = buffer:ReadByte();
+        --error("yCount::"..yCount)
+        for Index = 1,yCount do
+            local switcher = buffer:ReadInt();
+            --error("switcher::"..switcher)
+            local timeInterval = buffer:ReadInt();
+            --error("timeInterval::"..timeInterval)
+            local beginTime = buffer:ReadInt64();
+            --error("beginTime::"..beginTime)
+            local endTime = buffer:ReadInt64();
+            --error("endTime::"..endTime)
+            local ySize = buffer:ReadByte();
+            --error("ySize::"..ySize)
+            local rewardInfos = {};
+            for Index2 = 1,ySize do
+                local awardZone = buffer:ReadInt();
+                --error("awardZone::"..awardZone)
+                local itemInfos = {};
+                for Index3 = 1,5 do
+                    local itemID = buffer:ReadInt();
+                    --error("itemID::"..itemID);
+                    local itemNum = buffer:ReadInt();
+                    --error("itemNum::"..itemNum);
+                    itemInfos[Index3] = 
+                    {
+                        ItemId = itemID;
+                        ItemNum = itemNum;
+                    };
+                end
+                local info = 
+                {
+                    AwardZone = awardZone;
+                    ItemInfos = itemInfos;
+                };
+                rewardInfos[Index2] = info;
+            end
+            local rewardData = 
+            {
+                Switcher = switcher;
+                TimeInterval = timeInterval;
+                BeginTime = beginTime;
+                EndTime = endTime;
+                RewardInfos = rewardInfos;
+            }
+            FirstChargeManager.ChargeRewardDatas[Index] = rewardData;
+        end
+    elseif msgType == ENUM_TAKE_GOLD_AWARD_MSG.TAKE_GOLD_MSG_TAKE_GOLD_INFO then
+        if para1 == 0 then
+            local yFirstTakeGoldState = buffer:ReadByte();
+            --error("yFirstTakeGoldState::"..yFirstTakeGoldState);
+            FirstChargeManager.FirstChargeTakeGoldState = yFirstTakeGoldState;
+            Main_MiddleTop.InitButtonGroupsShowOut();
+             FirstChargePanel.RefreshChargeRewardPanel();
+            local yCount = buffer:ReadByte();
+            --error("yCount::"..yCount)
+            for Index = 1,yCount do
+                local takeGold = buffer:ReadInt();
+                --error("takeGold::"..takeGold)
+                local ySize = buffer:ReadByte();
+                --error("ySize::"..ySize)
+                for Index1 = 1,ySize do
+                    local nIsTake = buffer:ReadInt();
+                    --error("nIsTake::"..nIsTake)
+                end
+            end
+        end
+        
+    elseif msgType == ENUM_TAKE_GOLD_AWARD_MSG.TAKE_GOLD_MSG_TAKE_GOLD_AWARD_R then
+        local nType = para1; -- ENUM_TAKE_GOLD_OP_TYPE.TAKE_GOLD_OP_FIRST
+        --error("nType:::"..nType);
+        local awardZone = buffer:ReadInt();
+        --error("awardZone:::"..awardZone);
+        -- 如果nType为首冲，就将玩家的首冲状态置为2
+        if nType == ENUM_TAKE_GOLD_OP_TYPE.TAKE_GOLD_OP_FIRST then
+            FirstChargeManager.FirstChargeTakeGoldState = 2;
+            --ChargeRewardManager.FirstTakeGoldState = 2;
+            --error("FirstTakeGoldState============="..ChargeRewardManager.FirstTakeGoldState);
+            --Main_MiddleTop.InitButtonGroupsShowOut();
+            --FirstChargePanel.m_FirstChargeButton();
+        end
+    end
+end
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+--领取首次充值奖励
+function RequestReceiveFirstReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_TAKE_GOLD_AWARD_MSG);
+    buffer:WriteUShort(ENUM_TAKE_GOLD_AWARD_MSG.TAKE_GOLD_MSG_TAKE_GOLD_AWARD);
+    buffer:WriteUShort(ENUM_TAKE_GOLD_OP_TYPE.TAKE_GOLD_OP_FIRST);
+    error("value : "..value);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

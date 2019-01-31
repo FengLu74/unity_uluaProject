@@ -1,0 +1,24 @@
+﻿module("STOCTables", package.seeall)
+-- ��¼����
+LoginReturn = { m_dwUserID, m_n64UserLogedID, m_nUserConnectID, m_nLoginResult, m_wZoneID, m_yHaveProtectPwd, m_yIsAdult, m_dwLoginTime, m_dwSDKUserID};
+-- ���ͼ��ܷ���
+XiaKeJiNengDataReturn = { };
+-- ÿ�����񷵻�
+MeiRiRenWuDataReturnTable = { };
+-- �Ѿ��������ĳɾ�ID
+ChengJiuDataYiTiShiTable = { };
+-- ���ܿ���������
+JiNengKuaiJieDataReturn =
+{
+    lan1 = { jiNeng0 = { skillId = nil, index = nil }, jiNeng1 = { skillId = nil, index = nil }, jiNeng2 = { skillId = nil, index = nil }, jiNeng3 = { skillId = nil, index = nil } },
+    lan2 = { jiNeng0 = { skillId = nil, index = nil }, jiNeng1 = { skillId = nil, index = nil }, jiNeng2 = { skillId = nil, index = nil }, jiNeng3 = { skillId = nil, index = nil } },
+}
+
+-- �ȴ�loading����Ҫ�򿪵Ľ���ID
+WaitLoadPanelId = { };
+-- ���涥����������
+TopSystemData = { };
+-- �����м乫����������
+MiddleSystemJumpQueueData = { };
+-- �����м乫�治��������
+MiddleSystemNoJumpQueueData = { };

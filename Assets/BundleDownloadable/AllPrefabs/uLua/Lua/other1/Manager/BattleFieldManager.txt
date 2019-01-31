@@ -1,0 +1,120 @@
+﻿module("BattleFieldManager", package.seeall)
+-- 竞技场总共几个段位
+BattleFieldRankNum = 6;
+-- 初始积分
+BattleFieldInitScore = 1000;
+-- 匹配总时长
+BattleFieldMatchTime = 70;
+-- 一次显示多少条战斗记录
+BattleFieldRecordOnceShow = 10;
+-- 一个赛季多长时间
+BattleFieldSeasonLastDays = 14;
+-- 竞技场场景ID
+BattleFieldSceneTable = {71,72,73};
+-- 竞技场匹配转动的固定时间
+BattleFieldMatchRollTime = 3;
+-- 竞技场总战斗时间
+SecondsBattleFieldFight = 100;
+
+-- 竞技场数据
+BattleFieldTableData = {};
+-- 竞技场赛季奖励数据
+BattleFieldSeasonRewardTableData = {};
+
+-- 当前赛季积分
+SeasonScore = 0;
+-- 当前赛季排名
+SeasonRank = 0;
+-- 当前赛季胜场
+SeasonWin = 0;
+-- 当前赛季负场
+SeasonFail = 0;
+-- 当前赛季平场
+SeasonDraw = 0;
+-- 所有赛季胜场
+AllSeasonWin = 0;
+-- 所有赛季负场
+AllSeasonFail = 0;
+-- 所有赛季平场
+AllSeasonDraw = 0;
+
+-- 赛季剩余天数
+SeasonLeftDays = 0;
+
+-- 竞技场货币
+BattleFieldMoney = 0;
+
+-- 是否领取当天奖励
+IsGetBattleRewardDay = {};
+
+-- 战斗记录
+FightRecord = {};
+
+function DealTableData()
+    BattleFieldTableData = {};
+    local tableData;
+    for Index = 1,BattleFieldRankNum do
+        tableData = CCommonTool.GetBattleFieldInfo(Index);
+        if tableData == nil then
+            error("BattleField表数据错误");
+        end
+        BattleFieldTableData[Index] = tableData;
+    end
+    local seasonRewardData = CCommonTool.GetAllBattleFieldSeasonRewardInfo();
+    for Index = 1,seasonRewardData.Count do
+        BattleFieldSeasonRewardTableData[Index] = seasonRewardData[Index -1];
+    end
+end
+
+function InitData()
+    
+end
+
+function ClearData()
+    SeasonScore = 0;
+    SeasonWin = 0;
+    SeasonFail = 0;
+    SeasonDraw = 0;
+    AllSeasonWin = 0;
+    AllSeasonFail = 0;
+    AllSeasonDraw = 0;
+    IsGetBattleRewardDay = {};
+    FightRecord = {};
+end
+
+function RequestForRecord(startIndex)
+    if #FightRecord >= startIndex + BattleFieldRecordOnceShow then
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_BATTLEFIELD_RECORD);
+    buffer:WriteByte(#FightRecord);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnRankRefresh(myRank)
+    SeasonRank = myRank;
+    BattlePanel.OnRankRefresh();
+    ShopPanel.OnBattleFieldRankRefresh();
+end
+
+function GetCurRank()
+    local curRank = 1;
+    for Index = 1,BattleFieldRankNum do
+        if SeasonScore <= BattleFieldTableData[Index].Score then
+            curRank = Index;
+            return curRank;
+        end
+    end
+    error("玩家积分不在区间段");
+    return curRank;
+end
+
+function IsInBattleFieldScene()
+    for Index = 1,#BattleFieldSceneTable do
+        if G_SceneMng.SceneID == BattleFieldSceneTable[Index] then
+            return true;
+        end
+    end
+    return false;
+end

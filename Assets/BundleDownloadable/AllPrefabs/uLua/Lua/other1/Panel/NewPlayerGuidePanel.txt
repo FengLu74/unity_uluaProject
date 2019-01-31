@@ -1,0 +1,361 @@
+﻿module("NewPlayerGuidePanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 文本内容的显示
+local m_ContentPath = "Content/Label-Content";
+-----------------------------------------按钮路径--------------------------------------
+-- 跳过
+local m_SkipButtonPath = "Button_TiaoGuo";
+-- 下一步点击的操作
+local m_NextButtonPath = "NextClickObject";
+-----------------------------------------Sprite路径------------------------------------
+-- 头像资源
+local IconResources = "Content/Sprite_Icon";
+-- 左边盒子
+local m_LeftBoxPath = "Box_Left";
+-- 右边盒子
+local m_RightBoxPath = "Box_Right";
+-- 上边盒子
+local m_TopBoxPath = "Box_Top";
+-- 下边盒子
+local m_DownBoxPath = "Box_Down";
+-- 箭头
+local m_ArrowPath = "Content/Sprite_Arrows";
+-- 滑动指示动画
+local m_DragAniPath = "Content/Sprite_Draw";
+-- 新手引导图片圆
+local m_CircleIconPath = "Guide_Icon_Yuan";
+-- 新手引导图片方
+local m_RectIconPath = "Guide_Icon_Fang";
+-- 小精灵
+local m_ElfinIconPath = "Content/Label-Content/Sprite_Elfin";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 新手引导遮罩碰撞器
+local m_MaskColliderPath = "StopObject";
+
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 当前面板的对象
+local m_PanelObject = nil;
+local m_Panel = nil;
+-- 四个碰撞盒子
+local m_LeftBox = nil;
+local m_RightBox = nil;
+local m_TopBox = nil;
+local m_DownBox = nil;
+local m_Arrow = nil;
+local m_DragAni = nil;
+local m_ElfinIcon = nil;
+local m_Label = nil;
+
+-- 初始化失败默认情况
+local m_CreateSuccess = nil;
+-- 是否显示强制引导
+local m_IsForce = false;
+-- 碰撞盒子的宽和高
+local m_BoxWidth = 2500;
+local m_BoxHeight = 2500;
+local m_NonShapeId = 255;
+
+-- 新手引导管理器
+local m_CGuideManager = nil;
+-- 压黑纹理
+local m_ShaderTexture = nil;
+-- UIROOT对象
+local m_UIRoot = nil;
+-- 当前引导框对象
+local m_CurShapeIconGo = nil;
+-- 当前UIsprite对象
+local m_CurShapeIcon = nil;
+
+local m_SkipDelayTime = 0;
+local m_NextValidTime = 0;
+local m_NextStepTime = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+-- 计时器1
+local m_SkipBtnVisibleTimer = "NewPlayerGuidePanelEvent";
+-- 计时器2
+local m_NextValidTimer = "NewPlayerGuidePanelEventTwo";
+-- 计时器3
+local m_NextStepTimer = "NewPlayerGuidePanelEventThere";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDestroy()
+    m_IsForce = false;
+    m_CreateSuccess = nil;
+    m_ShaderTexture = nil;
+    m_CurShapeIconGo = nil;
+    m_CurShapeIcon = nil;
+    m_Panel = nil;
+    m_LeftBox = nil;
+    m_RightBox = nil;
+    m_TopBox = nil;
+    m_DownBox = nil;
+    m_Arrow = nil;
+    m_DragAni = nil;
+    m_Label = nil;
+    m_ElfinIcon = nil;
+
+    m_CGuideManager = nil;
+    closetPanel();
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化背包的所有数据信息
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL);
+    m_Panel = m_PanelObject:GetComponent("UIPanel");
+    m_LeftBox = child(m_PanelObject, m_LeftBoxPath).gameObject;
+    m_RightBox = child(m_PanelObject, m_RightBoxPath).gameObject;
+    m_TopBox = child(m_PanelObject, m_TopBoxPath).gameObject;
+    m_DownBox = child(m_PanelObject, m_DownBoxPath).gameObject;
+    m_Arrow = child(m_PanelObject, m_ArrowPath).gameObject;
+    m_DragAni = child(m_PanelObject, m_DragAniPath).gameObject;
+    m_ElfinIcon = GetComponent(m_PanelObject, m_ElfinIconPath, "UISprite");
+    m_Label = GetComponent(m_PanelObject, m_ContentPath, "UILabel");
+
+   -- 引导人物的宽度值 如果为0表示不出现人物和背景
+    SetGameObjectState(IconResources, false, m_PanelObject);
+
+    m_CGuideManager = G_UserInfo.GetPlayerGuideManager;
+    m_UIRoot = G_PanelMng:GetUIRoot();
+
+    m_SkipDelayTime = CCommonTool.GetDefineInfo(3800):GetIntContent();
+    m_NextValidTime = CCommonTool.GetDefineInfo(3801):GetIntContent();
+    m_NextStepTime = CCommonTool.GetDefineInfo(3802):GetIntContent();
+end
+
+function InitEvents()
+    SetGameObjectEvent(m_SkipButtonPath, OnClickTiaoGuo, m_PanelObject);
+end
+
+function InitShow()
+    if CheckGuildValid() ~= true then
+        return;
+    end
+    InitContent();
+end
+
+function CheckGuildValid()
+    local guideData = NewPlayerGuideManager.GetStepData();
+    if guideData == nil or not NewPlayerGuideManager.IsGuiding() then
+        closetPanel();
+        error("引导界面打开时, 引导已被暂停或中止!!");
+        return false;
+    end
+
+    local guideTarget = NewPlayerGuideManager.guideTarget;
+    if guideTarget == nil or IsNil(guideTarget) == true then
+        error("按钮名字路径错误 找不到按钮 策划查表 =targetPath =");
+        NewPlayerGuideManager.SkipGuide();
+        return false;
+    end
+    return true;
+end
+
+-- 初始化文本内容是字体样式
+function InitContent()
+    SetGameObjectState(m_MaskColliderPath, true, m_PanelObject);
+    SetGameObjectState(m_NextButtonPath, false, m_PanelObject);
+    SetGameObjectState(m_SkipButtonPath, false, m_PanelObject);
+
+    local guideData = NewPlayerGuideManager.GetStepData();
+    local isForce = guideData.IsFree == 1;
+    if isForce then
+        -- 跳过按钮出现的时间倒计时
+        AddTimerEvent(m_SkipBtnVisibleTimer, m_SkipDelayTime, OnSkipTimeOver);
+    end
+
+    if guideData.UIType == ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX then
+        m_Panel.depth = 900;
+        m_Panel.sortingOrder = 900;
+    else
+        m_Panel.depth = 650;
+        m_Panel.sortingOrder = 650;
+    end
+
+    local triggerOperate = guideData.TriggerOperation;
+
+    -- 设置触发类型
+    if 6 == triggerOperate then
+        SetGameObjectState(m_NextButtonPath, true, m_PanelObject);
+        SetGameObjectEvent(m_NextButtonPath, kong, m_PanelObject);
+        AddTimerEvent(m_NextValidTimer, m_NextValidTime, OnNextValidTimeOver);
+    end
+    
+    -- 四个碰撞盒
+    m_LeftBox:SetActive(isForce);
+    m_RightBox:SetActive(isForce);
+    m_TopBox:SetActive(isForce);
+    m_DownBox:SetActive(isForce);
+
+    -- 引导文本
+    if guideData.DialogWidth == 0 then
+        m_Label.gameObject:SetActive(false);
+    else
+        local text = CCommonTool.GetTxtData(guideData.TextContent).m_str;
+        local charCount = Util.GetStringWidth(text);
+        if charCount < 50 then
+            Util.SetLabelOverflow(m_Label, 0);
+            m_Label.width = 305;
+            m_Label.height = 90;
+        else
+            Util.SetLabelOverflow(m_Label, 3);
+            m_Label.overflowWidth = 300;
+        end
+        m_Label.text = text;
+        m_Label.gameObject:SetActive(true);
+    end
+
+    -- 箭头
+    m_Arrow:SetActive(guideData.ArrowPosX ~= 0);
+
+    -- 滑动动画
+    m_DragAni:SetActive(triggerOperate == 7);
+
+    -- 引导框形状
+    local shapeType = guideData.UIObjType;
+    SetGameObjectState(m_CircleIconPath, shapeType == 1, m_PanelObject);
+    SetGameObjectState(m_RectIconPath, shapeType == 2, m_PanelObject);
+    if shapeType ~= m_NonShapeId then
+        local shapePath = shapeType == 1 and m_CircleIconPath or m_RectIconPath;
+        m_CurShapeIconGo = child(m_PanelObject, shapePath).gameObject;
+        m_CurShapeIconGo:SetActive(true);
+        m_CurShapeIcon = m_CurShapeIconGo:GetComponent("UISprite");
+    end
+
+    UpdatePosition();
+    SetGameObjectState(m_MaskColliderPath, false, m_PanelObject);
+end
+
+function UpdateContent()
+    if m_CreateSuccess == true and IsOpenPanel(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL) == 1 then
+        UpdatePosition();
+    end
+end
+
+-- 设置碰撞盒子的位置
+function UpdatePosition()
+    local guideTarget = NewPlayerGuideManager.guideTarget;
+    local guideData = NewPlayerGuideManager.GetStepData();
+    -- 获取引导目标的区域
+    local rect = m_CGuideManager:GetGameObjectWorldPosition(guideTarget.gameObject, guideData);
+    SetColliderBox(rect);
+    SetShapeIconPosition(rect);
+    SetArrowIconPosition(rect);
+    SetDragAniPosition(rect);
+    SetLabelPosition();
+end
+
+-- 设置四个ColliderBox
+function SetColliderBox(rect)
+    local transfPosX = m_UIRoot.transform.lossyScale.x * m_BoxWidth;
+    local transfPosY = m_UIRoot.transform.lossyScale.y * m_BoxHeight;
+    -- 设置碰撞器的坐标
+    local leftPos = Vector3.New(rect.x - transfPosX / 2, 0, 0);
+    local rightPos = Vector3.New(rect.x +(rect.z * m_UIRoot.transform.lossyScale.x) + transfPosX / 2, 0, 0);
+    local topPos = Vector3.New(rect.x, rect.y + transfPosY / 2, 0);
+    local downPos = Vector3.New(rect.x, rect.y - transfPosY / 2 -(rect.w * m_UIRoot.transform.lossyScale.y), 0);
+    -- 设置四个碰撞盒子的左边
+    m_LeftBox.transform.position = leftPos;
+    m_RightBox.transform.position = rightPos;
+    m_TopBox.transform.position = topPos;
+    m_DownBox.transform.position = downPos;
+end
+
+-- 设置引导框位置
+function SetShapeIconPosition(rect)
+    local guideData = NewPlayerGuideManager.GetStepData();
+    if guideData.UIObjType ~= m_NonShapeId then
+        m_CurShapeIcon:SetDimensions(rect.z, rect.w);
+        local trans = m_CurShapeIconGo.transform;
+        trans.position = Vector3.New(rect.x, rect.y, 1);
+        local relativePos = Vector3.New(guideData.UIObjX, guideData.UIObjY, 0);
+        trans.localPosition = m_CurShapeIconGo.transform.localPosition + relativePos;
+    end
+end
+
+-- 箭头位置
+function SetArrowIconPosition()
+    local guideData = NewPlayerGuideManager.GetStepData();
+    if guideData.ArrowPosX ~= 0 then
+        local relativePos = Vector3.New(guideData.ArrowPosX, guideData.ArrowPosY, 0);
+        m_Arrow.transform.localEulerAngles = Vector3.New(0, 0, guideData.ArrowRotateZ);
+        m_Arrow.transform.localPosition = m_CurShapeIconGo.transform.localPosition + relativePos;
+    end
+end
+
+-- 滑动动画位置
+function SetDragAniPosition()
+    local guideData = NewPlayerGuideManager.GetStepData();
+    local triggerOperate = guideData.TriggerOperation;
+    if triggerOperate == 7 then
+        local relativePos = Vector3.New(guideData.HandPosX, guideData.HandPosY, 0);
+        --m_DragAni.transform.localEulerAngles = Vector3.New(0, 0, guideData.ArrowRotateZ);
+        m_DragAni.transform.localPosition = m_CurShapeIconGo.transform.localPosition + relativePos;
+    end
+end
+
+-- 引导文本位置
+function SetLabelPosition()
+    local guideData = NewPlayerGuideManager.GetStepData();
+    if guideData.DialogWidth > 0 then
+        local pos = Vector3.New(guideData.TextPositionX, guideData.TextPositionY, 0);
+        pos = m_CurShapeIconGo.transform.localPosition + pos;
+        m_Label.transform.localPosition = pos
+        Util.SetSpriteFlip(m_ElfinIcon, m_CurShapeIconGo.transform.localPosition.x < 0 and 1 or 0);
+    end
+end
+
+function closetPanel()
+    G_TimerMng:RemoveTimeTask(m_SkipBtnVisibleTimer);
+    G_TimerMng:RemoveTimeTask(m_NextValidTimer);
+    G_TimerMng:RemoveTimeTask(m_NextStepTimer);
+    closePanel(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL);
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 跳过当前引导段
+function OnClickTiaoGuo(go)
+    NewPlayerGuideManager.SkipGuide();
+end
+
+function kong() end
+
+-- 下一步操作
+function OnNextClick()
+    G_TimerMng:RemoveTimeTask(m_NextValidTimer);
+    NewPlayerGuideManager.SaveAndGuideNextStep();
+end
+
+-- 面板计时操作
+function OnNextValidTimeOver()
+    -- 点击之后进行下一步引导
+    G_TimerMng:RemoveTimeTask(m_NextValidTimer);
+    SetGameObjectEvent(m_NextButtonPath, OnNextClick, m_PanelObject);
+    AddTimerEvent(m_NextStepTimer, m_NextStepTime, OnNextClick);
+end
+
+-- 计时结束回调
+function OnSkipTimeOver()
+    -- 计时器结束开始弹新手面板
+    G_TimerMng:RemoveTimeTask(m_SkipBtnVisibleTimer);
+    SetGameObjectState(m_SkipButtonPath, true, m_PanelObject);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

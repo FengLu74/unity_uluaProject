@@ -1,0 +1,242 @@
+﻿module('TitlePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TitlePanel';
+---------------------------------------label路径---------------------------------------
+-- 当前称号
+local m_LabelCurrentPath = "Content/Label_Current";
+-- 有效期
+local m_ValidTimePath = "ValidTime";
+-- 称号属性
+local m_AttrPath = "Attr";
+-- 称号名称
+local m_NamePath = "Name";
+-- 条件
+local m_ConditionPath = "Condition";
+-----------------------------------------按钮路径--------------------------------------
+local m_ButtonClosePath = "Button_Close";
+-- 装备
+local m_EquipButtonPath = "EquipButton";
+-- 卸下
+local m_UnloadButtonPath = "UnloadButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 红点路径
+local m_RedHintPath = "Sprite_RedHint";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+-- 空面板
+local m_BlankPath = "Blank";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "Content/ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+
+local m_TimerData = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    TitleManager.ClearNewTitle();
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TITLE);
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_ButtonClosePath, OnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local titleId = TitleManager.currentTitleId;
+    if titleId == 0 then
+        SetLabelContent(m_LabelCurrentPath, --[[无]]CCommonTool.GetTxtData(8126).m_str, m_PanelObject);
+    else    
+        local info = CCommonTool.GetTitleInfo(titleId);
+        if info ~= nil then
+            SetLabelTextByID(m_LabelCurrentPath, info.TitleValue, m_PanelObject);
+        end
+    end
+    local titleList = TitleManager.GetTitleTable();
+
+    local now = G_TimerMng:GetCurrentSeconds();
+    local hasLimitTitle = false;
+    m_List:RemoveAll();
+    for i, data in pairs(titleList) do
+        if data.isGet == TitleManager.TITLE_GET then 
+            local expireTime = data.expireTime;
+            if expireTime < 0 or expireTime > now then
+                m_List:AddData(data);
+                if expireTime > 0 then
+                    hasLimitTitle = true;
+                end
+            end
+        else
+            m_List:AddData(data);
+        end
+    end
+    SetGameObjectState(m_BlankPath, #titleList == 0, m_PanelObject);
+    ClearTimer();
+    if hasLimitTitle == true then
+        m_TimerData = Timer.Instance:AddTimer(1, -1, RefreshList);
+    end
+end
+
+-- 刷新限时称号
+function RefreshList()
+    if m_List ~= nil then
+        m_List:Refresh();
+    end
+end
+
+function ClearTimer()
+    if m_TimerData ~= nil then
+        Timer.Instance:StopTimer(m_TimerData);
+        m_TimerData = nil;
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TITLE);
+end
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local curTitleId = TitleManager.currentTitleId;
+    local go = cell.gameObject;
+    local info = data.info;
+    local expireTime = -1;
+    if data.isGet == TitleManager.TITLE_GET then 
+        expireTime = data.expireTime;
+    else
+        expireTime = info.Time;
+    end
+    local expired = false;
+
+    SetLabelTextByID(m_NamePath, info.TitleValue, go);
+    SetLabelTextByID(m_ConditionPath, info.ConTextId, go);
+    local attrText = string_format(--[[属性加成: {0}]]CCommonTool.GetTxtData(1470).m_str, TitleManager.GetTitleAttrText(info));
+    SetLabelContent(m_AttrPath, attrText, go)
+    if expireTime < 0 then
+        SetLabelContent(m_ValidTimePath, --[[有效期: 永久]]CCommonTool.GetTxtData(1600).m_str, go);
+        SetLabelColor(m_ValidTimePath, "91E564", go);--TEMP
+    else
+        if data.isGet == TitleManager.TITLE_GET then 
+            local now = G_TimerMng:GetCurrentSeconds();
+            if expireTime > now then
+                local seconds = expireTime - now;
+                local day, hour, minute = 0, 0, 0;
+                day = math.floor(seconds / 86400);
+                seconds = math.fmod(seconds, 86400);
+                hour = math.floor(seconds / 3600);
+                seconds = math.fmod(seconds, 3600);
+                minute = math.floor(seconds / 60);
+                seconds = math.fmod(seconds, 60);
+                if day > 0 then
+                    SetLabelContent(m_ValidTimePath, string_format(CCommonTool.GetTxtData(1602).m_str, day, hour), go);--{0}天{1}小时
+                elseif hour > 0 then
+                    SetLabelContent(m_ValidTimePath, string_format(CCommonTool.GetTxtData(1603).m_str, hour, minute), go);--{0}小时{1}分钟
+                else
+                    SetLabelContent(m_ValidTimePath, string_format(CCommonTool.GetTxtData(1604).m_str, minute, seconds), go);--{0}分钟{1}秒
+                end
+            else
+                expired = true;
+                SetLabelContent(m_ValidTimePath, --[[有效期: 已过期]]CCommonTool.GetTxtData(1601).m_str, go);
+            end
+            SetLabelColor(m_ValidTimePath, "F03737", go);
+        else
+            local seconds = expireTime * 60;
+            local day, hour, minute = 0, 0, 0;
+            day = math.floor(seconds / 86400);
+            seconds = math.fmod(seconds, 86400);
+            hour = math.floor(seconds / 3600);
+            seconds = math.fmod(seconds, 3600);
+            minute = math.floor(seconds / 60);
+            seconds = math.fmod(seconds, 60);
+            if day > 0 then
+                SetLabelContent(m_ValidTimePath, string_format(CCommonTool.GetTxtData(1602).m_str, day, hour), go);--{0}天{1}小时
+            elseif hour > 0 then
+                SetLabelContent(m_ValidTimePath, string_format(CCommonTool.GetTxtData(1603).m_str, hour, minute), go);--{0}小时{1}分钟
+            else
+                SetLabelContent(m_ValidTimePath, string_format(CCommonTool.GetTxtData(1604).m_str, minute, seconds), go);--{0}分钟{1}秒
+            end
+            SetLabelColor(m_ValidTimePath, "F03737", go);
+        end
+    end
+    if data.isGet == TitleManager.TITLE_GET then 
+        SetGameObjectState(m_RedHintPath, TitleManager.IsNewTitle(data.id), go);
+        SetGameObjectState(m_EquipButtonPath, not expired and data.id ~= curTitleId, go);
+        SetGameObjectState(m_UnloadButtonPath, not expired and data.id == curTitleId, go);
+    else
+        SetGameObjectState(m_RedHintPath, false, go);
+        SetGameObjectState(m_EquipButtonPath, false, go);
+        SetGameObjectState(m_UnloadButtonPath, false, go);
+    end
+end
+
+-- 列表点击
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if m_EquipButtonPath == go.name then
+        TitleProtocol.RequestEquipTitle(data.id, true);
+        if TitleManager.IsNewTitle(data.id) == true then
+            TitleManager.CancelNewTitleState(data.id);
+            RefreshList();
+        end
+    elseif m_UnloadButtonPath == go.name then
+        TitleProtocol.RequestEquipTitle(data.id, false);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TITLE) == 1 then
+        InitShow();
+    end
+end

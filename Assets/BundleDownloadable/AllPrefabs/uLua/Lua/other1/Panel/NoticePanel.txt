@@ -1,0 +1,120 @@
+﻿module('NoticePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'NoticePanel';
+---------------------------------------label路径---------------------------------------
+-- 公告内容
+local m_NoticeContentLabelPath = "Content/Scroll View/Label";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 关闭按钮路径
+local m_ClosePath = "Close";
+local m_MaskClosePath = "Mask";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 菜单list
+local m_MenuItemListPath = "MainMenu/Scroll View/ItemList";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 菜单list
+local m_MenuItemList = nil;
+-- 关闭按钮
+local m_Close = nil;
+local m_MaskClose = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_ItemList = nil;
+	m_Close = nil;
+    m_MaskClose = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_NOTICE_PANEL);
+    m_MenuItemList = GetComponent(m_PanelObject, m_MenuItemListPath, "UIListView");
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+    m_MaskClose = child(m_PanelObject, m_MaskClosePath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_MenuItemList:SetInitCallback(OnMenuItemListViewInit);
+    m_MenuItemList:SetClickCallback(OnMenuItemListViewClick);
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_MaskClose).onClick = LuaHelper.OnClick(OnCloseClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+   InitMenuData();
+end
+
+-- 设置菜单数据
+function InitMenuData()
+    local noticeInfos = G_GameMng.NoticeManager:GetNoticeInfos();
+    local count = noticeInfos.Count;
+    m_MenuItemList:RemoveAll();
+    if count > 0 then
+        for index = 1, count do
+           local data = noticeInfos[index - 1];
+           m_MenuItemList:AddData(data);
+        end
+        m_MenuItemList:LookAt(0,true);
+        local data = noticeInfos[0];
+        SetNoticeContent(data);
+    end
+end
+-- 设置公告显示内容
+function SetNoticeContent(data)
+    local desc = data.Desc;
+    SetLabelContent(m_NoticeContentLabelPath , desc, m_PanelObject);
+end
+------------------------------------------事件方法------------------------------------
+-- 菜单初始化
+function OnMenuItemListViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local text = data.Title;
+    SetLabelContent("Sprite_Deactive/Label",text,item);
+    SetLabelContent("Sprite_Active/Label",text,item);
+end
+
+-- 菜单点击事件
+function OnMenuItemListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    SetNoticeContent(data);
+    RepositionUIScrollViewComp("Content/Scroll View", m_PanelObject);
+end
+
+-- 关闭按钮事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_NOTICE_PANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

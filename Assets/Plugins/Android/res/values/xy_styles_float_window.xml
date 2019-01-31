@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="XyFloatWindowItem">
+        <item name="android:background">@null</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_width">0dip</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_marginLeft">@dimen/xy_common_margin_15dip</item>
+        <item name="android:layout_marginRight">@dimen/xy_common_margin_15dip</item>
+        <item name="android:layout_marginTop">@dimen/xy_common_margin_5dip</item>
+        <item name="android:layout_marginBottom">@dimen/xy_common_margin_5dip</item>
+        <item name="android:contentDescription">@string/xy_ib_default_content_description</item>
+    </style>
+
+    <style name="XyFloatWindowItem.MenuHidden" parent="XyFloatWindowItem">
+        <item name="android:src">@drawable/xy_fw_view_menu_hidden</item>
+    </style>
+
+    <style name="XyFloatWindowItem.MenuCustomer" parent="XyFloatWindowItem">
+        <item name="android:src">@drawable/xy_fw_view_menu_customer</item>
+    </style>
+
+    <style name="XyFloatWindowItem.MenuUser" parent="XyFloatWindowItem">
+        <item name="android:src">@drawable/xy_fw_view_menu_user</item>
+    </style>
+
+
+    <style name="XyFloatWindowAnimationLeft2Right" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/xy_fw_view_menu_left_anim_show</item>
+        <item name="android:windowExitAnimation">@anim/xy_fw_view_menu_left_anim_exit</item>
+    </style>
+    <style name="XyFloatWindowAnimationRight2Left" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/xy_fw_view_menu_right_anim_show</item>
+        <item name="android:windowExitAnimation">@anim/xy_fw_view_menu_right_anim_exit</item>
+    </style>
+</resources>

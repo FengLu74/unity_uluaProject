@@ -1,0 +1,34 @@
+﻿module("PlayerSettingManager", package.seeall)
+--角色提示
+LocalNotification = 0;
+--系统提示
+SystemNotification = 0;
+--夜间提示
+NightNotification = 0;
+
+--角色提示
+function SetLocalNotification(value)
+    LocalNotification = PlayerPrefs.SetInt("PlayerSettingManager.LocalNotification", value);
+end
+function GetLocalNotification()
+    LocalNotification = PlayerPrefs.GetInt("PlayerSettingManager.LocalNotification", 1);
+    return LocalNotification;
+end
+
+--系统提示
+function SetSystemNotification(value)
+    SystemNotification = PlayerPrefs.SetInt("PlayerSettingManager.SystemNotification", value);
+end
+function GetSystemNotification()
+    SystemNotification = PlayerPrefs.GetInt("PlayerSettingManager.SystemNotification", 1);
+    return SystemNotification;
+end
+
+--夜间提示
+function SetNightNotification(value)
+    NightNotification = PlayerPrefs.SetInt("PlayerSettingManager.NightNotification", value);
+end
+function GetNightNotification()
+    NightNotification = PlayerPrefs.GetInt("PlayerSettingManager.NightNotification", 0);
+    return NightNotification;
+end

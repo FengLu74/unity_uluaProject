@@ -1,0 +1,91 @@
+﻿--[[
+    field=Id, type=int, desc=主键Id也是可找回活动ID
+    field=BindCoin, type=int, desc=可找回活动单次银币价格
+    field=BindCoinRatio, type=float, desc=银币可找回的百分比
+    field=BindCoinState, type=int, desc=银币可找回是否可用
+    field=BindDiamond, type=int, desc=可找回活动单次蓝钻价格
+    field=BindDiamondRatio, type=float, desc=蓝钻可找回的百分比
+    field=BindDiamondState, type=int, desc=蓝钻可找回是否可用
+    field=Diamond, type=int, desc=可找回活动单次红钻价格
+    field=DiamondRatio, type=float, desc=红钻可找回的百分比
+    field=DiamondState, type=int, desc=红钻可找回是否可用
+]]
+module("ResourcesBackTable", package.seeall)
+local list={
+    {Id=101,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=102,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=401,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=2101,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=2201,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=2301,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=2401,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=2601,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1},
+    {Id=2701,BindCoin=20000,BindCoinRatio=0.5,BindCoinState=0,BindDiamond=40,BindDiamondRatio=0.5,BindDiamondState=1,Diamond=20,DiamondRatio=0.8,DiamondState=1}
+};
+local map = {[101]=list[1],[102]=list[2],[401]=list[3],[2101]=list[4],[2201]=list[5],[2301]=list[6],[2401]=list[7],[2601]=list[8],[2701]=list[9]};
+
+count = 9;
+Count = 9;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

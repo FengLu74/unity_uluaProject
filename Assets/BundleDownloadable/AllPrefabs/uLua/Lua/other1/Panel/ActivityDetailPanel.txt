@@ -1,0 +1,228 @@
+﻿module('ActivityDetailPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityDetailPanel';
+---------------------------------------label路径---------------------------------------
+-- 活动名称
+local m_NamePath = "Content/Name";
+-- 活动开启等级
+local m_LevelPath = "Content/Level";
+-- 活动形式
+local m_JoinTypePath = "Content/JoinType";
+-- 活动时间
+local m_OpenTimePath = "Content/OpenTime";
+-- 活动描述
+local m_DescPath = "Content/Desc";
+-- 活跃度
+local m_LivenessPath = "Content/Liveness";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 前往
+local m_JumpButtonPath = "Content/JumpButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 活动图标
+local m_IconPath = "Content/Icon";
+-- 设置提醒
+local m_CheckmarkPath = "Content/Checkmark";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 活动奖励
+local m_ItemsPath = "Content/Items";
+-- 活动奖励1
+local m_Item1Path = "Content/Items/Item1";
+-- 活动奖励2
+local m_Item2Path = "Content/Items/Item2";
+-- 活动奖励3
+local m_Item3Path = "Content/Items/Item3";
+-- 活动奖励4
+local m_Item4Path = "Content/Items/Item4";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 活动开放等级
+local m_Level = nil;
+-- 活动形式
+local m_JoinType = nil;
+-- 活动开放时间
+local m_OpenTime = nil;
+-- 活跃度
+local m_Liveness = nil;
+-- 活动奖励
+local m_Items = nil;
+-- 设置提醒
+local m_Checkmark = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+-- 边境战场活动ID
+local m_actBorderWarID = 1701;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Level = nil;
+	m_JoinType = nil;
+	m_OpenTime = nil;
+	m_Liveness = nil;
+	m_Items = nil;
+	m_Item1 = nil;
+	m_Item2 = nil;
+	m_Item3 = nil;
+	m_Item4 = nil;
+	m_Checkmark = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL);
+    m_Level = GetComponent(m_PanelObject, m_LevelPath, "UILabel")
+    m_JoinType = GetComponent(m_PanelObject, m_JoinTypePath, "UILabel")
+    m_OpenTime = GetComponent(m_PanelObject, m_OpenTimePath, "UILabel")
+    m_Liveness = GetComponent(m_PanelObject, m_LivenessPath, "UILabel")
+    m_Items = child(m_PanelObject, m_ItemsPath).gameObject;
+    m_Item1 = child(m_PanelObject, m_Item1Path).gameObject;
+    m_Item2 = child(m_PanelObject, m_Item2Path).gameObject;
+    m_Item3 = child(m_PanelObject, m_Item3Path).gameObject;
+    m_Item4 = child(m_PanelObject, m_Item4Path).gameObject;
+    m_Checkmark = GetComponent(m_PanelObject, m_CheckmarkPath, "UIToggle");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+	EventDelegate.Add(m_Checkmark.onChange, EventDelegate.New(OnCheckmarkChanged));
+	SetGameObjectEvent(m_JumpButtonPath, OnJumpButtonClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    local data = ActivityManager.GetActivity(m_ActivityId);
+    local info = data.info;
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    local state = ActivityManager.GetActivityState(data.id);
+
+    SetSpriteByAtlasID(m_IconPath, info.Icon, m_PanelObject);
+    SetLabelTextByID(m_NamePath, info.Name, m_PanelObject);
+    m_Liveness.text = data.liveness;
+    if data.maxLevel == 1000 then
+        m_Level.text = string_format(--[[{0}级以上]]CCommonTool.GetTxtData(934).m_str, data.openLevel);
+    else
+        m_Level.text = string_format(--[[{0}级-{1}级]]CCommonTool.GetTxtData(935).m_str, data.openLevel, data.maxLevel);
+    end
+    m_JoinType.text = CCommonTool.GetTxtData(info.JoinTypeTextId).m_str;
+    -- 边境战场活动特殊处理
+    if data.id == m_actBorderWarID then
+        m_OpenTime.text = ActivityManager.GetActivityDayTime(data.id);
+    else
+        m_OpenTime.text = ActivityManager.GetOpenTime(data.id, true, " ");
+    end
+    SetLabelTextByID(m_DescPath, info.Desc, m_PanelObject);
+
+    if info.ShowReward == 1 then
+        m_Items:SetActive(true);
+        local paths = {m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path};
+        -- 获得奖励道具信息
+        local list = CCommonTool.GetRewardShowItemIds(info.RewardId);
+        local count = list.count;
+        for i, path in ipairs(paths) do
+            if i <= count then
+                local excelId = list[i - 1];
+                SetItemShowByExcelIDV04(m_PanelObject, path, excelId, 1, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL);
+                SetItemToolTipsEvent(child(m_PanelObject, path).gameObject,"",ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL,false,excelId);
+                SetGameObjectState(path, true, m_PanelObject);
+            else
+                SetGameObjectState(path, false, m_PanelObject);
+            end
+        end
+    else
+        m_Items:SetActive(false);
+    end
+    SetGameObjectState(m_CheckmarkPath, info.ShowRemind == 1, m_PanelObject);
+    local jumpButton = child(m_PanelObject,m_JumpButtonPath).gameObject;
+    if info.JumpType == 0 then
+        jumpButton:SetActive(false);
+    else
+        local isBattleFieldActivity = ActivityManager.IsBattleFieldActivity(data.id);
+        local buttonGrey = isBattleFieldActivity ~= true and (data.passed or state ~= ACTIVITY_STATE.OPENING);
+        jumpButton:SetActive(true);
+        CCommonTool.SetGameObjectGrey(jumpButton, buttonGrey);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL);
+end
+
+-- 设置提醒点击事件
+function OnCheckmarkChanged()
+    error(m_Checkmark.value);
+end
+
+-- 前往按钮点击事件
+function OnJumpButtonClick(gameObject)
+    if ActivityManager.IsLackTimes(m_ActivityId) == 1 then
+        ActivityTimesItemPanel.Show(m_ActivityId);
+        closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL);
+        return;
+    end
+    local panelId = ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL;
+    ActivityManager.Jump(m_ActivityId, panelId, function(jumpType, success) 
+        if success == true  then
+            if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+                closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+            end
+        end
+    end);
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL);
+    --[[
+    local result, jumpType = ActivityManager.Jump(m_ActivityId);
+    if result then
+        if jumpType ~= ACTIVITY_JUMP_TYPE.OPEN_UI then
+            closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+        end
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL);
+    ]]
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Show(activityId, causePanelId)
+    m_ActivityId = activityId;
+    local panelId = ENUMPANELID.ENUM_PANEL_ACTIVITYDETAILPANEL;
+    if IsOpenPanel(panelId) == 1 then
+        InitShow();
+    else
+        createPanel(panelId, causePanelId);
+    end
+end

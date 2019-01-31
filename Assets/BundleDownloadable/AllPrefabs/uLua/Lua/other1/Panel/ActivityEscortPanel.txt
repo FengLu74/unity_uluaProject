@@ -1,0 +1,276 @@
+﻿module('ActivityEscortPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityEscortPanel';
+---------------------------------------label路径---------------------------------------
+-- 运送物资
+local m_LbEscortPath = "Sub_Content/lb_Escort";
+-- 加注释
+local m_LbInfoPath = "Sub_Content/lb_Info";
+-- 加注释
+local m_LbDepositDataPath = "Sub_Content/lb_DepositData";
+-- 加注释
+local m_LbGuildLvDataPath = "Sub_Content/lb_GuildLvData";
+-- 加注释
+local m_LbRestDataPath = "Sub_Content/lb_RestData";
+-- 加注释
+local m_LbTokenDataPath = "Sub_Content/lb_TokenData";
+local m_LbTokenNumPath = "Sub_Content/lb_TokenNum";
+
+-- 加注释
+local m_LbJoinRewardDataPath = "Sub_Content/lb_JoinRewardData";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 开始运输
+local m_BtnStartPath = "Sub_Content/btn_Start";
+-- 刷新物资车
+local m_BtnRefreshPath = "Sub_Content/btn_Refresh";
+-- 关闭按钮
+local m_BtnClosePath = "Sub_Content/btn_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 镖车路径
+local m_BossCellPath = "Sub_BossList/BossCell";
+-- 选中图标路径
+local m_SelectObjStr = "Sub_BossList/sp_Select";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 押镖数据
+local m_EscortData = nil;
+-- 要显示的镖车数据 默认显示C级
+local m_SelectLv = 1;
+-- 选中
+local m_SelectObj = nil;
+-- 开始播放的时间
+local m_StartTime = nil;
+-- 开始运输
+local m_BtnStart = nil;
+-- 刷新物资车
+local m_BtnRefresh = nil;
+-- 是否可以点击
+local isCanClick = true;
+-- 当前可刷新次数
+local canRefreshNum = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 匀速时间
+local m_ConstantSpeedTime = 2.5;
+-- 匀减速时间
+local m_minusSpeedTime = 1.5;
+-- 匀速速度(栏位/s)
+local m_ConstantSpeed = 8;
+-- 减到的速度
+local m_MinSpeed = 3;
+-- 最后匀速时间
+local m_lastConstantSpeedTime = 5;
+-- 匀速速度(栏位/s)
+local m_LastConstantSpeed = 2;
+
+-- 一圈多少栏位
+local m_TotalItems = 4;
+
+local distance = nil;
+local tempPath = "";
+
+-- 镖车等级
+local m_Level = {[1] = "C", [2] = "B", [3] = "A", [4] = "S", };
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function Update()
+    if m_StartTime == nil then return end
+    deltaTime = Time.time - m_StartTime;
+    if deltaTime >= 0 and deltaTime <= m_ConstantSpeedTime then
+        isCanClick = false;
+        distance = deltaTime * m_ConstantSpeed;
+        tempPath = m_BossCellPath .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+        m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition;
+        CCommonTool.SetGameObjectGrey(m_BtnStart, true);
+        CCommonTool.SetGameObjectGrey(m_BtnRefresh, true);
+    elseif deltaTime > m_ConstantSpeedTime and deltaTime < m_ConstantSpeedTime + m_minusSpeedTime then
+        local curVelocity = (m_minusSpeedTime - deltaTime + m_ConstantSpeedTime)/ m_minusSpeedTime * (m_ConstantSpeed - m_MinSpeed) + m_MinSpeed;
+        distance = m_ConstantSpeedTime * m_ConstantSpeed + (m_ConstantSpeed + curVelocity)*(deltaTime - m_ConstantSpeedTime)/2;
+        tempPath = m_BossCellPath .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+        m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition;
+   elseif deltaTime >= m_ConstantSpeedTime + m_minusSpeedTime and deltaTime < m_ConstantSpeedTime + m_minusSpeedTime + m_lastConstantSpeedTime then
+        distance = m_ConstantSpeedTime * m_ConstantSpeed + (m_ConstantSpeed + m_MinSpeed)*m_minusSpeedTime/2 + (deltaTime - m_ConstantSpeedTime - m_minusSpeedTime)*m_LastConstantSpeed;
+        tempPath = m_BossCellPath .. (math.floor(math.fmod(distance,m_TotalItems)) + 1);
+        m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition; 
+        if m_ConstantSpeedTime + m_minusSpeedTime + m_lastConstantSpeedTime - deltaTime < 3.7 then
+            if m_SelectLv == math.floor(math.fmod(distance,m_TotalItems)) + 1 then
+                isCanClick = true;
+                InitContent();
+                CCommonTool.SetGameObjectGrey(m_BtnStart, false);
+                CCommonTool.SetGameObjectGrey(m_BtnRefresh, false);
+                m_StartTime = 200;
+            end
+        end 
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_EscortData = nil;
+    m_SelectObj = nil;
+    m_BtnStart = nil;
+    m_BtnRefresh = nil;
+    isCanClick = true;
+    canRefreshNum = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITY_ESCORT_PANEL);
+    m_SelectObj = child(m_PanelObject, m_SelectObjStr);
+    m_BtnStart = child(m_PanelObject, m_BtnStartPath).gameObject;
+    m_BtnRefresh = child(m_PanelObject, m_BtnRefreshPath).gameObject;
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_BtnStartPath, OnBtnStartClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnRefreshPath, OnBtnRefreshClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+end
+
+-- 初始化数据
+function InitData()
+    m_EscortData = CCommonTool.GetAllUnionConvoyInfo();
+end
+
+-- 初始化显示信息
+function InitShow()
+    local lv =  G_UserInfo.RoleAttribute.Level;
+    local guildLv = GuildManager.myGuild.level;
+    if m_EscortData ~= nil then  
+        -- 计算银币所需系数
+        local n1 = CCommonTool.GetDefineInfo(6060);
+        local n2 = CCommonTool.GetDefineInfo(6061);
+        local n3 = CCommonTool.GetDefineInfo(6040 + guildLv - 1);
+        for i = 1, 4 do
+            local data = m_EscortData[i - 1];
+            SetLabelContent(m_BossCellPath .. i .. "/lb_ResurrectionData", data.CorpsMoney, m_PanelObject);
+            if n1 and n2 and n3 then
+                local moneyNum = math.ceil(((lv * n1:GetIntContent()) + n2:GetIntContent()) * data.Quality * n3:GetFloatContent());
+                SetLabelContent(m_BossCellPath .. i .. "/lb_GoldData", math.floor(moneyNum), m_PanelObject);
+            end
+        end 
+    end
+    SetLabelContent(m_LbGuildLvDataPath, guildLv, m_PanelObject);
+    local guildBonus = CCommonTool.GetDefineInfo(6020 + guildLv - 1);
+    if guildBonus then 
+        SetLabelContent(m_LbJoinRewardDataPath, guildBonus:GetIntContent().."%", m_PanelObject);
+    end
+    SetItemShowByExcelIDV04(m_PanelObject,"Sub_Content/sp_Token",21300,1,false,11,ENUMPANELID.ENUM_PANEL_ACTIVITY_ESCORT_PANEL);
+    SetItemToolTipsEvent(m_PanelObject, "Sub_Content/sp_Token", ENUMPANELID.ENUM_PANEL_ACTIVITY_ESCORT_PANEL, false, 21300);
+    if ActivityManager.activityEscort ~= nil then
+        local data = ActivityManager.activityEscort;
+        SetLabelContent(m_LbRestDataPath, data.restTimes, m_PanelObject);
+        local tokenNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, data.tokenID);
+        SetLabelContent(m_LbTokenNumPath, tokenNum, m_PanelObject);
+        if data.refreshTimes ~= 0 then
+            SetLabelTextByID("Sub_Content/lb_Token", 1576, m_PanelObject);
+            SetLabelContent(m_LbTokenDataPath, data.refreshTimes, m_PanelObject);
+        else
+            SetLabelTextByID("Sub_Content/lb_Token", 1585, m_PanelObject);
+            SetLabelContent(m_LbTokenDataPath, "1", m_PanelObject);
+        end
+
+        if data.isHaveEscort <= 0 then
+            m_StartTime = Time.time; 
+            ActivityProtocol.RequestRefreshEscort(1);
+        else
+            m_StartTime = 200;
+            for i = 1, m_EscortData.count do
+                if m_EscortData[i-1].CamionMapNPC == isHaveEscort then
+                    m_SelectLv = i;
+                end
+            end
+            local tempPath = m_BossCellPath .. m_SelectLv;
+            m_SelectObj.transform.localPosition = child(m_PanelObject,tempPath).localPosition;
+        end  
+        canRefreshNum = data.refreshTimes + tokenNum;
+    end
+    InitContent();
+end
+
+-- 显示对应等级镖车的信息
+function InitContent()
+    local data = m_EscortData[m_SelectLv - 1];
+    SetLabelContent(m_LbEscortPath,string_format(GetTextToId(163100), m_Level[m_SelectLv]),m_PanelObject);
+    SetLabelTextByID(m_LbInfoPath, data.TextID, m_PanelObject);
+    SetLabelContent(m_LbDepositDataPath, data.Cash, m_PanelObject);
+end
+------------------------------------------事件方法------------------------------------
+
+-- 开始运输
+function OnBtnStartClick(gameObject)
+    if isCanClick then
+        ActivityProtocol.RequestStartEscort();
+        closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_ESCORT_PANEL);
+    end
+end
+
+-- 刷新物资车
+function OnBtnRefreshClick(gameObject)
+    if TeamManager.HasTeam() == true then 
+        ShowSystemFlowTips(8091);
+        return;
+    end
+    if isCanClick then
+        ActivityProtocol.RequestRefreshEscort(2);
+        if canRefreshNum > 0 then 
+            m_StartTime = Time.time;
+        end
+    end
+end
+
+-- 关闭
+function OnBtnCloseClick(gameObject)
+    if isCanClick then
+        closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITY_ESCORT_PANEL);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 刷新物资车返回
+function GetEscortRefresh(ExcelID,refreshTimes,tokenID)
+    for i = 1, m_EscortData.count do
+        if m_EscortData[i-1].CamionMapNPC == ExcelID then
+            m_SelectLv = i;
+        end
+    end
+    local tokenNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, tokenID);
+    if refreshTimes ~= 0 then
+            SetLabelContent(m_LbTokenDataPath, refreshTimes, m_PanelObject);
+            SetLabelTextByID("Sub_Content/lb_Token", 1576, m_PanelObject);
+        else
+            SetLabelTextByID("Sub_Content/lb_Token", 1585, m_PanelObject);
+            SetLabelContent(m_LbTokenDataPath, "1", m_PanelObject);
+        end
+    SetLabelContent(m_LbTokenNumPath, tokenNum, m_PanelObject);
+    canRefreshNum = refreshTimes + tokenNum;
+end

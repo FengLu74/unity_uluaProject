@@ -1,0 +1,120 @@
+﻿module("NewFunctionOpenPanel", package.seeall)
+
+-- 当前panel名字
+local m_strPanelName = "Second/NewFunctionOpenPanel";
+-- 当前面板的tag名字
+local m_strPanelTag = "NewFunctionOpenPanel";
+---------------------------------------label路径---------------------------------------
+-- 新功能名字
+local m_newOpenName = "Content/Sprite_Icon/Sprite_Name";
+-- 标题
+local m_spriteTitle = "Content/Sprite_Text";
+-----------------------------------------按钮路径--------------------------------------
+-- 遮罩
+local m_zheZhao = "ZheZhao";
+-----------------------------------------Sprite路径------------------------------------
+-- 新功能开启的图标
+local m_newOpenBg = "Content/Background";
+-- 图标
+local m_newOpenIcon = "Content/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 新功能开启特效
+local m_effectPath = "Content/effect_ui_guangquan";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+-- 当前面板的对象
+local m_strPanelObject = nil;
+-- 初始化失败默认情况
+local m_bCreateSuccess = nil;
+-- 列表内容
+local m_listItem = nil;
+-- 当前移动的对象
+local m_currentObject = nil;
+-- 是否在移动状态
+local m_isMoveState = false;
+-- 声音ID 
+local m_musicID = 4000;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+
+-- 系统函数,对象创建成功后执行,面板中激活对象的方法必须放在这里面
+function Start()
+    error("NewFunctionOpenPanel = Start");
+    InitAllInfo();
+    m_bCreateSuccess = true;
+end
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    error("NewFunctionOpenPanel = OnEnable");
+    if m_bCreateSuccess == true then
+        InitAllInfo();
+    end
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化管理器
+function InitMng()
+end
+-- 初始化玩家自身信息
+function InitPlayerSelfUserInfo()
+    -- 面板对象
+    m_strPanelObject = findWithTag(m_strPanelTag);
+    error(m_strPanelObject);
+    error("InitPlayerSelfUserInfo");
+    -- 获得位置;
+    if nil ~= m_strPanelObject then
+        m_currentObject = GetComponent(m_strPanelObject, m_newOpenIcon, "TweenScale");
+        InitContent();
+    end
+end
+-- 初始化所有内容
+function InitAllInfo()
+    InitMng();
+    InitPlayerSelfUserInfo();
+end
+-- 初始化物品点击事件点击事件信息
+function InitOnClick()
+    SetGameObjectEvent(m_zheZhao, closetPanel, m_strPanelObject, nil);
+end
+-- 初始化内容
+function InitContent()
+    AddTimerEvent("NewFunctionOpenPanelEvent", CallBackOver, ETimeShowType.TypeNumberThree, CallBack);
+    if m_listItem ~= nil then
+        if m_listItem[1] ~= nil and m_listItem[2] ~= nil then
+            SetSpriteByAtlasID(m_newOpenIcon, m_listItem[1], m_strPanelObject);
+            SetSpriteByAtlasID(m_newOpenName, m_listItem[2], m_strPanelObject);
+        end
+    end
+    OnButtonClick();
+    InitOnClick();
+end
+-- 计时器回调
+function CallBack(tiemTxt)
+    error("tiemTxt === " .. tiemTxt);
+end
+-- 结束回调
+function CallBackOver()
+    closetPanel();
+end
+
+function closetPanel()
+    G_TimerMng:RemoveTimeTask("NewFunctionOpenPanelEvent");
+    m_listItem = nil;
+    closePanel(ENUMPANELID.ENUM_PANEL_NEWFUNCTIONOPENPANEL);
+end
+--------------------------------------按钮事件方法------------------------------------
+
+function OnButtonClick()
+    m_currentObject:ResetToBeginning();
+    m_currentObject:Play(true);
+end
+function functionParameter(paraTable)
+    error("functionParameter ==");
+    -- 传递到侠客属性界面
+    m_listItem = paraTable;
+    if true == m_bCreateSuccess then
+        InitAllInfo();
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

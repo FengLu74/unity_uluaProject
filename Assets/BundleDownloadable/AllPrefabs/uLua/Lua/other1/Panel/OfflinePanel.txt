@@ -1,0 +1,428 @@
+﻿module("OfflinePanel", package.seeall)
+--------------------------------------------label路径--------------------------------------
+-- 免费领取经验值
+local m_labelFreeOfflineExp = "Content_Offline/Item1/Label_OfflineExp";
+-- 金币领取经验值
+local m_labelCoinOfflineExp = "Content_Offline/Item2/Label_OfflineExp";
+-- 金币领取消耗
+local m_labelCoinCost = "Content_Offline/Item2/BG_OfflineCost/Label_Cost";
+-- 钻石领取经验值
+local m_labelDiamondOfflineExp = "Content_Offline/Item3/Label_OfflineExp";
+-- 钻石领取消耗
+local m_labelDiamondCost = "Content_Offline/Item3/BG_OfflineCost/Label_Cost";
+-- Vip领取经验值
+local m_labelDNVOfflineExp = "Content_Offline/Item4/Label_OfflineExp";
+-- Vip领取消耗
+local m_labelDNVCost = "Content_Offline/Item4/BG_OfflineCost/Label_Cost";
+-- 免费领取按钮状态显示
+local m_labelFreeReward = "Content_Offline/Item1/Button_GetRewards/Label_Reward";
+-- 金币领取按钮状态显示
+local m_labelCoinReward = "Content_Offline/Item2/Button_GetRewards/Label_Reward";
+-- 钻石领取按钮状态显示
+local m_labelDiamondReward = "Content_Offline/Item3/Button_GetRewards/Label_Reward";
+-- Vip领取按钮状态显示
+local m_labelDNVReward = "Content_Offline/Item4/Button_GetRewards/Label_Reward";
+-- 离线时间-- 小时
+local m_labelOfflineHour = "Content_Offline/Label_OfflineTime/Label_Hour";
+-- 分钟
+local m_labelOffLineMin = "Content_Offline/Label_OfflineTime/Label_Min";
+-- 描述
+local m_labelDes = "Content_Offline/Label_OfflineDes";
+-- 本次领取奖励免费
+local m_labelFree = "Content_Offline/GetReward/Others/Label1";
+-- 领取的经验值
+local m_labelExpNum = "Content_Offline/GetReward/Others/Label_Num";
+-- 本次领取奖励不免费
+local m_labelCost = "Content_Offline/GetReward/Others/Label_Cost";
+-- 本次领取奖励花费金额
+local m_labelCostNum = "Content_Offline/GetReward/Others/Label_Cost/Label-DiamondCount";
+----------------------------------------sprite路径-----------------------------------------------
+-- 金币Icon
+local m_spriteCoinCostIcon = "Content_Offline/Item2/BG_OfflineCost/Label_Cost/Sprite_Icon";
+-- 钻石Icon
+local m_spriteDiamondCostIcon = "Content_Offline/Item3/BG_OfflineCost/Label_Cost/Sprite_Icon";
+-- 钻石<VIP>Icon
+local m_spriteDNVCostIcon = "Content_Offline/Item4/BG_OfflineCost/Label_Cost/Sprite_Icon";
+
+-- 本次领取奖励花费图标
+local m_spriteCostType = "Content_Offline/GetReward/Others/Label_Cost/Sprite";
+---------------------------------------button路径------------------------------------------
+-- 免费领取按钮
+local m_buttonFreeGetRewards = "Content_Offline/Item1/Button_1";
+-- 金币领取按钮
+local m_buttonCoinGetRewards = "Content_Offline/Item2/Button_2";
+-- 钻石领取按钮
+local m_buttonDiamondGetRewards = "Content_Offline/Item3/Button_3";
+-- Vip领取按钮
+local m_buttonDNVGetRewards = "Content_Offline/Item4/Button_4";
+-- 说明面板开启按钮
+local m_buttonDescribe = "Content_Offline/Button_Describe";
+-- 说明面板关闭按钮
+local m_buttonDescribeClose = "Content_Describe/Button_Close";
+
+
+
+--  领取确认按钮
+local m_rewardEnser = "Content_Offline/GetReward/Button-QueDing";
+--  领取取消按钮
+local m_rewardCancle = "Content_Offline/GetReward/Button-FanHui";
+---------------------------------------gameObject路径---------------------------------------
+-- Item对象
+local m_itemObj = "Content_Offline/Item"
+
+-- 领取奖励确认面板
+local m_getRewardPanel = "Content_Offline/GetReward";
+----------------------------------通用的名称路径---------------------------------------
+-- 已领取状态
+local m_labelReceive = "/Label_Receive";
+-- 未领取状态
+local m_labelReward = "/Label_Reward";
+-- 不能领取状态 
+local m_labelNotReward = "/Label_NotReward";
+-- 领取按钮
+local m_buttonRewards = "/Button_";
+-- 领取所需消耗
+local m_OfflineCost = "/BG_OfflineCost";
+-- 周卡领取
+local m_weekCardReward = "/Label";
+
+------------------------------------写死的规定----------------------------------------
+
+
+---------------------------------------引用的对象------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 界面创建成功的标记
+local m_bCreateSuccess = false;
+-- 领取奖励需消耗的金币/钻石数量
+local m_costNum = 0;
+-- 离线时间滑块
+local m_progressBarTime = nil;
+-- 离线时间
+local m_timeLeft = 0;
+-- 当前按钮名称
+local m_buttonName = nil;
+-- 记录领取奖励按钮索引
+local m_lastClickedNum = 0;
+-- 离线经验信息
+local m_offlineExpInfo = nil;
+-- 类型
+local m_costType = nil;
+-- 领取奖励确认界面是否开启
+m_GetRewardPanelIsOn = false;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    ValidatePanel();
+    -- 初始化界面objects
+    InitObjects();
+    -- 初始化界面中按钮的点击事件
+    InitOnClick();
+    -- 初始化界面的信息
+    InitData();
+    SetButtonState();
+    m_bCreateSuccess = true;
+end
+function OnDisable()
+end
+function OnEnable()
+    if m_bCreateSuccess == true then
+        InitData();
+        SetButtonState();
+    end
+end
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_offlineExpInfo = nil;
+    m_lastClickedNum = 0;
+    m_buttonName = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化界面objects
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_OFFLINE_PANEL);
+end
+
+-- 初始化界面中按钮的点击事件
+function InitOnClick()
+    -- 设置领取按钮点击事件
+    SetGameObjectEvent(m_buttonFreeGetRewards, OnFreeGetRewards, m_panelObject);
+    SetGameObjectEvent(m_buttonCoinGetRewards, OnCoinGetRewards, m_panelObject);
+    SetGameObjectEvent(m_buttonDiamondGetRewards, OnDiamondGetReward, m_panelObject);
+    SetGameObjectEvent(m_buttonDNVGetRewards, OnDNVGetRewards, m_panelObject);
+    SetGameObjectEvent(m_rewardCancle, OnGetRewardCanel, m_panelObject);
+    SetGameObjectEvent(m_rewardEnser, OnGetRewardEnser, m_panelObject);
+end
+-- 初始化界面的数据
+function InitData()
+    -- 加载当前离线经验信息
+    local pLevel = Ioo.SceneManager.UserInfo.RoleAttribute.Level;
+    m_offlineExpInfo = CCommonTool.GetOfflineExpInfoByIndex(pLevel);
+    if m_offlineExpInfo == nil then
+        error("no expInfo data");
+        return;
+    else
+        for index = 2, 4 do
+            SetGameObjectState(m_itemObj .. index .. m_OfflineCost, true, m_panelObject);
+        end
+        -- 离线时间小于最小领取时间为不可领取状态
+        if m_timeLeft < m_offlineExpInfo.MinTime then
+            SetLabelContent(m_labelFreeOfflineExp, "0", m_panelObject);
+            SetLabelContent(m_labelCoinOfflineExp, "0", m_panelObject);
+            SetLabelContent(m_labelDiamondOfflineExp, "0", m_panelObject);
+            SetLabelContent(m_labelDNVOfflineExp, "0", m_panelObject);
+            SetLabelContent(m_labelCoinCost, "0", m_panelObject);
+            SetLabelContent(m_labelDiamondCost, "0", m_panelObject);
+            SetLabelContent(m_labelDNVCost, "0", m_panelObject);
+        else
+            -- 设置离线经验显示
+            local offlineExpTotal = m_offlineExpInfo.Exp * m_timeLeft;
+            SetLabelContent(m_labelFreeOfflineExp, offlineExpTotal, m_panelObject);
+            SetLabelContent(m_labelCoinOfflineExp, math.floor(offlineExpTotal * m_offlineExpInfo.CoinRatio), m_panelObject);
+            SetLabelContent(m_labelDiamondOfflineExp, math.floor(offlineExpTotal * m_offlineExpInfo.DiamondNoVipRatio), m_panelObject);
+            SetLabelContent(m_labelDNVOfflineExp, math.floor(offlineExpTotal * m_offlineExpInfo.DiamondNeedVipRatio), m_panelObject);
+            -- 设置领取消耗显示
+            SetLabelContent(m_labelCoinCost, m_offlineExpInfo.CoinCost * m_timeLeft / m_offlineExpInfo.Time, m_panelObject);
+            SetLabelContent(m_labelDiamondCost, math.floor(m_offlineExpInfo.DiamondNoVipCost * m_timeLeft / m_offlineExpInfo.Time), m_panelObject);
+            SetLabelContent(m_labelDNVCost, math.floor(m_offlineExpInfo.DiamondNeedVipCost * m_timeLeft / m_offlineExpInfo.Time), m_panelObject);
+        end
+        -- 设置ICON图标
+        -- 银币
+        local nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+        SetSpriteByAtlasID(m_spriteCoinCostIcon, nMoneyIconIndex, m_panelObject, true);
+        -- 绑定钻石钻
+        -- 钻石花费图标
+        local nZunanshiIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent();
+        SetSpriteByAtlasID(m_spriteDiamondCostIcon, nZunanshiIconIndex, m_panelObject, true);
+        -- vip花费图标
+        SetSpriteByAtlasID(m_spriteDNVCostIcon, nZunanshiIconIndex, m_panelObject, true);
+    end
+    -- 设置离线时间显示
+    SetLeftTimeFormat(m_timeLeft);
+    G_RewardMng.OfflineTimeLeft = m_timeLeft
+    m_GetRewardPanelIsOn = false;
+    SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+end
+-- 获取各领取条件所需消耗物品数量
+function GetCostNum(type)
+    local pLevel = Ioo.SceneManager.UserInfo.RoleAttribute.Level;
+    local nMoneyIconIndex = nil;
+    local ExpValue = nil;
+    m_offlineExpInfo = CCommonTool.GetOfflineExpInfoByIndex(pLevel);
+    if m_offlineExpInfo ~= nil then
+        local offlineExpTotal = m_offlineExpInfo.Exp * m_timeLeft;
+        if type == 2 then
+            nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+            m_costNum = m_offlineExpInfo.CoinCost * m_timeLeft / m_offlineExpInfo.Time;
+            ExpValue = math.floor(offlineExpTotal * m_offlineExpInfo.CoinRatio);
+        elseif type == 3 then
+            nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent();
+            m_costNum = m_offlineExpInfo.DiamondNoVipCost * m_timeLeft / m_offlineExpInfo.Time;
+            ExpValue = math.floor(offlineExpTotal * m_offlineExpInfo.DiamondNoVipRatio);
+        elseif type == 4 then
+            nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent();
+            m_costNum = m_offlineExpInfo.DiamondNeedVipCost * m_timeLeft / m_offlineExpInfo.Time;
+            ExpValue = math.floor(offlineExpTotal * m_offlineExpInfo.DiamondNeedVipRatio);
+        else
+            error("money type not exist");
+        end
+        SetLabelContent(m_labelCostNum, math.floor(m_costNum), m_panelObject);
+        SetSpriteByAtlasID(m_spriteCostType, nMoneyIconIndex, m_panelObject, true);
+        SetLabelContent(m_labelExpNum, ExpValue, m_panelObject);
+    end
+end
+-- 设置各领取按钮状态
+function SetButtonState()
+    if StoreManager.GetHaveWeekMemberCard() == true or VipManager.CheckIsHave(2) == true then
+        SetGameObjectState(m_itemObj .. 4 .. m_buttonRewards .. 4, true, m_panelObject);
+        SetGameObjectState(m_itemObj .. 4 .. m_weekCardReward, false, m_panelObject);
+    else
+        SetGameObjectState(m_itemObj .. 4 .. m_buttonRewards .. 4, false, m_panelObject);
+        SetGameObjectState(m_itemObj .. 4 .. m_weekCardReward, true, m_panelObject);
+    end
+    if G_RewardMng.OfflineResult == 3 then
+        --- 是否有周卡
+        for index = 1, 4 do
+            if m_lastClickedNum == index then
+                SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReceive, true, m_panelObject);
+                SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReward, false, m_panelObject);
+                SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelNotReward, false, m_panelObject);
+            else
+                SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReceive, false, m_panelObject);
+                SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReward, false, m_panelObject)
+                SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelNotReward, true, m_panelObject);
+            end
+        end
+        SetLabelContent(m_labelOfflineHour, "0", m_panelObject);
+        SetLabelContent(m_labelOffLineMin, "0", m_panelObject);
+    elseif G_RewardMng.OfflineTimeLeft < 60 and G_RewardMng.OfflineResult == 0 then
+        for index = 1, 4 do
+            SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReceive, false, m_panelObject);
+            SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReward, false, m_panelObject)
+            SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelNotReward, true, m_panelObject);
+        end
+    elseif G_RewardMng.OfflineTimeLeft >= 60 and G_RewardMng.OfflineResult == 0 then
+        for index = 1, 4 do
+            SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReceive, false, m_panelObject);
+            SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelReward, true, m_panelObject)
+            SetGameObjectState(m_itemObj .. index .. m_buttonRewards .. index .. m_labelNotReward, false, m_panelObject);
+        end
+    end
+end
+-- 设置时间格式
+function SetLeftTimeFormat(time)
+    local hourResult = time / 60;
+    local minResultUnit = time % 60;
+    if hourResult < 1 then
+        hourResult = time;
+        SetLabelContent(m_labelOfflineHour, "0", m_panelObject);
+        SetLabelContent(m_labelOffLineMin, time, m_panelObject);
+    else
+        local m = math.floor(hourResult);
+        SetLabelContent(m_labelOfflineHour, m, m_panelObject);
+        SetLabelContent(m_labelOffLineMin, minResultUnit, m_panelObject);
+    end
+end
+----------------------------------------------按钮事件方法--------------------------------------------------
+-- 免费领取按钮事件
+function OnFreeGetRewards(e)
+    if m_timeLeft < m_offlineExpInfo.MinTime then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REWARD_OFFLINE);
+    else
+        m_GetRewardPanelIsOn = true;
+        SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+        SetGameObjectState(m_labelFree, true, m_panelObject);
+        SetGameObjectState(m_labelCost, false, m_panelObject);
+        SetLabelContent(m_labelExpNum, m_offlineExpInfo.Exp * m_timeLeft, m_panelObject);
+        m_lastClickedNum = 1;
+    end
+end
+-- 金币领取按钮事件
+function OnCoinGetRewards(e)
+    if m_timeLeft < m_offlineExpInfo.MinTime then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REWARD_OFFLINE);
+    else
+        m_GetRewardPanelIsOn = true;
+        SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+        SetGameObjectState(m_labelFree, false, m_panelObject);
+        SetGameObjectState(m_labelCost, true, m_panelObject);
+        m_lastClickedNum = 2;
+        local type = ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_GOLD_GET
+        GetCostNum(type);
+    end
+end
+-- 钻石领取按钮事件
+function OnDiamondGetReward(e)
+    if m_timeLeft < m_offlineExpInfo.MinTime then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REWARD_OFFLINE);
+    else
+        m_GetRewardPanelIsOn = true;
+        SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+        SetGameObjectState(m_labelFree, false, m_panelObject);
+        SetGameObjectState(m_labelCost, true, m_panelObject);
+
+        m_lastClickedNum = 3;
+        local type = ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_DIAMOND_GET1;
+        GetCostNum(type);
+    end
+end
+-- VIP领取按钮事件
+function OnDNVGetRewards(e)
+    if m_timeLeft < m_offlineExpInfo.MinTime then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REWARD_OFFLINE);
+    else
+        m_GetRewardPanelIsOn = true;
+        SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+        SetGameObjectState(m_labelFree, false, m_panelObject);
+        SetGameObjectState(m_labelCost, true, m_panelObject);
+        m_lastClickedNum = 4;
+        local type = ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_DIAMOND_GET2;
+        GetCostNum(type);
+    end
+end
+
+
+-- 领取奖励确认按钮
+function OnGetRewardEnser()
+    if m_lastClickedNum == 1 then
+        CToS(ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_FREE_GET_EXP);
+    elseif m_lastClickedNum == 2 then
+        m_costType = ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_GOLD_GET
+        if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_costNum), ENUMPANELID.ENUM_OFFLINE_PANEL, OnExchangeMoneyCallBack) then
+            return;
+        end
+        CToS(m_costType);
+    elseif m_lastClickedNum == 3 then
+        m_costType = ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_DIAMOND_GET1;
+        if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND, math.floor(m_costNum), ENUMPANELID.ENUM_OFFLINE_PANEL, OnExchangeMoneyCallBack, m_costType) then
+            CToS(m_costType);
+        end
+    elseif m_lastClickedNum == 4 then
+        m_costType = ENUM_OFFLINE_AWARD_TYPE.OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_DIAMOND_GET2;
+        if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND, math.floor(m_costNum), ENUMPANELID.ENUM_OFFLINE_PANEL, OnExchangeMoneyCallBack, m_costType) then
+            CToS(m_costType);
+        end
+    end
+    m_GetRewardPanelIsOn = false;
+    SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+end
+
+function OnExchangeMoneyCallBack(type)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_OFFLINE_AWARD);
+    buffer:WriteInt(type);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取奖励取消按钮
+function OnGetRewardCanel()
+    m_GetRewardPanelIsOn = false;
+    SetGameObjectState(m_getRewardPanel, m_GetRewardPanelIsOn, m_panelObject);
+end
+
+-- 领取奖励类型传送
+function CToS(type)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_OFFLINE_AWARD);
+    buffer:WriteInt(type);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+--检测界面是否需要开启
+function ValidatePanel()
+    local data = 
+    {
+        PanelId = ENUMPANELID.ENUM_OFFLINE_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel",data);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 离线时间返回
+function OnResetOfflineData(leftTime)
+    m_timeLeft = leftTime;
+end
+-- 领取奖励结果返回
+function OnResetOfflineResult(result)
+    m_offlineResult = result;
+    G_RewardMng.OfflineResult = m_offlineResult;
+    if IsOpenPanel(ENUMPANELID.ENUM_OFFLINE_PANEL) == 1 then
+        SetButtonState();
+    end
+end
+
+function IsShowRedHintOffline()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        return false;
+    end
+    if not G_RewardMng:IsCanShowOfflineRewardRedHint() then
+        return false;
+    end
+    return true;
+end

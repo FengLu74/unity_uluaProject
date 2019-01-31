@@ -1,0 +1,369 @@
+﻿module('ChargeRewardPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ChargeRewardPanel';
+---------------------------------------label路径---------------------------------------
+--累积充值描述
+local m_AccumulateDescLabelPath1 = "Accumulate/Desc/Label1";
+local m_AccumulateDescLabelPath2 = "Accumulate/Desc/Label2";
+local m_AccumulateDescLabelPath3 = "Accumulate/Desc/Label3";
+local m_AccumulateDescLabelPath4 = "Accumulate/Desc/Label4";
+local m_AccumulateDescLabelPath5 = "Accumulate/Desc/Label5";
+local m_AccumulateDescLabelPath6 = "Accumulate/Desc/icon_4";
+-----------------------------------------按钮路径--------------------------------------
+-- 充值按钮
+local m_ChargeButtonPath = "Buttons/Button";          
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 背景框路径
+local m_MaskPath = "Mask";
+-- 首次充值
+local m_FirstChargePath = "FirstCharge";
+-- 累积充值奖励
+local m_AccumulateChargePath = "Accumulate";
+-- 关闭按钮路径
+local m_ClosePath = "Buttons/Close";               
+----------------------------------通用的名称路径---------------------------------------
+-- 显示内容Item1
+local m_DescItemPath1 = "FirstCharge/Desc/Item1";
+-- 显示内容Item2
+local m_DescItemPath2 = "FirstCharge/Desc/Item2";
+-- 显示内容Item3
+local m_DescItemPath3 = "FirstCharge/Desc/Item3";
+-- 显示内容Item4
+local m_DescItemPath4 = "FirstCharge/Desc/Item4";
+-- 首次充值奖励Grid路径
+--local m_RewardGridPath = "FirstCharge/Reward/Scroll View/Grid";
+--首次充值按钮Label
+local m_FirstChargeLabelPath = "Buttons/Button/Label";
+--累积充值奖励列表
+local m_AccumulateChargeViewPath = "Accumulate/Scroll View/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 背景框
+local m_Mask = nil;
+-- 显示内容Item1
+local m_DescItem1 = nil;
+-- 显示内容Item2
+local m_DescItem2 = nil;
+-- 显示内容Item3
+local m_DescItem3 = nil;
+-- 首次充值奖励Grid
+local m_RewardGrid = nil;
+--累积充值奖励列表
+local m_AccumulateChargeView = nil;
+-- 关闭按钮
+local m_Close = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+-- 记录领取首次充值奖励信息
+local m_FirstChargeRewardDatas = {};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Mask = nil;
+	m_RewardGrid = nil;
+    m_AccumulateChargeView = nil;
+	m_Close = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+    m_Mask = child(m_PanelObject, m_MaskPath).gameObject;
+--    m_DescItem1 = child(m_PanelObject, m_DescItemPath1).gameObject;
+--    m_DescItem2 = child(m_PanelObject, m_DescItemPath2).gameObject;
+--    m_DescItem3 = child(m_PanelObject, m_DescItemPath3).gameObject;
+--    m_DescItem4 = child(m_PanelObject, m_DescItemPath4).gameObject;
+--    m_RewardGrid = GetComponent(m_PanelObject, m_RewardGridPath, "UIListView");
+    m_AccumulateChargeView = GetComponent(m_PanelObject, m_AccumulateChargeViewPath, "UIListView");
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+--    m_RewardGrid:SetInitCallback(OnRewardGridViewInit);
+--    m_RewardGrid:SetClickCallback(OnRewardGridViewClick);
+
+    m_AccumulateChargeView:SetInitCallback(OnAccumulateChargeViewInit);
+    m_AccumulateChargeView:SetClickCallback(OnAccumulateChargeViewClick);
+    
+	SetGameObjectEvent(m_ChargeButtonPath, OnChargeButtonClick, m_PanelObject);
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    --InitDescItemInfo();
+   -- InitRewardItemInfo();                                   
+    InitChargeRewardPanelPanel();
+    InitAccumulateCharge();
+end
+
+-- 初始化面板效果
+function InitChargeRewardPanelPanel()
+    local firstChargeState = FirstChargeManager.FirstChargeTakeGoldState;
+    SetGameObjectState(m_AccumulateChargePath, true, m_PanelObject);    
+    SetGameObjectState(m_FirstChargePath, false, m_PanelObject);
+--    SetGameObjectState(m_FirstChargePath, firstChargeState ~= 2, m_PanelObject);
+--    SetGameObjectState(m_AccumulateChargePath, firstChargeState == 2, m_PanelObject);
+--    if firstChargeState == 1 then
+--        local text = GetTextToId(646);
+--        SetLabelContent(m_FirstChargeLabelPath,text,m_PanelObject);
+--    else
+--        local text = GetTextToId(2045);
+--        SetLabelContent(m_FirstChargeLabelPath,text,m_PanelObject);
+--    end
+end
+
+--[[初始化内容显示信息
+function InitDescItemInfo()
+    local item1TitleText1 = GetTextToId(2038);
+    SetLabelContent("Title/Desc/Label1",item1TitleText1,m_DescItem1);
+    local item1TitleText2 = GetTextToId(2049);
+    SetLabelContent("Title/Desc/Money",item1TitleText2,m_DescItem1);
+    local item1TitleText3 = GetTextToId(2039);
+    SetLabelContent("Title/Desc/Label2",item1TitleText3,m_DescItem1);
+    local item1LimitText1 = GetTextToId(2042);
+    SetLabelContent("Limit/Label",item1LimitText1,m_DescItem1);
+
+    local item2Text1 = GetTextToId(2040);
+    SetLabelContent("Title/Label",item2Text1,m_DescItem2);
+    local item2LimitText1 = GetTextToId(2043);
+    SetLabelContent("Limit/Label",item2LimitText1,m_DescItem2);
+
+    local item3Text1 = GetTextToId(2041);
+    SetLabelContent("Title/Label",item3Text1,m_DescItem3);
+    local item3LimitText1 = GetTextToId(2044);
+    SetLabelContent("Limit/Label",item3LimitText1,m_DescItem3);
+end
+]]
+
+--[[初始化奖励信息信息
+function InitRewardItemInfo()
+    local chargeRewardData = FirstChargeManager.GetChargeRewardDatas(ENUM_TAKE_GOLD_OP_TYPE.TAKE_GOLD_OP_FIRST);
+    if chargeRewardData ~= nil then
+        local length = GetTableLength(chargeRewardData.RewardInfos);
+        m_RewardGrid:RemoveAll();
+        if length >= 1 then
+            local rewardInfo = chargeRewardData.RewardInfos[1];
+
+            m_ReceiveFirstChargeId = rewardInfo.AwardZone;
+            local length1 = GetTableLength(rewardInfo.ItemInfos);
+            local rewardData = {};
+            for index1 = 1 , length1 do
+                local itemData = rewardInfo.ItemInfos[index1];
+                itemData.ItemId = CCommonTool.GetProfessionItemId(itemData.ItemId);  --获得角色职业对应的道具id
+                if itemData.ItemId > 0 then
+                    if IsNotMoney(itemData.ItemId) then
+                        rewardData[itemData.ItemId] = itemData.ItemNum;
+                    end
+                    m_RewardGrid:AddData(itemData);
+                end
+            end
+            m_FirstChargeRewardDatas[1] = 
+            {
+                AwardZone = rewardInfo.AwardZone;
+                RewardData = rewardData;
+            }
+        end  
+    end
+end
+]]
+
+--[[
+function IsNotMoney(itemId)
+    if itemId >= 10000 and itemId < 20000  then
+        return false;
+    end
+    return true;
+end
+]]
+
+--初始化累积充值显示UI
+function InitAccumulateCharge()
+    local labeltext1 = GetTextToId(2066);
+    SetLabelContent(m_AccumulateDescLabelPath1,labeltext1,m_PanelObject); 
+    local iconText = "";--GetTextToId(2070);
+    local labelText2 = string_format("{0}{1}",ChargeRewardManager.AccumulateMoneyNum,iconText)
+    SetLabelContent(m_AccumulateDescLabelPath2,labeltext1..labelText2,m_PanelObject); 
+    local labeltext3 = GetTextToId(2067);
+    SetLabelContent(m_AccumulateDescLabelPath3,labeltext3,m_PanelObject); 
+    local moneyDifference = ChargeRewardManager.GetAccumulateDifference();
+    if moneyDifference > 0 then
+        local moneyText = string_format("{0}{1}",moneyDifference,iconText);
+        local labeltext4 = string_format(GetTextToId(9125),moneyText);
+        SetLabelContent(m_AccumulateDescLabelPath4,labeltext4,m_PanelObject);
+		--local labeltext5 = string_format(GetTextToId(9124),moneyText);
+		SetLabelContent(m_AccumulateDescLabelPath5,GetTextToId(9124),m_PanelObject);--可获得下一级奖励
+		
+		SetGameObjectState(m_AccumulateDescLabelPath5,true,m_PanelObject);
+		SetGameObjectState(m_AccumulateDescLabelPath6,true,m_PanelObject);
+    else
+        local labeltext4 = GetTextToId(2069);
+        SetLabelContent(m_AccumulateDescLabelPath4,labeltext4,m_PanelObject);
+		SetGameObjectState(m_AccumulateDescLabelPath5,false,m_PanelObject);
+		SetGameObjectState(m_AccumulateDescLabelPath6,false,m_PanelObject);
+    end
+    InitAccumulateChargeView();
+end
+
+--初始化累积充值列表信息
+function InitAccumulateChargeView()
+    local accumulateDatas = ChargeRewardManager.GetAccumulateRewardDatas();
+    local length = GetTableLength(accumulateDatas);
+    m_AccumulateChargeView:RemoveAll();
+    for index = 1, length do
+        local data = accumulateDatas[index];
+        m_AccumulateChargeView:AddData(data);
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+--[[奖励列表初始化
+function OnRewardGridViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.ItemId;
+    local num = data.ItemNum;
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 145, ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_CHARGE_REWAR_PANEL, false, excelId);
+end
+]]
+
+--[[奖励列表
+function OnRewardGridViewClick(listView, cell, go)
+
+end
+]]
+-- 充值累积奖励列表
+function OnAccumulateChargeViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local iconText = "";--GetTextToId(2070);
+    local accumulateNum = data.AccumulateNum;
+    local labelText1 = string_format("{0}{1}",accumulateNum,iconText);
+    SetLabelContent("Desc/Label1",labelText1,item); 
+    local labelText2 = GetTextToId(2064);
+    SetLabelContent("Desc/Label2",labelText2,item); 
+    local itemDatas = data.ItemDatas;
+    local itemLength = GetTableLength(itemDatas);
+    for i = 1 , 4 do
+        if i <= itemLength then
+            local itemData = itemDatas[i];
+            local excelId = CCommonTool.GetProfessionItemId(itemData.ItemId);
+            local num = itemData.ItemNum;
+            SetItemShowByExcelIDV04(item, string_format("ItemList/Grid/Item{0}/Prop",i), excelId, num, false, 145, ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+            SetItemToolTipsEvent(item, string_format("ItemList/Grid/Item{0}",i), ENUMPANELID.ENUM_CHARGE_REWAR_PANEL, false, excelId);
+        end
+        SetGameObjectState(string_format("ItemList/Grid/Item{0}",i), i <= itemLength, item);
+    end
+    local result = ChargeRewardManager.AccumulateMoneyNum >= data.AccumulateNum;
+    local buttonText = "";
+    local button = child(item, "Button").gameObject;
+    CCommonTool.SetGameObjectGrey(button, result == false);
+    if result == true then
+        local id = data.Id;
+        local buttonState = ChargeRewardManager.GetAccumulateRewardState(id);
+        CCommonTool.SetGameObjectGrey(button, buttonState == 1);
+        if  buttonState == 0 then
+            buttonText = GetTextToId(2029);
+        else
+            buttonText = GetTextToId(2030);
+        end
+    else
+        buttonText = GetTextToId(1580);
+    end
+    SetLabelContent("Button/Label",buttonText,item); 
+end
+
+-- 充值累积奖励列表
+function OnAccumulateChargeViewClick(listView, cell, go)
+    local item = cell.gameObject;
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    if go.name == "Button" then
+        local result = ChargeRewardManager.AccumulateMoneyNum >= data.AccumulateNum;
+        if result == true then
+            local id = data.Id;
+            local buttonState = ChargeRewardManager.GetAccumulateRewardState(id);
+            if buttonState == 0 then
+                error("[Lua]-->领取累积充值奖励");
+                ChargeRewardProtocol.RequestReceiveReward(id);
+            else
+                error("[Lua]-->已领取");
+                ShowSystemFlowTips(5700);
+            end
+        else
+            ShowSystemFlowTips(5701);
+        end
+    end
+end
+
+-- 点击充值按钮
+function OnChargeButtonClick(gameObject)
+    local firstChargeState = ChargeRewardManager.FirstTakeGoldState;
+    if firstChargeState == 1 then
+        local rewardData = m_FirstChargeRewardDatas[1];
+        if rewardData ~= nil then
+            local itemList = G_BagMng:GetCanPickUpListItem(rewardData.RewardData);
+            --error("itemList.Count : "..itemList.Count);
+            if itemList.Count <= 0 then
+                --error("背包已满，无法领取！！！");
+                ShowSystemFlowTips(103);
+            else
+                --error("领取充值奖励");
+                ChargeRewardProtocol.RequestReceiveFirstReward(m_ReceiveFirstChargeId);
+            end
+        end
+    else
+        StorePanel.OpenPanelRecharge();
+    end
+end
+
+-- 关闭按钮 
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+--[[刷新Ui显示
+function RefreshChargeRewardPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL) == 1 then
+        InitChargeRewardPanelPanel();
+    end
+end
+]]
+
+--刷新累积奖励界面
+function RefreshAccumulateChargeView()
+    if IsOpenPanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL) == 1 then
+        InitAccumulateChargeView();
+    end
+end

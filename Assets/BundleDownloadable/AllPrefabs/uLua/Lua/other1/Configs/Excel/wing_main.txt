@@ -1,0 +1,151 @@
+﻿--[[
+    field=Id, type=int, desc=主键ID
+    field=Name, type=int, desc=名称
+    field=SkillID, type=int, desc=对应技能升级主键
+    field=SkillCount, type=byte, desc=技能总数
+    field=ModelID, type=int, desc=时装id
+    field=QualityID, type=byte, desc=品质
+    field=StarLevel, type=int, desc=最高星级
+    field=ActivateAttr1, type=byte, desc=属性ID1
+    field=PicAttr1, type=int, desc=属性1图标
+    field=TypeAttr1, type=int, desc=属性数值1
+    field=ValueAttr1, type=int, desc=每星提升属性1
+    field=ActivateAttr2, type=byte, desc=属性ID2
+    field=PicAttr2, type=int, desc=属性2图标
+    field=TypeAttr2, type=int, desc=属性数值2
+    field=ValueAttr2, type=int, desc=每星提升属性2
+    field=ActivateAttr3, type=byte, desc=属性ID3
+    field=PicAttr3, type=int, desc=属性3图标
+    field=TypeAttr3, type=int, desc=属性数值3
+    field=ValueAttr3, type=int, desc=每星提升属性3
+    field=ActivateAttr4, type=byte, desc=属性ID4
+    field=PicAttr4, type=int, desc=属性4图标
+    field=TypeAttr4, type=int, desc=属性数值4
+    field=ValueAttr4, type=int, desc=每星提升属性4
+    field=ActivateAttr5, type=byte, desc=属性ID5
+    field=PicAttr5, type=int, desc=属性5图标
+    field=TypeAttr5, type=int, desc=属性数值5
+    field=ValueAttr5, type=int, desc=每星提升属性5
+    field=ActivateAttr6, type=byte, desc=属性ID6
+    field=PicAttr6, type=int, desc=属性6图标
+    field=TypeAttr6, type=int, desc=属性数值6
+    field=ValueAttr6, type=int, desc=每星提升属性6
+]]
+module("WingMainTable", package.seeall)
+local list={
+    {Id=11,Name=50006,SkillID=0,SkillCount=6,ModelID=140101,QualityID=2,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=3840,ValueAttr1=670,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=154,ValueAttr2=27,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=154,ValueAttr3=27,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=77,ValueAttr4=14,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=77,ValueAttr5=14,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=21,Name=50007,SkillID=1000,SkillCount=6,ModelID=140102,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=600,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=24,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=24,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=12,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=12,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=31,Name=50008,SkillID=0,SkillCount=6,ModelID=140103,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=1180,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=47,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=47,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=24,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=24,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=41,Name=50009,SkillID=2000,SkillCount=6,ModelID=140104,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=2710,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=109,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=109,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=55,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=55,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=51,Name=50010,SkillID=0,SkillCount=6,ModelID=140105,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4150,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=166,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=166,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=83,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=83,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=61,Name=50011,SkillID=3000,SkillCount=6,ModelID=140106,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4340,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=174,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=174,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=87,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=87,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=10},
+    {Id=71,Name=76307,SkillID=0,SkillCount=6,ModelID=140107,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=5880,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=236,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=236,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=118,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=118,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=81,Name=76308,SkillID=4000,SkillCount=6,ModelID=140108,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=11640,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=466,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=466,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=233,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=233,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=91,Name=76309,SkillID=0,SkillCount=6,ModelID=140109,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=19320,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=773,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=773,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=387,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=387,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=101,Name=76310,SkillID=5000,SkillCount=6,ModelID=140110,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=111,Name=76312,SkillID=0,SkillCount=6,ModelID=140111,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=121,Name=76311,SkillID=6000,SkillCount=6,ModelID=140112,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=12,Name=50006,SkillID=0,SkillCount=6,ModelID=240101,QualityID=2,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=3840,ValueAttr1=670,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=154,ValueAttr2=27,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=154,ValueAttr3=27,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=77,ValueAttr4=14,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=77,ValueAttr5=14,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=22,Name=50007,SkillID=1000,SkillCount=6,ModelID=240102,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=600,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=24,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=24,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=12,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=12,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=32,Name=50008,SkillID=0,SkillCount=6,ModelID=240103,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=1180,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=47,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=47,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=24,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=24,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=42,Name=50009,SkillID=2000,SkillCount=6,ModelID=240104,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=2710,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=109,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=109,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=55,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=55,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=52,Name=50010,SkillID=0,SkillCount=6,ModelID=240105,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4150,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=166,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=166,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=83,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=83,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=62,Name=50011,SkillID=3000,SkillCount=6,ModelID=240106,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4340,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=174,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=174,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=87,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=87,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=10},
+    {Id=72,Name=76307,SkillID=0,SkillCount=6,ModelID=240107,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=5880,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=236,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=236,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=118,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=118,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=82,Name=76308,SkillID=4000,SkillCount=6,ModelID=240108,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=11640,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=466,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=466,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=233,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=233,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=92,Name=76309,SkillID=0,SkillCount=6,ModelID=240109,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=19320,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=773,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=773,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=387,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=387,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=102,Name=76310,SkillID=5000,SkillCount=6,ModelID=240110,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=112,Name=76312,SkillID=0,SkillCount=6,ModelID=240111,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=122,Name=76311,SkillID=6000,SkillCount=6,ModelID=240112,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=13,Name=50006,SkillID=0,SkillCount=6,ModelID=340101,QualityID=2,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=3840,ValueAttr1=670,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=154,ValueAttr2=27,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=154,ValueAttr3=27,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=77,ValueAttr4=14,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=77,ValueAttr5=14,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=23,Name=50007,SkillID=1000,SkillCount=6,ModelID=340102,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=600,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=24,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=24,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=12,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=12,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=33,Name=50008,SkillID=0,SkillCount=6,ModelID=340103,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=1180,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=47,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=47,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=24,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=24,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=43,Name=50009,SkillID=2000,SkillCount=6,ModelID=340104,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=2710,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=109,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=109,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=55,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=55,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=53,Name=50010,SkillID=0,SkillCount=6,ModelID=340105,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4150,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=166,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=166,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=83,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=83,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=63,Name=50011,SkillID=3000,SkillCount=6,ModelID=340106,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4340,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=174,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=174,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=87,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=87,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=10},
+    {Id=73,Name=76307,SkillID=0,SkillCount=6,ModelID=340107,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=5880,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=236,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=236,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=118,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=118,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=83,Name=76308,SkillID=4000,SkillCount=6,ModelID=340108,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=11640,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=466,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=466,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=233,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=233,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=93,Name=76309,SkillID=0,SkillCount=6,ModelID=340109,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=19320,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=773,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=773,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=387,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=387,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=103,Name=76310,SkillID=5000,SkillCount=6,ModelID=340110,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=113,Name=76312,SkillID=0,SkillCount=6,ModelID=340111,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=123,Name=76311,SkillID=6000,SkillCount=6,ModelID=340112,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=14,Name=50006,SkillID=0,SkillCount=6,ModelID=440101,QualityID=2,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=3840,ValueAttr1=670,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=154,ValueAttr2=27,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=154,ValueAttr3=27,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=77,ValueAttr4=14,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=77,ValueAttr5=14,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=24,Name=50007,SkillID=1000,SkillCount=6,ModelID=440102,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=600,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=24,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=24,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=12,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=12,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=34,Name=50008,SkillID=0,SkillCount=6,ModelID=440103,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=1180,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=47,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=47,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=24,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=24,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=44,Name=50009,SkillID=2000,SkillCount=6,ModelID=440104,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=2710,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=109,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=109,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=55,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=55,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=54,Name=50010,SkillID=0,SkillCount=6,ModelID=440105,QualityID=3,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4150,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=166,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=166,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=83,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=83,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=0},
+    {Id=64,Name=50011,SkillID=3000,SkillCount=6,ModelID=440106,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=4340,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=174,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=174,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=87,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=87,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=10},
+    {Id=74,Name=76307,SkillID=0,SkillCount=6,ModelID=440107,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=5880,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=236,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=236,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=118,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=118,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=84,Name=76308,SkillID=4000,SkillCount=6,ModelID=440108,QualityID=4,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=11640,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=466,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=466,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=233,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=233,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=94,Name=76309,SkillID=0,SkillCount=6,ModelID=440109,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=19320,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=773,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=773,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=387,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=387,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=104,Name=76310,SkillID=5000,SkillCount=6,ModelID=440110,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=114,Name=76312,SkillID=0,SkillCount=6,ModelID=440111,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20},
+    {Id=124,Name=76311,SkillID=6000,SkillCount=6,ModelID=440112,QualityID=5,StarLevel=10,ActivateAttr1=141,PicAttr1=7007,TypeAttr1=0,ValueAttr1=23160,ActivateAttr2=11,PicAttr2=7009,TypeAttr2=0,ValueAttr2=927,ActivateAttr3=21,PicAttr3=7004,TypeAttr3=0,ValueAttr3=927,ActivateAttr4=31,PicAttr4=7008,TypeAttr4=0,ValueAttr4=464,ActivateAttr5=41,PicAttr5=7003,TypeAttr5=0,ValueAttr5=464,ActivateAttr6=224,PicAttr6=7011,TypeAttr6=0,ValueAttr6=20}
+};
+local map = {[11]=list[1],[21]=list[2],[31]=list[3],[41]=list[4],[51]=list[5],[61]=list[6],[71]=list[7],[81]=list[8],[91]=list[9],[101]=list[10],[111]=list[11],[121]=list[12],[12]=list[13],[22]=list[14],[32]=list[15],[42]=list[16],[52]=list[17],[62]=list[18],[72]=list[19],[82]=list[20],[92]=list[21],[102]=list[22],[112]=list[23],[122]=list[24],[13]=list[25],[23]=list[26],[33]=list[27],[43]=list[28],[53]=list[29],[63]=list[30],[73]=list[31],[83]=list[32],[93]=list[33],[103]=list[34],[113]=list[35],[123]=list[36],[14]=list[37],[24]=list[38],[34]=list[39],[44]=list[40],[54]=list[41],[64]=list[42],[74]=list[43],[84]=list[44],[94]=list[45],[104]=list[46],[114]=list[47],[124]=list[48]};
+
+count = 48;
+Count = 48;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

@@ -1,0 +1,4144 @@
+﻿-- 按钮事件
+Button_Delegate =
+{
+    onSubmit = 1,
+    onClick = 2,
+    onDoubleClick = 3,
+    onHover = 4,
+    onPress = 5,
+    onSelect = 6,
+    onScroll = 7,
+    onDragStart = 8,
+    onDrag = 9,
+    onDragOver = 10,
+    onDragOut = 11,
+    onDragEnd = 12,
+    onDrop = 13,
+    onKey = 14,
+    onTooltip = 15,
+};
+
+
+E_BATTLE_STATE =
+{
+    E_BATTLEZONE_CLOSED = 0,
+    -- 关闭状态
+    E_BATTLEZONE_OPEN = 1,
+    -- 关闭|开启状态,战区空闲
+    E_BATTLEZONE_CROWD = 2,
+    -- 拥挤
+    E_BATTLEZONE_BUSY = 4,
+    -- 战区繁忙
+    E_BATTLEZONE_FULL = 8,
+    -- 爆满
+    E_BATTLEZONE_HIDE = 16,
+    -- 隐藏战区
+
+    E_BATTLEZONE_DEBUG = 64,
+    -- 对内调试，对内开启，对外关闭
+
+    E_BATTLEZONE_DEBUGCLOSE = 132,
+    -- 内部调试，外部不可见
+    TypeDungeonLockPictureID = 3003,
+    -- 副本锁定图标id
+};
+
+
+-- 0-武器 1-盾牌 2-头盔 3-衣服 4-护腕 5-腰带 6-鞋子 7-项链 8-手镯 9-戒指 10-法宝
+
+
+-- 特别声明:　以后要新加面板，请在UI_PANEL_AUTO_END之前加，并且指定一个值，不能在中间插入了
+--           也不要删除一个面板枚举
+--           在UI_PANEL_AUTO_BEGIN和UI_PANEL_AUTO_END之间的面板将会自动序列化
+ENUM_UI_PANEL =
+{
+    UI_PANEL_INVALID = - 1,
+    -- 无效
+    UI_PANEL_AUTO_BEGIN = 0,
+    UI_PANEL_ITEM_BEGIN = 0,
+    -- 道具栏开始
+    UI_PANEL_ITEM_EQUIP = 0,
+    -- 装备面板信息
+    UI_PANEL_ITEM_ITEM = 0,
+    -- 道具面板信息
+    UI_PANEL_ITEM_PIECE = 0,
+    --  碎片面板
+    UI_PANEL_ITEM_GEM = 0,
+    --  宝石面板
+    UI_PANEL_ITEM_STONE = 0,
+    -- 宠物面板
+    UI_PANEL_ITEM_PET = 2,
+    --  魂石面板
+    UI_PANEL_EQUIP_PLAYSELF = 6,
+};
+
+ENUM_QUALITY_MSG =
+{
+    -- 0 - 失败
+    ENUM_QUALIT_MSG_SERVER_ERR = 0,
+    -- 服务器出错
+    ENUM_QUALIT_MSG_LV_MAX = 1,
+    -- 修为等级满级
+    ENUM_QUALIT_MSG_ITEM_NOT_ENOUGH = 2,
+    -- 升级道具个数不足
+    ENUM_QUALIT_MSG_EXP_NOT_ENOUGH = 3,
+    -- 升级修为经验不足
+    ENUM_QUALIT_MSG_ITEM_NOT_LEGAL = 4,
+    -- 升级道具填表不合法
+    -- 成功
+    ENUM_QUALIT_MSG_SUCCEED = 10,-- 升级成功
+};
+
+ESortType =
+{
+    TypeNone = 0,
+    -- 物品的品质升序
+    TypeQualityAscend = 1,
+    -- 物品的品质降序
+    TypeQualityDescend = 2,
+    -- 装备部位的升序
+    TypeEquipPosAscend = 3,
+    -- 装备部位的降序
+    TypeEquipPosDescend = 4,
+    -- 物品的ExcelID的升序
+    TypeExcelIDAscend = 5,
+    -- 物品的ExcelID的降序
+    TypeExcelIDDescend = 6,
+    -- 物品的数量升序
+    TypeEquipNumAscend = 7,
+    -- 物品的数量降序
+    TypeEquipNumDescend = 8,
+    -- 按照宝石或者道具等级升序排序
+    TypeGemLevelAscend = 9,
+    --  按照宝石或者道具等级降序排序
+    TypeGemLevelDescend = 10,
+    -- 按照合成类型排序
+    TypeItemCombineType = 11,
+    -- 装备的需要等级降序
+    TypeEquipNeedLevelDescend = 12,
+    -- 装备强化等级降序
+    TypeEquipForceDescend = 13,
+    -- 装备升星等级降序
+    TypeEquipStarDescend = 14,
+    -- 装备的需要等级升序
+    TypeEquipNeedLevel = 15,
+    -- 装备升星等级升序
+    TypeEquipStar = 16,
+    -- 装备强化等级降序
+    TypeEquipForce = 17,
+};
+
+-- 合成相关消息 客户端消息枚举
+ENUM_ITEMCOMPOUND_NEW_MSG =
+{
+    -- 合成成功
+    MSG_ITEMCOMPOUND_NEW_SUCCESS = 0,
+    -- 合成失败
+    MSG_ITEMCOMPOUND_NEW_FAIL = 1,
+    -- 类型不相同
+    MSG_ITEMCOMPOUND_NEW_TYPE = 2,
+    MSG_ITEMCOMPOUND_NEW_CLOSED = 3,
+    -- 合成系统暂时关闭
+    MSG_ITEMCOMPOUND_NEW_NO_ENOUGH_LV = 4,
+    -- 人物等级不满足合成要求等级
+    MSG_ITEMCOMPOUND_NEW_ERROR_INTERNAL_ERROR = 5,
+    -- 内部错误，如数据表不正常，没有根据LGID获得装备，获取表指针为NULL等
+    MSG_ITEMCOMPOUND_NEW_NO_ENOUGH_ITEM = 6,
+    -- 装备个数不足，不能合成(小于个)
+    MSG_ITEMCOMPOUND_NEW_ERROR_PLAYER_DEAD = 7,
+    -- 玩家死亡，不能合成
+    MSG_ITEMCOMPOUND_NEW_ERROR_PLAYER_NOENOUGHMONEY = 8,
+    -- 玩家没有足够的金钱，不能进行装备合成
+    MSG_ITEMCOMPOUND_NEW_MATCH_ID = 9,
+    -- 道具的合成ID不匹配
+    MSG_ITEMCOMPOUND_NEW_UNFIND_DROPITEM = 10,
+    -- 掉落包出错
+    MSG_ITEMCOMPOUND_NEW_BAGISFUUL = 11,-- 背包满
+}
+
+EquipType =
+{
+    ET_Arm = 0,
+    -- 武器
+    ET_Necklace = 1,
+    -- 项链
+    ET_Ring = 2,
+    -- 戒指
+    ET_Dress = 3,
+    -- 饰品
+    ET_Helmet = 4,
+    -- 头盔
+    ET_Cuirass = 5,
+    -- 胸甲
+    ET_Leg_Guard = 6,
+    -- 护腿
+    ET_Shoes = 7,
+    -- 鞋子
+    ET_Pants = 8,
+    -- 裤子
+    ET_Earing = 9,
+    -- 耳环
+    ET_Wing = 11,
+    -- 翅膀
+
+    -- 新增装备
+    -- 枚举 10,11 已被占用
+    ET_Bracelet = 12,
+    -- 手镯
+    ET_Juju = 13,
+    -- 护符
+    
+    ET_EquipCount = 14;
+    -- 装备数量
+}
+
+E_CTOS_MAILMSG_TYPE =
+{
+    ECMT_SENDMAIL = 1,
+    -- 发送邮件
+    ECMT_REQUESTBASEINFO = 2,
+    -- 请求邮件的基本信息
+    ECMT_REFRESH_ALL_NEWMAIL = 3,
+    -- 刷新所有邮件的基本信息
+    ECMT_REQUESTCONTENT = 4,
+    -- 获取邮件内容
+    ECMT_DELETEMAIL = 5,
+    -- 删除邮件
+    ECMT_GETAFFIX = 6,
+    -- 获取附件
+    ECMT_GETAFFIX_ONCE = 7,-- 一键领取
+}
+
+-- 服务器发送给客户端的内容
+E_STOC_MAILMSG_TYPE =
+{
+    ESMT_BASEINFO = 1,
+    -- 邮件基本信息
+    ESMT_NEWINFO = 2,
+    -- 最新未获取的邮件信息
+    ESMT_CONTENT = 3,
+    -- 邮件内容
+    ESMT_UNREAD_AND_TOTAL_COUNT = 4,
+    -- 未读邮件个数和总个数
+    ESMT_UNREAD_NEW_COUNT = 5,
+    -- 未读新邮件个数
+    ESMT_RECENT_USER_LIST = 6,
+    -- 最近联系人列表
+    ESMT_FEEDBACK = 7,
+    -- 反馈信息
+    ESMT_TAKEAFFIXRESULT = 8,-- 获取附件
+}
+
+E_STOC_MAILMSG_FEEDBACK =
+{
+    ESMF_SEND_SUCCESS = 1,
+    -- 发送成功
+    ESMF_SEND_FAILED = 2,
+    -- 发送失败
+    ESMF_DELETE_SUCCESS = 3,
+    -- 删除成功
+    ESMF_DELETE_FAILED = 4,
+    -- 删除失败
+    ESMF_GETBASEINFO_FAILED = 5,
+    -- 获取基本信息失败
+    ESMF_GETCONTENT_FAILED = 6,
+    -- 获取邮件内容失败
+    ESMF_GETAFFIX_FAILED = 7,
+    -- 获取邮件附件失败
+    ESMF_GETCONTENT_HAVEDELETED = 8,
+    -- 邮件已经被删除
+    ESMF_GETPLAYERMAILSTATE_FAILED = 9,
+    -- 获取玩家邮件状态信息失败
+    ESMF_FAILED_GETUSERID = 10,
+    -- 收件人姓名不合法
+    ESMF_FAILED_USERMAILFULL = 11,
+    -- 收件人收件箱已满
+    ESMF_FAILED_NO_ENOUGH_MONEY = 12,
+    -- 金钱不足，无法支付邮资
+    ESMF_FAILED_NO_ENOUGH_SEND_MAIL_COUND = 13,
+    -- 今天发送邮件已达最大次数
+    ESMF_FAILED_ITEM_CANNOT_MAIL = 14,-- 附件中含有不能邮寄的道具
+}
+
+MONEY_TYPE =
+{
+    YINBI_TYPE = 1,
+    -- 银币
+    YUANBAO_TYPE = 2,-- 元宝
+}
+
+-- 系统悬浮提示信息事件
+ENUM_SYS_FLOWTIPS_EVENT =
+{
+    -- 主角修为升级魂石不够
+    ENUM_EVENT_SPRITESTONELACK = 100,
+    -- 主角修为升级魂石与星星都不够
+    ENUM_EVENT_STARSANDSTONELACK = 101,
+    -- 主角修为升级星星数未达到要求
+    ENUM_EVENT_STARSLACK = 101,
+
+    -- 移动中禁止打开界面
+    ENUM_EVENT_MOVINGNOPANEL = 102,
+    -- 装备背包已满,无法卸下!
+    ENUM_EVENT_EQUIPBAGFULLNOIN = 103,
+    -- 背包更新
+    ENUM_EVENT_BAGUPDATE = 105,
+
+    -- 功能暂未开放,尽情期待~
+    ENUM_EVENT_NOTMADE = 106,
+
+    -- 没有可采集的任务
+    ENUM_EVENT_NOCOLLECTTASK = 108,
+    -- 要创建角色的服务器没有启动
+    ENUM_EVENT_CREATEROLESEVERISDOWN = 109,
+    -- 角色在GS测试创建失败
+    ENUM_EVENT_CREATEFAILEDONGSTEST = 110,
+    -- 角色名字非法
+    ENUM_EVENT_ROLENAMEILLEGAL = 111,
+    -- 该位置已经存在角色了
+    ENUM_EVENT_ROLEALREADYHAVE = 112,
+    -- 角色名字存在
+    ENUM_EVENT_ROLENAMEALLREADYHAVE = 113,
+    -- 角色添加失败
+    ENUM_EVENT_ROLEADDFAILED = 114,
+    -- 技能解锁失败
+    ENUM_EVENT_SKILLUNLOCKWRONG = 115,
+    -- 网络连接错误，确认网络连接后重新登陆
+    ENUM_EVENT_WRONGCONNECT = 116,
+    -- 请输入3到9位字母数字或下划线组成的帐号
+    ENUM_EVENT_ACCOUNTNUMWRONG = 117,
+    -- 请输入3到9位字母数字或下划线组成的密码
+    ENUM_EVENT_PASSWORDWRONG = 118,
+    -- 客户端版本不匹配
+    ENUM_EVENT_CLIENTWRONGVERSION = 119,
+    -- 登陆的战区错误
+    ENUM_EVENT_LOGINBATTLEWRONG = 120,
+    -- 放入NGS时数据错误
+    ENUM_EVENT_DATAINNGSWRONG = 121,
+    -- 没有这个用户
+    ENUM_EVENT_NOTHISACCOUNT = 122,
+    -- 密码错误
+    ENUM_EVENT_WRONGPASSWORD = 123,
+    -- 账号被封停
+    ENUM_EVENT_ACCOUNTISFORBIDDEN = 124,
+    -- 登录失败
+    ENUM_EVENT_LOGINFAILED = 125,
+    -- 获取角色数据失败，检查网络后重新登录
+    ENUM_EVENT_GETROLEDATAWRONG = 126,
+    -- 选择角色后删除
+    ENUM_EVENT_PLEASESELECTROLE = 127,
+    -- 请选择角色后进入游戏
+    ENUM_EVENT_SELECTROLEGOIN = 128,
+    -- 请创建角色后进入游戏
+    ENUM_EVENT_CREATEROLEGOIN = 129,
+    -- 达到登陆错误次数最大值
+    ENUM_EVENT_MAXWRONGPASSWORDTIME = 130,
+
+    -- 服务器出错
+    ENUM_EVENT_SEVERWRONGXIUWEI = 203,
+    -- 修为等级满级
+    ENUM_EVENT_XIUWEILEVELFULL = 204,
+    -- 修为升级道具不合法
+    ENUM_EVENT_ITEMISILLEGAL = 205,
+    -- 修为升级成功
+    ENUM_EVENT_LEVELUPXIUWEI = 206,
+    -- 服务器返回了未知参数
+    ENUM_EVENT_RETURNBADARG = 207,
+
+    -- 技能未解锁,无法拖动
+    ENUM_EVENT_UNLOCKSKILL = 208,
+    -- 技能是大招,无法拖动
+    ENUM_EVENT_ISFINALSKILL = 209,
+
+    -- 升级技能银两不足
+    ENUM_EVENT_SKILLLACKMONEY = 300,
+    -- 设计技能道具不足
+    ENUM_EVENT_SKILLLACKITEM = 301,
+    -- 升级技能等级不足
+    ENUM_EVENT_SKILLLACKLEVEL = 302,
+    -- 该技能未解锁
+    ENUM_EVENT_SKILLUNLOCK = 303,
+    -- 不存在这个技能配置信息
+    ENUM_EVENT_SKILLLACKCONFIG = 304,
+    -- 没有学习技能
+    ENUM_EVENT_SKILLNOLEARN = 305,
+    -- 技能等级已经达到最大
+    ENUM_EVENT_SKILLLEVELMAX = 306,
+    -- 玩家的等级不足,不能升级
+    ENUM_EVENT_SKILLLACKPLAYERLEVEL = 307,
+    -- 技能消耗的道具配置信息不存在
+    ENUM_EVENT_SKILLLACKCONFIGITEM = 308,
+    -- 玩家不存在技能消耗的道具
+    ENUM_EVENT_SKILLLACKCOSTITEM = 309,
+    -- 玩家消耗的道具不足
+    ENUM_EVENT_SKILLLACKPLAYERITEM = 310,
+    -- 玩家消耗的银币不足
+    ENUM_EVENT_SKILLLACKPLAYERMONEY = 311,
+    -- 玩家扣除银币出现了问题
+    ENUM_EVENT_SKILLCOSTMONEY = 312,
+    -- 玩家扣除道具出现了问题
+    ENUM_EVENT_SKILLCOSTITEM = 313,
+    -- 服务器返回了未知的参数
+    ENUM_EVENT_SKILLRETURNBADARG = 314,
+    -- 技能升级成功
+    ENUM_EVENT_SKILLLEVELUP = 315,
+
+
+    ENUM_MSG_BALL_EVENTID_INVAILD = - 1,
+    -- 冶炼功能：
+    -- -- 冶炼道具金币不足
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_NOENOUGHMONEY = 400,
+    -- -- 冶炼道具道具不足
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_NO_STONE = 401,
+    -- -- 当前装备已强化至最高级(无法继续强化)
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_CURLEVELMAX = 402,
+    -- -- 已强化至当前最高级，提升角色等级后可继续强化
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_LEVELLIMIT = 403,
+    -- -- 很遗憾，装备强化失败
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_CURLEVELMAXEx = 404,
+    -- -- 恭喜您，强化成功，[e8da9b]{0}强化到[ff4e2f]{1}[-]级！[-]
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_SUCCESS = 405,
+    -- -- 强化功能尚未开启
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_CLOSED = 406,
+    -- -- 需要XX等级才能冶炼
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_NO_OPEN_LV = 407,
+    -- -- 死亡无法装备冶炼
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_PLAYER_DEAD = 408,
+    -- -- 没有符合一键强化的装备
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_NOEQUIPCANUP = 409,
+
+    -- -- 合成成功，但合成的装备ID不存在，查服务器log
+    ENUM_MSG_BALL_EVENTID_ITEMUPDATE_NO_ITEM = 410,
+    -- 强化系统暂时关闭
+    NUM_MSG_BALL_EVENTID_ITEMUPDATE_TEMPRROARY_CLOSED = 411;
+    -- 内部错误，如数据表不正常，没有根据LGID获得装备，获取表指针为NULL等
+    NUM_MSG_BALL_EVENTID_ITEMUPDATE_INSIDE_ERROR = 412;
+
+
+    -- 您的好友数量已达上限
+    ENUM_FRIEND_MAX_COUNT = 413;
+    -- 已发送邀请
+    ENUM_FRIEND_INVITE = 414;
+    -- 您的黑名单数量已达上限
+    ENUM_FRIEND_BALCK_MAX_COUNT = 415;
+
+    -- 该账号在其他地方登录
+    UM_MSG_BALL_EVENTID_LOADING_LOAD_OTHER = 416;
+    -- 版本错误
+    UM_MSG_BALL_EVENTID_LOADING_VERSION_ERROR = 417;
+    -- 读盘错误
+    UM_MSG_BALL_EVENTID_LOADING_READE_ERROR = 418;
+    -- 放入场景失败
+    UM_MSG_BALL_EVENTID_LOADING_ADDSCENE_FAIL = 419;
+    -- 切换NGS，验证码错误
+    UM_MSG_BALL_EVENTID_LOADING_CODE_ERROR = 420;
+    -- 同账号的其他角色在这个链接上已经登录了
+    UM_MSG_BALL_EVENTID_LOADING_SAME_USER = 421;
+    -- 角色在线
+    UM_MSG_BALL_EVENTID_LOADING_USER_ONLINE = 422;
+    -- 角色处于封停状态
+    UM_MSG_BALL_EVENTID_LOADING_ROLE_STOP = 423;
+
+    -- 领取成就失败
+    ENUM_ACHIEVE_GET_FAIL = 424;
+
+    -- 装备强化系统未开启
+    ENUM_BAG_STRENG_SYSTEM_CLOSED = 425;
+    -- 装备升星系统未开启
+    ENUM_BAG_SHENGXINF_SYSTEM_CLOSED = 426;
+
+    -- 这已经是第一章了
+    ENUM_DUNGRONSOLO_FIRST_CHAPTER = 427;
+
+    -- 今日扫荡次数已用完
+    ENUM_ENDLESSACTI_NOT_TIMES = 428;
+    -- 本层不可挑战
+    ENUM_ENDLESSACTI_NOT_CHALLENGE = 429;
+    -- 扫荡所需钻石不足
+    ENUM_ENDLESSACTISWEEP_MONEY_NOT_ENOUGH = 430;
+    -- 玩家名称无效
+    ENUM_FRIENDADD_NOT_NAME = 431;
+    -- 点击了道具加号,打开获取途径,暂未制作
+    ENUM_FUMO_ADD_ITEM = 432;
+    -- 当前没有选择部位，无法注魔
+    ENUM_FUMO_NOT_SELECT_PART = 433;
+    -- 当前没有选择孔位，无法注魔
+    ENUM_FUMO_NOT_SELECT_SOLE = 434;
+    -- 当前没有可用道具，无法注魔
+    ENUM_FUMO_NOT_ITEM = 435;
+    -- 当前孔位还未附魔，无法注魔
+    ENUM_FUMO_NOT_FUMO = 436;
+    -- 达到最大附魔等级，无法继续注魔
+    ENUM_FUMO_MAX_LEVEL = 437;
+    -- 此处没有装备不能镶嵌
+    ENUM_FUSHI_NOT_EQUIP = 438;
+    -- 同一装备不能镶嵌相同属性的符石
+    ENUM_FUSHI_NOT_EQUIP_SAME_FUSHI = 439;
+    -- 没有位置可以镶嵌符石
+    ENUM_FUSHI_NOT_POSITION = 440;
+    -- 道具数量不足
+    ENUM_FUSHI_NOT_ITEM = 441;
+
+    -- 该功能暂未开启
+    ENUM_GILDACTIVITY_NOT_OPEN = 442;
+    -- 功能未开放
+    ENUM_GUILDAFFAIRS_NOT_OPEN = 443;
+
+    -- 宣言内容不能为空
+    ENUM_GUILDAFFAIRS_CONENT_NOT_NULL = 444;
+    -- 内政大厅已经达到最大等级了
+    ENUM_GUILDAFFAIRS_HALL_MAX_LEVEL = 445;
+    -- 内政大厅已经达到最大等级了
+    ENUM_GUILDAFFAIRS_STORE_MAX_LEVEL = 446;
+    -- 公告内容不能为空!
+    ENUM_GUILDINFO_ANNOUNCEMEMT_NOT_NULL = 447;
+
+    ENUM_MSG_BALL_EVENTID_PUTOUT_ITEM_BAG_FULL = 501,
+    -- -- 卸下装备时背包满
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_SUCCESS = 502,
+    -- -- 碎片合成成功
+    ENUM_MSG_BALL_EVENTID_SELLITEM_SUCCESS = 503,
+    -- -- 成功出售道具
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_NOENOUGH = 504,
+    -- -- 碎片合成碎片不足
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_NOMONEY = 505,
+    -- -- 合成碎片银两不足
+    ENUM_MSG_BALL_EVENTID_PUTON_LOWLV_ITEM = 506,
+    -- -- 佩戴品级低的道具
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_CLOSED = 507,
+    -- -- 碎片合成未开启
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_NO_OPEN_LV = 508,
+    -- -- 需要XX级才能碎片合成
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_PLAYER_DEAD = 509,
+    -- -- 死亡无法碎片合成
+    ENUM_MSG_BALL_EVENTID_PIECECOMPOUND_BAG_MAX = 510,
+    -- -- 背包已满，无法放入合成产物道具
+
+    -- 合成
+    ENUM_MSG_BALL_EVENTID_COMPOUND_DIFFERENT_TYPE = 601,
+    -- -- 合成时放入不同类型的道具
+    ENUM_MSG_BALL_EVENTID_COMPOUND_KEY_NOENOGHITEM = 602,
+    -- -- 点击一键放入，没有足够的道具
+    ENUM_MSG_BALL_EVENTID_COMPOUND_NO_STONE = 603,
+    -- -- 合成消耗的资源不足
+    ENUM_MSG_BALL_EVENTID_COMPOUND_CLOSED = 604,
+    -- -- 合成尚未开启
+    ENUM_MSG_BALL_EVENTID_COMPOUND_NO_OPEN_LV = 605,
+    -- -- 需要XX级才能合成
+    ENUM_MSG_BALL_EVENTID_COMPOUND_PLAYER_DEAD = 606,
+    -- -- 死亡无法合成
+    ENUM_MSG_BALL_EVENTID_COMPOUND_ITEMLVMAX = 607,
+    -- -- 此道具已经是顶级，不能合成
+    ENUM_MSG_BALL_EVENTID_COMPOUND_TYPE = 608,
+    -- -- 放入的类型不一样
+    ENUM_MSG_BALL_EVENTID_COMPOUND_MAX_TYPE = 609,
+    -- -- 选择5个道具之后在选择提示已满
+    ENUM_MSG_BALL_EVENTID_COMPOUND_BAGMAX = 610,
+    -- -- 合成道具时，背包没有空位置放合成产物道具
+    ENUM_MSG_BALL_EVENTID_COMPOUND_BACK_UPDATEBAGMAX = 611,
+    -- -- 合成道具时，背包没有空位置放装备冶炼返还道具
+    -- 金钱不足，无法合成
+    ENUM_MSG_BALL_EVENTID_NOTMONEY = 2730,
+    -- 道具不足，无法合成
+    ENUM_MSG_BALL_EVENTID_NOITEM = 2731,
+    -- 合成成功
+    ENUM_MSG_BALL_EVENTID_COMPOUND_SUCCESS = 2732,
+    -- 该道具不能进行合成。
+    ENUM_MSG_BALL_EVENTID_NOT_COMPOUND_SUCCESS = 2733,
+    -- --副本功能
+    ENUM_MSG_BALL_EVENTID_DUNGEON_UNCLOCK_CHAPTER = 700,
+    -- -- 选择未解锁的章节
+    ENUM_MSG_BALL_EVENTID_DUNGEON_LEVEL_LOW = 701,
+    -- -- 选择未达到等级需求的章节
+    ENUM_MSG_BALL_EVENTID_DUNGEON_UNCLOCK_DUNGEON = 702,
+    -- -- 选择未解锁的副本
+    ENUM_MSG_BALL_EVENTID_DUNGEON_REWARD_BOX = 703,
+    -- -- 点击已经领取的章节宝箱
+    ENUM_MSG_BALL_EVENTID_DUNGEON_BUY_THEW_SUCCESS = 704,
+    -- -- 成功购买体力
+    ENUM_MSG_BALL_EVENTID_DUNGEON_SWEEP_NOT_THEW = 705,
+    -- -- 扫荡时体力不足
+    ENUM_MSG_BALL_EVENTID_DUNGEON_SWEEP_NOT_ITEM = 706,
+    -- -- 扫荡道具数量不足
+    ENUM_MSG_BALL_EVENTID_DUNGEON_NOT_VIP_LEVEL = 707,
+    -- -- vip等级为1boss副本才可以扫荡
+    ENUM_MSG_BALL_EVENTID_DUNGEON_SWEEP_THREE_STAR = 708,
+    -- -- 三星才可以扫荡
+    ENUM_MSG_BALL_EVENTID_DUNGEON_NO_CHALLENGE_NUM = 709,
+    -- -- 副本今日挑战次数已满
+    ENUM_MSG_BALL_EVENTID_DUNGEON_NOT_ENOUGH_THEW = 710,
+    -- -- 体力值不足
+    ENUM_MSG_BALL_EVENTID_DUNGEON_NOT_ENOUGH_STAR = 711,
+    -- -- 星星数量不够无法领取宝箱
+    ENUM_MSG_BALL_EVENTID_DUNGEON_ALREADY_AT_DUNGEON = 712,
+    -- -- 你已经在一个副本中了！
+    ENUM_MSG_BALL_EVENTID_DUNGEON_ALREADY_REWARD_BOX = 715,
+    -- -- 宝箱已经领取了！
+    ENUM_PARTNERALREADYOUT = 716,
+    -- 此侠客已经出战
+    ENUM_DISPOSEPOSISFULL = 717,
+    -- 出战位置已经满了
+    ENUM_NOPARTNERSONLEFTLIST = 718,
+    -- 左侧列表中不存在该侠客
+
+    ENUM_DUNGEONBOXGET = 721,
+    -- 购买100点体力
+    ENUM_ENERGY_ADDBUYCOUNT = 724,
+    -- 今日已购买上限
+    ENUM_ENERGY_NOTIMES = 725,
+    -- 您体力足够，无需购买
+    ENUM_ENERGY_FULL = 726,
+    -- 获得x点体力
+    ENUM_ENERGY_USESAMLLDRUG = 727,
+
+    -- 选择附魔页签，切换至附魔功能
+    ENUM_MSG_NOTPASSALLFUBEN = 730,
+    -- 战斗状态飞行不允许
+    ENUM_MSG_FLY_NO_ATTACK = 911,
+    -- 战斗状态降落不允许
+    ENUM_MSG_FALL_NO_ATTACK = 912,
+    -- 场景飞行不允许
+    ENUM_MSG_FLY_NO_SCENE = 913,
+    -- 场景降落不允许
+    ENUM_MSG_FALL_NO_SCENE = 914,
+    -- 降落的位置不合适
+    ENUM_MSG_FALL_NO_CORRECT = 915,
+    -- 副本宝箱已经领取过的提示
+    ENUM_MSG_BALL_EVENTID_MAIL_TAKEFAIL_MONEY = 901,
+    -- -- 提取邮件金钱失败
+    ENUM_MSG_BALL_EVENTID_MAIL_TAKEFAIL_YUANBAO = 902,
+    -- -- 提取邮件元宝失败
+    ENUM_MSG_BALL_EVENTID_MAIL_TAKEFAIL_ITEM = 903,
+    -- -- 提取邮件道具失败
+
+    -- --增加侠客
+    ENUM_MSG_BALL_EVENTID_ADD_PET_ID_PROBLEM = 1001,
+    -- --玩家发送的侠客ID不符合要求
+    ENUM_MSG_BALL_EVENTID_ADD_PET_EXIST_PET_NO_ADD = 1002,
+    -- --玩家已经存在这个侠客，不能再次增加
+    ENUM_MSG_BALL_EVENTID_ADD_PET_BAG_NO_EXISTS_ITEM = 1003,
+    -- --玩家背包中不存在这个消耗的道具
+    ENUM_MSG_BALL_EVENTID_ADD_PET_BAG_ITEM_NUM_SHORTAGE = 1004,
+    -- --玩家背包中消耗道具数量不足
+    ENUM_MSG_BALL_EVENTID_ADD_PET_BAG_DELETE_ITEM_GO_WRONG = 1005,
+    -- --删除玩家背包中的道具出现问题
+
+    -- --侠客修为等级升级
+    ENUM_MSG_BALL_EVENTID_PET_CULTIVATE_UPGRADE_PET_ID_PROBLEM = 1101,
+    -- --玩家发送的侠客ID不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_CULTIVATE_UPGRADE_ALREADY_MAX_LEVEL_NO_UPGRADE = 1102,
+    -- --玩家修为等级已经达到最大的等级，不能再次升级
+    ENUM_MSG_BALL_EVENTID_PET_CULTIVATE_UPGRADE_NO_EXISTS_CULTIVATE_ID = 1103,
+    -- --侠客修为ID不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_CULTIVATE_UPGRADE_BAG_NO_EXISTS_ITEM = 1104,
+    -- --侠客升级时，玩家背包中不存在这个消耗的道具
+    ENUM_MSG_BALL_EVENTID_PET_CULTIVATE_UPGRADE_BAG_ITEM_NUM_SHORTAGE = 1105,
+    -- --玩家背包中消耗的道具不足
+    ENUM_MSG_BALL_EVENTID_PET_CULTIVATE_UPGRADE_BAG_DELETE_ITEM_GO_WRONG = 1106,
+    -- --删除玩家背包中的道具出现问题
+
+    -- --侠客等级升级
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_NO_EXISTS_PET = 1201,
+    -- --玩家不存在这个侠客，不能进行升级
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_COST_ITEM_PROBLEM = 1202,
+    -- --玩家消耗的道具不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_LEVEL_PROBLEM = 1203,
+    -- --侠客的等级不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_COST_ITEM_OVERDUE = 1204,
+    -- --侠客升级消耗的道具超出最大消耗道具的数量
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_BAG_NO_EXISTS_ITEM = 1205,
+    -- --玩家背包中不存在消耗的道具
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_BAG_ITEM_NUM_SHORTAGE = 1206,
+    -- --玩家背包中消耗的数量不足
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_BAG_DELETE_ITEM_GO_WRONG = 1207,
+    -- --删除玩家背包中的道具出现问题
+    ENUM_MSG_BALL_EVENTID_PET_LEVEL_UPGRADE_NO_EXISTS_PET_ID = 1208,
+    -- --玩家发送的侠客ID不符合要求
+
+    -- --侠客上阵
+    ENUM_MSG_BALL_EVENTID_PET_ADD_FORMATION_RAID_ID_PROBLEM = 1301,
+    -- --玩家发送的副本ID不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_ADD_FORMATION_SITE_ERROR = 1302,
+    -- --侠客上阵的时候，上阵的位置不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_ADD_FORMATION_PET_EXISTS = 1303,
+    -- --侠客已经在这个副本类型的阵型中，不能再次上阵
+    ENUM_MSG_BALL_EVENTID_PET_ADD_FORMATION_SITE_EXISTS = 1304,
+    -- --这个阵型中的这个位置已经存在侠客，其他的侠客不能上阵这个位置
+
+    -- --侠客下阵
+    ENUM_MSG_BALL_EVENTID_PET_UNDER_FORMATION_RAID_ID_PROBLEM = 1401,
+    -- --玩家发送的副本ID不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_UNDER_FORMATION_NO_EXISTS = 1402,
+    -- --这个侠客没有上阵，不能下阵
+
+    -- --侠客技能升级
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_NO_EXISTS_PET = 1501,
+    -- --玩家不存在这个侠客，技能不能升级
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_NO_EXISTS_PET_SKILL = 1502,
+    -- --侠客不存在这个技能，不能升级
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_MAX_LEVEL_NO_UPGRADE = 1503,
+    -- --侠客的技能已经达到最大的等级，不能升级
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_PET_LEVEL_PROBLEM = 1504,
+    -- --侠客技能升级侠客等级不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_ITEM_SHORTAGE = 1505,
+    -- --侠客技能升级消耗的道具不足
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_COST_MONEY_SHORTAGE = 1506,
+    -- --侠客技能升级消耗的金钱不足
+    ENUM_MSG_BALL_EVENTID_PET_SKILL_UPGRADE_REDUCE_ITEM_PROBLEM = 1507,
+    -- --侠客减少道具的时候出现问题
+
+    -- --侠客穿装备
+    ENUM_MSG_BALL_EVENTID_PUT_ON_EQUIP_NO_EXISTS_PET = 1601,
+    -- --玩家不存在这个侠客
+    ENUM_MSG_BALL_EVENTID_PUT_ON_EQUIP_EXIST_EQUIP = 1602,
+    -- --侠客已经穿上这个装备
+    ENUM_MSG_BALL_EVENTID_PUT_ON_EQUIP_NO_EXISTS_PET_ID = 1603,
+    -- --玩家发送的侠客ID不符合要求
+    ENUM_MSG_BALL_EVENTID_PUT_ON_EQUIP_ID_PROBLEM = 1604,
+    -- --侠客穿装备的装备ID不符合要求
+
+    -- --侠客装备升级
+    ENUM_MSG_BALL_EVENTID_PET_EQUIP_UPGRADE_NO_EXISTS_PET = 1701,
+    -- --玩家不存在这个侠客
+    ENUM_MSG_BALL_EVENTID_PET_EQUIP_UPGRADE_PET_EXIST_EQUIP = 1702,
+    -- --侠客已经穿上这个装备
+    ENUM_MSG_BALL_EVENTID_PET_EQUIP_UPGRADE_LASTEST_LEVEL = 1703,
+    -- --侠客装备的等级已经达到最大等级，不能进行升级
+    ENUM_MSG_BALL_EVENTID_PET_EQUIP_UPGRADE_COST_ITEM = 1704,
+    -- --侠客装备升级消耗的装备不符合要求
+    ENUM_MSG_BALL_EVENTID_PET_EQUIP_UPGRADE_INTENSITY_PROBLEM = 1705,
+    -- --侠客装备升级时候，装备的强化等级出现问题
+    ENUM_MSG_BALL_EVENTID_PET_EQUIP_UPGRADE_COST_MONEY_ITEM_PROBLEM = 1706,
+    -- --侠客装备升级的时候，消耗的金钱和道具出现问题
+
+    -- --藏宝图功能
+    ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_NO_EXISTS_ID = 1801,
+    -- --玩家发送的藏宝图ID不符合要求
+    ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_DROPITEM = 1802,
+    -- --掉落包出错
+    ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_COST_BIND_MONEY_SHORTAGE = 1803,
+    -- --消耗游戏产生货币不足
+    ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_COST_GOLD_SHORTAGE = 1804,
+    -- --消耗的元宝不足
+    ENUM_MSG_BALL_EVENTID_LOTTERY_DRAW_DROPITEM_SAVE_MYSQL_PROBLEM = 1805,
+    -- --物品保存数据库失败
+
+    -- --主角复活
+    ENUM_MSG_BALL_EVENTID_ROLE_REBORN_COST_GOLD_SHORTAGE = 2201,
+    -- --主角消耗的金币不足
+    ENUM_MSG_BALL_EVENTID_ROLE_REBORN_TYPE_PROBLEM = 2202,
+    -- --消耗类型不符合要求
+    ENUM_MSG_BALL_EVENTID_ROLE_REBORN_COST_TIME_SHORTAGE = 2203,
+    -- --主角消耗的冷却时间不足
+    ENUM_MSG_BALL_EVENTID_ROLE_REBORN_ROLE_SCENE_TYPE_PROBLEM = 2204,
+    -- --玩家所处的场景不对
+
+    -- --龙魂
+    -- 龙魂等级已满，无法注魂！
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_LV_MAX = 2401,
+    -- 所需精魄不足，无法注魂！
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_ITEM_NO_ENOUGH = 2402,
+    -- 角色等级不足，无法注魂！
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_PLAYERLV_NO_ENOUGH = 2403,
+    -- 错误，查服务器LOG
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_SERVER_ERR = 2404,
+    -- 错误，查客户端LOG
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_CLIETNT_ERR = 2405,
+    -- 龙魂升级成功
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_LEVEL_UP = 2406,
+    -- 龙魂之力激活
+    ENUM_MSG_BALL_EVENTID_DRAGONSOULNEW_EFFECT = 2407,
+    -- 符石孔尚未开启，$级开启
+    ENUM_MSG_BALL_EVENTID_GEM_OPEN_LEVEL = 3400,
+    -- --成功开启符石孔
+    ENUM_MSG_GEM_HOLE_OPEN_SUC = 3410,
+    -- 符石等级不满足条件。
+    ENUM_MSG_BALL_EVENTID_GEM_XIANGQIAN_LEVEL = 3580,
+    -- --符石开孔缺少道具
+    ENUM_MSG_GEM_HOLE_ITEM_LACK = 3420,
+    -- --同一装备不能镶嵌相同类型的符石
+    ENUM_MSG_GEM_SET_CHECK = 3430,
+    -- --镶嵌所需金币不足
+    ENUM_MSG_GEM_SET_MONEY_LACK = 3440,
+    -- --镶嵌所需钻石不足,相同符石无法替换
+    ENUM_MSG_GEM_SET_DIA_LACK = 3450,
+    -- --摘除所需金币不足
+    ENUM_MSG_GEM_UNSET_MONEY_LACK = 3460,
+    -- --摘除所需钻石不足
+    ENUM_MSG_GEM_UNSET_DIA_LACK = 3470,
+    -- --激活共鸣
+    ENUM_MSG_GEM_ACTIVATE_GONGMING = 3480,
+    -- --去除共鸣
+    ENUM_MSG_GEM_UNACTIVATE_GONGMING = 3490,
+    -- --符石镶嵌成功
+    ENUM_MSG_GEM_SET_SUC = 3500,
+    -- --此孔位已经有宝石，不能镶嵌
+    ENUM_MSG_GEM_HOLE_HAS_STONE = 3510,
+    -- --符石一键升级失败
+    ENUM_MSG_GEM_LEVELUP_ALL_FAL = 2518,
+    -- --当前孔位没有符石
+    ENUM_MSG_GEM_NOTHING_IN_HOLE = 2519,
+    -- 进入危险场景体力不足
+    ENUM_MSG_DANGEROUS_SCENE_THEW_NO_ENOUGH = 3020,
+    -- --符石镶嵌成功
+    ENUM_MSG_GEM_SET_SUC = 3500,
+    -- --符石背包以满
+    ENUM_MSG_GEM_BAG_FULL = 3520,
+    -- --开孔金钱不足
+    ENUM_MSG_GEM_HOLE_MONEY_NO_ENGOGH = 3530,
+    -- --开孔金钱不足
+    ENUM_MSG_GEM_HOLE_GOLD_NO_ENGOGH = 3540,
+    -- --升级金钱不足
+    ENUM_MSG_GEM_LEVELUP_NO_MONEY = 3550,
+    -- --升级道具不足
+    ENUM_MSG_GEM_LEVELUP_NO_ITEM = 3560,
+    -- --符石孔位已经开启
+    ENUM_MSG_GEM_HOLE_ALREADY_OPEN = 3570,
+    -- --符石开孔等级不足
+    ENUM_MSG_GEM_HOLE_LV_ERROR = 3580,
+    -- --符石位置没装备
+    ENUM_MSG_GEM_POS_NO_EQUIP = 3590,
+    -- --当前孔位没有符石
+    ENUM_MSG_GEM_NOTHING_IN_HOLE = 3600,
+    -- --玩家没有宝石不能镶嵌
+    ENUM_MSG_GEM_PLAYER_NO_STONE = 3610,
+    -- --神翼
+    -- --您的神翼系统已经开启~
+    ENUM_MSG_BALL_EVENTID_WING_SHENYI_FUNCTION_OPEN = 3200,
+    -- --道具数量不足，无法化灵！
+    ENUM_MSG_BALL_EVENTID_WING_ITEM_NOT_ENOUGH_HUALING = 3210,
+    -- --道具数量不足，无法幻化！
+    ENUM_MSG_BALL_EVENTID_WING_ITEM_NOT_ENOUGH_HUANHUA = 3220,
+    -- --化灵成功~
+    ENUM_MSG_BALL_EVENTID_WING_HUALING_SUCCEED = 3230,
+    -- --化灵失败！
+    ENUM_MSG_BALL_EVENTID_WING_HUALING_FAILURE = 3240,
+    -- --很遗憾，幻化失败
+    ENUM_MSG_BALL_EVENTID_WING_HUANHUA_FAILURE = 3250,
+    -- --恭喜您~幻化成功
+    ENUM_MSG_BALL_EVENTID_WING_HUANHUA_SUCCEED = 3260,
+    -- --一键化灵成功~
+    ENUM_MSG_BALL_EVENTID_WING_YIJIANHUALING_SUCCEED = 3270,
+    -- --一键化灵失败！
+    ENUM_MSG_BALL_EVENTID_WING_YIJIANHUALING_FAILURE = 3280,
+
+    -- --镶嵌所需金币不足
+    ENUM_MSG_BALL_EVENTID_WING_XIANG_QIAN_JIN_BI_BU_ZU = 2514,
+    -- --镶嵌所需钻石不足
+    ENUM_MSG_BALL_EVENTID_WING_XIANG_QIAN_ZHUAN_SHI_BU_ZU = 2515,
+
+    -- --摘除所需金币不足
+    ENUM_MSG_BALL_EVENTID_WING_ZHAI_CHU_JIN_BI_BU_ZU = 2516,
+    -- --摘除所需钻石不足
+    ENUM_MSG_BALL_EVENTID_WING_ZHAI_CHU_ZHUAN_SHI_BU_ZU = 2517,
+    -- --开孔所需金币不足
+    ENUM_MSG_BALL_EVENTID_WING_KAI_KONG_JIN_BI_BU_ZU = 2533,
+    -- --开孔所需钻石不足
+    ENUM_MSG_BALL_EVENTID_WING_KAI_KONG_ZHUAN_SHI_BU_ZU = 2534,
+
+    -- --当前变身不能被替换
+    ENUM_MSG_APPEARANCE_NOT_BEREPLACED = 2530,
+    -- 服务器返回消息中,请耐心等待
+    ENUM_MSG_APPEARANCE_NOT_MESSAGE = 2556,
+
+
+    ENUM_MSG_EQUIPSTARLV_NO_MONEY = 2700,
+    -- --装备升星没有足够金钱
+    ENUM_MSG_EQUIPSTARLV_NO_ITEM = 2701,
+    -- --装备升星没有足够的道具
+    ENUM_MSG_EQUIPSTARLV_SUCC = 2702,
+    -- --装备升星成功
+    ENUM_MSG_EQUIPSTARLV_FAIL = 2703,
+    -- --装备升星失败
+    ENUM_MSG_EQUIPSTARLV_UNABLE_STAR = 2704,
+    -- --装备已满级不能升星
+    ENUM_MSG_EQUIPSTARLV_UNABLE_CHANGE_ID = 2705,
+    -- --装备没满级不能升阶
+    ENUM_MSG_EQUIPSTARLV_CHANGE_ID_SUCC = 2706,
+    -- --装备升阶成功
+    ENUM_MSG_EQUIPSTARLV_CHANGE_ID_FAIL = 2707,
+    -- --装备升阶失败
+
+    ENUM_MSG_EQUIPSTARLV_CHANGE_ID_NO_MONEY = 2708,
+    -- --装备升阶没有足够金钱
+    ENUM_MSG_EQUIPSTARLV_CHANGE_ID_NO_ITEM = 2709,
+    -- --装备升阶没有足够道具
+    ENUM_MSG_EQUIPSTARLV_EQUIP_STAR_MAX = 2710,
+    -- --装备星级已经达到最高
+    ENUM_MSG_EQUIPSTARLV_NO_OPEN = 2711,
+    -- --装备升星没有开放
+    ENUM_MSG_EQUIPSTARLV_PLAYER_LV_NO_ENOUGH = 2712,
+    -- --玩家等级不够开启
+    ENUM_MSG_EQUIPSTARLV_NO_EQUIP = 2713,
+    -- --此玩家没有这件装备
+    -- 功能尚未开启
+    ENUM_MSG_NOT_FUNCTION = 2557,
+
+    -- 生命值已满，无需使用药品
+    ENUM_USEMED_FULLHP = 2558,
+    -- 当前场景无法使用药品
+    ENUM_USEMED_SCENELIMIT = 2559,
+    -- 药品正在cd，暂时无法使用
+    ENUM_USEMED_CD = 2560,
+    -- 当前药品道具信息不存在，无法使用药品
+    ENUM_USEMED_NOINFO = 2567,
+    -- 主角不存在，无法使用药品
+    ENUM_USEMED_NOUSER = 2568,
+    -- 主角已死亡，无法使用药品
+    ENUM_USEMED_DEAD = 2569,
+    -- mapdate表不存在当前场景信息，无法使用药品
+    ENUM_USEMED_NOSCENEINFO = 2570,
+    -- 等级不足，无法使用该药品
+    ENUM_USEMED_LEVELLIMIT = 2571,
+    -- 神位升级功勋不足
+    ENUM_MSG_GOD_EVENTID_WING_SHENG_JI_GONG_XUN_BU_ZU = 2585,
+    -- 您已被沉默，暂无法释放技能。
+    ENUM_EVENT_SKILL_TIPS1 = 2205,
+    -- 魔法不足，暂无法释放技能。
+    ENUM_EVENT_SKILL_TIPS2 = 2206,
+    -- 您已被眩晕，暂无法释放技能。
+    ENUM_EVENT_SKILL_TIPS4 = 2207,
+    -- 此处无效,请重新选择。
+    ENUM_EVENT_SKILL_TIPS5 = 2208,
+    -- 技能冷却中
+    ENUM_EVENT_SKILL_TIPS3 = 5400,
+    -- 请先选择一个目标
+    ENUM_EVENT_SKILL_Relive_NOTARGET = 5401,
+    -- 技能目标必须是玩家
+    ENUM_EVENT_SKILL_Relive_PLAYER = 5402,
+    -- 与复活技能目标必须是友好关系
+    ENUM_EVENT_SKILL_Relive_ALLIED = 5403,
+    -- 目标不是死亡状态
+    ENUM_EVENT_SKILL_Relive_DIE = 5404,
+    -- 目标不在技能最大施放范围内
+    ENUM_EVENT_SKILL_Relive_RANGE = 5405,
+    -- ]目标已经为复活状态
+    ENUM_EVENT_SKILL_Relive_RELIVE = 5406,
+    -- 需要一个友好的选择目标
+    ENUM_EVENT_SKILL_NEED_ALLIED_TARGET = 5407,
+    -- 与目标必须是友好关系
+    ENUM_EVENT_SKILL_TARGET_ALLIED = 5408,
+    -- 目标必须非死亡状态
+    ENUM_EVENT_SKILL_TARGET_ALIVE = 5409,
+
+    -- 怒气未满无法释放该技能
+    ENUM_EVENT_SKILL_NOT_FINAL = 2646,
+    -- 没有翅膀模型
+    ENUM_EVENT_SKILL_NOT_WING = 2691,
+    -- 待分解的装备中有不可分解的道具
+    ENUM_EVENT_SKILL_NOT_RESOLVEEQUIP = 2740,
+    -- 待分解的装备数量<=0
+    ENUM_EVENT_SKILL_NOT_PUTINEQUIP = 2741;
+    -- 背包已满，无法分解
+    ENUM_EVENT_SKILL_NOT_BAGFULL = 2742;
+    -- 没有符合一键放入设置的装备
+    ENUM_EVENT_SKILL_NOT_CANPUTINEQUIP = 2744,
+    -- 内容太长
+    ENUM_EVENT_LIAOTIAN_CONTENT_TOOLONG = 2749,
+    -- 没有加入阵营
+    ENUM_EVENT_LIAOTIAN_NOTJOIN_CAMP = 2750,
+    -- 没有加入公会
+    ENUM_EVENT_LIAOTIAN_NOTJOIN_GUILD = 2751,
+    -- 没有加入队伍
+    ENUM_EVENT_LIAOTIAN_NOTJOIN_TEAM = 2752,
+    -- 等级不足,无法发言
+    ENUM_EVENT_LIAOTIAN_NOTLEVEL_1 = 2753,
+    -- 等级不足,无法发言
+    ENUM_EVENT_LIAOTIAN_NOTLEVEL_2 = 2754,
+    -- CD中
+    ENUM_EVENT_LIAOTIAN_NOTCD = 2755,
+    -- 内容为空
+    ENUM_EVENT_LIAOTIAN__CONTENT_EMPTY = 2756,
+    -- 等级不足,无法发言
+    ENUM_EVENT_LIAOTIAN_NOTLEVEL_3 = 2758;
+    -- [e8da9b]以发送招人信息[-]
+    ENUM_EVENT_LIAOTIAN_TEAM_SENDED = 3751;
+    -- [e8da9b]发送过于频繁，请稍后[-]
+    ENUM_EVENT_LIAOTIAN_TEAM_NOTCD = 3752;
+    -- 消息已过期
+    ENUM_EVENT_LIAOTIAN_TEAM_OVERDUE = 3754;
+    -- --世界地图相关
+    -- 场景传送-（已在该场景）
+    ENUM_SCENE_TRANSFER_AMID = 2760,
+    -- 场景传送-（等级不足）
+    ENUM_SCENE_TRANSFER_LEVEL = 2761,
+    -- 安全区
+    ENUM_ENTER_SAFELY_AREA = 2763,
+    -- 等级不满足场景的要求等级
+    ENUM_ENTER_DUNGEON_LEVEL = 2771;
+    -- 体力不足
+    ENUM_ENTER_DUNGEON_THEW = 2779;
+    -- 该活动{0}级开启
+    ENUM_ACTIVITY_LEVEL = 2782;
+    -- 完成任务{0}后开启该活动
+    ENUM_ACTIVITY_TASK = 2783;
+    -- 大餐正在制作中
+    ENUM_ACTIVITY_CREATMEAL = 2784;
+    -- 本时段您已经吃过大餐了，可不要贪心哟
+    ENUM_ACTIVITY_MEALTAKED = 2785;
+
+    -- --商铺相关
+    -- --商铺系统关闭
+    ENUM_MSG_SHOP_SYS_CLOSED = 2800,
+    -- --元宝商铺系统关闭
+    ENUM_MSG_SHOP_GOLD_SYS_CLOSED = 2801,
+    -- --其他商铺系统关闭  提示这个就是序列化或者客户端发送参数错了
+    ENUM_MSG_SHOP_OTHER_SYS_CLOSED = 2802,
+    -- --商铺类型不合法
+    ENUM_MSG_SHOP_TYPE_ERROR = 2803,
+    -- --客户端发送过来的服务器数量不合法
+    ENUM_MSG_SHOP_CLIENT_SEND_SERVER_NUM_ERROR = 2804,
+    -- --购买数量不合法   大于999或者0个
+    ENUM_MSG_SHOP_BUY_NUM_ERROR = 2805,
+    -- --客户端发送过来的服务器单价不合法
+    ENUM_MSG_SHOP_BUY_SINGLE_PRICE_ERROR = 2806,
+    -- --限时道具不在购买时间段
+    ENUM_MSG_SHOP_DATA_ERROR = 2807,
+    -- --隐藏道具不可以买
+    ENUM_MSG_SHOP_HIDE_ITEM_ERROR = 2808,
+    -- --策划填表单价出错
+    ENUM_MSG_SHOP_SERVER_PRICE_ERROR = 2809,
+    -- --客户端发送过来的单价小于服务器单价
+    ENUM_MSG_SHOP_CLIENT_SEND_SERVER_PRICE_ERROR = 2810,
+    -- --没有足够钱购买商城道具
+    ENUM_MSG_SHOP_BUG_ITEM_MONEY_NO_ENOUGH = 2811,
+    -- --客户端发送的商店类型错误，不是元宝商城类型
+    ENUM_MSG_SHOP_CLIENT_SEND_TYPE_ERROR = 2812,
+    -- --客户端发送的信息出错，基础表中没有匹配
+    ENUM_MSG_SHOP_CLIENT_SEND_INFO_ERROR = 2813,
+    -- --客户端发送过来的服务器ExcelID不合法
+    ENUM_MSG_SHOP_CLIENT_SEND_SERVER_EXCELID_ERROR = 2814,
+    -- 物品使用等级不足提示
+    ENUM_ITEM_NEED_LEVEL_DISSATISFY = 2840,
+
+    -- 等级不足，无法将该药剂放置在快捷栏
+    ENUM_SETMED_LACKLEVEL = 2720,
+    -- 成功将该药剂放置在快捷栏
+    ENUM_SETMED_OK = 2721,
+    -- 该药剂已经放置在快捷栏，无需重复放置
+    ENUM_SETMED_SAMEMED = 2722,
+
+    -- --公会相关
+    -- 公会查询失败
+    ENUM_GUILD_QUERY_FAILED = 2600,
+    -- 创建公会最小字符
+    ENUM_GUILD_MIN_LIMITED = 2601,
+    -- 创建公会最大字符
+    ENUM_GUILD_MAX_LIMITED = 2602,
+    -- 公会名称存在非法字符
+    ENUM_GUILD_LLEGAL_CHARACTER = 2603,
+    -- 字符已存在
+    ENUM_GUILD_EXIST_CHARACTER = 2604,
+    -- 创建公会所需钻石不足
+    ENUM_GUILD_DIAMOND_SHORTAGE = 2605,
+    -- 创建公会成功
+    ENUM_GUILD_CREATE_SUCCESSED = 2606,
+    -- 邀请人不在线
+    ENUM_GUILD_INVITE_PLAYER_OFFLINE = 2607,
+    -- 邀请人已有公会
+    ENUM_GUILD_INVITE_PLAYER_HAVED = 2608,
+    -- 公会人数已满，无法邀请
+    ENUM_GUILD_INVITE_COUNT_FILLED = 2609,
+    -- 公会人数已满，无法申请
+    ENUM_GUILD_APPROVAL_COUNT_FILLED = 2610,
+    -- 申请失败
+    ENUM_GUILD_APPROVAL_COUNT_LIMITED = 2611,
+    -- 加入公会失败
+    ENUM_GUILD_JOIN_FAILED = 2612,
+    -- 加入公会成功
+    ENUM_GUILD_JOIN_SUCCESSED = 2613,
+    -- 退出公会
+    ENUM_GUILD_EXIT = 2614,
+    -- 退出公会成功
+    ENUM_GUILD_EXIT_SUCCESSED = 2615,
+    -- 开除成员
+    ENUM_GUILD_DISMISS_MEMBER = 2616,
+    -- 被开除成员
+    ENUM_GUILD_DISMISSED_MEMBER = 2617,
+    -- 权限提示
+    ENUM_GUILD_AUTHORITY_OPERATION = 2618,
+    -- 审批提示
+    ENUM_GUILD_EXAMINE_COUNT_FILLED = 2619,
+    -- 未加入阵营提示
+    ENUM_GUILD_NO_CAMP = 2620,
+    -- 申请成功提示
+    ENUM_GUILD_APPLY_SUCCESS = 2622,
+    -- 获得xx点体力
+    ENUM_ENERGY_GET = 2853,
+    -- 药品设置数量不足
+    ENUM_MEDSET_LACKNUM = 2870,
+    -- 药品设置等级不足
+    ENUM_MEDSET_LACKLEVEL = 2871,
+    -- 已经是好友的提示
+    ENUM_FRIEND_TIPS = 2526,
+    -- 无法切换其他战斗模式
+    ENUM_CHANGE_ATTACK_MODE = 2591,
+    -- 没有工会不能切换工会模式
+    ENUM_CHANGE_NOT_GONG_HUI = 2592,
+    -- 没有阵营不能切换阵营模式
+    ENUM_CHANGE_NOT_ZHENG_YING = 2593,
+    -- 等级不足，无法进入BOSS所在场景
+    ENUM_ACTIVITY_WORLDBOSS_LEVEL = 3030,
+    -- BOSS没有刷新，无法前往
+    ENUM_ACTIVITY_WORLDBOSS_NOREFRESH = 3031,
+    -- 记得明天再来领取哦~
+    ENUM_REWARD_TOMORROW = 3130,
+    -- 已经满星，无需刷新
+    ENUM_MISSION_REFRESHSTAR = 3711,
+
+    -- 某人拒绝了邀请组队
+    ENUM_TEAM_REFUSE = 3730,
+    -- 已催促队长，稍后再
+    ENUM_TEAM_PROMPT_ENTER_CD = 3747,
+    -- 已经向队长发出进入提示
+    ENUM_TEAM_PROMPT_ENTER = 3748,
+    -- 玩家{0}提示您尽快开始
+    ENUM_TEAM_REQUEST_ENTER = 3749,
+    -- 只有队长才有权限
+    ENUM_TEAM_ONLY_LEADER = 3750,
+    -- 房间人数已经最大不能进入
+    ENUM_TEAM_MEMBER_LIMIT = 3759,
+    -- 购买boss副本活动次数时次数不为0
+    ENUM_DUNGEON_BOSS_TIMES_NOT_ZERO = 3763,
+    -- 今日购买boss副本活动次数已经达到最大上限
+    ENUM_DUNGEON_BOSS_TIMES_LIMIT = 3764,
+    -- 购买boss副本活动次数元宝不够
+    ENUM_DUNGEON_BOSS_TIMES_GOLD_NOTENOUGH = 3765,
+    -- 进入Boss副本人数不足
+    ENUM_DUNGEON_BOSS_ENTER_MEMBER_LACK = 3766,
+    -- 今日次数已用尽!
+    ENUM_DUNGEON_BOSS_TIMES_OVER = 3767,
+    -- 当前次数已用尽，请购买！
+    ENUM_DUNGEON_BOSS_TIMES_OVER_BUY = 3768,
+    -- 组队人数至少{0}人
+    ENUM_TEAM_MEMBER_LACK = 3769,
+    -- 今日购买数已达上限\n(已购买{0}/{1})
+    ENUM_DUNGEON_BOSS_TIMES_LIMIT = 3770,
+    -- 购买{0}次副本次数\n(已购买{1}/{2})
+    ENUM_DUNGEON_BOSS_TIMES_BUY = 3771,
+    -- "玩家{0}等级不足不能进入Boss副本"
+    ENUM_DUNGEON_BOSS_ERROR_LEVEL = 3772,
+    -- "玩家{0}体力不足不能进入Boss副本"
+    ENUM_DUNGEON_BOSS_ERROR_ENERGY = 3773,
+    -- "玩家{0}进入活动次数不足不能进入Boss副本"
+    ENUM_DUNGEON_BOSS_ERROR_TIMES = 3774,
+    -- 本副本尚未全部通关
+    ENUM_DUNGEON_STORY_CHAPTER_THROUGH = 730,
+
+    -- 起飞降落中无法使用坐骑
+    ENUM_CANNOTUSERIDE_FLYANDDOWN = 5101,
+    -- 飞行中无法使用坐骑
+    ENUM_CANNOTUSERIDE_FLYING = 5102,
+    -- 当前场景无法使用坐骑
+    ENUM_CANNOTUSERIDE_SCENE = 5103,
+    -- 变身中无法使用坐骑
+    ENUM_CANNOTUSERIDE_CHANGINGMODEL = 5104,
+    -- 战斗中无法使用坐骑
+    ENUM_CANNOTUSERIDE_FIGHTING = 5105,
+    -- 暂未设置当前骑乘坐骑
+    ENUM_CANNOTUSERIDE_NOTSETMOUNTID = 5106,
+    --  骑乘操作过于频繁 请稍后再试
+    ENUM_OPERAING_FREQUENCY_TIP = 5107,
+
+    -- x拒绝了组队邀请
+    ENUM_REFUSE_TEAM_INVITE_PASSIVE = 3730,
+    -- x拒绝了组队申请
+    ENUM_REFUSE_TEAM_APPLY_PASSIVE = 3731,
+    -- 已经有队伍了
+    ENUM_HAVE_TEAM = 3734,
+    -- 队伍人数已满
+    ENUM_TEAM_FULL = 3735,
+    -- 您自己离开了队伍
+    ENUM_TEAM_SELF_LEAVE = 3736,
+    -- 您被踢出队伍
+    ENUM_TEAM_SELF_BEKICK = 3737,
+    -- 您被任命为队长
+    ENUM_TEAM_SELF_BE_CAPTAIN = 3738,
+    -- 您的队伍已经解散
+    ENUM_TEAM_DISSMISS = 3739,
+    -- 成功创建队伍，您是队长
+    ENUM_SUCCESS_CREATE_TEAM = 3740,
+    -- x进入队伍
+    ENUM_PLAYER_JOIN_TEAM = 3741,
+    -- x离开了队伍
+    ENUM_PLAYER_LEAVE_TEAM = 3742,
+    -- x被队长踢出队伍
+    ENUM_PLAYER_BE_KICKED = 3743,
+    -- x成为新队长
+    ENUM_PLAYER_BE_CAPTAIN = 3744,
+    -- 当前队伍目标更换为x
+    ENUM_TEAM_CHANGE_GOAL = 3745,
+    -- 成功加入队伍
+    ENUM_SUCCESS_JOIN_TEAM = 3746,
+    -- 玩家x已下线
+    ENUM_PLAYER_OFFLINE = 3776,
+    -- x已经有队伍了
+    ENUM_PLAYER_HAVE_TEAM = 3777,
+    -- 拒绝x的组队邀请
+    ENUM_REFUSE_TEAM_INVITE_ACTIVE = 3778,
+
+    -- 离线经验已领取
+    ENUM_REWARD_OFFLINE = 5160;
+    -- 等级不足无法领取
+    ENUM_NOTENOUGH_LEVEL = 2311;
+    -- 在线时间不足 不能领取奖励
+    ENUM_NOTENOUGH_ONLINETIME = 2312;
+    -- 请在X天之后领取
+    ENUM_REWARD_EVERYLOGIN = 2310;
+
+    -- 领地战相关
+    -- 分配队伍时人数已满
+    ENUM_GUILD_TEAM_FULL = 7624,
+    -- 分配队长时只有一人
+    ENUM_GUILD_TEAM_ONE = 7625,
+
+    -- 角色名称不能为空
+    ENUM_ROLE_NOT_NAME = 2827,
+    -- 角色名称最多为七个字
+    ENUM_ROLE_NAME_LENGTH = 2828,
+	
+	--队伍中存在对立阵营的玩家，进入活动场景失败
+	ENUM_MSG_TEAM_HAS_OHTER_UNION_PLAYER_IN_UNIONSCENE_CANNOT_ENTER = 9201,
+	
+	--队伍中有对立阵营玩家在特殊阵营场景中，禁止组队
+	ENUM_MSG_TEAM_MEMBER_IN_UNION_SCENE_AND_UNION_NO_EQUAL = 9202,
+
+    -- 装备传承系统未开启
+    ENUM_BAG_INHERIT_SYSTEM_CLOSED = 460;
+}
+
+-- 游戏内系统提示类型
+GAME_SYSTEM_MESSAGE =
+{
+    INVALID = 0,
+    -- (无效)
+    SG_BALL_NOTICE = 1,
+    -- 普通提示
+    MSG_BALL_SYSTEM = 2,
+    -- 系统频道
+    MSG_BALL_TEAM_NOTICE = 3,
+    -- 队伍频道
+    MSG_BALL_GUILD_NOTICE = 4,
+    -- 公会频道
+    MSG_BALL_UNION_NOTICE = 5,-- 阵营频道
+
+}
+
+-- 共用定义表，c#里面如果添加了定义在此处也的添加定义，
+EDefineContentID =
+{
+    TypeNone = 0,
+    -- --/ 默认类型
+    TypeIdle_1 = 1001,
+    -- --/ 普通状态呼吸动作
+    TypeIdle_2 = 1002,
+    -- --/ 战斗状态状态呼吸动作
+    TypeRun_1 = 1003,
+    -- --/ 行走状态
+    TypeHit_1 = 1004,
+    -- --/ 被击动作
+    TypeDeath_1 = 1005,
+    -- --/ 死亡动作
+    TypeBorth_1 = 1006,
+    -- --/ 出生动作
+    TypeFly_1 = 1007,
+    -- --/ 轻功动作
+    TypeAttack_1 = 1008,
+    -- --/ 普通攻击动作1
+    TypeAttack_2 = 1009,
+    -- --/ 普通攻击动作2
+    TypeAttack_3 = 1010,
+    -- --/ 普通攻击动作3
+    TypeAttack_1_Back = 1011,
+    -- --/ 主角普攻1收招
+    TypeAttack_2_Back = 1012,
+    -- --/主角普攻2收招
+    TypeCollectAction_1 = 1013,
+    -- --/  采集动画1
+    TypeCollectAction_2 = 1014,
+    -- --/  采集动画2
+    TypeCollectAction_3 = 1015,
+    -- --/  采集动画3
+    TypeMainPlayerModelID = 2001,
+    -- 青龙堂
+    TypeTsingLungHall = 2622,
+    -- 白虎堂
+    TypeTigerHall = 2623,
+    -- 会长
+    TypeChairman = 2624,
+    -- 副会长
+    TypeViceChairman = 2625,
+    -- 青龙堂堂主
+    TypeTsingLungHallHost = 2626,
+    -- 白虎堂堂主
+    TypeTigerHallHost = 2627,
+    -- 青龙堂成员
+    TypeTsingLungHallMember = 2628,
+    -- 白虎堂成员
+    TypeTigerHallMember = 2629,
+    -- 成员
+    TypeGuildMember = 2630,
+    -- 附魔属性名字前缀-白
+    EnchantWhitePrefix = 2641,
+    -- 附魔属性名字前缀-绿
+    EnchantGreenPrefix = 2642,
+    -- 附魔属性名字前缀-蓝
+    EnchantBluePrefix = 2643,
+    -- 附魔属性名字前缀-紫
+    EnchantPurplePrefix = 2644,
+    -- 附魔属性名字前缀-橙
+    EnchantOrangePrefix = 2645,
+    -- --/ 主角色玩家模型ID
+
+    -- 缩略图金币
+    TypeSmallJinBiID = 2650;
+    -- 缩略图钻石
+    TypeSmallZuanShiID = 2651;
+    -- 缩略图体力
+    TypeSmallThewID = 2652;
+    -- 缩略图经验
+    TypeSmallExpID = 2653;
+
+    -- --银币图片id(绑定)
+    TypeJinBiID = 2803,
+    -- --蓝钻石图片id（绑定）
+    TypeZuanshiID = 2801,
+    -- --经验图片id
+    TypeExpID = 2804,
+    -- --银币的品质颜色（绑定）
+    TypeYinBiAptitudeID = 2813,
+    -- --蓝钻石的品质颜色（绑定）
+    TypeYuanBaoAptitudeID = 2811,
+    -- --经验的品质颜色
+    TypeExpAptitudeID = 2814,
+
+    -- 红钻图标ID(非绑定)
+    TypeHongZuanSpriteID = 2800;
+    -- 金币图标ID（非绑定）
+    TypeJinBiSpriteID = 2802;
+    -- 红钻图标品质（非绑定）
+    TypeHongZuanAptitudeID = 2810;
+    -- 金币图标品质（非绑定）
+    TypeJinBiAptitudeID = 2812;
+
+    TypeMissionModelIDAccept = 3001,
+    -- --/ 任务可接状态模型ID
+    TypeMissionModelIDFinish = 3002,
+    -- --/ 任务完成状态模型ID
+    TypeDungeonLockPictureID = 3003,
+    -- -- 副本锁定图标id
+    TypeDungeonItemID = 3013,
+    -- --扫荡令道具ID
+    TypeDungeItemCount = 3014,
+    -- --剧情本扫荡数量
+
+    TypePlayerEffect = 3021,
+    -- --升级人物特效
+    TypePlayerLevelUpEffect = 3022,
+    -- --升级提示特效
+    TypeSeekEffectID = 3023,
+    -- --寻路特效,
+    TypeAcceptTaskEffect = 3024,
+    -- --玩家接受任务特效
+    TypeFinishTaskEffect = 3025,
+    -- --玩家完成任务特效
+    TypeLimitTimePass = 3026,
+    -- --限时通关特效
+    TypePassFight = 3027,
+    -- --通关(战斗)特效
+    TypeDefend = 3028,
+    -- --守护特效
+    TypeSubsist = 3029,
+    -- --生存特效
+    TypeClean = 3030,
+    -- --清剿特效
+    --  战斗模式解锁等级
+    TypeFightModelUnlock = 3401,
+    --  推荐阵营奖励
+    TypeRecommendCampReward = 3601,
+    --  更换阵营消耗(繁荣度高的一方)
+    TypeChangeCampConsumeA = 3602,
+    --  更换阵营消耗(繁荣度低的一方)
+    TypeChangeCampConsumeB = 3603,
+    --  联盟文本
+    TypeUnionTittle = 3604,
+    --  部落文本
+    TypeTribeTittle = 3605,
+    --  联盟详情介绍
+    TypeUnionDetails = 3606,
+    --  部落详情介绍
+    TypeTribeDetails = 3607,
+    -- 天赋消耗道具ID
+    TypeTalentConsumeItemId = 3520,
+    -- 天赋消耗道具数量
+    TypeTalentConsumeItemCount = 3521,
+    -- 天赋消耗砖石数量
+    TypeTalentConsumeZuanShiCount = 3522,
+    -- 联盟小图标
+    LianMengCampIcon = 3608,
+    -- 部落小图标
+    BuLuoCampIcon = 3609,
+    -- 联盟大图标
+    LianMengBigCampIcon = 3610,
+    -- 部落大图标
+    BuLuoBigCampIcon = 3611,
+    -- 体力购买最大次数
+    TypeThewBuyTime = 3701,
+    -- 体力购买数值
+    TypeThewBuyCount = 3702,
+    -- 恢复每点体力时间
+    TypeThewNeedTime = 3703,
+    -- 体力最大储存值
+    TypeThewMaxCount = 3704,
+
+    -- --/ 活跃度宝箱1要求点数
+    BaoXiangValueReward_1 = 3706,
+    -- --/ 活跃度宝箱2要求点数
+    BaoXiangValueReward_2 = 3707,
+    -- --/ 活跃度宝箱3要求点数
+    BaoXiangValueReward_3 = 3708,
+    -- --/ 活跃度宝箱4要求点数
+    BaoXiangValueReward_4 = 3709,
+    -- npc商店最大购买数量
+    NPCShopMaxBuyCount = 3710,
+
+    -- --/ 活跃度宝箱1资源
+    BaoXiangOpen_1 = 3716,
+    BaoXiangClose_1 = 3711,
+    -- --/ 活跃度宝箱2资源
+    BaoXiangOpen_2 = 3717,
+    BaoXiangClose_2 = 3712,
+    -- --/ 活跃度宝箱3资源
+    BaoXiangOpen_3 = 3718,
+    BaoXiangClose_3 = 3713,
+    -- --/ 活跃度宝箱4资源
+    BaoXiangOpen_4 = 3719,
+    BaoXiangClose_4 = 3714,
+    -- --/ 活跃度宝箱5资源
+    BaoXiangOpen_5 = 3720,
+    BaoXiangClose_5 = 3715,
+    -- 离线经验界面等级限制
+    OFFLINE_PANEL_LEVEL_LIMITED = 3531,
+    -- 创建公会消耗图标
+    GUILD_CREATED_COST_TYPE = 3618,
+    -- 创建公会消耗图标
+    GUILD_CREATED_COST_ICON = 3619,
+    -- 创建公会所消耗的资源
+    GUILD_CREATED_COST_RESOURCE = 3620,
+    -- 创建公会消耗道具ID
+    GUILD_CREATED_COST_ITEM_ID = 3616,
+    -- 创建公会消耗道具数量
+    GUILD_CREATED_COST_ITEM_COUNT = 3617,
+    -- 公会默认招募宣言
+    GUILD_DEFAULT_DECLARATION = 3621,
+    -- 公会宣言最大字符数限制
+    GUILD_DECLARATION_MAX_CHAR_LIMITED = 3622,
+    -- 公会默认公告
+    GUILD_DEFAULT_NOTICE = 3623,
+    -- 公会公告最大字符数限制
+    GUILD_NOTICE_MAX_CHAR_LIMITED = 3624,
+    -- 公会名称最大字符数限制
+    GUILD_NAME_MAX_CHAR_LIMITED = 3625,
+    -- 公会名称最小字符数限制
+    GUILD_NAME_MIN_CHAR_LIMITED = 3626,
+    -- 玩家同时申请公会的数量
+    GUILD_APPROVAL_COUNT_SAMETIME = 3627,
+    -- 公会分堂最大人数
+    GUILD_KINDRED_MAX_COUNT = 3628,
+    -- 队伍频道CD
+    TYPELIAOTIANTEMPCD = 3542,
+    -- 公会频道CD
+    TYPELIAOTIANGUILDCD = 3543,
+    -- 阵营频道CD
+    TYPELIAOTIANCAMPCD = 3544,
+    -- 世界频道CD
+    TYPELIAOTIANWORLDCD = 3545,
+    -- 当前频道CD
+    TYPELIAOTIANCURRENTCD = 3546,
+    -- 队伍频等级限制
+    TYPELIAOTIANTEMPLEVEL = 3552,
+    -- 公会频等级限制
+    TYPELIAOTIANGUILDLEVEL = 3553,
+    -- 阵营频等级限制
+    TYPELIAOTIANCAMPLEVEL = 3554,
+    -- 世界频等级限制
+    TYPELIAOTIANWORLDLEVEL = 3555,
+    -- 当前频等级限制
+    TYPELIAOTIANCURRENTLEVEL = 3556,
+    -- 私聊频道等级限制
+    TYPELIAOTIANALONELEVEL = 3540,
+    -- 改名花费
+    TYPE_CHANGE_NAME_MONEY = 3561,
+    -- 私聊CD
+    TYPE_CHAT_PRIVATE_CD = 3547,
+    -- 自动装备的等级
+    TYPE_AUTOMATICEQUIP_LEVEL = 3810,
+
+    -- 好友数量上限
+    MAX_COUNT_FRIEND = 3570,
+    -- 仇人数量上限
+    MAX_COUNT_ENEMY = 3571,
+    -- 黑名单数量上限
+    MAX_COUNT_BLACK = 3572,
+    -- 最近联系人数量上限
+    MAX_COUNT_RECENT = 3573,
+    -- 击杀记录数量上限
+    MAX_COUNT_KILLRECORD = 3574,
+    -- 私聊记录数量上限
+    MAX_COUNT_CHATRECORDS = 3575,
+    -- 每日赠送礼物数量上限
+    MAX_COUNT_GIVE_GIFT = 3576,
+    -- 每日领取礼物数量上限
+    MAX_COUNT_GET_GIFT = 3577,
+    -- 邮件查看上限
+    MAX_COUNT_MAIL = 2310;
+
+    -- 伤害计算等级系数
+    Type_GradeCoefficient = 4001;
+    -- 伤害计算等级常数
+    Type_GradeConstant = 4002;
+
+
+    -- 刺客职业图标
+    TYPE_PROFESSION_ASSASSIN_ICONID = 9006,
+    -- 法师职业图标
+    TYPE_PROFESSION_FEILIBA_ICONID = 9005,
+    -- 萝莉职业图标
+    TYPE_PROFESSION_LOLI_ICONID = 9007,
+    -- 战士职业图标
+    TYPE_PROFESSION_WARDRAGONWHITE_ICONID = 9004,
+
+
+    -- 饮酒界面公会宴会额外经验加成
+    TYPE_DRINKWIN_EXTRAADDEXP = 6015,
+    -- 饮酒界面公会等级每升一级加成
+    TYPE_DRINKWINE_GUILDLEVELUPADDEXP = 6016,
+
+    -- 切换成和平模式所需要的时间
+    TYPE_CHANGE_PACEMODE_TIME = 3258;
+
+    -- 角色进阶用的的道具图标
+    TYPE_CULTIVATECHANGEPANEL_ITEM = 20800,
+
+    -- 活动界面骑士荣誉页签开启等级
+    TYPE_LEVEL_ACTIVITYHONIR = 6400,
+}
+
+-- 随机名字数据
+RandomRoleNameData =
+{
+    Xing = { StartId = 20001, EndId = 20500 },
+    NanMing_Shuang = { StartId = 30001, EndId = 32190 },
+    NvMing_Shuang = { StartId = 40001, EndId = 44062 }
+}
+
+-- 动作融合比例信息
+-- 文件格式如下:::  XXX_and_XXX=YYY|YYY
+-- 正在播放的动画_即将播放的动画 = 当前动画播放的固定时间的比例|即将播放的动画的融合比例
+SkillAnimationData =
+{
+    Attack01_and_Attack02 = "1|0",
+
+    Attack01_and_Idle01 = "0.9|0.1",
+
+    Attack02_and_Attack03 = "1|0",
+
+    Attack03_and_Attack04 = "1|0",
+
+    Attack04_and_Attack01 = "1|0",
+
+    Attack01_back_and_Idle01 = "0.8|0.2",
+
+    Attack02_back_and_Idle01 = "0.8|0.2",
+
+    Attack03_back_and_Idle01 = "0.8|0.2",
+
+    Attack01_and_Attack01_back = "0.8|0.2",
+
+    Attack02_and_Attack02_back = "0.8|0.2",
+
+    Attack03_and_Attack03_back = "0.8|0.2",
+
+
+    Roll01_and_Run01 = "0.7|0.3",
+    Run01_and_Roll01 = "0.7|0.3",
+
+    Idle01_and_Attack01 = "1|0",
+    Idle01_and_Run01 = "0.85|0.15",
+
+    Fly01_and_FlyIdle01 = "0.7|0.3",
+
+
+    Run01_and_Idle01 = "0.85|0.15",
+    Run01_and_Attack01 = "0.8|0.2",
+    Run01_and_Attack02 = "0.8|0.2",
+    Run01_and_Attack03 = "0.8|0.2",
+    Run01_and_Attack04 = "0.8|0.2",
+}
+
+CHAT_CHANNEL_ID =
+{
+    -- 无效
+    CHAT_IVALID_ID = - 1,
+    -- 全部
+    CHAT_ALL_ID = 0,
+    -- 世界
+    CHAT_WORLD_ID = 1,
+    -- 场景
+    CHAT_SCENE_ID = 2,
+    -- 私聊
+    CHAT_ALONE_ID = 3,
+    -- 系统频道
+    CHAT_SYSTEM_ID = 4,
+    -- 阵营频道
+    CHAT_CAMP_ID = 5,
+    -- 公会频道
+    CHAT_GUILD_ID = 6,
+    -- 队伍频道
+    CHAT_JOIN_ID = 7,
+}
+
+-- 职业的id号
+PROFESSION_ID =
+{
+    -- 刺客
+    ASSASSIN = 1,
+    -- 菲利巴
+    FEILIBA = 2,
+    -- 龙战士
+    WARDRAGONWHITE = 3,
+    -- 萝莉
+    LOLI = 4,
+}
+
+-- -- LogicalObjects 角色分类
+ENUM_LGS_ACTOR_TYPE =
+{
+    ER_ACTOR_TYPE_FUNCTIONAL_NPC = 0,
+    -- --功能性NPC
+    ER_ACTOR_TYPE_PLAYER = 1,
+    -- --游戏者（主角）
+    ER_ACTOR_TYPE_MONSTER = 2,
+    -- --敌人NPC(怪物)
+    ER_ACTOR_TYPE_HORSE = 6,
+    -- --乘骑
+    ER_ACTOR_TYPE_HIRELING = 8,
+    -- --召唤兽
+    ER_ACTOR_TYPE_CAMION = 9,
+    -- --镖车
+    ER_ACTOR_TYPE_LAWMAN = 10,
+    -- --执法者
+    ER_ACTOR_TYPE_RESENTFUL_SPIRIT = 11,
+    -- --怨灵
+    ER_ACTOR_TYPE_CRAZY_MONSTER = 12,
+    -- --疯狂的怪物（见人就打的怪物）
+    ER_ACTOR_TYPE_BATTLESOLDIER = 13,
+    -- --战场士兵
+    ER_ACTOR_TYPE_BATTLECHARIOT = 14,
+    -- --战场战车
+    ER_ACTOR_TYPE_BATTLENEUTRAL_A = 15,
+    -- --战场攻击型中立怪
+    ER_ACTOR_TYPE_BATTLENEUTRAL_B = 16,
+    -- --战场非攻击型中立怪
+    ER_ACTOR_TYPE_BATTLETOWER_A = 17,
+    -- --战场攻击型塔
+    ER_ACTOR_TYPE_BATTLETOWER_B = 18,
+    -- --战场非攻击型塔
+    ER_ACTOR_TYPE_BATTLESTATICUNIT = 19,
+    -- --战场静态对象
+    ER_ACTOR_TYPE_HIRELING_HORSE = 20,
+    -- --幼年坐骑召唤兽
+    ER_ACTOR_TYPE_WILD_HORSE = 21,
+    -- --野生召唤兽（可抓捕）
+    ER_ACTOR_TYPE_RELICDEFENDER = 22,
+    -- --神迹防守怪
+    ER_ACTOR_TYPE_ITEMBOX = 23,-- --宝箱
+}
+
+-- 道具小类别
+ItemCategory =
+{
+    IC_None = 0,
+    IC_Money = 1,
+    -- 金钱 [10000,11999]
+    IC_Diamond = 2,
+    -- 钻石 [12000,13999]
+    IC_CoinObligate = 3,
+    -- 金钱预留[14000,19999]
+    IC_EquipStrSysItem = 4,
+    -- 装备强化用道具[20000,20099]
+    IC_SkillSysItem_MagicBook = 5,
+    -- 技能系统用道具(魔法书)[20100,20199]
+    IC_SkillSysItem_Stone = 6,
+    -- 技能系统用道具(符文石)[20200,20299]
+    IC_SkillSysItem_ResetWater = 7,
+    -- 技能系统用道具(洗点水)[20300,20399]
+    IC_DragonSysItem = 8,
+    -- 龙魂系统用道具[20400,20499]
+    IC_WingSysItem = 9,
+    -- 神翼系统用道具[20500,20599]
+    IC_StarUpSysItem = 10,
+    -- 升星系统用道具[20600,20699]
+    IC_EnchantSysItem = 11,
+    -- 附魔系统用道具[20700,20799]
+    IC_SpriteStoneItem = 12,
+    -- 角色进阶魂石道具[20800,20899]
+    IC_OtherItem = 13,
+    -- 其他的一些系统功能用，消耗品道具[20900,21399]
+    IC_MountsItem = 14,
+    -- 坐骑相关道具ID段[22000,22299]
+    IC_FashionID = 15,
+    -- 时装ID[22300,24999]
+    IC_ExpItem = 16,
+    -- 经验药[25000,25099]
+    IC_ThewItem = 17,
+    -- 体力药[25100,25199]
+    IC_MedBackItem = 18,
+    -- 非商城恢复药剂[25200,25299]
+    IC_PlayerMedBackItem = 19,
+    -- 玩家制作恢复药剂[25300,25399]
+    IC_StoreMedBackItem = 20,
+    -- 商城恢复药剂[25400,25499]
+    IC_PetItem = 21,
+    -- 宠物相关道具[25500,26099]
+    IC_LifeSkill = 22,
+    -- 生活技能[26100,26999]
+    IC_PeckGift = 23,
+    -- 活动礼包[27000,28999]
+    IC_OtherSysBack = 24,
+    -- 其他备用[27000,29999]
+    IC_StoneItem = 25,
+    -- 宝石道具[30000,30999]
+    IC_ScriptUseItem = 26,
+    -- 脚本专用道具[31000,31999]
+    IC_TaskUseItem = 27,
+    -- 任务道具[32000,39999]
+    IC_DropPreview = 28,
+    -- 掉落预览[40000,41999]
+    IC_ItemObligate = 29,
+    -- 道具预留[40000,99999]
+    IC_Pet = 30,
+    -- 宠物[100000,110000]
+    IC_Weapon = 31,
+    -- 武器[1000000,1099999]
+    IC_Necklace = 32,
+    -- 项链[1100000,1199999]
+    IC_Ring = 33,
+    -- 戒指[1200000,1299999]
+    IC_Dress = 34,
+    -- 饰品[1300000,1399999]
+    IC_Helmet = 35,
+    -- 头盔[1400000,1499999]
+    IC_Cuirass = 36,
+    -- 胸甲[1500000,1599999]
+    IC_Leg = 37,
+    -- 护腿[1600000,1699999]
+    IC_Shoes = 38,
+    -- 鞋子[1700000,1799999]
+    IC_Pants = 39,
+    -- 裤子[1800000,1899999]
+    IC_Earing = 40,
+    -- 耳环[1900000,1999999]
+    IC_Wing = 41,
+    -- 翅膀[3000000,3199999]
+    IC_EquipObligate = 42,
+    -- 装备预留[2000000,2999999]
+    IC_Artifact = 43,
+    -- 神器[21400,21999]
+    IC_ActivityItem = 44,
+    -- 活动次数道具[50000,51999]
+    IC_GodWing = 45,                        -- 2018 - 7 神翼 [21310 ,21319]          
+    IC_GodShape = 46,                       -- 神将   [21320,21329]           
+    IC_Jewel = 47,                          -- 宝珠   [21330,21339]            
+    IC_Sina = 48 ,                          -- 神行   [21340,21349]           
+    IC_Matrix = 49,                         -- 阵法   [21360,2369]            
+
+    IC_Count = 50,-- 数量
+}
+
+-- 道具的标签分类
+ITEMTAGTYPE =
+{
+    TT_None = 0,
+    -- 无
+    TT_Equip = 1,
+    -- 装备[1000000,3199999]
+    TT_Item = 2,
+    -- 其它除了上述
+    TT_Consume = 3,
+    -- //消耗[25000,25499]【31000,31999】
+    TT_Count = 4,
+}
+
+-- 道具类型
+ITEMTYPE =
+{
+    IT_None = 0,
+
+    IT_Equip = 1,
+    -- 装备[1000000,3199999]
+    IT_Prop = 2,
+    -- 道具[10000,99999]
+    IT_Pet = 3,
+    -- 宠物[100000,110000]
+    IT_Count = 4,
+}
+
+-- 角色功能分类
+ENUM_ROLEATTACKTYPE =
+{
+    DEFENCE = 1,
+    NEAR = 2,
+    FAR = 3,
+    SUPPORT = 4,
+}
+ENUM_ROLESPRITEID =
+{
+    -- 近战的类型图片ID
+    m_jinZhanSpriteID = 1,
+    -- 远程的类型图片ID
+    m_yuanChengSpriteID = 2,
+    -- 近战的类型图片ID
+    m_fuZhuSpriteID = 3,
+}
+
+-- 好友操作分类
+ENUM_FRIENDOPERATION =
+{
+    SearchFriends = 1,
+    SearchEnemys = 2,
+    SearchRecommendFriends = 3,
+    SearchApplyFriends = 4,
+    BlackFriends = 5,
+}
+
+-- 面板号
+ENUMPANELID = {
+    -- 进入游戏界面
+    ENUM_PANEL_COMEINGAME = 101,
+    -- 创建角色界面
+    ENUM_PANEL_CREATEROLE = 102,
+    -- 登陆界面
+    ENUM_PANEL_ONLOGIN = 103,
+    -- 选择角色界面
+    ENUM_PANEL_SELECTROLE = 104,
+    -- 选择服务器界面
+    ENUM_PANEL_SELECTSERVER = 105,
+    -- 进入游戏排队等待面板
+    ENUM_PANEL_ENTERGAMEWAITPANEL = 106,
+    -- 等待完成界面
+    ENUM_PANEL_WAITDONE = 107,
+
+    -- loading界面
+    ENUM_PANEL_LOADING = 108,
+
+    -- 主界面
+    ENUM_PANEL_MAIN = 109,
+    -- 角色界面
+    ENUM_PANEL_ROLE = 111,
+    -- 背包界面
+    ENUM_PANEL_BAGPANEL = 112,
+    -- 竞技场界面
+    ENUM_PANEL_BATTLEPANEL = 113,
+    -- 竞技场匹配界面
+    ENUM_PANEL_BATTLEMATCHPANEL = 1131,
+    -- 竞技场结算界面
+    ENUM_PANEL_BATTLERESULTPANEL = 1132,
+    -- 竞技场战斗记录界面
+    ENUM_PANEL_BATTLERECORDPANEL = 1133,
+    -- 竞技场奖励界面
+    ENUM_PANEL_BATTLEREWARDPANEL = 1134,
+    -- 竞技场轮空奖励界面
+    ENUM_PANEL_BATTLENOMATCHRESULTPANEL = 1135,
+    -- 装备界面
+    ENUM_PANEL_EQUIPPANEL = 114,
+    -- 技能界面
+    ENUM_PANEL_SKILLPANEL = 115,
+    -- 宠物界面
+    ENUM_PANEL_PETPANEL = 116,
+    -- 宠物升级界面
+    ENUM_PANEL_PETLEVELUPPANEL = 1161,
+    -- 宠物亲密度界面
+    ENUM_PANEL_PETINTIMATEPANEL = 1162,
+    -- 宠物悟性界面
+    ENUM_PANEL_PETSAVVYPANEL = 1163,
+    -- 宠物资质养成界面
+    ENUM_PANEL_PETQUALITYADDPANEL = 1164,
+    -- 宠物资质洗练界面
+    ENUM_PANEL_PETQUALITYREFRESHPANEL = 1165,
+    -- 宠物技能学习界面
+    ENUM_PANEL_PETSKILLLEARNPANEL = 1166,
+    -- 宠物详细属性界面
+    ENUM_PANEL_PETATTRDETAILSPANEL = 1167,
+    -- 宠物图鉴界面
+    ENUM_PANEL_PETINTROPANEL = 1168,
+    -- 宠物合成界面
+    ENUM_PANEL_PETCOMBINEPANEL = 1169,
+    -- 宠物升星界面
+    ENUM_PANEL_PETSTARUPPANEL = 1170,
+    -- 任务界面
+    ENUM_PANEL_MISSIONPANEL = 118,
+    -- 合成界面
+    ENUM_PANEL_COMBINEPANEL = 119,
+    -- 好友界面
+    ENUM_PANEL_FRIENDSPANEL = 120,
+    -- UI特效界面
+    ENUM_PANEL_EFFECTSPANEL = 121,
+    -- 神器界面
+    ENUM_PANEL_ARTIFACTPANEL = 122,
+    -- 神器碎片界面
+    ENUM_PANEL_ARTIFACTFRAGMENTPANEL = 1221,
+    -- 神器升级界面
+    ENUM_PANEL_ARTIFACTLEVELUPPANEL = 1222,
+    -- 邮件界面
+    ENUM_PANEL_MAILPANEL = 123,
+    -- 设置界面
+    ENUM_PANEL_SETPANEL = 124,
+    -- 排行榜界面
+    ENUM_PANEL_RANKPANEL = 125,
+    -- 章节奖励界面
+    -- ENUM_PANEL_CHAPTERBOXPANEL = 1171,
+    -- 副本战斗失败界面
+    ENUM_PANEL_FIGHTFAILPANEL = 126,
+    -- 副本扫荡界面
+    -- ENUM_PANEL_FIGHTSWEEPPANEL = 1172,
+    -- 副本战斗胜利界面
+    ENUM_PANEL_FIGHTWINPANEL = 127,
+    -- 提示信息界面
+    ENUM_PANEL_MESSAGETEXTBOX = 128,
+    -- 通过任务打开的玩家剧情界面
+    -- ENUM_PANEL_PLOTBYTASKPANEL = 129,
+    -- 剧情界面
+    -- ENUM_PANEL_PLOTPANEL = 130,
+    -- 野外复活界面
+    ENUM_PANEL_PLAYERREVIVEPANEL = 131,
+    -- 翻牌界面
+    ENUM_PANEL_ROLLOVERCARDPANEL = 132,
+    -- GM界面
+    ENUM_PANEL_GMPANEL = 133,
+    -- 使用任务道具界面
+    ENUM_PANEL_USETASKITEMPANEL = 134,
+    -- 世界地图界面
+    ENUM_PANEL_WORLDMAPPANEL = 135,
+    -- 更换装备提示界面
+    ENUM_PANEL_RECOMMONDUSEITEMPANEL = 136,
+    -- 采集条界面
+    ENUM_PANEL_COLLECTBARPANEL = 137,
+    -- 副本退出界面
+    ENUM_PANEL_DUNGEONQUITPANEL = 138,
+    -- 阵营符印界面
+    ENUM_PANEL_CAMPSEALPANEL = 139,
+    -- 战斗力显示界面
+    ENUM_PANEL_FIGHTVALUESHOWPANEL = 140,
+    -- 系统悬浮提示界面
+    ENUM_PANEL_SYSTEMFLOWTIP = 141,
+    -- 对话界面
+    ENUM_PANEL_TALKPANEL = 142,
+    -- 任务接受界面
+    ENUM_PANEL_MISSIONACCEPTPANEL = 143,
+    -- 电影剧情界面
+    ENUM_PANEL_MOVIEPLOTPANEL = 144,
+    -- 新功能开启
+    ENUM_PANEL_NEWFUNCTIONOPENPANEL = 145,
+    -- 货币界面
+    ENUM_PANEL_COINPANEL = 146,
+    -- 阵营界面
+    ENUM_PANEL_CAMPPANEL = 147,
+    -- 进阶成功界面
+    ENUM_PANEL_CULTIVATECHANGEPANEL = 1111,
+    -- 副本信息界面
+    -- ENUM_PANEL_DUNGEONINFOPANEL = 1173,
+    -- 道具出售界面
+    ENUM_PANEL_ITEMSELLPANEL = 1121,
+
+    -- 加入阵营面板
+    ENUM_PANEL_JOIN_UNIT = 1471,
+    -- 更改阵营面板
+    -- ENUM_PANEL_CHANGE_UNIT = 1472,
+    -- 新功能开启第二个面板
+    ENUM_PANEL_FUNCTIONOPENTIPSPANEL = 1451,
+    -- 阅读面板（读书）
+    ENUM_PANEL_READINGPANEL = 148,
+    -- 每日任务面板
+    ENUM_PANEL_EVERYDAYPANEL = 149,
+    -- 聊天面板
+    ENUM_PANEL_CHAT = 150,
+    -- 福利界面
+    ENUM_PANEL_REWARDPANEL = 151,
+    -- 活动界面
+    ENUM_PANEL_ACTIVITYPANEL = 152,
+    -- 金币和经验活动界面
+    ENUM_PANEL_COINANDEXPACTIPANEL = 153,
+    -- 公会创建界面
+    ENUM_PANEL_GUILD_CREATE_PANEL = 154,
+    -- 公会信息界面
+    ENUM_PANEL_GUILD_INFO_PANEL = 155,
+    -- 公会商店
+    ENUM_PANEL_GUILD_SHOP_PANEL = 15541,
+    -- 商城
+    ENUM_PANEL_PLAYER_STORE_PANEL = 156,
+    -- 新手引导面板
+    ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL = 157,
+    -- 分解界面
+    ENUM_PANEL_RESOLVEPANEL = 158,
+    -- 副本复活面板
+    -- ENUM_PANEL_PLAYERFAILFIELDPANEL = 159,
+    -- 其他玩家的按钮列表操作面板
+    ENUM_PANEL_OTHERPLAYERBUTTONLISTPANEL = 160,
+    -- 其他玩家的详细信息面板
+    ENUM_PANEL_OTHER_PLAYER_ROLE_PANEL = 161,
+    -- 组队界面
+    ENUM_PANEL_TEAMPANEL = 162,
+    -- 组队邀请界面
+    ENUM_PANEL_TEAM_INVITE_PANEL = 163,
+    -- 合成分解界面
+    ENUM_PANEL_RESOLVEANDCOMBINEPANEL = 164,
+    -- 无尽炼狱胜利界面
+    ENUM_PANEL_ENDLESSACTWINPANEL = 165,
+    -- 无尽炼狱扫荡界面
+    -- ENUM_PANEL_ENDLESSACTSWEEPPANEL = 166,
+    -- 购买体力界面
+    -- ENUM_PANEL_BUYTHEWPANEL = 167,
+    -- 道具ToolTips悬浮
+    ENUM_PANEL_ITEMTOOLTIPSPANEL = 168,
+    -- 系统说明面板
+    ENUM_PANEL_SYSTEMEXPLAINPANEL = 169,
+    -- 获取途径面板
+    ENUM_PANEL_GETWAYPANEL = 170,
+    -- 符印面板
+    ENUM_PANEL_SEALPANEL = 171,
+    -- 摄像机变换视角界面
+    ENUM_PANEL_CAMERATYPECHANGEPANEL = 172,
+    -- 坐骑面板
+    ENUM_PANEL_RIDEPANEL = 173,
+    -- NPC商店界面
+    -- ENUM_PANEL_NPCSHOPPANEL = 174,
+    -- 公会邀请界面
+    -- ENUM_PANEL_GUILDINVITEPANEL = 175;
+    -- 饮酒的活动界面
+    ENUM_PANEL_DRINKWINEPANEL = 176;
+    -- 成就完成界面
+    ENUM_PANEL_ACHIEVEFINISH = 177;
+    -- 奇遇界面
+    -- ENUM_PANEL_WONDERMEETPANEL = 178;
+    -- 十连抽翻牌界面
+    ENUM_PANEL_EXTRACTROLLOVERCARDPANEL = 179;
+    -- 拍卖行
+    ENUM_PANEL_AUCTIONPANEL = 180;
+    -- 拍卖行选择菜单
+    ENUM_PANEL_AUCTIONSELECTMUNUPANEL = 181;
+    -- 小键盘
+    ENUM_PANEL_SMALLKEYBOARDPANEL = 182;
+    -- 技能tips界面
+    ENUM_PANEL_SKILLTOOLTIPPANEL = 183;
+    -- 活动详情界面
+    ENUM_PANEL_ACTIVITYDETAILPANEL = 184;
+    -- 活动周历界面
+    ENUM_PANAEL_ACTIVITYCALENDERPANEL = 185;
+    --  时装界面
+    ENUM_PANAEL_FASHION = 186;
+    -- 活动通用界面
+    ENUM_PANEL_ACTIVITYGENERALPANEL = 187;
+    -- 魔王本界面
+    ENUM_PANEL_DUNGEONBOSSPANEL = 188;
+    -- 剧情本界面
+    ENUM_PANEL_DUNGEONSOLOPANEL = 189;
+    -- 无尽天梯
+    ENUM_PANEL_ACTIVITYSTAIRPANEL = 190;
+    -- 帝国悬赏面板
+    ENUM_PANEL_EMPIREBOUNTYSTARPANEL = 191;
+    -- 生活技能
+    ENUM_PANEL_LIFESKILL = 192;
+    -- 天赋tips界面
+    ENUM_PANEL_TALENTTOOLTIPPANEL = 193;
+    -- 组队目标界面
+    ENUM_PANEL_TEAM_GOAL_PANEL = 194;
+    -- 组队申请列表界面
+    ENUM_PANEL_TEAM_APPLY_PANEL = 195;
+    -- 组队选择职业界面
+    ENUM_PANEL_TEAM_SELECTPRO_PANEL = 196;
+    -- 组队准备界面
+    ENUM_PANEL_TEAM_READY_PANEL = 197;
+    -- 组队喊话界面
+    ENUM_PANEL_TEAM_SPEAK_PANEL = 198;
+    -- 组队菜单界面
+    ENUM_PANEL_TEAM_MENU_PANEL = 199;
+    -- 货币兑换界面
+    ENUM_PANEL_MONEY_EXCHANGE_PANEL = 200;
+    -- buff预览界面
+    ENUM_PANEL_BUFFBROWSE = 201;
+    -- 公会捐献界面
+    ENUM_PANEL_GUILD_DONATION = 202;
+    -- 公会审批界面
+    ENUM_PANEL_GUILD_APPROVAL = 203;
+    -- 公会贡献排行榜
+    ENUM_PANEL_GUILD_RANK = 204;
+    -- 商店界面
+    ENUM_PANEL_SHOP = 205;
+    -- 公会管理界面
+    ENUM_PANEL_GUILD_MANAGER = 206;
+    -- 魔法熔炉界面
+    ENUM_PANEL_MAGICFORGE_PANEL = 207;
+    -- 公会福利设置贡献值界面
+    ENUM_PANEL_GUILD_WELFARE_CONFIRM = 208;
+    -- 公会领取俸禄界面
+    ENUM_PANEL_GUILD_REWARD = 209;
+    -- 召唤饮酒BOSS界面
+    ENUM_PANEL_SUMMON_BACCHUS_PANEL = 210;
+    -- 成就界面
+    ENUM_PANEL_ACHIEVE = 211;
+    -- 聊天设置面板
+    ENUM_PANEL_CHAT_SETTING = 212,
+    -- 宴会活动加成显示界面
+    ENUM_PANEL_BANQUET_BONUS_PANEL = 213,
+    -- 体力获取界面
+    ENUM_PANEL_ADD_THEW_PANEL = 214,
+    -- 公会据点，王城战竞标界面
+    ENUM_PANEL_GUILD_WAR_PANEL = 215,
+    -- 充值界面
+    ENUM_PANEL_CHARGE = 216,
+    -- 进入领地战准备场景界面
+    ENUM_PANEL_ACTIVITY_WAR_PANEL = 217,
+    -- 公会领地战 战前分配人员、战具界面
+    ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL = 218,
+    -- 公会领地战结束后结算界面
+    ENUM_PANEL_GUILD_WAR_RESULT_PANEL = 219,
+    -- 进入副本悬浮提示界面
+    ENUM_PANEL_DUNGON_TIP_PANEL = 220;
+    -- 进入副本信息提示界面
+    ENUM_PANEL_DUNGON_CONTENT_PANEL = 221;
+    -- 选择Npc界面
+    ENUM_SELECTAGENTPANEL = 222;
+    -- 副本倒计时界面
+    ENUM_PANEL_DUNGON_COUNTDOWN_PANEL = 223;
+    -- 公会领地战积分界面
+    ENUM_PANEL_GUILD_WAR_INTEGRAL_PANEL = 224;
+    -- 称号系统界面
+    ENUM_PANEL_TITLE = 225;
+    -- 广播公告界面
+    ENUM_PANEL_BROADCASTMSG = 226;
+    -- 主界面技能Tips
+    ENUM_PANEL_MAIN_SKILL_TIPS = 227;
+    -- 提交道具界面
+    ENUM_PANEL_SUBMITITEMSTASK = 228;
+    -- 批量使用道具界面
+    ENUM_PANEL_BATCHUSEITEM = 229;
+    -- 公会押镖界面
+    ENUM_PANEL_ACTIVITY_ESCORT_PANEL = 230;
+    -- 限时活动提示面板
+    ENUM_TIME_LIMITED_ACTIVITY_PANEL = 231;
+    -- 公告
+    ENUM_NOTICE_PANEL = 232;
+    -- 公会战胜利界面
+    ENUM_GUILD_WAR_WIN_PANEL = 233;
+    -- 公会战失败界面
+    ENUM_GUILD_WAR_FAIL_PANEL = 234;
+    -- 充值奖励界面
+    ENUM_CHARGE_REWAR_PANEL = 235;
+    -- 游戏福利界面
+    ENUM_WELFARE_PANEL = 236;
+    -- 七日签到
+    ENUM_EVERY_DAY_LOGIN_PANEL = 237;
+    -- 在线奖励
+    ENUM_ONLINE_TIME_PANEL = 238;
+    -- 升级礼包
+    ENUM_LEVEL_UP_PANEL = 239;
+    -- 离线经验
+    ENUM_OFFLINE_PANEL = 240;
+    -- 每日领取
+    ENUM_THIRTY_DAY_PICK_PANEL = 241;
+    -- 变强界面
+    ENUM_GET_STRONG_PANEL = 242;
+    -- 充值返利界面
+    ENUM_RECHARGE_PANEL = 243;
+    -- 坐骑副本评级信息弹板
+    ENUM_RIDE_DUNGEON_PANEL = 244;
+    -- 碎片兑换界面
+    ENUM_FRAGMENT_EXCHANGE_PANEL = 245;
+    -- 匹配队伍等待弹框界面
+    ENUM_PANEL_TEAM_MATCH_WAITING = 246;
+    -- 宝藏界面
+    ENUM_PANEL_TRAEUREPANEL = 247,
+    -- 成长基金1界面
+    ENUM_PANEL_GROWFUNDONEPANEL = 248,
+    -- 成长基金2界面
+    ENUM_PANEL_GROWFUNDTWOPANEL = 249,
+    -- 资源找回
+    ENUM_RESOURCSEBACKPANEL = 250,
+    -- 边境战场界面
+    ENUM_PANEL_BORDERWARPANEL = 251,
+    -- 吃鸡当前排行界面
+    ENUM_PANEL_EATCHICKENRANKPANEL = 252,
+    -- 吃鸡结算界面
+    ENUM_PANEL_EATCHICKENRESULTPANEL = 253,
+    -- 吃鸡地图界面
+    ENUM_PANEL_EATCHICKENMAPPANEL = 254,
+    -- 下载场景资源确认界面
+    ENUM_PANEL_WEBBUNDLE = 255,
+    -- 帝国悬赏任务完成领奖界面
+    ENUM_PANEL_DALIYREWARDTIPS_PANEL = 256,
+    -- 增加活动次数界面
+    ENUM_PANEL_ACTIVITY_TIMES = 257;
+    -- 切换界面
+    ENUM_PANEL_GS_LINE = 258;
+    -- 离线竞技场主界面
+    ENUM_PANEL_ARENA = 259;
+    -- 离线竞技场结算界面
+    ENUM_PANEL_ARENA_RESULT = 260;
+    -- 离线竞技场战斗记录界面
+    ENUM_PANEL_ARENA_RECORD = 261;
+    -- 离线竞技场奖励界面
+    ENUM_PANEL_ARENA_REWARD = 262;
+    -- 活动弹框界面
+    ENUM_PANEL_ACTIVITY_MESSAGE = 263;
+    -- 宠物出战顺序界面
+    ENUM_PANEL_PET_FIGHT_ORDER = 264;
+    -- 宝藏奖励预览界面
+    ENUM_PANEL_TRAEURE_REWARD_PANEL = 265;
+
+    -- 为保持各版本统一，panelID从300开始 
+    -- 限时活动界面
+    ENUM_PANEL_LIMITTIMEACT = 300,
+    -- 开启新称号界面
+    ENUM_PANEL_NEWTITLE = 301;
+    -- 获得新装备显示界面
+    ENUM_PANEL_GETNEWEQUIP = 302;
+    -- 每日充值界面
+    ENUM_PANEL_DAILYCHARGE = 303;
+    -- 强化统计界面
+    ENUM_PANEL_FORCESTATISTICAL = 304;
+    -- 精炼统计界面
+    ENUM_PANEL_REFININGSTATISTICAL = 305;
+    -- 宠物悟性统计界面
+    ENUM_PANEL_PETSAVVYSTATISTICAL = 306;
+    -- 宠物洗练统计界面
+    ENUM_PANEL_PETQUALITYREFRESHSTATISTICAL = 307;
+    -- 坐骑进阶统计界面
+    ENUM_PANEL_RIDELEVELUPSTATISTICAL = 308;
+    -- 累天充值界面
+    ENUM_PANEL_CUMULATIVEDAYSCHARGE = 309;
+    -- 第二福利界面
+    ENUM_PANEL_SECONDWELFARE = 310;
+    -- 限时抽奖界面
+    ENUM_PANEL_TIMELIMITDRAW = 311;
+    -- Vip界面
+    ENUM_PANEL_VIP = 312;
+	-- 材料快捷购买界面
+    ENUM_PANEL_QUICKBUYMAT = 401;
+    -- 神翼界面
+    ENUM_PANEL_WINGPANEL = 402;
+    --神翼化灵界面
+    ENUM_PANEL_WINGSPIRITPANEL = 403;
+    -- 神将界面
+    ENUM_PANEL_GODSHAPESHIFT = 404;
+    -- 宝珠界面
+    ENUM_PANEL_JEWEPANEL = 405;
+    -- 首充3D界面
+    ENUM_FIRST_CHARGE_PANEL = 406;
+    -- 神行界面
+    ENUM_SINHAENGPANEL = 407;
+    -- 阵法界面
+    ENUM_MatrixPANEL = 408;
+    --Boss大厅界面
+    ENUM_BOSSLOBBYPANEL = 430;
+    -- 3d模型相关获得炫耀界面
+    ENUM_SHOWOFFPANEL = 431;
+    --Boss大厅装备Boss，多人难度boss离开按钮界面
+    ENUM_PANEL_FORLEAVEBOSSPANEL = 432 ;
+
+};
+
+-- 成就的类别={类别ID,文字ID,图标ID}
+ENUM_ACHIEVETYPE =
+{
+    -- 综合
+    { ACHIEVETYPEID = 1, ACHIEVETYPETXTID = 10201, ACHIEVETYPEPICID = 1201 },
+    -- 角色
+    { ACHIEVETYPEID = 2, ACHIEVETYPETXTID = 10202, ACHIEVETYPEPICID = 1202 },
+    -- 副本
+    { ACHIEVETYPEID = 3, ACHIEVETYPETXTID = 10203, ACHIEVETYPEPICID = 1203 },
+    -- PVP
+    { ACHIEVETYPEID = 4, ACHIEVETYPETXTID = 10204, ACHIEVETYPEPICID = 1204 },
+    -- 社交
+    { ACHIEVETYPEID = 5, ACHIEVETYPETXTID = 10205, ACHIEVETYPEPICID = 1205 }
+};
+
+-- 战斗模式类别={类别ID,图标ID,文字图标ID}
+ENUM_BATTLEMODETYPE =
+{
+    -- 和平
+    { BATTLEMODETYPEID = 1, BATTLEMODETYPEPICID = 10, BATTLEMODETYPETXTPICID = 8928 },
+    -- 自由
+    { BATTLEMODETYPEID = 2, BATTLEMODETYPEPICID = 11, BATTLEMODETYPETXTPICID = 8927 },
+    -- 公会
+    { BATTLEMODETYPEID = 4, BATTLEMODETYPEPICID = 12, BATTLEMODETYPETXTPICID = 8926 },
+    -- 阵营
+    { BATTLEMODETYPEID = 32, BATTLEMODETYPEPICID = 13, BATTLEMODETYPETXTPICID = 8925 },
+};
+
+-- 阵营类型
+ENUM_CAMP_TYPE =
+{
+    -- 无阵营
+    ENUM_UNIT_TYPE_NULL = 0,
+    -- 守护系 [ 龙之守护定义 ]			
+    ENUM_UNIT_LIANMENG = 1,
+    -- 纷争系 [ 龙之守护定义 ]
+    ENUM_UNIT_BULUO = 2,
+}
+
+-- 阵营界面类型
+ENUM_CAMPPANEL_TYPE =
+{
+    -- 阵营界面		
+    ENUM_CAMP_INFO = 1,
+    -- 神位界面		
+    ENUM_CAMP_MILITARYRANK = 2,
+    -- 神位界面		
+    ENUM_CAMP_REWARD = 3,
+    -- 神位界面		
+    ENUM_CAMP_ACTIVITY = 4,
+}
+
+-- 接收服务器消息的任务状态
+MISSIONSTATE =
+{
+    MISSION_MSG_TYPE_UPDATE = 0,
+    -- 刷新任务列表
+    MISSION_MSG_TYPE_ACCEPT = 1,
+    -- 接受任务
+    MISSION_MSG_TYPE_COUNT_CHANGE = 2,
+    -- 计数变更
+    MISSION_MSG_TYPE_COMPLETE = 3,
+    -- 任务结束
+    MISSION_MSG_TYPE_DELETE = 4,
+    -- 删除任务
+}
+
+-- 任务状态
+ENUM_MISSION_NPC_STATE =
+{
+    ENUM_MISSION_NPC_STATE_INVALID = - 3,
+    -- 无效 不显示
+    ENUM_MISSION_NPC_STATE_FAILED = - 2,
+    -- 任务失败，比如超过任务时限 不显示
+    ENUM_MISSION_NPC_STATE_OVER = - 1,
+    -- 完成任务，已交 不显示
+
+    ENUM_MISSION_NPC_STATE_CANNOT_ACCEPT = 0,
+    -- 不可接，差某些条件     显示优先级 低
+    ENUM_MISSION_NPC_STATE_CAN_ACCEPT_LESS_N_LEVEL = 1,
+    -- 可接，还未接，小于玩家n级         ||
+    ENUM_MISSION_NPC_STATE_CAN_ACCEPT = 2,
+    -- 可接，还未接                      ||
+    ENUM_MISSION_NPC_STATE_GOING = 3,
+    -- 已接，进行中                      ||
+    ENUM_MISSION_NPC_STATE_COMPLETE = 4,-- 已完成，待交                      高
+
+};
+
+-- 任务大类型
+ENUM_MISSIONTYPE = 
+{
+    MAIN = 0,
+    BRANCH = 1,
+    EVERYDAY = 2,
+};
+
+ENUM_MISSION_TYPE =                                                   --任务类型
+{
+    E_MSSN_TYPE_BASE_KILL_MONSTER = 101,			-- 杀怪任务
+    E_MSSN_TYPE_BASE_COLLECTION = 102,              -- 采集任务
+    E_MSSN_TYPE_BASE_TALK = 103,                    -- 直接对话任务
+    E_MSSN_TYPE_BASE_KILLMONSTER_DROP_ITEM = 104,	-- 杀怪掉落任务
+    E_MSSN_TYPE_BASE_CONVOY = 105,                  -- 护送任务
+    E_MSSN_TYPE_BASE_SPECIAL = 106,                 --特殊任务
+    E_MSSN_TYPE_BASE_LEVELUP = 107,                 --升级任务
+    E_MSSN_TYPE_BASE_UseItem = 108,                 -- 区域使用道具任务
+    E_MSSN_TYPE_BASE_Search = 109,                  --侦查任务
+    E_MSSN_TYPE_BASE_ACTION = 110,                  -- 行为任务
+    E_MSSN_TYPE_BASE_OPERATE = 111,                 -- 操作任务
+    E_MSSN_TYPE_BASE_EXPENDITEM = 112,              -- 提交道具任务
+    E_MSSN_TYPE_BASE_SPECIAL_PARAM = 113,           -- 特殊参数任务
+    E_MSSN_TYPE_BASE_DUNGEON_SUCCESS_NUM = 401,     -- 指定副本完成次数
+    E_MSSN_TYPE_BASE_THE_DUNGEON_IS_SUCCESS = 404,  -- 指定副本为通关状态
+};
+
+-- 玩家日常任务类型
+ENUM_EVERYDAY_TASKTYPE = 
+{
+    EXP = 10,--悬赏经验
+    BOTHCAMP = 20,--双方阵营
+    UNIONCAMP = 21,--联盟阵营
+    TRIBECAMP = 22,--部落阵营
+    GUILD = 30,--工会
+}
+
+-- 离线经验
+ENUM_OFFLINE_AWARD_TYPE =
+{
+    OFFLINE_AWARD_TYPE_MSG_INVALID = - 1,
+    -- 请求所有的数据
+    OFFLINE_AWARD_MSG_REQUEST_ALL_DATA = 0,
+    -- 请求领取免费离线经验
+    OFFLINE_AWARD_MSG_REQUEST_FREE_GET_EXP = 1,
+    -- 请求领取金币经验
+    OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_GOLD_GET = 2,
+    -- 请求领取钻石经验
+    OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_DIAMOND_GET1 = 3,
+    -- 请求领取砖石经验<VIP购买>
+    OFFLINE_AWARD_MSG_REQUEST_ACTIVITY_DIAMOND_GET2 = 4,
+}
+ENUM_GUILD_OP_SUBMSG =
+{
+    -- 创建帮会
+    GUILD_OP_CREATE_GUILD = 0,
+    -- 删除帮会	穿删除帮派ID GuildID
+    GUILD_OP_DELETE_GUILD = 1,
+    -- 申请加入帮会
+    GUILD_OP_APPLY_JOIN_GUILD = 2,
+    -- 取消加入帮会
+    GUILD_OP_CANCEL_JOIN = 3,
+    -- 申请加入分堂
+    GUILD_OP_APPLY_JOIN_KINDRED = 4,
+    -- 拒绝某玩家的加入申请
+    GUILD_OP_REFUSE_JOIN = 5,
+    
+    -- 邀请队员创建临时帮会
+    GUILD_OP_QUERY_TEAMGUILD = 6,
+    -- 同意临时队伍帮会
+    GUILD_OP_JOIN_TEAMGUILD = 7,
+    -- 拒绝队伍临时帮会
+    GUILD_OP_REFUSE_TEAMGUILD = 8,
+    -- 同意加入帮会
+    GUILD_OP_JOIN_GUILD = 9,
+    -- 删除成员
+    GUILD_OP_DELETE_MEMBER = 10,
+    -- 去除成员信息
+    GUILD_OP_DEL_MEMBER_INFO = 11,
+    -- 主动离开帮会
+    GUILD_OP_LEAVE_GUILD = 12,
+    -- 设置管理权限
+    GUILD_OP_SET_RIGHTS = 13,
+    -- 自定义军衔
+    GUILD_OP_CUSTOM_RANK = 14,
+    -- 授衔
+    GUILD_OP_GRANT_RANK = 15,
+    -- 申请记录
+    GUILD_OP_SENDQUERYRECORD = 16,
+    -- 邀请加入帮会
+    GUILD_OP_INVITE_JION = 17,
+    -- 返回邀请加入帮会
+    GUILD_OP_RETURN_INVITE_JOIN = 18,
+    -- 有人申请加入帮会，默认发给帮主
+    GUILD_OP_PLAYER_QUERYJOIN = 19,
+    -- 更新个人贡献度
+    GUILD_OP_GUILD_UPDATAHORNOR = 20,
+    -- 告诉客户端谁捐赠了多少钱
+    GUILD_OP_GUILD_DONATEMONEY = 21,
+    -- 更改称号
+    GUILD_OP_GUILD_MODI_CHENGHAO = 22,
+    -- 升级帮会
+    GUILD_OP_LEVELUP_GUILD = 23,
+    -- 任命副帮主
+    GUILD_OP_SET_MINISTER = 24,
+    -- 任命长老
+    GUILD_OP_SET_PRESBYTER = 25,
+    -- 任命护法
+    GUILD_OP_SET_HUFA = 26,
+    -- 任命精英
+    GUILD_OP_SET_JINGYING = 27,
+    -- 从帮众堂招收一个成员到其他分堂
+    GUILD_OP_ADD_KINDRED_MEMBER = 28,
+    -- 罢免一个成员（直接变为普通帮众）
+    GUILD_OP_DROP_MEMBER = 29,
+    -- 离开某个分堂（直接变为普通帮众）
+    GUILD_OP_LEAVE_KINDRED = 30,
+    -- 转移帮主
+    GUILD_OP_GIVE_LEADER = 31,
+    -- 设置帮会宣言
+    GUILD_OP_SET_PROCLAMATION = 32,
+    -- 添加帮会公告
+    GUILD_OP_ADD_ANNOUNCEMENT = 33,
+    -- 删除帮会公告
+    GUILD_OP_DEL_ANNOUNCEMENT = 34,
+    -- 设置招募类型
+    GUILD_OP_SET_ZHAOMUTYPE = 35,
+    -- 转堂成功
+    GUILD_OP_CHANGE_KINDRED_SUC = 36,
+    -- 分堂操作信息 -
+    -- 新增加一个分堂（一般是升级的时候）
+    GUILD_OP_ADD_NEW_KINDRED = 37,
+    -- 设置分堂堂主		
+    GUILD_OP_SET_KINDRED_LEADER = 38,
+    -- 罢免一个分堂堂主	
+    GUILD_OP_DEL_KINDRED_LEADER = 39,
+    -- 删除一个分堂成员	
+    GUILD_OP_DEL_KINDRED_MEMBER = 40,
+    -- 查询所有的 帮会id-帮会名称 列表数据 开始标记
+    GUILD_QUERY_ALL_ID2NAME_BEGIN = 41,
+    -- 查询所有的 帮会id-帮会名称 列表数据 正在发送标记
+    GUILD_QUERY_ALL_ID2NAME_DATA = 42,
+    -- 查询所有的 帮会id-帮会名称 列表数据 发送结束标记
+    GUILD_QUERY_ALL_ID2NAME_END = 43,
+    -- 查询某个帮会的 帮会id-帮会名称 数据
+    GUILD_QUERY_MULTI_ID2NAME_DATA = 44,
+    -- 查询帮会列表开始(如果帮会列表过大则要做分拆发送，所以做开始结束标记。)
+    GUILD_QUERY_ALL_GUILD_DATA_BEGIN = 45,
+    -- 查询帮会列表(如果帮会列表过大则要做分拆发送，所以做开始结束标记。)
+    GUILD_QUERY_ALL_GUILD_DATA = 46,
+    -- 查询帮会列表结束(如果帮会列表过大则要做分拆发送，所以做开始结束标记。)
+    GUILD_QUERY_ALL_GUILD_DATA_END = 47,
+    -- 玩家公会信息
+    GUILD_QUERY_SINGLE_GUILD_DATA = 48,
+    -- 查询帮会列表某一页的数据(如果客户端用分页表示的话)
+    GUILD_QUERY_GUILD_LIST_PAGE_DATA = 49,
+    -- 根据帮会名字或者帮主名字查询
+    GUILD_QUERY_GUILD_BYNAME = 50,
+    -- 查询帮会全体成员信息
+    GUILD_QUERY_ALL_MEMBER_INFO = 51,
+    -- 查询成员信息
+    GUILD_QUERY_SINGLE_MEMBER_INFO = 52,
+    -- 查询帮会军衔信息
+    GUILD_QUERY_RANK_DATA = 53,
+    -- 查询申请加入的记录信息
+    GUILD_QUERY_APPLY_JOIN_DATA = 54,
+    -- 查询单个分堂信息
+    GUILD_QUERY_SINGLE_KINDRED_INFO = 55,
+    -- 查询所有分堂信息
+    GUILD_QUERY_ALL_KINDRED_INFO = 56,
+    -- 查询帮会结构信息
+    GUILD_QUERY_GUILD_STRUCTURE = 57,
+    -- 查询帮会所有的公告信息
+    GUILD_QUERY_GUILD_NOTICE = 58,
+    -- 请求帮会事件
+    GUILD_QUERY_GUILD_EVENT = 59,
+    -- 请求全体成员的开始
+    GUILD_QUERY_MEMBER_INFO_BEGIN = 60,
+    -- 更新帮会成员的在线状态
+    GUILD_UPDATE_MEMBER_ONLINE_STATE = 61,
+    -- 消息提示
+    GUILD_MEMSSAGE_PUBILC = 62,
+    -- 进入帮会活动副本
+    GUILD_ENTER_FBACTIVITY = 63,
+    -- 领地GS列表信息
+    GUILD_SCENE_REQUEST_GS_STATE = 64,
+    -- 反馈领地GS列表信息开始
+    GUILD_SCENE_FEEDBACK_GS_STATE_BEGIN = 65,
+    -- 反馈领地GS列表信息
+    GUILD_SCENE_FEEDBACK_GS_STATE = 66,
+    -- 反馈领地GS列表信息结束
+    GUILD_SCENE_FEEDBACK_GS_STATE_END = 67,
+    -- 请求领地详细信息
+    GUILD_SCENE_REQUEST_DETAIL = 68,
+    -- 领地详细信息的反馈
+    GUILD_SCENE_FEEDBACK_DETAIL = 69,
+    -- 请求本帮报名信息
+    GUILD_SCENE_REQUEST_MY_APPLY = 70,
+    -- 本帮报名信息的反馈
+    GUILD_SCENE_FEEDBACK_MY_APPLY = 71,
+    -- 请求本帮争夺战信息
+    GUILD_SCENE_REQUEST_MY_BATTLE = 72,
+    -- 本帮争夺战信息的反馈
+    GUILD_SCENE_FEEDBACK_MY_BATTLE = 73,
+    -- 请求获取所有的竞拍信息
+    GUILD_SCENE_REQUEST_APPLY_DATA = 74,
+    -- 请求获取所有竞拍信息的返回
+    GUILD_SCENE_FEEDBACK_APPLY_DATA = 75,
+    -- 清空领地报名信息
+    GUILD_SCENE_FEEDBACK_APPLY_CLEAR = 76,
+    -- 请求竞拍
+    GUILD_SCENE_REQUEST_APPLY_BATTLE = 77,
+    -- 请求竞拍反馈
+    GUILD_SCENE_FEEDBACK_APPLY_BATTLE = 78,
+    -- 请求放弃竞拍
+    GUILD_SCENE_REQUEST_ABANDON_APPLY = 79,
+    -- 请求放弃竞拍返回
+    GUILD_SCENE_FEEDBACK_ABANDON_APPLY = 80,
+    -- 请求放弃领地
+    GUILD_SCENE_REQUEST_ABANDON_SCENE = 81,
+    -- 请求放弃领地的反馈
+    GUILD_SCENE_FEEDBACK_ABANDON_SCENE = 82,
+    -- 领地奖励领取状态
+    GUILD_SCENE_GET_REWARD_STATE = 83,
+    -- 领取领地奖励
+    GUILD_SCENE_REQUEST_GET_REWARD = 84,
+    -- 领取领地奖励的反馈
+    GUILD_SCENE_FEEDBACK_GET_REWARD = 85,
+    -- 请求进入领地争夺
+    GUILD_SCENE_REQUEST_ENTER_SCENE = 86,
+    -- 请求传送图腾
+    GUILD_SCENE_REQUEST_TRANS_POINT = 87,
+    -- 帮主福利状态
+    GUILD_LEADER_GRACE_STATE = 88,
+    -- 帮会活动状态
+    GUILD_ACTIVE_STATE = 89,
+    -- 个人捐献资金给帮会
+    GUILD_CTOS_PERSONAL_DONATE = 90,
+    -- 帮会捐献资金给联盟
+    GUILD_CTOS_GUILD_DONATE = 91,
+    -- 设定帮会个人赋税
+    GUILD_CTOS_SET_PERSONAL_TAX = 92,
+    -- 领取帮主福利
+    GUILD_CTOS_GET_LEADER_GRACE = 93,
+    -- 请求全体成员的结束，与GUILD_QUERY_MEMBER_INFO_BEGIN配对
+    GUILD_QUERY_MEMBER_INFO_END = 94,
+    -- 查询帮会建设
+    GUILD_QUERY_GUILD_BUILD = 95,
+    -- 开启帮会建设
+    GUILD_START_GUILD_BUILD = 96,
+    -- 审批列表一键同意
+    GUILD_OP_JOIN_GUILD_ONCE = 97,
+    -- 审批列表一键拒绝
+    GUILD_OP_REFUSE_JOIN_ONCE = 98,
+    -- 查询多个帮会信息
+    GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE = 99,
+    -- 查询多个帮会信息 开始
+    GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE_BEGIN = 100,
+    -- 查询多个帮会信息 结束
+    GUILD_OP_QUERY_GUILD_INFO_BY_VAGUE_BND = 101,
+    -- 公会建筑升级
+    GUILD_OP_LEVELUP_GUILD_BUILDING = 102,
+    -- 进入公会领地
+    GUILD_OP_ENTER_GUILD_REQUIRED = 103,
+    -- 开启公会聚会活动
+    GUILD_OP_OPEN_CORPS_PARTY = 104,
+    -- 更新设置福利区间
+    GUILD_OP_SET_WELFARE_RANGE = 105,
+    -- 更新设置福利区间
+    GUILD_OP_GET_WELFARE = 106,
+    -- 请求公会饮酒经验
+    GUILD_GET_WINEEXP = 107,
+    -- 发送客户端聚会状态
+    GUILD_SEND_GUILD_PARTY_STATE    = 108,
+    -- 请求查看竞标结果
+    GUILD_SCENE_REQUEST_APPLY_RESULT_DATA = 109,
+    -- 请求获取竞拍结果信息返回
+    GUILD_SCENE_FEEDBACK_APPLY_RESULT_DATA = 110,
+    -- 竞标结果产生，公会全员收到提示消息
+    GUILD_SCENE_FEEDBACK_APPLY_RESULT_GENERATE = 111,
+    -- 公会界面点击前往按钮进入准备场景消息
+    GUILD_SCENE_REQUEST_ENTER_READY_SCENE = 112,
+    -- 战前30分钟提示消息
+    GUILD_SCENE_FEEDBACK_BEFORE_30_MIN_HINT = 113,
+    -- 点击提示信息弹出进入准备场景界面 
+    GUILD_SCENE_REQUEST_OPEN_ACTIVITY = 114,
+    -- 点击提示信息进入准备场景界面返回
+    GUILD_SCENE_FEEDBACK_OPEN_ACTIVITY = 115,
+    -- 战役结束,服务器发来结算消息
+    GUILD_SCENE_FEEDBACK_BATTLE_OVER = 116,
+    -- 请求购买城战武器
+    GUILD_SCENE_REQUEST_BUY_WEAPON_ITEM = 117,
+    -- 请求为自己的参战队员分配小队
+    GUILD_SCENE_REQUEST_ALLOC_TEAM = 118,
+    -- 请求为自己的参战队员分配战具
+    GUILD_SCENE_REQUEST_ALLOC_WEAPON = 119,
+    -- 请求为自己的参战队员分配小队返回
+    GUILD_SCENE_FEEDBACK_ALLOC_TEAM	= 120,
+    -- 点击配置人员按钮发送获取数据消息
+    GUILD_SCENE_REQUEST_CLINK_ALLOC_BUTTON = 121,
+    -- 点击配置人员按钮返回 
+    GUILD_SCENE_FEEDBACK_CLINK_ALLOC_BUTTON = 122,
+    -- 进入人员分配界面请求消息
+    GUILD_SCENE_REQUEST_CLINK_ALLOC_PAGE = 123,
+    -- 进入人员分配界面请求消息返回
+    GUILD_SCENE_FEEDBACK_CLINK_ALLOC_PAGE = 124,
+    -- 点击战具分配分页按钮
+    GUILD_SCENE_REQUEST_CLINK_ITEM_ALLOC_PAGE = 125,
+    -- 点击战具分配分页按钮返回
+    GUILD_SCENE_FEEDBACK_CLINK_ITEM_ALLOC_PAGE = 126,
+    -- 请求查看积分
+    GUILD_SCENE_REQUEST_GET_SCORE_DATA = 127,
+    -- 查看积分返回
+    GUILD_SCENE_FEEDBACK_SCORE_DATA = 128,
+    -- 战斗结束，客户端请求离开战场
+    GUILD_SCENE_REQUEST_LEAVE_BATTLE = 129,
+    -- 请求分配小队长
+    GUILD_SCENE_REQUEST_ALLOC_TEAM_LEADER = 131,
+    -- 分配小队长返回
+    GUILD_SCENE_FEEDBACK_ALLCO_TEAM_LEADER = 132,
+    -- 点击设置队长按钮消息
+    GUILD_SCENE_REQUEST_CLINK_SET_LEADER_BTN = 133,
+    -- 设置队长按钮返回
+    GUILD_SCENE_FEEDBACK_CLINK_SET_LEADER_BTN = 134,
+    -- 进入到准备场景返回
+    GUILD_SCENE_FEERBACK_ENTER_READY_RROM = 135,
+    -- 请求退出准备场景
+    GUILD_SCENE_REQUEST_QUIT_READY_ROOM = 136,
+    -- 请求公会UI状态（1：竞拍状态  2：前往状态）
+    GUILD_SCENE_REQUEST_CORPS_UI_STATE = 137,
+    -- 请求公会UI状态返回
+    GUILD_SCENE_FEEDBACK_CORPS_UI_STATE = 138,
+    -- 点击战具配置人员按钮
+    GUILD_SCENE_REQUEST_WEAPON_ALLOC_BTN = 139,
+    -- 点击配置人员按钮和为参战队员分配战具的返回相同
+    GUILD_SCENE_FEEDBACK_WEAPON_ALLOC_BTN = 140,
+    -- 点击城战战具按钮,请求战具相关数据
+    GUILD_SCENE_REQUEST_CLINK_CITY_WEAPON_BTN = 141,
+    -- 点击城战战具按钮返回，购买城战道具后也会刷这个消息
+    GUILD_SCENE_FEEDBACK_CLINK_CITY_WEAPON_BTN = 142,
+
+    -- 点击活动界面的领地战分页按钮
+    GUILD_SCENE_REQUEST_CLINK_ACTIVITY_BATTLE_BTN = 143,
+    -- 点击活动界面的领地战分页按钮返回
+    GUILD_SCENE_FEEDBACK_CLINK_ACTIVITY_BATTLE_BTN = 144,
+    -- 报名参加领地战成员进入战场后同步的数据
+    GUILD_SCENE_FEEDBACK_PLAYER_ENTER_ROOM_AFTER = 145,	
+    -- 点击左侧面板查看战场资源数据
+    GUILD_SCENE_REQUEST_CLINK_LEFT_PLANEL_LOOK_INFO = 146,
+    -- 点击左侧面板查看战场资源数据返回
+    GUILD_SCENE_FEEDBACK_CLINK_LEFT_PLANEL_LOOK_INFO = 147,
+    -- 资源积分改变同步
+    GUILD_SCENE_FEEDBACK_RESOURCE_SCORE_CHANGE = 148,
+    -- 个人数据改变同步（杀人数，助攻数，死亡数）
+    GUILD_SCENE_FEEDBACK_PERSONAL_DATA_CHANGE = 149,
+    -- 公会战 离开战场
+    GUILD_SCENE_FEEDBACK_LEAVE_BATTLE_ROOM = 150,
+    -- 寻路到某个资源点
+    GUILD_SCENE_REQUEST_FIND_WAY_TO_RESOURCE = 151,
+    -- 点击竞拍按钮,用于检测是否有资格开启竞拍
+    GUILD_SCENE_REQUEST_CLINK_APPLY_BTN = 152,
+    -- 点击竞拍按钮返回
+    GUILD_SCENE_FEEDBACK_CLINK_APPLY_BTN = 153,
+    -- 接收公会单个成员信息
+    GUILD_OP_UPDATE_OR_ADD_SINGLE_MEMBER_INFO = 154,
+    -- 上线或者加入公会发送公会界面竞拍相关数据
+    GUILD_OP_PLAYER_ENTER_GAME_SEND_DATA = 155,
+    -- 主界面左侧领地战信息界面寻路到某个防御塔
+    GUILD_OP_AOTO_FIND_WAY_TO_TOWER = 156,
+    -- 更新领地战小地图信息
+    GUILD_OP_UPDATE_MAP_INFO = 157,
+}
+
+-- 公会错误信息返回消息
+ENUM_GUILD_OP_ERROR_RETURN = 
+{
+    GUILD_OP_ERROR_NONE = 0,                                --枚举开始
+    GUILD_OP_ERROR_NO_DO = 1,                               --不做处理 
+    GUILD_OP_ERROR_NO_GUILD = 2,                            --晕 没找到帮会*
+    GUILD_OP_ERROR_CREATE_NAME_SAME = 3,                    --创建错误，公会已存在
+    GUILD_OP_ERROR_JOINED_GUILD = 4,                        --已经加入帮会了*
+    GUILD_OP_ERROR_NAME_DIRTY = 5,                          --名字存在违禁字符
+    GUILD_OP_ERROR_NAME_EMPTY = 6,                          --名字不能为空*	
+    GUILD_OP_ERROR_NONE_APPLY_JOIN = 7,					    -- 没有申请加入的
+    GUILD_OP_ERROR_SET_RIGHTS_FAIL = 8,					    -- 设置权限失败
+    GUILD_OP_ERROR_NO_RIGHTS = 9,						    -- 无权限操作
+    GUILD_OP_ERROR_CUSTOM_RANK_FAIL = 10,				    -- 自定义军衔失败
+    GUILD_OP_ERROR_GRANT_RANK_FAIL = 11,					-- 授予军衔失败
+    GUILD_OP_ERROR_CAN_NOT_DEL_SELF = 12,				    -- 不能踢出自己
+    GUILD_OP_ERROR_REFUES_ADDMEMBER = 13,                   -- 帮会默认不加入成员*
+    GUILD_OP_ERROR_CHANGE_UNION_TIME = 14,                  -- 帮会转联盟过程中
+
+    -- 增加的错误类型  add by yaukey at 2009.11.16
+    GUILD_OP_ERROR_CREATE_GUILD_LOW_LEVEL = 15,			    -- 等级不够不能创建帮会*
+    GUILD_OP_ERROR_CREATE_NOT_ENOUGH_MONEY = 16,			-- 金钱不够不能创建帮会*
+    GUILD_OP_ERROR_CREATE_NOT_HAVE_ITEM = 17,			    -- 没有道具不能创建帮会
+    GUILD_OP_ERROR_CREATE_EXIST_GUILD_NAME = 18,			-- 帮会名称已经存在不能创建帮会
+    GUILD_OP_ERROR_CREATE_NAME_INVALID = 19,                -- 帮会名非法*
+    GUILD_OP_ERROR_ADD_MEMBER_JOINED_GUILD = 20,			-- 要招收的玩家已经加入了帮会
+    GUILD_OP_ERROR_ADD_MEMBER_DEL_CHARACTER = 21,		    -- 玩家可能删除了该角色或者加入了其他帮会，没有在申请表里
+    GUILD_OP_ERROR_GUILD_ALREADY_MAX_LEVLE = 22,			-- 帮会已经升级到了最大等级
+    GUILD_OP_ERROR_LEVELUP_NOT_ENOUGH_MONEY = 23,           -- 金钱不够不能升级帮会
+    GUILD_OP_ERROR_ALREADY_DROPED_MEMBER = 24,              -- 已经是帮众堂的成员不能再罢免
+
+    GUILD_OP_ERROR_NOT_JOIN_GUILD = 25,					    -- 尚未加入任何帮会或不是本帮会成员
+    GUILD_OP_ERROR_OP_NOT_JOIN_GUILD = 26,				    -- 被操作的玩家不只是本帮会成员
+    GUILD_OP_ERROR_EXEC_SQL_FAIL = 27,					    -- 执行数据库sql语句时发生错误*
+
+    GUILD_OP_ERROR_WRONG_KINDRED_TYPE = 28,				    -- 错误的分堂类型
+    GUILD_OP_ERROR_EXIST_KINDRED_YTPE = 29,				    -- 已存在的分堂类型
+    GUILD_OP_ERROR_FULL_KINDRED_NUM = 30,				    -- 分堂数量已满
+    GUILD_OP_ERROR_ALREADY_KINDRED_CREATOR = 31,			-- 被授予堂主的玩家已经是某分堂的堂主
+    GUILD_OP_ERROR_LEADER_EXIST = 32,					    -- 该分堂的堂主没被撤销，不能任命其他堂主
+    GUILD_OP_ERROR_DEL_NON_LEADER = 33,					    -- 要罢免堂主的堂根本没有堂主
+    GUILD_OP_ERROR_DEL_WRONG_LEADER = 34,				    -- 要罢免的堂主根本不是堂主
+    GUILD_OP_ERROR_NO_KINDRED_LEADER = 35,				    -- 要招人的分堂没有堂主（就是该分堂还没有创建）
+    GUILD_OP_ERROR_NOT_EXIST_KINDRED = 36,				    -- 要踢人的分堂不存在
+
+    GUILD_OP_ERROR_NOT_ENOUGH_MONEY_SET_PROCLAM = 37,	    -- 发布宣言金钱不够
+    GUILD_OP_ERROR_FULL_ANNOUNCE_NUM = 38,				    -- 公告数量已满
+    GUILD_OP_ERROR_ANNOUNCE_TEXT_TOO_LONG = 39,			    -- 公告字数太多
+
+    GUILD_OP_ERROR_HAVE_OTHER_POSITION = 40,				-- 已经有其他职位了，不能重复任命(只能先罢免)
+    GUILD_OP_ERROR_NO_UPDATE_HORNOR = 41,                   -- 没有更新荣誉值           
+
+    -- 配置表中的限制错误
+    GUILD_OP_ERROR_FULL_GUILD_MEMBER = 42,				    -- 帮会最大成员数已满，请升级
+    GUILD_OP_ERROR_FULL_APPLY_NUM = 43,					    -- 帮会最大申请人数*
+    GUILD_OP_ERROR_JOIN_GUILD_NOT_ENOUGH_LEVEL = 44,		-- 加入帮会等级不够
+    GUILD_OP_ERROR_MAX_MINISTER_NUM = 45,				    -- 最大副帮主人数已满
+    GUILD_OP_ERROR_MAX_KINDRED_LEADER_NUM = 46,			    -- 此分堂堂主人数已满
+    GUILD_OP_ERROR_MAX_HUFA_NUM = 47,                       -- 最大护法数已满
+    GUILD_OP_ERROR_MAX_KINDRED_MEMBER_NUM = 48,			    -- 帮会分堂最大人数已满
+    GUILD_OP_ERROR_PLAYER_FULL_JOIN = 49,                   -- 每个人最多申请5个帮会
+    GUILD_OP_ERROR_PLAYER_HAD_QUERY = 50,                   -- 已经申请过了
+    GUILD_OP_ERROR_PLAEYR_NO_ONLINE = 51,                   -- 角色不在线
+
+    GUILD_OP_ERROR_INVITEPLAYER_LEVELERROR = 52,            -- 被招收入帮的人等级不够
+    GUILD_OP_ERROR_INVITEPLAYER_LIMITTIME = 53,             -- 被招收的人在限制时间内，距离上次离开帮会小于24小时
+
+    GUILD_OP_ERROR_GUILDTASK_PARAMINVALID = 54,             -- 帮会任务的参数非法
+    GUILD_OP_ERROR_RECEIVE_TASK_EEROR = 55,                 -- 接受帮会任务失败
+    GUILD_OP_ERROR_COMPLETE_TASK_EEROR = 56,                -- 完成帮会错误
+    CORSP_READ_ERROR_GUILD_TASK = 57,                       -- 读取帮会任务非法
+    GUILD_OP_ERROR_NOTASK = 58,                             -- 任务没有找到
+    GUILD_OP_ERROR_INVALIDTIME = 59,                        -- 接任务的时间不对
+    GUILD_OP_ERROR_INVALID_TASKSTATE = 60,                  -- 任务状态不对
+    GUILD_OP_ERROR_MAX_COUNT = 61,                          -- 任务次数已满
+    GUILD_OP_ERROR_TEMP_GUILD = 62,                         -- 未转正帮会不能进行该操作
+    GUILD_OP_ERROR_NO_GAMEUNIT = 63,                        -- 还没加入联盟*
+    GUILD_OP_ERROR_NOTSAME_GAMEUNIT = 64,                   -- 不是相同联盟*
+
+    GUILD_OP_ERROR_APPLY_FAILED = 65,                       -- 帮会领地争夺战报名失败
+    GUILD_OP_ERROR_APPLY_WINNER_FAILED = 66,                -- 设置报名成功帮会失败
+    GUILD_OP_ERROR_ADD_SCENE_RES = 67,                      -- 增加领地资源失败
+    GUILD_OP_ERROR_LEVELUP_SCENE = 68,                      -- 升级领地等级失败
+    GUILD_OP_ERROR_CHENGHAO_INVALID = 69,                   -- 备注非法
+    GUILD_OP_ERROR_UNKNOWN = 70,							-- 未知错误*
+    GUILD_OP_ERROR_AGREE_UNION_DIFFERENT = 71,              -- 联盟不同
+    GUILD_OP_ERROR_NODATA_UPDATE = 72,                      -- 没有更新到数据
+    GUILD_OP_ERROR_PARAME_INVALID = 73,                     -- 参数无效
+    GUILD_OP_ERROR_UNIT_LEADER_NO_GIVE = 74,		        -- 盟主不允许转移帮主(经典版本使用)
+    GUILD_OP_ERROR_ANNOUNCE_TXT_EMPTY = 75,				    -- 公告不能没有文字*、
+
+    --new20161221
+    GUILD_OP_ERROR_CLOSED_ADD_GUILD = 76,				        -- 被申请人关闭了入帮会开关
+    GUILD_OP_ERROR_KINDREDHEARDER_NOT_CHANGE = 77,               -- 堂主不允许转堂
+    GUILD_OP_ERROR_NO_KINDRED_CANNOT_SET_HEARDER = 78,	        -- 不在此堂不能设置为堂主
+    GUILD_OP_ERROR_GIVE_LEADER_TIME = 79,				        -- 一天只能转移一次帮主
+    GUILD_OP_ERROR_GIVE_SUB_LEADER_TIME = 80,			        -- 一天只能任命一次副帮主
+}
+
+ENUM_ITEM_CREATE_ORIGIN =
+{
+    ITEM_ORIGIN_NONE = 0,
+    -- -- 不明，但愿别出现
+    -- --ITEM_ORIGIN_OLD_VER              = 1 << 0,    -- 老版本，未使用
+    ITEM_ORIGIN_DROP = 0,
+    -- -- 怪物掉落地
+    ITEM_ORIGIN_NPC = 1,
+    -- -- 从NPC买来的
+    ITEM_ORIGIN_GM = 2,
+    -- -- GM 命令生成的
+    ITEM_ORIGIN_TASK = 3,
+    -- -- 任务奖励
+    -- --ITEM_ORIGIN_TRADE                = 1 << 5,    -- P2P交易获得
+    ITEM_ORIGIN_BOX = 4,
+    -- -- 猜宝箱所得
+    ITEM_ORIGIN_QIHUOJU = 5,
+    -- -- 奇货居/商城买来的
+    ITEM_ORIGIN_MINE = 6,
+    -- -- 采集/挖矿提炼出的
+    ITEM_ORIGIN_SYS = 7,
+    -- -- 系统生成道具
+    ITEM_ORIGIN_SYS_TEMP = 8,
+    -- -- 系统临时生成道具(系统会自动销毁的)
+    ITEM_ORIGIN_SCRIPT = 9,
+    -- -- 脚本给的道具
+    ITEM_ORIGIN_SCRIPT_DROP = 10,
+    -- --/脚本掉落
+    -- ITEM_ORIGIN_PUBLICSALE           = 1 << 11,       -- 拍卖行生成的
+    ITEM_ORIGIN_SYS_MAIL = 11,
+    -- -- 系统邮件发送的
+    ITEM_ORIGIN_MAIL_FUJIAN = 12,
+    -- -- 邮件系统附件发来的
+    ITEM_ORIGIN_ROLE_TOOL_GIVE = 13,
+    -- -- 查档工具给的
+    ITEM_ORIGIN_ROLE_TOOL_BACK = 14,
+    -- -- 查档工具恢复的
+    ITEM_ORIGIN_ROLE_TOOL_BACK_TAKED = 15,
+    -- -- 查档工具恢复的并且已取
+    ITEM_ORIGIN_ITEM_SPAWN = 16,
+    -- -- 开箱子、福袋等生成
+    ITEM_ORIGIN_LIFE_SKILL = 17,
+    -- -- 生产技能创建
+    ITEM_ORIGIN_COMPOSE = 18,
+    -- -- 道具合成后产生
+    ITEM_ORIGIN_ACTIVE = 19,
+    -- -- 活动奖励
+
+    -- --/为获得道具留下空位，道具获得和产生统一处理和记录
+    ITEM_ORIGIN_PICKUP = 20,
+    -- -- 拾取
+    ITEM_ORIGIN_NPC_BUY_BACK = 21,
+    -- -- 从NPC处回购
+    ITEM_ORIGIN_SELF_MOVE = 22,
+    -- -- 移动自己的道具到别的面板
+    ITEM_ORIGIN_EXCHANGE_ITEM = 23,
+    -- -- 兑换道具产生
+    ITEM_ORIGIN_EQUIPUPDATABACK = 24,
+    -- -- 装备替换返还强化的道具材料
+    ITEM_ORIGIN_LOTTERY_DRAW = 25,
+    -- -- 藏宝图系统生成道具
+    ITEM_ORIGIN_EQUIP_INTENSIFY = 26,
+    -- -- 装备强化返回原装备
+    ITEM_ORIGIN_EQUIP_UPGRADE = 27,
+    -- -- 装备升级返回原装备
+    ITEM_ORIGIN_CHANGE_EQUIP = 28,-- -- 切换装备()
+};
+
+CREDHINTENUM =
+{
+    -- 无
+    NONE = 0,
+    -- 主界面左下角大按钮红点提示
+    INTERFACE_ALL = 1,
+    -- 主界面右上福利按钮
+    BUTTONGROUP_REWARD = 2,
+
+
+
+    -- 主界面右上第二福利按钮
+    SECONDBUTTONGROUP_REWARD = 19;
+     -- 主界面右上邮件按钮
+    BUTTONGROUP_MAIL = 5,
+    -- 主界面背包按钮
+    BAG_CANUNLOCK = 7,
+    -- 主界面宠物按钮
+    MAIN_BUTTON_PET = 8,
+    -- 下方角色按钮
+    INTERFACE_ROLE = 11,
+    -- 下方角色组角色按钮
+    INTERFACE_ROLE_ROLE = 111,
+    -- 下方角色组坐骑按钮
+    INTERFACE_ROLE_RIDE = 112,
+
+    -- 下方角色组宠物按钮
+    INTERFACE_ROLE_PET = 113,
+    -- 下方角色组时装按钮
+    INTERFACE_ROLE_FASHION = 114,
+    -- 时装-发型
+    FASHION_HAIR = 1141,
+    -- 时装-脸型
+    FASHION_FACE = 1142,
+    -- 时装-服装
+    FASHION_CLOTHES = 1143,
+    -- 时装-翅膀
+    FASHION_WING = 1144,
+    -- 时装-武器
+    FASHION_WEAPON = 1145,
+
+    -- 下方装备按钮
+    INTERFACE_EQUIP = 12,
+    -- 下方装备组装备按钮
+    INTERFACE_EQUIP_EQUIP = 123,
+    -- 装备界面强化按钮
+    EQUIP_FORCE = 1231,
+    -- 装备界面精炼按钮
+    EQUIP_STARUP = 1232,
+    -- 装备界面附魔按钮
+    EQUIP_ENCHANT = 1233,
+    -- 装备界面宝石按钮
+    EQUIP_GEM = 1234,
+    -- 装备界面传承按钮
+    EQUIP_INHERIT = 1235,
+    -- 福利7日签到
+    REWARD_ONLOGIN = 21,
+    -- 福利在线奖励
+    REWARD_ONLINE = 22,
+    -- 福利等级礼包
+    REWARD_LEVEL = 23,
+    -- 福利离线经验
+    REWARD_OFFLINE = 24,
+    -- 福利30日签到
+    REWARD_THIRTY_DAY = 25,
+	-- 福利充值返利
+    REWARD_RECHARGE = 26,
+    -- 碎片兑换
+    REWARD_EXCHANGE = 27,
+    -- 成长基金1
+    REWARD_GROWFUNDONE = 28,
+    -- 成长基金2
+    REWARD_GROWFUNDTWO = 29,
+    -- 资源找回
+    REWARD_RESOURCES_BACK = 210,
+
+     -- 福利充值返利
+    SECONDREWARD_RECHARGE = 196,
+	REWARD_DAILYRECHARGE = 211,
+    -- 强化统计
+    REWARD_STRENGTHEN = 212,
+    -- 精炼统计
+    REWARD_REFINING = 213,
+    -- 宠物悟性统计
+    REWARD_PETSAVVY= 214,
+    -- 宠物洗练统计
+    REWARD_PETQUALITYREFRESH = 215,
+    -- 坐骑进阶统计
+    REWARD_RIDELEVELUP = 216,
+    -- 累天充值
+    REWARD_CUMULATIVEDAYSCHARGE = 217,
+    -- 每日充值
+    SECONDREWARD_DAILYRECHARGE = 1911,
+    -- 累天充值
+    SECONDREWARD_CUMULATIVEDAYSCHARGE = 1912,
+    -- 强化统计
+    SECONDREWARD_STRENGTHEN = 1913,
+    -- 精炼统计
+    SECONDREWARD_REFINING = 1914,
+    -- 宠物悟性统计
+    SECONDREWARD_PETSAVVY= 1915,
+    -- 宠物洗练统计
+    SECONDREWARD_PETQUALITYREFRESH = 1916,
+    -- 坐骑进阶统计
+    SECONDREWARD_RIDELEVELUP = 1917,
+    -- 限时抽奖
+    SECONDREWARD_TIMELIMITDRAW = 1918,
+	-- 福利7日签到
+    SECONDREWARD_ONLOGIN = 191,
+    -- 福利在线奖励
+    SECONDREWARD_ONLINE = 192,
+    -- 福利等级礼包
+    SECONDREWARD_LEVEL = 193,
+    -- 福利离线经验
+    SECONDREWARD_OFFLINE = 194,
+    -- 福利30日签到
+    SECONDREWARD_THIRTY_DAY = 195,
+     -- 福利充值返利
+    SECONDREWARD_RECHARGE = 196,
+    -- 碎片兑换
+    SECONDREWARD_EXCHANGE = 197,
+    -- 成长基金1
+    SECONDREWARD_GROWFUNDONE = 198,
+    -- 成长基金2
+    SECONDREWARD_GROWFUNDTWO = 199,
+    -- 资源找回
+    SECONDREWARD_RESOURCES_BACK = 1910,
+    -- 主界面-抽屉-技能
+    INTERFACE_SKILL = 13,
+    -- 主界面-抽屉-技能按钮
+    INTERFACE_SKILL_SKILL = 131,
+    -- 技能-升级
+    SKILL_LEVEL = 1311,
+    -- 技能-天赋
+    SKILL_TALENT = 1312,
+
+    -- 主界面-抽屉-生活技能按钮
+    INTERFACE_SKILL_LIFE_SKILL = 132,
+    -- 生活技能-学习技能
+    LIFE_SKILL_LEARN = 1321,
+    -- 生活技能-生成制造
+    LIFE_SKILL_PRODUCTION = 1322,
+
+    -- 主界面-抽屉-公会
+    INTERFACE_GUILD = 14,
+    -- 公会-信息
+    GUILD_INFO = 141,
+    -- 公会-俸禄
+    GUILD_REWARD = 1411,
+    -- 公会-成员
+    GUILD_MEMBER = 142,
+    -- 公会-建筑
+    GUILD_BUILDING = 143,
+    -- 公会-技能
+    GUILD_SKILL = 144,
+
+    -- 主界面右上-日常任务按钮
+    BUTTONGROUP_DAILY_TASK = 3,
+    -- 日常-每日任务
+    DAILY_TASK_DAY = 31,
+    -- 日常-每周任务
+    DAILY_TASK_WEEK = 32,
+    -- 日常-每月任务
+    DAILY_TASK_MONTH = 33,
+
+    -- 主界面右上-活动按钮
+    BUTTONGROUP_ACTIVITY = 4,
+    -- 队伍-申请列表
+    TEAM_APPLY_LIST = 6,
+    -- 成就
+    ACHIEVE = 115,
+
+    -- 阵营界面信息
+    CAMP_INFO = 151,
+    -- 阵营符文信息
+    CAMP_SEAL = 152,
+--    --好友标签红点提示
+    FRIEND = 162,
+--    -- 好友界面中好友红点提示
+--    APPLYFRIEND = 10331,
+--    -- 好友界面中申请好友红点提示
+    FRIEND_ENEMY = 164,
+--    --好友界面中的仇人列表红点提示
+    FRIEND_RECENT = 161,
+--    --好友界面中的最近联系人红点提示
+--    REWARDBUTTON = 1020,
+--    -- 好友礼物
+    FRIEND_GIFT = 163,
+    TITLE = 1111,       --称号红点
+    CULTIVATE = 1112,   --进阶红点
+    --商城充值红点
+    STORE_CHARGE = 9,
+    --首次充值红点
+    FIRST_CHARGE = 10,
+
+    -- 主界面右上宝藏按钮
+    MAIN_TREAURE = 17,
+    -- 宠物十连抽界面红点
+    TREAURE_GETREWARD = 171,
+    -- 神器十连抽界面红点
+    TREAURE_ARTFACTLOTTERY = 172;
+    -- 神器红点
+    MAIN_ARTIFACT = 18,
+    -- 神翼红点
+    GOD_WING = 1402,
+    -- 神将红点 
+    MAIN_GODSHAPESHIFT = 1404,
+    -- 变强 红点
+    MAIN_STRONG = 24201,
+    -- 宝珠红点
+    MAIN_JEWE = 40501,
+
+    -- vip红点
+    MAIN_VIP = 20,
+    VIP_REWARD = 201,
+    -- 神行红点
+    SINHAENGPANEL = 40701,
+    -- 阵法红点
+    MATRIXPANEL = 40801,
+
+    -- 主界面右上新手基金按钮和成长基金红点
+    MAIN_GROWFUND1 = 35,
+    -- 主界面右上限时钻石礼包按钮红点
+    MAIN_LIMITTIMEGIFTBAG = 36,
+    -- 主界面右上Boss大厅按钮红点
+    MAIN_BOSSLOBBY = 37,
+}
+-- 轴心
+ENUM_PIVOT =
+{
+    TopLeft = 0,
+    Top = 1,
+    TopRight = 2,
+    Left = 3,
+    Center = 4,
+    Right = 5,
+    BottomLeft = 6,
+    Bottom = 7,
+    BottomRight = 8,
+}
+
+-- 自动播放语音存储KEY
+ENUM_PLAYERPREFS_KEY =
+{
+    WORD = "autoplaychannel1",
+    GUILD = "autoplaychannel6",
+    CAMP = "autoplaychannel5",
+    TEMP = "autoplaychannel7",
+    WIFI = "autoplaywifi",
+    FOURG = "autoplay4G",
+}
+
+-- 所有的功能系统，解锁系统用
+CSYSTEMENUM =
+{
+
+    NONE = 0,                   --无
+    SYSTEM_RIDE = 1,            --坐骑
+    SYSTEM_PET = 2,             --宠物
+    SYSTEM_FASHION = 3,         --外观
+    SYSTEM_SKILL = 4,           --技能
+    SYSTEM_LIFESKILL = 5,       --生活技能
+
+    SYSTEM_EQUIPFORCE = 6,      --装备强化系统
+    SYSTEM_EQUIPSTARUP = 7,     --装备升星系统
+    SYSTEM_EQUIPENCHANT = 8,    --装备附魔系统
+    SYSTEM_EQUIPSTONE = 9,      --装备符石系统
+    SYSTEM_EQUIPRANDEFF = 10,   --装备洗练系统
+
+    SYSTEM_GUILD = 11,           --帮派
+    SYSTEM_CAMP = 12,            --阵营
+
+    SYSTEM_STORE = 13,           --商店系统
+    SYSTEM_REWARD = 14,          --福利系统
+    
+    SYSTEM_RANK = 15,            --排行榜
+    SYSTEM_ACTIVITY = 16,        --活动系统
+    SYSTEM_AUCTION = 17,         --拍卖
+    SYSTEM_MAIL = 18,            --邮件系统
+    SYSTEM_FRIEND = 19,          --好友系统
+    SYSTEM_PACKS = 20,           --礼包系统(首冲)
+    SYSTEM_EVERYDAY = 21,        --日常系统（每日任务）
+    SYSTEM_SCORESTORE = 22,      --积分商城系统
+
+    SYSTEM_COMBINE = 23,         --合成
+    SYSTEM_RESOLVE = 24,         --分解
+
+    SYSTEM_ACHIEVE = 25,         --成就
+
+    SYSTEM_TREAURE = 26,         --宝藏
+    SYSTEM_ARTIFACT = 27,        --神器
+    SYSTEM_ARTIFACT1 = 28,       --秩序面具
+    SYSTEM_ARTIFACT2 = 29,       --不屈之戟
+    SYSTEM_ARTIFACT3 = 30,       --生命之石
+    SYSTEM_ARTIFACT4 = 31,       --智慧方锤
+    SYSTEM_ARTIFACT5 = 32,       --光耀之剑
+
+    SYSTEM_CAMPSEAL = 33,        --阵营纹章
+    SYSTEM_QUALITYREFRESH = 34,  --资质洗练
+    SYSTEM_QUALITYADD = 35,      --资质提升
+    SYSTEM_LEARNSKILL = 36,      --学习技能
+    SYSTEM_WING = 37,            -- 神翼
+    SYSTEM_GOD = 38,              -- 神将
+    SYSTEM_JEWE = 39,             -- 宝珠
+    SYSTEM_EQUIPINHERIT = 40,    --装备继承系统
+    SYSTEM_Sinah = 41,           -- 神行系统 
+    SYSTEM_Matrix = 42,          -- 阵法系统 
+    SYSTEM_SHENQI_LOTTERYDRAW=43; --神器十连抽
+    SYSTEM_GROWFUND1=44;            --新手基金
+    SYSTEM_LIMITTIMEGIFTBAG=45;    --限时礼包
+    SYSTEM_BOSSLOBBY=46;           --BOSS大厅系统
+    SYSTEM_BOSSDRAGON = 47;        --龙神
+    SYSTEM_SKILLTALENT = 48;       --技能天赋
+    COUNT = 49,                    --总数
+}
+
+-- 场景类型
+EMapType =
+{
+    -- 无
+    NONE = - 1,
+    -- 野外场景
+    MAP_TYPE_YEWAI = 0,
+    -- 主城
+    MAP_TYPE_CITY = 1,
+    -- 副本
+    MAP_TYPE_FUBEN = 2,
+    -- 危险场景
+    MAP_TYPE_DANGER = 3,
+    -- 公会驻地
+    MAP_TYPE_GUILD = 4,
+}
+
+-- 对应c#中的组件类型对应的文本
+CSCompmentType =
+{
+    UIGrid = "UIGrid";
+    CUIWrapContentEx = "CUIWrapContentEx";
+}
+-- 组队相关
+ETeamType =
+{
+    TEAM_TYPE_INVITE = 0,
+    -- 邀请
+    TEAM_TYPE_APPLY = 1,
+    -- 申请
+    TEAM_TYPE_CENTER = 2,
+    -- 阅读中心
+    TEAM_TYPE_CREATE = 3,-- 创建
+}
+ETeamTypeReturn =
+{
+    TEAM_TYPE_REFUSE = 1,
+    -- 拒绝
+    TEAM_TYPE_AGREE = 0,
+    -- 同意
+    TEAM_TYPE_CENTER = 2,-- 阅读中心
+}
+ETeamAskType =
+{
+    TEAM_ASK_TYPE_APPLY = 0,
+    -- 申请
+    TEAM_ASK_TYPE_INVITE = 1,
+    -- 邀请
+    TEAM_ASK_TYPE_INVITE_CANCLE = 2,
+    -- 取消邀请
+    TEAM_ASK_TYPE_APPLY_CANCLE = 3,-- 取消申请
+}
+ETeamDismissType =
+{
+    TEAM_DISMISS_TYPE_KICK_OUT = 0,
+    -- 踢出组员
+    TEAM_DISMISS_TYPE_DISMISS = 1,-- 解散队伍
+}
+
+-- 客户端发送的组队操作
+ENUM_TEAM_RETURN_TEAM_OPERATOR_TYPE = 
+{
+	ENUM_TEAM_RETURN_OPERATOR_TYPE_JOIN			= 0,	--申请
+	ENUM_TEAM_RETURN_OPERATOR_TYPE_INVITATION	= 1,	--邀请
+	ENUM_TEAM_RETURN_OPERATOR_TYPE_CREATE_TEAM	= 3,	--创建队伍
+}
+-- 客户端发送的组队操作
+ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE =
+{
+	ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_NO_AGREE		= 0,	--拒绝
+	ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_AGREE			= 1,	--同意
+	ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_READ_NOTIFY	= 2,	--阅读中心提示
+	ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_CANNOT_TEAM	= 3,	--禁止组队
+	ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_RANDOM_TEAM	= 4,	--在随机组队中
+}
+
+----帮会的官职等级，最大10个级别
+E_GUILD_RANKLEVEL = 
+{
+    LEADER          = 0,  --帮主
+    VICE_LEADER     = 1,  --副帮主
+    PETERXS         = 2,  --堂主
+    MEMBER          = 9,  --最低级别的帮众了
+}
+
+--增加分堂类型定义 added by yaukey at 2009.11.16
+EKINDREDTYPE = 
+{
+	GENERAL = 0,	-- 普通成员
+	ELITE = 1,		-- 精英团
+	KNIGHT = 2,		-- 骑士团
+}
+
+-- 公会权限
+E_GUILD_PERMISSION = {
+    APPOINT_VICE_LEADER = 1,        --任命副会长
+    FIRE_VICE_LEADER = 2,           --开除副会长
+    APPOINT_PETERXS = 3,            --任命堂主
+    FIRE_PETERXS = 4,               --开除堂主
+    FIRE_PETERXS_MEMBER = 5,        --请出分堂
+    APPOINT_MEMBER_PETERXS = 6,     --任命分堂成员
+    FIRE_GENERAL_MEMBER = 7,        --开除普通成员
+    DEMISE_LEADER = 8,              --禅让会长
+    INVITE_JOIN_IN = 9,             --邀请加入公会
+    APPROVE = 10,                   --审批申请
+    EDIT_NOTICE = 11,               --编辑公告
+    EDIT_DECLARATION = 12,          --编辑招募宣言
+    UPGRADE_BUILDING = 13,          --升级建筑
+    RESEARCH_SKILLS = 14,           --研究技能
+    LAUNCH_WAR = 15,                --发起领地争战
+    OPEN_MEETING = 16,              --开启聚会
+
+    VOICE_MIC = 1000,               --麦克风权限
+};
+
+-- 公会系统相关版本号
+E_GUILD_VERSION = {
+    
+};
+
+-- 公会建筑升级类型
+GUILD_BUILDING_TYPE =
+{
+	INTERIOR		= 0,		-- 公会内政大厅							--带参数(限制公会人数)
+	SHOP			= 1,		-- 公会商店升级
+	SKILL			= 2,		-- 公会技能升级
+	WOOD			= 3,		-- 公会木材升级(每天出产木材)			--带参数(出产木材数)
+	WOOD_STORAGE	= 4,		-- 公会木材仓库升级(限制存储木材上限)	--带参数(限制木材上限)
+}
+
+ENUM_TEAM_MEMBER_TYPE = 
+{
+    TEAM_MEMBER_TYPE_CAPTAIN = 0,			--队长
+    TEAM_MEMBER_TYPE_MEMBER = 1,			--队员
+    TEAM_MEMBER_TYPE_HERO = 2,				--英雄
+    TEAM_MEMBER_TYPE_CONSORT = 3,			--夫妻
+}
+
+JOINCAMPENUM = 
+{
+    -- 联盟
+    UNION = 1,
+    -- 部落
+    TRIBE = 2,
+}
+
+--DUNGEON_TYPE = {
+--    NONE = 0,
+--    STORY = 1,     --剧情副本类型
+--    BOSS = 2,       --BOOS副本类型
+--    ACTIVITY = 3,     --活动单人副本类型
+--    ACTIVITY_BOSS = 4,   --活动组队副本类型
+--    COUNT=5,
+--}
+
+DUNGEON_TYPE = {	
+    NONE            = -1,   -- 不需要副本房间
+    SINGLE          = 0,    -- 单人副本
+    TEAM            = 1,    -- 组队副本
+    PUBLIC          = 2,    -- 公共副本
+    GUILD         	= 3,    -- 帮会副本
+    UNION_LEADER   	= 4,    -- 盟主争夺副本
+    RELIC_BATTLE    = 5,    -- 神迹争夺副本
+    YULIN_BATTLE    = 6,    -- 羽林练兵副本
+    MASTER_PLAYER   = 7,    -- 师徒副本
+    KOF_BATTLE      = 8,    -- 第一尊者副本
+    PUBLIC_EX       = 9,    -- 公共扩展副本
+    STORY	        = 10,   -- 单人剧情副本
+    BOSS            = 11,	-- BOSS副本
+    GUILD_RESIDENT  = 12,	-- 公会建筑副本
+    RECOMMEND_TEAM  = 13,   -- 推荐组队副本
+    COUNT           = 14,	-- 
+};
+
+--排行榜二级类型
+RANK_SECEND_TYPE =
+{
+    NONE = 0,
+    CAMPUNION = 1,
+    CAMPTRIBE = 2,
+}
+
+RANK_TYPE = 
+{
+    CAMPRANK = 20,    -- 阵营排行榜
+    FIGHTVALUE = 1,    -- 个人战力榜
+    LEVEL = 2,      -- 个人等级榜
+    CMAP_FEATS = 20,    -- 个人排名
+    CAMP_WEEKLYFEATS = 21, --阵营周功勋
+    CAMP_ENEMYNUM= 22, -- 阵营杀敌榜
+    GUILDRANK = 30,     --公会
+    ACTIVITYSTAIR = 40,--神之试炼闯关
+    BATTLEFIELD = 50, -- 竞技场排行榜
+    ARENA = 51, -- 离线竞技场
+    PETRANK = 60, -- 宠物战力排行榜
+    --限时排行活动
+	E_RANKTYPE_LIMIT_FIGHT_RISE	    = 70,		-- 战斗力提升榜
+	E_RANKTYPE_LIMIT_PETFIGHTABILITY = 71,      -- 宠物战斗力榜
+	E_RANKTYPE_LIMIT_GANG_XIGUAN = 72,          -- 公会战斗力榜
+	E_RANKTYPE_LIMIT_CORPS_ADDMONEY = 73,       -- 公会捐献榜
+	E_RANKTYPE_LIMIT_UNION_SD = 74,             -- 阵营杀敌榜
+}
+
+--公会
+GUILD_RANK_TYPE =
+{
+    GUILD_MONEY = 2,    -- 公会总资金榜
+    GUILD_FIGHTVALUE = 1,    -- 公会总战力榜
+
+}
+
+-- 客户端请求的控制，比如屏蔽好友开关、屏蔽组队开关、屏蔽帮会开关	支持到32种行为  见玩家属性 szLG_ATT_CLIENT_CONTROL_PLAYER_ACTION
+ENUM_CLIENT_CONTROL_PLAYER_ACTION = 
+{
+	ENUM_CLIENT_CONTROL_PLAYER_ACTION_FRIEND	= 0,	--禁止好友申请
+	ENUM_CLIENT_CONTROL_PLAYER_ACTION_ADD_TEAM	= 1,	--禁止组队申请
+	ENUM_CLIENT_CONTROL_PLAYER_ACTION_ADD_CORPS	= 2,	--禁止帮会申请
+
+	ENUM_CLIENT_CONTROL_PLAYER_ACTION_MAX = 4,	            -- 行为数量
+};
+
+-- 计时器剩余时间的显示方式
+ETimeShowType = 
+{
+    -- 默认类型
+    TypeNone = 0,
+    -- 只显示秒数
+    TypeNumberOne = 1,
+    -- 显示分钟和秒数
+    TypeNumberTwo = 2,
+    -- 显示小时,分钟,秒数
+    TypeNumberThree = 3,
+    -- 显示小时,分钟,秒数以00:00:00的形式
+    TypeNumberFour = 4,
+    -- 显示秒数以00的形式
+    TypeNumberFive = 5,
+    -- 大于1小时，显示小时:分钟，其他显示分钟:秒数
+    TypeNumberSix = 6,
+    -- 显示时间秒数（没有秒字）
+    TypeNumberSeven = 7,
+    -- 显示分钟、秒数(00:00)
+    TypeNumberEight = 8,
+    -- 1,只显示天数  2，显示天数和小时  3，显示小时和分钟  4， 显示分钟和秒
+    TypeNumberNine=9,
+    -- 时间大于1分钟时只显示分钟，小于1分钟只显示为秒
+    TypeNumberTen= 10,
+    -- 时间大于1天显示天数跟小时，小于1天显示小时分钟，小于1小时显示分钟秒钟
+    TypeNumberEleven = 11,
+}
+
+-- 公会活动ID
+GUILD_ACTIVITY_ID = {
+    DONATION = 1,   -- 捐献
+    MEETING = 2,    -- 聚会
+}
+
+-- 活动ID枚举
+ENUM_AOT_ID = 
+{
+    AOT_ID_INVALID = -1,
+
+	--以下是测试枚举，不用纠结命名，等策划定义活动名称再修改
+	--AOT_ID_NEWPLAYER_ACTIVITY				= 1,		--新手活动副本
+	AOT_ID_DIJING_EXP_ACTIVITY				= 101,		--地精悬赏-经验本
+	AOT_ID_DIJING_MONEY_ACTIVITY			= 102,		--地精悬赏-金钱本
+	AOT_ID_ZIYUAN_MOUNT_ACTIVITY			= 201,		--资源本-坐骑材料本
+	AOT_ID_SHEJIAO_EXP_ACTIVITY				= 301,		--社交活动-经验之酒
+	AOT_ID_SHEJIAO_TILIACTIVITY				= 302,		--社交活动-王城盛宴
+
+	AOT_ID_EVERYDAY_MISSION					= 401,		--帝国悬赏
+	AOT_ID_NO_MAN_SIMPLE_LAND_1				= 501,		--无主之地
+	AOT_ID_NO_MAN_SIMPLE_LAND_2				= 502,		--无主之地
+	AOT_ID_NO_MAN_SIMPLE_LAND_3				= 503,		--无主之地
+
+	AOT_ID_NO_MAN_HARD_LAND_1				= 506,		--无主之地(
+	AOT_ID_NO_MAN_HARD_LAND_2				= 507,		--无主之地
+	AOT_ID_NO_MAN_HARD_LAND_3				= 508,		--无主之地
+
+
+	AOT_ID_MIJINGDUOBAO_ACTIVITY			= 601,		--秘境夺宝活动
+	AOT_ID_CHANGYEMENGJING_ACTIVITY			= 701,		--长夜梦境活动(悲鸣地宫活动)
+	AOT_ID_CORPS_REQUIRED					= 801,		--公会驻地
+	AOT_ID_AOTAI_WUXIAN_ACTIVITY			= 901,		--原无尽的炼狱(100层副本）
+    AOT_ID_ACTIVITY_BALL                    = 2101,     -- 宝珠
+	AOT_ID_ACTIVITY_PET                     = 2301,     -- 宠物
+    AOT_ID_ACTIVITY_MOUNT                   = 2401,     -- 坐骑
+    AOT_ID_ACTIVITY_SHO                     = 2201,     -- 魔神
+    AOT_ID_MAGICFORGE_ACTIVITY				= 1001,		--魔法熔炉活动
+    AOT_ID_BATTLE_FIELD						= 1201,		--竞技场
+	AOT_ID_BATTLE_FIELD_NIGHT				= 1202,		--竞技场（晚上）
+	AOT_ID_ARENA                            = 1901,     -- 离线竞技场景
+
+	AOT_ID_DUNGEON_SINGEL_10001				= 10001,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10002				= 10002,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10003				= 10003,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10004				= 10004,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10005				= 10005,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10006				= 10006,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10011				= 10011,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10012				= 10012,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10013				= 10013,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10014				= 10014,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10015				= 10015,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10016				= 10016,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10021				= 10021,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10022				= 10022,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10023				= 10023,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10024				= 10024,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10025				= 10025,	--单人章节副本
+	AOT_ID_DUNGEON_SINGEL_10026				= 10026,	--单人章节副本
+	AOT_ID_DUNGEON_TEAM_20021				= 20021,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20031				= 20031,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20032				= 20032,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20041				= 20041,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20042				= 20042,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20043				= 20043,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20051				= 20051,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20052				= 20052,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20053				= 20053,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20061				= 20061,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20062				= 20062,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20063				= 20063,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20071				= 20071,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20072				= 20072,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20073				= 20073,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20081				= 20081,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20082				= 20083,	--组队Boss副本
+	AOT_ID_DUNGEON_TEAM_20083				= 20083,	--组队Boss副本
+
+    AOT_ID_DUNGEON_HUNT_ACTIVITY			= 1401,	    --猎魔大师活动
+
+    AOT_ID_ARENA                            = 1901,     -- 离线竞技场景
+}
+
+--采集类型：采集、采矿、割肉、钓鱼、发掘、捕虫
+ENUM_BATTLEUNIT_GATHER_TYPE =
+{
+	GATHER_TYPE_COLLECTION = 0,				-- 采集任务道具
+	GATHER_TYPE_NONE = 1,					-- 采集无文本(客户端使用)
+	GATHER_TYPE_TRANSMMIT = 2,				-- 传送读条(客户端使用)
+	GATHER_TYPE_COLLECT_ENOUGH_DEL = 3,	    -- 采集次数够删除对象
+	GATHER_TYPE_EVENT = 4,		            -- 脚本读条事件
+    GATHER_TYPE_TRANSFER2 = 5,              -- 活动跳转读条(客户端使用)
+    GATHER_TYPE_CAPTUREPET = 6,             -- 捕捉宠物
+    GATHER_TYPE_TRANSFER3 = 7,              -- 传送到镖车附近(客户端使用)
+}
+
+--服务器发送的道具(add和update消息)基础数据Flag
+ENUM_UPDATEITEM_COMMON_FLAG = 
+{
+    ENUM_UPDATEITEM_COMMON_FLAG_CONTAIN_IS_ONE      = bit:_lshift(1,0),    -- 0 当前数量是否为1
+    ENUM_UPDATEITEM_COMMON_FLAG_UPDATELEVEL_IS_ZERO = bit:_lshift(1,1),    -- 1 精炼等级是否为0
+    ENUM_UPDATEITEM_COMMON_FLAG_STAR_IS_ZERO        = bit:_lshift(1,2),    -- 2 升星等级是否为0
+    ENUM_UPDATEITEM_COMMON_FLAG_EXP_IS_ZERO         = bit:_lshift(1,3),    -- 3 道具经验是否为0  
+    ENUM_UPDATEITEM_COMMON_FLAG_LUCK_IS_ZERO        = bit:_lshift(1,4),    -- 4 道具幸运值是否为0
+    ENUM_UPDATEITEM_COMMON_FLAG_HAVEPETINFO         = bit:_lshift(1,5),    -- 5 道具是否有宠物属性
+
+}
+
+--服务器发送的道具(add和update消息)附加效果数据Flag
+ENUM_UPDATEITEM_EFFECT_FLAG = 
+{
+    ENUM_UPDATEITEM_EFFECT_FLAG_RANDOMEFFECTIDISBYTE    = bit:_lshift(1,0),    --随机属性附加效果ID是否超过byte
+    ENUM_UPDATEITEM_EFFECT_FLAG_TAOZHUANGNUMISBYTE      = bit:_lshift(1,1),    --套装属性附加效果ID是否超过byte
+}
+
+--道具附加效果属性枚举
+ENUM_ITEM_ATT_STRUCT_TYPE = 
+{	
+	ITEM_ATT_STRUCT_EQUIP		= 0,			--装备基础属性
+	ITEM_ATT_STRUCT_WING        = 1,		    --翅膀属性
+	ITEM_ATT_STRUCT_EFFECT      = 2,			--存档的高级附加效果属性
+
+	ITEM_ATT_STRUCT_END,	
+}
+
+--存档的高级附加效果属性枚举
+ENUM_ITEM_EFFECT_TYPE = 
+{
+    ENUM_ITEM_EFFECT_TYPE_BEGIN			= 0,
+    ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT	= 0,		--装备随机属性(洗练)
+    ENUM_ITEM_EFFECT_TYPE_TAOZHUANG     = 1,		--套装属性
+    ENUM_ITEM_EFFECT_TYPE_NUM           = 2,
+}
+
+--随机属性(洗练) 属性 最大个数
+ITEM_MAX_RANDOM_EFFECT_MAX_NUM = 5;
+--装备套装属性最大条目数
+MAX_ITEM_EFFECT_TAOZHUANG_NUMBER = 5;
+-- pk模式
+ENUM_PK_CHANGE_TYPE = 
+{
+    -- 默认类型
+    PK_SWITCH_NONE = bit:_lshift(1,0),
+    -- 和平模式不要修改这个值 当玩家为和平模式的时候，检查关系矩阵
+    PK_SWITCH_PEACE_NEW = bit:_lshift(1,0),
+    -- 全体(自由)模式当玩家为全体模式的时候，检查关系矩阵   
+    PK_SWITCH_ALL_NEW = bit:_lshift(1,1),
+    -- 帮会模式 当玩家为帮会模式的时候，先检查被攻击者是否为帮会成员，不是再检查关系矩阵
+    PK_SWITCH_GUILD_NEW = bit:_lshift(1,2),
+    -- 组队模式 当玩家为组队模式的时候，先检查被攻击者是否为队友，不是再检查关系矩阵
+    PK_SWITCH_TEAM_NEW = bit:_lshift(1,3),
+    -- 服务器锁定状态（客户端不可更改）
+    PK_SWITCH_SERVER_LOCK_NEW = bit:_lshift(1,4),
+    -- 联盟模式
+    PK_SWITCH_TYPE_CAMP = bit:_lshift(1,5),
+}
+
+-- 主界面玩家的4种PK模式
+ENUM_MAINPANEL_PKMODE = 
+{
+    PEACE = 1,
+    FREE = 2,
+    GUILD = 3,
+    CAMP = 4,
+}
+
+-- 主界面右下角提示的类型
+ENUM_MAINPANEL_SHOWTIPTYPE = 
+{
+    TEAM_INVITE = 1,
+    TEAM_APPLY = 3,
+    GUILD_INVITE = 2,
+    GUILD_WAR = 4,    -- 公会领地战邀请进入
+    FRIEND_APPLY = 5, -- 好友申请
+}
+
+-- 系统解锁服务器端发送客户端的类型
+SYSOPEN_SEND_TO_CLIENT_TYPE = 
+{
+    LEVEL_UP = 0,	--升级
+    FINISHED_TASK = 1,	--完成任务
+    PLAYER_ONLINE = 2,	--上线
+    GM_OPERATION = 3,	--GM操作
+};
+
+-- 主界面下方解锁的条件
+ENUM_MAIN_INTERFACE_OPENCONDI = 
+{
+    ALWAYSOPEN = 0,--总是开放的
+    NEEDSYSTEMOPEN = 1,--需要某个系统解锁的
+    EQUIPOPEN = 2,--装备中的几个系统任意一个解锁就解锁
+}
+
+-- 主界面下方大按钮解锁的条件
+ENUM_MAIN_INTERFACE_UNLOCKTYPE = 
+{
+    ALWAYSOPEN = 0,--总是开放的
+    NEEDLEVEL = 1,--需要等级
+    NEEDMISSION = 2,--需要任务
+}
+
+-- 反序列化类型
+ENUM_ITEM_SERIALIZE = 
+{
+    ITEM_ADD = 1,-- 道具添加(背包)
+    ITEM_UPDATE = 2,--道具更新(背包)
+    ITEM_ONLY_SERIALIZE = 3,--只序列化
+}
+
+-- 活动状态枚举
+ACTIVITY_STATE = {
+    CLOSED = 1,         -- 活动已关闭
+    OPENING = 2,        -- 活动进行中
+    WAITING = 3,        -- 当天的活动未开始
+    OVER = 4,           -- 当天的活动已结束
+    UNSTART = 5,        -- 非当天的活动
+    LOCKED = 6,         -- 活动未解锁(等级不足)
+};
+-- 邮件类型
+ENUM_MAIL_TYPE = 
+{
+    MT_SystemMailBegin = 1,    -- 系统邮件开始
+    MT_SystemAuto = 2,    ----系统自动邮件
+    MT_SystemGM = 3,    ----游戏运营邮件
+    MT_PublicSaleShop = 4,    -- --拍卖行发送
+    MT_System_Return = 5,    ----系统退信
+    MT_SYS_GIFT_FROM_DB = 6,    ----来自的系统奖励来自数据库
+    MT_SYS_GIFT_FROM_CFG = 7,    ----来自的系统奖励来自配置
+    MT_SYS_WEIBO_AWARD = 8,     ----微博发奖
+    MT_SYS_TOOL_GIVE = 9,    ----来自查档工具给的
+    MT_SYS_TOOL_BACK = 10,    -- --来自查档工具恢复的
+    MT_SYS_INTERFACE_GIVE = 11,    -- --脚本接口给的
+    MT_SYS_MONEYEXCHANGE_TRADE  = 12,    -- --元宝交易行
+    MT_SYS_MONEYEXCHANGE_RETURN = 13,    ----元宝交易行返还的
+    MT_SystemMailEnd = 14,    --邮件系统结束
+
+    MT_UserMailBegin = 15,    --用户邮件开始
+    MT_Normal = 16,    ----玩家之间邮件
+    MT_Normal_Chat_Secret = 17,    ----玩家之间邮件[聊天系统私密]
+    MT_Family = 18,    ----家族内部邮件
+    MT_Corps = 19,    ----军团邮件
+    MT_UserMailEnd = 20,    -- 用户邮件结束
+
+    ---- 以上是不允许更改的 与服务器一致
+    MT_SystemMailEx_Begin = 50,    -- 系统邮件扩展开始
+    MT_SYS_LUCK_BOX = 51,    ----砸宝箱给的
+    MT_SYS_TAKE_GOLD_AWARD = 52, ----提取元宝奖励
+    MT_SYS_EXP_DEAL_ITEM = 53,    ----异常处理道具
+    MT_SYS_USER_SHOP_GIFT = 54,   ----玩家通过商城赠送
+    MT_SYS_MASTER_RETURN = 55,   ----徒弟出师返还
+    MT_SYS_BLESS_ITEM = 56,    ----祝福道具
+    MT_SYS_GM_SEND_MAIL = 58,    ----GM发送的邮件
+    MT_SYS_OLD_RETURN_MAIL = 59,    ----老玩家回归邮件
+    MT_SYS_WORLD_BOSS = 60,    --/参与世界Boss发送
+    MT_SYS_SIGNIN = 61,    ----签到
+    MT_SYS_DUNGEON = 62,    ----副本
+    MT_SYS_ACHIEVE = 63,    ----成就
+    MT_SYS_VERYDAYTASK = 64,    ----日常(传凯的)
+    MT_SYS_VERYDAYTASK_Y = 65,    ----每日必做(彦凯那个)
+    MT_SYS_GODOFFICER = 66,    ----神位
+    MT_SYS_UNION = 67,    ----联盟
+    MT_SYS_DUNGEON_CARD = 68,    ----副本翻牌
+    MT_SYS_AOTAI_ACTIVITY = 69, ----奥泰空间
+    MT_SYS_LOTTERY = 70,    ----十连抽奖
+    MT_SYS_AUCTION_WITH_ID = 71,    ----+-LongY[Zck] 拍卖行[模板相关]
+    MT_SYS_BOSS = 72,    ----+-LongY[Zck] 通用Boss
+    MY_SYS_CDK = 78,    --//CDK
+	MY_SYS_GAME_SHOP = 79,  --//商城
+    MT_SYS_WITH_DATA_BEGIN = 120,
+    MT_SYS_AUCTION_WITH_DATA = 120, ----+-LongY[Zck] 拍卖行[实例相关]
+    MT_SYS_WITH_DATA_END = 150,	
+    MT_SystemMailEx_End = 200,    -- 系统邮件扩展结束
+}
+
+-- 邮件枚举状态
+ENUM_MAIL_STATE = 
+{
+    MS_Read = bit:_lshift(1,0), ----已读,
+    MS_Overdue = bit:_lshift(1,1), ----已经过期bit:_lshift(1,1),
+    MS_Deleted = bit:_lshift(1,2), ----已经删除（用于群发性质的邮件）
+    MS_NoAffix = bit:_lshift(1,3),-- --没有附件
+    MS_TakeAffixItem = bit:_lshift(1,4), ----是否可以提取道具附件
+    MS_TakeAffixMoney = bit:_lshift(1,5), ----钱
+    MS_TakeAffixSilver = bit:_lshift(1,6), ----绑定钱
+    MS_TakeAffixTongBao = bit:_lshift(1,7), -- 钻石
+    MS_TakeAffixTongBei = bit:_lshift(1,8), -- 绑定钻石
+    MS_Takeing =bit:_lshift(1,9), ---- 正在提取中
+}
+
+-- 邮件道具领取状态枚举
+ENUM_MAILITEM_AKEAFFIXSTATE = 
+{
+    ESMT_SUCCESS_TAKEITEM = bit:_lshift(1,0), --领取道具成功
+    ESMT_SUCCESS_TAKEMONEY = bit:_lshift(1,1), --领取非绑定金币成功
+    ESMT_SUCCESS_TAKEBINDMONEY = bit:_lshift(1,2), --领取绑定金币成功
+    ESMT_SUCCESS_TAKETONGBAO = bit:_lshift(1,3),-- 领取非绑定钻石成功
+    ESMT_SUCCESS_TAKEBINDTONGBAO = bit:_lshift(1,4), --领取绑定钻石成功
+
+    ESMT_FAILED_TAKEITEM = bit:_lshift(1,5), --领取道具失败
+    ESMT_FAILED_TAKEMONEY = bit:_lshift(1,6), --领取非绑定金币失败
+    ESMT_FAILED_TAKEBINDMONEY = bit:_lshift(1,7), -- 领取绑定金币失败
+    ESMT_FAILED_TAKETONGBAO = bit:_lshift(1,8), -- 领取非绑定钻石失败
+    ESMT_FAILED_TAKEBINDTONGBAO =bit:_lshift(1,9), ---- 领取绑定钻石失败
+}
+
+-- 宝石的操作类型
+GEM_OP_TYPE = 
+{
+	OPEN_HOLE = 0, -- 开孔
+	SET_STONE = 1, -- 镶嵌宝石
+	UNSET_STONE = 2, -- 摘除宝石
+};
+
+-- 队伍成员类型
+TEAM_MEMBER_TYPE = 
+{
+    LEADER = 0,		-- 队长
+    MEMBER = 1,		-- 队员
+    HERO = 2,		-- 英雄
+    CONSORT = 3,	-- 夫妻
+}
+
+-- 兑换货币的要兑换的货币类型
+MONEY_EXCHANGE_TYPE = 
+{
+    NOTBIND_MONEY = 0,  -- 金币(非绑定金币)
+    BIND_MONEY = 1,     -- 银币(绑定金币)
+    BIND_DIAMOND = 2,   -- 蓝钻(绑定钻石)
+}
+
+-- 兑换货币使用的货币类型
+MONEY_EXCHANGE_USE_TYPE =
+{
+    USE_NOTBIND_MONEY = 0,      -- 使用金币(非绑定金币)
+    USE_NOTBIND_DIAMOND = 1,    -- 使用红钻(非绑定钻石)
+    USE_BIND_DIAMOND = 2,       -- 使用蓝钻(绑定钻石)
+}
+--快捷购买使用的货币类型
+QUICK_BUY_USE_TYPE = 
+{
+    USE_BIND_COIN = 0,             -- 使用银币
+    USE_BIND_DIAMOND = 1,          -- 使用蓝钻(绑定钻石)
+    USE_NOTBIND_DIAMOND = 2,       -- 使用红钻(非绑定钻石)
+}
+-- 道具快捷购买类型
+QUICK_BUY_ITEM_COST_TYPE = 
+{
+    USE_RED_DIAMOND = 1,       --只能用红钻购买
+    USE_COIN = 2,              --只能用银币购买
+    USE_BLUE_DIAMOND = 3,      --只能用蓝钻购买
+}
+-- 货币类型
+MONEY_NEW_TYPE = 
+{
+    BIND_COIN = 3,      -- 绑定金币(银币)
+    BIND_DIAMOND = 4,   -- 绑定钻石(蓝钻)
+    NOTBIND_COIN = 5,   -- 非绑定金币(金币)
+    NOTBIND_DIAMOND = 6 -- 非绑定钻石(红钻)
+}
+
+-- 复活类型枚举
+ENUM_RELIVE_TYPE = 
+{
+	ENUM_RELIVE_TYPE_INVALID = -1,
+	ENUM_RELIVE_TYPE_INTACT = 0,					-- 原地复活					使用钻石（包括副本）
+	ENUM_RELIVE_TYPE_RELIVE_POS = 1,				-- 到复活点复活				有CD时间复活点复活
+	ENUM_RELIVE_TYPE_CENTER_CITY = 2,				-- 到主城复活				小于一定等级去小镇复活
+
+	ENUM_RELIVE_TYPE_S_AND_C_ALL_USE_END = 3,		-- 服务器和客户端公用结束	再上面的是客户端和服务器公用，下面的仅仅服务器使用
+
+	--ENUM_RELIVE_TYPE_PRISON_JUNIOR,			-- 普通监狱
+	--ENUM_RELIVE_TYPE_PRISON_SENIOR,			-- 高级监狱
+    --ENUM_RELIVE_TYPE_PRISON_HELL,				-- 地狱监狱
+    --ENUM_RELIVE_TYPE_FRESHMAN,				-- 新人复活
+    --ENUM_RELIVE_TYPE_FORCE_INTACT,			-- 强制定时原地复活
+    --ENUM_RELIVE_TYPE_FORCE_RELIVE_POS,		-- 强制定时复活点复活
+    --ENUM_RELIVE_TYPE_YULIN_INTACT,			-- 羽林战场中的原地复活            (非羽林战场复活逻辑禁止使用该枚举！！！)
+    --ENUM_RELIVE_TYPE_YULIN_FORCE_RELIVE_POS,	-- 羽林战场中的强制定时复活点复活  (非羽林战场复活逻辑禁止使用该枚举！！！)
+	ENUM_RELIVE_TYPE_LASTSCENE_POS = 4,				--+-LongY[Zck] 到上次进入副本的场景坐标点复活[暂时专用于“副本”]
+	ENUM_RELIVE_TYPE_SKILL_REBORN = 5,				-- 技能复活
+
+	ENUM_RELIVE_TYPE_END = 6,
+};
+
+-- 传送枚举
+ENUM_TRANSMISSION_TYPE = 
+{
+	BEGIN					= 0,
+	MISSION_TRANSMISSION	= 1,	-- 任务传送
+	WORLD_BOSS_TRANSMISSION	= 2,	-- 世界Boss传送
+	DANGEROUS_TRANSMISSION	= 3,	-- 危险场景传送
+	FIND_NPC_TRANSMISSION	= 4,	-- 查找NPC传送
+	SMALL_MAP_TRANSMISSION	= 5,	-- 小地图传送
+	END,
+};
+
+--魔法熔炉玩家所处在的状态
+ENUM_MAGICFORGE_STATE = 
+{
+	ENUM_MAGICFORGE_STATE_START						= 0,	-- 未随机出6个道具
+	ENUM_MAGICFORGE_STATE_COLLECTING				= 1,	-- 正在收集6个道具
+	ENUM_MAGICFORGE_STATE_PLAYTWEENING				= 2,	-- 正在播放转动动画
+};
+
+-- 活动跳转类型
+ACTIVITY_JUMP_TYPE = 
+{
+    OPEN_UI         = 1,    -- 打开指定UI
+    SEEK_NPC        = 2,    -- 前往NPC
+    EMPIREBOUNTY    = 3,    -- 帝国悬赏
+    DUNGEON         = 4,    -- 前往副本
+    SCENE           = 5,    -- 跳转场景
+    CAMP_NPC        = 6,    -- 无主之地
+    WORLDBOSS       = 7,    -- 世界BOSS
+    CAMP_BORDER     = 8,    -- 阵营边境战场
+};
+
+-- 屏蔽词模块
+ENUM_SHILED_AREA = 
+{
+    CHAT = "chat",          --聊天系统
+    GUILD = "guild",        --公会系统
+    NAME = "name",          --名字系统
+};
+
+-- 宠物相关
+PET_ENUM = 
+{
+    -- 宠物资质个数
+    PET_ALL_QUALITY_NUM = 5,
+    -- 宠物资质提升所用道具的种类
+    PET_ADD_QUALITY_USEITEM_NUM = 4,
+    -- 宠物天赋技能个数
+    PET_ALL_TALENT_SKILL_NUM = 5,
+    -- 宠物后天技能个数
+    PET_ALL_LEARN_SKILL_NUM = 5,
+    -- 宠物所有技能个数
+    PET_ALL_SKILL_NUM = 10,
+    -- 宠物悟性最大值
+    PetMaxSavvyNum = 15,
+    -- 宠物面板最大个数
+    PET_PANEL_MAX_NUM = 10,
+
+	PET_STATE_CHILD = 0, -- 幼年
+	PET_STATE_ADULT = 1, -- 成年
+
+    PET_SAVVY_MAXNUM = 15, -- 宠物悟性最大值
+    PET_SAVVY_NUM_PER_COLUMN = 3, -- 宠物每段几个悟性值
+
+    PET_INTIMATE_ITEM_NUM = 4, -- 宠物亲密度需求道具数量
+
+    PET_LOCK_MAX_ITEMS = 3, -- 宠物锁定瓶最大个数
+
+    PET_SKILLTYPE_TALENT = 0, -- 宠物技能的类型，天赋技能
+    PET_SKILLTYPE_LEARN = 1, -- 宠物技能的类型，学习技能
+
+    PET_MAX_STAR_NUM = 10, -- 宠物星级最大数
+    PET_STAR_UP_NEED_MAX_ITEMNUM = 5, -- 宠物升星需求道具的最大数量
+
+    PET_COMBINE_SLOT_NUM = 3, -- 宠物合成孔位数
+    PET_FIGHT_ORDER_NUM = 3, -- 上阵宠物个数
+};
+
+-- 宠物子消息
+PET_ITEM_OPERATE_MSG = 
+{
+	PET_EAT_EXPITEM = 0,        -- 吃经验药
+    PET_RELEASE = 1,            -- 宠物放生
+    PET_CHANGE_TO_ITEM = 2,     -- 宠物变成道具
+    PET_ADD_SAVVY = 3,          -- 悟性提升
+    PET_ADD_INTIMATE = 4,       -- 亲密度提升
+    PET_SET_OUTPET_ID = 5,      -- 设置出战宠物
+	PET_REST_OUTPET_ID = 6,     -- 休息出战宠物
+	PET_INFO_INIT = 7,          -- 宠物信息上线发送
+    PET_GROW_TO_ADULT = 8,      -- 幼年期宠物进化到成年
+    PET_QUALITY_FOSTER = 9,     -- 资质培养
+    PET_QUALITY_REFRESH = 10,   -- 宠物资质刷新
+	PET_QUALITY_SAVE = 11,      -- 宠物资质保存
+    PET_SETOUT_ADDINTIMATE = 12,--宠物出战累积时间到加亲密度
+	PET_SETOUT_ADDEXP = 13,		--宠物出战同步加经验
+	PET_SETOUT_DEAD = 14,		--通知客户端宠物死亡
+	PET_CTOS_CREATEPET =15,		--宠物死亡复活时间到通知服务器创建宠物
+    PET_CAPTURE = 16,			--宠物捕捉
+    PET_LEARN_SKILL = 17,		--宠物学习技能
+    PET_CREATE_IN_SCENE = 18,   --宠物在场景中创建
+    PET_REQUEST_RANKINFO = 19,  --排行榜请求宠物的序列化数据
+    PET_SHOWTIPS_LEARNSKILL_BYLEVELUP = 20, --宠物升级悟出了技能
+    PET_DECOMPOSE = 21,			--宠物分解
+	PET_STARUP = 22,			--宠物升星
+    PET_COMBINE = 23,           --宠物合成
+    PET_FIGHTING_TEAM = 24,     --宠物战斗小队
+    PET_FIGHTING_TEAM_PRIORFIRST = 25,  --宠物战斗小队优先
+};
+
+-- 战区信息
+ZONE_ENUM = 
+{
+    -- 战区类型
+    ZONE_NEW = bit:_lshift(1,0), -- 新战区
+    ZONE_RECOMMEND = bit:_lshift(1,1), -- 推荐战区
+    ZONE_EXP_1 = bit:_lshift(1,2), -- 战区经验 00 - 正常 01-倍经验 10—经验 11-经验
+    ZONE_EXP_2 = bit:_lshift(1,3), -- 战区经验
+    ZONE_HOT = bit:_lshift(1,4), -- 火爆
+
+    ---战区状态
+    ZONE_CLOSE = 0;                --// 关闭状态
+    ZONE_OPEN  = bit:_lshift(1,0); --//开启状态,战区空闲(流畅状态)
+	ZONE_CROWD = bit:_lshift(1,1); --//拥挤
+	ZONE_BUSY  = bit:_lshift(1,2); --//战区繁忙
+	ZONE_FULL  = bit:_lshift(1,3); --//爆满
+	ZONE_HIDE  = bit:_lshift(1,4); --//隐藏战区
+
+    -- 根据Sdk发来的一个状态来判断是内部人员还是用户来显示此状态的战区
+	ZONE_DEBUG = bit:_lshift(1,6); --//对内调试，对内开启，对外关闭
+
+	ZONE_DEBUGCLOSE = bit:_lshift(1,7); --//内部调试，外部不可见
+};
+
+-- 促销状态
+E_SHOPITEM_FLAG =
+{
+    E_SHOPITEM_HOTITEM = bit:_lshift(1,0),      --热卖物品
+    E_SHOPITEM_PROMOTEITEM = bit:_lshift(1,1),  --促销商品(打折)
+    E_SHOPITEM_HIDEITEM = bit:_lshift(1,2),     --隐藏商品
+    E_SHOPITEM_LIMITTIME = bit:_lshift(1,3),    --限时供应
+    E_SHOPITEM_NEWITEM = bit:_lshift(1,4),      --新的物品
+    --暂时废弃
+    E_SHOPITEM_PACKAGEITEM = bit:_lshift(1,5), --打包商品，有赠品
+};
+
+--新手游技能类型
+ENUM_SKILL_TYPE_PHONE = 
+{
+	SKILL_TYPE_PHONE_BEGIN					= 0,
+	SKILL_TYPE_PHONE_INITIATIVE				= 1,	-- 主动
+	SKILL_TYPE_PHONE_PASSIVITY				= 2,	-- 被动
+	SKILL_TYPE_PHONE_HALO_BUFF				= 3,	-- 光环
+	SKILL_TYPE_PHONE_DISPLACEMENT			= 4,	-- 位移
+	SKILL_TYPE_PHONE_DISPLACEMENT_XUANFENG	= 5,    -- 旋风斩(另类位移)
+	SKILL_TYPE_PHONE_FREE_FLY				= 6,    -- 轻功技能
+	SKILL_TYPE_PHONE_BODY_STRONG			= 7,	-- 变身技能
+	SKILL_TYPE_PHONE_DISPLACEMENT_BACK		= 8,	-- 反向位移技能
+	SKILL_TYPE_PHONE_RELIVE					= 9,	-- 复活技能
+};
+
+-- 猎魔大师副本退出类型
+ENUM_HUNT_QUIT_TYPE =
+{
+    HUNT_QUIT_TYPE_ACTIVE                  = 1,    -- 主动退出副本
+    HUNT_QUIT_TYPE_DIE                     = 2,    -- 死亡时退出
+    HUNT_QUIT_TYPE_WIN                     = 3,    -- 胜利时退出
+};
+
+-- 竞技场战斗结果
+BATTLEFIELD_RESULT = 
+{
+	BATTLEFIELD_RESULT_START = 0,	--初始
+	BATTLEFIELD_RESULT_WIN = 1,		--胜利
+	BATTLEFIELD_RESULT_LOSE = 2,	--失败
+	BATTLEFIELD_RESULT_DRAW = 3,	--平局
+	BATTLEFIELD_RESULT_NOMATCH = 4,	--轮空
+};
+
+-- 竞技场每日领取奖励状态
+BATTLEFIELD_GETREWARDSTATE = 
+{
+	BATTLEFIELD_GETREWARDSTATE_CANNOTGET = 0, --无法领取
+	BATTLEFIELD_GETREWARDSTATE_CANGETBUTNOTGET = 1, --可领取
+	BATTLEFIELD_GETREWARDSTATE_ALREADYGET = 2, --已领取
+};
+
+-- 消息类型
+ENUM_TAKE_GOLD_AWARD_MSG = 
+{
+    TAKE_GOLD_MSG_CFG = 0,					-- 发送配置信息		szBuf: STOC_TakeGoldAwardCfg
+    TAKE_GOLD_MSG_TAKE_GOLD_FIRST = 1,		-- 提取首次信息
+    TAKE_GOLD_MSG_TAKE_GOLD_INFO = 2,		-- 提取元宝信息		param[2]: 0 表示初始化，1表示重置信息； param[3]:重置类型ENUM_TAKE_GOLD_OP_TYPE；szBuf: SPlayerTakeGoldInfo
+    --TAKE_GOLD_MSG_REQUEST_TAKE_INFO,	-- 请求提取信息		窗口打开时请求 其他参数无效																							我们不需要客户端主动提取了
+    TAKE_GOLD_MSG_UPDATE_TAKE_GOLD = 3,		-- 更新提取元宝数	szBuf: Int 值，表示提取的元宝数
+    TAKE_GOLD_MSG_TAKE_GOLD_AWARD = 4,		-- 提取奖励			param[2] : 提取类型 ENUM_TAKE_GOLD_OP_TYPE； szBuf: Int值，领取的区间值
+    TAKE_GOLD_MSG_TAKE_GOLD_AWARD_R = 5,	-- 提取奖励返回		param[2] : 提取类型 ENUM_TAKE_GOLD_OP_TYPE； param[3]:0奖励失败，1奖励成功；szBuf: Int值，领取的区间值
+    --TAKE_GOLD_MSG_TAKE_GOLD_ADV_HTTP, -- 广告网址																																我们不需要了，这个网址放在SDK里了
+};
+
+-- 提取元宝操作TYPE
+ENUM_TAKE_GOLD_OP_TYPE = 
+{
+    TAKE_GOLD_OP_TYPE_BEGIN = 0,  -- 开始
+    TAKE_GOLD_OP_FIRST = 0,       -- 首次提取
+    TAKE_GOLD_OP_MONTH = 1,       -- 月操作
+    TAKE_GOLD_OP_WEEK  = 2,       -- 周操作
+    TAKE_GOLD_OP_TYPE_END = 3,    -- 操作类型个数
+};
+
+--福利
+WelfareType =
+{
+   --七日签到
+   WT_SevenDayLogin = 1;
+   --在线奖励
+   WT_OnlineTime = 2;
+   --升级礼包
+   WT_Levelup = 3;
+   --离线经验
+   WT_Offline = 4;
+   --30日领取
+   WT_ThirtyDayPick = 5;
+   --充值返利
+   WT_Recharge = 6;
+   -- 道具兑换
+   WT_Exchange = 7;
+   -- 成长基金1=新手基金
+   WT_GrowFund1 = 8;
+   -- 成长基金2
+   WT_GrowFund2 = 9;
+   --资源找回
+   WT_ResourcesBack = 10;
+   --每日充值
+   WT_DailyCharge = 11;
+   -- 累天充值
+   WT_CumulativeDaysCharge = 12;
+   --累计道具消耗相关
+   WT_Force = 13;   -- 强化
+   WT_Refining = 14; -- 精炼
+   WT_PetSavvy = 15;-- 宠物悟性
+   WT_PetQualityRefresh = 16; --宠物洗练
+   WT_RideLevelUp = 17; -- 坐骑进阶
+   -- 限时抽奖
+   WT_TimeLimitDraw = 18;
+
+   --最多长度
+   Count = 18;
+}
+
+-- 成长基金
+GrowFundType = 
+{
+	GROW_FUND_TYPE_1 = 0; -- 1档成长基金
+	GROW_FUND_TYPE_2 = 1; -- 2档成长基金
+
+	GROW_FUND_TYPE_END = 2;
+};
+
+-- 商城礼包状态
+StoreGiftBagFlag =
+{
+    GB_Hot = bit:_lshift(1,0),             --热门推荐
+
+};
+--商城主菜单
+MainMenuType =
+{
+   MMT_Red = 1;         --红钻商城
+   MMT_Blue = 2;        --蓝钻商城
+   MMT_MemberCard = 3;  --月卡
+   MMT_WeekCard = 7;    --周卡
+   MMT_Recharge = 4;    --充值
+   MMT_GiftBag1 = 5;    --超值礼包(直购礼包)
+   MMT_GiftBag2 = 6;    --超值礼包(钻石礼包)
+   Count = 7;
+}
+
+-- 神器子消息
+ARTIFACT_OPERATE_MSG = 
+{
+	ARTIFACT_ACTIVE_FRAGMENT = 0,	--激活碎片
+	ARTIFACT_ACTIVE_ARTIFACT = 1,	--激活神器
+	ARTIFACT_LEVELUP_FRAGMENT = 2,	--碎片升级
+	ARTIFACT_LEVELUP_ARTIFACT = 3,	--神器升级
+};
+
+-- 阵营符印子消息
+CAMPSEAL_OPERATE_MSG = 
+{
+	CAMPSEAL_ACTIVE = 0,		--激活符文
+	CAMPSEAL_SEAL_ON = 1,		--镶嵌符文
+	CAMPSEAL_SEAL_CHANGE = 2,	--替换符文
+	CAMPSEAL_SEAL_DOWN = 3,		--卸下符文
+};
+
+-- 活动ID常量
+EACTIVITYID = {
+    ACTIVITY_STAIR = 901,   -- 神之试炼
+    ACTIVITY_BALL = 2101,   -- 宝珠
+    ACTIVITY_SHO = 2201,    -- 魔神
+	ACTIVITY_PET = 2301,   -- 宠物
+    ACTIVITY_MOUNT = 2401,    --坐骑
+}
+
+-- 台湾SDK的gameId
+TW_GAME_ID = 32;
+
+-- 系统显示开关
+SYS_SHOW_SWITCH = {
+    CDKEY_ANDROID   = 1,            -- 兑换码-安卓
+    CDKEY_IOS       = 2,            -- 兑换码-IOS
+    COUNT           = 3,            -- 开关总数
+}

@@ -1,0 +1,208 @@
+﻿require "Panel/VipShowPanel"
+require "Panel/VipWelfarePanel"
+require "Panel/VipPrivilegePanel"
+
+module('VipPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'VipPanel';
+---------------------------------------label路径---------------------------------------
+-- 当前Vip等级
+local m_LbVipLvPath = "Sub_VipProcess/lb_VipLv";
+-- vip描述
+local m_LbVipContentPath = "Sub_VipProcess/lb_VipContent";
+-- 当前经验
+local m_LbVipNumPath = "Sub_VipProcess/Sub_VipPB/lb_VipNum";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_ClosePath = "Close";
+-- 加注释
+local m_SubCardInfoPath = "Sub_VipShow/Sub_CardInfo";
+-- 加注释
+local m_SubVipWelfarePath = "Sub_VipWelfare";
+
+----------------------------------通用的名称路径---------------------------------------
+-- vip进度条
+local m_SubVipPBPath = "Sub_VipProcess/Sub_VipPB";
+-- 充值按钮
+local m_BtnRechargePath = "Sub_VipProcess/btn_Recharge";
+-- 说明按钮 btn_Tips
+local m_BtnTipsPath = "Sub_VipProcess/btn_Tips";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+local m_Close = nil;
+local m_SubVipPB = nil;
+local m_BtnRecharge = nil;
+
+-- 当前选中的标签 默认选中第一个
+local m_selectTagNum = 1;
+-- 上一次选择的标签默认选中第一个
+local m_lastSelectTagNum = 1;
+-----------------------------------一些写死的规定--------------------------------------
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = "Tab1", panelName = "VipShowPanel", isFirstOpen = true, luaFileName = VipShowPanel}, 
+    [2] = { name = "Tab2", panelName = "VipWelfarePanel", isFirstOpen = true, luaFileName = VipWelfarePanel}, 
+    [3] = { name = "Tab3", panelName = "VipPrivilegePanel", isFirstOpen = true, luaFileName = VipPrivilegePanel},
+};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+    m_toggleTable[m_selectTagNum].luaFileName.Start();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    end
+end
+
+function OnDisable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Close = nil;
+	m_SubVipPB = nil;
+	m_BtnRecharge = nil;
+    for Index = 1, #m_toggleTable do
+        m_toggleTable[Index].luaFileName.OnDestroy();
+        m_toggleTable[Index].isFirstOpen = true;
+    end
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_VIP);
+    m_Close = child(m_PanelObject, m_ClosePath).gameObject;
+    m_SubVipPB = GetComponent(m_PanelObject, m_SubVipPBPath, "UIProgressBar");
+    m_BtnRecharge = child(m_PanelObject, m_BtnRechargePath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Close).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_BtnRecharge).onClick = LuaHelper.OnClick(OnBtnRechargeClick);
+    SetGameObjectEvent(m_BtnTipsPath, OnBtnTipsClick, m_PanelObject);
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent("MainMenu/" .. m_toggleTable[Index].name, OnTabClick, m_PanelObject);
+    end
+end
+
+-- 初始化显示信息
+function InitShow()
+    -- 初始化标签状态
+    for Index = 1, #m_toggleTable do
+        SetButtonActiveState(Index, Index == m_selectTagNum)
+    end
+    if VipManager.MyVipData == nil then return end
+    SetLabelContent(m_LbVipLvPath, "VIP "..VipManager.MyVipData.vipLv, m_PanelObject);
+
+    local allVipData = VIPLevelTable.GetAll();
+    local curVipData = VIPLevelTable.Get(VipManager.MyVipData.vipLv);
+    if VipManager.MyVipData.vipLv == #allVipData then 
+        SetLabelContent(m_LbVipContentPath, "VIP"..GetTextToId(280), m_PanelObject);
+        local value = VipManager.MyVipData.vipExp / curVipData.NeedExp;
+        SetLabelContent(m_LbVipNumPath, VipManager.MyVipData.vipExp.."/".. curVipData.NeedExp, m_PanelObject);
+        m_SubVipPB.value = value;
+    else
+        local nextVipData = VIPLevelTable.Get(VipManager.MyVipData.vipLv + 1);
+        SetLabelContent(m_LbVipContentPath, string_format(GetTextToId(162903),nextVipData.NeedExp - VipManager.MyVipData.vipExp, VipManager.MyVipData.vipLv + 1), m_PanelObject);
+        local value = VipManager.MyVipData.vipExp / nextVipData.NeedExp;
+        SetLabelContent(m_LbVipNumPath, VipManager.MyVipData.vipExp.."/".. nextVipData.NeedExp, m_PanelObject);
+        m_SubVipPB.value = value;
+    end
+    OpenPanelByTag();
+    RedHintMng.SetRedHintState(CREDHINTENUM.VIP_REWARD, Main_MiddleTop.CheckVipRed());
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭界面
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_VIP);
+end
+
+-- 充值跳转
+function OnBtnRechargeClick(gameObject)
+    StorePanel.OpenPanelRecharge();
+end
+
+-- 页签点击
+function OnTabClick(e)
+    local currentName = e.name;
+    local selectTagNum = tonumber(string.sub(currentName, 4));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        OpenPanelByTag();
+    end
+end
+
+-- 说明点击
+function OnBtnTipsClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_VIP, 2);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 修改经验值
+function ChangeProcessBar(m_selectTagNum)
+    --error("selectTagNum::"..m_selectTagNum);
+    local curVipData = VIPLevelTable.Get(m_selectTagNum);
+    if curVipData == nil then
+        return;
+    end
+    --error("curVipData.NeedExp::"..curVipData.NeedExp);
+    local value = VipManager.MyVipData.vipExp / curVipData.NeedExp;
+    SetLabelContent(m_LbVipNumPath, VipManager.MyVipData.vipExp.."/".. curVipData.NeedExp, m_PanelObject);
+    m_SubVipPB.value = value;
+end
+-- 修改标签 
+function SetButtonActiveState(Index, actived)
+    local tabParent = child(m_PanelObject, "MainMenu").gameObject;
+    SetGameObjectState(m_toggleTable[Index].name.."/Sprite_Active", actived, tabParent);
+    SetGameObjectState(m_toggleTable[Index].name.."/Sprite_Deactive", not actived, tabParent);
+    SetGameObjectState(m_toggleTable[Index].panelName, actived, m_PanelObject);
+end
+
+-- 打开对应界面
+function OpenPanelByTag()
+    SetButtonActiveState(m_lastSelectTagNum, false);
+    SetButtonActiveState(m_selectTagNum, true);
+    SetGameObjectState("Sub_VipProcess", m_selectTagNum ~= 3, m_PanelObject);
+    -- 执行的lua逻辑
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+    SetGameObjectState(m_BtnTipsPath, m_selectTagNum == 2, m_PanelObject);
+end
+ 
+ -- 刷新界面
+ function RefreshVipPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_VIP) == 1 then 
+--        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+        InitShow();
+        error("RefreshVipPanel")
+    end
+ end

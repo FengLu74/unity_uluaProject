@@ -1,0 +1,460 @@
+﻿module("Main_RightBottom", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前药品的数量
+local m_MedNumStr = "RightBottom/Skill/UseMedButton/Label_Num";
+-- 购买+号
+local m_MedAddStr = "RightBottom/Skill/UseMedButton/Label_Buy";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 使用药品按钮
+local m_UseMedButtonStr = "RightBottom/Skill/UseMedButton";
+
+-- tip按钮
+local m_TipButtonStr = "RightBottom/TipButton";
+-- 公会领地战成功提示
+local m_TipSuccessfulBidStr = "RightBottom/SuccessfulBidTips";
+
+-- 自动战斗按钮
+local m_AutoFightButtonStr = "RightBottom/Skill/Button_AutoFight";
+-----------------------------------------Sprite路径------------------------------------
+-- 药品图标
+local m_MedIconStr = "RightBottom/Skill/UseMedButton/Sprite_Icon";
+-- 药品CD遮罩图标
+local m_MedMaskStr = "RightBottom/Skill/UseMedButton/Sprite_Mask";
+----------------------------------gameobject所在的路径---------------------------------
+-- 吃鸡技能
+local m_EatChickenSkillStr = "RightBottom/Skill/EatChickenSkill";
+----------------------------------通用的名称路径---------------------------------------
+-- 吃鸡技能位置
+local m_EatChickenCommonSkillStr = "/Skill";
+-- 技能锁头
+local m_SkillLockStr = "/Sprite_Lock";
+-- 技能等级
+local m_SkillLevelStr = "/Label_Level";
+-- 神将变身按钮
+local m_GodShapeShiftBtnStr = "RightBottom/Skill/GodSkill/Sprite_BG/Skill_image";
+-- 神將變身按钮cd
+local m_GodBtnCDStr = "RightBottom/Skill/GodSkill/Sprite_BG/Skill_Cd";
+-- 神将cd图片
+local m_GodShapeCDShiftBtnStr = "RightBottom/Skill/GodSkill/Sprite_BG/Skill_imageCd";
+-- 神将锁cd图片
+local m_GodShapeCDSuoShiftBtnStr = "RightBottom/Skill/GodSkill/Sprite_BG/Skill_imageSuoCd";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    G_TimerMng:RemoveTimeTask("TipsWar");
+    G_TimerMng:RemoveTimeTask("FriendsApplyTimer");
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 初始化显示信息
+function InitShow()
+    -- 初始化药品的显示
+    InitMedicineUse();
+    -- 初始化Tips数据
+    InitTipButtonShow();
+    -- 初始化自动战斗的按钮显示
+    InitAutoFightShow()
+    -- 初始化吃鸡技能
+    InitEatChickenSkillShow();
+       -- 初始化神将技能cd
+    InitGodBtnShow();
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    -- 点击使用药品的按钮
+    SetGameObjectEvent(m_UseMedButtonStr, ClickUseMedicine, m_panelObject);
+    -- 点击提示消息按钮
+    SetGameObjectEvent(m_TipButtonStr, OnTipButtonClick, m_panelObject);
+    -- 点击解锁
+    for Index = 1,4 do
+        local path = m_EatChickenSkillStr..m_EatChickenCommonSkillStr..Index;
+        SetGameObjectEvent(path .. m_SkillLockStr,OnSkillLockClick,m_panelObject);
+    end
+    -- 神将变身按钮
+    SetGameObjectEvent(m_GodShapeShiftBtnStr,OnClickGodShapeShift,m_panelObject);
+end
+--------------------------------------神将变身暂时写在这里-------------start--------------------------------
+function OnClickGodShapeShift(e)
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_GOD) ==  false then
+        -- 神将对应12
+        local need_lvl = G_MainPanel_InterfaceData[12].UnlockPara1;
+        ShowSystemFlowTips(2680,nil,{need_lvl});
+        return;
+    end
+    local god_id = GodShapeShiftManager.GetCurGodEquipId();
+    if god_id <= 0 then
+        -- 未激活任意一个神将
+        ShowSystemFlowTips(9627);
+        --error("需要激活任意一个神将");
+        return;
+    end 
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHO_Appearance);  --12011
+    buffer:WriteInt(god_id);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+    
+end
+function InitGodBtnShow(times)
+
+    if  m_panelObject ==nil then
+        return;
+    end
+    local cur_GodId = GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId;
+    if cur_GodId == nil or cur_GodId <=0 then
+        SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,1,m_panelObject);
+        SetGameObjectState(m_GodShapeCDSuoShiftBtnStr,true,m_panelObject);
+    else
+        SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,0,m_panelObject);  --以前为什么注释掉？？
+        SetGameObjectState(m_GodShapeCDSuoShiftBtnStr,false,m_panelObject);
+    end  
+    if times~=nil then
+        SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,0,m_panelObject);
+        SetGameObjectState(m_GodShapeCDSuoShiftBtnStr,false,m_panelObject);
+    end
+end
+--[[function SetGodShapeShiftCdLabel(times)
+    if times >0 and m_panelObject ~=nil then
+        --CCommonTool.SetGameObjectGrey(child(m_panelObject, m_GodShapeShiftBtnStr).gameObject, true);
+        SetLabelContent(m_GodBtnCDStr,times,m_panelObject);
+        local total_time = GodShapeShiftManager.localGod_TotalCDTime;
+        if times > total_time then
+            times = total_time;
+        end
+        SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,times/total_time,m_panelObject);
+        AddTimerEvent("GodCdTaskInMainPanel", times, OnGodCdCallOver, ETimeShowType.TypeNumberSeven, OnGodCdUpdate);
+    else
+        -- 冷却已到show effect
+        OnGodCdCallOver();
+    end
+end]]
+
+function OnGodCdCallOver()
+    if m_panelObject ~=nil then
+        --CCommonTool.SetGameObjectGrey(child(m_panelObject, m_GodShapeShiftBtnStr).gameObject, false);
+        SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,0,m_panelObject);
+        SetLabelContent(m_GodBtnCDStr,"",m_panelObject);
+    end
+end
+function OnGodCdUpdate(timeTxt)
+    if m_panelObject ~=nil then
+        local total_time = GodShapeShiftManager.localGod_TotalCDTime;
+        local curtime = tonumber(timeTxt);
+        SetSpriteFillAmountTwo(m_GodShapeCDShiftBtnStr,curtime/total_time,m_panelObject);
+        SetLabelContent(m_GodBtnCDStr,timeTxt,m_panelObject);
+    end
+end
+--------------------------------------神将变身暂时写在这里-------------end--------------------------------
+-- 使用药品界面初始化
+function InitMedicineUse()
+    local mapData = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID);
+    local excelID = G_UseMedMng.CurrentSetMedExcelID;
+    local obj = GetComponent(m_panelObject, m_UseMedButtonStr, "UIProgressBar");
+    G_UseMedMng.MainPanelUseMed = obj;
+    if mapData.OptionsDrug == 1 then
+        SetGameObjectState(m_UseMedButtonStr, true, m_panelObject);
+        if excelID == 0 then
+            SetGameObjectState(m_MedNumStr, false, m_panelObject);
+            SetGameObjectState(m_MedIconStr, false, m_panelObject);
+            SetGameObjectState(m_MedAddStr, true, m_panelObject);
+            SetGameObjectState(m_MedMaskStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_MedNumStr, true, m_panelObject);
+            SetGameObjectState(m_MedIconStr, true, m_panelObject);
+            SetGameObjectState(m_MedAddStr, false, m_panelObject);
+            SetLabelContent(m_MedNumStr, G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelID), m_panelObject);
+            SetSpriteByAtlasID(m_MedIconStr, CCommonTool.GetItemInfo(excelID).PictureID, m_panelObject, true);
+            SetGameObjectState(m_MedMaskStr, true, m_panelObject);
+            G_UseMedMng:InitPbValue();
+        end
+    else
+        SetGameObjectState(m_UseMedButtonStr, false, m_panelObject);
+    end
+end
+
+-- 初始化自动战斗的按钮显示
+function InitAutoFightShow()
+    if EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_AutoFightButtonStr, false, m_panelObject);
+        return;
+    end
+    if G_MissionMng:IsMissioncomplete(G_OpenAutoFightTaskID) then
+        SetGameObjectState(m_AutoFightButtonStr, true, m_panelObject);
+    else
+        if G_UserInfo.RoleAttribute.Level >= G_OpenAutoFightLevel then
+            SetGameObjectState(m_AutoFightButtonStr, true, m_panelObject);
+        else
+            SetGameObjectState(m_AutoFightButtonStr, false, m_panelObject);
+        end
+    end
+end
+
+-- 初始化Tips数据
+function InitTipButtonShow()
+    if #_G.LogicData_TipsTable > 0 then
+        SetGameObjectState(m_TipButtonStr, true, m_panelObject);
+        if _G.LogicData_TipsTable[1].DataType == ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY then
+            InitFriendsAppltyTimer();
+        end
+    else
+        SetGameObjectState(m_TipButtonStr, false, m_panelObject);
+    end
+    
+    -- 只用于显示公会竞标成功后的通知
+    if #_G.LogicData_TipsWarTable > 0 then
+        SetGameObjectState(m_TipSuccessfulBidStr, true, m_panelObject);
+        local guildId = _G.LogicData_TipsWarTable[1];
+        local guildName;
+        if guildId > 0 then
+            guildName = G_GuildMng:GetGuildName(guildId);
+        else
+            guildName = GetTextToId(162322);
+        end
+        local sceneNameID = CCommonTool.GetActivityWarInfoIndex(_G.LogicData_TipsWarTable[2]).NameID;
+        local sceneName = GetTextToId(sceneNameID);
+        local time = string_format(--[[本周{0} {1}]]CCommonTool.GetTxtData(1590).m_str,_G.LogicData_TipsWarTable[3],ActivityManager.TimeToString(_G.LogicData_TipsWarTable[4])) ;
+        SetLabelContent(m_TipSuccessfulBidStr .. "/lb_Content", string_format(
+        --[[ {0} 将与[8CD7D7]{1}[-] 争夺 [E7AE94]{2}[- ]]
+        GetTextToId(1379), "", guildName, sceneName), m_panelObject);
+        local ishaveTimer = G_TimerMng:GetTimeTask("TipsWar");
+        if ishaveTimer == nil then
+            AddTimerEvent("TipsWar", 3, TipsWarCallBackOver);
+        end
+    else
+        SetGameObjectState(m_TipSuccessfulBidStr, false, m_panelObject);
+    end
+end
+
+function InitEatChickenSkillShow()
+    if EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_EatChickenSkillStr,true,m_panelObject);
+        InitEatChickenSkillData();
+    else
+        SetGameObjectState(m_EatChickenSkillStr,false,m_panelObject);
+    end
+end
+
+function InitEatChickenSkillData()
+    for Index = 1,4 do
+        UpdateEatChickenSkill(Index);
+    end
+end
+
+function UpdateEatChickenSkill(skillIndex)
+    if skillIndex < 1 or skillIndex > 4 then
+        return;
+    end
+    local path = m_EatChickenSkillStr..m_EatChickenCommonSkillStr..skillIndex;
+    if EatChickenManager.SkillData[skillIndex] ~= nil then
+        local level = EatChickenManager.SkillData[skillIndex].SkillLevel;
+        SetLabelContent(path .. m_SkillLevelStr,level,m_panelObject);
+        if level <= 0 then
+            SetGameObjectState(path .. m_SkillLockStr,true,m_panelObject);
+            SetGameObjectState(path .. m_SkillLevelStr,false,m_panelObject);
+        else
+            SetGameObjectState(path .. m_SkillLockStr,false,m_panelObject);
+            SetGameObjectState(path .. m_SkillLevelStr,true,m_panelObject);
+        end
+    else
+        SetGameObjectState(path .. m_SkillLockStr,true,m_panelObject);
+        SetGameObjectState(path .. m_SkillLevelStr,false,m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击吃药
+function ClickUseMedicine()
+    local excelID = G_UseMedMng.CurrentSetMedExcelID;
+    local funcTable = { };
+    table.insert(funcTable, 3);
+    if excelID == 0 then
+        createPanelExx(ENUMPANELID.ENUM_PANEL_SETPANEL, funcTable);
+    else
+        G_UseMedMng:UseMed(false, excelID);
+    end
+end
+
+-- 点击提示按钮的事件
+function OnTipButtonClick()
+    if #_G.LogicData_TipsTable > 0 then
+        local tempData = _G.LogicData_TipsTable[1];
+        if tempData.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_INVITE then
+            ParameterToMessageTextBox.TeamInvite(tempData.Data);
+        elseif tempData.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_APPLY then
+            createPanel(ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+            createPanel(ENUMPANELID.ENUM_PANEL_TEAM_APPLY_PANEL);
+        elseif tempData.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_INVITE then
+            ParameterToMessageTextBox.GuildInvite(tempData.Data);
+        elseif tempData.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_WAR then
+            GuildProtocol.RequestOpenActivityWar();
+        elseif tempData.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY then
+            G_TimerMng:RemoveTimeTask("FriendsApplyTimer");
+            ParameterToMessageTextBox.ShowFriendsApply(tempData.Data.name);
+        end
+        table.remove(_G.LogicData_TipsTable, 1);
+        InitTipButtonShow();
+    end
+end
+
+-- 点击吃鸡锁头技能
+function OnSkillLockClick()
+    ShowSystemFlowTips(5702);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 使用药品的界面初始化
+function InitMedicineUseOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitMedicineUse();
+    end
+end
+
+-- 更新使用药品的数量
+function RefreshUseMedNumOut(excelID)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if excelID == G_UseMedMng.CurrentSetMedExcelID then
+            SetLabelContent(m_MedNumStr, G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelID), m_panelObject);
+        end
+    end
+end
+
+-- 初始化自动战斗的按钮显示
+function InitAutoFightShowOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitAutoFightShow();
+    end
+end
+
+-- 添加tip数据
+function AddTipTableData(data, tipType)
+    local tempTable = { Data = data, DataType = tipType }
+    table.insert(_G.LogicData_TipsTable, tempTable);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitTipButtonShow();
+    end
+end
+
+-- 移除tip中所有的数据
+function RemoveAllTypeInTipTable(tipType)
+    error("tipType:" .. tipType);
+    error(SerializeTable(_G.LogicData_TipsTable));
+    local AllTipTypeData = { };
+    for k, v in pairs(_G.LogicData_TipsTable) do
+        if v.DataType == tipType then
+            table.insert(AllTipTypeData, v);
+        end
+    end
+    for Index = 1, #AllTipTypeData do
+        RemoveTipTableData(AllTipTypeData[Index].Data, tipType);
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitTipButtonShow();
+    end
+end
+
+-- 移除tip中的某一条数据
+function RemoveTipTableData(data, tipType)
+    local removeKey = nil;
+    if tipType == ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_INVITE then
+        for k, v in pairs(_G.LogicData_TipsTable) do
+            if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_INVITE then
+                if v.Data.globalId == data.globalId then
+                    removeKey = k;
+                    break;
+                end
+            end
+        end
+    elseif tipType == ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_APPLY then
+        for k, v in pairs(_G.LogicData_TipsTable) do
+            if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_APPLY then
+                if v.Data.globalId == data.globalId then
+                    removeKey = k;
+                    break;
+                end
+            end
+        end
+    elseif tipType == ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_INVITE then
+        for k, v in pairs(_G.LogicData_TipsTable) do
+            if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.GUILD_INVITE then
+                if v.Data.globalId == data.globalId then
+                    removeKey = k;
+                    break;
+                end
+            end
+        end
+    elseif tipType == ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY then
+        for k, v in pairs(_G.LogicData_TipsTable) do
+            if v.DataType == ENUM_MAINPANEL_SHOWTIPTYPE.FRIEND_APPLY then
+                if v.Data.globalId == data.globalId then
+                    removeKey = k;
+                    break;
+                end
+            end
+        end
+    else
+        error("不存在的主界面tip类型:::" .. tipType);
+    end
+    if removeKey then
+        table.remove(_G.LogicData_TipsTable, removeKey);
+    else
+        error("不存在的删除消息提示信息,提示类型" .. tipType);
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitTipButtonShow();
+    end
+end
+
+-- 计时器结束回调，关闭公会领地战提示
+function TipsWarCallBackOver()
+    _G.LogicData_TipsWarTable = { };
+    SetGameObjectState(m_TipSuccessfulBidStr, false, m_panelObject);
+    G_TimerMng:RemoveTimeTask("TipsWar");
+end
+
+-- 如果弹出的是好友申请的提示，制作一个持续60秒的计时器
+function InitFriendsAppltyTimer()
+    AddTimerEvent("FriendsApplyTimer",60,FriendsApplyOver);
+end
+
+function FriendsApplyOver()
+    local tempData = _G.LogicData_TipsTable[1];
+    if tempData == nil then return end
+    RemoveTipTableData(tempData.Data, tempData.DataType);
+    G_TimerMng:RemoveTimeTask("FriendsApplyTimer");
+end
+
+function UpdateEatChickenSkillOut(skillIndex)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        UpdateEatChickenSkill(skillIndex);
+    end
+end

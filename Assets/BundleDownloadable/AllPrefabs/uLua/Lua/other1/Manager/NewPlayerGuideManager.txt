@@ -1,0 +1,583 @@
+﻿module("NewPlayerGuideManager",package.seeall)
+
+-- 停止ID
+local STOPID = 10000;
+-- 当前引导步骤数据
+local stepData = nil;
+-- 是否正在新手引导
+local isGuiding = false;
+-- 引导目标的位置
+local guideTargetPosition = Vector3.zero;
+-- 引导目标未准备好时等待的次数
+local guideWaitingCount = 0;
+-- 新手引导管理器
+local  guideManager = nil;
+-- 任务管理器
+local missionManager = nil;
+-- 时间管理器
+local timeManager = nil;
+-- 面板管理器
+local panelManager = nil;
+-- 福利相关界面
+local welfarePanels = nil;
+-- 计时器名字
+local timerEventName = "NewPlayerGuideManagerEvent";
+-- 是否测试引导中
+local isTesting = false;
+-- 引导的目标
+guideTarget = nil;
+
+-- 初始化管理器
+function InitManager()
+    guideManager = G_UserInfo.GetPlayerGuideManager;
+    missionManager = G_UserInfo.MissionManager;
+    timeManager = Ioo.TimerManager;
+    panelManager = Ioo.PanelManager;
+    welfarePanels = {
+        ENUMPANELID.ENUM_WELFARE_PANEL,
+        ENUMPANELID.ENUM_EVERY_DAY_LOGIN_PANEL,
+        ENUMPANELID.ENUM_ONLINE_TIME_PANEL,
+        ENUMPANELID.ENUM_LEVEL_UP_PANEL,
+        ENUMPANELID.ENUM_OFFLINE_PANEL,
+        ENUMPANELID.ENUM_THIRTY_DAY_PICK_PANEL,
+    };
+end
+
+-- 测试新手引导
+function TestStep(stepId)
+    if stepId ~= nil and stepId > 0 then
+        isTesting = true;
+        OnSetGuideID(stepId);
+    end
+end
+
+-- 设置新手引导的开始步骤
+function OnSetGuideID(stepId)
+	Reset();
+	if stepId ~= STOPID then
+        error("新手引导的开始步骤:"..tostring(stepId));
+		stepData = CCommonTool.GetJackarooInfo(stepId);
+        if not stepData then
+            return;
+        end
+		if stepData.DelayTime > 0 then
+            AddTimerEvent(timerEventName,stepData.DelayTime,OnTimerOverCallBack);
+		else
+			StartGuideStep();
+		end
+    else
+        if isTesting then isTesting = false end
+	end
+end
+
+function OnTimerOverCallBack()
+	timeManager:RemoveTimeTask(timerEventName);
+	StartGuideStep();
+end
+
+-- 新手引导开始
+function StartGuideStep()
+	if nil ~= stepData then
+        guideManager:StartGuide(stepData);
+        AddPanelEvents();
+	end
+end
+
+-- 变更新手引导步骤之前先关闭新手引导面板
+function CloseGuidePanel()
+	if IsOpenPanel(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL) == 1 then
+		NewPlayerGuidePanel.closetPanel();
+	end
+end
+
+function Reset()
+    isGuiding = false;
+    guideTarget = nil;
+    guideTargetPosition = Vector3.zero;
+    stepData = nil;
+    guideWaitingCount = 0;
+	CloseGuidePanel();
+    guideManager:StopGuide();
+    RemovePanelEvents();
+    NewPlayerGuideCallback.Reset();
+end
+
+function UpdateGuide()
+    if stepData == nil then
+        Reset(); -- Insert后重置
+        return;
+    end
+    local trriggerOperation = stepData.TriggerOperation;
+    local panelId = stepData.UIType;
+
+    if not G_SceneMng.isInGame then
+        return;
+    end
+
+    local isTouchOperate = trriggerOperation == 2 or trriggerOperation == 6 or trriggerOperation == 7;
+    if isTouchOperate then
+        local interrtupted = IsInterrtupted(panelId, true);
+        if interrtupted then
+            if isGuiding then
+                -- 如果被打断引导, 暂停处理
+                -- 等打断的界面关闭时, 继续引导
+                PauseGuide();
+            end
+            return;
+        end
+        if isGuiding then
+            if IsNil(guideTarget) == true then
+                -- 如果引导的目标为空时, 直接跳过引导
+                SkipGuide();
+                return;
+            elseif guideTarget.activeInHierarchy ~= true then
+                PauseGuide();
+                return;
+            elseif not IsRightGuideTarget() then
+                PauseGuide();
+                return;
+            end
+        end
+    end
+
+    if isGuiding == true then
+        if stepData.IsFree == 1 then
+            --强制引导时, 中止任务自动追踪
+            if missionManager.IsMissionTrace then
+                missionManager.IsMissionTrace = false;
+                G_UserInfo:GetCurPlayer().AgentOrderMng:CreateOrderStop();
+            end
+            -- 取消自动战斗
+            if G_UserInfo:GetCurPlayer().AttackManager.IsAutoFight == true then
+                G_UserInfo.AutoAttackManager:AutoFightNO();
+            end
+        end
+        
+        if isTouchOperate then
+            if Vector3.Distance(guideTargetPosition, guideTarget.transform.position) > 0.01 then
+                NewPlayerGuidePanel.UpdateContent();
+                guideTargetPosition = guideTarget.transform.position;
+            end
+            -- 检测位置变化
+            if stepData.FuncInvodeType == 1 then
+                local result = ExecuteCallback(stepData.CallFunction);
+                if result == true then
+                    return;
+                end
+            end
+        end
+    end
+
+    if stepData == nil then
+        return;
+    end
+
+    -- trriggerOperation:
+    -- 1:弹出界面
+    -- 2:点击按钮
+    -- 3:弹出图片
+    -- 4:播放动画
+    -- 5:自动寻路
+    -- 6:纯提示指引
+    -- 7:滑动指引
+	if trriggerOperation == 1 then
+		if IsOpenPanel(panelId) == 1 then
+			SaveAndGuideNextStep();
+		else
+			createPanel(panelId);
+		end
+	elseif trriggerOperation == 2 then
+		ProcessGuideTarget(trriggerOperation);
+	elseif trriggerOperation == 3 then
+	elseif trriggerOperation == 4 then
+		G_UserInfo.GetMoviePlotManager.OnSetMoviePlotID(stepData.TriggerNum);
+		G_UserInfo.GetMoviePlotManager:OnMovieStar();
+	elseif trriggerOperation == 5 then
+		-- 自动寻路 传任务ID开始自动寻路
+		G_UserInfo.MissionManager:TraceTypeOperate(stepData.TriggerNum,true, false);
+		SaveAndGuideNextStep();
+	elseif trriggerOperation == 6 then
+	 	ProcessGuideTarget(trriggerOperation);
+    elseif trriggerOperation == 7 then
+        ProcessGuideTarget(trriggerOperation);
+	end
+end
+
+-- 暂停引导
+function PauseGuide()
+    if isGuiding == true then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL) == 1 then
+            isGuiding = false;
+            CloseGuidePanel();
+            --error("暂停引导");
+        end
+    end
+end
+
+-- 处理引导目标
+function ProcessGuideTarget(trriggerOperation)
+    if isGuiding == true then return end
+    local panelId = stepData.UIType;
+	if not _IsOpenedPanel(panelId) then return end
+
+    local target = GetGuideTarget(panelId,stepData.UIObj);
+    if target ~= nil then
+        if true == target.activeInHierarchy then
+            if stepData.IsFree == 1 and panelId == ENUMPANELID.ENUM_PANEL_MAIN then
+                -- 如果是主界面引导, 强制关闭不相关的界面
+                CloseOtherPanels(panelId);
+                -- 关闭功能开启Tips界面(不是一个单独的界面)
+                Main_Middle.OnCloseNewSystemPanelClick();
+            end
+            if trriggerOperation == 2 or trriggerOperation == 7 then 
+                guideManager:SetCurrentClickButton(target, trriggerOperation);
+            end
+            isGuiding = true;
+            guideTarget = target;
+            guideTargetPosition = target.transform.position;
+            OpenGuidePanel();
+            return;
+        end
+    end
+    guideWaitingCount = guideWaitingCount + 1;
+    if guideWaitingCount > 30 then
+        SkipGuide();
+    end
+end
+
+function _IsOpenedPanel(panelId)
+    if IsOpenPanel(panelId) ~= 1 then return false end
+    return true;
+end
+
+-- 获取引导目标对象
+function GetGuideTarget(panelId, path)
+    local panelObject = FindPanelObjWithPanelID(panelId);
+	local target = child(panelObject, path);
+    if target ~= nil then
+        return target.gameObject;
+    end
+    return nil;
+end
+
+-- 检测引导目标是否正确
+function IsRightGuideTarget()
+    local guidePath = stepData.UIObj;
+    local targetPath = "";
+    local t = guideTarget.transform;
+    while t.parent ~= nil do
+        targetPath = t.name .. "/" .. targetPath;
+        t = t.parent;
+    end
+    local isRight = string.find(targetPath, guidePath, 1, true)
+    return isRight;
+end
+
+-- 打开新手引导面板
+function OpenGuidePanel()
+	if IsOpenPanel(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL) ~= 1 then
+        createPanel(ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL);
+	end
+end
+
+-- 保存并触发下一步引导
+function SaveAndGuideNextStep()
+    if stepData == nil then
+        return;
+    end
+    --[[
+    if tonumber(stepData.IsServer) ~= STOPID then
+		GuideProtocol.SendVerificationStepMessage(stepData.Id);
+		return;
+    end
+    ]]
+	if stepData.ClientAgree ~= STOPID and not isTesting then
+		GuideProtocol.SendPivotalStepMessage(stepData.Id);
+	elseif stepData.StepID == STOPID and not isTesting then
+		GuideProtocol.SendPivotalStepMessage(stepData.Id);
+	end
+    --更新下一步操作
+    OnSetGuideID(stepData.StepID);
+end
+
+-- 判断指定界面打开是否影响新手引导
+function IsIgnoredPanel(panelId)
+    if panelId == ENUMPANELID.ENUM_PANEL_COINPANEL 
+        or panelId == ENUMPANELID.ENUM_PANEL_EFFECTSPANEL
+		or panelId == ENUMPANELID.ENUM_PANEL_SYSTEMFLOWTIP
+		or panelId == ENUMPANELID.ENUM_PANEL_FIGHTVALUESHOWPANEL 
+		or panelId == ENUMPANELID.ENUM_PANEL_COLLECTBARPANEL 
+        or panelId == ENUMPANELID.ENUM_PANEL_ACHIEVEFINISH
+		--or panelId == ENUMPANELID.ENUM_PANEL_RECOMMONDUSEITEMPANEL 
+		or panelId == ENUMPANELID.ENUM_PANEL_LOADING then
+		return true;
+	end
+    return false;
+end
+
+-- 判断新手引导是否被打断
+-- 剧情对话/摄像机变换视角界面
+function IsInterrtupted(panelId, checkMainPanel)
+    local panelIds = {
+        ENUMPANELID.ENUM_PANEL_MISSIONACCEPTPANEL,
+        ENUMPANELID.ENUM_PANEL_CAMERATYPECHANGEPANEL,
+        ENUMPANELID.ENUM_PANEL_MOVIEPLOTPANEL,
+        ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL,
+        ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX,
+
+        ENUMPANELID.ENUM_PANEL_GMPANEL,
+        ENUMPANELID.ENUM_PANEL_PLAYERREVIVEPANEL,
+        ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL,
+        ENUMPANELID.ENUM_PANEL_ROLLOVERCARDPANEL,
+        ENUMPANELID.ENUM_PANEL_USETASKITEMPANEL,
+        ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANELthen,
+    }
+
+    for i, id in ipairs(panelIds) do
+        if id == panelId then
+            return false;
+        end
+    end
+    
+    for i, id in ipairs(panelIds) do
+        if IsOpenPanel(id) == 1 then
+            return true;
+        end
+    end
+
+    if checkMainPanel and panelId == ENUMPANELID.ENUM_PANEL_MAIN then
+        -- 引导主界面, 如果有二级界面打开, 暂停引导
+        return G_PanelMng:HasSecondPanelOpened();
+    end
+    return false;
+end
+
+-- 跳过当前引导段
+function SkipGuide()
+    if stepData ~= nil then
+        error("跳过当前引导段:"..stepData.Id);
+	    if stepData and not isTesting then 
+            GuideProtocol.SendSkipMessage(stepData.Id); 
+        end
+        isTesting = false;
+	    OnSetGuideID(STOPID);
+    end
+end
+
+-- 检测下一步引导的UI是否已存在
+function CheckNextStepUI()
+    if stepData ~= nil then
+        local nextStepId = stepData.StepID
+        -- 没有下一步引导了
+        if nextStepId == STOPID then
+            return true;
+        end
+        local data = CCommonTool.GetJackarooInfo(nextStepId);
+        -- 数据不存在, 直接跳过引导
+        if data == nil then
+            SkipGuide();
+            return false;
+        end
+        local target = GetGuideTarget(data.UIType, data.UIObj);
+        if target ~= nil and target.activeInHierarchy == true then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 获取当前引导数据
+function GetStepData()
+    return stepData;
+end
+
+-- 设置引导数据(策划用)
+function SetStepData(data)
+    Reset();
+    stepData = data;
+    guideManager:StartGuide(data);
+    UpdateGuide();
+end
+
+-- 是否正在引导
+function IsGuiding()
+    return isGuiding;
+end
+
+-- 添加界面打开/关闭事件
+function AddPanelEvents()
+    Event.Add("UIEvent.OnPanelOpened", OnPanelOpened);
+    Event.Add("UIEvent.OnPanelClosed", OnPanelClosed);
+end
+
+-- 移除界面打开/关闭事件
+function RemovePanelEvents()
+    Event.Remove("UIEvent.OnPanelOpened", OnPanelOpened);
+    Event.Remove("UIEvent.OnPanelClosed", OnPanelClosed);
+end
+
+-- 界面打开事件
+function OnPanelOpened(eventName, panelId)
+    if not stepData or not isGuiding then return; end
+    if panelId == ENUMPANELID.ENUM_PANEL_NEW_PLAYER_GUIDE_PANEL then
+		return;
+	end
+    -- 这些界面打开不影响新手引导
+    if IsIgnoredPanel(panelId) then return; end
+    local skip = false;
+    local curPanelId = stepData.UIType;
+    if curPanelId ~= panelId then
+        if curPanelId == ENUMPANELID.ENUM_PANEL_BAGPANEL then
+            if panelId == ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL then
+                return;
+            end
+        end
+        skip = stepData.StepID == STOPID;
+        if not skip then
+            local nextData = CCommonTool.GetJackarooInfo(stepData.StepID);
+            local nextPanelId = nextData.UIType;
+		    if nextPanelId ~= panelId and not IsIgnoredPanel(nextData.UIType) then
+                if stepData.IsFree == 0 or IsInterrtupted(panelId, false) then
+                    skip = true;
+                else
+                    -- 如果当前引导的是福利相关界面, 打开的也是福利相关界面
+                    for _, id in ipairs(welfarePanels) do
+                        if id == curPanelId or nextPanelId == id then
+                            for _, id2 in ipairs(welfarePanels) do
+                                if id2 == panelId or nextPanelId == id2 then
+                                    return;
+                                end
+                            end
+                            break;
+                        end
+                    end
+                    closePanel(panelId);
+                    error("引导时关闭, 阻止此界面打开, panelId : ".. tostring(panelId));
+                    return;
+                end
+		    end
+        end
+	end
+    -- 暂停引导
+    if skip then 
+        error(string_format("panelId:{0} 界面暂停新手引导", panelId));
+        PauseGuide(); 
+    end
+end
+
+-- 界面关闭事件
+function OnPanelClosed(eventName, panelId)
+    --error("界面关闭事件:"..panelId);
+end
+
+-- 关闭引导不相关的界面
+function CloseOtherPanels(panelId)
+    local openedPanelIds = panelManager:GetOpenedPanelIds();
+    local count = openedPanelIds.Count;
+    for i = 0, count-1 do
+        local id = openedPanelIds[i];
+        if id ~= panelId and IsIgnoredPanel(id) ~= true then
+            closePanel(id);
+        end
+    end
+end
+
+function ExecuteCallback(funcName)
+    local result = nil;
+    if funcName ~= nil and funcName ~= "null" then
+        local func = loadstring("return NewPlayerGuideCallback." .. funcName);
+        if func ~= nil then
+            result = func();
+        end
+    end
+    return result;
+end
+
+-- 清理数据
+function ClearData()
+    RemoveGreenHandTimer();
+    if isGuiding == true then
+        Reset();
+    end
+end
+
+-- 新手期TimerData
+local greenhandTimerData = nil;
+-- 检测新手期时间
+local checkGreenHandTime = 0;
+-- 记录上次角色位置
+local playerLastPosition = Vector3.zero;
+
+-- 添加新手期引导Timer事件
+function AddGreenHandTimer()
+    RemoveGreenHandTimer();
+    greenhandTimerData = Timer.Instance:AddTimer(3, -1, CheckGreenHandGuide);
+end
+
+-- 移除新手期引导Timer事件s
+function RemoveGreenHandTimer()
+    if greenhandTimerData ~= nil then
+        Timer.Instance:StopTimer(greenhandTimerData);
+        greenhandTimerData = nil;
+    end
+end
+
+-- 新手期引导检测
+function CheckGreenHandGuide()
+    if G_UserInfo.RoleAttribute.Level > GreenHandLevelLimit then
+        --log("新手期引导检测::新手期已过, 删除Timer事件");
+        RemoveGreenHandTimer();
+        return;
+    end
+
+    local now = os.time();
+    if now < checkGreenHandTime then
+        --log("新手期引导检测::下次检测等待中...");
+        return;
+    end
+
+    local player = G_UserInfo:GetCurPlayer();
+    if isGuiding == true    -- 正在引导
+        or TeamManager.HasTeam()    -- 有队伍
+        or CollectBar.isCollecting
+        or G_SceneMng.isInGame == false -- 场景加载中
+        or G_MoviePlotMng.IsMoviePlot   -- 播放剧情
+        or IsNil(player) -- 主角不存在
+        or not player.IsAlive -- 角色死亡
+        or player.AttackManager.IsAutoFight  -- 开启自动战斗
+        or (G_SceneMng:GetCurMapType() ~= 0 and G_SceneMng:GetCurMapType() ~= 1) then-- 所在场景不是主城或野外
+        checkGreenHandTime = now;
+        --log("新手期引导检测::触发条件不足...");
+        return;
+    end
+
+    local playerPos = player.Position;
+    if playerLastPosition:Equals(Vector3.zero) or Vector3.Distance(playerLastPosition, playerPos) > 1 then
+        playerLastPosition = playerPos;
+        checkGreenHandTime = now;
+        --log("新手期引导检测::角色有移动");
+        return;
+    end
+
+    if G_PanelMng:HasSecondPanelOpened() 
+        or IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 then
+        --log("有二级界面处于打开状态或主界面处于关闭状态");
+        return;
+    end
+
+    if now - checkGreenHandTime > GreenHandIdleSeconds then
+        checkGreenHandTime = now + GreenHandIntervalSeconds;
+        Main_LeftMiddle.SelectTaskTag();
+        OnSetGuideID(GreenHandGuildStepId);
+        --log("新手期引导检测::触发新手期引导");
+    end
+end
+
+-- 跳过新手期引导
+function SkipGreenHandGuide(go)
+    if isGuiding == true and go == guideTarget then
+        OnSetGuideID(STOPID);
+    end
+end
+
+InitManager();

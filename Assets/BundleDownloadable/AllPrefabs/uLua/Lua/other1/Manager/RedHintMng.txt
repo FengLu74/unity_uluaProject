@@ -1,0 +1,465 @@
+﻿module("RedHintMng", package.seeall)
+-- 是否读过红点表
+local m_InitTableData = false;
+-- 所有最底层红点的数据信息
+local m_SpecialTriggerTable = { };
+-- 所有非最底层红点的数据信息
+local m_CommonTriggerTable = { };
+-- 所有红点，主键为panelID,值为table(key:索引 value:红点数据)
+local m_PanelIDRedHintTable = { };
+
+-- itemAttribute类的一个临时变量
+local m_itemAttr = nil;
+
+-- 清空数据
+function ClearData()
+    for k, v in pairs(m_SpecialTriggerTable) do
+        v.ShowState = false;
+        v.NextRedHintNum = 0;
+    end
+    for k, v in pairs(m_CommonTriggerTable) do
+        v.ShowState = false;
+        v.NextRedHintNum = 0;
+    end
+end
+
+-- 读表完成加载红点表数据
+function DealTableData()
+    if not m_InitTableData then
+        m_itemAttr = ItemAttribute.New(0);
+        m_InitTableData = true;
+        local allRedHintInfo = CCommonTool.GetAllRedHintTable();
+        for Index = 1, allRedHintInfo.Count do
+            local redHintInfo = allRedHintInfo[Index - 1];
+            local redPointData = SerializeRedHintTableInfo(redHintInfo);
+            if redPointData.TriggerType == 1 then
+                m_SpecialTriggerTable[redPointData.CurRedHint] = redPointData;
+            elseif redPointData.TriggerType == 0 then
+                m_CommonTriggerTable[redPointData.CurRedHint] = redPointData;
+            end
+            if m_PanelIDRedHintTable[redPointData.PanelID] == nil then
+                m_PanelIDRedHintTable[redPointData.PanelID] = { };
+            end
+            table.insert(m_PanelIDRedHintTable[redPointData.PanelID], redPointData.CurRedHint);
+        end
+    end
+end
+
+-- 序列化一行红点表数据
+function SerializeRedHintTableInfo(redHintInfo)
+    local redPointDataTable = { };
+    redPointDataTable.CurRedHint = redHintInfo.Id;
+    redPointDataTable.OnceRedHint = redHintInfo.OnceRedHint;
+    redPointDataTable.PanelID = redHintInfo.BelongPanelID;
+    redPointDataTable.PosStr = redHintInfo.PosStr;
+    redPointDataTable.TriggerType = redHintInfo.Type;
+    -- 此红点下层的红点显示的总个数
+    redPointDataTable.NextRedHintNum = 0;
+    redPointDataTable.ShowState = false;
+    return redPointDataTable;
+end
+
+-- 更新界面红点的信息
+function UpdateRedHintPanelShow(redPointData)
+    if IsOpenPanel(redPointData.PanelID) == 1 then
+        local panelObj = FindPanelObjWithPanelID(redPointData.PanelID);
+        if panelObj ~= nil then
+            local trans = child(panelObj, redPointData.PosStr);
+            if trans == nil then
+                error("红点系统::does not find trans:::which panelName is::::" .. panelObj.name .. "pos str is ::::" .. redPointData.PosStr);
+            else
+                --error(trans.parent.name);
+                trans.gameObject:SetActive(redPointData.ShowState);
+            end
+        end
+    end
+end
+
+-- 更新上一层红点所拥有的下层红点中的总个数
+function UpdateNextRedHintNum(redHintTypeID, state)
+    if redHintTypeID == CREDHINTENUM.NONE then
+        return;
+    end
+    if m_CommonTriggerTable[redHintTypeID] == nil then
+        error("红点系统:: m_CommonTriggerTable does not contain this type:::table not exist ? :::" .. redHintTypeID);
+        return;
+    end
+    local beforeNum = m_CommonTriggerTable[redHintTypeID].NextRedHintNum;
+    if state then
+        m_CommonTriggerTable[redHintTypeID].NextRedHintNum = m_CommonTriggerTable[redHintTypeID].NextRedHintNum + 1;
+        if m_CommonTriggerTable[redHintTypeID].NextRedHintNum >= 1 then
+            m_CommonTriggerTable[redHintTypeID].ShowState = true;
+            if beforeNum <= 0 then
+                UpdateNextRedHintNum(m_CommonTriggerTable[redHintTypeID].OnceRedHint, true);
+            end
+        end
+    else
+        m_CommonTriggerTable[redHintTypeID].NextRedHintNum = m_CommonTriggerTable[redHintTypeID].NextRedHintNum - 1;
+        if m_CommonTriggerTable[redHintTypeID].NextRedHintNum == 0 then
+            m_CommonTriggerTable[redHintTypeID].ShowState = false;
+            if beforeNum > 0 then
+                UpdateNextRedHintNum(m_CommonTriggerTable[redHintTypeID].OnceRedHint, false);
+            end
+        end
+    end
+    UpdateRedHintPanelShow(m_CommonTriggerTable[redHintTypeID]);
+end
+
+-- 设置红点的提示状态
+function SetRedHintState(redHintEnum, state)
+    if m_SpecialTriggerTable[redHintEnum] ~= nil then
+        if m_SpecialTriggerTable[redHintEnum].ShowState ~= state then
+            m_SpecialTriggerTable[redHintEnum].ShowState = state;
+            local onceRedHint = m_SpecialTriggerTable[redHintEnum].OnceRedHint;
+            if m_CommonTriggerTable[onceRedHint] ~= nil then
+                UpdateNextRedHintNum(onceRedHint, state);
+            end
+        else
+            -- nothing
+        end
+    elseif m_CommonTriggerTable[redHintEnum] ~= nil then
+        error("红点系统：这个红点不是最底层的红点，不允许强行设置开关状态，请查看堆栈信息");
+        return;
+    else
+        error("红点系统:: m_SpecialTriggerTable does not contain this type:::table not exist ? :::" .. redHintEnum);
+        return;
+    end
+    
+    UpdateRedHintPanelShow(m_SpecialTriggerTable[redHintEnum]);
+end
+
+-- 得到红点的状态
+function GetRedHintState(redHintEnum)
+    if m_CommonTriggerTable[redHintEnum] ~= nil then
+        return m_CommonTriggerTable[redHintEnum].ShowState;
+    elseif m_SpecialTriggerTable[redHintEnum] ~= nil then
+        return m_SpecialTriggerTable[redHintEnum].ShowState;
+    else
+        error("红点系统：这个红点不存在，ID是::::" .. redHintEnum);
+        return false;
+    end
+end
+
+-- 刷新界面红点的显示
+function RefreshPanelRedHintsState(panelID)
+    if m_PanelIDRedHintTable[panelID] ~= nil then
+        local needRefreshTable = m_PanelIDRedHintTable[panelID];
+        for Index = 1, #needRefreshTable do
+            local curRedHintID = needRefreshTable[Index];
+            if m_CommonTriggerTable[curRedHintID] ~= nil then
+                UpdateRedHintPanelShow(m_CommonTriggerTable[curRedHintID]);
+            elseif m_SpecialTriggerTable[curRedHintID] ~= nil then
+                UpdateRedHintPanelShow(m_SpecialTriggerTable[curRedHintID]);
+            else
+                error("红点系统:: m_SpecialTriggerTable does not contain this type:::table not exist ? :::" .. curRedHintID);
+            end
+        end
+    end
+end
+
+-- 升级后的红点检测
+function RedHintCheckByLevelUp()
+    RedHintMng.SetRedHintState(CREDHINTENUM.CULTIVATE, CultivateChangePanel.IsCanCultivateLevelUp());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_GEM, Equip_Gem.IsShowRedHintEquipGem());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_LEVEL, LevelupPanel.IsShowRedHintLevelUp());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BUTTON_PET, PetManager.IsShowRedHintPet());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_ARTIFACT, ArtifactManager.IsShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDONE, GrowFundManager.GrowFundOneShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1, GrowFundManager.GrowFundTenLevelShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDTWO, GrowFundManager.GrowFundTwoShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_SEAL, CampSealManager.IsShowRedHint());
+
+end
+
+-- 系统解锁后的红点检测
+function RedHintCheckBySystemUnlock(sysEnum)
+    if sysEnum == CSYSTEMENUM.SYSTEM_RIDE then
+        RedHintMng.SetRedHintState(CREDHINTENUM.INTERFACE_ROLE_RIDE, RidePanel.IsShowRedHintRide());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPFORCE then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPSTARUP then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_STARUP, Equip_StarUp.IsShowRedHintEquipStarUp());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPENCHANT then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EQUIPSTONE then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_GEM, Equip_Gem.IsShowRedHintEquipGem());
+    elseif sysEnum == CSYSTEMENUM.EQUIP_INHERIT then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_INHERIT, Equip_Inherit.IsShowRedHintEquipInherit());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_REWARD then
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLOGIN, EverydayLoginPanel.IsShowRedHintOnLogin());
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLINE, OnlineTimePanel.IsShowRedHintOnLine());
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_LEVEL, LevelupPanel.IsShowRedHintLevelUp());
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_OFFLINE, OfflinePanel.IsShowRedHintOffline());
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_THIRTY_DAY, ThirtyDayPickManager.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_EXCHANGE, FragmentExchangePanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_RESOURCES_BACK, ResourcesBackManager.IsShowRedHint());
+
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_RECHARGE, RechargePanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_DAILYRECHARGE, DailyChargePanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_STRENGTHEN, ForceStatisticalPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_REFINING, RefiningStatisticalPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_PETSAVVY, PetSavvyStatisticalPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_PETQUALITYREFRESH, PetQualityRefreshStatisticalPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_RIDELEVELUP, RideLevelUpStatisticalPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_CUMULATIVEDAYSCHARGE, CumulativeDaysChargePanel.IsShowRedHint());
+        
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_MAIL then
+        RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_MAIL, PlayerMailPanel.IsShowRedHintMail());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_SKILL then
+        RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+        RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_ACTIVITY then
+        RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_ACTIVITY, ActivityManager.HasUndoneActive());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_EVERYDAY then
+        RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_WEEK, EveryDayTaskManager.HasFinishTask(2));
+        RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_MONTH, EveryDayTaskManager.HasFinishTask(3));
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_FRIEND then
+        FriendsPanel.RefreshRedHint();
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_CAMP then
+        RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_INFO, CampBeyond3DPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_SEAL, CampSealManager.IsShowRedHint());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_ACHIEVE then
+        RedHintMng.SetRedHintState(CREDHINTENUM.ACHIEVE, AchieveManager.HasFinishStateAchieve());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_PET then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BUTTON_PET, PetManager.IsShowRedHintPet());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_SCORESTORE then
+        RedHintMng.SetRedHintState(CREDHINTENUM.STORE_CHARGE, StoreManager.IsShowMonthMemberCardRedHint());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_TREAURE then
+        RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_ARTFACTLOTTERY, ArtifactLotteryPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_GETREWARD, GetRewardPanel.IsShowRedHint());
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_TREAURE, GetRewardPanel.IsShowRedHint());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_ARTIFACT then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_ARTIFACT, ArtifactManager.IsShowRedHint());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_GROWFUND1 then 
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1, GrowFundManager.GrowFundTenLevelShowRedHint());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_LIMITTIMEGIFTBAG then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_LIMITTIMEGIFTBAG, StoreManager.IsShowGiftBagRedHint());
+    elseif sysEnum == CSYSTEMENUM.SYSTEM_BOSSLOBBY then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BOSSLOBBY, ActivityManager.HasUndoneActiveInBossLobby());
+    end
+end
+
+-- 服务器通知初始化主角所有系统数据完成
+function ServerSendInitAllSysDataOK()
+    RedHintMng.SetRedHintState(CREDHINTENUM.CULTIVATE, CultivateChangePanel.IsCanCultivateLevelUp());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.INTERFACE_ROLE_RIDE, RidePanel.IsShowRedHintRide());
+    RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_MAIL, PlayerMailPanel.IsShowRedHintMail());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_STARUP, Equip_StarUp.IsShowRedHintEquipStarUp());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_GEM, Equip_Gem.IsShowRedHintEquipGem());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_INHERIT, Equip_Inherit.IsShowRedHintEquipInherit());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLOGIN, EverydayLoginPanel.IsShowRedHintOnLogin());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_ONLINE, OnlineTimePanel.IsShowRedHintOnLine());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_LEVEL, LevelupPanel.IsShowRedHintLevelUp());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_OFFLINE, OfflinePanel.IsShowRedHintOffline());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_THIRTY_DAY, ThirtyDayPickManager.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_EXCHANGE, FragmentExchangePanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_RESOURCES_BACK, ResourcesBackManager.IsShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_RECHARGE, RechargePanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_DAILYRECHARGE, DailyChargePanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_STRENGTHEN, ForceStatisticalPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_REFINING, RefiningStatisticalPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_PETSAVVY, PetSavvyStatisticalPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_PETQUALITYREFRESH, PetQualityRefreshStatisticalPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_RIDELEVELUP, RideLevelUpStatisticalPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_CUMULATIVEDAYSCHARGE, CumulativeDaysChargePanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_TIMELIMITDRAW, TimeLimitDrawPanel.IsShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_TALENT, SkillManager.HasUpgradableTalent());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_REWARD, GuildManager.CanGetReward());
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_MEMBER, GuildManager.HasGuildApplicant());
+    RedHintMng.SetRedHintState(CREDHINTENUM.GUILD_BUILDING, GuildManager.HasUpgradableBuilding());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_ACTIVITY, ActivityManager.HasUndoneActive());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_WEEK, EveryDayTaskManager.HasFinishTask(2));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_MONTH, EveryDayTaskManager.HasFinishTask(3));
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_HAIR, FashionManager.IsShowFashionRedHint(1));
+    RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_FACE, FashionManager.IsShowFashionRedHint(2));
+    RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_CLOTHES, FashionManager.IsShowFashionRedHint(3));
+    RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_WING, FashionManager.IsShowFashionRedHint(4));
+    RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_WEAPON, FashionManager.IsShowFashionRedHint(5));
+
+    FriendsPanel.RefreshRedHint();
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_INFO, CampBeyond3DPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_SEAL, CampSealManager.IsShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.ACHIEVE, AchieveManager.HasFinishStateAchieve());
+    RedHintMng.SetRedHintState(CREDHINTENUM.TITLE, TitleManager.HasNewTitle());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BUTTON_PET, PetManager.IsShowRedHintPet());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.STORE_CHARGE, StoreManager.IsShowMonthMemberCardRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.FIRST_CHARGE, true);
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_GETREWARD, GetRewardPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_ARTFACTLOTTERY, ArtifactLotteryPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_TREAURE, GetRewardPanel.IsShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_ARTIFACT, ArtifactManager.IsShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDONE, GrowFundManager.GrowFundOneShowRedHint());
+
+    RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_GROWFUNDTWO, GrowFundManager.GrowFundTwoShowRedHint());
+
+     -- 神翼红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.GOD_WING,WingPanelCN.IsShowRedHintRide());
+    -- 神将红点
+    --RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GODSHAPESHIFT,GodShapeShiftPanel.IsShowRedHintRide());
+    -- 变强红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_STRONG,GetStrongPanel.CanShowRedHint());
+    -- 宝珠红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_JEWE,JewelPanel.CanShowRedHint());
+    -- 神行红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.SINHAENGPANEL, SinhaengPanel.sinhaengCanShowRed());
+    -- 阵法
+    RedHintMng.SetRedHintState(CREDHINTENUM.MATRIXPANEL, MatrixPanel.MatrixCanShowRed());
+    --新手基金--没有领取过
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1, GrowFundManager.GrowFundTenLevelShowRedHint());
+    --限时礼包
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_LIMITTIMEGIFTBAG, StoreManager.IsShowGiftBagRedHint());
+    --Boss大厅
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BOSSLOBBY, ActivityManager.HasUndoneActiveInBossLobby());
+end
+
+-- 道具添加，道具数量更新，道具移除
+function ItemUpdate(excelID, panelType)
+    m_itemAttr.ExcelID = excelID;
+    local itemCategory = m_itemAttr:GetItemCategory();
+    if itemCategory == ItemCategory.IC_SpriteStoneItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.CULTIVATE, CultivateChangePanel.IsCanCultivateLevelUp());
+    elseif itemCategory == ItemCategory.IC_MountsItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.INTERFACE_ROLE_RIDE, RidePanel.IsShowRedHintRide());
+    elseif itemCategory == ItemCategory.IC_EquipStrSysItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+    elseif itemCategory == ItemCategory.IC_StarUpSysItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_STARUP, Equip_StarUp.IsShowRedHintEquipStarUp());
+    elseif itemCategory == ItemCategory.IC_EnchantSysItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+    elseif itemCategory == ItemCategory.IC_StoneItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_GEM, Equip_Gem.IsShowRedHintEquipGem());
+    elseif itemCategory == ItemCategory.IC_StoneItem then             --!!
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_INHERIT, Equip_Inherit.IsShowRedHintEquipInherit());
+    elseif itemCategory == ItemCategory.IC_SkillSysItem_MagicBook then
+        RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+    elseif itemCategory == ItemCategory.IC_PetItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BUTTON_PET, PetManager.IsShowRedHintPet());
+    elseif itemCategory == ItemCategory.IC_Artifact then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_ARTIFACT, ArtifactManager.IsShowRedHint());
+    elseif itemCategory == ItemCategory.IC_WingSysItem then
+        RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_HAIR, FashionManager.IsShowFashionRedHint(1));
+        RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_FACE, FashionManager.IsShowFashionRedHint(2));
+        RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_CLOTHES, FashionManager.IsShowFashionRedHint(3));
+        RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_WING, FashionManager.IsShowFashionRedHint(4));
+        RedHintMng.SetRedHintState(CREDHINTENUM.FASHION_WEAPON, FashionManager.IsShowFashionRedHint(5));
+        RedHintMng.SetRedHintState(CREDHINTENUM.SECONDREWARD_TIMELIMITDRAW, TimeLimitDrawPanel.IsShowRedHint());
+    elseif itemCategory == ItemCategory.IC_GodWing then
+        -- 神翼红点
+        RedHintMng.SetRedHintState(CREDHINTENUM.GOD_WING,WingPanelCN.IsShowRedHintRide());
+    elseif itemCategory == ItemCategory.IC_GodShape  then
+        -- 神将红点
+        --RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GODSHAPESHIFT,GodShapeShiftPanel.IsShowRedHintRide());
+    elseif itemCategory == ItemCategory.IC_Jewel then
+        -- 宝珠红点
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_JEWE,JewelPanel.CanShowRedHint());
+    elseif itemCategory == ItemCategory.IC_Sina then
+        -- 神行红点
+        RedHintMng.SetRedHintState(CREDHINTENUM.SINHAENGPANEL, SinhaengPanel.sinhaengCanShowRed());
+    elseif itemCategory == ItemCategory.IC_Matrix then
+        -- -- 阵法
+        RedHintMng.SetRedHintState(CREDHINTENUM.MATRIXPANEL, MatrixPanel.MatrixCanShowRed());
+    end
+    
+    local tagType = m_itemAttr:GetTagType();
+    if tagType == ITEMTAGTYPE.TT_Equip then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_STARUP, Equip_StarUp.IsShowRedHintEquipStarUp());
+    end
+    if panelType == ENUM_UI_PANEL.UI_PANEL_ITEM_PET then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BUTTON_PET, PetManager.IsShowRedHintPet());
+    end
+
+    local itemType = m_itemAttr:GetItemType();
+    -- 道具兑换
+    if itemType == ITEMTYPE.IT_Prop then
+        RedHintMng.SetRedHintState(CREDHINTENUM.REWARD_EXCHANGE, FragmentExchangePanel.IsShowRedHint());
+    end
+end
+
+
+-- 道具信息更新，交换道具面板位置
+function RefreshItemInfo(excelID, panelType)
+    if panelType == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+        RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+    elseif panelType == ENUM_UI_PANEL.UI_PANEL_ITEM_PET then
+        RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_BUTTON_PET, PetManager.IsShowRedHintPet());
+    end
+end
+
+-- 绑定金币的改变
+function RefreshBindCoin()
+    RedHintMng.SetRedHintState(CREDHINTENUM.INTERFACE_ROLE_RIDE, RidePanel.IsShowRedHintRide());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_FORCE, Equip_Force.IsShowRedHintEquipForce());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_STARUP, Equip_StarUp.IsShowRedHintEquipStarUp());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_ENCHANT, Equip_Enchant.IsShowRedHintEquipEnchant());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_GEM, Equip_Gem.IsShowRedHintEquipGem());
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_INHERIT, Equip_Inherit.IsShowRedHintEquipInherit());
+    RedHintMng.SetRedHintState(CREDHINTENUM.SKILL_LEVEL, SkillManager.HasUpgradableSkill());
+    RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_GETREWARD, GetRewardPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_ARTFACTLOTTERY, ArtifactLotteryPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_TREAURE, GetRewardPanel.IsShowRedHint());
+    -- 神翼红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.GOD_WING,WingPanelCN.IsShowRedHintRide());
+    -- 神将红点
+    --RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GODSHAPESHIFT,GodShapeShiftPanel.IsShowRedHintRide());
+    -- 宝珠红点
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_JEWE,JewelPanel.CanShowRedHint());
+    
+end
+
+-- 玩家的金币，银币和钻石改变
+function RefreshMoney()
+    RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_GETREWARD, GetRewardPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.TREAURE_ARTFACTLOTTERY, ArtifactLotteryPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_TREAURE, GetRewardPanel.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.CAMP_SEAL, CampSealManager.IsShowRedHint());
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_GROWFUND1, GrowFundManager.GrowFundTenLevelShowRedHint());
+end
+-- 玩家的戰鬥力發生編髮
+function RefreshFightValue()
+    RedHintMng.SetRedHintState(CREDHINTENUM.MAIN_STRONG,GetStrongPanel.CanShowRedHint());
+end
+-- 测试方法
+-- !id	OnceRedHint	belongPanelID	posStr	type
+-- int	int	int	string	byte
+-- 红点提示ID	上一层红点ID	红点所在的面板ID	面板中的具体位置	触发条件
+-- 1000	0	109	Interface/Button_Interface/Sprite_RedHint	0
+-- 1020	1000	109	Interface/Tween/FirstTableBind/FirstButton1/Sprite_RedHint	0
+-- 10001	1020	109	Interface/Tween/SecondTableBind/SecondTable1/SecondButton1/Sprite_RedHint	1
+local testBool = false;
+function TestRedHint()
+    testBool = not testBool;
+    RedHintMng.SetRedHintState(10001, testBool);
+end

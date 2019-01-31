@@ -1,0 +1,199 @@
+﻿module('DaliyRewardTipsPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'DaliyRewardTipsPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 普通领取按钮所在的路径
+local m_btnNormalGet = "btn_NormalGet";
+-- vip领取按钮所在的路径
+local m_btnVipGet = "btn_VipGet";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 每个奖励的通用路径
+local m_itemStr = "Sub_Items/Item";
+local m_ItemsPath ="Sub_Items";
+-- 每个奖励下的品质颜色
+local m_itemPinZhiStr = "/Sprite_Apptitude";
+local m_itemPinZhi2Str = "/Sprite_Apptitude2";
+-- 每个奖励下的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 每个奖励下的数量
+local m_itemNumStr = "/Label_Num";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 任务信息
+local missionInfo = nil;
+-- 奖励GRID
+local m_Items = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 倒计时名称
+local m_TimerName = "DaliyRewardGetTimer";
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+--    G_TimerMng:RemoveTimeTask(m_TimerName);
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    missionInfo = nil;
+    m_Items = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL);
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid")
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_btnNormalGet, OnNormalGetClick, m_PanelObject);
+    SetGameObjectEvent(m_btnVipGet, OnVipGetClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if missionInfo == nil then return end
+    -- 初始化按钮显示
+    if VipManager.MyVipData == nil then error("vipData is null");  return end
+    if VipManager.MyVipData.vipLv > 0 then 
+        SetGameObjectState(m_btnNormalGet, false, m_PanelObject);
+        SetGameObjectState(m_btnVipGet .. "/lb_Vip", false, m_PanelObject);
+        SetGameObjectPos(m_btnVipGet, Vector3.New(0, -229, 0), m_PanelObject);
+    else
+        SetGameObjectState(m_btnNormalGet, true, m_PanelObject);
+        SetGameObjectState(m_btnVipGet .. "/lb_Vip", true, m_PanelObject);
+        SetGameObjectPos(m_btnVipGet, Vector3.New(217, -229, 0), m_PanelObject);
+    end
+    -- 添加十秒倒计时
+    AddTimerEvent(m_TimerName, 10, CallBackOver, ETimeShowType.TypeNumberOne, OnTimerUpdateEvent);
+    -- 任务环数
+    local loopTime = G_MissionMng:GetDayMissionLoopTimeById(missionInfo.Id);
+    SetLabelContent("lb_Content", string_format(GetTextToId(2331), loopTime), m_PanelObject);
+    -- 得到奖励的list结构
+    -- 任务库id
+    local randomId = missionInfo.TaskRandom;
+    local randomInfo = CCommonTool.GetMissionRandomInfo(randomId);
+    local allRewardItems = nil;
+    if missionInfo.Id == randomInfo.TaskLast or missionInfo.Id == randomInfo.TaskStart then
+        allRewardItems = G_MissionMng:GetCurrentMissionRewards(missionInfo.RewardsItemId);
+    elseif missionInfo.Id >= randomInfo.StartTask and missionInfo.Id <= randomInfo.FinishTask then
+        if loopTime > 0 then
+            local aa = randomInfo.StartReward + loopTime - 1;
+            allRewardItems = G_MissionMng:GetCurrentMissionRewards(randomInfo.StartReward + loopTime - 1);
+        end
+    end
+    if loopTime == 0 then
+        loopTime = 1;
+    end
+    SetLabelContent(m_itemStr .. 1 .. m_itemNumStr, missionInfo.RewardsExp, m_PanelObject);
+    SetLabelContent(m_itemStr .. 2 .. m_itemNumStr, missionInfo.RewardsMoney, m_PanelObject);
+    local count = 0;
+    if missionInfo.RewardsExp > 0 then
+        count = count + 1;
+    end
+    if missionInfo.RewardsMoney > 0 then
+        count = count + 1;
+    end
+    if count == 2 then
+        -- 设置奖励信息
+        -- 1.经验2.金钱3.4.为道具信息
+        -- 设置经验、金币的图片和品质
+        local nExpIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpID):GetIntContent();
+        SetSpriteByAtlasID(m_itemStr .. 1 .. m_itemIconStr, nExpIconIndex, m_PanelObject, true);
+        local nExpPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeExpAptitudeID):GetIntContent();
+        SetSpriteApptitudeV04(m_itemStr .. 1 .. m_itemPinZhiStr, nExpPinZhiIndex, m_PanelObject);
+        SetSpriteApptitude2V04(m_itemStr .. 1 .. m_itemPinZhi2Str, nExpPinZhiIndex, m_PanelObject);
+        SetItemToolTipsEvent(m_PanelObject, m_itemStr .. 1, ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL, false, G_ItemToolTipDefine.EXP);
+        local nMoneyIconIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+        SetSpriteByAtlasID(m_itemStr .. 2 .. m_itemIconStr, nMoneyIconIndex, m_PanelObject, true);
+        local nMoneyPinZhiIndex = CCommonTool.GetDefineInfo(EDefineContentID.TypeYinBiAptitudeID):GetIntContent();
+        SetSpriteApptitudeV04(m_itemStr .. 2 .. m_itemPinZhiStr, nMoneyPinZhiIndex, m_PanelObject);
+        SetSpriteApptitude2V04(m_itemStr .. 2 .. m_itemPinZhi2Str, nMoneyPinZhiIndex, m_PanelObject);
+        SetItemToolTipsEvent(m_PanelObject, m_itemStr .. 2, ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL, false, G_ItemToolTipDefine.BINDMONEY);
+    end
+    local index = count + 1;
+    if allRewardItems.Count > 0 then 
+        for Index = index, 4 do
+            if Index - index < allRewardItems.Count then
+                SetGameObjectState(m_itemStr .. Index, true, m_PanelObject);
+                SetSpriteApptitudeV04(m_itemStr .. Index .. m_itemPinZhiStr, allRewardItems[Index - index].rewardExcelID:GetAptitudeID(), m_PanelObject);
+                SetSpriteApptitude2V04(m_itemStr .. Index .. m_itemPinZhi2Str, allRewardItems[Index - index].rewardExcelID:GetAptitudeID(), m_PanelObject);
+                SetSpriteByAtlasID(m_itemStr .. Index .. m_itemIconStr, allRewardItems[Index - index].rewardExcelID:GetImageIdById(), m_PanelObject);
+                SetItemIconEffect(m_PanelObject, m_itemStr .. Index .. m_itemIconStr, allRewardItems[Index - index].rewardExcelID.ExcelID, 21);
+                SetLabelContent(m_itemStr .. Index .. m_itemNumStr, allRewardItems[Index - index].rewardNums, m_PanelObject);
+                SetItemToolTipsEvent(m_PanelObject, m_itemStr .. Index, ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL, false, allRewardItems[Index - index].rewardExcelID.ExcelID);
+            else
+                SetGameObjectState(m_itemStr .. Index, false, m_PanelObject);
+            end
+        end
+    end
+    m_Items:Reposition();
+end
+
+------------------------------------------事件方法------------------------------------
+-- 计时器每秒回调 
+function OnTimerUpdateEvent(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL) == 1 then
+        if VipManager.MyVipData.vipLv > 0 then 
+            SetLabelContent("lb_Info", string_format(GetTextToId(2335),timeTxt), m_PanelObject);
+        else
+            SetLabelContent("lb_Info", string_format(GetTextToId(2334),timeTxt), m_PanelObject);
+        end
+    end
+end
+
+-- 时间结束回调
+function CallBackOver()
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_COMPLETE_MISSION);
+    buffer:WriteUInt(missionInfo.Id);
+    G_NetWorkMng:SendMessage(buffer);
+    G_TimerMng:RemoveTimeTask(m_TimerName);
+    closePanel(ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL);
+end
+
+-- 点击普通领取
+function OnNormalGetClick()
+    CallBackOver();
+end
+
+-- 点击vip领取
+function OnVipGetClick()
+    if VipManager.MyVipData.vipLv > 0 then 
+        CallBackOver();
+    else
+--        -- 打开充值界面
+--        closePanel(ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL);
+--        OpenUIByEnum.OpenByParam("7_4_1_1");
+        ShowSystemFlowTips(9707);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 打开帝国悬赏任务奖励界面
+function OnOpenDaliyRewardTipsPanel(missionData)
+    missionInfo = missionData;
+    createPanel(ENUMPANELID.ENUM_PANEL_DALIYREWARDTIPS_PANEL);
+end

@@ -1,0 +1,1505 @@
+﻿module("TeamProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 组队申请或邀请操作接口
+    network.Register(GMI_STOC_ASKTEAM, OnAskTeam);
+    -- 组队结果
+    network.Register(GMI_STOC_ASKTEAM_RETURN, OnAskTeamReturn);
+    -- 队伍被解散了
+    network.Register(GMI_STOC_TEAM_DISSMISS, OnTeamDissolve);
+    -- 告诉所有队员有人加入队伍
+    network.Register(GMI_STOC_TEAM_CHANGE, OnTeamChange);
+    -- 通知玩家自己已经离开队伍
+    network.Register(GMI_STOC_TEAM_SELF_LEAVE, OnSelfLeaveTeam);
+    -- 向客户端刷新队伍信息
+    network.Register(GMI_STOC_PLAYER_TEAM_INFO, OnRecieveTeamData);
+    -- 发送队伍信息改变消息(队伍目标)
+    network.Register(CMI_STOC_LGS_CHANGE_TEAM_GOAL_ID, OnTeamGoalChanged);
+    -- 返回组队大厅队伍列表开始
+    network.Register(CMI_STOC_SEND_TEAM_DUNGEON_LIST_START, OnRecieveHallTeamList);
+    -- 返回组队大厅队伍列表数据
+    network.Register(CMI_STOC_SEND_TEAM_DUNGEON_LIST, OnRecieveHallTeamList);
+    -- 返回组队大厅队伍列表结束
+    network.Register(CMI_STOC_SEND_TEAM_DUNGEON_LIST_END, OnRecieveHallTeamList);
+    -- 返回附近队伍列表开始
+    network.Register(CMI_STOC_SEND_NEARBY_TEAM_LIST_START, OnRecieveNearbyTeamList);
+    -- 返回附近队伍列表结束
+    network.Register(CMI_STOC_SEND_NEARBY_TEAM_LIST_END, OnRecieveNearbyTeamList);
+    -- 发送附近队伍列表
+    network.Register(GMI_STOC_SEND_NEARBY_TEAM_LIST, OnRecieveNearbyTeamList);
+    -- 更新队员属性
+    network.Register(GMI_STOC_TEAM_MEMBER_UPDATE, OnTeamMemberAttrChanged);
+    -- 向客户端发队友位置
+    network.Register(GMI_STOC_TEAM_MEMBER_POS, UpateTeamMemberPos);
+    -- 修改组队匹配状态回复(匹配队伍)
+    network.Register(GMI_STOC_PLAYER_SET_TEAM_MATCHING_STATE, OnRecieveMatchingTeamState);
+    -- 玩家设置组队匹配状态(匹配队员)
+    network.Register(GMI_STOC_TEAM_SET_MATCHING_STATE, OnRecieveMatchingMemberState);
+    -- 修改组队匹配职业
+    network.Register(GMI_STOC_CHANGE_TEAM_MATCHING_PRO, OnChangeMatchProfession);
+    -- 向客户端发送队员准备状态修改
+    network.Register(GMI_STOC_CHANGE_TEAM_MEMBER_ALREADY_STATE, OnMemberReadyStateChange);
+    -- 拒绝所有人的入队申请
+    network.Register(GMI_STOC_REFUSE_ALL_JOIN, OnRefureAllApply);
+    -- 进入队伍弹框确认是否跟随队长
+    network.Register(GMI_STOC_OPEN_IS_TEAM_FOLLOW_LEADER_PANEL, OnEnterTeamConfirmFollow);
+    -- 设置队长跟随状态
+    network.Register(GMI_STOC_LGS_SET_TEAM_FOLLOW_LEADER_STATE, OnSetTeamFollowState);
+    -- 队长召集队员进入跟随状态
+    network.Register(GMI_STOC_TEAM_LEADER_ASK_MEMBER_FOLLOW, OnLeaderConvoke);
+    -- 自动跟随中, 服务器通知传送到队长所在场景
+    network.Register(GMI_STOC_TEAM_MEMBER_TRANSMIT_TO_LEADER_SCENE, OnFollowToScene);
+    -- 通知客户端刷新组队界面 
+    network.Register(GMI_STOC_REFREH_TEAM_INFO, OnRefreshTeam);
+end
+
+-- 组队申请或邀请操作接口
+function OnAskTeam(protocolId, buffer)
+    -- 操作类型 0:申请 1:邀请 2:取消邀请 3:取消申请 4:有了队伍 5:转换队长
+    local opType = buffer:ReadShort();
+    -- 发起者是否在队伍中1: 在0: 不在
+    buffer:ReadShort();
+    -- 取消原因 0: 回应超时,系统强制取消 1:玩家主动取消 3:玩家下线 4：玩家进队 11:玩家切线
+    local cancelReason = buffer:ReadShort();
+    if opType == 0 or opType == 1 then
+        local member = ReadMember(buffer);
+        TeamManager.RefreshInviteAndApplyList(member);
+        if opType == 0 then
+            -- local mgr = TeamManager;
+            -- if mgr.autoAccept and mgr.IsLeader() then
+            --    RequestAgreeApply(member.globalId);
+            -- end
+        else
+            log(string_format("收到玩家{0}的组队消息", member.globalId));
+        end
+    elseif opType == 2 or opType == 3 then
+        -- 取消(被)邀请和(被)申请
+        local globalId = buffer:ReadUInt();
+        -- 2 被操作者
+        local globalId2 = buffer:ReadUInt();
+        -- globalId2
+        local name = buffer:ReadStringByByte();
+        if cancelReason == 0 then
+            -- error(string_format("组队：取消申请或邀请:{0} 另外一个GID：{1}  type:{2}", globalId, globalId2, opType));
+        end
+        local isSelf = true;
+        if globalId ~= G_UserInfo.GlobalDBID then
+            isSelf = false;
+            TeamManager.RemoveInviteAndApplyList(globalId);
+        end
+        if isSelf then
+            if cancelReason == 0 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}超时系统删除了邀请", globalId2));
+                else
+                    -- error(string_format("组队：玩家{0}超时系统删除了申请", globalId2));
+                end
+            elseif cancelReason == 1 then
+                if opType == 2 then
+                    G_MusicMng:OnLoadMusic(4011);
+                    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_INVITE_PASSIVE, nil, { name });
+                else
+                    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_APPLY_PASSIVE, nil, { name });
+                end
+            elseif cancelReason == 3 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}下线删除了组队邀请", globalId2));
+                else
+                    -- error(string_format("组队：玩家{0}下线删除了组队申请", globalId2));
+                end
+            elseif cancelReason == 4 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}有了队伍删除了组队邀请", globalId2));
+                    -- Version2
+                    log(globalId2 .. name .. "有了队伍，取消了" .. "我的邀请");
+                else
+                    -- error(string_format("组队：玩家{0}有了队伍删除了组队申请", globalId2));
+                end
+            elseif cancelReason == 5 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}转换队长删除了组队邀请", globalId2));
+                else
+                    -- error(string_format("组队：玩家{0}转换队长删除了组队申请", globalId2));
+                end
+            elseif cancelReason == 6 then
+                if opType == 2 then
+                    error("不应该到这里来");
+                else
+                    log(globalId2 .. name .. "取消了" .. "我的申请");
+                end
+            elseif cancelReason == 11 then
+                if opType == 2 then
+                    log(string_format("组队：玩家{0}切线，取消了我的邀请", name));
+                elseif opType == 3 then
+                    log(string_format("组队：玩家{0}切线，取消了我的申请", name));
+                else
+                    log("收到cancelReason" .. cancelReason .. "opType" .. opType);
+                end
+            end
+        else
+            if cancelReason == 0 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}超时删除了组队邀请", globalId));
+                else
+                    -- error(string_format("组队：玩家{0}超时删除了组队申请", globalId));
+                end
+            elseif cancelReason == 1 then
+                if opType == 2 then
+                    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_INVITE_PASSIVE, nil, { name });
+                else
+                    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_APPLY_PASSIVE, nil, { name });
+                end
+            elseif cancelReason == 3 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}下线拒绝了我的邀请", globalId));
+                else
+                    -- error(string_format("组队：玩家{0}下线拒绝了我的申请", globalId));
+                end
+            elseif cancelReason == 4 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}有了队伍删除了组队邀请", globalId));
+                    -- Version2
+                    log("我有了队伍，取消了" .. globalId .. name .. "的邀请,不需要提示的，call 晓辉");
+                else
+                    -- error(string_format("组队：玩家{0}有了队伍删除了组队申请", globalId));
+                end
+            elseif cancelReason == 5 then
+                if opType == 2 then
+                    -- error(string_format("组队：玩家{0}转换队长删除了组队邀请", globalId));
+                else
+                    -- error(string_format("组队：玩家{0}转换队长删除了组队申请", globalId));
+                end
+            elseif cancelReason == 6 then
+                if opType == 2 then
+                    log("不应该到这里来");
+                else
+                    log("我取消了所有人的申请入队消息：下面是每一条" .. globalId .. name .. "其实不需要提示的，call 晓辉");
+                end
+            end
+        end
+    end
+    RefreshTeamInvitePanel();
+end
+
+-- 组队的结果
+function OnAskTeamReturn(protocolId, buffer)
+    -- add By WangZhiJie
+    -- 组队的结果
+    -- D0:		0:失败 1:成功(加入队伍或邀请别人加入) 2:创建新队伍成功
+    --          3:转发消息给队长(A申请进入B队伍，但B不是队长，寻龙客户端没处理)
+    -- D1:		如果不成功，附加信息
+    -- 			0:  超时
+    -- 			1:  此人拒绝组队
+    -- 			2:  此人所在队伍已经满员
+    -- 			3:  此人所在队伍禁止加入新人
+    -- 			4:  此人不在任何队伍中
+    -- 			5:  此人不是队长，不能发送邀请消息
+    -- 			6:  未知错误
+    -- 			7:  组成新队伍失败
+    -- 			8:  两人都在队伍中，禁止组队操作
+    -- 			9:  此人禁止与他人组队
+    -- 			10: 对方下线
+    -- 			11: 对方切线
+    -- 			12: 对方不在同一线路
+    -- 			13: 此人已经有队伍，不能加入其他队伍
+    -- 			14: 该场景禁止组队
+    --              15: 不在同一个副本不能组队
+    -- 			17: 已被禁止组队!			请求的人禁止
+    -- 			18: 此玩家已被禁止组队!		对方禁止
+    -- 			22: 自己的队伍人数已满，不能邀请其他人
+    -- 			34: 该玩家正在进行随机组队，无法接受组队邀请!
+    -- 			100:申请信息不存在，客户端仅仅输出log，不要提示
+    -- 			其他:玩家拒绝与你组队
+    --              如果成功，那么1代表是队长0代表不是队长
+    -- D2:			申请: 邀请
+    -- D3		:	被申请人的STOCTeamMember 结构
+
+    -- 组队结果
+    local result = buffer:ReadUShort();
+    -- 结果类型
+    local resultType = buffer:ReadUShort();
+    -- 取消原因
+    local cancelReason = buffer:ReadUShort();
+    local member = ReadMember(buffer);
+    local name = member.name;
+    log("result" .. result .. "  resultType::" .. resultType);
+    -- 失败处理
+    if result == 0 then
+        if resultType == 0 then
+            -- 超时
+            -- error("由于回应超时，玩家自动取消了对你的组队申请");
+        elseif resultType == 1 then
+            -- 此人拒绝组队
+            if cancelReason == 1 then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_INVITE_ACTIVE, nil, { name });
+            else
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_INVITE_PASSIVE, nil, { name });
+            end
+        elseif resultType == 2 then
+            -- 此人所在队伍已经满员
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_FULL);
+        elseif resultType == 3 then
+            -- 此人所在队伍禁止加入新人
+            -- 无此功能
+            -- error("此人所在队伍禁止加入新人");
+        elseif resultType == 4 then
+            -- 此人不在任何队伍中
+        elseif resultType == 5 then
+            -- 此人不是队长，不能发送邀请消息
+        elseif resultType == 6 then
+            -- 未知错误
+        elseif resultType == 7 then
+            -- 组成新队伍失败
+            error("异常错误");
+        elseif resultType == 8 then
+            -- 两人都在队伍中，禁止组队操作
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_HAVE_TEAM);
+        elseif resultType == 9 then
+            -- 止人禁止与他人组队
+            -- error("此人禁止与他人组队");
+        elseif resultType == 10 then
+            -- 对方下线
+            if cancelReason == 0 then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_OFFLINE, nil, { name });
+            end
+        elseif resultType == 11 then
+            -- 对方不在线（这里错了，是切线）
+            if cancelReason == 0 then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_OFFLINE, nil, { name });
+            end
+        elseif resultType == 12 then
+            -- 对方不在同一线路
+            -- error("对方不在同一线路，现在应该不会提示这个了");       --暂时废弃
+        elseif resultType == 13 then
+            -- 此人已经有队伍，不能加入其他队伍
+            if cancelReason == 1 then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_HAVE_TEAM, nil, { name });
+            else
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_HAVE_TEAM, nil, { name });
+            end
+        elseif resultType == 14 then
+            -- 该场景禁止组队	
+            -- error("该场景禁止组队");                                --暂时废弃
+        elseif resultType == 15 then
+            -- 玩家或对方在监狱中
+            -- error("不在同一个副本不能组队");
+        elseif resultType == 16 then
+            -- 玩家被禁止组队
+            -- error("玩家被禁止组队");
+        elseif resultType == 17 then
+            -- 玩家被禁止组队
+            -- error("玩家被禁止组队");
+            ShowSystemFlowTips(2832);
+        elseif resultType == 34 then
+            -- 玩家正在随机组队
+            -- error("玩家正在随机组队");
+		elseif resultType == 33 then
+			-- 特殊阵营场景
+			ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_TEAM_MEMBER_IN_UNION_SCENE_AND_UNION_NO_EQUAL);
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_REFUSE_TEAM_INVITE_PASSIVE, nil, { name });
+        end
+        if cancelReason == 1 then
+            -- 1是操作者  0是被操作者
+            -- 删除
+            TeamManager.RemoveInviteAndApplyList(member.globalId);
+            RefreshTeamInvitePanel();
+        end
+    elseif result == 1 then
+        -- 如果是申请
+        if cancelReason == 1 then
+            -- 删除
+            TeamManager.RemoveInviteAndApplyList(member.globalId);
+            RefreshTeamInvitePanel();
+            if member.globalId ~= G_UserInfo.GlobalDBID then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SUCCESS_JOIN_TEAM);
+            else
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_JOIN_TEAM, nil, { name });
+            end
+        else
+            if member.globalId ~= G_UserInfo.GlobalDBID then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SUCCESS_JOIN_TEAM);
+            end
+        end
+    elseif result == 2 then
+        log("组队：队伍创建成功");
+        if cancelReason == 1 then
+            -- 1是操作者  0是被操作者
+            -- 删除
+            TeamManager.RemoveInviteAndApplyList(member.globalId);
+            RefreshTeamInvitePanel();
+        end
+
+        if resultType == 1 then
+            -- 1为队长，需要提示
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SUCCESS_CREATE_TEAM);
+        else
+            -- 队伍创建，我不是队长
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_SUCCESS_JOIN_TEAM);
+        end
+    elseif result == 3 then
+        -- error("消息转发给队长");
+    end
+end
+
+-- 读取队伍信息
+function ReadTeamData(buffer)
+    log("读取队伍信息");
+    local teamData = { };
+    teamData.id = buffer:ReadInt();
+    teamData.teamId = teamData.id;
+    teamData.leaderId = buffer:ReadUInt();
+    -- 队长ID
+    teamData.joinType = buffer:ReadByte();
+    -- 加入类型 0:禁止组队 1:可以组队
+    teamData.activityRoomKey = buffer:ReadInt64();
+    -- 队伍活动副本的房间钥匙
+    teamData.createTime = buffer:ReadInt64();
+    teamData.enterDungeonTime = buffer:ReadInt64();
+    teamData.enterDungeonLGID = buffer:ReadUInt();
+    -- 进入副本的LGID
+    teamData.targetPosX = buffer:ReadFloat();
+    -- 要去的场景的X坐标
+    teamData.targetPosZ = buffer:ReadFloat();
+    -- 要去的场景的Z坐标
+    teamData.targetDir = buffer:ReadFloat();
+    teamData.goalId = buffer:ReadUShort();
+    -- 队伍目标
+    if teamData.goalId < 2 then
+        teamData.goalId = 2;
+        -- 2的目标是全部
+    end
+    teamData.diffIndex = buffer:ReadByte() + 1;
+    -- 活动难度索引
+    teamData.autoMatchMember = buffer:ReadByte() == 1;
+    -- 1:自动匹配 0:不自动匹配
+
+    local selfId = G_UserInfo.GlobalDBID;
+
+    -- 读取队伍职业匹配信息
+    teamData.proInfos = { }
+    for i = 1, 4 do
+        local proInfo = { };
+        proInfo.id = i;
+        -- 位置
+        proInfo.index = i;
+        proInfo.globalId = buffer:ReadUInt();
+        -- 玩家ID
+        proInfo.proId = buffer:ReadByte();
+        -- 职业ID 255表示匹配所有职业
+        table.insert(teamData.proInfos, proInfo);
+        if proInfo.globalId == selfId then
+            G_TeamMng.SlotIndexInTeam = i;
+        end
+    end
+    table.sort(teamData.proInfos, SortProInfo);
+    return teamData;
+end
+
+function SortProInfo(p1, p2)
+    if p1.globalId ~= 0 and p2.globalId == 0 then
+        return true;
+    end
+    if p1.globalId == 0 and p2.globalId ~= 0 then
+        return false;
+    end
+    local matchAllId = TeamManager.MATCH_ALL_PRO_ID;
+    if p1.proId ~= matchAllId and p2.proId == matchAllId then
+        return true;
+    end
+    if p1.proId == matchAllId and p2.proId ~= matchAllId then
+        return false;
+    end
+    return p1.id < p2.id;
+end
+
+-- 读取成员信息
+function ReadMember(buffer)
+    log("读取成员信息");
+    local mem = { };
+    -- ID
+    mem.globalId = buffer:ReadUInt();
+    mem.id = mem.globalId;
+    -- 职业
+    mem.profession = buffer:ReadByte();
+    mem.proId = mem.profession;
+    -- 等级
+    mem.level = buffer:ReadUShort();
+    error("mem.level" .. mem.level);
+    -- 阵营
+    mem.campType = buffer:ReadByte();
+    error("mem.campType" .. mem.campType);
+    -- 名字
+    mem.name = buffer:ReadStringByByte();
+    error("mem.name" .. mem.name);
+    -- 队员类型
+    mem.memType = buffer:ReadByte();
+    -- 阵营
+    --mem.campType = buffer:ReadByte();
+    -- 队伍ID
+    mem.teamId = buffer:ReadInt();
+    -- 队长ID
+    mem.leaderId = buffer:ReadUInt();
+    -- 脸型编号
+    mem.faceId = buffer:ReadByte();
+    -- 是否挂了
+    mem.dead = buffer:ReadByte();
+    -- 是否掉线
+    mem.offline = buffer:ReadByte();
+    -- 公会ID
+    mem.guildId = buffer:ReadUInt();
+    -- 战力值
+    mem.fightPower = buffer:ReadUInt();
+    -- 队员个数
+    mem.memberCount = buffer:ReadByte();
+    -- 阵营
+    --mem.campType = buffer:ReadByte();
+    -- mem.activityId = buffer:ReadInt();  -- 队伍目标ID
+    -- 武器
+    mem.weaponId = buffer:ReadUInt();
+    -- 胸甲
+    mem.breastplateId = buffer:ReadUInt();
+    -- 武器等级
+    mem.weaponLevel = buffer:ReadUShort();
+    -- 胸甲等级
+    mem.breastplateLevel = buffer:ReadUShort();
+    -- 翅膀ID
+    mem.wingId = buffer:ReadUInt();
+    -- 队伍目标ID
+    mem.goalId = buffer:ReadUShort();
+    if mem.goalId < 2 then
+        mem.goalId = 2;
+        -- 2的目标是全部
+    end
+    -- 难度索引
+    mem.diffIndex = buffer:ReadByte() + 1;
+    -- 头发ID
+    mem.hairId = buffer:ReadUInt();
+    -- 头发颜色ID
+    mem.hairColorId = buffer:ReadUInt();
+    -- 血量百分比
+    mem.hpPercent = buffer:ReadByte() / 100;    -- 255表示不需要更新血量
+    error(string_format("成员名称:{0}, 成员ID:{1}, 血量百分比:{2}", mem.name, mem.globalId, mem.hpPercent));
+    -- 跟随状态 1:跟随中 0:不跟随
+    mem.followState = buffer:ReadByte();
+    return mem;
+end
+
+-- 队伍解散了
+function OnTeamDissolve(protocolId, buffer)
+    ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_DISSMISS);
+    TeamManager.ClearTeam();
+    TeamManager.PorcessMatchMemberPrompt();
+    TeamManager.CancelSelectTeamMember(0);
+    RefreshTeamPanel();
+    ChatVoiceManager.QuitTeamRoom();
+    log("队伍解散了");
+end
+
+-- 告诉所有队员有人加入队伍
+function OnTeamChange(protocolId, buffer)
+    local resultType = buffer:ReadUShort();
+    -- 何原因类型
+    buffer:ReadUShort();
+    -- 无用
+    buffer:ReadUShort();
+    -- 无用
+    local member = ReadMember(buffer);
+    error(SerializeTable(member));
+    -- 获得当前主角ID
+    local userId = G_UserInfo.GlobalDBID;
+    -- 是不是当前主角
+    local isSelf = userId == member.globalId;
+    -- 查看我是不是队长
+    local isLeader = userId == member.globalId;
+    -- 是否熟悉队伍面板
+    local refreshPanel = false;
+    log("resultType::" .. resultType);
+    -- 如果是入队，需要把玩家数据放入队伍当中
+    if resultType == 1 then
+        -- 入队
+        -- 把成员数据加入队伍成员信息(如果已经存在此玩家，那么是出问题了，以最新数据为准)
+        TeamManager.AddTeamMember(member);
+        -- 如果不是我，而且我也不是队长，需要提示（寻龙：如果是队友入队，需要提示）
+        if not isSelf and not isLeader then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_JOIN_TEAM, nil, { member.name });
+        end
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 2 then
+        -- 队员主动离队
+        -- 如果是自己，需要删除队伍
+        if isSelf then
+            log("组队：自己退出队伍是不走这里的");
+        else
+            -- 如果是队友，需要删除这个队友信息，并且给出提示
+            TeamManager.RemoveTeamMember(member.globalId);
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_LEAVE_TEAM, nil, { member.name });
+        end
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 3 then
+        -- 被队长踢出
+        -- 如果是自己，那么说明出错了，自己被踢不在这里发送
+        if isSelf then
+            log("组队：自己被踢出队伍是不走这里的");
+            -- 如果是队友，那么删除这个队友信息
+        else
+            log("组队："..member.name .."被踢出");
+            error("member.globalId:" .. member.globalId);
+            TeamManager.RemoveTeamMember(member.globalId);
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_BE_KICKED, nil, { member.name });
+        end
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 4 then
+        -- 队员切场景
+        -- 如果是不是自己，那么检查我的场景是否等于改变队员的场景，如果不相同，那么做出客户端效果，给出提示
+        if not isSelf then
+            log(string_format("组队:队友{0} ID:{1}切换场景:{2}", member.globalId, member.name, ""));
+            -- 如果是我，需要根据我的场景，去和队伍中其他人的场景ID比较，如果不相同，那么做出客户端效果，给出提示
+        else
+            log(string_format("组队：我切换到场景：{0}", ""));
+        end
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 5 then
+        -- 队员下线离队
+        log("组队：这里ENUM_SEND_TEAM_TYPE_OFFLINE_OUT没处理，看到发群里");
+        -- 如果是自己，那么说明出错了，自己怎么可能下线离队还被通知？
+        -- 如果是队友，那么删除这个队友信息，给出提示
+
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 6 then
+        -- 队长主动离队
+        log("组队：这里ENUM_SEND_TEAM_TYPE_LEADER_OUT没处理，看到发群里");
+        ----------和下面的消息封装一个函数
+        -- 如果是自己，删除队伍信息，
+        -- 如果是队友，那么删除这个队友信息，并且根据类型给出提示
+
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 7 then
+        -- 队长下线离队
+        log("组队：这里ENUM_SEND_TEAM_TYPE_LEADER_OFFLINE_OUT没处理，看到发群里");
+        ----------和上面的消息封装一个函数
+        -- 如果是自己
+
+        -- 如果是队友，那么删除这个队友信息，并且根据类型给出提示
+
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 8 then
+        -- 场景不允许组队，队员离队
+        log("组队：这里ENUM_SEND_TEAM_TYPE_FORBID_OUT没处理，看到发群里");
+        -- 如果是自己，那么离队，给出提示
+        -- 如果是队友，那么删除这个队友信息，给出提示
+
+        -- 刷新界面
+        refreshPanel = true;
+    elseif resultType == 9 then
+        -- 场景不允许组队，队长离队
+        log("组队：这里ENUM_SEND_TEAM_TYPE_LEADER_FORBID_OUT没处理，看到发群里");
+        -- 如果是自己，那么说明出错了，自己被踢不在这里发送
+
+        -- 如果是队友，那么删除这个队友信息
+
+        refreshPanel = true;
+    elseif resultType == 10 then
+        -- 移交队长
+        -- 如果不是我自己进队，那么提示有人入队（寻龙：仅仅提示更换队长）
+        if not isSelf then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_PLAYER_BE_CAPTAIN, nil, { member.name });
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_SELF_BE_CAPTAIN, nil, { member.name });
+        end
+        refreshPanel = true;
+    elseif resultType == 11 then
+        -- 状态更新
+        -- 如果不是我，修改状态
+        if not isSelf then
+            TeamManager.ChangeTeamMemberState(member);
+        end
+        refreshPanel = true;
+    elseif resultType == 12 then
+        -- 12上下线导致状态改变，此时只发给自己GS，因为这个是通过GWBS转发消息
+        local m = TeamManager.GetTeamMember(member.id);
+        m.offline = member.offline;
+        if m.offline == 1 then
+            TeamManager.CancelSelectTeamMember(member.id);
+        end
+        refreshPanel = true;
+    end
+    TeamManager.SortTeamMembers();
+
+    -- 刷新
+    if refreshPanel then
+        RefreshTeamPanel();
+    end
+end
+
+-- 当自己离队
+function OnSelfLeaveTeam(protocolId, buffer)
+    local resultType = buffer:ReadByte();
+    if resultType == 3 then
+        -- 我被踢出
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_SELF_BEKICK);
+    elseif resultType == 2 then
+        -- 我主动离队
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_SELF_LEAVE);
+    else
+        log(string_format("离队出错，类型:{0}", resultType));
+    end
+    log("自己离队");
+    TeamManager.ClearTeam();
+    ChatVoiceManager.QuitTeamRoom();
+    TeamManager.PorcessMatchMemberPrompt();
+    TeamManager.CancelSelectTeamMember(0);
+    RefreshTeamPanel();
+end
+
+-- 向客户端刷新队伍信息
+function OnRecieveTeamData(protocolId, buffer)
+    local isCreateTeam = not TeamManager.HasTeam();
+    if isCreateTeam then
+        TeamManager.ClearTeam();
+        -- 创建或加入队伍时主界面默认显示队伍
+        Main_LeftMiddle.SelectTeamTag();
+    end
+    log("向客户端刷新队伍信息");
+    local teamData = ReadTeamData(buffer);
+    TeamManager.UpdateTeamData(teamData);
+    local memberCount = buffer:ReadUShort();
+    if memberCount > 0 then
+        -- 成员数量>0表示重新接受队员信息
+        TeamManager.teamMemberList = { };
+    end
+    log("memberCount:::" .. memberCount);
+    for i = 1, memberCount do
+        local member = ReadMember(buffer);
+        TeamManager.AddTeamMember(member);
+        if member.globalId == teamData.leaderId then
+            member.memType = TEAM_MEMBER_TYPE.LEADER;
+        end
+    end
+    if memberCount > 0 then
+        TeamManager.SortTeamMembers();
+    end
+    RefreshTeamPanel();
+    Main_MiddleBottom.AutoSelectRecordChannel();
+    TeamManager.PorcessMatchMemberPrompt();
+    TeamManager.PorcessMatchTeamPrompt();
+    if memberCount == TeamManager.MAX_MEMBER_COUNT or not TeamManager.IsLeader() then
+        Main_RightBottom.RemoveAllTypeInTipTable(ENUM_MAINPANEL_SHOWTIPTYPE.TEAM_APPLY);
+    end
+    if isCreateTeam then
+        --ChatVoiceManager.AutoJoinRoom();
+    end
+end
+
+-- 队伍目标变更
+function OnTeamGoalChanged(protocolId, buffer)
+    local teamData = TeamManager.teamData;
+    if TeamManager.teamData == nil then
+        error("队伍数据不存在! teamData == nil");
+        return;
+    end
+    -- result == 0:操作成功 result > 0:操作失败
+    local result = buffer:ReadByte();
+    log("yError" .. result);
+    if result > 0 then
+        error("本次操作出错");
+    else
+        teamData.goalId = buffer:ReadUShort();
+        if teamData.goalId < 2 then
+            teamData.goalId = 2;
+            -- 2的目标是全部
+        end
+        teamData.diffIndex = buffer:ReadByte() + 1;
+        log("teamData.goalId::" .. teamData.goalId);
+        local goalName = TeamManager.GetTeamGoalName(teamData.goalId, teamData.diffIndex, false);
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_CHANGE_GOAL, nil, { goalName });
+        MyTeamPanel.UpdateTeamGoal();
+
+        -- 是否需要暂停匹配(修改为全部目标的时候，需要暂停匹配)
+        OnRecieveMatchingMemberState(GMI_STOC_TEAM_SET_MATCHING_STATE, buffer);
+    end
+end
+
+-- 返回组队大厅队伍列表数据
+function OnRecieveHallTeamList(protocolId, buffer)
+    if protocolId ~= CMI_STOC_SEND_TEAM_DUNGEON_LIST then
+        return;
+    end
+    local teamCount = buffer:ReadUShort();
+    -- 发送过来的队伍个数
+    local teamList = { };
+    for i = 1, teamCount do
+        -- 发送队伍信息
+        local teamData = ReadTeamData(buffer);
+        -- 队长信息
+        local leaderInfo = nil;
+        local members = { };
+        -- 队员个数
+        local memberCount = buffer:ReadByte();
+        log("memberCount::" .. memberCount);
+        for j = 1, memberCount do
+            -- 现在需要接收所有成员的基本信息
+            local member = { };
+            member.globalId = buffer:ReadUInt();
+            member.id = member.globalId;
+            member.profession = buffer:ReadByte();
+            member.proId = member.profession;
+            member.level = buffer:ReadUShort();
+            member.campType = buffer:ReadByte();
+            member.name = buffer:ReadStringByByte();
+            error("member.name"..member.name);
+            -- buffer:ReadByte(); --TODO:: 阵营数据
+            table.insert(members, member);
+            -- 如果是队长
+            if member.globalId == teamData.leaderId then
+                leaderInfo = member;
+            end
+        end
+        if leaderInfo ~= nil then
+            leaderInfo.memberCount = memberCount;
+        else
+            error("组队大厅队伍列表:未找到队长信息")
+        end
+        table.insert(teamList, {
+            memberCount = memberCount,
+            members = members,
+            leaderInfo = leaderInfo,
+            teamData = teamData,
+            teamId = teamData.teamId,
+        } );
+    end
+    -- error(SerializeTable(teamList));
+    TeamManager.hallTeamList = teamList;
+    TeamHallPanel.OnListUpdate();
+end
+
+-- 返回附近队伍列表
+function OnRecieveNearbyTeamList(protocolId, buffer)
+    if protocolId == CMI_STOC_SEND_NEARBY_TEAM_LIST_START then
+        -- 返回附近队伍列表开始
+        TeamManager.nearbyTeamList = { };
+    elseif protocolId == CMI_STOC_SEND_NEARBY_TEAM_LIST_END then
+        -- 返回附近队伍列表结束
+        TeamNearbyPanel.Refresh();
+    elseif protocolId == GMI_STOC_SEND_NEARBY_TEAM_LIST then
+        -- 发送附近队伍列表
+        if TeamManager.nearbyTeamList == nil then
+            TeamManager.nearbyTeamList = { };
+        end
+        local teamCount = buffer:ReadUShort();
+        -- 发送过来的队伍个数
+        local teamList = { };
+        for i = 1, teamCount do
+            -- 发送队伍信息
+            local teamData = ReadTeamData(buffer);
+            -- 队长信息
+            local leaderInfo = nil;
+            local members = { };
+            -- 队员个数
+            local memberCount = buffer:ReadByte();
+            for j = 1, memberCount do
+                -- 现在需要接收所有成员的基本信息
+                local member = { };
+                member.globalId = buffer:ReadUInt();
+                member.id = member.globalId;
+                member.profession = buffer:ReadByte();
+                member.proId = member.profession;
+                member.level = buffer:ReadUShort();
+                member.campType = buffer:ReadByte();
+                -- buffer:ReadByte(); --TODO:: 阵营数据
+                member.name = buffer:ReadStringByByte();
+                error("member.name"..member.name);
+                table.insert(members, member);
+                -- 如果是队长
+                if member.globalId == teamData.leaderId then
+                    leaderInfo = member;
+                end
+            end
+            if leaderInfo ~= nil then
+                leaderInfo.memberCount = memberCount;
+            else
+                error("组队大厅队伍列表:未找到队长信息")
+            end
+            table.insert(TeamManager.nearbyTeamList, {
+                memberCount = memberCount,
+                members = members,
+                leaderInfo = leaderInfo,
+                teamData = teamData,
+                teamId = teamData.teamId,
+            } );
+        end
+    end
+end
+
+-- 更新队员属性
+function OnTeamMemberAttrChanged(protocolId, buffer)
+    --    enum ENUM_TEAM_PLAYER_INFO_TYPE
+    -- {
+    -- 	ENUM_TEAM_PLAYER_INFO_TYPE_HP		= 0,	//血量
+    -- 	ENUM_TEAM_PLAYER_INFO_TYPE_MP		= 1,	//蓝量
+    -- 	ENUM_TEAM_PLAYER_INFO_TYPE_POS		= 2,	//位置				DWORD dwGlobalID, BYTE yType, WORD wSceneID, float fPosX, float fPosZ
+    -- 	ENUM_TEAM_PLAYER_INFO_TYPE_LV		= 3,	//等级
+    -- 	ENUM_TEAM_PLAYER_INFO_TYPE_PRO		= 4,	//职业
+    -- 	ENUM_TEAM_PLAYER_INFO_TYPE_PK_MODE	= 5,	//PK模式
+    -- 	ENUM_TEAM_MEMBER_FOLLOW_STATE		= 6,	//跟随状态			DWORD dwGlobalID, BYTE yType, BYTE yState
+    -- };
+    local globalId = buffer:ReadUInt();
+    local attrId = buffer:ReadByte();
+    local member = TeamManager.GetTeamMember(globalId);
+    if member == nil then
+        error("更新队伍成员属性时, 成员不存在. globalId:" .. tostring(globalId));
+        return;
+    end
+    if attrId == 0 then
+        member.hp = buffer:ReadFloat();
+        member.maxHp = buffer:ReadFloat();
+        member.hpPercent = member.hp / member.maxHp;
+        Main_LeftMiddle.RefreshMainPanelTeamHp(globalId, member.hpPercent);
+        error(string_format("更新队员血量: 玩家名称:{0}, 玩家ID:{1}, 更新血量:{2}, 血量百分比:{3}", member.name, member.globalId, member.hp, member.hpPercent));
+    elseif attrId == 1 then
+        member.mp = buffer:ReadFloat();
+        member.maxMp = buffer:ReadFloat();
+    elseif attrId == 2 then
+        -- 位置
+        member.sceneId = buffer:ReadUShort();
+        member.posX = buffer:ReadFloat();
+        member.posZ = buffer:ReadFloat();
+
+        if TeamManager.teamData.leaderId == globalId then
+            G_TeamMng:UpdateLeaderPosition(member.sceneId, member.posX, member.posZ);
+        end
+    elseif attrId == 3 then
+        member.level = buffer:ReadUShort();
+        Main_LeftMiddle.RefreshMainPanelTeamLevel(globalId);
+        MyTeamPanel.UpdateMemberAttr(globalId);
+    elseif attrId == 4 then
+        local profession = buffer:ReadByte();
+        globalId = buffer:ReadUInt();
+        member = TeamManager.GetTeamMember(globalId);
+        if member ~= nil then
+            member.profession = profession;
+        end
+        Main_LeftMiddle.RefreshMainPanelTeamPro(globalId);
+        MyTeamPanel.UpdateMemberAttr(globalId);
+    elseif attrId == 5 then
+        -- PK模式更新
+        member.pkMode = buffer:ReadByte();
+    elseif attrId == 6 then
+        -- 跟随状态
+        member.followState = buffer:ReadByte();
+        if globalId == G_UserInfo.GlobalDBID then
+            G_TeamMng.FollowState = member.followState;
+        end
+        Main_LeftMiddle.RefreshMainPanelTeamFollowState(globalId);
+    end
+end
+
+-- 向客户端发队友位置
+function UpateTeamMemberPos(protocolId, buffer)
+end
+
+-- 刷新组队界面
+function RefreshTeamPanel()
+    MyTeamPanel.Refresh();
+    Main_LeftMiddle.RefreshTeamPanel();
+    Main_MiddleTop.InitTeamFollowingOut();
+    TeamNearbyPanel.Refresh();
+    TeamHallPanel.Refresh();
+
+    local hasTeam = TeamManager.HasTeam();
+    if not hasTeam then
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_INVITE_PANEL);
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_SELECTPRO_PANEL);
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_SPEAK_PANEL);
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_MENU_PANEL);
+    end
+end
+
+function RefreshTeamInvitePanel()
+    TeamInvitePanel.Refresh();
+    TeamApplyPanel.Refresh();
+    RefreshRedHint();
+end
+
+function RefreshRedHint()
+end
+
+-- 修改我的队伍匹配状态回复(匹配队员)
+function OnRecieveMatchingMemberState(protocolId, buffer)
+    local state = buffer:ReadByte();
+    -- 1:自动匹配 0:不自动匹配
+    local teamData = TeamManager.teamData;
+    teamData.autoMatchMember = state == 1;
+    MyTeamPanel.UpdateMatchState();
+    Main_LeftMiddle.RefreshTeamPanel();
+    TeamManager.PorcessMatchMemberPrompt();
+end
+
+-- 玩家设置匹配组队状态(匹配队伍)
+function OnRecieveMatchingTeamState(protocolId, buffer)
+    local result = buffer:ReadByte();
+    -- 结果 0:失败 1:成功
+    if result == 1 then
+        local state = buffer:ReadByte();
+        -- 1:自动匹配 0:取消匹配
+        if state == 1 then
+            local goalData = TeamManager.teamHallGoalData;
+            goalData.goalId = buffer:ReadUShort();
+            -- 目标ID
+            goalData.diffIndex = buffer:ReadByte() + 1;
+            -- 难度索引
+        end
+        TeamManager.autoMatchTeam = state == 1;
+        TeamManager.PorcessMatchTeamPrompt();
+        TeamHallPanel.UpdateMatchState();
+        Main_LeftMiddle.RefreshTeamPanel();
+    end
+end 
+
+-- 修改组队匹配职业
+function OnChangeMatchProfession(protocolId, buffer)
+    local index = buffer:ReadByte() + 1;
+    -- 索引
+    local proId = buffer:ReadByte();
+    -- 职业ID
+    local proInfos = TeamManager.teamData.proInfos;
+    proInfos[index].proId = proId;
+    MyTeamPanel.Refresh();
+    -- error("proInfos:"..SerializeTable(proInfos));
+    TeamManager.PorcessMatchMemberPrompt();
+end
+
+-- 向客户端发送队员准备状态修改
+function OnMemberReadyStateChange(protocolId, buffer)
+    local data = { };
+    -- 1:准备中 0:取消准备
+    data.state = buffer:ReadByte();
+    local teamData = TeamManager.teamData;
+    if data.state == 0 then
+        data.globalId = buffer:ReadInt();
+        if data.globalId > 0 then
+            local member = TeamManager.GetTeamMember(data.globalId);
+            if member ~= nil then
+                if data.globalId ~= G_UserInfo.GlobalDBID then
+                    -- 如果是队长
+                    if data.globalId == teamData.leaderId then
+                        ShowSystemFlowTips(3792, nil, { member.name });
+                    else
+                        ShowSystemFlowTips(3791, nil, { member.name });
+                    end
+                end
+            else
+                error(string_format("队员列表的成员ID:{0}不存在!", data.globalId));
+            end
+            -- return;
+        end
+    elseif data.state == 1 then
+        data.readyGlobalIds = { };
+        local count = buffer:ReadByte();
+        for i = 1, count do
+            table.insert(data.readyGlobalIds, buffer:ReadInt());
+        end
+        -- 准备的队员数量
+        data.readyCount = count;
+        -- 准备结束时间
+        data.time = buffer:ReadInt();
+        -- 前往的副本ID
+        data.dungeonId = buffer:ReadInt();
+    end
+    TeamReadyPanel.OnMemberReadyStateChange(data);
+
+end
+
+-- 拒绝所有人的入队申请
+function OnRefureAllApply(protocolId, buffer)
+    TeamManager.RemoveAllInviteAndApplyList();
+    RefreshTeamInvitePanel();
+end
+
+-- 召集弹框30秒事件数据
+local timerData = nil;
+-- 取消倒计时
+local confirmSeconds = 0;
+local setAutoFight = false;
+-- 队长召集队员进入跟随状态
+function OnLeaderConvoke(protocolId, buffer)
+    local content = CCommonTool.GetTxtData(2001).m_str;
+    ParameterToMessageTextBox.ShowConfirm("", content, OnConvokeConfirm, true, OnConfirmClose);
+    if timerData ~= nil then
+        Timer.Instance:StopTimer(timerData);
+    end
+    setAutoFight = false;
+    confirmSeconds = 30;
+    timerData = Timer.Instance:AddTimer(1, confirmSeconds, RefreshConfirmPanelTime);
+    RefreshConfirmPanelTime();
+end
+
+-- 刷新确认弹框倒计时
+function RefreshConfirmPanelTime()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX) == 1 then
+        if not TeamManager.HasTeam() then
+            closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+            return;
+        end
+        local cancelText = CCommonTool.GetTxtData(407).m_str .. string_format("({0})", confirmSeconds);
+        local okText = CCommonTool.GetTxtData(375).m_str;
+        MessageTextBoxPanel.UpdateButtonText(cancelText, okText);
+    end
+    if confirmSeconds <= 0 then
+        closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+        return;
+    end
+    confirmSeconds = confirmSeconds - 1;
+end
+
+-- 确认框回调
+function OnConvokeConfirm(isOK)
+    if isOK == true then
+        RequestEnterFollowState();
+        if timerData ~= nil then
+            Timer.Instance:StopTimer(timerData);
+        end
+    end
+end
+
+-- 确认框关闭
+function OnConfirmClose()
+    if timerData ~= nil then
+        Timer.Instance:StopTimer(timerData);
+    end
+end
+
+-- 设置队长跟随返回
+function OnSetTeamFollowState(protocolId, buffer)
+    local followState = buffer:ReadByte();
+    local data = TeamManager.GetTeamMember(G_UserInfo.GlobalDBID);
+    data.followState = followState;
+    G_TeamMng.FollowState = followState;
+    Main_LeftMiddle.InitTeamButtonsOut();
+    Main_MiddleTop.InitTeamFollowingOut();
+    if followState == 1 then
+        -- 入队第一次跟随 开启自动战斗
+        if setAutoFight then
+            setAutoFight = false;
+            G_UserInfo:AutoFightOn();
+        end
+        -- 打断自动寻路和任务追踪
+        G_MissionMng:StopTracMission();
+        -- 打断镖车跟随
+        EveryDayTaskManager.CheckIsCamionFollow();
+    else
+        ShowSystemFlowTips(8051);
+        -- 取消跟随, 打断自动寻路
+        local player = G_UserInfo:GetCurPlayer();
+        if player ~= nil then
+            player.AgentOrderMng:CreateOrderStop();
+        end
+    end
+end
+
+-- 进入队伍弹框确认是否跟随队长
+function OnEnterTeamConfirmFollow(protocolId, buffer)
+    local content = nil;
+    local teamData = TeamManager.teamData;
+    if teamData.goalId > 2 then
+        -- <=2代表全部目标
+        local goalName = TeamManager.GetTeamGoalName(teamData.goalId, teamData.diffIndex, false);
+        content = string_format(CCommonTool.GetTxtData(2010).m_str, goalName);
+    else
+        content = CCommonTool.GetTxtData(2000).m_str;
+    end
+    ParameterToMessageTextBox.ShowConfirm("", content, OnConvokeConfirm, true, OnConfirmClose);
+    if timerData ~= nil then
+        Timer.Instance:StopTimer(timerData);
+    end
+    setAutoFight = true;
+    confirmSeconds = 30;
+    timerData = Timer.Instance:AddTimer(1, confirmSeconds, RefreshConfirmPanelTime);
+    RefreshConfirmPanelTime();
+end
+
+-- 自动跟随中, 服务器通知传送到队长所在场景
+function OnFollowToScene(protocalId, buffer)
+    local player = G_UserInfo:GetCurPlayer();
+    if player ~= nil and not player.IsAlive then
+        error("角色死亡, 无法进行传送");
+        return;
+    end
+    local leaderId = buffer:ReadUInt();
+    local sceneId = buffer:ReadUInt();
+    local posX = buffer:ReadFloat();
+    local posZ = buffer:ReadFloat();
+    if G_SceneMng.isInGame == true then
+        local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER2;
+        local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+        CollectBar.BreakTaskSendBar();
+        CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, function() RequestFollowToScene(leaderId, sceneId, posX, posZ); end);
+        -- 打断自动寻路和任务追踪d
+        G_MissionMng:StopTracMission();
+    end
+end
+
+-- 通知客户端刷新组队界面 
+function OnRefreshTeam(protocalId, buffer)
+    local nouse = buffer:ReadByte(); -- 没用
+    TeamPanel.OnRefreshTean();
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求加入队伍
+-- @param leaderId 队长ID
+function RequestApplyTeam(leaderId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM);
+    buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_APPLY);
+    buffer:WriteInt(-1);
+    buffer:WriteUInt(leaderId);
+    G_NetWorkMng:SendMessage(buffer);
+    ShowSystemFlowTips(3780);
+end
+
+-- 请求同意入队申请
+-- @param globalId 申请人ID
+function RequestAgreeApply(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM_RETURN);
+    buffer:WriteByte(0);
+    -- 操作类型 0:申请 1:邀请 2:取消邀请 3:取消申请
+    buffer:WriteByte(1);
+    -- 同意1
+    buffer:WriteByte(1);
+    buffer:WriteUInt(globalId);
+    -- 申请人ID
+    buffer:WriteShort(0);
+    buffer:WriteByte(0);
+    -- 是否是猎魔组队
+    buffer:WriteByte(0);
+    -- buffer:WriteUInt(0);    -- 活动ID
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+
+-- 请求创建队伍
+-- @param goalId 队伍目标
+-- @param diffIndex 活动难度索引 1:简单 2:普通 3:困难
+-- @param isHunt 是否猎魔活动标记 0，普通，1，猎魔活动队伍
+function RequestCreateTeam(goalId, diffIndex, isHunt)
+    if goalId == 0 then
+        error("<color=0x00FF00>创建队伍目标为0, BUG!!</color>");
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM_RETURN);
+    buffer:WriteByte(ENUM_TEAM_RETURN_TEAM_OPERATOR_TYPE.ENUM_TEAM_RETURN_OPERATOR_TYPE_CREATE_TEAM);
+    buffer:WriteByte(ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE.ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_AGREE);
+    buffer:WriteByte(1);
+    buffer:WriteUInt(G_UserInfo.GlobalDBID);
+    buffer:WriteUShort(goalId);
+    buffer:WriteByte(diffIndex - 1);
+    if isHunt ~= nil then 
+        buffer:WriteByte(isHunt);
+    else
+        buffer:WriteByte(0);
+    end
+    -- buffer:WriteUInt(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求组队大厅列表
+-- 请求自动匹配队伍
+-- @param goalId 队伍目标
+-- @param diffIndex 活动难度索引 1:简单 2:普通 3:困难
+-- @param lastTeamId 最后一条的队伍ID, 翻页时用
+function RequestTeamHallList(goalId, diffIndex, lastTeamId)
+    log(string_format("请求组队大厅列表 目标ID:{0}, 难度索引:{1}", goalId, diffIndex));
+    lastTeamId = lastTeamId or 0;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(CMI_CTOS_LGS_TEAM_DUNGEON_LIST);
+    buffer:WriteUInt(lastTeamId);
+    buffer:WriteUShort(goalId);
+    buffer:WriteByte(diffIndex - 1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求离开队伍
+function RequestQuitTeam()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_LEAVE_TEAM);
+    buffer:WriteUInt(G_UserInfo.GlobalDBID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求设置队伍目标
+-- @param goalId 队伍目标
+-- @param diffIndex 活动难度索引 1:简单 2:普通 3:困难
+function RequestSetTeamGoal(goalId, diffIndex)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(CMI_CTOS_LGS_SET_TEAM_GOAL_ID);
+    buffer:WriteUShort(goalId);
+    buffer:WriteByte(diffIndex - 1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求自动匹配队伍
+-- @param goalId 队伍目标
+-- @param diffIndex 活动难度索引 1:简单 2:普通 3:困难
+function RequestMatchTeam(goalId, diffIndex)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_SET_TEAM_MATCHING_STATE);
+    buffer:WriteByte(1);
+    buffer:WriteUShort(goalId);
+    buffer:WriteByte(diffIndex - 1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求取消自动匹配队伍
+function RequestCancelMatchTeam()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PLAYER_SET_TEAM_MATCHING_STATE);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求自动匹配队伍成员
+-- @param teamId 队伍ID
+function RequestMatchMember(teamId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_TEAM_SET_MATCHING_STATE);
+    buffer:WriteInt(teamId);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求取消自动匹配队伍成员
+-- @param teamId 队伍ID
+function RequestCancelMatchMember(teamId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_TEAM_SET_MATCHING_STATE);
+    buffer:WriteInt(teamId);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求前往操作
+-- function RequestEnter()
+--    local teamData = TeamManager.teamData;
+--    if teamData.goalId == 2 then
+--        ShowSystemFlowTips(0);
+--        error("[ff2b2b]请选择具体队伍目标");
+--        return;
+--    end
+--    local goalInfo = TeamManager.GetTeamGoalInfo(teamData.goalId);
+--    local dungeonId = 0;
+--    if teamData.diffIndex == 1 then
+--        dungeonId = goalInfo.DungeonId1;
+--    elseif teamData.diffIndex == 2 then
+--        dungeonId = goalInfo.DungeonId2;
+--    elseif teamData.diffIndex == 3 then
+--        dungeonId = goalInfo.DungeonId3;
+--    end
+--    if dungeonId == 0 then
+--        error("组队前往的副本ID为0");
+--        return;
+--    end
+--    DungeonProtocol.RequestEnterDungeon(dungeonId);
+-- end
+
+-- 请求邀请玩家入队
+-- @param globalId 玩家ID
+function RequestInvitePlayer(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM);
+    buffer:WriteByte(ETeamAskType.TEAM_ASK_TYPE_INVITE);
+    buffer:WriteInt(-1);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求附近队伍列表
+function RequestNearbyTeamList()
+    -- 先清空附件队伍列表
+    TeamManager.nearbyTeamList = { };
+    local nearbyTeamIds = TeamManager.GetNearbyTeamIds();
+    local count = #nearbyTeamIds;
+    if count == 0 then
+        return false;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_NEARBY_TEAM_ID_LIST);
+    buffer:WriteByte(count);
+    for i, teamId in ipairs(nearbyTeamIds) do
+        if i > 255 then
+            break;
+        end
+        buffer:WriteUInt(teamId);
+    end
+    log("请求附近队伍列表:" .. table.concat(nearbyTeamIds, ","));
+    G_NetWorkMng:SendMessage(buffer);
+    return true;
+end
+
+-- 请求接受组队邀请
+-- @param globalId 玩家ID
+-- @param memType 成员类型??
+function RequestAgreeInvite(globalId, memType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM_RETURN);
+    buffer:WriteByte(memType);
+    buffer:WriteByte(ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE.ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_AGREE);
+    buffer:WriteByte(1);
+    buffer:WriteUInt(globalId);
+    buffer:WriteUShort(0);
+    buffer:WriteByte(0);
+    -- 是否是猎魔组队
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求拒绝组队邀请
+-- @param globalId 玩家ID
+-- @param memType 成员类型??
+function RequestRefuseInvite(globalId, memType)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASKTEAM_RETURN);
+    buffer:WriteByte(memType);
+    buffer:WriteByte(ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE.ENUM_TEAM_RETURN_PLAYER_OPERATOR_TYPE_NO_AGREE);
+    buffer:WriteByte(1);
+    buffer:WriteUInt(globalId);
+    buffer:WriteUShort(0);
+    buffer:WriteByte(0);
+    -- 是否是猎魔组队
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求组队喊话
+-- @param broacastType 广播类型 1:组队频道广播 2:公会频道广播
+-- @param content 输入的内容
+function RequestTeamSpeak(broacastType, content)
+    local teamData = TeamManager.teamData;
+    local goalName = TeamManager.GetTeamGoalName(teamData.goalId, teamData.diffIndex, true);
+    local countString = string_format(CCommonTool.GetTxtData(1562).m_str, TeamManager.GetTeamMemberCount(), TeamManager.MAX_MEMBER_COUNT);
+    content = string_format("[E1971D]{0}[-]  {1}  [E1971D]{2}[-]", goalName, content, countString);
+    ChatManager.SendTeamMessage(broacastType, teamData.teamId, content);
+end
+
+-- 请求匹配队伍喊话
+function RequestMatchTeamSpeak()
+    local proNameId = CCommonTool.GetPartnerInfo(G_UserInfo.RoleAttribute.ProID).NameTxt;
+    local proName = CCommonTool.GetTxtData(proNameId).m_str;
+    local level = G_UserInfo.RoleAttribute.Level;
+    local goalData = TeamManager.teamHallGoalData;
+    local goalName = TeamManager.GetTeamGoalName(goalData.goalId, goalData.diffIndex, true);
+    local content = string_format(CCommonTool.GetTxtData(2172).m_str, level, proName, goalName);
+    ChatManager.SendMatchTeamMessage(goalData, content);
+end
+
+-- 请求匹配队伍成员的职业
+-- @param index 位置过引
+-- @param proId 职业ID
+function RequestMatchProfession(index, proId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_CHANGE_TEAM_MATCHING_PRO);
+    buffer:WriteByte(index - 1);
+    buffer:WriteByte(proId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求踢出队伍
+-- @param globalId 队员globalId
+function RequestKickTeam(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_DISMISS_TEAM);
+    buffer:WriteByte(ETeamDismissType.TEAM_DISMISS_TYPE_KICK_OUT);
+    buffer:WriteUInt(0);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求提升队员为队长
+-- @param globalId 队员globalId
+function RequestPromoteLeader(globalId)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_HANDOVER_CAPTAIN);
+    buffer:WriteUInt(globalId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求准备状态
+-- @param state 准备状态 1:准备 0:放弃
+function RequestTeamReadyState(state)
+    log("请求准备状态::" .. state);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_TEAM_MEMBER_CHANGE_ALREADY);
+    buffer:WriteUInt(state);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求清空入队申请列表
+function RequestClearApplyList()
+    local buffer = ByteBuffer:New();
+    buffer:WriteUShort(GMI_CTOS_LGS_REFUSE_ALL_JOIN);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求取消队伍跟随状态
+function RequestCancelFollowState()
+    local buffer = ByteBuffer:New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SET_TEAM_FOLLOW_LEADER_STATE);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+    log("请求取消队伍跟随状态");
+end
+
+-- 请求进入队伍跟随状态
+function RequestEnterFollowState()
+    local buffer = ByteBuffer:New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SET_TEAM_FOLLOW_LEADER_STATE);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+    log("请求进入队伍跟随状态");
+end
+
+-- 请求召集队员进入跟随状态
+function RequestTeamConvoke()
+    local buffer = ByteBuffer:New();
+    buffer:WriteUShort(GMI_CTOS_TEAM_LEADER_ASK_MEMBER_FOLLOW);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+    log("请求召集队员进入跟随状态");
+end
+
+-- 请求传送队长所在场景
+function RequestFollowToScene(leaderId, sceneId, posX, posZ)
+    if not G_SceneMng.isInGame == true then
+        return;
+    end
+    local player = G_UserInfo:GetCurPlayer();
+    if player ~= nil and not player.IsAlive then
+        error("角色死亡, 无法进行传送");
+        return;
+    end
+    local buffer = ByteBuffer:New();
+    buffer:WriteUShort(GMI_CTOS_TEAM_MEMBER_TRANSMIT_TO_LEADER_SCENE);
+    buffer:WriteUInt(leaderId);
+    buffer:WriteUInt(sceneId);
+    buffer:WriteFloat(posX);
+    buffer:WriteFloat(posZ);
+    G_NetWorkMng:SendMessage(buffer);
+    log(string_format("请求传送队长所在场景:场景ID:{0}, 队长ID:{1}", leaderId, sceneId));
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

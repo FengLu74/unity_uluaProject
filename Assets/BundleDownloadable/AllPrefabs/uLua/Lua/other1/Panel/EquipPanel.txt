@@ -1,0 +1,222 @@
+﻿module("EquipPanel", package.seeall)
+
+require "Panel/Equip_Force";
+require "Panel/Equip_StarUp";
+require "Panel/Equip_Enchant";
+require "Panel/Equip_Gem";
+require "Panel/Equip_RandEff";
+require "Panel/Equip_Inherit";
+---------------------------------------label路径---------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+-- 消息提示面板
+-- 消息提示面板
+local m_MessagePanel = "MessagePanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 按钮的路径
+local m_buttonStr = "LeftTags/LeftPanel/UITable/";
+-- 激活的时候显示的内容
+local m_activeContentStr = "/Sprite_Active";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 左下方选择的标签（1为最左侧的，依次向右）
+local m_selectTagNum = 1;
+-- 上一次选择的标签
+local m_lastSelectTagNum = 1;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = {};
+-----------------------------------一些写死的规定--------------------------------------
+-- toggles组成的table内容
+local m_toggleTable = {
+    [1] = { name = "1Toggle_Force", panelName = "ForcePanel", isFirstOpen = true, luaFileName = Equip_Force },
+    [2] = { name = "2Toggle_Gem", panelName = "GemPanel", isFirstOpen = true, luaFileName = Equip_Gem },
+    [3] = { name = "3Toggle_Enchant", panelName = "EnchantPanel", isFirstOpen = true, luaFileName = Equip_Enchant },
+    [4] = { name = "4Toggle_RandEff", panelName = "RandEffPanel", isFirstOpen = true, luaFileName = Equip_RandEff },
+    [5] = { name = "5Toggle_StarUp", panelName = "StarUpPanel", isFirstOpen = true, luaFileName = Equip_StarUp },
+    [6] = { name = "6Toggle_Inherit", panelName = "InheritPanel", isFirstOpen = true, luaFileName = Equip_Inherit },
+};
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面的显示
+    InitPanelShow();
+    -- 初始化点击事件
+    InitOnClick();
+    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+    m_toggleTable[m_selectTagNum].luaFileName.Start();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if true == m_panelInitAlready then
+        InitPanelShow();
+        m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    end
+end
+
+function OnDisable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+end
+
+function OnDestroy()
+    for Index = 1, #m_toggleTable do
+        m_toggleTable[Index].luaFileName.OnDestroy();
+        m_toggleTable[Index].isFirstOpen = true;
+    end
+    m_selectTagNum = 1;
+    m_lastSelectTagNum = 1;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end
+
+-- 初始化界面的显示
+function InitPanelShow()
+    for Index = 1, #m_toggleTable do
+        local isShow = false;
+        local notShow = true;
+        if Index == m_selectTagNum then
+            isShow = true;
+            notShow = false;
+        end
+        SetGameObjectState(m_buttonStr .. m_toggleTable[Index].name .. m_activeContentStr, isShow, m_panelObject);
+        SetGameObjectState(m_toggleTable[Index].panelName, isShow, m_panelObject);
+    end
+
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPFORCE) then
+        SetGameObjectState(m_buttonStr .. m_toggleTable[1].name, true, m_panelObject);
+    else
+        SetGameObjectState(m_buttonStr .. m_toggleTable[1].name, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTARUP) then
+        SetGameObjectState(m_buttonStr .. m_toggleTable[5].name, true, m_panelObject);
+    else
+        SetGameObjectState(m_buttonStr .. m_toggleTable[5].name, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPENCHANT) then
+        SetGameObjectState(m_buttonStr .. m_toggleTable[3].name, true, m_panelObject);
+    else
+        SetGameObjectState(m_buttonStr .. m_toggleTable[3].name, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTONE) then
+        SetGameObjectState(m_buttonStr .. m_toggleTable[2].name, true, m_panelObject);
+    else
+        SetGameObjectState(m_buttonStr .. m_toggleTable[2].name, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPRANDEFF) then
+        SetGameObjectState(m_buttonStr .. m_toggleTable[4].name, true, m_panelObject);
+    else
+        SetGameObjectState(m_buttonStr .. m_toggleTable[4].name, false, m_panelObject);
+    end
+    if  SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPINHERIT) then
+        SetGameObjectState(m_buttonStr .. m_toggleTable[6].name, true, m_panelObject);
+    else
+        SetGameObjectState(m_buttonStr .. m_toggleTable[6].name, false, m_panelObject);
+    end
+    RepositionUITableComp(m_buttonStr, m_panelObject);
+    --消息提示面板
+    SetGameObjectState(m_MessagePanel, false, m_panelObject);
+end
+
+-- 通过tag的次序开启内容以及执行lua逻辑
+function OpenPanelByTag()
+    -- 将内容开启
+    SetGameObjectState(m_buttonStr .. m_toggleTable[m_selectTagNum].name .. m_activeContentStr, true, m_panelObject);
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_panelObject);
+    -- 将内容关闭
+    SetGameObjectState(m_buttonStr .. m_toggleTable[m_lastSelectTagNum].name .. m_activeContentStr, false, m_panelObject);
+    SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_panelObject);
+    -- 执行的lua逻辑
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    for Index = 1, #m_toggleTable do
+        SetGameObjectEvent(m_buttonStr .. m_toggleTable[Index].name, OnButtonClick, m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭按钮事件
+function OnCloseClick()
+    if m_selectTagNum == 5 then
+        if Equip_StarUp.m_DetailPanelIsOpen then
+            Equip_StarUp.OnCloseDetailAttrPanelClick();
+            return;
+        end
+    end
+    -- 关闭当前界面
+    closePanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end
+
+--  点击事件处理
+function OnButtonClick(e)
+    local selectTagNum = tonumber(string.sub(e.name, 1, 1));
+    if m_selectTagNum ~= selectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+        m_selectTagNum = selectTagNum;
+        OpenPanelByTag();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 打开此界面并且通过参数来打开第几个标签页的内容
+function OpenThisPanelByTag(index, causePanelId)
+    if m_panelInitAlready == false then
+        m_selectTagNum = index;
+        m_lastSelectTagNum = index;
+        createPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL, causePanelId);
+    else
+        createPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL, causePanelId);
+        if m_selectTagNum ~= index then
+            m_lastSelectTagNum = m_selectTagNum;
+            m_selectTagNum = index;
+            OpenPanelByTag();
+        end
+    end
+end
+
+-- 得到当前选择的是哪个标签
+function GetSelectTagNum()
+    return m_selectTagNum;
+end
+
+-- 系统解锁后执行的事件
+function InitSystemOpenOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 then
+        InitPanelShow();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = {m_selectTagNum};
+    jumpParamsTable[2] = m_toggleTable[m_selectTagNum].luaFileName.GetJumpCloseData();
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+    m_selectTagNum = m_JumpPanelParamsTable[1];
+    m_toggleTable[m_selectTagNum].luaFileName.SetJumpCloseData(m_JumpPanelParamsTable[2]);
+end

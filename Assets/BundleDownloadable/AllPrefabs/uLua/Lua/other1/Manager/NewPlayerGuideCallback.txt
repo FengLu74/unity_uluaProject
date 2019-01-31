@@ -1,0 +1,27 @@
+﻿module("NewPlayerGuideCallback",package.seeall)
+
+posInited = false;
+startPos = nil;
+function PositionYChange(dist)
+    local target = NewPlayerGuideManager.guideTarget;
+    if target ~= nil and target.activeInHierarchy == true then
+        if posInited == false then
+            startPos = target.transform.position;
+            posInited = true;
+            return;
+        end
+        local pos = target.transform.position;
+        local y = target.transform:InverseTransformPoint(pos).y;
+        local startY = target.transform:InverseTransformPoint(startPos).y;
+        if y - startY > dist then
+            NewPlayerGuideManager.SkipGuide();
+            return true;
+        end
+    end
+    return false;
+end
+
+function Reset()
+    posInited = false;
+    startPos = nil;
+end

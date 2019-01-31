@@ -1,0 +1,339 @@
+﻿module("DungeonManager", package.seeall)
+
+-- 所有静态副本数据
+local m_DungeonInfos = nil;
+-- 副本类型对应的副本静态数据
+local m_TypeDungeonInfos = nil;
+-- 场景/副本字典
+local m_MapDuneonDict = nil;
+
+-- 玩家身上成功打过的章节 剧情本数据
+local m_StoryChatperData = {};
+-- 玩家已通关的剧情副本数据
+local m_StoryDungeons = {};
+
+-- BOSS副本进入次数
+local m_bossDungeonTimes = 0;
+-- BOSS副本已购买次数
+--local m_bossDungeonBuyTimes = 0;
+-- 最后一次催促队长的时间
+local m_lastUrgeTime = 0;
+
+-------------------------------------------------内部方法 START --------------------------------------------------
+
+-- 初始化所有副本静态数据
+function InitDungeons()
+    if m_DungeonInfos then
+        return m_DungeonInfos;
+    end
+    m_DungeonInfos = {};
+    m_TypeDungeonInfos = {};
+    m_MapDuneonDict = {};
+    local list = CCommonTool.GetAllDungeonInfo();
+    for i = 0, list.Count-1 do
+        local info = list[i];
+        local dungeonType = info.DungeonType;
+        if dungeonType ~= DUNGEON_TYPE.NONE then
+            if m_TypeDungeonInfos[dungeonType] == nil then
+                m_TypeDungeonInfos[dungeonType] = {};
+            end
+            table.insert(m_TypeDungeonInfos[dungeonType], info);
+            m_DungeonInfos[info.Id] = info;
+            if not m_MapDuneonDict[info.MapId] then
+                m_MapDuneonDict[info.MapId] = {};
+            end
+            table.insert(m_MapDuneonDict[info.MapId], info.Id);
+        end
+    end
+    return m_DungeonInfos;
+end
+
+-------------------------------------------------内部方法 END --------------------------------------------------
+
+--------------------------------------------------通用接口 START --------------------------------------------------
+
+-- BOSS副本进入次数信息
+-- Return remainTimes, usedTimes, maxTimes
+function GetBossDungeonTimesInfo()
+    local activities = ActivityManager.activities;
+    for i, act in ipairs(activities) do
+        -- ID>20000为魔王本活动, showState == 1的魔王本活动存储活动次数数据, showState == 2不在活动列表显示
+        if act.id >= 20000 and act.showState == 1 then
+            local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(act.id);
+            return remainTimes, usedTimes, maxTimes;
+        end
+    end
+    return 0, 0, 0;
+end
+-- BOSS大厅装备boss副本进入次数信息
+-- Return remainTimes, usedTimes, maxTimes
+function GetEquipBossDungeonTimesInfo(dungeonId)
+    local senddungeonId=0;
+    if dungeonId>=6000 and dungeonId<6100 then
+        senddungeonId=6001;
+    elseif dungeonId>=6100 and dungeonId<6200 then
+        senddungeonId=6101;
+    elseif dungeonId>=6200 and dungeonId<6300 then
+        senddungeonId=6201;
+    elseif dungeonId>=6300 and dungeonId<6400 then
+        senddungeonId=6301;
+    elseif dungeonId>=6400 and dungeonId<6500 then
+        senddungeonId=6401;
+    elseif dungeonId>3000 and dungeonId<5000 then
+        senddungeonId=dungeonId;
+    else
+        error("boss大厅单人装备boss活动ID未定义！=-->"..dungeonId);
+        return 0, 0, 0;
+    end
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(senddungeonId);
+    --error("remainTimes="..remainTimes.."***usedTimes="..usedTimes);
+    return remainTimes, usedTimes, maxTimes;
+end
+-- BOSS大厅装备boss副本显示单人还是多人
+function GetEquipBossSingleInfo(dungeonId)
+    local single=9045;
+    if dungeonId>=6000 and dungeonId<7000 then
+        single=9045;
+    elseif dungeonId>3000 and dungeonId<5000 then
+        single=931;
+    else
+        error("boss大厅单人装备boss活动ID未定义！=-->"..dungeonId);
+    end
+    return single;
+
+end
+
+-- 更新Boss副本进入次数信息
+function UpdateBossDungeonTimes(buffer)
+    local times = buffer:ReadUShort();
+    m_bossDungeonTimes = times;
+--    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGEONPANEL) == 1 then
+--        if DungeonPanel.GetSelectTagNum() == 2 then
+--            DungeonBossPanel.InitTimes();
+--        end
+--    end
+    Logger.LogError("Boss副本：进入副本次数：" .. times);
+end
+
+-- 初始化副本列表数据
+function DealTableData()
+    InitDungeons();
+end
+
+-- 获取副本静态数据
+function GetDungeonInfo(dungeonId)
+    local info = m_DungeonInfos[dungeonId];
+    if info == nil then
+        error(string_format("副本ID:{0}不存在!", dungeonId));
+        return nil;
+    end
+    return info;
+end
+
+---- 获取活动副本信息
+--function GetActivityDungeonInfo()
+--    return m_TypeDungeonInfos[DUNGEON_TYPE.ACTIVITY];
+--end
+
+---- 获取所有已解锁的活动副本
+--function GetActivityDungeonsWithUnlocked()
+--    local dungeons = {};
+--    local infos = GetActivityDungeonInfo();
+--    local userLevel = G_UserInfo.RoleAttribute.Level;
+--    for i, info in ipairs(infos) do
+--        if userLevel >= info.Level then
+--            table.insert(dungeons, info);
+--        end
+--    end
+--    return dungeons;
+--end
+
+-- 获取组队副本信息 (组队副本)
+function GetTeamDungeonInfo()
+    return m_TypeDungeonInfos[DUNGEON_TYPE.ACTIVITY_BOSS];
+end
+
+-- 获取所有已解锁的组队副本
+function GetTeamDungeonsWithUnlocked()
+    local dungeons = {};
+    local infos = GetTeamDungeonInfo();
+    local userLevel = G_UserInfo.RoleAttribute.Level;
+    for i, info in ipairs(infos) do
+        if userLevel >= info.Level then
+            table.insert(dungeons, info);
+        end
+    end
+    return dungeons;
+end
+-- 获取BOSS副本数据
+function GetBossDungeons()
+    local dungeons = m_TypeDungeonInfos[DUNGEON_TYPE.BOSS];
+    local items = {};
+    for i, info in ipairs(dungeons) do
+        local id = info.Id;
+        -- 魔王本列表如果在活动列表里存在, 则显示在界面上
+        -- 次数也在活动里获取
+        local activity = ActivityManager.GetActivity(id);
+        if activity ~= nil then
+            table.insert(items, {info=info,activity=activity});
+        end
+    end
+    table.sort(items, function(d1, d2)
+        if d1.activity.openLevel ~= d2.activity.openLevel then
+            return d1.activity.openLevel < d2.activity.openLevel;
+        end
+        return d1.info.Id < d2.info.Id;
+    end);
+    return items;
+end
+
+--定义的不显示的等级
+local limitShowLevel=-1;
+-- 获取左边可显示的页签的BOSS副本数据
+function GetBossLobbyDungeons()
+    local dungeons = m_TypeDungeonInfos[DUNGEON_TYPE.BOSS];
+    local items = {};
+    for i, info in ipairs(dungeons) do
+        if info.Level~=limitShowLevel then
+            local id = info.Id;                 --配置表dungeondata内数据
+            if  id >= 6000 and id < 6100 then   --获取左边页签显示的活动信息
+                local leftID = id;
+                table.insert(items, {info=info,leftID=leftID});
+            end
+        end
+    end
+    table.sort(items, function(d1, d2)
+        if d1.info.Level ~= d2.info.Level then
+            return d1.info.Level < d2.info.Level;
+        end
+        return d1.info.Id < d2.info.Id;
+    end);
+    return items;
+end
+
+-- 获取BOSS副本数据
+function GetAllBossLobbyDungeons()
+    local dungeons = m_TypeDungeonInfos[DUNGEON_TYPE.BOSS];
+    local items = {};
+    for i, info in ipairs(dungeons) do
+        if info.Level~=limitShowLevel then
+            local id = info.Id;                 --配置表dungeondata内数据
+            if  (id >= 3000 and id < 5000) or (id >= 6000 and id < 7000) then
+                local leftID = id;
+                table.insert(items, {info=info,leftID=leftID}); 
+            end
+        end
+    end
+    return items;
+end
+-- 获取BOSS副本数据
+function GetBossLobbyBossByID(ID)
+    local dungeons = m_TypeDungeonInfos[DUNGEON_TYPE.BOSS];
+    local items = {};
+    for i, info in ipairs(dungeons) do
+        if  ID== info.Id  then
+            return info;
+        end
+    end
+end
+
+-- 通过mapid查找到副本id
+function GetDungeonIDByMapID(mapId)
+    local dungeonIds = m_MapDuneonDict[mapId]
+    if dungeonIds then
+        return dungeonIds[1];
+    end
+    return -1;
+end
+
+-- 通过ID判断副本是否为组队副本
+function IsTeamDungeon(dungeonId)
+    local info = GetDungeonInfo(dungeonId);
+    if info ~= nil then
+        local dungeonType = info.DungeonType;
+        return dungeonType == DUNGEON_TYPE.TEAM or dungeonType == DUNGEON_TYPE.BOSS or dungeonType == DUNGEON_TYPE.RECOMMEND_TEAM;
+    else
+        error(string_format("副本ID:{0}不存在", dungeonId));
+        return false;
+    end
+end
+
+-- 检测副本进入条件
+-- @param dungeonId 副本ID
+function CheckDungeonEnterCondition(dungeonId)
+    local info = DungeonManager.GetDungeonInfo(dungeonId);
+    if info == nil then
+        return false;
+    end
+    local dungeonType = info.DungeonType;
+    if dungeonType == DUNGEON_TYPE.BOSS then
+        -- 判断魔王本次数
+        local remainTimes, usedTimes, maxTimes = DungeonManager.GetBossDungeonTimesInfo();
+        if remainTimes == 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_DUNGEON_BOSS_TIMES_OVER);
+            return false;
+        end
+    end
+
+    -- 服务器的副本是活动, 如果有数据, 则使用服务器的等级
+    local activity = ActivityManager.GetActivity(dungeonId);
+    local level = 0;
+    local teamNum = 0;
+    if activity ~= nil then
+        level = activity.openLevel;
+        teamNum = activity.teamNum;
+    else
+        level = info.Level;
+    end
+    if level > G_UserInfo.RoleAttribute.Level then
+        --当前副本未解锁
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MSG_BALL_EVENTID_DUNGEON_UNCLOCK_CHAPTER);
+        return false;
+    end
+
+    if teamNum > 0 then
+    	local teamData = TeamManager.teamData;
+        local isLeader = TeamManager.IsLeader();
+        local hasTeam = TeamManager.HasTeam();
+        local memberCount = TeamManager.GetTeamMemberCount();
+        if not hasTeam then
+            ShowSystemFlowTips(3758);
+            return false;
+        end
+        if not isLeader then 
+            -- 队员催促队长进入副本
+            local now = os.time();
+            local cdTime = CCommonTool.GetDefineInfo(3006):GetIntContent();
+            if now >= m_lastUrgeTime + cdTime then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_PROMPT_ENTER);
+                m_lastUrgeTime = now;
+                -- 发送催促队长协议
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_TEAM_MEMBER_ASK_LEADER_ENTER_FB);
+                buffer:WriteByte(0);
+                G_NetWorkMng:SendMessage(buffer);
+            else
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_PROMPT_ENTER_CD);
+            end
+            return false;
+        else
+            if teamNum > memberCount then
+                ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_TEAM_MEMBER_LACK, nil, {teamNum});
+                return false;
+            end
+        end
+    end
+    return true;
+end
+
+
+-- 数据清理
+function ClearData()
+    m_StoryChatperData = {};
+    m_StoryDungeons = {};
+    m_bossDungeonTimes = 0;
+    --m_bossDungeonBuyTimes = 0;
+    m_lastUrgeTime = 0;
+end
+
+--------------------------------------------------通用接口 END --------------------------------------------------

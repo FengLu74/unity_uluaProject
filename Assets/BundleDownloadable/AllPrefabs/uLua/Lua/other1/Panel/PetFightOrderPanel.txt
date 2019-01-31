@@ -1,0 +1,707 @@
+﻿module('PetFightOrderPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'PetFightOrderPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭
+local m_ButtonClosePath = "Button_Close";
+-- 遮罩
+local m_MaskPath = "Mask";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 取消选择
+local m_ButtonResetPath = "Middle/Button_Reset";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 上阵宠物
+local m_SlotPath = "Top/Slot";
+-- 上阵宠物1
+local m_Slot1Path = "Top/Slot1";
+-- 上阵宠物2
+local m_Slot2Path = "Top/Slot2";
+-- 上阵宠物3
+local m_Slot3Path = "Top/Slot3";
+-- 复选框
+local m_OrderTogglePath = "Toggle/OrderToggle";
+-- 复选框标记
+local m_MarkPath = "Toggle/OrderToggle/Mark";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 备战列表
+local m_ListPath = "Middle/PetsList/Grid";
+-- 宠物图标
+local m_IconStr = "Sprite_Icon";
+-- 图标品质
+local m_QualityStr = "Sprite_Quality";
+-- 不可选中
+local m_CannotSelectStr = "CannotSelect";
+-- 宠物星级
+local m_StarNumStr = "Label_StarNum";
+-- 选择
+local m_SelectStr = "Sprite_Select";
+-- 出战中
+local m_OutStr = "/Label_Out";
+-- 未成年
+local m_NonageStr = "/Label_Nonage";
+-- 合体中
+local m_CombineStr = "/Label_Combine";
+-- 战力
+local m_FightValueStr = "Label_FightValue";
+
+-- 星级
+local m_SlotPetStarStr = "/Sprite_Star";
+-- 品质
+local m_SLotPetQualityStr = "/Sprite_Quality";
+-- 解锁
+local m_SlotOpenStr = "/NotLock";
+-- 有宠物
+local m_SlotHavePetStr = "/HavePet";
+-- 宠物图标
+local m_SlotPetIconStr = "/Sprite_Icon";
+-- 转化率
+local m_SlotPetTransValueStr = "/Label_TransValue";
+-- 没有宠物
+local m_SlotNoPetStr = "/NoPet";
+-- 下阵按钮
+local m_ButtonCancelStr = "/HavePet/Button_Cancel";
+
+-- 选中特效
+local m_SlotSelectEffectStr = "/Effect_Select";
+-- 上升下降箭头
+local m_SlotCompareStr = "/Compare";
+-- 上升箭头
+local m_SlotHighStr = "/Sprite_High";
+-- 下降箭头
+local m_SlotLowStr = "/Sprite_Low";
+-- 操作特效
+local m_SlotEffectStr = "/Effect";
+-- 可操作
+local m_SlotCanOperateStr = "/Effect_Can";
+-- 不可操作
+local m_SlotCannotOperateStr = "/Effect_Cannot";
+
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 上阵宠物1
+local m_Slot1 = nil;
+-- 上阵宠物2
+local m_Slot2 = nil;
+-- 上阵宠物3
+local m_Slot3 = nil;
+-- 备战列表
+local m_List = nil;
+-- 复选框
+local m_OrderToggle = nil;
+-- 复选框标记
+local m_Mark = nil;
+
+-- 多少星以下不让操作
+local CanOperateMinStar = 1;
+
+-- 所有宠物
+local m_PetList = nil;
+-- 左侧选中的是第几个
+local m_ListSelect = 0;
+-- 中间选中的是第几个
+local m_TopSelect = 0;
+-- 左侧所有数据
+local m_LeftShowTable = {};
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local m_PanelId = ENUMPANELID.ENUM_PANEL_PET_FIGHT_ORDER;
+
+-- 左侧栏位状态
+local PetCloneState = 
+{
+    NotHavePetState = 0,-- 没有宠物
+    CanClickState = 1,-- 有宠物且可操作
+    SetOutState = 2, -- 出战
+    CombineState = 3, -- 合体
+    NonageState = 4, -- 未成年
+}
+
+local OP_TYPE = {
+    DOWN = 1,
+    UP = 2,
+    EXCHANGE = 3,
+}
+
+-- 6种品质的渐变颜色
+local ItemQualityColor =
+{
+    [1] = "e8da9b",
+    [2] = "91e464",
+    [3] = "3bbdee",
+    [4] = "d719ff",
+    [5] = "fffd37",
+    [6] = "f63333",
+}
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_ListSelect = 0;
+    m_TopSelect = 0;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Slot1 = nil;
+	m_Slot2 = nil;
+	m_Slot3 = nil;
+	m_List = nil;
+	m_OrderToggle = nil;
+	m_Mark = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(m_PanelId);
+    m_Slot1 = child(m_PanelObject, m_Slot1Path).gameObject;
+    m_Slot2 = child(m_PanelObject, m_Slot2Path).gameObject;
+    m_Slot3 = child(m_PanelObject, m_Slot3Path).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_OrderToggle = child(m_PanelObject, m_OrderTogglePath).gameObject;
+    m_Mark = child(m_PanelObject, m_MarkPath).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+    UIEventListener.Get(m_Slot1).onClick = LuaHelper.OnClick(OnSlot1Click);
+    UIEventListener.Get(m_Slot2).onClick = LuaHelper.OnClick(OnSlot2Click);
+    UIEventListener.Get(m_Slot3).onClick = LuaHelper.OnClick(OnSlot3Click);
+    for Index = 1, 3 do
+        SetGameObjectEvent(m_SlotPath .. Index .. m_ButtonCancelStr, function(go) OnButtonCancelClick(Index); end, m_PanelObject);
+    end
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+	SetGameObjectEvent(m_ButtonResetPath, OnButtonResetClick, m_PanelObject);
+    UIEventListener.Get(m_OrderToggle).onClick = LuaHelper.OnClick(OnOrderToggleClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if Platform == "editor" then
+        
+        --PetManager.m_aPetTeamData = {
+        --    {pos=-1, time=0},
+        --    {pos=-1, time=0},
+        --    {pos=-1, time=0},
+        --};
+    end
+    local count = #PetManager.m_aPetTeamData;
+    if #PetManager.m_aPetTeamData < PET_ENUM.PET_FIGHT_ORDER_NUM then
+        for Index = count + 1, PET_ENUM.PET_FIGHT_ORDER_NUM do
+            PetManager.m_aPetTeamData[Index] = {pos=-1, time=0};
+        end
+    end
+    InitPetList();
+    InitOrderPet();
+    InitPetOperateState();
+    m_Mark:SetActive(PetManager.m_yIsPriorFirst);
+
+    error(SerializeTable(PetManager.m_aPetTeamData));
+end
+
+-- 初始化出战对列
+function InitOrderPet()
+    local SlotStr = nil;
+    for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+        SlotStr = m_SlotPath .. Index;
+        local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+        local data = nil;
+        local itemPetAttr = nil;
+        if orderPosId >= 0 then
+            for i = 1, m_PetList.Count do
+                if m_PetList[i - 1].PakID == orderPosId then
+                    itemPetAttr = m_PetList[i - 1];
+                    break;
+                end
+            end
+        end
+
+        for _, v in ipairs(m_LeftShowTable) do
+            if v.ItemAttr ~= nil and v.ItemAttr.PakID == orderPosId then
+                data = v;
+                itemPetAttr = v.ItemAttr;
+                break;
+            end
+        end
+
+        if itemPetAttr == nil then
+            SetSpriteApptitude2V04(SlotStr..m_SLotPetQualityStr, 1, m_PanelObject);
+            SetSpriteFillAmountTwo(SlotStr..m_SlotPetStarStr, 0, m_PanelObject);
+        else
+            SetSpriteApptitude2V04(SlotStr..m_SLotPetQualityStr, itemPetAttr:GetAptitudeID(), m_PanelObject);
+            local petATT = itemPetAttr.AllPetAttribute;
+            if petATT ~= nil then
+                SetSpriteFillAmountTwo(SlotStr..m_SlotPetStarStr,petATT.PetStar/PET_ENUM.PET_MAX_STAR_NUM, m_PanelObject);
+            end
+            SetSpriteColor(SlotStr..m_SlotPetStarStr, ItemQualityColor[PetCombinePanel.GetQualityByStarLevel(petATT.PetStar)], m_PanelObject);
+        end
+        local havePetStr = SlotStr..m_SlotHavePetStr;
+        local noPetStr = SlotStr..m_SlotNoPetStr;
+        if itemPetAttr == nil then
+            SetGameObjectState(havePetStr,false,m_PanelObject);
+            SetGameObjectState(noPetStr,true,m_PanelObject);
+        else
+            SetGameObjectState(havePetStr,true,m_PanelObject);
+            SetGameObjectState(noPetStr,false,m_PanelObject);
+            SetSpriteByAtlasID(havePetStr..m_SlotPetIconStr,itemPetAttr:GetImageIdById(),m_PanelObject);
+            SetLabelContent(havePetStr.."/"..m_FightValueStr, data.FightValue, m_PanelObject);
+        end
+    end
+end
+
+-- 初始化备战列表数据
+function InitPetList()
+    m_List:RemoveAll();
+    m_LeftShowTable = {};
+    m_PetList = G_BagMng:GetGoodsByItemType(ENUM_UI_PANEL.UI_PANEL_ITEM_PET);
+    local petCount = m_PetList.Count;
+    for Index = 1, PET_ENUM.PET_PANEL_MAX_NUM do
+        if Index <= petCount then
+            m_LeftShowTable[Index] = {};
+            m_LeftShowTable[Index].ItemAttr = m_PetList[Index - 1];
+            m_LeftShowTable[Index].FightValue = math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_PetList[Index - 1],1) + 0.5);
+            m_LeftShowTable[Index].State = GetPetState(m_PetList[Index - 1]);
+        else
+            m_LeftShowTable[Index] = {};
+            m_LeftShowTable[Index].ItemAttr = nil;
+            m_LeftShowTable[Index].FightValue = -1;
+            m_LeftShowTable[Index].State = GetPetState(nil);
+        end
+    end
+    table.sort(m_LeftShowTable,SortFunc);
+    for Index = 1, #m_LeftShowTable do
+        m_List:AddData(m_LeftShowTable[Index]);
+        if m_LeftShowTable[Index].State ~= PetCloneState.CanClickState then
+            m_List:SetDisable(Index - 1);
+        end
+    end
+end
+
+function SortFunc(data1,data2)
+    return data1.FightValue > data2.FightValue;
+end
+
+function GetPetState(itemAttr)
+    if itemAttr == nil then
+        return PetCloneState.NotHavePetState;
+    else
+        local petATT = itemAttr.AllPetAttribute;
+        if petATT == nil then
+            error("拿不到道具中的宠物属性");
+            return PetCloneState.NotHavePetState;
+        end
+        for _, v in ipairs(PetManager.m_aPetTeamData) do
+            if v.pos == itemAttr.PakID then
+                return PetCloneState.SetOutState;
+            end
+        end
+        for k,v in ipairs(PetManager.m_aPetCombineData) do
+            if v == itemAttr.PakID then
+                return PetCloneState.CombineState;
+            end
+        end
+        if petATT.PetState == PET_ENUM.PET_STATE_CHILD then
+            return PetCloneState.NonageState;
+        end
+    end
+    return PetCloneState.CanClickState;
+end
+
+function InitPetOperateState()
+    if m_TopSelect > 0 then
+        local SlotStr = nil;
+        for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+            SlotStr = m_SlotPath .. Index;
+            local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+
+            if Index == m_TopSelect then
+                SetGameObjectState(SlotStr .. m_ButtonCancelStr, true, m_PanelObject);
+                SetGameObjectState(SlotStr .. m_SlotEffectStr, false, m_PanelObject);
+                SetGameObjectState(SlotStr .. m_SlotSelectEffectStr, true, m_PanelObject);
+            elseif orderPosId >= 0 then
+                SetGameObjectState(SlotStr .. m_ButtonCancelStr, false, m_PanelObject);
+                SetGameObjectState(SlotStr .. m_SlotEffectStr, true, m_PanelObject);
+                SetGameObjectState(SlotStr .. m_SlotSelectEffectStr, false, m_PanelObject);
+            else
+                SetGameObjectState(SlotStr .. m_ButtonCancelStr, false, m_PanelObject);
+                SetGameObjectState(SlotStr .. m_SlotEffectStr, false, m_PanelObject);
+                SetGameObjectState(SlotStr .. m_SlotSelectEffectStr, false, m_PanelObject);
+            end
+        end
+        m_List:Refresh();
+    elseif m_ListSelect > 0 then
+        local SlotStr = nil;
+        for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+            SlotStr = m_SlotPath .. Index;
+            SetGameObjectState(SlotStr .. m_ButtonCancelStr, false, m_PanelObject);
+            SetGameObjectState(SlotStr .. m_SlotEffectStr, true, m_PanelObject);
+            SetGameObjectState(SlotStr .. m_SlotSelectEffectStr, false, m_PanelObject);
+        end
+        m_List:Refresh();
+    else
+        local SlotStr = nil;
+        for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+            SlotStr = m_SlotPath .. Index;
+            SetGameObjectState(SlotStr .. m_ButtonCancelStr, false, m_PanelObject);
+            SetGameObjectState(SlotStr .. m_SlotEffectStr, false, m_PanelObject);
+            SetGameObjectState(SlotStr .. m_SlotSelectEffectStr, false, m_PanelObject);
+        end
+        m_List:Refresh();
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+function OnCloseClick()
+    closePanel(m_PanelId);
+end
+
+-- 关闭按钮
+function OnButtonCloseClick(gameObject)
+    OnCloseClick();
+end
+
+-- 遮罩点击
+function OnMaskClick(gameObject)
+    OnCloseClick();
+end
+
+function OnSlotClick(go, slotIndex)
+    if slotIndex == m_TopSelect then
+        -- 取消选择
+        m_ListSelect = 0;
+        m_TopSelect = 0;
+        InitPetOperateState();
+        return;
+    end
+    local clickOrderPosId = PetManager.m_aPetTeamData[slotIndex].pos;
+    if clickOrderPosId < 0 then
+        return;
+    end
+    if m_ListSelect > 0 then
+        -- 交换操作
+        local posIds = {};
+        local data = m_List:GetData(m_ListSelect-1);
+        for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+            local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+            if Index == slotIndex then
+                if data.ItemAttr ~= nil then
+                    -- 直接更新数据
+                    data.State = PetCloneState.SetOutState;
+                    PetManager.m_aPetTeamData[Index].pos = data.ItemAttr.PakID;
+                    PetManager.m_aPetTeamData[Index].time = 0;
+                    for _, v in ipairs(m_LeftShowTable) do
+                        if v.ItemAttr ~= nil and v.ItemAttr.PakID == orderPosId then
+                            v.State = PetCloneState.CanClickState; 
+                        end
+                    end
+                    table.insert(posIds, data.ItemAttr.PakID);
+                else
+                    error("data.ItemArr 为空!");
+                    return;
+                end
+            else
+                table.insert(posIds, orderPosId);
+            end
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM);
+        buffer:WriteByte(OP_TYPE.EXCHANGE);
+        local size = #posIds
+        buffer:WriteByte(size);
+        for i = 1, size do
+            buffer:WriteInt(posIds[i]);
+        end
+        error("posIds:"..SerializeTable(posIds));
+        G_NetWorkMng:SendMessage(buffer);
+        m_TopSelect = 0;
+        m_ListSelect = 0;
+        InitOrderPet();
+        InitPetOperateState();
+    elseif m_TopSelect > 0 then
+        -- 更新数据
+        local teamData = PetManager.m_aPetTeamData;
+        local t = teamData[slotIndex];
+        teamData[slotIndex] = teamData[m_TopSelect];
+        teamData[m_TopSelect] = t;
+
+        local posIds = {};
+        for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+            local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+            table.insert(posIds, orderPosId);
+        end
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+        buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM);
+        buffer:WriteByte(OP_TYPE.EXCHANGE);
+        local size = #posIds
+        buffer:WriteByte(size);
+        for i = 1, size do
+            buffer:WriteInt(posIds[i]);
+        end
+        error("posIds:"..SerializeTable(posIds));
+        G_NetWorkMng:SendMessage(buffer);
+        m_TopSelect = 0;
+        m_ListSelect = 0;
+        InitPetOperateState();
+        InitOrderPet();
+    else
+        m_TopSelect = slotIndex;
+        InitPetOperateState();
+    end
+end
+
+-- 上阵宠物1
+function OnSlot1Click(gameObject)
+    OnSlotClick(gameObject, 1);
+end
+
+-- 上阵宠物2
+function OnSlot2Click(gameObject)
+    OnSlotClick(gameObject, 2);
+end
+
+-- 上阵宠物3
+function OnSlot3Click(gameObject)
+    OnSlotClick(gameObject, 3);
+end
+
+function OnButtonCancelClick(SlotIndex)
+    local orderPosId = PetManager.m_aPetTeamData[SlotIndex].pos;
+    -- 更新数据
+    local petTeamData = PetManager.m_aPetTeamData;
+    for i = SlotIndex, PET_ENUM.PET_FIGHT_ORDER_NUM do
+        if i ~= PET_ENUM.PET_FIGHT_ORDER_NUM then
+            petTeamData[i].pos = petTeamData[i+1].pos;
+            petTeamData[i].time = petTeamData[i+1].time;
+        else
+            petTeamData[i].pos = -1;
+            petTeamData[i].time = 0;
+        end
+    end
+    for _, v in ipairs(m_LeftShowTable) do
+        if v.ItemAttr ~= nil and v.ItemAttr.PakID == orderPosId then
+            v.State = PetCloneState.CanClickState; 
+        end
+    end
+
+    -- 下阵操作
+    local posIds = {};
+    for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+        local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+        table.insert(posIds, orderPosId);
+    end
+
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM);
+    buffer:WriteByte(OP_TYPE.EXCHANGE);
+    local size = #posIds
+    buffer:WriteByte(size);
+    for i = 1, size do
+        buffer:WriteInt(posIds[i]);
+    end
+    error("posIds:"..SerializeTable(posIds));
+    G_NetWorkMng:SendMessage(buffer);
+    m_TopSelect = 0;
+    m_ListSelect = 0;
+    InitOrderPet();
+    InitPetOperateState();
+end
+
+-- 备战列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local itemPetAttr = data.ItemAttr;
+    if data.State == PetCloneState.NotHavePetState then
+        SetGameObjectState(m_IconStr,false,go);--图标
+        SetGameObjectState(m_QualityStr,false,go);--品质
+        SetGameObjectState(m_StarNumStr,false,go);--星级
+        SetGameObjectState(m_SelectStr,false,go);
+        SetGameObjectState(m_CannotSelectStr,false,go);
+        SetGameObjectState(m_FightValueStr,false,go);
+        SetGameObjectState(m_SelectStr,false,go);
+    else
+        SetGameObjectState(m_IconStr,true,go);
+        SetGameObjectState(m_QualityStr,true,go);
+        SetGameObjectState(m_StarNumStr,true,go);
+        SetGameObjectState(m_FightValueStr,true,go);
+        SetSpriteByAtlasID(m_IconStr, itemPetAttr:GetImageIdById(), go);
+        SetSpriteApptitudeV04(m_QualityStr, itemPetAttr:GetAptitudeID(), go);
+        local petATT = itemPetAttr.AllPetAttribute;
+        if petATT == nil then
+            return;
+        end
+        SetLabelContent(m_StarNumStr,petATT.PetStar,go);
+        SetLabelContent(m_FightValueStr, data.FightValue, go);
+        if data.State == PetCloneState.CanClickState then
+            SetGameObjectState(m_CannotSelectStr,false,go);
+            SetGameObjectState(m_SelectStr, m_TopSelect > 0 or cell.dataIndex + 1 == m_ListSelect, go);
+        else
+            SetGameObjectState(m_SelectStr,false,go);
+            SetGameObjectState(m_CannotSelectStr,true,go);
+            SetGameObjectState(m_SelectStr,false,go);
+            if data.State == PetCloneState.SetOutState then
+                SetGameObjectState(m_CannotSelectStr..m_OutStr,true,go);
+                SetGameObjectState(m_CannotSelectStr..m_NonageStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_CombineStr,false,go);
+            elseif data.State == PetCloneState.NonageState then
+                SetGameObjectState(m_CannotSelectStr..m_OutStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_NonageStr,true,go);
+                SetGameObjectState(m_CannotSelectStr..m_CombineStr,false,go);
+            elseif data.State == PetCloneState.CombineState then
+                SetGameObjectState(m_CannotSelectStr..m_OutStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_NonageStr,false,go);
+                SetGameObjectState(m_CannotSelectStr..m_CombineStr,true,go);
+            end
+        end
+    end
+end
+
+-- 备战列表点击
+function OnListViewClick(listView, cell, go)
+    local dataIndex = cell.dataIndex;
+    local data = listView:GetData(dataIndex);
+    if dataIndex + 1 == m_ListSelect then
+        m_ListSelect = 0;
+        InitPetOperateState();
+    elseif data.State == PetCloneState.CanClickState then
+        if m_TopSelect > 0 then
+            -- 交换操作
+            local posIds = {};
+            for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+                local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+                if Index == m_TopSelect then
+                    if data.ItemAttr ~= nil then
+                        -- 直接更新数据
+                        data.State = PetCloneState.SetOutState;
+                        PetManager.m_aPetTeamData[Index].pos = data.ItemAttr.PakID
+                        PetManager.m_aPetTeamData[Index].time = 0;
+                        for _, v in ipairs(m_LeftShowTable) do
+                            if v.ItemAttr ~= nil and v.ItemAttr.PakID == orderPosId then
+                                v.State = PetCloneState.CanClickState; 
+                            end
+                        end
+                        table.insert(posIds, data.ItemAttr.PakID);
+                    else
+                        error("data.ItemArr 为空!");
+                        return;
+                    end
+                else
+                    table.insert(posIds, orderPosId);
+                end
+            end
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+            buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM);
+            buffer:WriteByte(OP_TYPE.EXCHANGE);
+            local size = #posIds
+            buffer:WriteByte(size);
+            for i = 1, size do
+                buffer:WriteInt(posIds[i]);
+            end
+            error("posIds:"..SerializeTable(posIds));
+            G_NetWorkMng:SendMessage(buffer);
+            m_TopSelect = 0;
+            m_ListSelect = 0;
+            InitPetOperateState();
+            InitOrderPet();
+        else
+            -- 选中或直接上阵操作
+            local posIds = {};
+            local hasBlank = false;
+            local teamIndex = 0;
+            for Index = 1,PET_ENUM.PET_FIGHT_ORDER_NUM do
+                local orderPosId = PetManager.m_aPetTeamData[Index].pos;
+                if orderPosId < 0 and not hasBlank then
+                    hasBlank = true;
+                    if data.ItemAttr ~= nil then
+                        teamIndex = Index;
+                        table.insert(posIds, data.ItemAttr.PakID);
+                    else
+                        error("data.ItemArr 为空!");
+                        return;
+                    end
+                else
+                    table.insert(posIds, orderPosId);
+                end
+            end
+            if hasBlank == true then
+                -- 直接更新数据
+                data.State = PetCloneState.SetOutState;
+                PetManager.m_aPetTeamData[teamIndex].pos = data.ItemAttr.PakID;
+                PetManager.m_aPetTeamData[teamIndex].time = 0;
+                InitOrderPet();
+
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+                buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM);
+                buffer:WriteByte(hasBlank and OP_TYPE.EXCHANGE or OP_TYPE.UP);
+                local size = #posIds
+                buffer:WriteByte(size);
+                for i = 1, size do
+                    buffer:WriteInt(posIds[i]);
+                end
+                error("posIds:"..SerializeTable(posIds));
+                G_NetWorkMng:SendMessage(buffer);
+                m_TopSelect = 0;
+                m_ListSelect = 0;
+                InitOrderPet();
+            else
+                m_ListSelect = dataIndex + 1;
+            end
+            InitPetOperateState();
+        end
+    end
+end
+
+-- 取消选择按钮
+function OnButtonResetClick(gameObject)
+    m_TopSelect = 0;
+    m_ListSelect = 0;
+    InitPetOperateState();
+end
+
+-- 复选框点击
+function OnOrderToggleClick(gameObject)
+    PetManager.m_yIsPriorFirst = not PetManager.m_yIsPriorFirst;
+    m_Mark:SetActive(PetManager.m_yIsPriorFirst);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_FIGHTING_TEAM_PRIORFIRST);
+    buffer:WriteByte(PetManager.m_yIsPriorFirst == true and 1 or 0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

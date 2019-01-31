@@ -1,0 +1,153 @@
+﻿module("SystemExplainPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 标题
+local m_systemTitle = "Tag/Label-Name";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭界面
+local m_OnConfirmClick = "ZheZhao";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 单个对象
+local m_systemItem = "ListPanel/Content/Zone";
+-- 拖拽对象
+local m_dragStr = "ListPanel/Drag";
+-- 所有内容
+local m_systemContent = "ListPanel/Content";
+----------------------------------通用的名称路径---------------------------------------
+-- 小标题
+local m_labelTitle = "/Label_Title";
+-- 标题内容
+local m_labelContent = "/Label_Content";
+-----------------------------------引用的对象------------------------------------------
+-- 面板是否创建成功
+local m_bCreateSuccess = false;
+-- 面板对象
+local m_strPanelObject = nil;
+-- 面板Id
+local m_panelId = nil;
+-- 面板页签ID
+local m_tabId = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-----------------------------BaseLua调用的同名方法----------------------------
+-- start方法
+function Start()
+    -- 初始化object
+    InitObjects();
+    InitAllInfo();
+    InitClickEvent();
+    -- 创建成功
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+
+end
+
+function OnDestroy()
+    m_bCreateSuccess = false;
+    m_strPanelObject = nil;
+    m_panelId = nil;
+    m_tabId = nil;
+end
+-------------------------本lua文件自调用方法---------------------------------------
+-- 初始化object
+function InitObjects()
+    -- 面板对象
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL);
+end
+
+function InitClickEvent()
+    SetGameObjectEvent(m_OnConfirmClick, OnCloseClick, m_strPanelObject);
+end
+
+function InitAllInfo()
+    local panelObj = GetComponent(m_strPanelObject, "ListPanel", "UIPanel");
+    -- Position
+    panelObj.gameObject.transform.localPosition = Vector3.New(0, 0, 0);
+    -- Offset
+    panelObj.clipOffset = Vector2.New(0, 4);
+    InitDataInfo();
+end
+
+-- 添加数据
+function InitDataInfo()
+    local allExplainInfo = CCommonTool.GetAllExplainInfo();
+    local explainInfo = nil;
+    local count = allExplainInfo.Count;
+    for index = 1, 10 do
+        SetGameObjectState(m_systemItem .. index, false, m_strPanelObject);
+    end
+    if allExplainInfo ~= nil then
+        for index = 1, count do
+            if allExplainInfo[index - 1].PanelId == m_panelId and allExplainInfo[index - 1].TabId == m_tabId then
+                explainInfo = CCommonTool.GetAllExplainInfoByIndex(index);
+            end
+        end
+        if explainInfo ~= nil then
+            SetLabelTextByID(m_systemTitle, explainInfo.MainTitle, m_strPanelObject);
+            -- 内容组1
+            SystemExplainInfo(explainInfo.Title1, explainInfo.Content1, 1);
+            -- 内容组2
+            SystemExplainInfo(explainInfo.Title2, explainInfo.Content2, 2);
+            -- 内容组3
+            SystemExplainInfo(explainInfo.Title3, explainInfo.Content3, 3);
+            -- 内容组4
+            SystemExplainInfo(explainInfo.Title4, explainInfo.Content4, 4);
+            -- 内容组5
+            SystemExplainInfo(explainInfo.Title5, explainInfo.Content5, 5);
+            -- 内容组6
+            SystemExplainInfo(explainInfo.Title6, explainInfo.Content6, 6);
+            -- 内容组7
+            SystemExplainInfo(explainInfo.Title7, explainInfo.Content7, 7);
+            -- 内容组8
+            SystemExplainInfo(explainInfo.Title8, explainInfo.Content8, 8);
+            -- 内容组9
+            SystemExplainInfo(explainInfo.Title9, explainInfo.Content9, 9);
+            -- 内容组10
+            SystemExplainInfo(explainInfo.Title10, explainInfo.Content10, 10);
+        end
+    end
+    local trans = child(m_strPanelObject, m_systemContent);
+    local height = CCommonTool.GetBoundsSize(trans).y;
+    -- 设置拖拽的长度
+    SetSpriteHeight(m_dragStr, height, m_strPanelObject);
+end
+
+-- 单个对象的处理
+function SystemExplainInfo(title, content, index)
+    local height = 0;
+    local count = index;
+    if title > 0 then
+        SetGameObjectState(m_systemItem .. index, true, m_strPanelObject);
+        for index = 1, count do
+            local Index = index - 1;
+            if Index > 0 then
+                height = height + GetComponent(m_strPanelObject, m_systemItem .. Index .. m_labelContent, "UILabel").height + 75;
+            end
+        end
+        -- 设置对象高度
+        SetGameObjectPos(m_systemItem .. index, Vector3.New(0, - height, 0), m_strPanelObject);
+        SetLabelTextByID(m_systemItem .. index .. m_labelContent, content, m_strPanelObject);
+        SetLabelTextByID(m_systemItem .. index .. m_labelTitle, title, m_strPanelObject);
+    end
+end
+--------------------------------------按钮事件方法--------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- panelId 面板ID
+-- tabId  页签ID
+function SetData(panelId, tabId)
+    m_panelId = panelId;
+    m_tabId = tabId;
+    createPanel(ENUMPANELID.ENUM_PANEL_SYSTEMEXPLAINPANEL, panelId);
+end

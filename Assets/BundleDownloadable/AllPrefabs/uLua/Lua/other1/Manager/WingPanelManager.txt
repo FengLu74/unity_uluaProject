@@ -1,0 +1,418 @@
+﻿module("WingPanelManager", package.seeall)
+------------------------------------------------------------------神翼培养--------------------------------------------------------------
+local ENUM_WING_STATE =
+{
+    CANFOSTER = 1,    -- 可以培养
+    CANLEVELUP = 2,   -- 可以突破
+    LEVELMAX = 3,     -- 最大阶级
+    LEVELLACK = 4,    -- 还未解锁
+}
+
+-- 玩家翅膀信息--server赋值
+LogicData_WingDataInfo = {};
+
+-- 在lua文件中得到翅膀总表的配置
+function GetWingTotalCfgInLua()
+    return WingTable.GetAll();
+end
+-- 在lua文件中得到翅膀属性培养，消耗的配置表
+function GetWingAttrCfgInLua()
+	local att_table = WingAttrTable.GetAll();
+	local cost_table = WingFosteTable.GetAll();
+	return att_table,cost_table;
+end
+-- 得到翅膀属性培养，消耗配置表
+function GetWingAttrCfgInLuaById(attr_id,cost_id)
+
+	local att_table , cost_table = GetWingAttrCfgInLua();
+	if att_table==nil or cost_table ==nil then
+		error("att_table==nil or cost_table ==nil");
+	end
+	return WingAttrTable.Get(attr_id),WingFosteTable.Get(cost_id);
+end
+function GetWingCostById(cost_id)
+	return WingFosteTable.Get(cost_id);
+end
+-- 根据翅膀id得到数据块
+function GetWingsSuitCfgById(wing_id)
+	return WingTable.Get(wing_id);
+end
+
+-- 神翼界面是否可以有小红点显示
+function CanShowRedHitInWingPanel()
+	return false;
+end
+--return 当前翅膀的培养信息，未解锁，可培养，可升阶，最大阶
+-- player_data当前翅膀数据（server），wing_data 当前翅膀配置数据
+function GetCurWingState(player_data)
+	local state = nil;
+	if player_data.StageLvl<1 then
+		state = ENUM_WING_STATE.LEVELLACK;   -- 不可能出现小于1
+	elseif player_data.StageLvl<10 then
+		if player_data.FosterLvl<10 then
+
+			state = ENUM_WING_STATE.CANFOSTER;
+		else
+			state = ENUM_WING_STATE.CANLEVELUP;
+		end
+	else
+		state = ENUM_WING_STATE.LEVELMAX; 
+	end
+	return state;
+end
+--得到，可培养，可升阶状态消耗的道具table
+function GetCurWingCostByState(wing_state,costInfo)
+	 if costInfo == nil then
+		return;
+	 end
+	 local item_table = {};
+	 if wing_state == ENUM_WING_STATE.CANFOSTER then
+	    local item1 = { };
+	    item1.excelID = G_ItemToolTipDefine.BINDMONEY;
+	    item1.Type = 1;
+	    item1.Num = costInfo.GroomGold;
+	    table.insert(item_table, item1);
+
+	    local item2 = { };
+	    item2.excelID = costInfo.GroomItem1;
+	    item2.Type = 0;
+	    item2.Num = costInfo.GroomItem1Num;
+	    table.insert(item_table, item2);
+	elseif wing_state == ENUM_WING_STATE.CANLEVELUP then
+	    local item1 = { };
+	    item1.excelID = G_ItemToolTipDefine.BINDMONEY;
+	    item1.Type = 1;
+	    item1.Num = costInfo.UpgradeGold;
+	    table.insert(item_table, item1);
+
+	    local item2 = { };
+	    item2.excelID = costInfo.UpgradeItem1;
+	    item2.Type = 0;
+	    item2.Num = costInfo.UpgradeItem1Num;
+	    table.insert(item_table, item2);
+	end
+	return item_table;
+end
+
+-- 根据翅膀id判定是否满足培养消耗的道具
+function IsEnoughCostByWingId(itemTable)
+	
+	for Index=1,#itemTable do
+
+		if itemTable[Index].Type == 1 then
+
+            if G_UserInfo.BindCoin < itemTable[Index].Num then
+                 return false;
+            end
+        elseif itemTable[Index].Type == 0 then
+        	--local hasNum = WingPanelManager.GetTotalNumByUnBindId(itemTable[Index].excelID);
+            local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable[Index].excelID);
+
+            if hasNum < itemTable[Index].Num then
+
+                return false;
+            end
+        end
+        
+    end
+
+   return true;
+
+end
+-- 新解锁翅膀时刷新内存值
+function RefreshPlayerWingsData(wing_Id)
+
+	local playerWingsInfoTable = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+
+	for index=1,#playerWingsInfoTable do
+		if playerWingsInfoTable[index].Id == wing_Id then
+			error("[lua] this wingId had unloacked!!!");
+			return;
+		end
+	end
+	if GetSureWingIdByCfg(wing_Id) then
+		local new_WingItem = {};
+		new_WingItem.Id = wing_Id; 
+		new_WingItem.StageLvl = 1;
+		new_WingItem.FosterLvl = 0;
+
+		table.insert(playerWingsInfoTable,new_WingItem);
+		--error("#playerWingsInfoTable:"..#playerWingsInfoTable);
+		SortPlayerWingsTable();
+		-- 新解锁翅膀时刷新一次小红点
+		RedHintMng.SetRedHintState(CREDHINTENUM.GOD_WING,WingPanel.IsShowRedHintRide());
+	else
+		error("翅膀id： "..wing_Id.." 不是进阶翅膀表中的id");
+	end
+	
+end
+-- 进阶的10个翅膀{}
+function GetSureWingIdByCfg(wing_Id)
+	local CurRoleWingCfg = {};
+	local minId = -1;
+    local min_Id = CCommonTool.GetRoleDateInfo(G_UserInfo.RoleAttribute.ProID).CultivateId;
+    local info = CCommonTool.GetRoleCultivateInfo(min_Id+1);
+    minId  = info.WingsId;
+    if minId <=0 then
+        return;
+    end
+    local max_id = minId + 9;
+    for culId = minId, max_id do
+        local culInfo = WingPanelManager.GetWingsSuitCfgById(culId);
+        table.insert(CurRoleWingCfg, culInfo);
+    end
+	--error("CurRoleWingCfg-->长度:"..#CurRoleWingCfg);
+	for index=1,#CurRoleWingCfg do
+		if CurRoleWingCfg[index].Id == wing_Id then
+			return true;
+		end
+	end
+	return false;
+end
+-- 对server传来的table进行按照权重排序
+function SortPlayerWingsTable()
+	local playerWingsInfoTable = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+
+	if playerWingsInfoTable==nil or #playerWingsInfoTable<=0 then
+		return;
+	end
+
+
+	table.sort( playerWingsInfoTable, sortFunctions)
+
+end
+function sortFunctions(a,b)
+	--local wing_table = GetWingTotalCfgInLua();
+	if WingTable.Get(a.Id)~=nil and WingTable.Get(b.Id)~=nil then
+		return WingTable.Get(a.Id).Value>WingTable.Get(b.Id).Value;
+	else
+		error("比较报错");
+	end
+	return a.Id>b.Id;
+end
+-- 是否可以显示神翼化灵界面
+function CanShowSpiritPanel()
+	
+	local need_lvl = WingPanelManager.LogicData_WingDataInfo.spiritWingNeedLvl;
+	local playerWingsInfoTable = WingPanelManager.LogicData_WingDataInfo.playerWingsInfo;
+	if playerWingsInfoTable==nil or #playerWingsInfoTable<=0 then
+		return false,need_lvl;
+	end
+	
+	local cur_lvl = 0;
+	for index=1,#playerWingsInfoTable do
+		--cur_lvl = cur_lvl+(playerWingsInfoTable[index].StageLvl-1)*10+playerWingsInfoTable[index].FosterLvl;
+		cur_lvl = cur_lvl+playerWingsInfoTable[index].StageLvl;
+	end
+	--error("神翼全部阶数之和："..cur_lvl);
+	return cur_lvl>=need_lvl,need_lvl;
+end
+------------------------------------------------------------------化灵共鸣--------------------------------------------------------------
+-- 根据职业 得到配置表中5种属性值
+function GetAttrTableByRoleID()
+	local attr_table = {};
+	local spirit_table = SpiritTable.GetAll();
+	if spirit_table ==nil or #spirit_table<=0 then
+		return attr_table ;
+	end
+	local proId = G_UserInfo.RoleAttribute.ProID;
+	for index=1,#spirit_table do
+		
+		if spirit_table[index].RoleId ==1 then
+			table.insert(attr_table,spirit_table[index]);
+		elseif spirit_table[index].RoleId == 2 and (proId == 1 or proId == 3) then
+			table.insert(attr_table,spirit_table[index]);
+		elseif spirit_table[index].RoleId == 3 and (proId == 2 or proId == 4) then
+			table.insert(attr_table,spirit_table[index]);
+		end
+	end
+	
+	table.sort( attr_table, function (a,b)
+		return a.Value > b.Value;
+	end );
+
+	return attr_table;
+end
+-- 根据属性id得到对应的培养等级，经验
+function GetAttrLvlAndExpByAttrId(attr_id)
+	local spirit_table = WingPanelManager.LogicData_WingDataInfo.playerSpiritsInfo;
+	if spirit_table == nil or #spirit_table<=0 then
+		return 0, 0 ;
+	end
+
+	for index=1,#spirit_table do
+		if spirit_table[index].attrType == attr_id then
+			return spirit_table[index].attrLvl,spirit_table[index].attrExp;
+		end
+	end
+	return 0,0 ;
+end
+-- 根据属性类型type，等级，lvl得到具体的属性值,满级需要的经验值
+function GetAttrValueAndExp(attr_type,cur_lvl)
+	local lvl = 0;
+	if cur_lvl ==0 then
+		lvl = cur_lvl+1;
+	else
+		lvl = cur_lvl;
+	end
+	local lvl_type = attr_type*1000+lvl;
+
+	if WingChemicalSpiritTable.Get(lvl_type)~=nil then
+
+		if cur_lvl ==0  or cur_lvl ==100 then
+			return WingChemicalSpiritTable.Get(lvl_type).ActivateAttr,WingChemicalSpiritTable.Get(lvl_type).GroomGold;
+		else
+			return WingChemicalSpiritTable.Get(lvl_type).ActivateAttr,WingChemicalSpiritTable.Get(lvl_type+1).GroomGold;
+		end
+	end
+
+	return 0,0;
+end
+
+function GetAddAttrValue(attr_type,cur_lvl)
+	local lvl = 0;
+	if cur_lvl ==0 then
+		lvl = cur_lvl+1;
+	else
+		lvl = cur_lvl;
+	end
+	local lvl_type = attr_type*1000+lvl;
+
+	if WingChemicalSpiritTable.Get(lvl_type)~=nil then
+
+		if cur_lvl ==0   then
+
+			return WingChemicalSpiritTable.Get(lvl_type).ActivateAttr;
+
+		elseif  cur_lvl ==100 then
+
+			return 0;
+		else
+			return WingChemicalSpiritTable.Get(lvl_type+1).ActivateAttr-WingChemicalSpiritTable.Get(lvl_type).ActivateAttr;
+		end
+	end
+
+	return 0
+end
+
+function GetAttrValueAndExpTwo(attr_type,lvl)
+	
+	local lvl_type = attr_type*1000+lvl;
+
+	if WingChemicalSpiritTable.Get(lvl_type)~=nil then
+
+		return WingChemicalSpiritTable.Get(lvl_type).ActivateAttr;
+	end
+
+	return 0,0;
+
+end
+
+
+-- 根据共鸣等级获得当前，和下一等级数据
+function GetSpiritInfoByLvl(lvl)
+
+	if lvl == 0 then
+		lvl = lvl+1;
+	end
+	error("lvl:"..lvl);
+	if lvl ==20 then
+		return ChemicalSpiritResonateTable.Get(lvl),nil;
+	else
+
+		return ChemicalSpiritResonateTable.Get(lvl),ChemicalSpiritResonateTable.Get(lvl+1);
+	end
+	
+end
+-- 根据属性类型type，等级lvl 得到需要展示的培养道具table
+function GetShowItemById(attr_type,lvl)
+	if lvl ==0 then
+		lvl = lvl+1;
+	end
+	local lvl_type = attr_type*1000+lvl;
+	local item_table = {};
+	local spirit_data = WingChemicalSpiritTable.Get(lvl_type);
+	if spirit_data ==nil then
+		return item_table;
+	end
+	local item1 = { };
+    item1.excelID = spirit_data.GroomItem1;
+    item1.Type = 0;
+    item1.Num = 1;
+    item1.Exp = spirit_data.GroomItem1Gold
+    table.insert(item_table, item1);
+
+    local item2 = { };
+    item2.excelID = spirit_data.GroomItem2;
+    item2.Type = 0;
+    item2.Num = 1;
+    item2.Exp = spirit_data.GroomItem2Gold
+    table.insert(item_table, item2);
+
+    local item3 = { };
+    item3.excelID = spirit_data.GroomItem3;
+    item3.Type = 0;
+    item3.Num = 1;
+    item3.Exp = spirit_data.GroomItem3Gold
+    table.insert(item_table, item3);
+
+	return item_table;
+end
+--根据得到非绑定id 得到绑定id
+function WrapBindExceId(unBind_id)
+    local num = -1;
+    local  datas = CCommonTool.GetTradableInfo(unBind_id);
+    if datas ~=nil then
+        num =   datas.UntradableItemID; -- 绑定id
+    else
+    	error("非绑定id："..unBind_id.." 得到不对应的绑定id");
+    end   
+    return num
+end
+-- 根据非绑定id得到（绑定）+（非绑定）数量和
+function GetTotalNumByUnBindId(unBind_id)
+	local unBind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, unBind_id);
+	local bind_Id = WrapBindExceId(unBind_id);
+	local bind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bind_Id);
+	return unBind_Num+bind_Num;
+end
+---------------------我要变强分数神翼计算需要--------------
+--总数据分数=(所有翅膀的阶数)*m_QualityScoreTable[1]+(化灵后所有的阶数)*m_QualityScoreTable[2]
+-- 品质系数写死
+m_QualityScoreTable =
+{
+    --for ceshi
+    --[1]:翅膀数据系数
+    --[2]:翅膀华灵后数据系数
+--    [1]=1,
+--    [2]=1,
+    [1] = 300, 
+    [2] = 60, 
+}
+
+-- 得到变强界面系统的品质系数对应的分数
+function GetScore()
+    local score = 0;
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_WING) == false then return score end
+    --神翼数据
+	local Infos = LogicData_WingDataInfo.playerWingsInfo;
+    if Infos~=nil and #Infos>0  then
+        local x=0;
+        for index=1,#Infos do
+            x=x+Infos[index].StageLvl;
+        end
+        score=score+x*m_QualityScoreTable[1];
+    end
+    --神翼化灵数据
+    local ChangeInfos=LogicData_WingDataInfo.playerSpiritsInfo;
+    if ChangeInfos~=nil and #ChangeInfos>0  then
+        local x=0;
+        for index=1,#ChangeInfos do
+            x=x+ChangeInfos[index].attrLvl;
+        end
+        score=score+x*m_QualityScoreTable[2];
+    end
+    return score;
+end
+------------------
+

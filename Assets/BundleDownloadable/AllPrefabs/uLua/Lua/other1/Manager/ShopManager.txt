@@ -1,0 +1,152 @@
+﻿module("ShopManager", package.seeall)
+
+-- 商店数据(key:商店面板号，value(key:商店ID，value(key:库ID，value(所有商店数据))))
+ShopData = {};
+
+ShopLimitData = {};
+
+ShopBelongPanel = 
+{
+    Score_ShopPanel = 1,--积分商店
+    Coin_ShopPanel = 2, --银币商店
+}
+
+ShopID = 
+{
+    GuildShop = 1, -- 公会商店
+    CampShop = 2,  -- 阵营商店
+    BattleShop = 3,-- 竞技商店
+    HountDemonShop = 4, -- 猎魔商店
+    HonorShop = 5, -- 骑士荣誉商店
+    ArtifactShop = 6, -- 神器商店
+    CoinShop = 10, -- 银币商店
+}
+
+function DealTableData()
+    local allShopInfo = CCommonTool.GetAllShopInfo();
+    local shopItem1Info = CCommonTool.GetAllShopItem1Info();
+    local shopItem2Info = CCommonTool.GetAllShopItem2Info();
+    local shopItem3Info = CCommonTool.GetAllShopItem3Info();
+    local shopItem4Info = CCommonTool.GetAllShopItem4Info();
+    local shopItem5Info = CCommonTool.GetAllShopItem5Info();
+    local shopItem6Info = CCommonTool.GetAllShopItem6Info();
+    local shopItem10Info = CCommonTool.GetAllShopItem10Info();
+
+    ShopData[ShopBelongPanel.Score_ShopPanel] = {};
+    ShopData[ShopBelongPanel.Coin_ShopPanel] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.GuildShop] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.CampShop] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.BattleShop] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.HountDemonShop] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.HonorShop] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.ArtifactShop] = {};
+    ShopData[ShopBelongPanel.Score_ShopPanel][ShopID.CoinShop] = {};
+
+    for Index = 1,allShopInfo.Count do
+        local shopInfo = allShopInfo[Index - 1];
+        if ShopData[shopInfo.ShopType] == nil then
+            error("不存在商店隶属界面为:"..shopInfo.ShopType.."的设计");
+        else
+            if ShopData[shopInfo.ShopType][shopInfo.ShopId] == nil then
+                error("不存在商店隶属界面为:"..shopInfo.ShopType.."的商店ID为:"..shopInfo.ShopId.."的设计");
+            else
+                local tempTable = {};
+                ShopData[shopInfo.ShopType][shopInfo.ShopId].NameTxtID = shopInfo.NameId;
+                local allTagsData = ShopData[shopInfo.ShopType][shopInfo.ShopId].AllTagsData;
+                if allTagsData == nil then
+                    allTagsData = {};
+                    ShopData[shopInfo.ShopType][shopInfo.ShopId].AllTagsData = allTagsData;
+                end
+                tempTable.ShopInfo = shopInfo;
+                tempTable.AllShopItemsInfo = {};
+                table.insert(allTagsData,tempTable);
+            end
+        end
+    end
+
+    local AllShopItemsData = 
+    {
+        [1] = {ShopMatchID = ShopID.GuildShop,Data = shopItem1Info},
+        [2] = {ShopMatchID = ShopID.CampShop,Data = shopItem2Info},
+        [3] = {ShopMatchID = ShopID.BattleShop,Data = shopItem3Info},
+        [4] = {ShopMatchID = ShopID.HountDemonShop,Data = shopItem4Info},
+        [5] = {ShopMatchID = ShopID.HonorShop,Data = shopItem5Info},
+        [6] = {ShopMatchID = ShopID.ArtifactShop,Data = shopItem6Info},
+        [7] = {ShopMatchID = ShopID.CoinShop,Data = shopItem10Info},
+    }
+    local ShopPanelInfo = ShopData[ShopBelongPanel.Score_ShopPanel];
+    if ShopPanelInfo ~= nil then
+        for Index = 1,#AllShopItemsData do
+            local shopItemsData = AllShopItemsData[Index];
+            local allTabsShopInfo = ShopPanelInfo[shopItemsData.ShopMatchID].AllTagsData;
+            local allTabsShopItemsInfo = shopItemsData.Data;
+            for i = 1,allTabsShopItemsInfo.Count do
+                local shopItemInfo = allTabsShopItemsInfo[i - 1];
+                local findIndex = nil;
+                for k,v in pairs(allTabsShopInfo) do
+                    if shopItemInfo.ShopDate == v.ShopInfo.TabDate then
+                        local allItemsInfoTable = v.AllShopItemsInfo;
+                        table.insert(allItemsInfoTable,shopItemInfo);
+                        findIndex = k;
+                        break;
+                    end
+                end
+                if findIndex == nil then
+                    error("这个道具库ID没有在商店表中填写:"..shopItemInfo.ShopDate);
+                end
+            end
+        end
+    end
+end
+
+-- 清空数据
+function ClearData()
+    ShopLimitData = {};
+end
+
+function GetOrderByShopID(shopEnum)
+    if shopEnum == ShopManager.ShopID.GuildShop then
+        return 2;
+    elseif shopEnum == ShopManager.ShopID.CampShop then
+        return 3;
+    elseif shopEnum == ShopManager.ShopID.BattleShop then
+        return 4;
+    elseif shopEnum == ShopManager.ShopID.HountDemonShop then
+        return 5;
+    elseif shopEnum == ShopManager.ShopID.HonorShop then
+        return 6;
+    elseif shopEnum == ShopManager.ShopID.ArtifactShop then
+        return 7;
+    elseif shopEnum == ShopManager.ShopID.CoinShop then
+        return 1;
+    else
+        return 0;
+    end
+end
+
+
+-- 打开商店界面
+-- @param1:商店具体类型，对应ShopManager。ShopID
+function OpenShopPanelWithTag(shopEnum,leftTagIndex,middleItemSelect)
+    local shopPanelData = ShopManager.ShopData[ShopManager.ShopBelongPanel.Score_ShopPanel];
+    local count = 0;
+    local openIndex = 0;
+    openIndex = GetOrderByShopID(shopEnum);
+    if openIndex == 0 then
+        error("未曾约定的商店枚举ID:::"..shopEnum);
+        return;
+    end
+    if leftTagIndex == nil then
+        leftTagIndex = 1;
+    end
+    if middleItemSelect == nil then
+        middleItemSelect = 1;
+    end
+    if openIndex ~= 0 then
+        ShopPanel.m_topSelectTag = openIndex;
+        ShopPanel.m_leftSelectTag = leftTagIndex;
+        ShopPanel.m_middleItemSelect = middleItemSelect;
+        ShopPanel.m_isOtherJump = true;
+        Main_MiddleTop.OnShopClick();
+    end
+end

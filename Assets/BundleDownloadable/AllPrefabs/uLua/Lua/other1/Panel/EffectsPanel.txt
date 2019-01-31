@@ -1,0 +1,350 @@
+﻿module("EffectsPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 普通公告内容路径
+local m_labelNormalContent = "Marquee/Content_Normal/Label_Parent/Label_Content";
+-- 系统公告内容路径
+local m_labelSystemContent = "Marquee/Content_System/Label_Parent/Label_Content";
+-- 场景类型
+local m_sceneType = "SceneNamePanel/TweenObj/Label/Label_SceneType";
+-- 场景名称
+local m_sceneNameStr = "SceneNamePanel/TweenObj/Label/Label_SceneName";
+--------------------------------------button路径--------------------------------------
+---------------------------------------sprite路径--------------------------------------
+--------------------------------gameobject所在的路径---------------------------------
+-- 公告父级对象路径
+local m_parentObjStr = "Marquee";
+-- 普通公告对象路径
+local m_normalNoteParentStr = "Marquee/Content_Normal/Sprite_NormalBg";
+-- 系统公告对象路径
+local m_systemNoteParentStr = "Marquee/Content_System/Sprite_SystemBg";
+-- 普通公告内容路径
+local m_labelNormalParentStr = "Marquee/Content_Normal/Label_Parent";
+-- 系统公告内容路径
+local m_labelSystemParentStr = "Marquee/Content_System/Label_Parent";
+-- 普通公告面板路径
+local m_normalNotePanelStr = "Marquee/Content_Normal";
+-- 系统公告面板路径
+local m_systemNotePanelStr = "Marquee/Content_System";
+--------------------------------------引用的对象---------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 普通公告对象引用
+local m_normalContentObj = nil;
+-- 系统公告对象引用
+local m_systemContentObj = nil;
+-- 普通公告内容对象引用
+local m_labelNormalParentObj = nil;
+-- 系统公告内容对象引用
+local m_labelSystemParentObj = nil;
+-- 普通公告父级对象引用
+local m_normalNoteParentObj = nil;
+-- 系统公告父级对象引用
+local m_systemNoteParentObj = nil;
+-- 生成下一条间隔时间
+local m_ShowNextTipTime = 5.0;
+-- 驻留时间
+local m_DelayTime = .3;
+-- 普通公告子内容对象引用
+local contentNormalBg = nil;
+-- 系统公告子内容对象引用
+local m_contentSystemBg = nil;
+-- 普通公告子内容父级对象引用
+local m_parentNormalObj = nil;
+-- 系统公告子内容父级对象引用
+local m_parentSystemObj = nil;
+-- 公告sprite组件对象
+local m_normalNoteParentComp = nil;
+-- 公告显示状态
+local m_normalNotShowing = true;
+local m_systemNotShowing = true;
+-- 当前播放的是插队的消息还是不插队的消息
+local m_isJumpQueueMes = true;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+
+-- 普通公告的timer
+local m_NormalNoteTimer = nil;
+-- 系统公告的timer
+local m_SystemNoteTimer = nil;
+-- 公告移除的Timer
+local m_RemoveNoteTimer = nil;
+--------------------------------BaseLua调用的同名方法-------------------------------
+function Start()
+    InitObjects();
+    InitData();
+    -- 面板初始化完毕
+    InitSceneName();
+    m_panelInitAlready = true;
+end
+
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+    end
+end
+
+function OnDisable()
+    m_normalNotShowing = true;
+    m_systemNotShowing = true;
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_normalContentObj = nil;
+    m_systemContentObj = nil;
+    m_labelNormalParentObj = nil;
+    m_labelSystemParentObj = nil;
+    m_normalNoteParentObj = nil;
+    m_systemNoteParentObj = nil;
+    m_parentNormalObj = nil;
+    m_parentSystemObj = nil;
+    m_normalNoteParentComp = nil;
+    m_panelInitAlready = false;
+    m_normalNotShowing = true;
+    m_systemNotShowing = true;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitData()
+    if #STOCTables.TopSystemData > 0 then
+        ShowSystemContent();
+    end
+    if #STOCTables.MiddleSystemJumpQueueData + #STOCTables.MiddleSystemNoJumpQueueData > 0 then
+        ShowNormalContent();
+    end
+end
+-- 初始化对象
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EFFECTSPANEL);
+    -- 普通公告内容
+    m_normalContentObj = child(m_panelObject, m_labelNormalContent).gameObject;
+    -- 系统公告内容
+    m_systemContentObj = child(m_panelObject, m_labelSystemContent).gameObject;
+    -- 普通公告内容背景
+    m_normalNoteParentObj = child(m_panelObject, m_normalNoteParentStr).gameObject;
+    -- 系统公告内容背景
+    m_systemNoteParentObj = child(m_panelObject, m_systemNoteParentStr).gameObject;
+    -- 普通公告父级对象
+    m_parentNormalObj = child(m_panelObject, m_parentObjStr).gameObject;
+    -- 系统公告父级对象
+    m_parentSystemObj = child(m_panelObject, m_parentObjStr).gameObject;
+    -- 普通公告内容父级对象
+    m_labelNormalParentObj = child(m_panelObject, m_labelNormalParentStr).gameObject;
+    -- 系统公告内容父级对象
+    m_labelSystemParentObj = child(m_panelObject, m_labelSystemParentStr).gameObject;
+    -- 公告sprite组件对象
+    m_normalNoteParentComp = GetComponent(m_panelObject, m_normalNoteParentStr, "UISprite");
+    -- 官方公告sprite组件对象
+    m_systemNoteParentComp = GetComponent(m_panelObject, m_systemNoteParentStr, "UISprite");
+end
+
+function InitSceneName()
+    local sceneType = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID).SceneType;
+    local sceneName = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID).SceneName;
+    local sceneNameText = GetTextToId(sceneName);
+    local activityID = G_SceneMng.ActivityID;
+    if activityID == ENUM_AOT_ID.AOT_ID_AOTAI_WUXIAN_ACTIVITY or activityID == ENUM_AOT_ID.AOT_ID_ACTIVITY_BALL or activityID == ENUM_AOT_ID.AOT_ID_ACTIVITY_SHO or activityID == ENUM_AOT_ID.AOT_ID_ACTIVITY_PET or activityID == ENUM_AOT_ID.AOT_ID_ACTIVITY_MOUNT then
+        local index =  ActivityManager.GetStairActivityCurLayer(activityID);
+        if index <= 1 then
+            index = 1;
+        end
+        local info = ActivityManager.GetStairActivityInfo(activityID, index);
+        if info ~= nil then
+            --[第 {0} 层	第 {0} 层]
+            sceneNameText = string_format(GetTextToId(954), info.Id);
+        else
+            error("读取无尽炼狱信息失败:::" .. index);
+        end
+    end
+    SetLabelContent(m_sceneNameStr, sceneNameText, m_panelObject);
+    -- 场景名称
+    SetLabelTextByID(m_sceneType, sceneType, m_panelObject);
+end
+---------------------------------------------------普通公告信息---------------------------------------------------------------
+function ShowNormalContent()
+    m_normalNotShowing = false;
+    local labelContent = "";
+    if #STOCTables.MiddleSystemJumpQueueData > 0 then
+        labelContent = STOCTables.MiddleSystemJumpQueueData[1].content;
+        m_isJumpQueueMes = true;
+    else
+        labelContent = STOCTables.MiddleSystemNoJumpQueueData[1].content;
+        m_isJumpQueueMes = false;
+    end
+    SetGameObjectState(m_normalNotePanelStr, true, m_panelObject);
+    SetLabelContent("Label_Content", labelContent, m_labelNormalParentObj);
+    local tweenComp = GetComponent(m_normalNoteParentObj, "", "TweenAlpha");
+    tweenComp.enabled = false;
+    local labelComp = GetComponent(m_labelNormalParentObj, "Label_Content", "UILabel");
+    local speed = m_normalNoteParentComp.width / 8;
+    local totalTime = m_normalNoteParentComp.width / speed + labelComp.width / speed;
+    CTweenPositionEx.NewBegin(m_labelNormalParentObj, totalTime, Vector3.New(-(labelComp.width + m_normalNoteParentComp.width) + 540, 0, 0), Vector3.New(540, 0, 0), 0, false);
+    m_NormalNoteTimer = Timer.Instance:AddTimer(totalTime - 1, 0, StartNormalTweenCheck);
+    SetSpriteColor32(m_normalNoteParentStr, "FFFFFFAA", m_panelObject);
+    CCommonTool.TweenPositionOnFinishEvent(m_labelNormalParentObj, CallBackAfterTimeAsNormal, 1);
+    -- 播放到文本的宽度时, 移除公告数据
+    m_RemoveNoteTimer = Timer.Instance:AddTimer(labelComp.width / speed, 0, TweenPositionOverAsNormal);
+end
+
+function StartNormalTweenCheck()
+    if m_isJumpQueueMes then
+        if STOCTables.MiddleSystemJumpQueueData[1] ~= nil and STOCTables.MiddleSystemJumpQueueData[1].loopTime == 1 then
+            if #STOCTables.MiddleSystemJumpQueueData + #STOCTables.MiddleSystemNoJumpQueueData == 0 then
+                CCommonTool.TweenAlphaNewBegin(m_normalNoteParentObj, 1.5, 0, 0.667, 0);
+            end
+        end
+    else
+        if STOCTables.MiddleSystemNoJumpQueueData[1] == nil then
+            if #STOCTables.MiddleSystemJumpQueueData + #STOCTables.MiddleSystemNoJumpQueueData <= 0 then
+                CCommonTool.TweenAlphaNewBegin(m_normalNoteParentObj, 1.5, 0, 0.667, 0);
+            end
+        elseif STOCTables.MiddleSystemNoJumpQueueData[1].loopTime == 1 then
+            if #STOCTables.MiddleSystemJumpQueueData + #STOCTables.MiddleSystemNoJumpQueueData == 0 then
+                CCommonTool.TweenAlphaNewBegin(m_normalNoteParentObj, 1.5, 0, 0.667, 0);
+            end
+        end
+    end
+end
+
+function TweenPositionOverAsNormal()
+    if m_isJumpQueueMes then
+        if STOCTables.MiddleSystemJumpQueueData[1].loopTime == 1 then
+            table.remove(STOCTables.MiddleSystemJumpQueueData, 1);
+        else
+            STOCTables.MiddleSystemJumpQueueData[1].loopTime = STOCTables.MiddleSystemJumpQueueData[1].loopTime - 1;
+        end
+    else
+        if STOCTables.MiddleSystemNoJumpQueueData[1].loopTime == 1 then
+            table.remove(STOCTables.MiddleSystemNoJumpQueueData, 1);
+        else
+            STOCTables.MiddleSystemNoJumpQueueData[1].loopTime = STOCTables.MiddleSystemNoJumpQueueData[1].loopTime - 1;
+        end
+    end
+    --CallBackAfterTimeAsNormal();
+
+end
+
+function CallBackAfterTimeAsNormal()
+    if #STOCTables.MiddleSystemJumpQueueData + #STOCTables.MiddleSystemNoJumpQueueData == 0 then
+        m_normalNotShowing = true;
+        SetGameObjectState(m_normalNotePanelStr, false, m_panelObject);
+    else
+        ShowNormalContent();
+    end
+end
+---------------------------------------------------系统公告信息---------------------------------------------------------------
+function ShowSystemContent()
+    m_systemNotShowing = false;
+    local labelContent = STOCTables.TopSystemData[1];
+    SetGameObjectState(m_systemNotePanelStr, true, m_panelObject);
+    SetLabelContent("Label_Content", labelContent, m_labelSystemParentObj);
+    local tweenComp = GetComponent(m_systemNoteParentObj, "", "TweenAlpha");
+    tweenComp.enabled = false;
+    local labelComp = GetComponent(m_labelSystemParentObj, "Label_Content", "UILabel");
+    local fixTime = m_systemNoteParentComp.width / 8;
+    local totalTime = m_systemNoteParentComp.width / fixTime + labelComp.width / fixTime;
+    CTweenPositionEx.NewBegin(m_labelSystemParentObj, totalTime, Vector3.New(-(labelComp.width + m_systemNoteParentComp.width) + 960, 518, 0), Vector3.New(960, 518, 0), m_DelayTime, false);
+    m_SystemNoteTimer = Timer.Instance:AddTimer(totalTime - 1, 0, StartSystemTweenCheck)
+    SetSpriteColor32(m_systemNoteParentStr, "FFFFFFAA", m_panelObject);
+    CCommonTool.TweenPositionOnFinishEvent(m_labelSystemParentObj, TweenPositionOverAsSystem, 1);
+end
+
+function TweenPositionOverAsSystem()
+    table.remove(STOCTables.TopSystemData, 1);
+    CallBackAfterTimeAsSystem();
+end
+
+function StartSystemTweenCheck()
+    if #STOCTables.TopSystemData <= 1 then
+        CCommonTool.TweenAlphaNewBegin(m_systemNoteParentObj, 1.5, 0, 0.667, 0);
+    end
+end
+
+function CallBackAfterTimeAsSystem()
+    if #STOCTables.TopSystemData == 0 then
+        m_systemNotShowing = true;
+        SetGameObjectState(m_systemNotePanelStr, false, m_panelObject);
+    else
+        ShowSystemContent();
+    end
+end
+
+function ClearTimer()
+    if m_NormalNoteTimer ~= nil then
+        Timer.Instance:StopTimer(m_NormalNoteTimer);
+        m_NormalNoteTimer = nil;
+    end
+    if m_SystemNoteTimer ~= nil then
+        Timer.Instance:StopTimer(m_SystemNoteTimer);
+        m_SystemNoteTimer = nil;
+    end
+    if m_RemoveNoteTimer ~= nil then
+        Timer.Instance:StopTimer(m_RemoveNoteTimer);
+        m_RemoveNoteTimer = nil;
+    end
+end
+---------------------------------外部调用(或内部)此界面信息的方法------------------------------------------
+function AddQueueAsNormal(mNoteData)
+    -- 如果超出了最大上限，中间系统公告就直接舍弃
+    if #STOCTables.MiddleSystemJumpQueueData + #STOCTables.MiddleSystemNoJumpQueueData > G_SysTipsCountMax then
+        return;
+    else
+        if mNoteData.JumpQueue == 1 then
+            table.insert(STOCTables.MiddleSystemJumpQueueData, mNoteData);
+        elseif mNoteData.JumpQueue == 0 then
+            table.insert(STOCTables.MiddleSystemNoJumpQueueData, mNoteData);
+        else
+            -- 错误的插队参数
+            return;
+        end
+    end
+    if m_panelInitAlready then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EFFECTSPANEL) == 1 then
+            if m_normalNotShowing then
+                ShowNormalContent();
+            else
+                -- 正在播放中那就先不管了，播完了会继续播放的
+                return;
+            end
+        else
+            createPanel(ENUMPANELID.ENUM_PANEL_EFFECTSPANEL);
+        end
+    else
+        -- 因为effectsPanel是必定创建的这里就不处理，等待自动创建后自动播放
+    end
+end
+
+function AddQueueAsSystem(content)
+    -- 如果超出了最大上限，顶部系统公告就直接舍弃
+    if #STOCTables.TopSystemData > G_SysTipsCountMax then
+        return;
+    else
+        table.insert(STOCTables.TopSystemData, content);
+    end
+    if m_panelInitAlready then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EFFECTSPANEL) == 1 then
+            if m_systemNotShowing then
+                ShowSystemContent();
+            else
+                -- 正在播放中那就先不管了，播完了会继续播放的
+                return;
+            end
+        else
+            createPanel(ENUMPANELID.ENUM_PANEL_EFFECTSPANEL);
+        end
+    else
+        -- 因为effectsPanel是必定创建的这里就不处理，等待自动创建后自动播放
+    end
+end
+
+-- 功能开启特效上的文本信息
+function InitSystemOpenInfo(systemId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EFFECTSPANEL) == 1 then
+        local info = CCommonTool.GetSystemOpenInfo(systemId);
+        if info ~= nil then
+            SetLabelTextByID("Effects/effect_ui_systemopen/Panel/Label", info.EffectTxtId, m_panelObject);
+            SetSpriteByAtlasID("Effects/effect_ui_systemopen/Panel/Icon", info.PictureId, m_panelObject, true);
+        end
+    end
+end

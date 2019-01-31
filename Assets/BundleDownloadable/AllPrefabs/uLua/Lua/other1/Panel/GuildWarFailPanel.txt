@@ -1,0 +1,225 @@
+﻿module('GuildWarFailPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildWarFailPanel';
+---------------------------------------label路径---------------------------------------
+local m_lbTimePath = "Content/Personal/Label_Over";
+-----------------------------------------按钮路径--------------------------------------
+-- 加注释
+local m_ButtonQueRenPath = "Content/Personal/Button-QueRen";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 
+local m_GridPath = "Content/Personal/DropView/Items/Scroll View/Grid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_Grid = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Content = nil;
+	m_Grid = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_GUILD_WAR_FAIL_PANEL);
+    m_Grid = GetComponent(m_PanelObject, m_GridPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_Grid:SetInitCallback(OnGridViewInit);
+    m_Grid:SetClickCallback(OnGridViewClick);
+	SetGameObjectEvent(m_ButtonQueRenPath, OnButtonQueRenClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    AddTimerEvent("GuildWarOver", 10, CallBackOver, ETimeShowType.TypeNumberSeven, updateCallBack);
+    local resultData = GuildManager.guildAuctionInfo.GuildWarResult;
+    local defendCorpsID = resultData.defGuildID;
+    local attackCorpsID = resultData.atackGuildID;
+    local redPath = "Content/Personal/Sub_Red/";
+    local bluePath = "Content/Personal/Sub_Blue/";
+    local myGuildID = GuildManager.myGuild.guildId;
+    -- 攻方公会信息
+    local myGuildName = G_GuildMng:GetGuildName(attackCorpsID);
+    local myGuildLv = G_GuildMng:GetGuildLevel(attackCorpsID);
+    local myGuildFlag = G_GuildMng:GetFlagName(attackCorpsID);
+    local myInfo = CCommonTool.GetGuildInfoByIndex(tonumber(myGuildLv));
+
+    SetLabelContent(redPath.."lb_Name", myGuildName, m_PanelObject);
+    SetLabelContent(redPath.."lb_GuildFlag", myGuildFlag, m_PanelObject);
+    SetSpriteByAtlasID(redPath.."lb_GuildFlag/sp_Flag", myInfo.FlagIconBig, m_PanelObject, true);
+    -- 守方公会相关信息
+    if defendCorpsID > 0 then
+        local guildName = G_GuildMng:GetGuildName(defendCorpsID);
+        local flagName =  G_GuildMng:GetFlagName(defendCorpsID);
+        local guildLv = G_GuildMng:GetGuildLevel(defendCorpsID);
+        local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+
+        SetLabelContent(bluePath.."lb_Name", guildName, m_PanelObject);
+        SetLabelContent(bluePath.."lb_GuildFlag", flagName, m_PanelObject);
+        SetSpriteByAtlasID(bluePath.."lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true); 
+    else
+        SetLabelTextByID(bluePath.."lb_Name", 162322, m_PanelObject);
+        SetLabelTextByID(bluePath.."lb_GuildFlag", 162323, m_PanelObject);
+    end
+     -- 设置攻守双方的胜负信息及战绩
+    SetGameObjectState(redPath.."sp_Result", true, m_PanelObject);
+    SetGameObjectState(bluePath.."sp_Result", true, m_PanelObject);
+    local txtWin = string_format(CCommonTool.GetTxtData(1179).m_str,"");
+    local txtLose = string_format(CCommonTool.GetTxtData(1180).m_str,"");
+    -- 蓝色方胜利字及图片
+    local blueSp = child(m_PanelObject, bluePath .. "sp_Result");
+    local blueLb = child(m_PanelObject, bluePath .. "sp_Result/lb_Result");
+    -- 红色方胜利字及图片
+    local redSp = child(m_PanelObject, redPath .. "sp_Result");
+    local redLb = child(m_PanelObject, redPath .. "sp_Result/lb_Result");
+
+    -- 当我方公会是防守公会时
+    if myGuildID == defendCorpsID then 
+        -- 胜利
+        if resultData.state == 1 then
+            SetLabelContent(bluePath.."sp_Result/lb_Result", txtWin, m_PanelObject);
+            SetLabelContent(redPath.."sp_Result/lb_Result", txtLose, m_PanelObject);
+            CCommonTool.SetGameObjectGrey(blueSp.gameObject, false);
+            CCommonTool.SetGameObjectGrey(blueLb.gameObject, false);
+            CCommonTool.SetGameObjectGrey(redSp.gameObject, true);
+            CCommonTool.SetGameObjectGrey(redLb.gameObject, true);
+        else -- 失败
+            SetLabelContent(bluePath.."sp_Result/lb_Result", txtLose, m_PanelObject);
+            SetLabelContent(redPath.."sp_Result/lb_Result", txtWin, m_PanelObject);
+            CCommonTool.SetGameObjectGrey(blueSp.gameObject, true);
+            CCommonTool.SetGameObjectGrey(blueLb.gameObject, true);
+            CCommonTool.SetGameObjectGrey(redSp.gameObject, false);
+            CCommonTool.SetGameObjectGrey(redLb.gameObject, false);
+        end
+    end
+    -- 当我方公会是攻击公会时
+    if myGuildID == attackCorpsID then 
+        -- 胜利
+        if resultData.state == 1 then
+            SetLabelContent(bluePath.."sp_Result/lb_Result", txtLose, m_PanelObject);
+            SetLabelContent(redPath.."sp_Result/lb_Result", txtWin, m_PanelObject);
+            CCommonTool.SetGameObjectGrey(blueSp.gameObject, true);
+            CCommonTool.SetGameObjectGrey(blueLb.gameObject, true);
+            CCommonTool.SetGameObjectGrey(redSp.gameObject, false);
+            CCommonTool.SetGameObjectGrey(redLb.gameObject, false);
+        else -- 失败
+            SetLabelContent(bluePath.."sp_Result/lb_Result", txtWin, m_PanelObject);
+            SetLabelContent(redPath.."sp_Result/lb_Result", txtLose, m_PanelObject);
+            CCommonTool.SetGameObjectGrey(blueSp.gameObject, false);
+            CCommonTool.SetGameObjectGrey(blueLb.gameObject, false);
+            CCommonTool.SetGameObjectGrey(redSp.gameObject, true);
+            CCommonTool.SetGameObjectGrey(redLb.gameObject, true);
+        end
+    end
+    SetLabelContent(bluePath.."Sub_Score/lb_KillNum", resultData.defKill, m_PanelObject);
+    SetLabelContent(bluePath.."Sub_Score/lb_DeathNum", resultData.defDeath, m_PanelObject);
+    SetLabelContent(bluePath.."Sub_Score/lb_Score", resultData.defScore, m_PanelObject);
+    SetLabelContent(redPath.."Sub_Score/lb_Score", resultData.atackScore, m_PanelObject);
+    SetLabelContent(redPath.."Sub_Score/lb_KillNum", resultData.atackKill, m_PanelObject);
+    SetLabelContent(redPath.."Sub_Score/lb_DeathNum", resultData.atackDeath, m_PanelObject);
+    -- 个人战绩
+    local personalPath = "Content/Personal/Acquire/Sub_Score";
+    SetLabelContent(personalPath.."/lb_SupNum", resultData.supNum, m_PanelObject);
+    SetLabelContent(personalPath.."/lb_KillNum", resultData.killNum, m_PanelObject);
+    SetLabelContent(personalPath.."/lb_DeathNum", resultData.deathNum, m_PanelObject);
+    -- 奖励信息
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(resultData.awardID);
+    local items = {};
+    if rewardInfo ~= nil then
+        -- 获得奖励道具信息
+        local list = rewardInfo:GetAllItem();
+        local count = list.Count;
+        for i = 1, count do
+            local itemData = list[i - 1];
+            local excelId = itemData.ExcelID;
+            if itemData.ItemDealType == 3 then
+                excelId = G_ItemToolTipDefine.BINDMONEY;
+            elseif itemData.ItemDealType == 4 then
+                excelId = G_ItemToolTipDefine.BINDDIAMOND;
+            elseif itemData.ItemDealType == 5 then
+                excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+            end
+            table.insert(items, { excelId = excelId, num = GetNumber(itemData.ItemNum*resultData.awardParam) });
+        end
+        m_Grid:RemoveAll();
+        for i, v in pairs(items) do
+            m_Grid:AddData(v);
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 奖励列表初始化
+function OnGridViewInit(listView, cell, data)
+    local item = cell.gameObject;
+    local excelId = data.excelId;
+    local num = data.num;
+    if num <= 0 then
+        num = 1;
+    end
+    SetItemShowByExcelIDV04(item, "Prop", excelId, num, false, 11, ENUMPANELID.ENUM_GUILD_WAR_FAIL_PANEL);
+    SetItemToolTipsEvent(item, "", ENUMPANELID.ENUM_GUILD_WAR_FAIL_PANEL, false, excelId);
+end
+
+-- 奖励列表点击
+function OnGridViewClick(listView, cell, go)
+    
+end
+
+-- 确定按钮
+function OnButtonQueRenClick(gameObject)
+    GuildProtocol.RequestLeaveScene();
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function CallBackOver()
+    GuildProtocol.RequestLeaveScene();
+    G_TimerMng:RemoveTimeTask("GuildWarOver");
+    closePanel(ENUMPANELID.ENUM_GUILD_WAR_FAIL_PANEL);
+end
+
+function updateCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_GUILD_WAR_FAIL_PANEL) == 1 then
+        SetLabelContent(m_lbTimePath, "("..timeTxt..")", m_PanelObject);
+    end
+end

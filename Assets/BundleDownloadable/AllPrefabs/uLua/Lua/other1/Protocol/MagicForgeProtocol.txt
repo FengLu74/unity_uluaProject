@@ -1,0 +1,164 @@
+﻿module("MagicForgeProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 魔法熔炉数据初始化
+    network.Register(GMI_STOC_MAGICFORGE_DATA_INIT, MagicForgeDataInit);
+    -- 魔法熔炉需求的道具
+    network.Register(GMI_STOC_MAGICFORGE_NEED_ITEMS, MagicForgeNeedItemReturn);
+    -- 播放动画需要显示的道具
+    network.Register(GMI_STOC_MAGICFORGE_REWARD_AND_SHOW_ITEMS, MagicForgeStartTween);
+    -- 重置返回
+    network.Register(GMI_STOC_MAGICFORGE_RESET_RETURN, OnResetNeedItems);
+    -- 魔法熔炉跨周重置次数
+    network.Register(GMI_STOC_MAGICFORGE_RESETTIMES_RETURN, OnResetData);
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+-- 魔法熔炉数据初始化
+function MagicForgeDataInit(protocolId,buffer)
+    local magicForgeState = buffer:ReadByte();
+    MagicForgeManager.MagicForgeState = magicForgeState;
+    local resetTimes = buffer:ReadByte();
+    MagicForgeManager.ResetDailyTimes = resetTimes;
+    local calculateResetTimes = buffer:ReadByte();
+    MagicForgeManager.CalculateTimes = calculateResetTimes;
+    MagicForgeManager.CollectItems = {};
+    local count = buffer:ReadByte();
+    for Index = 1,count do
+        local itemInfo = {};
+        local excelID = buffer:ReadInt();
+        itemInfo.ExcelID = excelID;
+        local itemNum = buffer:ReadInt();
+        itemInfo.ItemNum = itemNum;
+        table.insert(MagicForgeManager.CollectItems,itemInfo);
+    end
+end
+
+-- 魔法熔炉需求的道具
+function MagicForgeNeedItemReturn(protocolId,buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        MagicForgeManager.MagicForgeState = ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_COLLECTING;
+        MagicForgeManager.CollectItems = {};
+        local count = buffer:ReadByte();
+        for Index = 1,count do
+            local itemInfo = {};
+            local excelID = buffer:ReadInt();
+            itemInfo.ExcelID = excelID;
+            local itemNum = buffer:ReadInt();
+            itemInfo.ItemNum = itemNum;
+            table.insert(MagicForgeManager.CollectItems,itemInfo);
+        end
+        MagicForgePanel.RefreshPanel();
+    elseif result == -1 then
+        error("服务器:魔法熔炉开关已经关闭")
+        ShowSystemFlowTips(7702);
+    elseif result == -2 then
+        local activityResult = buffer:ReadInt();
+        error("服务器:魔法熔炉无法参加活动，无法随出需求道具")
+        ShowSystemFlowTips(7703);
+    elseif result == -3 then
+        error("服务器:魔法熔炉当前玩家状态不对")
+        ShowSystemFlowTips(7704);
+    elseif result == -4 then
+        error("服务器:魔法熔炉表中找不到对应玩家等级的数据")
+        ShowSystemFlowTips(7705);
+    else
+        error("未约定的错误号::"..result)
+        ShowSystemFlowTips(7706);
+    end
+end
+
+-- 播放动画需要显示的道具
+function MagicForgeStartTween(protocolId,buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        MagicForgeManager.CalculateTimes = MagicForgeManager.CalculateTimes + 1;
+        if MagicForgeManager.CalculateTimes >= MagicForgeCalculateTimes then
+            MagicForgeManager.CalculateTimes = 0;
+        end
+        MagicForgeManager.RewardAndShowItems = {};
+        local count = buffer:ReadByte();
+        for Index = 1,count do
+            local itemInfo = {};
+            local excelID = buffer:ReadInt();
+            itemInfo.ExcelID = excelID;
+            local itemNum = buffer:ReadInt();
+            itemInfo.ItemNum = itemNum;
+            table.insert(MagicForgeManager.RewardAndShowItems,itemInfo);
+        end
+        MagicForgeManager.MagicForgeState = ENUM_MAGICFORGE_STATE.ENUM_MAGICFORGE_STATE_PLAYTWEENING;
+        MagicForgePanel.RefreshPanel();
+    elseif result == -1 then
+        error("服务器:魔法熔炉开关已经关闭")
+        ShowSystemFlowTips(7702);
+    elseif result == -2 then
+        error("服务器:魔法熔炉当前玩家状态不对")
+        ShowSystemFlowTips(7704);
+    elseif result == -3 then
+        error("服务器:道具不足，无法祭祀")
+        ShowSystemFlowTips(7700);
+    elseif result == -4 then
+        error("服务器:删除道具出错")
+        ShowSystemFlowTips(7709);
+    elseif result == -5 then
+        error("服务器:魔法熔炉表中找不到对应玩家等级的数据")
+        ShowSystemFlowTips(7705);
+    elseif result == -6 then
+        error("服务器:魔法熔炉给累积奖励道具出错")
+        ShowSystemFlowTips(7710);
+    else
+        error("未约定的错误号::"..result)
+        ShowSystemFlowTips(7706);
+    end
+end
+
+function OnResetNeedItems(protocolId,buffer)
+    local result = buffer:ReadInt();
+    if result == 1 then
+        MagicForgeManager.ResetDailyTimes = MagicForgeManager.ResetDailyTimes + 1;
+        MagicForgeManager.CollectItems = {};
+        local count = buffer:ReadByte();
+        for Index = 1,count do
+            local itemInfo = {};
+            local excelID = buffer:ReadInt();
+            itemInfo.ExcelID = excelID;
+            local itemNum = buffer:ReadInt();
+            itemInfo.ItemNum = itemNum;
+            table.insert(MagicForgeManager.CollectItems,itemInfo);
+        end
+        MagicForgePanel.RefreshPanel();
+    elseif result == -1 then
+        error("服务器:魔法熔炉开关已经关闭")
+        ShowSystemFlowTips(7702);
+    elseif result == -2 then
+        error("服务器:魔法熔炉当前玩家状态不对")
+        ShowSystemFlowTips(7703);
+    elseif result == -3 then
+        error("服务器:魔法熔炉表中找不到对应玩家等级的数据")
+        ShowSystemFlowTips(7705);
+    elseif result == -4 then
+        error("服务器:玩家金钱不足")
+        ShowSystemFlowTips(7707);
+    elseif result == -5 then
+        error("服务器:重置次数已经达到上限")
+        ShowSystemFlowTips(7701);
+    elseif result == -6 then
+        error("服务器:扣金钱失败")
+        ShowSystemFlowTips(7708);
+    else
+        error("未约定的错误号::"..result)
+        ShowSystemFlowTips(7706);
+    end
+end
+
+-- 重置返回
+function OnResetData(protocolId,buffer)
+    local yType = buffer:ReadByte();
+    if yType == 0 then
+        error("跨周了重置魔法熔炉数据")
+    elseif yType == 1 then
+        MagicForgeManager.ResetDailyTimes = 0;
+    end
+    MagicForgePanel.ResetPanel(yType);
+end

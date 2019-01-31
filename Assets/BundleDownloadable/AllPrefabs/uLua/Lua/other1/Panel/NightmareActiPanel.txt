@@ -1,0 +1,273 @@
+﻿module("NightmareActiPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-- 刷新时间
+local m_refreshTimeStr = "Content_Right/Label_RefreshTime";
+-- 活动规则
+local m_activityRuleStr = "Content_Left/Label_ActivityRule";
+-- 奖励规则
+local m_rewardRuleStr = "Content_Left/Label_RewardRule";
+-- 开启时间
+local m_countdownStr = "Content_Left/Label_Countdown";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-- 参与按钮
+local m_joinButtonStr = "Content_Right/JoinButton";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+--奖励图标路径
+local m_rewardItemStr = "Content_Right/Rewards/Item_"
+
+-----------------------------------引用的对象------------------------------------------
+
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+
+local m_serverActivityInfo = nil;
+local m_weekDays = nil;
+local m_timeSegments = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+local m_timerName = "NightmareRefreshTimeEvent";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+
+function Start()
+    InitObjects();
+    InitOnClick();
+    InitInfo();
+    AddRefreshTimer();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitInfo();
+        AddRefreshTimer();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask(m_timerName);
+end
+
+function OnDestroy()
+    m_weekDays = nil;
+    m_timeSegments = nil;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_panelObject = child(m_panelObject, "NightmareActiPanel").gameObject;
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_joinButtonStr, OnJoinButtonClick, m_panelObject);
+end
+
+function InitInfo()
+    m_serverActivityInfo = nil;
+    if G_ActivityMng.AllActivitiesInfo:ContainsKey(ENUM_AOT_ID.AOT_ID_NIGHTWARE_ACTIVITY) then
+        m_serverActivityInfo = G_ActivityMng.AllActivitiesInfo[ENUM_AOT_ID.AOT_ID_NIGHTWARE_ACTIVITY];
+    else
+        error("server does not send activity ID"..ENUM_AOT_ID.AOT_ID_NIGHTWARE_ACTIVITY.."'s activity info");
+        return;
+    end
+    
+    -- 活动规则
+    SetLabelTextByID(m_activityRuleStr, G_NightmareRule1TxtId, m_panelObject);
+    -- 奖励规则
+    SetLabelTextByID(m_rewardRuleStr, G_NightmareRule2TxtId, m_panelObject);
+    -- 奖励道具列表
+    local rewardCount = #G_NightmareActiItems;
+    for i = 1, 6 do
+        local itemId = G_NightmareActiItems[i];
+        local isShowItem = itemId ~= nil;
+        SetGameObjectState(m_rewardItemStr..i, isShowItem, m_panelObject);
+        if isShowItem then
+            SetItemShowByExcelIDV04(m_panelObject, m_rewardItemStr .. i, itemId, 0, false);
+            SetItemToolTipsEvent(m_panelObject, m_rewardItemStr .. i, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, false, itemId);
+        end
+    end
+
+    InitRefreshTime();
+end
+
+function InitRefreshTime()
+    local sInfo = m_serverActivityInfo;
+    if sInfo == nil then
+        error("server does not send activity ID"..ENUM_AOT_ID.AOT_ID_NIGHTWARE_ACTIVITY.."'s activity info");
+    else
+        local timeValues = {};
+        local timeSegments = {};
+        local count = sInfo.OpenTimeSegment.Count;
+        for i = 0, count - 1 do
+            local timeInfo = sInfo.OpenTimeSegment[i];
+            local startTime = timeInfo.OpenTimeSegmentsOfDayBegin;
+            local endTime = timeInfo.OpenTimeSegmentOfDayEnd;
+            local startTimeString = TimeToString(startTime);
+            local endTimeString = TimeToString(endTime);
+            table.insert(timeValues, startTimeString .. " - " .. endTimeString);
+            table.insert(timeSegments, {startTime=TimeToSeconds(startTime), endTime=TimeToSeconds(endTime)});
+        end
+        table.sort(timeSegments, function(t1, t2) return t1.startTime < t2.startTime end);
+
+        --周配置 7位十进制数字, 从左到右第一位表示周一 1表示开启 0表示不开启
+        --例: 1000101 表示周一,周五,周日开启
+        --如果配置超过7位, 周一默认开启, 周二至周六读后六位, 与服务器算法一致
+        local weekConfig = string.format("%07d",sInfo.OpenDayOfWeek);
+        if #weekConfig > 7 then
+	        weekConfig = "1"..string.sub(weekConfig, -6);
+        end
+        local weekdays = {};
+        for i = 1, 7 do
+            local isOpen = string.sub(weekConfig, i, i) ~= "0";
+            if isOpen then
+                table.insert(weekdays, i);
+            end
+        end
+        if #weekdays > 0 then
+            local weekdayValues = {};
+            if #weekdays == 7 then
+                for _, timeString in ipairs(timeValues) do
+                    table.insert(weekdayValues, timeString);
+                end
+            else
+                for i, w in ipairs(weekdays) do
+                    for _, timeString in ipairs(timeValues) do
+                        table.insert(weekdayValues, GetWeekDayName(w) .. " " .. timeString);
+                    end
+                end
+            end
+            
+            SetLabelContent(m_refreshTimeStr, table.concat(weekdayValues, "\n"), m_panelObject);
+        end
+        m_weekDays = weekdays;
+        m_timeSegments = timeSegments;
+    end
+end
+
+--1230转化为12:30
+function TimeToString(time)
+    local h = math.floor(time / 100);
+    return string.format("%02d:%02d", h, time - h * 100)
+end
+
+--1230(12:30)转化为秒数
+function TimeToSeconds(time)
+    local h = math.floor(time / 100);
+    local m = time - h * 100;
+    return h * 3600 + m * 60
+end
+
+--
+function GetWeekDayName(week)
+    if week == 1 then return CCommonTool.GetTxtData(8101).m_str;
+    elseif week == 2 then return CCommonTool.GetTxtData(8102).m_str;
+    elseif week == 3 then return CCommonTool.GetTxtData(8103).m_str;
+    elseif week == 4 then return CCommonTool.GetTxtData(8104).m_str;
+    elseif week == 5 then return CCommonTool.GetTxtData(8105).m_str;
+    elseif week == 6 then return CCommonTool.GetTxtData(8106).m_str;
+    elseif week == 7 then return CCommonTool.GetTxtData(8107).m_str;
+    else return ""; end
+end
+
+function AddRefreshTimer()
+    AddTimerEvent(m_timerName, 10000000, nil, nil ,OnTimerUpdate);
+end
+
+function OnTimerUpdate()
+    local daySeconds = 86400;
+    local startTime, endTime, now = GetRecentActivityOpenTime();
+    if startTime <= 0 then
+        -- 未开启
+        SetLabelTextByID(m_countdownStr, 54501, m_panelObject);
+        G_TimerMng:RemoveTimeTask(m_timerName);
+    elseif now >= startTime and now < endTime then
+        -- 活动中
+        SetLabelContent(m_countdownStr, "", m_panelObject);
+    else
+        local totalSeconds = startTime - now;
+        local days = math.floor(totalSeconds / daySeconds);
+        local hours = math.floor((totalSeconds % daySeconds) / 3600);
+        local minutes = math.floor((totalSeconds % 3600) / 60);
+        local seconds = totalSeconds % 60;
+        SetLabelContent(m_countdownStr, string_format(CCommonTool.GetTxtData(8100).m_str, days, hours, minutes, seconds), m_panelObject);
+    end
+end
+
+-- 获取最近一次的活动开始结束时间
+function GetRecentActivityOpenTime()
+    if m_weekDays == nil or #m_weekDays == 0 then
+        return 0, 0, 0;
+    end
+    local now = G_TimerMng:GetCurrentSeconds();
+    local daySeconds = 86400;
+    local weekday = G_TimerMng:GetCurrentWeekDay();
+    if weekday == 0 then weekday = 7 end
+    local weekStartTime = G_TimerMng:GetTodayZeroTimestamp() - (weekday - 1) * daySeconds;
+    local minStartSeconds = -1;
+    local minEndSeconds = -1;
+    for _, w in ipairs(m_weekDays) do
+        for _, segment in ipairs(m_timeSegments) do
+            local s = weekStartTime + (w - 1) * daySeconds + segment.startTime;
+            local e = weekStartTime + (w - 1) * daySeconds + segment.endTime;
+            if now >= s and now < e then
+                return s, e, now;
+            end
+            if now < s then
+                return s, e, now;
+            end
+            if minStartSeconds == -1 then
+                minStartSeconds = s;
+                minEndSeconds = e;
+            end
+        end
+    end
+    return minStartSeconds + 7 * daySeconds, minEndSeconds + 7 * daySeconds, now;
+end
+
+
+--------------------------------------按钮事件方法------------------------------------
+
+-- 参与按钮事件
+function OnJoinButtonClick(go)
+    local startTime, endTime, now = GetRecentActivityOpenTime();
+    if startTime <= 0 then
+        -- 活动已关闭
+        ShowSystemFlowTips(CCommonTool.GetTxtData(54501).m_str, 0);
+    elseif now >= startTime and now < endTime then
+        local mapnpcInfo = CCommonTool.GetMapNpcInfo(G_NightmareChaseNpcId);
+        if mapnpcInfo ~= nil then
+            --设置搜索NPC目标
+            G_MissionMng.FindNpcExcelId = mapnpcInfo.NpcId;
+            G_MissionMng.FindPos = Vector3.New(mapnpcInfo.RefreshPointX, 0, mapnpcInfo.RefreshPointZ);
+            --发送传送协议
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_ACTIVITY_GOTOPOS);
+            buffer:WriteInt(mapnpcInfo.SceneID);
+            buffer:WriteFloat(mapnpcInfo.RefreshPointX);
+            buffer:WriteFloat(mapnpcInfo.RefreshPointZ);
+            G_NetWorkMng:SendMessage(buffer);
+            closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+        end
+    else 
+        -- 活动未开始
+        ShowSystemFlowTips(CCommonTool.GetTxtData(54500).m_str, 0);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+

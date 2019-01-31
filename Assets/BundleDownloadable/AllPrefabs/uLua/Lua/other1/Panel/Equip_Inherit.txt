@@ -1,0 +1,1735 @@
+﻿module("Equip_Inherit", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 当前装备战斗力文本所在的位置
+local m_fightValueSavedStr = "InheritPanel/Middle/Middle/Left/LeftFightValue/Label_CurValue";
+-- 当前装备替换当前右边选中属性的战斗力文本所在的位置
+local m_fightValueReplaceStr = "InheritPanel/Middle/Middle/Left/LeftFightValueAfter/Label_ChangeValue";
+
+-- 消耗装备减去当前选中属性的战斗力文本所在的位置
+local m_fightValueNotSavedStr = "InheritPanel/Middle/Middle/Right/RightFightValue/Label_ChangeValue";
+-- 战斗力变化文本所在的位置
+local m_fightValueChangeNumStr = "InheritPanel/Middle/Middle/Right/RightFightValue/Label_StarUpChangeValue";
+-- 战斗力箭头所在的位置
+local m_fightValueArrowSpriteStr = "InheritPanel/Middle/Middle/Right/RightFightValue/DirectionUpArrow";
+
+-- 左边战斗力变化文本所在的位置
+local m_fightLeftValueChangeNumStr = "InheritPanel/Middle/Middle/Left/LeftFightValueAfter/Label_StarUpChangeValue";
+-- 左边战斗力箭头所在的位置
+local m_fightLeftValueArrowSpriteStr = "InheritPanel/Middle/Middle/Left/LeftFightValueAfter/DirectionUpArrow";
+
+-- 中间左上部装备星级所在的位置
+local m_MiddleTopEquipStarLabelStr = "InheritPanel/Middle/Top/HasItem/Item/Label_StarNum";   --！！
+
+-----------------------------------------按钮路径--------------------------------------
+
+--传承按钮路径
+local  m_InheritButtonStr ="InheritPanel/Middle/Bottom/StarInherit_Button";   
+-- 是否使用传承护符
+local m_UseProtectStone = "InheritPanel/Middle/Bottom/Toggle_Select";
+-- 系统说明按钮
+local m_SystemExlpainStr = "InheritPanel/Middle/Button";
+-----------------------------------------Sprite路径------------------------------------
+
+
+----------------------------------gameobject所在的路径---------------------------------
+
+-- 左侧装备的listView组件所在的位置
+local m_leftEquipListViewCompStr = "InheritPanel/Left/ItemPanel/Grid";
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewCompStr = "InheritPanel/Right/ItemPanel/Grid";
+
+-- 中间左上部有装备的显示
+local m_MiddleTopLeftHasEquipContentStr = "InheritPanel/Middle/Top/LeftHasEquip";
+-- 中间左上部没有装备的显示
+local m_MiddleTopLeftNoEquipContentStr = "InheritPanel/Middle/Top/LeftNoHasEquip";
+
+-- 中间右上部有装备的显示
+local m_MiddleTopRightHasEquipContentStr = "InheritPanel/Middle/Top/RightHasEquip";
+-- 中间右上部没有装备的显示
+local m_MiddleTopRightNoEquipContentStr = "InheritPanel/Middle/Top/RightNoHasEquip";
+-- 中间右中部有装备随机属性的显示
+local m_MiddleMiddleRightHasEquipContentStr = "InheritPanel/Middle/Middle/Right";
+-- 中间右中部统一隐藏
+local m_MiddleMiddleRightHideContentStr = "InheritPanel/Middle/Hide";
+
+----------------------------
+--传承石、保底石
+-- 道具ExcelID
+local m_excelID = nil;
+--左边道具路径、
+local m_itemLeftStr = "InheritPanel/Middle/Bottom/InheritStone/Item";
+--右边道具路径、
+local m_itemRightStr = "InheritPanel/Middle/Bottom/ProtectStone/Item";
+----------------
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";                
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的名称
+local m_itemNameStr = "/Label_Name";
+-- 道具的遮罩获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+----------------------------
+--中间左中部属性点设置
+-- 中间左中部当前属性所在的位置
+local m_AttrStr = "InheritPanel/Middle/Middle/Left/LeftStochasticAttribute/Attr";
+--中间右中部属性点设置
+-- 中间右中部当前属性所在的位置
+local m_TableStr = "InheritPanel/Middle/Middle/Right/RightStochasticAttribute/Attr";
+-- 中间右中部当前属性Open所在的位置
+local m_OpenStr = "/Open";
+-- 中间右中部当前属性Close所在的位置
+local m_CloseStr = "/Close";
+-- 中间中部当前通用属性文本所在的路径
+local m_AttrNameLabel = "/Open/Attr/Label_AttrName";
+-- 中间中部当前通用属性值文本所在的位置
+local m_AttrValueLabelStr = "/Open/Attr/Label_AttrValue";
+-- 中间中部当前Close通用属性文本所在的路径
+local m_CloseAttrNameLabel = "/Close/Attr/Label_AttrName";
+-- 中间中部当前Close通用属性值文本所在的位置
+local m_CloseAttrValueLabelStr = "/Close/Attr/Label_AttrValue";
+----------------------------
+
+-- 中间左中部选中框对象Transform所在的位置
+local m_middleHoleSelectTransStr = "InheritPanel/Middle/Middle/Left/LeftStochasticAttribute/Sprite_Select";
+-- 中间右中部选中框对象Transform所在的位置
+local m_middleRightHoleSelectTransStr = "InheritPanel/Middle/Middle/Right/RightStochasticAttribute/Sprite_Select";
+
+-- 当前左边点击的是第几个属性(1~5)
+local m_curHoleSelect = 1;
+-- 当前右边点击的是第几个属性(1~5)
+local m_curRightHoleSelect = 1;
+
+-- 激活特效所在的位置
+local m_ActiveEffectStr = "InheritPanel/Effects";
+
+----------------------------------通用的名称路径---------------------------------------
+--UIlist View的Cell字段
+-- 装备图标
+local m_EquipIconSpriteStr = "Item/Sprite_Icon";
+-- 装备品质图标
+local m_EquipApptitudeSpriteStr = "Item/Sprite_Apptitude";
+-- 装备品质图标
+local m_EquipApptitudeSprite2Str = "Item/Sprite_Equip_Apptitude";
+local m_EquipStep2Str = "Item/lb_Equip_Apptitude";
+local m_EquipAppTitude2SpriteStr = "Item/Sprite_Apptitude2";
+---- 装备可传承的红点提示
+local m_EquipCanOperateStr = "Sprite_RedHint";
+-- 精炼等级加号的位置
+local m_StarUpLevelAdd = "/Label";
+
+-- 装备名称文本的路径
+local m_EquipNameLabelStr = "Label_Name";
+-- 装备战斗力所在的文本路径
+local m_EquipFightValueStr = "Label_FightValue";
+-- 已装备所在的路径
+local m_EquipIsOnStr = "Equiped";
+-- 装备星级所在的位置
+local m_EquipStarLabelStr = "Item/Label_StarNum";
+local m_EquipStarStr = "Item/Label_StarNum/Label";
+-- 套装
+local m_EquipSuitStr = "Item/Sprite_Suit";
+---------------
+-- 装备品质图标
+local m_ItemEquipApptitudeSpriteStr = "Sprite_Apptitude";
+---- toggle资源----------------------
+local m_ToggleBack = "/Background";
+local m_ToggleCheck = "/Checkmark";
+
+-----------------------------------------------------------
+--中间上左部装备信息
+-- 中间上部装备图标信息
+local m_MiddleTopLeftEquipIconStr = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/Sprite_Icon";
+-- 中间上部品质图标信息
+local m_MiddleTopLeftEquipApptitudeStr = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/Sprite_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopLeftEquipApptitude3Str = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/Sprite_Apptitude2";
+-- 中间上部装备图标信息
+local m_MiddleTopLeftEquipApptitude2Str = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/Sprite_Equip_Apptitude";
+local m_MiddleTopLeftEquipStep2Str = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/lb_Equip_Apptitude";
+-- 中间上部装备当前星级信息
+local m_MiddleTopLeftEquipStarLv2Str = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/Label_StarNum";
+-- 中间上部装备套装
+local m_MiddleTopLeftEquipSuitStr = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/CurItem/Sprite_Suit";
+-- 中间上部装备Name
+local m_MiddleTopLeftEquipName = "InheritPanel/Middle/Top/LeftHasEquip/curEquip/ButtomLable";
+
+-------------------------
+--中间上右部装备信息
+-- 中间上部装备图标信息
+local m_MiddleTopRightEquipIconStr = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/Sprite_Icon";
+-- 中间上部品质图标信息
+local m_MiddleTopRightEquipApptitudeStr = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/Sprite_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopRightEquipApptitude3Str = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/Sprite_Apptitude2";
+-- 中间上部装备图标信息
+local m_MiddleTopRightEquipApptitude2Str = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/Sprite_Equip_Apptitude";
+local m_MiddleTopRightEquipStep2Str = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/lb_Equip_Apptitude";
+-- 中间上部装备当前星级信息
+local m_MiddleTopRightEquipStarLv2Str = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/Label_StarNum";
+-- 中间上部装备套装
+local m_MiddleTopRightEquipSuitStr = "InheritPanel/Middle/Top/RightHasEquip/curEquip/CurItem/Sprite_Suit";
+-- 中间上部装备Name
+local m_MiddleTopRightEquipName = "InheritPanel/Middle/Top/RightHasEquip/curEquip/ButtomLable";
+-----------------------------------------------------------
+-- 装备非本职业
+local m_NotSameProStr = "Item/Sprite_Other";
+-- 装备等级不到
+local m_NotReachLevelStr = "Item/Sprite_LvDown";
+
+-- 说明
+local m_EffectLabelCompStr1 = "InheritPanel/Right/BG/EffectLable1/Label";
+-- 说明
+local m_EffectLabelCompStr2 ="InheritPanel/Right/BG/EffectLable2/Label";
+
+-----------------------------------
+local m_leftNoEquipment="InheritPanel/Left/ItemPanel/NotHave";
+local m_rightNoEquipment="InheritPanel/Right/ItemPanel/NotHave";
+
+-----------------------------------引用的对象------------------------------------------
+
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 左侧装备选择的是第几个
+local m_leftEquipSelect = -1;
+-- 右侧装备选择的是第几个
+local m_RightEquipSelect = -1;
+-- 右边装备数
+local m_rightEquipNum=-1;
+-- 左侧装备的listView组件
+local m_leftEquipListViewComp = nil;
+-- 右侧装备的UIListView组件
+local m_RightItemListViewComp = nil;
+
+-- 当前左边可以继承的装备list
+local m_CanInheritEquipsList = {};
+-- 右侧显示的装备list
+local m_bagEquipTable = {};
+
+-- 当前左边选中的装备
+local m_LeftSelectedItem = nil;
+-- 当前右边选中的装备
+local m_RightSelectedItem = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+
+--是否保留消耗装备，1为保留0为销毁
+local hold = nil;
+--当前传承护符的数量
+local allProtectStoneNum=0;
+--当前需消耗的传承护符的数量
+local needProtectStoneNum=0;
+--当前传承石的数量
+local allInheritStoneNum=nil;
+--当前需消耗的传承石的数量
+local needInheritStoneNum=0;
+-- 是否打开继续传承的弹板1
+local m_ContinueRandEffPanelIsOpen = false;
+-- 是否打开继续传承的弹板2
+local m_ShowClickContinuePanelIsOpen = false;
+--右侧点击选中不同的转移属性时当前装备的战力值会上升
+local m_fightValueIsHigher = false;
+--定义右边装备的可激活选中的属性：1=设定为可点选 0=设定为不可点选
+local activeState={[1]=0,[2]=0,[3]=0,[4]=0,[5]=0};
+--定义左边选中装备的战斗力
+local fightInLeftChoose=nil;
+--定义左点击事件
+local leftClick=false;
+--定义左边背包过来的选中
+local m_SelectedItem=nil;
+--等级限制
+local lv=nil;
+---------------------------------------Define---------------------------------------
+
+-- 属性品质枚举
+local ENUM_ATTR_APPTITUDE =
+{
+    NORMAL = 1,
+    -- 普通
+    GOOD = 2,
+    -- 优秀
+    EPIC = 3,-- 史诗
+}
+
+-- 属性品质颜色枚举
+local ENUM_ATTR_APPTITUDE_COLOR =
+{
+    NORMAL = "F1F0E2",
+    -- 普通
+    GOOD = "3AA0DF",
+    -- 优秀
+    EPIC = "B83CEF",-- 史诗
+}
+
+-- 属性值高低色值
+local ENUM_ATTR_CHANGE_COLOR =
+{
+    -- HIGH = "8dc55a",
+    -- LOW = "d53534",
+    HIGH = "1268ae",
+    LOW = "1268ae",
+    BALANCE = "1268ae",
+}
+-- 属性变化箭头图标ID
+ATTR_CHANGE_ICONID =
+{
+    HIGH = 31,
+    LOW = 32,
+}
+-- 属性值箭头文本高低色值
+ENUM_ATTR_LABEL_COLOR =
+{
+    HIGH = "A0F35A",
+    LOW = "D83232",
+}
+-- 通用装备职业id
+local m_commonProId = 255;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitPreData();
+    InitEffectsShow();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitData();
+        InitEffectsShow();
+        InitShow();
+    end
+end
+function OnDisable()
+	
+end
+----------------------------------------
+-- 初始化显示信息
+function InitShow()
+    InitLeft();
+    InitRight();
+    InitMiddle();
+
+end
+-- 初始化中间的显示
+function InitMiddle()
+    InitMiddleBottomLeft();
+    InitMiddleBottomRight();
+    InitMiddleTopLeft();
+    InitMiddleTopRight();
+    InitMiddleBottomLeftStoneInfo();
+    InitMiddleBottomRightStoneInfo();
+end
+----------------------------------------
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_leftEquipListViewComp = nil;
+    m_RightItemListViewComp = nil;
+    m_CanInheritEquipsList = nil;
+    m_bagEquipTable = nil;
+    m_LeftSelectedItem = nil;
+    m_RightSelectedItem=nil;
+    m_curHoleSelect=nil;
+    m_curRightHoleSelect=nil;
+    allInheritStoneNum=nil;
+    needInheritStoneNum=nil;
+    hold = nil;
+    m_curEquipCanStarUpInheritStoneEnough = nil;
+    m_fightValueIsHigher = nil;
+    activeState={[1]=0,[2]=0,[3]=0,[4]=0,[5]=0};
+    fightInLeftChoose=nil;
+    leftClick=nil;
+    m_ContinueRandEffPanelIsOpen=nil;
+    m_ShowClickContinuePanelIsOpen=nil;
+    allProtectStoneNum=nil;
+    needProtectStoneNum=nil;
+    m_leftEquipSelect=nil;
+    m_RightEquipSelect=nil;
+    m_rightEquipNum=nil;
+    m_commonProId=nil;
+    m_SelectedItem=nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    m_leftEquipListViewComp = GetComponent(m_panelObject, m_leftEquipListViewCompStr, "UIListView");
+    m_RightItemListViewComp = GetComponent(m_panelObject, m_RightItemListViewCompStr, "UIListView");
+    --中间
+    m_middleHoleSelectTrans = child(m_panelObject, m_middleHoleSelectTransStr);
+    m_middleRightHoleSelectTrans = child(m_panelObject, m_middleRightHoleSelectTransStr);
+    SetLabelContent(m_EffectLabelCompStr1,CCommonTool.GetTxtData(9278).m_str,m_panelObject);
+    SetLabelContent(m_EffectLabelCompStr2,CCommonTool.GetTxtData(9279).m_str,m_panelObject);
+    m_EquipCycleEff = child(m_panelObject, m_ActiveEffectStr).gameObject;
+    m_itemGetsWayMask = child(m_panelObject, m_itemRightStr..m_itemGetsWay).gameObject;
+end
+
+-- 初始化事件
+function InitEvents()
+    m_leftEquipListViewComp:SetInitCallback(OnEquipCloneInit);
+    m_leftEquipListViewComp:SetClickCallback(OnEquipCloneClick);
+    m_RightItemListViewComp:SetInitCallback(OnNeedItemCloneInit);
+    m_RightItemListViewComp:SetClickCallback(OnNeedItemClick);
+    for Index=1,5 do
+        SetGameObjectEvent( m_AttrStr.. Index, OnAttrClick, m_panelObject);
+        SetGameObjectEvent( m_TableStr.. Index, OnTableClick, m_panelObject);
+    end
+    SetGameObjectEvent(m_itemLeftStr, OnItemLeftGetWayClick, m_panelObject);
+    SetGameObjectEvent(m_itemRightStr, OnItemRightGetWayClick, m_panelObject);
+    SetGameObjectEvent(m_UseProtectStone, OnUseProtectStoneClick, m_panelObject);    
+    SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_panelObject); 
+end
+--刷新数据不更新，Start更新
+function InitPreData()
+    EquipMng.InheritTempPrtocolData[1]=1;
+    EquipMng.InheritTempPrtocolData[2]=-1;
+    EquipMng.InheritTempPrtocolData[3]=-1;
+    EquipMng.InheritTempPrtocolData[4]=0;
+    EquipMng.m_Delay=false;
+end
+function InitEffectsShow()
+    m_EquipCycleEff:SetActive(false);
+end
+
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftEquipSelect = m_JumpPanelParamsTable[1];
+        m_curHoleSelect = m_JumpPanelParamsTable[2];
+        m_RightEquipSelect = m_JumpPanelParamsTable[3];
+        m_curRightHoleSelect=m_JumpPanelParamsTable[4];
+        if m_JumpPanelParamsTable[5] then
+            ShowContinueRandEffPanel();
+        end
+        if m_JumpPanelParamsTable[6] then
+            ShowClickContinuePanel();
+        end
+
+        m_isJumpPanelSave = false;
+    else
+
+        m_leftEquipSelect = 0;
+        m_curHoleSelect=1;
+        m_RightEquipSelect=0;
+        m_curRightHoleSelect=1;
+        activeState={[1]=0,[2]=0,[3]=0,[4]=0,[5]=0};
+    end
+    lv=50;
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_InheritButtonStr, OnInheritClick, m_panelObject);
+end
+----------------------------------------------------------------------
+---------------------------------------------------Left----
+-- 初始化左侧的数据s
+function InitLeft()
+    m_leftEquipListViewComp:RemoveAll();
+    m_CanInheritEquipsList=ChooseEquip(m_CanInheritEquipsList,true);
+    if m_leftEquipSelect >= #m_CanInheritEquipsList then
+        m_leftEquipSelect = 0;
+    end
+    if m_CanInheritEquipsList~=nil and #m_CanInheritEquipsList>0 then
+        NoEquipMentShow(true,false);
+        for Index = 1, #m_CanInheritEquipsList do
+            m_leftEquipListViewComp:AddData(m_CanInheritEquipsList[Index]);
+            if m_SelectedItem~=nil and m_CanInheritEquipsList[Index] == m_SelectedItem then
+                m_leftEquipSelect = Index - 1;
+                m_SelectedItem = nil;
+            end
+            --如果服务器传回的左边装备ID==此装备ID，则左边选此装备
+            if EquipMng.InheritTempPrtocolData[4]==1 then
+                if EquipMng.InheritTempPrtocolData[2]>-1 and EquipMng.InheritTempPrtocolData[2]==m_CanInheritEquipsList[Index].CRID then
+                    --error("服务器传回的左边装备ID==此装备ID，则左边选此装备");
+                    m_leftEquipSelect=Index - 1;
+                    EquipMng.InheritTempPrtocolData[2]=-1;
+                end 
+            end
+        end
+        m_leftEquipListViewComp:LookAt(m_leftEquipSelect, true);
+    else
+        --显示当前没有可传承装备
+        NoEquipMentShow(true,true);
+    end
+end
+function NoEquipMentShow(LR,Show)
+    if LR==true then  --左边
+        --显示有无装备
+        SetGameObjectState(m_leftNoEquipment,Show,m_panelObject);
+    else
+        SetGameObjectState(m_rightNoEquipment,Show,m_panelObject);
+    end
+end
+--左右侧装备相同的装备筛选规则
+function ChooseEquip(list,left)
+
+--    for Index=list.Count,1,-1 do
+--        local itemAttr = list[Index-1];
+--        local allEquipRandomAttrs=GetAttrs(nil,nil,itemAttr);
+--        --装备上含有随机属性且是紫色品质以上--装备是当前职业装备，且都是项链可以装备
+--        if allEquipRandomAttrs.Count<=0 or itemAttr:GetEquipInfo().NeedLv<lv or  
+--         itemAttr:GetAptitudeID() < minAptitudeID or (itemAttr:GetEquipInfo().ProID ~= G_UserInfo.RoleAttribute.ProID and itemAttr:GetEquipInfo().ProID~=255)  then
+--            list:RemoveAt(Index-1);
+--        end
+--    end
+    local tableLR={};
+    if left==true then
+        --左边的筛选规则
+        list = G_BagMng:GetEquipWithRandEff();
+        local minAptitudeID= EquipInheritProtectTable.GetAll()[1].MainLevelID;
+        for Index=1,list.Count do
+            local itemAttr = list[Index-1];
+            local allEquipRandomAttrs=GetAttrs(nil,nil,itemAttr);
+            --装备上含有随机属性且是紫色品质以上--装备是当前职业装备，且都是项链可以装备
+            if not (allEquipRandomAttrs.Count<=0 or itemAttr:GetEquipInfo().NeedLv<lv or  
+             itemAttr:GetAptitudeID() < minAptitudeID or (itemAttr:GetEquipInfo().ProID ~= G_UserInfo.RoleAttribute.ProID and itemAttr:GetEquipInfo().ProID~=255))  then
+                --list:RemoveAt(Index-1);
+                table.insert(tableLR,list[Index-1]);
+            end
+        end
+    else
+        --右边的筛选规则
+        if m_CanInheritEquipsList~=nil and #m_CanInheritEquipsList>0 then
+            local minAptitudeID= EquipInheritProtectTable.GetAll()[1].MainLevelID;
+            for Index=1,#list do
+                local itemAttrLeft = m_CanInheritEquipsList[m_leftEquipSelect+1];
+                local excelIDLeft = itemAttrLeft.ExcelID;
+                local leftCaveID= itemAttrLeft.GetEquipType(excelIDLeft);
+                local itemAttr= list[Index];
+                local curRightExcelID=itemAttr.ExcelID;
+                local rightCaveID=itemAttr.GetEquipType(curRightExcelID);
+                local rightequipInfo = CCommonTool.GetEquipInfo(curRightExcelID);
+                if rightequipInfo == nil then
+                    error("右边装备表中不存在ID为:::" .. curRightExcelID .. "的装备信息");
+                    return;
+                end
+                local allEquipRandomAttrs=GetAttrs(nil,nil,itemAttr);
+                --装备上含有随机属性且是紫色品质以上--装备是当前职业装备，且都是项链可以装备
+                if not (allEquipRandomAttrs.Count<=0 or 
+                itemAttr:GetEquipInfo().NeedLv<lv or  
+                 itemAttr:GetAptitudeID() < minAptitudeID or 
+                 (itemAttr:GetEquipInfo().ProID ~= G_UserInfo.RoleAttribute.ProID and itemAttr:GetEquipInfo().ProID~=255) or
+                 list[Index].PanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF or 
+                 leftCaveID ~= rightCaveID or
+                  m_CanInheritEquipsList[m_leftEquipSelect+1]==list[Index])  then
+                    --list:RemoveAt(Index-1);
+                    table.insert(tableLR,list[Index]);
+                end
+            end
+        else
+            tableLR={};
+        end
+        
+    end
+    return tableLR;
+end
+-- 左侧装备信息显示
+function OnEquipCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local itemAttr = data;
+    if itemAttr ~= nil then
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        SameInitCloneEquipFunc(itemAttr,excelID,equipInfo,go);
+        ----------------------------
+        local timesInFightValue = 1 + EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemAttr.StarItemLevel) / 100;
+        local fightValue =CaculateRandEffFightValue(itemAttr,true,false); 
+        SetLabelContent(m_EquipFightValueStr,math.floor(fightValue*timesInFightValue), go);
+        --重构：--为右侧初始化OnNeedItemCloneInit准备数据，防止在OnEquipCloneInit中多次执行
+        m_LeftSelectedItem=listView:GetData(0);   
+        fightInLeftChoose=CaculateRandEffFightValue(m_LeftSelectedItem,true,false); 
+    else
+        error("EquipInherit OnEquipLeftInit itemattr 不存在");
+    end
+end
+---------------------
+--左右侧装备相同的界面初始化规则
+function SameInitCloneEquipFunc(itemAttr,excelID,equipInfo,go)
+    SetSpriteByAtlasID(m_EquipIconSpriteStr, CCommonTool.GetImageIDByExcelID(excelID), go, true);
+    SetSpriteApptitudeV04(m_EquipApptitudeSpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+--    SetSpriteEquipApptitudeV04(m_EquipApptitudeSprite2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+    SetGameObjectState(m_EquipApptitudeSprite2Str, false, go);
+    SetLabelContent(m_EquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), go);
+    SetLabelColor(m_EquipStep2Str, "91e464", go);
+    SetSpriteApptitude2V04(m_EquipAppTitude2SpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+    if itemAttr:GetEquipInfo().ProID == G_UserInfo.RoleAttribute.ProID or itemAttr:GetEquipInfo().ProID == m_commonProId then
+        SetGameObjectState(m_NotSameProStr, false, go);
+        if itemAttr:GetEquipInfo().NeedLv > G_UserInfo.RoleAttribute.Level then
+            SetGameObjectState(m_NotReachLevelStr, true, go);
+        else
+            SetGameObjectState(m_NotReachLevelStr, false, go);
+        end
+    else
+        SetGameObjectState(m_NotReachLevelStr, false, go);
+        SetGameObjectState(m_NotSameProStr, false, go);
+    end
+    -- 套装图标
+    if itemAttr:GetEquipInfo().SuitID > 0 then
+        SetGameObjectState(m_EquipSuitStr, true, go);
+    else
+        SetGameObjectState(m_EquipSuitStr, false, go);
+    end
+    if itemAttr.StarItemLevel <= 0 then
+        SetGameObjectState(m_EquipStarLabelStr, false, go);
+        SetGameObjectPos(m_EquipSuitStr, Vector3.New(-85, -48, 0), go);
+    else
+        SetGameObjectState(m_EquipStarLabelStr, true, go);
+        SetLabelContent(m_EquipStarLabelStr, itemAttr.StarItemLevel, go);
+        if itemAttr.StarItemLevel < 10 then
+            SetGameObjectPos(m_EquipStarStr, Vector3.New(-14, 1, 0), go);
+            SetGameObjectPos(m_EquipSuitStr, Vector3.New(-109, -48, 0), go);
+        else
+            SetGameObjectPos(m_EquipStarStr, Vector3.New(-25, 1, 0), go);
+            SetGameObjectPos(m_EquipSuitStr, Vector3.New(-120, -48, 0), go);
+        end
+    end
+    SetItemIconEffect(go, m_EquipIconSpriteStr, excelID, 11);
+    SetLabelTextByID(m_EquipNameLabelStr, CCommonTool.GetNameIDByExcelID(excelID), go);
+    SetLabelPinZhi(m_EquipNameLabelStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+    if itemAttr.PanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+        SetGameObjectState(m_EquipIsOnStr, true, go);
+    else
+        SetGameObjectState(m_EquipIsOnStr, false, go);
+    end
+end
+---------------------------------------
+-- 点击左侧装备
+function OnEquipCloneClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local itemAttr = data;
+    if itemAttr == m_CanInheritEquipsList[m_leftEquipSelect+1] then
+        return;
+    else
+        leftClick=true;
+        m_leftEquipSelect = cell.dataIndex;
+        m_LeftSelectedItem=data;
+        fightInLeftChoose=CaculateRandEffFightValue(m_LeftSelectedItem,true,false); 
+        InitMiddleTopLeft(); 
+        InitRight();  --+将右边的disable  
+        InitMiddleBottomLeft();
+        if m_RightEquipSelect>=0 then
+            ShowRightMessage(true,false);
+            InitMiddleTopRight(); 
+            InitMiddleBottomRight();
+            m_curHoleSelect=1;
+            changeChooseAttr(true,m_curHoleSelect);
+            --true=当前左边点选进去的
+            AttrsJudge(m_curHoleSelect,true);
+            local CURitemAttr,CURequipInfo=GetAttrAndEquip(m_CanInheritEquipsList,m_leftEquipSelect);
+            FightCalcute(CURitemAttr,CURequipInfo);
+        else
+            ShowRightMessage(false,false);
+        end
+    end
+end
+---------------------------------------------------Right----
+-- 初始化右侧的数据
+function InitRight()
+    -- 背包装备道具信息
+    m_bagEquipTable=ChooseEquip(m_CanInheritEquipsList,false);
+------筛选完毕
+    m_RightItemListViewComp:RemoveAll();
+    if m_bagEquipTable~=nil and #m_bagEquipTable>0 then 
+        NoEquipMentShow(false,false);
+        for Index = 1, #m_bagEquipTable do
+            m_RightItemListViewComp:AddData(m_bagEquipTable[Index]);
+        end
+    --------
+        if m_RightEquipSelect >= #m_bagEquipTable  then
+            m_RightEquipSelect=-1;
+        end
+        if  #m_bagEquipTable>0 and leftClick==true then
+            m_RightEquipSelect=0;
+            leftClick=false;
+        end
+        if m_RightEquipSelect<0 then
+            m_RightItemListViewComp:LookAt(-1, true);
+            m_RightEquipSelect=-1;
+        else
+            m_RightItemListViewComp:LookAt(m_RightEquipSelect, true);
+        end
+        if EquipMng.InheritTempPrtocolData[4]==1 then
+            local inheritProtocolRightSelectData=EquipMng.InheritTempPrtocolData[3];
+            if inheritProtocolRightSelectData>=0 then
+                for Index = 1, #m_bagEquipTable do
+                    if m_bagEquipTable[Index].CRID==inheritProtocolRightSelectData then
+                        --error(string_format("装备CRID={0},服务器装备CRID={1}",m_bagEquipTable[Index].CRID,inheritProtocolRightSelectData));   
+                        m_RightEquipSelect=Index-1;
+                        m_RightItemListViewComp:LookAt(m_RightEquipSelect, true);
+                    end
+                end
+            end
+            EquipMng.InheritTempPrtocolData[3]=-1;
+        end
+    else
+        NoEquipMentShow(false,true);
+    end
+    InitMiddleBottomLeftStoneInfo();
+    InitMiddleBottomRightStoneInfo();
+end
+-------------------------------------------
+-- 右侧装备信息显示
+function OnNeedItemCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local itemTable = data;
+    if itemTable ~= nil then
+        local excelID = itemTable.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        SameInitCloneEquipFunc(itemTable,excelID,equipInfo,go);
+        ---------------------------------------
+        --战斗力值计算
+        local timesInFightValue = 1 + EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemTable.StarItemLevel) / 100;
+        local fightValue = CaculateRandEffFightValue(itemTable,true,false); 
+        SetLabelContent(m_EquipFightValueStr, math.floor(fightValue * timesInFightValue), go);
+        SetGameObjectState(m_EquipCanOperateStr,fightValue>fightInLeftChoose, go);
+        ---------------------------------------
+--      SetGameObjectEvent(m_EquipApptitudeSpriteStr,function () SetItemToolTipsEvent(go,m_EquipApptitudeSpriteStr, ENUMPANELID.ENUM_PANEL_EQUIPPANEL, true, itemTable, false, false);end,go);
+        ---------------------------------------
+        if m_RightEquipSelect>=0 then
+            m_RightSelectedItem=listView:GetData(m_RightEquipSelect);            
+        end
+    else
+        error("EquipInherit OnEquipLeftInit itemTable 不存在");
+    end
+end
+----------------------------------------------Middle-Middle-Right---
+
+-- 点击右侧装备
+function OnNeedItemClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local itemTable = data;
+    if go.name=="Item" then
+        --error("Item-图标!!!!!!!!!");
+        listView.clickToSelect=false; --!点击不选中
+        local paraTable = { };
+        paraTable.PanelID = ENUMPANELID.ENUM_PANEL_EQUIPPANEL;
+        paraTable.IsRealItem = true;
+        paraTable.ItemData = itemTable;
+        paraTable.IsEquiped = false;
+        paraTable.IsOtherPlayerEquip = false;
+        ToolTipsPanel.SetData(paraTable);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL) == 1 then
+            ToolTipsPanel.InitShow();
+        else
+            createPanel(ENUMPANELID.ENUM_PANEL_ITEMTOOLTIPSPANEL);
+        end
+    end
+    if go.name=="Select" then
+        --error("Select-数字!!!!!!!!!!");
+        listView.clickToSelect=true;  
+        m_RightEquipSelect = cell.dataIndex;
+        m_RightSelectedItem=data;
+        --------------------------
+        if m_RightEquipSelect>=0 then
+            InitMiddleTopRight(); 
+            InitMiddleBottomRight();
+            m_curRightHoleSelect=1;
+            --changeChooseAttr(false,m_curRightHoleSelect);
+            AttrsJudge(m_curHoleSelect,false);
+            local CURitemAttr,CURequipInfo=GetAttrAndEquip(m_CanInheritEquipsList,m_leftEquipSelect);
+            FightCalcute(CURitemAttr,CURequipInfo);
+            InitMiddleBottomLeftStoneInfo();
+            InitMiddleBottomRightStoneInfo();
+        else
+            error("右边未选中？");
+        end
+    end
+end
+------------------------------
+----------------------------------------------Middle-Top-Left---
+-- 初始化中间左上部单个装备的显示
+function InitMiddleTopLeft()
+    if m_CanInheritEquipsList~=nil and  #m_CanInheritEquipsList > 0 then
+        ShowRightMessage(true,true);
+        local itemAttr = m_CanInheritEquipsList[m_leftEquipSelect+1];
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_MiddleTopLeftEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+        SetSpriteApptitudeV04(m_MiddleTopLeftEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_MiddleTopLeftEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--        SetSpriteEquipApptitudeV04(m_MiddleTopLeftEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetGameObjectState(m_MiddleTopLeftEquipApptitude2Str, false, m_panelObject);
+        SetLabelContent(m_MiddleTopLeftEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+        SetLabelColor(m_MiddleTopLeftEquipStep2Str, "91e464", m_panelObject);
+        SetLabelTextByID(m_MiddleTopLeftEquipName, CCommonTool.GetNameIDByExcelID(excelID), m_panelObject);
+
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+                SetGameObjectState(m_MiddleTopLeftEquipSuitStr, true, m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopLeftEquipSuitStr, false, m_panelObject);
+            end
+            if itemAttr.StarItemLevel <= 0 then
+                SetGameObjectState(m_MiddleTopLeftEquipStarLv2Str, false, m_panelObject);
+                SetGameObjectPos(m_MiddleTopLeftEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopLeftEquipStarLv2Str, true, m_panelObject);
+                SetLabelContent(m_MiddleTopLeftEquipStarLv2Str, itemAttr.StarItemLevel, m_panelObject);
+                if itemAttr.StarItemLevel < 10 then
+                    SetGameObjectPos(m_MiddleTopLeftEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopLeftEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+                else
+                    SetGameObjectPos(m_MiddleTopLeftEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopLeftEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+                end
+            end
+    else
+        ShowRightMessage(false,true);
+    end
+end
+----------------------------------------------Middle-Top-Right---
+function ShowRightMessage(show,LR)
+        if LR==true then --左边
+            SetGameObjectState(m_MiddleTopLeftHasEquipContentStr, show, m_panelObject);
+            SetGameObjectState(m_MiddleTopLeftNoEquipContentStr, not show, m_panelObject); 
+        else
+            SetGameObjectState(m_MiddleTopRightHasEquipContentStr, show, m_panelObject);
+            SetGameObjectState(m_MiddleTopRightNoEquipContentStr, not show, m_panelObject);
+            SetGameObjectState(m_MiddleMiddleRightHasEquipContentStr,show,m_panelObject);
+            SetGameObjectState(m_MiddleMiddleRightHideContentStr,not show,m_panelObject);
+        end
+end
+
+-- 初始化中间右上部单个装备的显示
+function InitMiddleTopRight()
+    if m_bagEquipTable~=nil and #m_bagEquipTable > 0 and m_RightEquipSelect~=-1 then
+        ShowRightMessage(true,false);
+        local itemAttr = m_bagEquipTable[m_RightEquipSelect+1];
+        local excelID = itemAttr.ExcelID;
+        SetSpriteByAtlasID(m_MiddleTopRightEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+        SetSpriteApptitudeV04(m_MiddleTopRightEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetSpriteApptitude2V04(m_MiddleTopRightEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--        SetSpriteEquipApptitudeV04(m_MiddleTopRightEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+        SetGameObjectState(m_MiddleTopRightEquipApptitude2Str, false, m_panelObject);
+        SetLabelContent(m_MiddleTopRightEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+        SetLabelColor(m_MiddleTopRightEquipStep2Str, "91e464", m_panelObject);
+        --SetLabelContent(m_MiddleTopLeftEquipStarLv2Str, itemAttr.StarItemLevel, m_panelObject);
+        --SetGameObjectPos(m_MiddleTopLeftEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+        SetLabelTextByID(m_MiddleTopRightEquipName, CCommonTool.GetNameIDByExcelID(excelID), m_panelObject);
+
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+                SetGameObjectState(m_MiddleTopRightEquipSuitStr, true, m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopRightEquipSuitStr, false, m_panelObject);
+            end
+            if itemAttr.StarItemLevel <= 0 then
+                SetGameObjectState(m_MiddleTopRightEquipStarLv2Str, false, m_panelObject);
+                SetGameObjectPos(m_MiddleTopRightEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopRightEquipStarLv2Str, true, m_panelObject);
+                SetLabelContent(m_MiddleTopRightEquipStarLv2Str, itemAttr.StarItemLevel, m_panelObject);
+                if itemAttr.StarItemLevel < 10 then
+                    SetGameObjectPos(m_MiddleTopRightEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopRightEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+                else
+                    SetGameObjectPos(m_MiddleTopRightEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopRightEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+                end
+            end
+    else
+        ShowRightMessage(false,false);
+    end
+end
+----------------------------------------------Middle-Bottom-Left--
+-- 初始化中间左下部随机属性的显示
+function InitMiddleBottomLeft()
+    if m_CanInheritEquipsList~=nil and #m_CanInheritEquipsList > 0 then
+        ShowRightMessage(true,true);
+        local itemAttr,equipInfo=GetAttrAndEquip(m_CanInheritEquipsList,m_leftEquipSelect);
+        local allEquipRandomAttrs=GetAttrs(nil,nil,itemAttr);
+        local attrID = 0;
+        local minValue = 0;
+        local maxValue = 0;
+        local groupID = 0;
+        local equipRandEffAttrInfo = 0;
+        local attrIDInTable = 0;
+        local curValue = 0;
+        local notSavedValue = 0;
+        local ratio = 0;                                   
+        --local basePercent = equipInfo.RandEffAddPercent / 10000;
+        --local times = 1 + EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemAttr.StarItemLevel) / 100;
+        local times=1;
+        for Index = 1, allEquipRandomAttrs.Count do
+            if Index > 5 then
+                -- 超过显示条目不显示
+                return;
+            end
+            if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 then
+                SetGameObjectState(m_AttrStr .. Index, true, m_panelObject);
+                attrID = allEquipRandomAttrs[Index - 1].EffectRandomAttrID;
+                groupID = allEquipRandomAttrs[Index - 1].EffectRandomGroupID;
+                equipRandEffAttrInfo = CCommonTool.GetEquipRandAttr(allEquipRandomAttrs[Index - 1].EffectRandomGroupID);
+                attrIDInTable, minValue, maxValue = EquipMng.GetEquipRandEffInfo(equipRandEffAttrInfo, allEquipRandomAttrs[Index - 1].EffectRandomGroupIndex);
+                curValue = allEquipRandomAttrs[Index - 1].EffectRandomAttrValue;
+                notSavedValue = allEquipRandomAttrs[Index - 1].EffectRandomNoReplaceValue;
+                ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                local prefixName = "";
+                 --根据通过属性ID获得属性名称，物攻...
+                prefixName = prefixName .. CCommonTool.GetAttrNameByAttrID(attrID);
+                SetLabelContent(m_AttrStr .. Index .. m_AttrNameLabel, prefixName, m_panelObject);
+                --属性值设定
+                local showValue;
+                if ratio < 1 then
+                    showValue = string.format("%0.1f", curValue * 100) * times;
+                    SetLabelContent(m_AttrStr .. Index .. m_AttrValueLabelStr, showValue .. "%", m_panelObject);   
+                else
+                    SetLabelContent(m_AttrStr .. Index .. m_AttrValueLabelStr, math.floor(curValue * times), m_panelObject);
+                end
+                --根据属性等级设定颜色
+                local apptitude = GetNameApptitude(groupID);
+                if apptitude == ENUM_ATTR_APPTITUDE.NORMAL then
+                    SetLabelColor(m_AttrStr .. Index .. m_AttrNameLabel, ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                    SetLabelColor(m_AttrStr .. Index .. m_AttrValueLabelStr, ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+
+                elseif apptitude == ENUM_ATTR_APPTITUDE.GOOD then
+                    SetLabelColor(m_AttrStr .. Index .. m_AttrNameLabel, ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                    SetLabelColor(m_AttrStr .. Index .. m_AttrValueLabelStr, ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+
+                elseif apptitude == ENUM_ATTR_APPTITUDE.EPIC then
+                    SetLabelColor(m_AttrStr .. Index .. m_AttrNameLabel, ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                    SetLabelColor(m_AttrStr .. Index .. m_AttrValueLabelStr, ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+
+                else
+                    error("附加效果组ID的百位不为1,2,3，说好的123呢，%>_<%" .. groupID);
+                end
+
+            else
+                SetGameObjectState(m_AttrStr .. Index, false, m_panelObject);
+            end
+        end
+
+        --左边选中的随机属性
+        if EquipMng.InheritClick==true and EquipMng.InheritTempPrtocolData[4]==1 then
+            --传承过来
+            m_curHoleSelect=EquipMng.m_leftSelectHole;
+            --EquipMng.InheritClick=false;
+        else
+            --m_curHoleSelect=1;
+        end
+        changeChooseAttr(true,m_curHoleSelect);
+        --error(string_format("m_curHoleSelect={0}",m_curHoleSelect));
+        AttrsJudge(m_curHoleSelect,false);
+        FightCalcute(itemAttr,equipInfo);
+    else
+        --error("left is nil");
+        ShowRightMessage(false,true);
+    end
+end
+--根据左边的选择计算右边属性的选中                                                                                                                           ---------------------------------------------点选左边
+function AttrsJudge(leftChoose,leftClick)
+    --------左边
+    if m_CanInheritEquipsList~=nil and  #m_CanInheritEquipsList>0 and m_leftEquipSelect >=0 then
+        local allEquipRandomAttrs=GetAttrs(m_CanInheritEquipsList,m_leftEquipSelect,nil);
+        local leftChooseAttrID=allEquipRandomAttrs[leftChoose-1].EffectRandomAttrID;--当前左边选中的属性id
+        --------右边
+        if m_bagEquipTable~=nil and #m_bagEquipTable>0 and m_RightEquipSelect>=0 then
+            local rAllEquipRandomAttrs=GetAttrs(m_bagEquipTable,m_RightEquipSelect,nil);
+            for Index=1,rAllEquipRandomAttrs.Count do --轮询右边
+                if rAllEquipRandomAttrs[Index-1].EffectRandomAttrID==nil then
+                    return;
+                end
+                local rightIndexAttrID=rAllEquipRandomAttrs[Index-1].EffectRandomAttrID; 
+                --error(string_format(string_format("rightIndexAttrID={0},leftChooseAttrID={1}",rightIndexAttrID,leftChooseAttrID)));
+                if rightIndexAttrID>10 then               
+                    if rightIndexAttrID==leftChooseAttrID then                                      --如果右边的和左边的同为一属性可传承
+                        --右边设定为可点选
+                        SetGameObjectState(m_TableStr.. (Index)..m_OpenStr,true, m_panelObject);
+                        SetGameObjectState(m_TableStr.. (Index)..m_CloseStr,false, m_panelObject);
+                        activeState[Index]=1;
+                    else
+                        local countLeftSameAttrNum=0;
+                        for leftIndex=1,allEquipRandomAttrs.Count  do --轮询左边
+                            local curRight=rAllEquipRandomAttrs[Index-1].EffectRandomAttrID;
+                            local curLeft=allEquipRandomAttrs[leftIndex-1].EffectRandomAttrID;
+                            if curRight==curLeft then 
+                                countLeftSameAttrNum=countLeftSameAttrNum+1;
+                            end    
+                        end
+                        local tableCurAttrNeedNum=InheritAttrCanReaptTableTable.Get(rightIndexAttrID).RepateNum;
+                        error(string_format("tableCurAttrNeedNum=={0},Index-1={1},rightIndexAttrID={2}",tableCurAttrNeedNum,(Index-1),rightIndexAttrID));
+                        if countLeftSameAttrNum< tableCurAttrNeedNum then--否则，如果右边当前的这个属性在左边的个数n < 规定数量个，则可传承
+                            --右边设定为可点选
+                            SetGameObjectState(m_TableStr.. (Index)..m_OpenStr,true, m_panelObject);
+                            SetGameObjectState(m_TableStr.. (Index)..m_CloseStr,false, m_panelObject);
+                            activeState[Index]=1;
+                        else                                             --否则，如果右边当前的这个属性在左边的个数 > 规定数量个，则不可传承
+                            --右边设定为不可点选
+                            SetGameObjectState(m_TableStr.. (Index)..m_OpenStr,false, m_panelObject);
+                            SetGameObjectState(m_TableStr.. (Index)..m_CloseStr,true, m_panelObject);
+                            activeState[Index]=0;
+                        end 
+                    end
+                end
+            end
+            --设定当前选中框的位置
+            local flag=false;
+                --error(string_format(string_format("设定当前选中框的位置EquipMng.m_rightSelectHole={0}",EquipMng.m_rightSelectHole)));
+            if EquipMng.InheritTempPrtocolData[4]==1 and EquipMng.InheritClick==true and activeState[EquipMng.m_rightSelectHole]==1 then
+                m_curRightHoleSelect=EquipMng.m_rightSelectHole;
+                changeChooseAttr(false,m_curRightHoleSelect);
+                EquipMng.InheritClick=false;
+                flag=true;
+                return;
+            end
+            for i,v in ipairs(activeState) do
+                if  v ==1 and i==m_curRightHoleSelect and leftClick==false then
+                    changeChooseAttr(false,i);
+                    m_curRightHoleSelect=i;
+                    flag=true;
+                    return;
+                end
+            end
+            if flag==false then
+                for i,v in ipairs(activeState) do
+                    if v ==1 then
+                        --error(string_format(string_format("设定当前选中框的位置i={0}",i)));
+                        changeChooseAttr(false,i);
+                        m_curRightHoleSelect=i;
+                        return;
+                    else
+                        --error(string_format(string_format("设定当前wei选中框的位置i={0}",i)));
+                    end
+                end
+            end
+        else
+            error("right is nil");
+        end
+    else
+        error("left is nil");
+    end
+end
+--中间战斗力的计算显示
+function FightCalcute(itemAttr,equipInfo)
+    if equipInfo~=nil then
+        local timesInFightValue = 1 + EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemAttr.StarItemLevel) / 100;
+        --替换前战斗力值计算
+        local fightValue = CaculateRandEffFightValue(itemAttr, true,false);
+        SetLabelContent(m_fightValueSavedStr, math.floor(fightValue * timesInFightValue), m_panelObject);
+        --替换后战斗力值计算m_fightValueReplaceStr
+        local fightValueReplace=CaculateRandEffFightValue(itemAttr, true,true);
+        SetLabelContent(m_fightValueReplaceStr, math.floor(fightValueReplace * timesInFightValue), m_panelObject);
+        showArrow(fightValue,fightValueReplace);
+    else
+        error("equipInfo is nil");
+    end
+end
+-------------------
+function showArrow(fightValue,fightValueReplace)
+    if fightValue < fightValueReplace then
+        m_fightValueIsHigher = true;
+        SetSpriteByAtlasID(m_fightLeftValueArrowSpriteStr, ATTR_CHANGE_ICONID.HIGH, m_panelObject);
+        SetLabelColor(m_fightLeftValueChangeNumStr, ENUM_ATTR_LABEL_COLOR.HIGH, m_panelObject);
+    else
+        m_fightValueIsHigher = false;
+        SetSpriteByAtlasID(m_fightLeftValueArrowSpriteStr, ATTR_CHANGE_ICONID.LOW, m_panelObject);
+        SetLabelColor(m_fightLeftValueChangeNumStr, ENUM_ATTR_LABEL_COLOR.LOW, m_panelObject);
+    end
+    SetLabelContent(m_fightLeftValueChangeNumStr, math.abs(fightValueReplace - fightValue), m_panelObject); 
+end
+function CaculateFightValue()
+    if m_bagEquipTable~=nil and #m_bagEquipTable > 0 and m_RightEquipSelect~=-1  then
+        ShowRightMessage(true,false);
+        local itemAttr,equipInfo=GetAttrAndEquip(m_bagEquipTable,m_RightEquipSelect);
+        --战斗力值计算
+        local timesInFightValue = 1 + EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemAttr.StarItemLevel) / 100;            --发送和显示的都需要去掉升星等级的加成
+        local fightValue = CaculateRandEffFightValue(itemAttr, true,false);
+        local curFightValue = CaculateRandEffFightValue(itemAttr, false,false);--去掉当前选中的属性的战力值
+        SetLabelContent(m_fightValueNotSavedStr, math.floor(fightValue * timesInFightValue), m_panelObject);
+        if fightValue < curFightValue then
+            m_fightValueIsHigher = true;
+            SetSpriteByAtlasID(m_fightValueArrowSpriteStr, ATTR_CHANGE_ICONID.HIGH, m_panelObject);
+            SetLabelColor(m_fightValueChangeNumStr, ENUM_ATTR_LABEL_COLOR.HIGH, m_panelObject);
+        else
+            m_fightValueIsHigher = false;
+            SetSpriteByAtlasID(m_fightValueArrowSpriteStr, ATTR_CHANGE_ICONID.LOW, m_panelObject);
+            SetLabelColor(m_fightValueChangeNumStr, ENUM_ATTR_LABEL_COLOR.LOW, m_panelObject);
+        end
+        SetLabelContent(m_fightValueChangeNumStr, math.floor(math.abs(curFightValue - fightValue) * timesInFightValue), m_panelObject);
+    else
+        error("right is nil");
+    end
+end
+-----------------------------------------
+----------------------------------------------Middle-Bottom-Right--
+-- 初始化中间右下部随机属性的显示
+function InitMiddleBottomRight()
+    if m_bagEquipTable~=nil and #m_bagEquipTable > 0 and m_RightEquipSelect~=-1  then
+        ShowRightMessage(true,false);
+        local allEquipRandomAttrs=GetAttrs(m_bagEquipTable,m_RightEquipSelect,nil);
+        local attrID = 0;
+        local minValue = 0;
+        local maxValue = 0;
+        local groupID = 0;
+        local equipRandEffAttrInfo = 0;
+        local attrIDInTable = 0;
+        local curValue = 0;
+        local notSavedValue = 0;
+        local ratio = 0;                                   
+        --local basePercent = equipInfo.RandEffAddPercent / 10000;
+        --local times = 1 + EquipMng.GetStarUpTotalPercent(equipInfo.RandEffAddPercent, itemAttr.StarItemLevel) / 100;            --发送和显示的都需要去掉升星等级的加成
+        local times=1;
+        for Index = 1, allEquipRandomAttrs.Count do
+            if Index > 5 then
+                -- 超过显示条目不显示
+                return;
+            end
+            if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 then
+                SetGameObjectState(m_TableStr .. Index, true, m_panelObject);
+                --AttrsJudge(m_curHoleSelect);
+                attrID = allEquipRandomAttrs[Index - 1].EffectRandomAttrID;
+                groupID = allEquipRandomAttrs[Index - 1].EffectRandomGroupID;
+                equipRandEffAttrInfo = CCommonTool.GetEquipRandAttr(allEquipRandomAttrs[Index - 1].EffectRandomGroupID);
+                attrIDInTable, minValue, maxValue = EquipMng.GetEquipRandEffInfo(equipRandEffAttrInfo, allEquipRandomAttrs[Index - 1].EffectRandomGroupIndex);
+                curValue = allEquipRandomAttrs[Index - 1].EffectRandomAttrValue;
+                notSavedValue = allEquipRandomAttrs[Index - 1].EffectRandomNoReplaceValue;
+                ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                --根据通过属性ID获得属性名称，物攻...
+                local prefixName = "";
+                prefixName = prefixName .. CCommonTool.GetAttrNameByAttrID(attrID);
+                SetLabelContent(m_TableStr .. Index .. m_AttrNameLabel, prefixName, m_panelObject);
+                SetLabelContent(m_TableStr .. Index .. m_CloseAttrNameLabel, prefixName, m_panelObject);
+
+                --属性值设定
+                local showValue;
+                if ratio < 1 then
+                    showValue = string.format("%0.1f", curValue * 100) * times;
+                    SetLabelContent(m_TableStr .. Index .. m_AttrValueLabelStr, showValue .. "%", m_panelObject); 
+                    SetLabelContent(m_TableStr .. Index .. m_CloseAttrValueLabelStr, showValue .. "%", m_panelObject);   
+
+                else
+                    SetLabelContent(m_TableStr .. Index .. m_AttrValueLabelStr, math.floor(curValue * times), m_panelObject);
+                    SetLabelContent(m_TableStr .. Index .. m_CloseAttrValueLabelStr, math.floor(curValue * times), m_panelObject);
+
+                end
+                --SetSpriteFillAmount(m_TableStr .. Index .. m_AttrProBarStr,(curValue - minValue) /(maxValue - minValue), m_panelObject);--设定滑动条
+
+                --根据属性等级设定颜色
+                local apptitude = GetNameApptitude(groupID);
+                if apptitude == ENUM_ATTR_APPTITUDE.NORMAL then
+                    SetLabelColor(m_TableStr .. Index .. m_AttrNameLabel, ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                    SetLabelColor(m_TableStr .. Index .. m_AttrValueLabelStr, ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                elseif apptitude == ENUM_ATTR_APPTITUDE.GOOD then
+                    SetLabelColor(m_TableStr .. Index .. m_AttrNameLabel, ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                    SetLabelColor(m_TableStr .. Index .. m_AttrValueLabelStr, ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                elseif apptitude == ENUM_ATTR_APPTITUDE.EPIC then
+                    SetLabelColor(m_TableStr .. Index .. m_AttrNameLabel, ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                    SetLabelColor(m_TableStr .. Index .. m_AttrValueLabelStr, ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                else
+                    error("附加效果组ID的百位不为1,2,3，说好的123呢，%>_<%" .. groupID);
+                end
+            else
+                SetGameObjectState(m_TableStr .. Index, false, m_panelObject);
+            end
+        end
+        --CaculateFightValue();
+    else
+        --error("right is nil");
+        ShowRightMessage(false,false);
+    end
+
+end
+-------------------------------------------
+
+
+-- 计算装备随机属性的战斗力
+function CaculateRandEffFightValue(item,holdAttr,replaceAttr)
+    local attrs= GetAttrs(nil,nil,item);
+    local fightTable = { };
+    for Index = 1, attrs.Count do
+        if attrs[Index - 1].EffectRandomAttrID > 0  then
+            local attrID = attrs[Index - 1].EffectRandomAttrID;
+            local ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+            if ratio == 0 then
+                ratio = 1;
+            end
+            if holdAttr==true and replaceAttr==true and m_curRightHoleSelect>=0 and m_curHoleSelect==Index then
+                    local Getattrs=GetAttrs(m_bagEquipTable,m_RightEquipSelect,nil);
+                    if Getattrs then
+                        local curRightAttrID=Getattrs[m_curRightHoleSelect-1].EffectRandomAttrID;                    
+                        local curRightAttrValue=Getattrs[m_curRightHoleSelect-1].EffectRandomAttrValue;
+                        local curRightratio = CCommonTool.GetAttrIndexInfo(curRightAttrID).Ratio;
+                        if curRightratio == 0 then
+                            curRightratio = 1;
+                        end
+                        --error("m_curRightHoleSelect="..m_curRightHoleSelect.."--111curRightAttrID="..curRightAttrID.."curRightAttrValue="..curRightAttrValue/curRightratio);
+                        AddFightValueTable(fightTable, curRightAttrID,curRightAttrValue/curRightratio,true,Index);
+                    else
+                        --error("error!");
+                    end
+            else
+                --error("attrID="..attrID.."curValue="..attrs[Index - 1].EffectRandomAttrValue / ratio);
+                AddFightValueTable(fightTable, attrID, attrs[Index - 1].EffectRandomAttrValue / ratio,holdAttr,Index);
+            end
+        end
+    end
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable) + 0.5);
+    return curFightValue;
+end
+-- 对战斗力计算table中添加属性---》改成替换属性（即保留但加进去的是右边选中的属性值holdAttr=true，replaceAttr=true）
+function AddFightValueTable(fightTable, attrIndex, attrValue,holdAttr,Index)
+    if m_curRightHoleSelect==Index and holdAttr==false then
+        --no done
+    else
+        if fightTable[attrIndex] ~= nil then
+            fightTable[attrIndex] = fightTable[attrIndex] + attrValue;--在table当前索引后添加数据
+        else
+            fightTable[attrIndex] = attrValue;
+        end
+    end
+end
+--得到所有的属性值
+function GetAttrs(EquipTable,EquipSelect,item)
+    if item==nil then
+        if EquipTable~=nil and #EquipTable>0 and EquipSelect>=0   then
+            local  m_rightEquipSingle=EquipTable[EquipSelect+1];
+            local ritemEquipAttrList = m_rightEquipSingle.AllEquipAttribute;
+            if ritemEquipAttrList == nil then
+                return;
+            end
+            local requipRandomAttrClass = ritemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+            if requipRandomAttrClass == nil then
+                log("equipRandomAttrClass == nil ");
+                return;
+            end
+            local rallEquipRandomAttrs = requipRandomAttrClass.EquipRandomAttrs;
+            if rallEquipRandomAttrs == nil then
+                log("allEquipRandomAttrs == nil");
+                return;
+            end   
+            return  rallEquipRandomAttrs;
+        end
+    else
+        local itemAttrList = item.AllEquipAttribute;
+        if itemAttrList == nil then
+            return;
+        end
+        local itemRandomAttrClass = itemAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+        if itemRandomAttrClass == nil then
+            log("equipRandomAttrClass == nil ");
+            return;
+        end
+        local itemallEquipRandomAttrs = itemRandomAttrClass.EquipRandomAttrs;
+        if itemallEquipRandomAttrs == nil then
+            log("allEquipRandomAttrs == nil");
+            return;
+        end   
+        return  itemallEquipRandomAttrs;
+    end
+end
+-- 得到此属性的品质（取附加效果组的百位，1为普通，2为优秀，3为史诗）
+function GetNameApptitude(groupID)
+    return math.fmod(math.modf(groupID / 100), 10);
+end
+-- 判断装备是否有随机属性
+function EquipIsHaveRandEff(itemAttr)
+    local allEquipRandomAttrs=GetAttrs(nil,nil,itemAttr);
+    for Index = 1, allEquipRandomAttrs.Count do
+        if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 and allEquipRandomAttrs[Index - 1].EffectRandomAttrValue > 0 then
+            return true;
+        end
+    end
+    return false;
+end
+-------------------------------------------
+----------------------------------------------Bottom-Stone道具-------------------------
+--初始化底部左方传承石的数据
+function InitMiddleBottomLeftStoneInfo()
+    local tableStone=InheritStoneChargeTable.Get(1);
+    local excelID=tableStone.ItemXLSMid;
+    local lvOffset=tableStone.lvOffset;
+
+    local leftItemID=CCommonTool.GetImageIDByExcelID(excelID);
+    SetSpriteByAtlasID(m_itemLeftStr..m_itemIconStr,leftItemID, m_panelObject, true);
+    local  leftApptitudeID=CCommonTool.GetAptitudeIDByExcelID(excelID);
+    SetSpriteApptitudeV04(m_itemLeftStr..m_itemApptitudeStr,leftApptitudeID, m_panelObject);
+    SetSpriteApptitude2V04(m_itemLeftStr..m_itemApptitude2Str, leftApptitudeID, m_panelObject);
+    local itemAttr = ItemAttribute.New(excelID);
+    SetLabelContent(m_itemLeftStr..m_itemNameStr,itemAttr:GetItemName(),m_panelObject);
+    SetLabelPinZhi(m_itemLeftStr..m_itemNameStr,leftApptitudeID, m_panelObject);
+    allInheritStoneNum=GetBindAndNotNumById(excelID);
+    --error(string_format("allInheritStoneNum={0},excelID={1}",allInheritStoneNum,excelID));
+    if m_CanInheritEquipsList~=nil and  #m_CanInheritEquipsList>0 and m_leftEquipSelect>=0 and  m_CanInheritEquipsList[m_leftEquipSelect+1]~=nil  then
+        local lvLeft= m_CanInheritEquipsList[m_leftEquipSelect+1]:GetNeeedLv();
+        local tenLVLeft,t=math.modf(lvLeft/10);
+        local rowLeft= EquipInheritTable.Get(tenLVLeft)  --!
+        if m_bagEquipTable~=nil and #m_bagEquipTable>0 and m_RightEquipSelect>=0 and m_bagEquipTable[m_RightEquipSelect+1]~=nil then
+            local lvRight= m_bagEquipTable[m_RightEquipSelect+1]:GetNeeedLv();
+            local tenLVRight,t1=math.modf(lvRight/10);
+            needInheritStoneNum=tableControl(tenLVRight,rowLeft);  --!
+            --error(string_format("allInheritStoneNum={1},needInheritStoneNum={0}",needInheritStoneNum,allInheritStoneNum));
+            SetLabelContent(m_itemLeftStr..m_itemNumStr,allInheritStoneNum.."/"..needInheritStoneNum, m_panelObject);
+        else
+            needInheritStoneNum=rowLeft.CostLevelID0;
+            SetLabelContent(m_itemLeftStr..m_itemNumStr,allInheritStoneNum.."/"..needInheritStoneNum, m_panelObject);           
+        end
+        if allInheritStoneNum-needInheritStoneNum<0 or allInheritStoneNum==0 then
+            SetLabelColor(m_itemLeftStr .. m_itemNumStr,"D83232", m_panelObject);
+        else
+            SetLabelColor(m_itemLeftStr .. m_itemNumStr,"FFFFFF", m_panelObject);
+        end
+        --error(string_format("allInheritStoneNum={1},needInheritStoneNum={0}",needInheritStoneNum,allInheritStoneNum));
+    else
+        error("left is nil");
+    end
+end
+--EquipInheritTable.lua、EquipInheritProtectTable.lua表获取当前消耗的石头数据
+function tableControl(indexTable,rowNeed)
+    local needStone=0;
+    for Index=1,12 do
+        if indexTable==0 then
+            needStone=rowNeed.CostLevelID0;
+        elseif indexTable==1 then
+            needStone=rowNeed.CostLevelID1;
+        elseif indexTable==2 then
+            needStone=rowNeed.CostLevelID2;
+        elseif indexTable==3 then
+            needStone=rowNeed.CostLevelID3;
+        elseif indexTable==4 then
+            needStone=rowNeed.CostLevelID4;
+        elseif indexTable==5 then
+            needStone=rowNeed.CostLevelID5;
+        elseif indexTable==6 then
+            needStone=rowNeed.CostLevelID6;
+        elseif indexTable==7 then
+            needStone=rowNeed.CostLevelID7;
+        elseif indexTable==8 then
+            needStone=rowNeed.CostLevelID8;
+        elseif indexTable==9 then
+            needStone=rowNeed.CostLevelID9;
+        elseif indexTable==10 then
+            needStone=rowNeed.CostLevelID10;
+        end
+    end
+    return needStone;
+end
+--初始化底部右方传承护符的数据
+function InitMiddleBottomRightStoneInfo()
+    OnSetSelectToggle(m_UseProtectStone, 1);
+    EquipMng.IsUseProtectStoneButton=1;
+    m_itemGetsWayMask:SetActive(false);
+    local tableStone=InheritStoneChargeTable.Get(2);
+    local excelID=tableStone.ItemXLSMid;    
+    local ItemID=CCommonTool.GetImageIDByExcelID(excelID);
+    SetSpriteByAtlasID(m_itemRightStr..m_itemIconStr,ItemID, m_panelObject, true);
+    local  ApptitudeID=CCommonTool.GetAptitudeIDByExcelID(excelID)
+    SetSpriteApptitudeV04(m_itemRightStr..m_itemApptitudeStr,ApptitudeID, m_panelObject);
+    SetSpriteApptitude2V04(m_itemRightStr..m_itemApptitude2Str, ApptitudeID, m_panelObject);
+    local itemAttr = ItemAttribute.New(excelID);
+    SetLabelContent(m_itemRightStr..m_itemNameStr,itemAttr:GetItemName(),m_panelObject);
+    SetLabelPinZhi(m_itemRightStr..m_itemNameStr,ApptitudeID, m_panelObject);
+    allProtectStoneNum=GetBindAndNotNumById(excelID);
+    if m_CanInheritEquipsList~=nil and #m_CanInheritEquipsList>0 and  m_leftEquipSelect>=0 and m_CanInheritEquipsList[m_leftEquipSelect+1]  then
+        local aptitudeLeft=m_CanInheritEquipsList[m_leftEquipSelect+1]:GetAptitudeID();
+        local aptitudeLeftid=aptitudeLeft;
+        local rowLeftNeed= EquipInheritProtectTable.Get(aptitudeLeftid); --！
+        if m_bagEquipTable~=nil and #m_bagEquipTable>0 and m_RightEquipSelect>=0 and  m_bagEquipTable[m_RightEquipSelect+1] then
+            local lvRight= m_bagEquipTable[m_RightEquipSelect+1]:GetNeeedLv();
+            local tenLVRight,t1=math.modf(lvRight/10);
+            needProtectStoneNum=tableControl(tenLVRight,rowLeftNeed);   --!
+            SetLabelContent(m_itemRightStr..m_itemNumStr,allProtectStoneNum.."/"..needProtectStoneNum, m_panelObject);
+        else
+            needProtectStoneNum=rowLeftNeed.CostLevelID0;
+            SetLabelContent(m_itemRightStr..m_itemNumStr,allProtectStoneNum.."/"..needProtectStoneNum, m_panelObject);           
+        end
+        if allProtectStoneNum-needProtectStoneNum<0 or allProtectStoneNum==0 then
+            SetLabelColor(m_itemRightStr .. m_itemNumStr,"D83232", m_panelObject);
+        else
+            SetLabelColor(m_itemRightStr .. m_itemNumStr,"FFFFFF", m_panelObject);
+        end
+    else
+        --error("left is nil");
+    end
+end
+
+-------------------------------------------
+-- 转换绑定非绑定
+function GetBindAndNotNumById(unBind_id)
+    local unBind_Num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, unBind_id);
+    local bind_Id = WrapBindExceId(unBind_id);
+    local bind_Num  = 0;
+    if bind_Id >0 then
+      bind_Num  = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, bind_Id);
+    end
+    return unBind_Num+bind_Num;
+end
+--根据得到非绑定id 得到绑定id
+function WrapBindExceId(unBind_id)
+    local num = -1;
+    local  datas = CCommonTool.GetTradableInfo(unBind_id);
+    if datas ~=nil then
+        num =   datas.UntradableItemID; -- 绑定id
+    else
+        --error("非绑定id："..unBind_id.." 得到不对应的绑定id");
+    end   
+    return num
+end
+-------------------------------------------
+--------------------------------------按钮事件方法------------------------------------
+-- 系统说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_EQUIPPANEL,6);
+end
+-- 点击左侧属性条
+function OnAttrClick(e)
+    local holeSelect = tonumber(string.sub(e.name,5));     --判定当前是否可以点击，不可以则弹出提示框
+    m_curHoleSelect=holeSelect;
+    changeChooseAttr(true,m_curHoleSelect);
+    AttrsJudge(m_curHoleSelect,false);
+    local itemAttr,equipInfo=GetAttrAndEquip(m_CanInheritEquipsList,m_leftEquipSelect);
+    FightCalcute(itemAttr,equipInfo);
+end
+function GetAttrAndEquip(EquipTable,EquipSelect)
+    if EquipTable~=nil and  #EquipTable>0 then
+        local itemAttr = EquipTable[EquipSelect+1];
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        return itemAttr,equipInfo;
+    else
+        error("EquipTable is nil");
+    end
+end
+-- 点击右侧属性条
+function OnTableClick(e)
+    --error("点击右侧属性条");
+    local holeSelect = tonumber(string.sub(e.name,5));--string.len(e.name)
+    --跳出提示
+    if activeState[holeSelect]==1 then
+
+        m_curRightHoleSelect=holeSelect;
+        changeChooseAttr(false,m_curRightHoleSelect);
+        local LitemAttr,LequipInfo=GetAttrAndEquip(m_CanInheritEquipsList,m_leftEquipSelect);
+        FightCalcute(LitemAttr,LequipInfo);
+    else
+        local attrs=GetAttrs(m_bagEquipTable,m_RightEquipSelect,nil);
+        attrID = attrs[holeSelect - 1].EffectRandomAttrID;
+        local prefixName =CCommonTool.GetAttrNameByAttrID(attrID);
+        local tempTable = { };
+        table.insert(tempTable, 1,prefixName);
+        table.insert(tempTable, 2,InheritAttrCanReaptTableTable.Get(attrID).RepateNum);
+        ShowSystemFlowTips(9769,nil,tempTable);
+    end                                                                                                  --判定当前是否可以点击，不可以则弹出提示框
+end
+--左右边选中框初始化 LR=true(左边随机属性框)
+function changeChooseAttr(LR,Select)
+    if Select >= 1 and Select <= 5 then
+        if LR==true then
+            SetGameObjectState(m_middleHoleSelectTransStr, true, m_panelObject);
+            m_middleHoleSelectTrans.localPosition = child(m_panelObject, m_AttrStr .. Select).localPosition;
+        elseif LR==false then
+            SetGameObjectState(m_middleRightHoleSelectTransStr, true, m_panelObject);
+            m_middleRightHoleSelectTrans.localPosition = child(m_panelObject, m_TableStr .. Select).localPosition;
+        end
+    end
+end
+-----------------------------------------
+function OnItemLeftGetWayClick()
+    local  m_ItemDataId=InheritStoneChargeTable.Get(1).ItemXLSMid;
+    GetWayPanel.Show(m_ItemDataId,ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end 
+function OnItemRightGetWayClick()
+    local  m_ItemDataId=InheritStoneChargeTable.Get(2).ItemXLSMid;
+    GetWayPanel.Show(m_ItemDataId,ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end 
+-----------------------------------------
+--判定石头的数量
+function CalcuteNum(allNum,xiaoHaoNum)
+    --error(string_format("allNum={1},xiaoHaoNum={0}",xiaoHaoNum,allNum));
+    return (allNum-xiaoHaoNum)<0;
+end
+
+-- 传承按钮点击
+function OnInheritClick(continue,protectCallBack,ok)
+    if m_RightEquipSelect<0 then
+        log("请先选择右侧消耗装备！");
+        ShowSystemFlowTips(9762);
+        return;
+    end
+    --AddTimerEvent();
+    if not EquipMng.CanClickEquipInheritButton then
+        log("正在等待服务器传承返回的消息，无法继续点击")
+        --error("正在等待服务器传承返回的消息，无法继续点击");
+        ShowSystemFlowTips(9761);
+        return;
+    end
+
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPINHERIT) then
+        log("装备传承系统还没解锁");
+        ShowSystemFlowTips(9760);
+        return;
+    end
+    if CalcuteNum(allInheritStoneNum,needInheritStoneNum ) then
+        log("传承石不足，无法传承");
+        ShowSystemFlowTips(9759);
+        return;
+    end   	
+    if EquipMng.IsUseProtectStoneButton==0 then
+        if not protectCallBack then
+            ShowClickContinuePanel();
+            return;
+        else    --未点击使用传承护符,回调继续
+            hold=0;
+        end
+    end
+    if EquipMng.IsUseProtectStoneButton==1 then
+        if  CalcuteNum(allProtectStoneNum,needProtectStoneNum) then
+           if continue==true then 
+                hold=0;
+            else   --传承护符不足将销毁装备，回调继续
+                ShowContinueRandEffPanel();
+                return;
+            end
+        else
+            --传承护符足够，是否使用传承护符-
+            --hold=1;
+            if ok==true then
+                hold=1;
+            else
+                ShowContinue();
+                return;
+            end
+        end
+    end
+    ----------------
+    --传承按钮连续点击防呆
+    if EquipMng.m_Delay==true then
+        log("您的操作太快")
+        ShowSystemFlowTips(9761);
+        return;
+    end
+    ClickDelay();
+    ----------------
+    m_EquipCycleEff:SetActive(false)
+    ----------------
+    local  m_leftEquipSingle=m_CanInheritEquipsList[m_leftEquipSelect+1];
+    local allEquipRandomAttrs=GetAttrs(nil,nil,m_leftEquipSingle);
+    local leftHoleSeclectSend=m_curHoleSelect-1;
+    ----------------
+    local  m_rightEquipSingle=m_bagEquipTable[m_RightEquipSelect+1];
+    local rallEquipRandomAttrs=GetAttrs(nil,nil,m_rightEquipSingle);
+    local rightHoleSeclectSend=m_curRightHoleSelect-1;
+    ------------------
+    if hold==1 then
+       EquipMng.InheritTempPrtocolData[3] =m_rightEquipSingle.CRID;
+    else
+        EquipMng.InheritTempPrtocolData[3]=0;
+    end
+    EquipMng.CanClickEquipInheritButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ASK_EQUIP_EFFECT_TRANSFER);                           --PROTOCOL
+
+    buffer:WriteUInt(m_rightEquipSingle.CRID);                       --垃圾装备的LGID             
+    buffer:WriteByte(rightHoleSeclectSend);                                                    --!!!/属性位置 从0开始
+    buffer:WriteInt(rallEquipRandomAttrs[rightHoleSeclectSend].EffectRandomAttrID);          --属性IDEffectRandomAttrID
+    buffer:WriteFloat(rallEquipRandomAttrs[rightHoleSeclectSend].EffectRandomAttrValue);     --属性值
+    buffer:WriteUShort(rallEquipRandomAttrs[rightHoleSeclectSend].EffectRandomGroupID);      --属性组ID
+    buffer:WriteByte(rallEquipRandomAttrs[rightHoleSeclectSend].EffectRandomGroupIndex);     --属性组索引
+
+    buffer:WriteUInt(m_leftEquipSingle.CRID);
+    buffer:WriteByte(leftHoleSeclectSend);  
+    buffer:WriteInt(allEquipRandomAttrs[leftHoleSeclectSend].EffectRandomAttrID);
+    buffer:WriteFloat(allEquipRandomAttrs[leftHoleSeclectSend].EffectRandomAttrValue);
+    buffer:WriteUShort(allEquipRandomAttrs[leftHoleSeclectSend].EffectRandomGroupID);
+    buffer:WriteByte(allEquipRandomAttrs[leftHoleSeclectSend].EffectRandomGroupIndex);
+
+    buffer:WriteByte(hold);            --1=保留装备   	
+    G_NetWorkMng:SendMessage(buffer);
+    --error("SendMessageOver");     	
+
+end
+
+---------------------------------
+-- 传承护符足够继续传承的弹板传参
+function ShowContinue()
+    --m_ContinueRandEffPanelIsOpen = true;
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(9306).m_str);
+    table.insert(tempTable, 3, OnContinueClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 9, ContinueClose);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end
+function ContinueClose()
+    --m_ContinueRandEffPanelIsOpen = false;
+end
+-- 继续传承的确认回调
+function OnContinueClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    OnInheritClick(nil, nil,true);
+end
+---------------------------------
+-- 判定是否点击使用传承护符后继续
+function ShowClickContinuePanel()
+    m_ShowClickContinuePanelIsOpen = true;
+    local tempTable = { };
+    table.insert(tempTable, 1, CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(9280).m_str);
+    table.insert(tempTable, 3, OnContinueInheritClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 9, ContinueInheritPanelClose);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end
+-- 继续传承的确认回调
+function OnContinueInheritClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    OnInheritClick(nil, true,nil);
+end
+function ContinueInheritPanelClose()
+    m_ShowClickContinuePanelIsOpen = false;
+end
+---------------------------------
+-- 传承护符足够时继续传承的弹板传参
+function ShowContinueRandEffPanel()
+    m_ContinueRandEffPanelIsOpen = true;
+    local tempTable = { };
+    table.insert(tempTable, 1,CCommonTool.GetTxtData(949).m_str);
+    table.insert(tempTable, 2, CCommonTool.GetTxtData(9281).m_str);
+    table.insert(tempTable, 3, notEnoughStoneOnContinueClick);
+    table.insert(tempTable, 4, CCommonTool.GetTxtData(375).m_str);
+    table.insert(tempTable, 5, ParameterToMessageTextBox.OnCloseClick);
+    table.insert(tempTable, 6, CCommonTool.GetTxtData(407).m_str);
+    table.insert(tempTable, 7, true);
+    table.insert(tempTable, 9, ContinueRandEffPanelClose);
+    table.insert(tempTable, 10, true);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX, tempTable, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+end
+function ContinueRandEffPanelClose()
+    m_ContinueRandEffPanelIsOpen = false;
+end
+-- 继续传承的确认回调
+function notEnoughStoneOnContinueClick()
+    ParameterToMessageTextBox.OnCloseClick();
+    OnInheritClick(true, nil,nil);
+end
+-----------------------------------------Toggle按钮事件-----------
+-- 点击使用传承护符
+function OnUseProtectStoneClick()
+    local toggleComp = GetComponent(m_panelObject, m_UseProtectStone, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        mValue = 1;
+        EquipMng.IsUseProtectStoneButton=1;
+        m_itemGetsWayMask:SetActive(false);
+        --error("点击使用传承护符");
+    else
+        mValue = 0;
+        EquipMng.IsUseProtectStoneButton=0;
+        m_itemGetsWayMask:SetActive(true);
+        --error("点击不使用传承护符");
+    end
+    OnSetToggleResourcesShow(m_UseProtectStone, mValue);
+end
+-- 设置选择资源的显示
+function OnSetToggleResourcesShow(path, state)
+    SetGameObjectState(path .. m_ToggleBack, false, m_panelObject);
+    SetGameObjectState(path .. m_ToggleCheck, false, m_panelObject);
+    if 1 == state then
+        SetGameObjectState(path .. m_ToggleCheck, true, m_panelObject);
+    else
+        SetGameObjectState(path .. m_ToggleBack, true, m_panelObject);
+    end
+end
+
+-- 设置是否选择
+function OnSetSelectToggle(currentToggle, autoChangeMed)
+    local toggleComp = GetComponent(m_panelObject, currentToggle, "UIToggle");
+    local mValue = 1;
+    -- 设置当前的更换药品提示是否打开
+    if 0 == autoChangeMed then
+        toggleComp.value = false;
+        mValue = 0;
+    else
+        toggleComp.value = true;
+        mValue = 1;
+    end
+    OnSetToggleResourcesShow(currentToggle, mValue);
+end
+---------------------------------------
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SuccessRefreshEquipInheritPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess and EquipMng.InheritTempPrtocolData[4]==1 then
+        m_EquipCycleEff:SetActive(true);
+        m_leftEquipListViewComp:Refresh();
+        m_RightItemListViewComp:Refresh();
+        EquipMng.InheritClick=true;
+        EquipMng.m_leftSelectHole=m_curHoleSelect;
+        EquipMng.m_rightSelectHole=m_curRightHoleSelect;
+
+        InitData();
+        InitShow();--保留装备需要将之前传承的装备选中
+    end
+end
+function ClickDelay()
+    EquipMng.m_Delay=true;
+    local ishaveTimer = G_TimerMng:GetTimeTask("InheritDelay");
+    if ishaveTimer == nil then
+        local time=CCommonTool.GetDefineInfo(6670):GetFloatContent();
+        --error(string_format("time={0}",time));
+        AddTimerEvent("InheritDelay",time,Delay);   --暂时屏蔽传承按钮的点击，1s后可点
+    end
+end
+function Delay()
+    EquipMng.m_Delay=false;
+end
+
+-- 打开继承界面并选中道具--BagPanel.lua调用
+function SelectItem(itemAttr)
+    m_SelectedItem = itemAttr;
+    EquipPanel.OpenThisPanelByTag(6);
+end
+
+-- 传承红点显示 RedHintMng.lua调用
+function IsShowRedHintEquipInherit()
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPINHERIT) then
+        return false;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    return false;
+end
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_leftEquipSelect,m_curHoleSelect,m_RightEquipSelect, m_curRightHoleSelect,m_ContinueRandEffPanelIsOpen };
+end
+

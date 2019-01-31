@@ -1,0 +1,1358 @@
+﻿module("PlayerSettingPanel", package.seeall);
+
+---------------------------------------label路径---------------------------------------
+-- 角色等级
+local m_PlayerLevelLabel = "ZhangHu_Content/Left/Head/PlayerLevel";
+-- 角色名称
+local m_PlayerNameLabel = "ZhangHu_Content/Left/Name/PlayerName";
+-- 角色ID
+local m_PlayerIDLabel = "ZhangHu_Content/Left/Id/PlayerID";
+-- 服务器名称
+local m_PlayerSeverIDLabel = "ZhangHu_Content/Left/Server/PlayerServer";
+-- 改名花费
+local m_ChangeNameMoney = "ChangeNameTips/Label_2";
+-- 设置同屏人数
+local m_SameScreenPlayerLabelStr = "HuaMian_Content/Toggle_Other/Num";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭
+local m_CloseButton = "Button_Close";
+-- 改名按钮
+local m_GaiMingButton = "ZhangHu_Content/Left/ChangeName_Button";
+-- 改名确定
+local m_GaiMingQueDing = "ChangeNameTips/Button_Ok";
+-- 改名取消
+local m_GaiMingQuXiao = "ChangeNameTips/Button_Cancel";
+local m_GaiMingZheZhao = "ChangeNameTips/ZheZhao";
+-- 客服按钮
+local m_CustomerServerButton = "ZhangHu_Content/Left/CustomerServer";
+-- 用户中心按钮
+local m_UserCenterButton = "ZhangHu_Content/Left/UserCenter";
+-- 用户协议按钮
+local m_UserProtocolButton = "ZhangHu_Content/Left/UserProtocol";
+-- 公告按钮
+local m_AnnouncementButton = "ZhangHu_Content/Left/Announcement";
+-- 社交配置
+local m_FriendApplyButton = "ZhangHu_Content/Right/PlayerInterflow/FriendApply";
+-- 组队屏蔽
+local m_TeamApplyButton = "ZhangHu_Content/Right/PlayerInterflow/TeamApply";
+-- 屏蔽公会邀请
+local m_GuidApplyButton = "ZhangHu_Content/Right/PlayerInterflow/GuidApply";
+
+--角色提示
+local m_LocalNotificationPath = "ZhangHu_Content/Right/Notification/LocalNotification";
+--系统提示
+local m_SystemNotificationPath = "ZhangHu_Content/Right/Notification/SystemNotification";
+--夜间提示
+local m_NightNotificationPath = "ZhangHu_Content/Right/Notification/NightNotification";
+
+-- 好友私信
+local m_FriendMessageButton = "ZhangHu_Content/Right/Message/FriendMessage";
+-- 系统消息
+local m_SystemMessageButton = "ZhangHu_Content/Right/Message/SystemMessage";
+
+-- 脱离卡死按钮
+local m_TuoLiKaSiButton = "ZhangHu_Content/Right/TuoLiKaSi";
+-- 更换账户按钮
+local m_GengHuanZhangHaoButton = "ZhangHu_Content/Right/GengHuanZhangHao";
+-- 切换按钮
+local m_QieHuanJueSeButton = "ZhangHu_Content/Right/QieHuanJueSe";
+
+-- 画面效果按钮
+local m_ImageQualityItemStr = "HuaMian_Content/ImageQuality/Grid/Item";
+-- 相机视角3D按钮
+local m_CameraType3D = "HuaMian_Content/CameraType/Angle_1";
+-- 相机视角2_5按钮
+local m_CameraType2_5D = "HuaMian_Content/CameraType/Angle_2";
+
+-- 是否显示翅膀
+local m_ShowWingPath = "HuaMian_Content/Toggle_Wing";
+
+-- 总是显示队伍玩家
+local m_ShowTeamPlayer = "HuaMian_Content/Toggle_TeamPlayer";
+-- 显示公会玩家
+local m_ShowSociatyPlayer = "HuaMian_Content/Toggle_Sociaty";
+-- 是否自动换药剂
+local m_AutoChangeHP = "ZhanDou_Content/Toggle_Select";
+-- 是否在副本中自动战斗
+local m_AutoAttack = "ZhanDou_Content/Toggle_AutoAttack";
+-- 是否开启自动分解
+local m_AutoResolve = "ZhanDou_Content/Toggle_AutoResolve";
+local m_BtnAutoResolve = "ZhanDou_Content/btn_AutoResolve";
+-- 药品关闭按钮
+local m_ItemCloseButton = "ZhanDou_Content/ItemList/ZheZhao";
+-- 声音配置音乐 音效
+local m_YinYueButton = "ShengYin_Content/Toggle_YinYue";
+local m_YinXiaoButton = "ShengYin_Content/Toggle_YinXiao";
+-- 提示内容低端手机
+local m_LabelTittleLow = "HuaMian_Content/TiShi/Label_Low";
+-- 提示内容中端手机
+local m_LabelTittleMiddle = "HuaMian_Content/TiShi/Label_Middle";
+-- 提示内容高端手机
+local m_LabelTittleHigh = "HuaMian_Content/TiShi/Label_High";
+-- 兑换码确认按钮
+local m_InputConfirm = "DuiHuan_Content/ConfirmButton";
+-- 兑换码黏贴按钮
+local m_InputPaste = "DuiHuan_Content/PasteButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 玩家头像
+local m_PlayerIcon = "ZhangHu_Content/Left/Head/PlayerIcon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 菜单列表
+local m_MenuListStr = "ButtonGroup/Grid";
+-- 账户内容显示
+local m_ZhangHuContentStr = "ZhangHu_Content";
+-- 画面
+local m_HuaMianContentStr = "HuaMian_Content";
+-- 声音
+local m_ShengYinContentStr = "ShengYin_Content";
+-- 自动战斗
+local m_ZiDongZhanDouContentStr = "ZhanDou_Content";
+-- 兑换码
+local m_DuiHuanMaContentStr = "DuiHuan_Content"
+-- 改名提示
+local m_ChangNameTips = "ChangeNameTips";
+-- 输入框
+local m_InputPath = "ChangeNameTips/InputName";
+--  兑换码输入框
+local m_InputNumber = "DuiHuan_Content/InputContent";
+-- 血瓶列表
+local m_ItemListStr = "ZhanDou_Content/ItemList/Scroll View/Grid";
+-- 血瓶列表滚动条
+local m_ItemListBarStr = "ZhanDou_Content/ItemList/Scroll Bar";
+-- 添加显示道具的列表
+local m_ItemListPanel = "ZhanDou_Content/ItemList";
+-- 道具显示路径
+local m_ItemButton = "ZhanDou_Content/Item";
+-- 同屏人数Silder
+local m_SameScreenSilderPath = "HuaMian_Content/Toggle_Other/Slider";
+-- 音乐音量Silder
+local m_MusicSilderPath = "ShengYin_Content/Toggle_MusicVolume/Slider";
+-- 音效音量
+local m_MusicEffectSilderPath = "ShengYin_Content/Toggle_MusicEffectVolume/Slider";
+-- 玩家silder资源路径
+local m_SilderPath = "ZhanDou_Content/Slider";
+----------------------------------通用的名称路径---------------------------------------
+-- toggle资源
+local m_ToggleBack = "/Background";
+local m_ToggleCheck = "/Checkmark";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 用户信息
+local m_UserInfoMng = nil;
+-- 设置管理器
+local m_SettingManager = nil;
+-- 菜单列表
+local m_MenuList = nil;
+-- 文本输入框
+local m_InputCreateRoleName = nil;
+-- 同屏人数Silder
+local m_SameScreenSilder = nil;
+-- 设置同屏人数
+local m_SameScreenPlayerLabel = nil;
+-- 音量Silder
+local m_MusicSilder = nil;
+-- 音效音量
+local m_MusicEffectSilder = nil;
+-- 自动回血百分比UIslider组件
+local m_HpRecoverPercent = nil;
+local m_ItemList = nil;
+-- 兑换码输入框
+local m_InputGetNumber = nil;
+-- 社交设置
+local m_SocialSettings = nil;
+-- 要打开的table索引
+local m_isOpenTableSelectIndex = 0;
+-- 所有药品选择界面是否开启
+local m_ItemListPanelIsOpen = false;
+-- 改名提示界面是否开启
+local m_ChangNameTipsIsOpen = false;
+-----------------------------------一些写死的规定--------------------------------------
+-- 当前改名需要的数量
+local m_MoneyCount = 100;
+-- 同屏幕玩家数目(仅用于缓存玩家数量,在初始化界面使用)
+local m_SameScreenPlayerNum = -1;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 传递打开面板参数打开那个标签
+function functionParameter(paraTable)
+    -- 传递到侠客属性界面
+    m_isOpenTableSelectIndex = paraTable[1];
+    if true == m_panelInitAlready then
+        InitAllInfo();
+    end
+end
+
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if true == m_panelInitAlready then
+        -- 初始化界面所有信息
+        InitAllInfo();
+    end
+
+end
+
+function OnDisable()
+    if m_SocialSettings ~= nil then
+        if m_SocialSettings.IsCloseFrientInvite ~= m_SettingManager.IsCloseFrientInvite
+            or m_SocialSettings.IsCloseTeamInvite ~= m_SettingManager.IsCloseTeamInvite
+            or m_SocialSettings.IsNotAddSociatyInvite ~= m_SettingManager.IsNotAddSociatyInvite then
+            local value = -1;
+            value = BitUtil.UIntSet(value, 0, m_SettingManager.IsCloseFrientInvite ~= 0);
+            value = BitUtil.UIntSet(value, 1, m_SettingManager.IsCloseTeamInvite ~= 0);
+            value = BitUtil.UIntSet(value, 2, m_SettingManager.IsNotAddSociatyInvite ~= 0);
+            PlayerSettingProtocol.RequestSaveSetting(value);
+        end
+        if m_SameScreenSilder ~= nil then
+            m_SameScreenPlayerNum = m_SameScreenSilder.value;
+        end
+        m_SocialSettings = nil;
+    end
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_currentSelectQualityIndex = 0;
+    m_isOpenTableSelectIndex = 0;
+    m_currentSelectCameraIndex = 2;
+    m_SocialSettings = nil;
+    m_MenuSelectIndex = 0;
+end
+
+-----------------------------------------文件自调用方法---------------------------
+-- 初始化信息
+function InitAllInfo()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化管理器
+    InitMng();
+    -- 初始内容
+    InitContent();
+    -- 初始化事件
+    InitEvents();
+    -- 初始化按钮信息
+    InitOnClick();
+    -- 初始化菜单信息
+    InitMenuList();
+    -- 初始化画质菜单信息
+    InitImageQuality();
+    -- 初始化社交设置
+    InitSheJiaoSetting();
+    -- 初始化画质设置(必须放在画质菜单初始化下面,保持最新的数据显示)
+    InitImageSetting();
+    -- 初始化声音设置
+    InitMusicSetting();
+    -- 初始化血量设置
+    InitHpContent();
+    -- 初始化翅膀是否显示设置
+    InitShowWingSetting();
+    -- 初始化数据
+    InitData();
+end
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_isOpenTableSelectIndex = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    else
+        if nil == m_isOpenTableSelectIndex then
+            m_isOpenTableSelectIndex = 0;
+        end
+    end
+    SetMenuSelect(m_isOpenTableSelectIndex);
+end
+-- 初始化对象
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SETPANEL);
+    -- 菜单列表
+    m_MenuList = GetComponent(m_panelObject, m_MenuListStr, "UIListView");
+    -- 输入修改名字
+    m_InputCreateRoleName = GetComponent(m_panelObject, m_InputPath, "UIInput");
+    -- 兑换码输入框
+    m_InputGetNumber = GetComponent(m_panelObject, m_InputNumber, "UIInput");
+    -- 同屏人数Silder
+    m_SameScreenSilder = GetComponent(m_panelObject, m_SameScreenSilderPath, "UISlider");
+    -- 同屏人数Label
+    m_SameScreenPlayerLabel = GetComponent(m_panelObject, m_SameScreenPlayerLabelStr, "UILabel");
+    -- 音量Silder
+    m_MusicSilder = GetComponent(m_panelObject, m_MusicSilderPath, "UISlider");
+    -- 音效音量
+    m_MusicEffectSilder = GetComponent(m_panelObject, m_MusicEffectSilderPath, "UISlider");
+    -- 自动回血百分比Silder
+    m_HpRecoverPercent = GetComponent(m_panelObject, m_SilderPath, "UISlider");
+    -- 设置药品列表
+    m_ItemList = GetComponent(m_panelObject, m_ItemListStr, "UIListView");
+    m_ItemList.scrollBar = GetComponent(m_panelObject, m_ItemListBarStr, "UIScrollBar");
+    -- 隐藏翅膀开关
+    SetGameObjectState(m_ShowWingPath, false, m_panelObject);
+end
+
+-- 初始化管理器
+function InitMng()
+    m_UserInfoMng = G_UserInfo;
+    m_SettingManager = m_UserInfoMng.PlayerSettingManager;
+end
+
+-- 初始内容
+function InitContent()
+    SetLabelContent(m_PlayerNameLabel, m_UserInfoMng.RoleAttribute.Name, m_panelObject);
+    SetLabelContent(m_PlayerIDLabel, m_UserInfoMng.RoleAttribute.GlobalDBID, m_panelObject);
+    SetLabelContent(m_PlayerLevelLabel, "Lv." .. m_UserInfoMng.RoleAttribute.Level, m_panelObject);
+    SetSpriteByAtlasID(m_PlayerIcon, CCommonTool.GetRoleDateInfo(m_UserInfoMng.RoleAttribute.ProID).HeadRes, m_panelObject);
+    local zoneID = PlayerPrefs.GetInt(SelectZoneId);
+    local zoneName = PlayerPrefs.GetString(SelectZoneName);
+    local textContent = CCommonTool.GetTxtData(8020).m_str;
+    -- SetLabelContent(m_PlayerSeverIDLabel, string_format(textContent, zoneID, zoneName), m_panelObject);
+    SetLabelContent(m_PlayerSeverIDLabel, zoneName, m_panelObject);
+    local define = CCommonTool.GetDefineInfo(EDefineContentID.TYPE_CHANGE_NAME_MONEY);
+    if define then
+        -- 获取改名金钱
+        m_MoneyCount = define:GetIntContent();
+        SetLabelContent(m_ChangeNameMoney, m_MoneyCount, m_panelObject);
+    else
+        SetLabelContent(m_ChangeNameMoney, m_MoneyCount, m_panelObject);
+    end
+end
+
+-- 初始化事件
+function InitEvents()
+    -- 设置菜单列表回调事件
+    m_MenuList:SetInitCallback(OnMenuInit);
+    m_MenuList:SetSelectedCallback(OnMenuSelected);
+    -- 设置药品列表
+    m_ItemList:SetInitCallback(OnItemListInit);
+    m_ItemList:SetClickCallback(OnItemListCallback);
+end
+
+-- 初始化按钮信息
+function InitOnClick()
+    -- 关闭面板
+    SetGameObjectEvent(m_CloseButton, OnCloseClick, m_panelObject);
+    -- 改名按钮
+    SetGameObjectEvent(m_GaiMingButton, OnGaiMingClick, m_panelObject);
+    -- 改名确定和取消
+    SetGameObjectEvent(m_GaiMingQuXiao, OnGaiMingCancelClick, m_panelObject);
+    SetGameObjectEvent(m_GaiMingZheZhao, OnGaiMingCancelClick, m_panelObject);
+    SetGameObjectEvent(m_GaiMingQueDing, OnGaiMingOkClick, m_panelObject);
+    -- 客服按钮
+    SetGameObjectEvent(m_CustomerServerButton, OnCustomerServerClick, m_panelObject);
+    -- 用户中心按钮
+    SetGameObjectEvent(m_UserCenterButton, OnUserCenterClick, m_panelObject);
+    -- 用户协议按钮
+    SetGameObjectEvent(m_UserProtocolButton, OnUserProtocolClick, m_panelObject);
+    -- 公告按钮
+    SetGameObjectEvent(m_AnnouncementButton, OnAnnouncementClick, m_panelObject);
+    -- 社交配置
+    SetGameObjectEvent(m_FriendApplyButton, OnFriendApplyClick, m_panelObject);
+    -- 组队屏蔽
+    SetGameObjectEvent(m_TeamApplyButton, OnTeamApplyClick, m_panelObject);
+    -- 屏蔽公会邀请
+    SetGameObjectEvent(m_GuidApplyButton, OnGuidApplyClick, m_panelObject);
+
+    --角色提示
+    SetGameObjectEvent(m_LocalNotificationPath, OnLocalNotificationClick, m_panelObject);
+    --系统提示
+    SetGameObjectEvent(m_SystemNotificationPath, OnSystemNotificationClick, m_panelObject);
+    --夜间提示
+    SetGameObjectEvent(m_NightNotificationPath, OnNightNotificationClick, m_panelObject);
+
+    -- 好友私信
+    SetGameObjectEvent(m_FriendMessageButton, OnFriendMessageClick, m_panelObject);
+    -- 系统消息
+    SetGameObjectEvent(m_SystemMessageButton, OnSystemMessageClick, m_panelObject);
+    -- 脱离卡死按钮
+    SetGameObjectEvent(m_TuoLiKaSiButton, OnTuoLiKaSiClick, m_panelObject);
+    -- 更换账户按钮
+    SetGameObjectEvent(m_GengHuanZhangHaoButton, OnGenHuanZhangHuClick, m_panelObject);
+    -- 切换按钮
+    SetGameObjectEvent(m_QieHuanJueSeButton, OnQieHuanJueSeClick, m_panelObject);
+    -- 设置摄像机品质
+    for index = 1, 3 do
+        SetGameObjectEvent(m_ImageQualityItemStr .. index, OnHuaMianSelectClick, m_panelObject);
+    end
+    -- 设置相机视角3D
+    SetGameObjectEvent(m_CameraType3D, OnCameraTypeSelectClick, m_panelObject);
+    -- 设置相机视角2_5D
+    SetGameObjectEvent(m_CameraType2_5D, OnCameraTypeSelectClick, m_panelObject);
+    -- 总是显示队伍玩家
+    SetGameObjectEvent(m_ShowTeamPlayer, OnShowTeamPlayerClick, m_panelObject);
+    -- 显示公会玩家
+    SetGameObjectEvent(m_ShowSociatyPlayer, OnShowSociatyPlayerClick, m_panelObject);
+
+    -- 同屏玩家人数
+    EventDelegate.Add(m_SameScreenSilder.onChange, EventDelegate.New(OnSameScreenChanged));
+
+    -- 是否显示翅膀
+    SetGameObjectEvent(m_ShowWingPath, OnShowWingClick, m_panelObject);
+
+    -- 声音配置音乐 音效
+    SetGameObjectEvent(m_YinYueButton, OnYinYueButtonClick, m_panelObject);
+    SetGameObjectEvent(m_YinXiaoButton, OnYinXiaoButtonClick, m_panelObject);
+    -- 音乐音量
+    EventDelegate.Add(m_MusicSilder.onChange, EventDelegate.New(OnMusicChanged));
+    -- 音效音量
+    EventDelegate.Add(m_MusicEffectSilder.onChange, EventDelegate.New(OnMusicEffectChanged));
+
+    -- 点击slider的事件
+    SetGameObjectEvent(m_SilderPath, OnClickSlider, m_panelObject, 5);
+    -- 拖拽Thumb结束的事件
+    SetGameObjectEvent(m_SilderPath .. "/Thumb", OnDragThumbEnd, m_panelObject, 12);
+
+    -- 点击自动喝药事件
+    SetGameObjectEvent(m_AutoChangeHP, OnAutoChangeHpClick, m_panelObject);
+    -- 点击副本自动战斗事件
+    SetGameObjectEvent(m_AutoAttack, OnAutoAttackClick, m_panelObject);
+     -- 点击自动分解
+    SetGameObjectEvent(m_AutoResolve, OnAutoResolveClick, m_panelObject);
+    SetGameObjectEvent(m_BtnAutoResolve, OnAutoResolveClick, m_panelObject);
+    -- 设置自动分解品质
+    SetGameObjectEvent(m_AutoResolve.."/sp_SelectGreen", OnAutoResolveGreenClick, m_panelObject);
+    SetGameObjectEvent(m_AutoResolve.."/sp_SelectBlue", OnAutoResolveBlueClick, m_panelObject);
+    -- 点击设置item的事件
+    SetGameObjectEvent(m_ItemButton, OnItemButtonClick, m_panelObject);
+    -- 关闭药品列表按钮
+    SetGameObjectEvent(m_ItemCloseButton, OnItemCloseButtonClick, m_panelObject);
+    -- 兑换码确认按钮
+    SetGameObjectEvent(m_InputConfirm, OnInputConfirmClick, m_panelObject);
+    -- 兑换码粘贴按钮
+    SetGameObjectEvent(m_InputPaste, OnPasteClick, m_panelObject);
+end
+
+-- 初始化菜单信息
+function InitMenuList()
+    m_MenuList:RemoveAll();
+    local listcount = 0;
+    local texts = nil
+    -- 在IOS平台不显示cdk
+    if AssetPath.Platform == "Ios" then
+        texts =
+        {
+            [1] = GetTextToId(565);-- "账户";
+            [2] = GetTextToId(566);-- "画面";
+            [3] = GetTextToId(567);-- "声音";
+            [4] = GetTextToId(569);-- "自动战斗";
+        };
+        listcount = 4;
+    else
+        texts =
+        {
+            [1] = GetTextToId(565);-- "账户";
+            [2] = GetTextToId(566);-- "画面";
+            [3] = GetTextToId(567);-- "声音";
+            [4] = GetTextToId(569);-- "自动战斗";
+            [5] = GetTextToId(1329);-- "兑换码";
+        };
+        listcount = 5;
+    end
+    for index = 1, listcount do
+        local data =
+        {
+            Index = index;
+            Text = texts[index];
+        };
+        m_MenuList:AddData(data);
+    end
+    if nil == m_isOpenTableSelectIndex then
+        m_isOpenTableSelectIndex = 0;
+    end
+    m_MenuList:LookAt(m_isOpenTableSelectIndex, true);
+end
+-- 设置菜单列表显示信息
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnMenuInit(listView, cell, data)
+    local item = cell.gameObject;
+    SetLabelContent("Active/Label", data.Text, item);
+    SetLabelContent("Deactive/Label", data.Text, item);
+end
+-- 设置菜单列表按下事件
+-- @param listView 列表组件
+-- @param dataIndex 列表Item对应的指针
+function OnMenuSelected(listView, dataIndex)
+    local data = listView:GetData(dataIndex);
+    error("dataIndex : " .. dataIndex);
+    m_isOpenTableSelectIndex = dataIndex;
+    SetMenuSelect(dataIndex);
+    m_InputGetNumber.value = "";
+end
+-- 设置按钮选中状态
+function SetMenuSelect(index)
+    SetGameObjectState(m_ZhangHuContentStr, index == 0, m_panelObject);
+    SetGameObjectState(m_HuaMianContentStr, index == 1, m_panelObject);
+    SetGameObjectState(m_ShengYinContentStr, index == 2, m_panelObject);
+    SetGameObjectState(m_ZiDongZhanDouContentStr, index == 3, m_panelObject);
+    SetGameObjectState(m_DuiHuanMaContentStr, index == 4, m_panelObject);
+end
+
+-- 初始化画质菜单信息
+function InitImageQuality()
+    local gameQuality = m_SettingManager.GameQuality;
+    local index = 3;
+    if gameQuality == 1 then
+        index = 1;
+    elseif gameQuality == 2 then
+        index = 2;
+    elseif gameQuality == 4 then
+        index = 3;
+    end
+    OnSetQualityIndex(index);
+    -- 手机默认配置1-低端 2-中断 4-高端
+    local CurrentModileSetting = m_SettingManager:GetCurrentModileSetting();
+    -- 低端配置
+    SetGameObjectState(m_LabelTittleLow, 1 == CurrentModileSetting, m_panelObject);
+    -- 中端配置
+    SetGameObjectState(m_LabelTittleMiddle, 2 == CurrentModileSetting, m_panelObject);
+    -- 高端配置
+    SetGameObjectState(m_LabelTittleHigh, 4 == CurrentModileSetting, m_panelObject);
+end
+-- 设置药品列表显示信息
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param data 列表Item数据信息
+function OnItemListInit(listView, cell, data)
+    local item = cell.gameObject;
+    local cellStyle = cell.cellStyle;
+    if cellStyle == "Item2" then
+        local excelId = data.ExcelId;
+        local itemAttr = ItemAttribute.New(excelId);
+        local itemInfo = CCommonTool.GetItemInfo(excelId);
+        SetSpriteByAtlasID("Sprite_Icon", itemAttr:GetImageIdById(), item);
+        SetSpriteApptitudeV04("Sprite_PinZhi", CCommonTool.GetAptitudeIDByExcelID(excelId), item);
+        local textContent = CCommonTool.GetTxtData(8056).m_str;
+        SetLabelContent("Label_UseLevel", string_format(textContent, itemInfo.NeedLevel), item);
+        local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelId);
+        SetLabelContent("Label_Num", num, item);
+        if G_UserInfo.RoleAttribute.Level >= itemInfo.NeedLevel then
+            SetGameObjectState("Label_UseLevel", false, item);
+            if num == 0 then
+                SetGameObjectState("Sprite_Black", true, item);
+            else
+                SetGameObjectState("Sprite_Black", false, item);
+            end
+        else
+            SetGameObjectState("Label_UseLevel", true, item);
+            SetGameObjectState("Sprite_Black", true, item);
+        end
+    end
+end
+-- 设置药品列表按下事件
+-- @param listView 列表组件
+-- @param cell 列表Item显示信息
+-- @param go 列表Item对象
+function OnItemListCallback(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local cellStyle = cell.cellStyle;
+    if cellStyle == "Item1" then
+        G_UseMedMng:SetCurrentUseMedExcelIDByLua(0);
+        -- 设置当前药品
+        local useMedExcelID = G_UseMedMng.CurrentSetMedExcelID;
+        if useMedExcelID == 0 then
+            SetGameObjectState("ZhanDou_Content/Item/ItemLabel", true, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemNum", false, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemIcon", false, m_panelObject);
+        else
+            SetGameObjectState("ZhanDou_Content/Item/ItemLabel", false, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemNum", true, m_panelObject);
+            local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, useMedExcelID);
+            SetLabelContent("ZhanDou_Content/Item/ItemNum", num, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemIcon", true, m_panelObject);
+            local itemAttr = ItemAttribute.New(useMedExcelID);
+            SetSpriteByAtlasID("ZhanDou_Content/Item/ItemIcon", itemAttr:GetImageIdById(), m_panelObject);
+            -- 设置品质
+            SetSpriteApptitudeV04("ZhanDou_Content/Item/ItemQuitly", CCommonTool.GetAptitudeIDByExcelID(useMedExcelID), m_panelObject);
+        end
+    end
+    if cellStyle == "Item2" then
+        local excelId = data.ExcelId;
+        local itemInfo = CCommonTool.GetItemInfo(excelId);
+        local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, excelId);
+        if G_UserInfo.RoleAttribute.Level >= itemInfo.NeedLevel then
+            if num == 0 then
+                GetWayPanel.Show(excelId, ENUMPANELID.ENUM_PANEL_SETPANEL);
+            else
+                --                if excelId >= 25300 then
+                --                    ParameterToMessageTextBox.OpenChangeMed();
+                --                else
+                G_UseMedMng:SetCurrentUseMedExcelIDByLua(excelId);
+                --                end
+            end
+        else
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_MEDSET_LACKLEVEL);
+        end
+    end
+end
+
+-- 初始化血量设置
+function InitHpContent()
+    m_ItemListPanelIsOpen = false;
+    SetGameObjectState(m_ItemListPanel, m_ItemListPanelIsOpen, m_panelObject);
+    -- 设置血量的百分比
+    m_HpRecoverPercent.value = G_UseMedMng.CurrentHpRecoverPercent;
+
+    -- 设置当前药品
+    local useMedExcelID = G_UseMedMng.CurrentSetMedExcelID;
+    if useMedExcelID == 0 then
+        SetGameObjectState("ZhanDou_Content/Item/ItemLabel", true, m_panelObject);
+        SetGameObjectState("ZhanDou_Content/Item/ItemNum", false, m_panelObject);
+        SetGameObjectState("ZhanDou_Content/Item/ItemIcon", false, m_panelObject);
+    else
+        SetGameObjectState("ZhanDou_Content/Item/ItemLabel", false, m_panelObject);
+        SetGameObjectState("ZhanDou_Content/Item/ItemNum", true, m_panelObject);
+        local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, useMedExcelID);
+        SetLabelContent("ZhanDou_Content/Item/ItemNum", num, m_panelObject);
+        SetGameObjectState("ZhanDou_Content/Item/ItemIcon", true, m_panelObject);
+        local itemAttr = ItemAttribute.New(useMedExcelID);
+        SetSpriteByAtlasID("ZhanDou_Content/Item/ItemIcon", itemAttr:GetImageIdById(), m_panelObject);
+        -- 设置品质
+        SetSpriteApptitudeV04("ZhanDou_Content/Item/ItemQuitly", CCommonTool.GetAptitudeIDByExcelID(useMedExcelID), m_panelObject);
+    end
+
+    -- 设置当前的自动吃药设置是否打开
+    local autoChangeMed = G_UseMedMng.AutoChangeSetMed;
+    local autoChangeIndex = 0;
+    if autoChangeMed == true then
+        autoChangeIndex = 1;
+    end
+    OnSetSelectToggle(m_AutoChangeHP, autoChangeIndex);
+    -- 设置当前副本战斗设置是否打开
+    OnSetAutoAttackToggle(m_AutoAttack, m_SettingManager.AutoAttack);
+    -- 设置自动分解
+    OnSetAutoResolveToggle(m_AutoResolve, m_SettingManager.AutoResolve);
+    -- 初始化药品列表
+    m_ItemList:RemoveAll();
+    local data =
+    {
+        Index = 0;
+        ExcelId = -1;
+    };
+    m_ItemList:AddData(data, "Item1");
+    local count = table.getn(G_MedTable);
+    for index = 1, count do
+        local data =
+        {
+            Index = index;
+            ExcelId = G_MedTable[index];
+        };
+        m_ItemList:AddData(data, "Item2");
+    end
+end
+
+-- 初始化音效
+function InitMusicSetting()
+    -- 设置是否显示音乐
+    OnSetSelectToggle(m_YinYueButton, m_SettingManager.IsOpenMusic);
+    -- 设置是否显示音效
+    OnSetSelectToggle(m_YinXiaoButton, m_SettingManager.IsOpenMusicEffect);
+    -- 初始化音乐音量
+    m_MusicSilder.value = m_SettingManager.IsOpenMusicVolume;
+    -- 初始化音效音量
+    m_MusicEffectSilder.value = m_SettingManager.IsOpenMusicEffectVolume;
+end
+-- 初始化画面数据
+function InitImageSetting()
+    OnSetSelectCameraData(m_SettingManager.CameraType, true);
+    -- 设置是否显示队伍
+    OnSetSelectToggle(m_ShowTeamPlayer, m_SettingManager.ShowTeamPlayer);
+    -- 设置是否显示公会玩家
+    OnSetSelectToggle(m_ShowSociatyPlayer, m_SettingManager.ShowSociatyPlayer);
+    -- 初始化同屏人数
+    if m_SameScreenPlayerNum >= 0 then
+        SameScreenPlayerNum(m_SameScreenPlayerNum);
+    else
+        SameScreenPlayerNum(m_SettingManager.SameScreenPlayer);
+    end
+end
+--初始化翅膀显示设置
+function InitShowWingSetting()
+    OnSetSelectToggle(m_ShowWingPath, m_SettingManager.IsShowWing);
+end
+
+
+-- 设置同屏人数
+function SameScreenPlayerNum(value)
+    if m_SameScreenSilder ~= nil then
+        m_SettingManager.SameScreenPlayer = value;
+        m_SameScreenSilder.value = value;
+        local minNum = 5;
+        local maxNum = 30;
+        local curNum = 5;
+        -- if value == 0 then
+        curNum = minNum + math.floor((maxNum - minNum) * value);
+        -- end
+        m_SettingManager.SameScreenPlayerNum = curNum;
+        if m_SameScreenPlayerLabel ~= nil then
+            m_SameScreenPlayerLabel.text = m_SettingManager.SameScreenPlayerNum;
+        end
+        m_SettingManager:UpdateSetsameScreenPlayer(nil);
+    end
+end
+
+-- 初始化社交
+function InitSheJiaoSetting()
+    -- 设置是否屏蔽好友邀请
+    OnSetSelectToggle(m_FriendApplyButton, m_SettingManager.IsCloseFrientInvite);
+    -- 设置是否屏蔽组队邀请
+    OnSetSelectToggle(m_TeamApplyButton, m_SettingManager.IsCloseTeamInvite);
+    -- 时装是否屏蔽公会邀请
+    OnSetSelectToggle(m_GuidApplyButton, m_SettingManager.IsNotAddSociatyInvite);
+    -- 角色提示
+    OnSetSelectToggle(m_LocalNotificationPath, PlayerSettingManager.GetLocalNotification());
+    -- 系统提示
+    OnSetSelectToggle(m_SystemNotificationPath, PlayerSettingManager.GetSystemNotification());
+    -- 夜间提示
+    OnSetSelectToggle(m_NightNotificationPath, PlayerSettingManager.GetNightNotification());
+
+
+    OnSetSelectToggle(m_FriendMessageButton, m_SettingManager.IsFrientChat);
+    OnSetSelectToggle(m_SystemMessageButton, m_SettingManager.IsSystemMessage);
+
+    SaveOriginalSetting();
+end
+
+-- 设置是否选择
+function OnSetSelectToggle(currentToggle, autoChangeMed)
+    local toggleComp = GetComponent(m_panelObject, currentToggle, "UIToggle");
+    local mValue = 1;
+    -- 设置当前的更换药品提示是否打开
+    if 0 == autoChangeMed then
+        toggleComp.value = false;
+        mValue = 0;
+    else
+        toggleComp.value = true;
+        mValue = 1;
+    end
+    OnSetToggleResourcesShow(currentToggle, mValue);
+end
+-- 设置自动战斗在副本中
+function OnSetAutoAttackToggle(currentToggle, autoChangeMed)
+    local toggleComp = GetComponent(m_panelObject, currentToggle, "UIToggle");
+    local mValue = 1;
+    -- 设置当前的更换药品提示是否打开
+    if 0 == autoChangeMed then
+        toggleComp.value = false;
+        mValue = 0;
+    else
+        toggleComp.value = true;
+        mValue = 1;
+    end
+    OnSetToggleResourcesShow(currentToggle, mValue);
+end
+-- 设置自动分解
+function OnSetAutoResolveToggle(currentToggle, autoChangeMed)
+    if VipManager.MyVipData.vipLv > 0 and VipManager.VipCardTimeInfo ~= nil then 
+        local tempState = false;
+        for i,v in pairs(VipManager.VipCardTimeInfo) do
+            if v.timeNum < 0 then 
+                tempState = true;
+                break;
+            end
+        end
+        if tempState == true then
+            SetGameObjectState(currentToggle, true, m_panelObject);
+            SetGameObjectState(m_BtnAutoResolve, false, m_panelObject);
+            local toggleComp = GetComponent(m_panelObject, currentToggle, "UIToggle");
+            local mValue = 1;
+            -- 设置当前的更换药品提示是否打开
+            if 0 == autoChangeMed then
+                toggleComp.value = false;
+                mValue = 0;
+            else
+                toggleComp.value = true;
+                mValue = 1;
+            end
+            OnSetToggleResourcesShow(currentToggle, mValue);
+        else
+            SetGameObjectState(m_BtnAutoResolve, true, m_panelObject);
+            SetGameObjectState(currentToggle, false, m_panelObject);
+        end
+    end
+end
+-- 设置选择资源的显示
+function OnSetToggleResourcesShow(path, state)
+    SetGameObjectState(path .. m_ToggleBack, false, m_panelObject);
+    SetGameObjectState(path .. m_ToggleCheck, false, m_panelObject);
+    if 1 == state then
+        SetGameObjectState(path .. m_ToggleCheck, true, m_panelObject);
+    else
+        SetGameObjectState(path .. m_ToggleBack, true, m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭面板
+function OnCloseClick()
+    if m_ItemListPanelIsOpen then
+        OnItemCloseButtonClick();
+        return;
+    end
+    if m_ChangNameTipsIsOpen then
+        OnGaiMingCancelClick();
+        return;
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_SETPANEL);
+end
+-- 改名
+function OnGaiMingClick(e)
+    -- error("OnGaiMingClick");
+    m_ChangNameTipsIsOpen = true;
+    SetGameObjectState(m_ChangNameTips, m_ChangNameTipsIsOpen, m_panelObject);
+    -- 先通过时间随机得到一个随机种子
+    -- math.randomseed(os.time());
+    -- -- 随机出姓
+    -- local xing = math.random(RandomRoleNameData.Xing.StartId, RandomRoleNameData.Xing.EndId);
+    -- local xingStr = CCommonTool.GetRandomNameData(xing).m_str;
+    -- -- 随机出名
+    -- local ming = math.random(RandomRoleNameData.NanMing_Shuang.StartId, RandomRoleNameData.NanMing_Shuang.EndId);
+    -- local mingStr = CCommonTool.GetRandomNameData(ming).m_str;
+    -- local randomRoleName = xingStr .. mingStr;
+    -- local uiinputCreateRoleName = inputCreateRoleName:GetComponent("UIInput");
+    -- uiinputCreateRoleName.value = randomRoleName;
+end
+-- 取消改名
+function OnGaiMingCancelClick()
+    m_ChangNameTipsIsOpen = false;
+    SetGameObjectState(m_ChangNameTips, m_ChangNameTipsIsOpen, m_panelObject);
+end
+-- 确认改名
+function OnGaiMingOkClick()
+    if true == OnIsMoneyAmple(m_MoneyCount, MONEY_TYPE.YUANBAO_TYPE) then
+        local roleName = m_InputCreateRoleName.value;
+        -- 判断角色名是否合法
+        if string.find(roleName, "%s") ~= nil then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_ROLENAMEILLEGAL);
+        elseif string.len(CCommonTool.IsLegitimacyByText(roleName, ENUM_SHILED_AREA.NAME)) > 0 then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_ROLENAMEILLEGAL);
+        elseif "" ~= roleName then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_CHANGE_NAME);
+            buffer:WriteByte(0);
+            buffer:WriteStringByByte(roleName);
+            G_NetWorkMng:SendMessage(buffer);
+        else
+            ShowSystemFlowTips(6103);
+        end
+    end
+    m_ChangNameTipsIsOpen = false;
+    SetGameObjectState(m_ChangNameTips, m_ChangNameTipsIsOpen, m_panelObject);
+end
+
+function OnInputConfirmClick()
+    local num = m_InputGetNumber.value;
+    if string.len(string.gsub(num, " ", "")) < 8 or string.len(string.gsub(num, " ", "")) > 8 then
+        ShowSystemFlowTips(4500);
+        m_InputGetNumber.value = "";
+    elseif "" ~= num then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_USE_CDKEY);
+        buffer:WriteStringByByte(num);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+end
+-- 客服按钮
+function OnCustomerServerClick(e)
+    error("OnCustomerServerClick");
+    OpenURL(CSDKManager.GetURL("CustomerServer"));
+end
+-- 用户中心按钮
+function OnUserCenterClick(e)
+    error("OnUserCenterClick");
+    OpenURL(CSDKManager.GetURL("UserCenter"));
+end
+-- 用户协议按钮
+function OnUserProtocolClick(e)
+    error("OnUserProtocolClick");
+    OpenURL(CSDKManager.GetURL("UserProtocol"));
+end
+-- 公告按钮
+function OnAnnouncementClick(e)
+    error("OnAnnouncementClick");
+    OpenURL(CSDKManager.GetURL("Announcement"));
+end
+
+function OpenURL(url)
+    if url ~= nil and url ~= "" then
+        Application.OpenURL(url);
+    end
+end
+
+-- 社交配置
+function OnFriendApplyClick(e)
+    local toggleComp = GetComponent(m_panelObject, m_FriendApplyButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsCloseFrientInvite = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsCloseFrientInvite = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_FriendApplyButton, mValue);
+    SetInvite();
+end
+-- 组队屏蔽
+function OnTeamApplyClick(e)
+    local toggleComp = GetComponent(m_panelObject, m_TeamApplyButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsCloseTeamInvite = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsCloseTeamInvite = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_TeamApplyButton, mValue);
+    SetInvite();
+end
+-- 屏蔽公会邀请
+function OnGuidApplyClick(e)
+    local toggleComp = GetComponent(m_panelObject, m_GuidApplyButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsNotAddSociatyInvite = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsNotAddSociatyInvite = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_GuidApplyButton, mValue);
+    SetInvite();
+end
+
+--角色提示
+function OnLocalNotificationClick()
+    local toggleComp = GetComponent(m_panelObject, m_LocalNotificationPath, "UIToggle");
+    local value = 1;
+    if toggleComp.value == true then
+        value = 1;
+    else
+        value = 0;
+    end
+    PlayerSettingManager.SetLocalNotification(value);
+    OnSetToggleResourcesShow(m_LocalNotificationPath, value);
+end
+--系统提示
+function OnSystemNotificationClick()
+    local toggleComp = GetComponent(m_panelObject, m_SystemNotificationPath, "UIToggle");
+    local value = 1;
+    if toggleComp.value == true then
+        value = 1;
+    else
+        value = 0;
+    end
+    PlayerSettingManager.SetSystemNotification(value);
+    OnSetToggleResourcesShow(m_SystemNotificationPath, value);
+end
+--夜间提示
+function OnNightNotificationClick()
+    local toggleComp = GetComponent(m_panelObject, m_NightNotificationPath, "UIToggle");
+    local value = 1;
+    if toggleComp.value == true then
+        value = 1;
+    else
+        value = 0;
+    end
+    PlayerSettingManager.SetNightNotification(value);
+    OnSetToggleResourcesShow(m_NightNotificationPath, value);
+end
+
+-- 好友私信
+function OnFriendMessageClick(e)
+    error("OnFriendMessageClick");
+    local toggleComp = GetComponent(m_panelObject, m_FriendMessageButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsFrientChat = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsFrientChat = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_FriendMessageButton, mValue);
+end
+-- 系统消息
+function OnSystemMessageClick(e)
+    error("OnGuidApplyClick");
+    local toggleComp = GetComponent(m_panelObject, m_SystemMessageButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsSystemMessage = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsSystemMessage = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_SystemMessageButton, mValue);
+end
+
+-- 脱离卡死
+function OnTuoLiKaSiClick(e)
+    error("OnTuoLiKaSiClick");
+    if BattleFieldManager.IsInBattleFieldScene() then
+        error("竞技场中无法脱离卡死");
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_ITEM_TRANSPORT);
+    G_NetWorkMng:SendMessage(buffer);
+    OnCloseClick();
+    ReportManager.RequestReportPanel(10330);
+end
+
+-- 更换账户
+function OnGenHuanZhangHuClick(e)
+    error("OnGenHuanZhangHuClick");
+    ParameterToMessageTextBox.ChangeUser();
+    -- G_GameMng:ChangeAccount();
+    ReportManager.RequestReportPanel(10331);
+end
+
+-- 更换角色
+function OnQieHuanJueSeClick(e)
+    error("OnQieHuanJueSeClick");
+    -- 1.客户端发送退出登录协议
+    -- 2.收到E_NTOC_LEAVE_GAME_RETURN协议后说明退出登录成功
+    -- 3.请求切角色协议
+    --    local buffer = ByteBuffer.New();
+    --    buffer:WriteUShort(GMI_CTOS_LGS_CLOSE);
+    --    buffer:WriteUInt(1);
+    --    G_NetWorkMng:SendMessage(buffer);
+    ParameterToMessageTextBox.ChangeRole();
+    ReportManager.RequestReportPanel(10332);
+end
+ 
+-- 品质选择
+local m_currentSelectQualityIndex = 0;
+function OnHuaMianSelectClick(e)
+    local index = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    OnSetQualityIndex(index);
+end
+-- 画面质量选择
+function OnSetQualityIndex(qualityIndex)
+    if m_currentSelectQualityIndex == qualityIndex then
+        return;
+    end
+    for index = 1, 3 do
+        SetGameObjectState(m_ImageQualityItemStr .. index .. "/Checkmark", false, m_panelObject);
+    end
+    SetGameObjectState(m_ImageQualityItemStr .. qualityIndex .. "/Checkmark", true, m_panelObject);
+
+    if qualityIndex == 1 then
+        m_SettingManager.GameQuality = 1;
+    elseif qualityIndex == 2 then
+        m_SettingManager.GameQuality = 2;
+    elseif qualityIndex == 3 then
+        m_SettingManager.GameQuality = 4;
+    end
+    SameScreenPlayerNum(m_SettingManager.SameScreenPlayer);
+end
+
+-- 相机视角选择
+function OnCameraTypeSelectClick(e)
+    local index = tonumber(string.sub(e.name, 7, string.len(e.name)));
+    OnSetCameraIndex(index);
+end
+-- 当前选择的相机类型索引默认2.5D类型
+local m_currentSelectCameraIndex = 2;
+-- 选择
+local m_buttonSelect = "/Checkmark";
+-- 相机视角选择
+function OnSetCameraIndex(mIndex, isInit)
+    if m_currentSelectCameraIndex == mIndex then
+        return;
+    end
+    OnSetSelectCameraData(mIndex, isInit);
+    -- SDK相关
+    if mIndex == 1 then
+        CSDKManager.EventHook("select-angle-3D", function() end);
+    elseif mIndex == 2 then
+        CSDKManager.EventHook("select-angle-2.5D", function() end);
+    end
+end
+-- 设置视角的选择
+function OnSetSelectCameraData(mIndex, isInit)
+    SetGameObjectState(m_CameraType3D .. m_buttonSelect, mIndex == 1, m_panelObject);
+    SetGameObjectState(m_CameraType2_5D .. m_buttonSelect, mIndex == 2, m_panelObject);
+    m_currentSelectCameraIndex = mIndex;
+    if not isInit then
+        m_SettingManager.CameraType = m_currentSelectCameraIndex;
+    end
+end
+-- 设置显示同屏人数
+function OnSameScreenChanged()
+    SameScreenPlayerNum(m_SameScreenSilder.value);
+end
+-- 总是显示队伍玩家
+function OnShowTeamPlayerClick()
+    error("OnShowTeamPlayerClick");
+    local toggleComp = GetComponent(m_panelObject, m_ShowTeamPlayer, "UIToggle");
+    if true == toggleComp.value then
+        m_SettingManager.ShowTeamPlayer = 1;
+    else
+        m_SettingManager.ShowTeamPlayer = 0;
+    end
+    OnSetToggleResourcesShow(m_ShowTeamPlayer, m_SettingManager.ShowTeamPlayer);
+end
+-- 显示公会玩家
+function OnShowSociatyPlayerClick()
+    error("OnShowSociatyPlayerClick");
+    local toggleComp = GetComponent(m_panelObject, m_ShowSociatyPlayer, "UIToggle");
+    if true == toggleComp.value then
+        m_SettingManager.ShowSociatyPlayer = 1;
+    else
+        m_SettingManager.ShowSociatyPlayer = 0;
+    end
+    OnSetToggleResourcesShow(m_ShowSociatyPlayer, m_SettingManager.ShowSociatyPlayer);
+end
+
+--是否显示翅膀
+function OnShowWingClick()
+    local toggleComp = GetComponent(m_panelObject, m_ShowWingPath, "UIToggle");
+    if true == toggleComp.value then
+        m_SettingManager.IsShowWing = 1;
+    else
+        m_SettingManager.IsShowWing = 0;
+    end
+    OnSetToggleResourcesShow(m_ShowWingPath, m_SettingManager.IsShowWing);
+end
+
+-- 声音配置音乐 
+function OnYinYueButtonClick()
+    local toggleComp = GetComponent(m_panelObject, m_YinYueButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsOpenMusic = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsOpenMusic = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_YinYueButton, mValue);
+end
+
+-- 音效
+function OnYinXiaoButtonClick()
+    local toggleComp = GetComponent(m_panelObject, m_YinXiaoButton, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        m_SettingManager.IsOpenMusicEffect = 1;
+        mValue = 1;
+    else
+        m_SettingManager.IsOpenMusicEffect = 0;
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_YinXiaoButton, mValue);
+end
+function OnMusicChanged()
+    -- error("OnMusicChanged : " .. m_MusicSilder.value);
+    m_SettingManager.IsOpenMusicVolume = m_MusicSilder.value;
+end
+function OnMusicEffectChanged()
+    -- error("OnMusicChanged : " .. m_MusicSilder.value);
+    m_SettingManager.IsOpenMusicEffectVolume = m_MusicEffectSilder.value;
+end
+
+-- 点击slider事件
+function OnClickSlider(e, state)
+    if state == false then
+        G_UseMedMng:SetCurrentHpPercent(m_HpRecoverPercent.value);
+        SendSetHpPercentUseMed();
+    end
+end
+-- 拖拽滑块
+function OnDragThumbEnd()
+    G_UseMedMng:SetCurrentHpPercent(m_HpRecoverPercent.value);
+    SendSetHpPercentUseMed();
+end
+-- 点击自动喝药事件
+function OnAutoChangeHpClick()
+    local toggleComp = GetComponent(m_panelObject, m_AutoChangeHP, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        mValue = 1;
+    else
+        mValue = 0;
+    end
+    OnSetToggleResourcesShow(m_AutoChangeHP, mValue);
+    local autoChangeMed = G_UseMedMng.AutoChangeSetMed;
+    G_UseMedMng.AutoChangeSetMed = not autoChangeMed;
+    local selectRoleIndex = PlayerPrefs.GetInt("SelectRoleIndex");
+    if autoChangeMed then
+        PlayerPrefs.SetInt("UseMedTip" ..(selectRoleIndex + 1), 1);
+    else
+        PlayerPrefs.SetInt("UseMedTip" ..(selectRoleIndex + 1), 0);
+    end
+end
+-- 点击自动战斗事件
+function OnAutoAttackClick()
+    local toggleComp = GetComponent(m_panelObject, m_AutoAttack, "UIToggle");
+    local mValue = 1;
+    if true == toggleComp.value then
+        mValue = 1;
+        m_SettingManager.AutoAttack = 1;
+        -- 开启自动站斗在副本
+    else
+        mValue = 0;
+        m_SettingManager.AutoAttack = 0;
+        -- 关闭自动站斗在副本
+    end
+    OnSetToggleResourcesShow(m_AutoAttack, mValue);
+end
+
+--点击自动分解
+function OnAutoResolveClick()
+    if VipManager.MyVipData.vipLv > 0 and VipManager.VipCardTimeInfo ~= nil then 
+        local tempState = false;
+        for i,v in pairs(VipManager.VipCardTimeInfo) do
+            if v.timeNum < 0 then 
+                tempState = true;
+                break;
+            end
+        end
+        if tempState == true then 
+            local toggleComp = GetComponent(m_panelObject, m_AutoResolve, "UIToggle");
+            local mValue = 1;
+            if true == toggleComp.value then
+                mValue = 1;
+                m_SettingManager.AutoResolve = 1;
+                -- 开启自动分解
+            else
+                mValue = 0;
+                m_SettingManager.AutoResolve = 0;
+                -- 关闭自动分解
+                VipProtocol.RequestSetResolvePZ(0);
+                VipManager.MyVipData.vipResolvePinZhi = 0;
+            end
+            OnSetToggleResourcesShow(m_AutoResolve, mValue);
+        else
+            ShowSystemFlowTips(9701);
+        end
+    else
+        ShowSystemFlowTips(9701);
+    end
+end
+function OnAutoResolveGreenClick()
+    VipProtocol.RequestSetResolvePZ(2);
+end
+function OnAutoResolveBlueClick()
+    VipProtocol.RequestSetResolvePZ(3);
+end
+
+-- 点击设置血瓶按钮事件
+function OnItemButtonClick()
+    m_ItemListPanelIsOpen = true;
+    SetGameObjectState(m_ItemListPanel, m_ItemListPanelIsOpen, m_panelObject);
+end
+-- 关闭药品列表
+function OnItemCloseButtonClick()
+    m_ItemListPanelIsOpen = false;
+    SetGameObjectState(m_ItemListPanel, m_ItemListPanelIsOpen, m_panelObject);
+end
+-- 发送设置血量百分比
+function SendSetHpPercentUseMed()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_READ_OR_SAVE_CLIENT_CFG);
+    buffer:WriteByte(2);
+    buffer:WriteFloat(m_HpRecoverPercent.value);
+    buffer:WriteFloat(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 兑换粘贴功能
+function OnPasteClick()
+    m_InputGetNumber.value = Util.PasteFromClipboard();
+end
+
+-- 设置邀请屏蔽开关
+function SetInvite()
+    if m_SocialSettings ~= nil then
+        if m_SocialSettings.IsCloseFrientInvite ~= m_SettingManager.IsCloseFrientInvite
+            or m_SocialSettings.IsCloseTeamInvite ~= m_SettingManager.IsCloseTeamInvite
+            or m_SocialSettings.IsNotAddSociatyInvite ~= m_SettingManager.IsNotAddSociatyInvite then
+            local value = -1;
+            value = BitUtil.UIntSet(value, 0, m_SettingManager.IsCloseFrientInvite ~= 0);
+            value = BitUtil.UIntSet(value, 1, m_SettingManager.IsCloseTeamInvite ~= 0);
+            value = BitUtil.UIntSet(value, 2, m_SettingManager.IsNotAddSociatyInvite ~= 0);
+            PlayerSettingProtocol.RequestSaveSetting(value);
+            m_SocialSettings.IsCloseFrientInvite = m_SettingManager.IsCloseFrientInvite;
+        end
+    end
+end
+
+-- 保存初始设置
+function SaveOriginalSetting()
+    m_SocialSettings = { };
+    m_SocialSettings.IsCloseFrientInvite = m_SettingManager.IsCloseFrientInvite;
+    m_SocialSettings.IsCloseTeamInvite = m_SettingManager.IsCloseTeamInvite;
+    m_SocialSettings.IsNotAddSociatyInvite = m_SettingManager.IsNotAddSociatyInvite;
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 刷新玩家的名字
+function OnupdatePlayerName()
+    if 1 == IsOpenPanel(ENUMPANELID.ENUM_PANEL_SETPANEL) then
+        InitMng();
+        SetLabelContent(m_PlayerNameLabel, m_UserInfoMng.RoleAttribute.Name, m_panelObject);
+    end
+end
+
+-- 设置当前药品
+function SettingCurrentMed()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SETPANEL) == 1 then
+        -- 设置当前药品
+        local useMedExcelID = G_UseMedMng.CurrentSetMedExcelID;
+        if useMedExcelID == 0 then
+            SetGameObjectState("ZhanDou_Content/Item/ItemLabel", true, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemNum", false, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemIcon", false, m_panelObject);
+        else
+            SetGameObjectState("ZhanDou_Content/Item/ItemLabel", false, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemNum", true, m_panelObject);
+            local num = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, useMedExcelID);
+            SetLabelContent("ZhanDou_Content/Item/ItemNum", num, m_panelObject);
+            SetGameObjectState("ZhanDou_Content/Item/ItemIcon", true, m_panelObject);
+            local itemAttr = ItemAttribute.New(useMedExcelID);
+            SetSpriteByAtlasID("ZhanDou_Content/Item/ItemIcon", itemAttr:GetImageIdById(), m_panelObject);
+            -- 设置品质
+            SetSpriteApptitudeV04("ZhanDou_Content/Item/ItemQuitly", CCommonTool.GetAptitudeIDByExcelID(useMedExcelID), m_panelObject);
+        end
+    end
+end
+
+-- 更换药品返回回调
+function SetStoreMed()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_SETPANEL) == 1 then
+        m_ItemListPanelIsOpen = false;
+        SetGameObjectState(m_ItemListPanel, m_ItemListPanelIsOpenon, m_panelObject);
+    end
+end
+
+
+-- 收到E_NTOC_LEAVE_GAME_RETURN协议后说明退出登录成功
+function OnLogoutReturn(buffer)
+    log("客户端收到E_NTOC_LEAVE_GAME_RETURN消息");
+    G_GameMng:ChangeRoleClick();
+    SelectRole.SendChangeRoleMessage();
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_isOpenTableSelectIndex };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

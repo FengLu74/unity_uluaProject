@@ -1,0 +1,474 @@
+﻿module("TalkBeyond3DPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 对话Label路径
+local TextLabelDir = "Background/TalkText";
+-- npc名字路径
+local NpcNameLabelDir = "Background/NpcName";
+-----------------------------------------按钮路径--------------------------------------
+-- 按钮1路径
+local Button1Dir = "Background/Button1";
+-- 按钮2路径
+local Button2Dir = "Background/Button2";
+-- 按钮3路径
+local Button3Dir = "Background/Button3";
+-- 关闭按钮路径
+local CloseButtonDir = "Background/Button-Close";
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+local m_sNpcname = nil;
+local isFirst = 0;
+-- 对话内容对象
+local m_stextString;
+-- 按钮数量
+local m_nBtNum = 1;
+-- 关闭按钮对象
+local m_CloseButton;
+-- 可接任务
+local m_acceptmissions = { };
+-- 进行中任务
+local m_doingmissions = { };
+-- 可交付任务
+local m_completemissions = { };
+-- 当前面板对象
+local panelGameObject;
+-- 要创建的npccrid
+local m_nNpcCrId = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+local m_npcInfo = nil;
+-- 上一个任务类型
+local m_lastMissionType = nil;
+local m_lastMissionName = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 按钮结构
+local m_Button = { [1] = { button, missionid, missionstate, buttontxt }, [2] = { button, missionid, missionstate, buttontxt }, [3] = { button, missionid, missionstate, buttontxt } };
+-- 服务器回复结构
+local m_TChatReply = {
+    { ReplyType = 0, NormalReply = { InquiryID = 0, InquiryGfxType = 0 } },
+    { ReplyType = 0, NormalReply = { InquiryID = 0, InquiryGfxType = 0 } },
+    { ReplyType = 0, NormalReply = { InquiryID = 0, InquiryGfxType = 0 } },
+};
+-- 功能按钮内容
+local m_TInquiry = {
+    { InquiryReply = { InquiryID = 0, InquiryGfxType = 0 } },
+    { InquiryReply = { InquiryID = 0, InquiryGfxType = 0 } },
+    { InquiryReply = { InquiryID = 0, InquiryGfxType = 0 } },
+};
+-- 正在做任务的临时标记
+local TASKDOING = 100;
+-- 任务状态
+local MISSION_MSG_TYPE_DELETE = 4;
+local MISSION_STATE_CAN_ACCEPT = 2;
+local MISSION_STATE_GOING = 3;
+local MISSION_STATE_COMPLETE = 4;
+local MISSION_STATE_OVER = -1;
+
+-- 记录正在播放的音效id
+local m_OldMusicId = 0;
+------------------------------------BaseLua调用的同名方法------------------------------
+
+function Start()
+    -- 找到面板对象
+    panelGameObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TALKPANEL);
+    -- 按钮1响应事件
+    m_Button[1].button = child(panelGameObject, Button1Dir).gameObject;
+    UIEventListener.Get(m_Button[1].button).onClick = LuaHelper.OnClick(OnButtonClick1);
+    -- 按钮2响应事件
+    m_Button[2].button = child(panelGameObject, Button2Dir).gameObject;
+    UIEventListener.Get(m_Button[2].button).onClick = LuaHelper.OnClick(OnButtonClick2);
+    -- 按钮3响应事件
+    m_Button[3].button = child(panelGameObject, Button3Dir).gameObject;
+    UIEventListener.Get(m_Button[3].button).onClick = LuaHelper.OnClick(OnButtonClick3);
+    -- 关闭按钮响应事件
+    m_CloseButton = child(panelGameObject, CloseButtonDir).gameObject;
+    UIEventListener.Get(m_CloseButton).onClick = LuaHelper.OnClick(OnCloseClick);
+    -- 刷新面板
+    UpdataTalkInfo();
+    m_bCreateSuccess = true;
+end
+
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if m_bCreateSuccess then
+        UpdataTalkInfo();
+    end
+
+end
+
+-- 隐藏时处理的逻辑
+function OnDisable()
+    StopNpcMusic();
+end
+
+-- 面板销毁
+function OnDestroy()
+    m_acceptmissions = { };
+    m_completemissions = { };
+    m_nBtNum = 1;
+    m_bCreateSuccess = false;
+    m_npcInfo = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+-- 初始化面板信息
+function InitTalkInfo(buffer, NpcCrid, NpcExcelID)
+    -- 当前的npcCrid
+    m_nNpcCrId = NpcCrid;
+    -- 可接任务存储
+    m_acceptmissions = { };
+    -- 完成任务存储
+    m_completemissions = { };
+    -- 正在进行任务存储
+    m_doingmissions = { };
+    -- 按钮数量
+    m_nBtNum = 1;
+    -- 任务数量和任务id
+    local nMissionNum = 0;
+    local nMissionId = 0;
+    -- 任务追踪面板的id，如果存在有效值直接打开任务面板
+    if _G.LogicData_CurTraceTaskID > 0 then
+        local tracemissionstate = G_MissionMng:GetMissionStateById(_G.LogicData_CurTraceTaskID);
+        if (tracemissionstate == MISSION_STATE_COMPLETE or tracemissionstate == MISSION_STATE_CAN_ACCEPT) and(G_MissionMng:IsRightNpc(_G.LogicData_CurTraceTaskID, tracemissionstate, m_nNpcCrId)) then
+            TaskBeyond3DPanel.InitTaskInfo(_G.LogicData_CurTraceTaskID, m_nNpcCrId);
+            _G.LogicData_CurTraceTaskID = 0;
+            return;
+        end
+    end
+    -- 三个功能按钮数据
+    for i = 1, 3 do
+        m_TInquiry[i].InquiryReply.InquiryID = buffer:ReadUInt();
+        m_TInquiry[i].InquiryReply.InquiryGfxType = buffer:ReadByte();
+    end
+    -- 三个对话数据
+    for i = 1, 3 do
+        m_TChatReply[i].ReplyType = buffer:ReadByte();
+        m_TChatReply[i].NormalReply.InquiryID = buffer:ReadUInt();
+        m_TChatReply[i].NormalReply.InquiryGfxType = buffer:ReadByte();
+    end
+    -- 客户端是否自动显示任务
+    local IsClientAutoShowMission = buffer:ReadInt();
+    if IsClientAutoShowMission > 0 then
+        local nCount = buffer:ReadInt();
+        -- 可接任务数量
+        if nCount > 0 then
+            for i = 1, nCount do
+                local m_acceptmission = { MissionId = 0, MissionTxt = 0 };
+                m_acceptmission.MissionId = buffer:ReadUInt();
+                -- 存储到可接任务table里面
+                table.insert(m_acceptmissions, m_acceptmission);
+                nMissionNum = nMissionNum + 1;
+                nMissionId = m_acceptmission.MissionId;
+            end
+        end
+        nCount = buffer:ReadInt();
+        if nCount > 0 then
+            -- 可交任务数量
+            for i = 1, nCount do
+                local m_completemission = { MissionId = 0, MissionTxt = 0 };
+                m_completemission.MissionId = buffer:ReadUInt();
+                -- 存储到可教任务table里面
+                table.insert(m_completemissions, m_completemission);
+                nMissionNum = nMissionNum + 1;
+                nMissionId = m_completemission.MissionId;
+            end
+        end
+
+        nCount = buffer:ReadInt();
+        if nCount > 0 then
+            -- 正在做任务数量
+            for i = 1, nCount do
+                local m_domission = { MissionId = 0, MissionTxt = 0 };
+                m_domission.MissionId = buffer:ReadUInt();
+                -- 存储到正在做任务table里面
+                error("m_doingmissions:::num::::" .. #m_doingmissions);
+                table.insert(m_doingmissions, m_domission);
+            end
+        end
+    end
+    -- 如果任务数量只是一个直接打开任务面板
+    if nMissionNum == 1 then
+        local tracemissionstate = G_MissionMng:GetMissionStateById(nMissionId);
+        if tracemissionstate == MISSION_STATE_COMPLETE or tracemissionstate == MISSION_STATE_CAN_ACCEPT then
+            TaskBeyond3DPanel.InitTaskInfo(nMissionId, m_nNpcCrId);
+            return;
+        end
+    else
+        m_npcInfo = CCommonTool.GetMapNpcInfo(NpcExcelID);
+        if nil ~= m_npcInfo then
+            if Constants.RegionalId == 1 then --CN
+                OnPlayNpcMusic(m_npcInfo.SoundinfoCnId);
+            elseif Constants.RegionalId == 2 then --韩文
+                OnPlayNpcMusic(m_npcInfo.SoundinfoKrId);
+            elseif Constants.RegionalId == 3 then --TW
+                OnPlayNpcMusic(m_npcInfo.SoundinfoTwId);
+            end
+        end
+    end
+    createPanel(ENUMPANELID.ENUM_PANEL_TALKPANEL);
+end
+
+function OnPlayNpcMusic(m_npcMusicID)
+    if m_npcMusicID > 0 then
+        StopNpcMusic();
+        m_OldMusicId = m_npcMusicID;
+        G_MusicMng:OnLoadPlayNpcMusic(m_nNpcCrId, m_npcMusicID);
+    end
+end
+
+function StopNpcMusic()
+    if m_OldMusicId > 0 then
+        G_MusicMng:StopMusicToId(m_OldMusicId);
+        m_OldMusicId = 0;
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+
+-- 第一个按钮点击处理
+function OnButtonClick1(e)
+
+    -- 如果任务状态为正在进行初始化任务查看面板
+    if m_Button[1].missionstate == TASKDOING then
+        G_MissionMng:TraceTypeOperate(m_Button[1].missionid, true, false);
+        CloseTalkPanel();
+        return;
+    end
+    -- 任务id值有效初始化任务面板否则为功能按钮
+    if m_Button[1].missionid > 0 then
+        TaskBeyond3DPanel.InitTaskInfo(m_Button[1].missionid, m_nNpcCrId);
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteShort(GMI_CTOS_LGS_SELECTINQUIRY);
+        buffer:WriteInt(0);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+    SetGameObjectState(Button1Dir.."/lb_Time", false, panelGameObject);
+    local ishaveTimer = G_TimerMng:GetTimeTask("HunterDemonMis");
+    if ishaveTimer ~= nil then
+        G_TimerMng:RemoveTimeTask("HunterDemonMis");
+    end
+    CloseTalkPanel();
+
+end
+
+-- 第二个按钮点击处理
+function OnButtonClick2(e)
+
+    -- 如果任务状态为正在进行初始化任务查看面板
+    if m_Button[2].missionstate == TASKDOING then
+        G_MissionMng:TraceTypeOperate(m_Button[2].missionid, true, false);
+        CloseTalkPanel();
+        return;
+    end
+    -- 任务id值有效初始化任务面板否则为功能按钮
+    if m_Button[2].missionid > 0 then
+        TaskBeyond3DPanel.InitTaskInfo(m_Button[2].missionid, m_nNpcCrId);
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteShort(GMI_CTOS_LGS_SELECTINQUIRY);
+        buffer:WriteInt(1);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+    CloseTalkPanel();
+
+end
+
+
+-- 第三个按钮点击处理
+function OnButtonClick3(e)
+
+    -- 如果任务状态为正在进行初始化任务查看面板
+    if m_Button[3].missionstate == TASKDOING then
+        G_MissionMng:TraceTypeOperate(m_Button[3].missionid, true, false);
+        CloseTalkPanel();
+        return;
+    end
+    -- 任务id值有效初始化任务面板否则为功能按钮
+    if m_Button[3].missionid > 0 then
+        TaskBeyond3DPanel.InitTaskInfo(m_Button[3].missionid, m_nNpcCrId);
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteShort(GMI_CTOS_LGS_SELECTINQUIRY);
+        buffer:WriteInt(2);
+        G_NetWorkMng:SendMessage(buffer);
+    end
+    CloseTalkPanel();
+
+end
+
+
+-- 关闭按钮点击处理
+function OnCloseClick(e)
+    -- 向服务器发送终止对话状态
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_INQUIRYEND);
+    G_NetWorkMng:SendMessage(buffer);
+    CloseTalkPanel()
+end
+
+-- 关闭对话面板
+function CloseTalkPanel()
+    StopNpcMusic();
+    closePanel(ENUMPANELID.ENUM_PANEL_TALKPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 更新面板的信息
+function UpdataTalkInfo()
+
+    -- 对话文本
+    if m_TChatReply[1].NormalReply.InquiryID > 0 then
+        local InquiryId = m_TChatReply[1].NormalReply.InquiryID;
+        local txtinfo = G_MissionMng:GetNpcInquiry(InquiryId);
+        SetLabelContent(TextLabelDir, txtinfo, panelGameObject);
+    end
+    -- 按钮信息更新
+    for i = 1, 3 do
+        -- 如果按钮超出3个不显示
+        if m_nBtNum > 3 then
+            return;
+        end
+        -- 功能按钮id无效
+        if m_TInquiry[i].InquiryReply.InquiryID < 1 then
+            break;
+        end
+        -- 显示按钮
+        m_Button[m_nBtNum].button:SetActive(true);
+        local Label = child(m_Button[m_nBtNum].button, "text");
+        local butttonname = Label:GetComponent("UILabel");
+        butttonname.text = G_MissionMng:GetNpcInquiry(m_TInquiry[i].InquiryReply.InquiryID);
+        -- 设置按钮id和状态
+        m_Button[m_nBtNum].missionid = 0;
+        m_Button[m_nBtNum].missionstate = 0;
+        m_nBtNum = m_nBtNum + 1;
+    end
+    -- 从可交任务表里面获得数据
+    for j = 1, table.getn(m_completemissions) do
+        if m_nBtNum > 3 then
+            return;
+        end
+        -- 显示按钮
+        m_Button[m_nBtNum].button:SetActive(true);
+        local Label = child(m_Button[m_nBtNum].button, "text");
+        local butttonname = Label:GetComponent("UILabel");
+        -- 任务类型
+        local missInfo = CCommonTool.GetMissionInfoData(m_completemissions[j].MissionId);
+        local missionType = missInfo.TaskType;
+        local nameStr = SetNameStr(missionType);
+        local missionName = nameStr .. G_MissionMng:GetMissionName(m_completemissions[j].MissionId);
+        butttonname.text = missionName;
+        -- 设置按钮id和状态
+        m_Button[m_nBtNum].missionid = m_completemissions[j].MissionId;
+        m_Button[m_nBtNum].missionstate = GMI_CTOS_LGS_COMPLETE_MISSION;
+        m_nBtNum = m_nBtNum + 1;
+    end
+    -- 从可接任务表里面获得数据
+    for j = 1, table.getn(m_acceptmissions) do
+        if m_nBtNum > 3 then
+            return;
+        end
+        -- 显示按钮
+        m_Button[m_nBtNum].button:SetActive(true);
+        local Label = child(m_Button[m_nBtNum].button, "text");
+        local butttonname = Label:GetComponent("UILabel");
+        -- 任务类型
+        local missInfo = CCommonTool.GetMissionInfoData(m_acceptmissions[j].MissionId);
+        local missionType = missInfo.TaskType;
+        local nameStr = SetNameStr(missionType);
+        local missionName = nameStr .. G_MissionMng:GetMissionName(m_acceptmissions[j].MissionId)
+        butttonname.text = missionName;
+        -- 设置按钮id和状态
+        m_Button[m_nBtNum].missionid = m_acceptmissions[j].MissionId;
+        m_Button[m_nBtNum].missionstate = GMI_CTOS_LGS_ACCEPT_MISSION;
+        m_nBtNum = m_nBtNum + 1;
+    end
+    -- 从正在做的任务表里面获得数据
+    for j = 1, table.getn(m_doingmissions) do
+        error("m_doingmissions:::num" .. table.getn(m_doingmissions));
+        if m_nBtNum > 3 then
+            return;
+        end
+        -- 显示按钮
+        m_Button[m_nBtNum].button:SetActive(true);
+        local Label = child(m_Button[m_nBtNum].button, "text");
+        local butttonname = Label:GetComponent("UILabel");
+        -- 任务类型
+        local missInfo = CCommonTool.GetMissionInfoData(m_doingmissions[j].MissionId);
+        local missionType = missInfo.TaskType;
+        local nameStr = SetNameStr(missionType);
+        local missionName = nameStr .. G_MissionMng:GetMissionName(m_doingmissions[j].MissionId)
+        butttonname.text = missionName;
+        -- 设置按钮id和状态
+        m_Button[m_nBtNum].missionid = m_doingmissions[j].MissionId;
+        m_Button[m_nBtNum].missionstate = TASKDOING;
+        m_nBtNum = m_nBtNum + 1;
+    end
+    -- 没有数据的按钮隐藏
+    for i = m_nBtNum, 3 do
+        m_Button[i].button:SetActive(false);
+    end
+    -- 设置npc名字
+    local npcname = G_MissionMng:GetNpcNameById(m_nNpcCrId);
+    SetLabelTextByID(NpcNameLabelDir, npcname, panelGameObject);
+    -- 加载npc模型
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_TALKPANEL);
+    buffer:WriteInt(m_nNpcCrId);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+
+    -- 通过判断npc的ExcelID段 (250031~250044) 判断当前是否猎魔任务，如果是猎魔任务则增加三秒倒计时自动进行任务
+    -- (250031~250044) 猎魔任务ID段, 策划没记住, 又新增了一个ID段, 现在改为读define.lua中的段
+    -- 策划不能随意更改该任务npc以及与npc对话时弹出面板的按钮对应数量,响应事件
+    local npcExcelID = G_MissionMng:GetNpcExcelIdById(m_nNpcCrId);
+    local isHunterNpcId = false;
+    for _, seg in ipairs(HunterDemonNpcIdSeg) do
+        if npcExcelID >= seg[1] and npcExcelID <= seg[2] then
+            isHunterNpcId = true;
+            break;
+        end
+    end
+    if isHunterNpcId == true then 
+        error(IsObjectActive(panelGameObject, Button1Dir))
+        if IsObjectActive(panelGameObject, Button1Dir) == true then 
+            SetGameObjectState(Button1Dir.."/lb_Time", true, panelGameObject);
+            AddTimerEvent("HunterDemonMis", 3, callBackOverFunc, ETimeShowType.TypeNumberSeven, updateCallBackFunc);
+        end
+    else
+        SetGameObjectState(Button1Dir.."/lb_Time", false, panelGameObject);
+    end
+end
+
+function callBackOverFunc()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TALKPANEL) == 1 then 
+        OnButtonClick1();
+    end
+end
+
+function updateCallBackFunc(time)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TALKPANEL) == 1 then 
+        SetLabelContent(Button1Dir.."/lb_Time", time, panelGameObject);
+    end
+end
+
+function SetNameStr(missionType)
+    if m_lastMissionType ~= nil then
+        if missionType == m_lastMissionType then
+            return m_lastMissionName;
+        end
+    end
+    local nameStr = nil;
+    if missionType == ENUM_MISSIONTYPE.MAIN then
+        nameStr = "[" .. GetTextToId(8117) .. GetTextToId(8118) .. "]";
+    elseif missionType == ENUM_MISSIONTYPE.BRANCH then
+        nameStr = "[" .. GetTextToId(8119) .. GetTextToId(8120) .. "]";
+    elseif missionType == ENUM_MISSIONTYPE.EVERYDAY then
+        nameStr = "[" .. GetTextToId(8121) .. GetTextToId(8122) .. "]";
+    else
+        error("this missiontype does not made by game designer:::" .. missionType);
+    end
+    m_lastMissionType = missionType;
+    m_lastMissionName = nameStr;
+    return nameStr;
+end

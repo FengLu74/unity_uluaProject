@@ -1,0 +1,159 @@
+﻿module('GuildMemberRankPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildMemberRankPanel';
+---------------------------------------label路径---------------------------------------
+-- 名称
+local m_NamePath = "Name";
+-- 贡献值
+local m_ContributionPath = "Contribution";
+-- 加入时间
+local m_JoinTimePath = "JoinTime";
+-- 排名
+local m_RankPath = "Rank";
+-- 职位
+local m_JobPath = "Job";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 第1名
+local m_Rank1Path = "Rank1";
+-- 第2名
+local m_Rank2Path = "Rank2";
+-- 第3名
+local m_Rank3Path = "Rank3";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_RANK);
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonClosePath, OnCloseClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local members = GuildManager.members or {};--GuildMemberPanel.GetTestMembers()
+    local totalValue = 0;
+    local weekValue = 0;
+    local rank = 1;
+    table.sort(members, SortFunc);
+    m_List:RemoveAll();
+    for i, data in ipairs(members) do
+        if i > 1 then
+            if data.weekContribution ~= weekValue or data.totalContribution then
+                rank = rank + 1;
+            end
+        end
+        totalValue = data.totalContribution;
+        weekValue = data.weekContribution;
+        m_List:AddData({rank=rank, id=data.globalId, member=data});
+    end
+    m_List:LookAt(0, false);
+end
+
+function SortFunc(m1, m2)
+    if m1.weekContribution ~= m2.weekContribution then
+        return m1.weekContribution > m2.weekContribution;
+    end
+    if m1.totalContribution ~= m2.totalContribution then
+        return m1.totalContribution > m2.totalContribution
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_RANK);
+end
+
+-- 关闭按钮点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_RANK);
+end
+
+-- 列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local rank = data.rank;
+    local member = data.member;
+    SetLabelContent(m_NamePath, member.name, go);
+    SetLabelContent(m_JobPath, GuildManager.GetJobTitleName(member.rankLevel, member.kindredType), go);
+    SetLabelContent(m_ContributionPath, member.weekContribution.."/"..member.totalContribution, go);
+    SetLabelContent(m_JoinTimePath, G_TimerMng:FormatTime(member.joinTime, --[[yyyy年M月d日]]CCommonTool.GetTxtData(1149).m_str), go);
+
+--    SetGameObjectState(m_RankPath, rank > 3, go);
+--    SetGameObjectState(m_Rank1Path, rank == 1, go);
+--    SetGameObjectState(m_Rank2Path, rank == 2, go);
+--    SetGameObjectState(m_Rank3Path, rank == 3, go);
+
+    SetLabelContent(m_RankPath, rank, go);
+end
+
+-- 列表点击事件
+function OnListViewClick(listView, cell, go)
+    
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_RANK) == 1 then
+        InitShow();
+    end
+end

@@ -1,0 +1,62 @@
+﻿module("ShopProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 打开NPC出售界面
+    network.Register(GMI_STOC_RETURN_GETRECORD_REQUEST, OpenShopPanel);
+    -- 返回购买道具的消息
+    network.Register(GMI_STOC_SHOP_RETURN_BUYGOODS_REQUEST, OnShopItemBuyResult);
+    -- 24点刷新NPC商店的消息
+    network.Register(GMI_STOC_SHOPRECORD_ZEROREFRESH, OnRefreshShopOnMidnight);
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+-- 通知客户端打开NPC出售界面
+function OpenShopPanel(protocolId,buffer)
+    local shopLimitData = {};
+    local itemLimitCount = buffer:ReadUShort();
+    for Index = 1,itemLimitCount do
+        local shopConfig = buffer:ReadInt();
+        local shopConfigID = math.floor(shopConfig/10000);
+        local shopID = math.floor(shopConfigID/100);
+        if shopLimitData[shopID] == nil then
+            shopLimitData[shopID] = {};
+        end
+        local itemLibrary = shopConfig - shopConfigID * 10000;
+        if shopLimitData[shopID][itemLibrary] == nil then
+            shopLimitData[shopID][itemLibrary] = {};
+        end
+        local itemExcelID = buffer:ReadInt();
+        local itemNum = buffer:ReadUShort();
+        shopLimitData[shopID][itemLibrary][itemExcelID] = itemNum;
+        ShopManager.ShopLimitData = shopLimitData;
+    end
+    createPanel(ENUMPANELID.ENUM_PANEL_SHOP);
+end
+
+-- 返回购买道具的消息
+function OnShopItemBuyResult(protocolId,buffer)
+    local shopConfig = buffer:ReadInt();
+    local shopConfigID = math.floor(shopConfig/10000);
+    local shopID = math.floor(shopConfigID/100);
+	local shopLimitData = ShopManager.ShopLimitData;
+    if shopLimitData[shopID] == nil then
+        shopLimitData[shopID] = {};
+    end
+    local itemLibrary = shopConfig - shopConfigID * 10000;
+    if shopLimitData[shopID][itemLibrary] == nil then
+        shopLimitData[shopID][itemLibrary] = {};
+    end
+    local itemExcelID = buffer:ReadInt();
+    local itemNum = buffer:ReadUShort();
+    if shopLimitData[shopID][itemLibrary][itemExcelID] == nil then
+        shopLimitData[shopID][itemLibrary][itemExcelID] = 0;
+    end
+    shopLimitData[shopID][itemLibrary][itemExcelID] = itemNum + shopLimitData[shopID][itemLibrary][itemExcelID];
+    ShopPanel.BuyResultReturn();
+end
+
+-- 24点刷新NPC商店的消息
+function OnRefreshShopOnMidnight(protocolId,buffer)
+    ShopManager.ShopLimitData = {};
+    ShopPanel.RefreshOnMidnight();
+end

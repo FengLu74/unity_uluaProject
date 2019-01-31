@@ -1,0 +1,414 @@
+﻿module('GuildSkillPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildSkillPanel';
+---------------------------------------label路径---------------------------------------
+-- 列表:技能名称
+local m_LabelNamePath = "Label_Name";
+-- 列表:属性
+local m_LabelAttrPath = "Label_Attr";
+-- 列表:等级
+local m_LevelPath = "Level";
+-- 技能等级
+local m_SkillLevelPath = "SkillInfo/SkillLevel";
+-- 技能名称
+local m_SkillNamePath = "SkillInfo/SkillName";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 升级按钮
+local m_ButtonLevelUpPath = "SkillInfo/Button_LevelUp";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 列表:技能图标
+local m_SpriteIconPath = "Sprite_Icon";
+-- 列表:技能可升级箭头
+local m_SpriteArrowPath = "Sprite_Arrow";
+-- 技能图标
+local m_SkillIconPath = "SkillInfo/SkillIcon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 技能属性1
+local m_SkillAttr1Path = "SkillInfo/SkillAttr1";
+-- 技能属性2
+local m_SkillAttr2Path = "SkillInfo/SkillAttr2";
+-- 技能消耗1
+local m_Item1Path = "SkillInfo/Items/Item1";
+-- 技能消耗2
+local m_Item2Path = "SkillInfo/Items/Item2";
+-- 技能消耗3
+local m_Item3Path = "SkillInfo/Items/Item3";
+-- 技能列表中特效
+local m_EffectPath = "Effect";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "SkillList/List";
+-- 消耗Grid
+local m_ItemsPath = "SkillInfo/Items";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+-- 技能等级
+local m_SkillLevel = nil;
+-- 技能升级属性1
+local m_SkillAttr1 = nil;
+-- 技能升级属性2
+local m_SkillAttr2 = nil;
+-- 技能消耗Grid
+local m_Items = nil;
+-- 技能列表中特效
+local m_Effect = nil;
+-- 消耗对象数组
+local m_ItemPaths = nil;
+-- 技能ID列表
+local m_skillIds = nil;
+
+local m_SelectIndex = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+-- 贡献度道具ID
+local CONTRIBUTION_MONEY_ID = 16000
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitSkillIds();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_SelectIndex = 0;
+    if m_Effect ~= nil then
+        m_Effect:SetActive(false);
+    end
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+	m_SkillLevel = nil;
+	m_SkillAttr1 = nil;
+	m_SkillAttr2 = nil;
+	m_Items = nil;
+    m_skillIds = nil;
+    m_ItemPaths = nil;
+    m_Effect = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_SkillLevel = GetComponent(m_PanelObject, m_SkillLevelPath, "UILabel");
+    m_SkillAttr1 = child(m_PanelObject, m_SkillAttr1Path).gameObject;
+    m_SkillAttr2 = child(m_PanelObject, m_SkillAttr2Path).gameObject;
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+    m_ItemPaths = {m_Item1Path, m_Item2Path, m_Item3Path};
+    m_Effect = child(m_PanelObject, m_EffectPath).gameObject;
+    m_Effect:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    --m_List:SetClickCallback(OnListViewClick);
+    m_List:SetSelectedCallback(OnListViewSelected);
+    SetGameObjectEvent(m_Item1Path, OnItem1Click, m_PanelObject);
+    SetGameObjectEvent(m_Item2Path, OnItem2Click, m_PanelObject);
+    SetGameObjectEvent(m_Item3Path, OnItem3Click, m_PanelObject);
+	SetGameObjectEvent(m_ButtonLevelUpPath, OnButtonLevelUpClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_List:RemoveAll();
+    for _, data in ipairs(m_skillIds) do
+        if data.skillId > 0 then
+            m_List:AddData(data);
+        end
+    end
+    m_List:LookAt(m_SelectIndex, true);
+end
+
+-- 初始化技能ID列表
+function InitSkillIds()
+    local roleInfo = G_UserInfo.RoleAttribute.RoleDateInfo;
+    local skillIds = {};
+    for i = 1, 8 do
+        local index = i - 1;
+        local skillId = roleInfo["Long"..i];
+        table.insert(skillIds, {index = index, skillId = skillId});
+    end
+    m_skillIds = skillIds;
+end
+
+-- 初始化选中的技能信息
+function InitSkillInfo()
+    local data = m_List:GetData(m_List.selectedIndex);
+    local skillId = data.skillId;
+    local index = data.index;
+    local level = GuildManager.skillLevels[index+1];
+    local info = CCommonTool.GetGuildSkillInfo(skillId);
+    local maxLevel = info.MaxLv;
+
+    SetLabelContent(m_SkillLevelPath, string_format("Lv.{0}", level), m_PanelObject);
+    SetLabelTextByID(m_SkillNamePath, info.Txt, m_PanelObject);
+    SetSpriteByAtlasID(m_SkillIconPath, info.Pic, m_PanelObject);
+
+    local needContribution = 0;
+    local hasContribution = GuildManager.GetSelfContribution();
+    local needItemId = 0;
+    local needItemCount = 0;
+    local hasItemCount = 0;
+    local attrValue = level == 0 and 0 or CCommonTool.GetGuildSkillLevelInfo(info.Attr+level-1).AddValue;
+    local nextAttrValue = 0;
+
+    if level < maxLevel then
+        CCommonTool.SetGameObjectGrey(child(m_PanelObject,m_ButtonLevelUpPath).gameObject, false);
+        local nextLevelInfo = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level);
+        needContribution = nextLevelInfo.Exp;
+        needItemId, hasItemCount = GetExcelIdAndMoney(nextLevelInfo.MoneyType);
+        needItemCount = nextLevelInfo.Money;
+        
+        local nextLevelInfo = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level);
+        nextAttrValue = nextLevelInfo.AddValue;
+    else
+        CCommonTool.SetGameObjectGrey(child(m_PanelObject,m_ButtonLevelUpPath).gameObject, true);
+        local levelInfo = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level-1);
+        needContribution = levelInfo.Exp;
+        needItemId, hasItemCount = GetExcelIdAndMoney(levelInfo.MoneyType);
+        needItemCount = levelInfo.Money;
+        nextAttrValue = levelInfo.AddValue;
+    end
+
+    -- 技能效果
+    local attrInfo = CCommonTool.GetAttrIndexInfo(info.Attr1);
+    local attrTxtId = attrInfo.TextID;
+    local attrText = CCommonTool.GetTxtData(attrTxtId).m_str;
+    SetLabelTextByID("Value1", attrTxtId, m_SkillAttr1);
+    if attrInfo.Ratio < 1 then
+        attrValue = attrInfo.Ratio * attrValue * 100;
+        nextAttrValue = attrInfo.Ratio * nextAttrValue * 100;
+        SetLabelContent("Value2", string.format("%1d%%", attrValue), m_SkillAttr1);
+        SetLabelContent("Value3", string.format("%1d%%", nextAttrValue), m_SkillAttr1);
+        SetLabelContent("Value4", string.format("%1d%%", nextAttrValue-attrValue), m_SkillAttr1);
+        SetGameObjectState("Value4", nextAttrValue ~= attrValue, m_SkillAttr1);
+    else
+        SetLabelContent("Value2", attrValue, m_SkillAttr1);
+        SetLabelContent("Value3", nextAttrValue, m_SkillAttr1);
+        SetLabelContent("Value4", nextAttrValue-attrValue, m_SkillAttr1);
+        SetGameObjectState("Value4", nextAttrValue ~= attrValue, m_SkillAttr1);
+    end
+
+    -- 消耗
+    local items = {
+        {id = CONTRIBUTION_MONEY_ID, num = needContribution, hasNum = hasContribution},
+        {id = needItemId, num = needItemCount, hasNum = hasItemCount}
+    };
+
+    local itemCount = #items;
+    for i, itemPath in ipairs(m_ItemPaths) do
+        if i <= itemCount then
+            SetGameObjectState(itemPath, true, m_PanelObject);
+            local itemId = items[i].id;
+            local num = items[i].num;
+            local haveNum = items[i].hasNum;
+            SetItemShowByExcelIDV04(m_PanelObject,itemPath,itemId,0,false,21,ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL);
+            if num > haveNum then
+                SetLabelContent(itemPath.."/Label_Num", string_format("[FF0000]{0}[-]", num), m_PanelObject);
+            else
+                SetLabelContent(itemPath.."/Label_Num", num, m_PanelObject);
+            end
+            SetGameObjectState(itemPath.."/Sprite_Less", false, m_PanelObject);
+            SetItemToolTipsEvent(m_PanelObject,itemPath,ENUMPANELID.ENUM_PANEL_GUILD_INFO_PANEL,false,itemId);
+        else
+            SetGameObjectState(itemPath, false, m_PanelObject);
+        end
+    end
+    m_Items:Reposition();
+end
+
+-- 通过消耗类型获得要显示的excelID 和 对应的钱数
+function GetExcelIdAndMoney(moneyType)
+    if moneyType == 0 then
+        return G_ItemToolTipDefine.BINDMONEY, G_UserInfo.BindCoin;
+    elseif moneyType == 1 then
+        return G_ItemToolTipDefine.NOTBINDMONEY, G_UserInfo.NotBindCoin;
+    elseif moneyType == 2 then
+        return G_ItemToolTipDefine.BINDDIAMOND, G_UserInfo.BindDiamond;
+    elseif moneyType == 3 then
+        return G_ItemToolTipDefine.NOTBINDDIAMOND, G_UserInfo.NotBindDiamond;
+    end
+    return 0, 0;
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local skillId = data.skillId;
+    local index = data.index;
+    local level = GuildManager.skillLevels[index+1];
+    local info = CCommonTool.GetGuildSkillInfo(skillId);
+    local maxLevel = info.MaxLv;
+
+    local buildingLevel = GuildManager.myGuild.guildSkillLevel;
+    local buildingInfo = GuildManager.GetBuildingInfo(GUILD_BUILDING_TYPE.SKILL, buildingLevel);
+    local canUpLevel = buildingInfo.Num;
+
+    SetLabelContent(m_LevelPath, string_format("{0}/{1}", level, canUpLevel), go);
+    SetLabelTextByID(m_LabelNamePath, info.Txt, go);
+    SetSpriteByAtlasID(m_SpriteIconPath, info.Pic, go);
+
+    local attrTxtId = CCommonTool.GetAttrIndexInfo(info.Attr1).TextID;
+    local attrText = CCommonTool.GetTxtData(attrTxtId).m_str;
+    local value = 0;
+    local nextValue = 0;
+    local needGuildMoney = 0;
+    local needMoneyType = 0;
+    local needMoney = 0;
+    if level < maxLevel then
+        value =  level == 0 and 0 or CCommonTool.GetGuildSkillLevelInfo(info.Attr+level-1).AddValue;
+        local nextLevelInfo = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level);
+        nextValue = nextLevelInfo.AddValue;
+        nextValue = nextValue - value;
+        needGuildMoney = nextLevelInfo.Exp;
+        needMoneyType = nextLevelInfo.MoneyType;
+        needMoney = nextLevelInfo.Money;
+        SetGameObjectState(m_SpriteArrowPath, GuildManager.SkillCanUpgrade(index, false), go);
+    else
+        value = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level-1).AddValue;
+        nextValue = 0;
+        SetGameObjectState(m_SpriteArrowPath, false, go);
+    end
+    --SetLabelContent(m_LabelAttrPath, string_format("{0} {1} [00FF00] +{2}[-]", attrText, value, nextValue), go);
+    SetLabelContent(m_LabelAttrPath, string_format("{0} {1}", attrText, value), go);
+end
+
+-- 列表选中
+function OnListViewSelected(listView, dataIndex)
+    m_SelectIndex = dataIndex;
+    InitSkillInfo(listView:GetData(dataIndex));
+end
+
+-- 消耗道具1
+function OnItem1Click(gameObject)
+    
+end
+
+-- 消耗道具2
+function OnItem2Click(gameObject)
+    
+end
+
+-- 消耗道具3
+function OnItem3Click(gameObject)
+    
+end
+
+-- 技能升级
+function OnButtonLevelUpClick(gameObject)
+    local data = m_List:GetData(m_List.selectedIndex);
+--    local level = GuildManager.skillLevels[data.index+1];
+--    local info = CCommonTool.GetGuildSkillInfo(data.skillId);
+--    local maxLevel = info.MaxLv;
+--    if level >= maxLevel then
+--        ShowSystemFlowTips(4300);
+--        return;
+--    end
+
+--    --技能建筑等级判断
+--    local levelInfo = CCommonTool.GetGuildSkillLevelInfo(info.Attr+level-(level == 0 and 0 or 1));
+--    local skillBuildingLevel = GuildManager.myGuild.guildSkillLevel;
+--    if skillBuildingLevel < levelInfo.NeedSkillLv then
+--        ShowSystemFlowTips(4310);
+--        return;
+--    end
+
+--    --角色等级判断
+--    local userLevel = G_UserInfo.RoleAttribute.Level;
+--    if userLevel < levelInfo.NeedRoleLevel then
+--        ShowSystemFlowTips(4320);
+--        return;
+--    end
+
+--    --公会贡献度判断
+--    local guildMoney = GuildManager.GetSelfContribution();
+--    if guildMoney < levelInfo.Exp then
+--        ShowSystemFlowTips(4330);
+--        return;
+--    end
+
+--    --银币判断
+--    if levelInfo.MoneyType == 0 and G_UserInfo.BindCoin < levelInfo.Money then
+--        ShowSystemFlowTips(4340);
+--        return;
+--    end
+
+    if GuildManager.SkillCanUpgrade(data.index, true) == true then
+        error(111);
+        GuildSkillProtocol.RequestSkillLevelUp(data.index);
+    end
+    ReportManager.RequestReportPanel(10327);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 升级技能后更新界面
+function Refresh()
+    if m_CreateSuccess == true and m_PanelObject.activeInHierarchy == true then
+        m_List:Refresh();
+        InitSkillInfo()
+    end
+end
+
+-- 升级返回
+function OnSkillLevelUp(index)
+    if m_CreateSuccess == true and m_PanelObject.activeInHierarchy == true then
+        if m_skillIds == nil then
+            return;
+        end
+        local data = m_skillIds[index];
+        if data == nil then
+            return;
+        end
+        local cell = m_List:GetCellByData(data);
+        if cell == nil then
+            return;
+        end
+        local posTrans = child(cell.gameObject, "EffectPos");
+        if posTrans == nil then 
+            return;
+        end
+        m_Effect.transform.position = posTrans.position;
+        m_Effect:SetActive(false);
+        m_Effect:SetActive(true);
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {index = m_SelectIndex};
+end
+
+function SetJumpCloseData(paramTable)
+    m_SelectIndex = paramTable.index;
+end

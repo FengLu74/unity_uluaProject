@@ -1,0 +1,495 @@
+﻿module("CumulativeCostProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -------------------------------- 强化统计相关 --------------------------------
+
+    -- 服务器通知客户端限时强化统计奖励领取数据
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_STRENGTHEN, OnStrengthenInit);
+    -- 服务器通知客户端限时强化统计数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_STRENGTHEN_CHANGE, OnStrengthenChange);
+    -- 服务器通知客户端限时强化统计领取返回
+    network.Register(GMI_STOC_REQUEST_GET_STRENGTHEN_AWARD_RETURN, OnStrengthenGetReturn);
+
+    -------------------------------- 精炼统计相关 --------------------------------
+    -- 服务器通知客户端限时精炼统计奖励数据
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_FEFINE,OnRefiningDatasInit); 
+    -- 服务器通知客户端限时精炼统计数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_FEFINE_CHANGE,OnRefiningChange);
+    -- 服务器通知客户端限时精炼统计奖励领取返回
+    network.Register(GMI_STOC_REQUEST_GET_FEFINE_AWARD_RETURN,OnGetRefiningReward); 
+
+    -------------------------------- 宠物悟性统计相关 --------------------------------
+    -- 服务器通知客户端限时宠物悟性统计奖励数据
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_UNDERSTAND,OnPetSavvyDatasInit); 
+    -- 服务器通知客户端限时宠物悟性统计数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_UNDERSTAND_CHANGE,OnPetSavvyChange);
+    -- 服务器通知客户端限时宠物悟性统计奖励领取返回
+    network.Register(GMI_STOC_REQUEST_GET_PET_UNDERSTAND_AWARD_RETURN,OnGetPetSavvyReward);
+
+    -------------------------------- 宠物洗练统计相关 --------------------------------
+    -- 服务器通知客户端限时宠物洗练统计奖励数据
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_SUCCINCT,OnPetQualityRefreshDatasInit); 
+    -- 服务器通知客户端限时宠物洗练统计数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_PET_SUCCINCT_CHANGE,OnPetQualityRefreshChange);
+    -- 服务器通知客户端限时宠物洗练统计奖励领取返回
+    network.Register(GMI_STOC_REQUEST_GET_PET_SUCCINCT_AWARD_RETURN,OnGetPetQualityRefreshReward); 
+
+    -------------------------------- 坐骑进阶统计相关 --------------------------------
+    -- 服务器通知客户端限时坐骑进阶统计奖励数据
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_MOUNT_ADVANCE,OnRideLevelUpDatasInit); 
+    -- 服务器通知客户端限时坐骑进阶统计数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_MOUNT_ADVANCE_CHANGE,OnRideLevelUpChange);
+    -- 服务器通知客户端限时坐骑进阶统计奖励领取返回
+    network.Register(GMI_STOC_REQUEST_GET_PET_MOUNT_ADVANCE_AWARD_RETURN,OnGetRideLevelUpReward); 
+
+    -------------------------------- 累日充值 --------------------------------
+    -- 服务器通知客户端限时坐骑进阶统计奖励数据
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_ACCDAYRECHARGE,OnCumulativeDaysDatasInit); 
+    -- 服务器通知客户端限时坐骑进阶统计数据改变
+    network.Register(GMI_STOC_SEND_CLIENT_LIMIT_TIME_ACCDAYRECHARGE_CHANGE,OnCumulativeDaysChange);
+    -- 服务器通知客户端限时坐骑进阶统计奖励领取返回
+    network.Register(GMI_STOC_REQUEST_GET_ACCDAYRECHARGE_AWARD_RETURN,OnGetCumulativeDaysReward); 
+
+    -------------------------------- 限时抽奖 --------------------------------
+    -- 服务器回复客户端限时抽奖道具信息 
+    network.Register(GMI_STOC_SEND_LIMITIME_LOTTERY_ITEM_INFO,OnTimeLimitDrawInfoBack); 
+    -- 服务器回复客户端限时抽奖结果（用于道具显示）
+    network.Register(GMI_STOC_SEND_LIMITIME_LOTTERY_RESULT,OnTimeLimitDrawRewardBack); 
+    -- 服务器回复客户端限时抽奖记录信息
+    network.Register(GMI_STOC_SEND_LIMITIME_LOTTERY_RECORD_INFO,OnTimeLimitDrawRecordBack); 
+end
+
+
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+------------------------------------------------------- 强化统计相关 -------------------------------------------------------
+function OnStrengthenInit(protocolId, buffer)
+    CumulativeCostMng.strengthenRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    CumulativeCostMng.strengthenBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    CumulativeCostMng.strengthenEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.strengthenAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.strengthenRewardState = m_nGetState;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(CumulativeCostMng.strengthenRechargeTable, acuAwardInfo);
+    end
+    ForceStatisticalPanel.InitInfoOut();
+end
+
+function OnStrengthenChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.strengthenAllGetExp = m_nDepositGetExp;
+    ForceStatisticalPanel.InitInfoOut();
+end
+
+function OnStrengthenGetReturn(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.strengthenRewardState = m_nGetState;
+    ForceStatisticalPanel.InitInfoOut();
+end
+
+------------------------------------------------------- 精炼统计相关 -------------------------------------------------------
+function OnRefiningDatasInit(protocolId, buffer)
+    CumulativeCostMng.RefiningRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    CumulativeCostMng.RefiningBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    CumulativeCostMng.RefiningEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.RefiningAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.RefiningRewardState = m_nGetState;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(CumulativeCostMng.RefiningRechargeTable, acuAwardInfo);
+    end
+    RefiningStatisticalPanel.InitInfoOut();
+end
+
+function OnRefiningChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.RefiningAllGetExp = m_nDepositGetExp;
+    RefiningStatisticalPanel.InitInfoOut();
+end
+
+function OnGetRefiningReward(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.RefiningRewardState = m_nGetState;
+    RefiningStatisticalPanel.InitInfoOut();
+end
+
+------------------------------------------------------- 宠物悟性统计相关 -------------------------------------------------------
+function OnPetSavvyDatasInit(protocolId, buffer)
+    CumulativeCostMng.PetSavvyRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    CumulativeCostMng.PetSavvyBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    CumulativeCostMng.PetSavvyEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.PetSavvyAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.PetSavvyRewardState = m_nGetState;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(CumulativeCostMng.PetSavvyRechargeTable, acuAwardInfo);
+    end
+    PetSavvyStatisticalPanel.InitInfoOut();
+end
+
+function OnPetSavvyChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.PetSavvyAllGetExp = m_nDepositGetExp;
+    PetSavvyStatisticalPanel.InitInfoOut();
+end
+
+function OnGetPetSavvyReward(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.PetSavvyRewardState = m_nGetState;
+    PetSavvyStatisticalPanel.InitInfoOut();
+end
+
+------------------------------------------------------- 宠物洗练统计相关 -------------------------------------------------------
+function OnPetQualityRefreshDatasInit(protocolId, buffer)
+    CumulativeCostMng.PetQualityRefreshRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    CumulativeCostMng.PetQualityRefreshBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    CumulativeCostMng.PetQualityRefreshEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.PetQualityRefreshAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.PetQualityRefreshRewardState = m_nGetState;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(CumulativeCostMng.PetQualityRefreshRechargeTable, acuAwardInfo);
+    end
+    PetQualityRefreshStatisticalPanel.InitInfoOut();
+end
+
+function OnPetQualityRefreshChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.PetQualityRefreshAllGetExp = m_nDepositGetExp;
+    PetQualityRefreshStatisticalPanel.InitInfoOut();
+end
+
+function OnGetPetQualityRefreshReward(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.PetQualityRefreshRewardState = m_nGetState;
+    PetQualityRefreshStatisticalPanel.InitInfoOut();
+end
+
+------------------------------------------------------- 坐骑进阶统计相关 -------------------------------------------------------
+function OnRideLevelUpDatasInit(protocolId, buffer)
+    CumulativeCostMng.RideLevelUpRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    CumulativeCostMng.RideLevelUpBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    CumulativeCostMng.RideLevelUpEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.RideLevelUpAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.RideLevelUpRewardState = m_nGetState;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(CumulativeCostMng.RideLevelUpRechargeTable, acuAwardInfo);
+    end
+    RideLevelUpStatisticalPanel.InitInfoOut();
+end
+
+function OnRideLevelUpChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.RideLevelUpAllGetExp = m_nDepositGetExp;
+    RideLevelUpStatisticalPanel.InitInfoOut();
+end
+
+function OnGetRideLevelUpReward(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.RideLevelUpRewardState = m_nGetState;
+    RideLevelUpStatisticalPanel.InitInfoOut();
+end
+
+------------------------------------------------------- 累日充值 -------------------------------------------------------
+function OnCumulativeDaysDatasInit(protocolId, buffer)
+    CumulativeCostMng.CumulativeDaysRechargeTable = { };
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt64();
+    CumulativeCostMng.CumulativeDaysBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt64();
+    CumulativeCostMng.CumulativeDaysEndTime = m_n64EndTime;
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.CumulativeDaysAllGetExp = m_nDepositGetExp;
+    -- 状态（领取状态）
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.CumulativeDaysRewardState = m_nGetState;
+    -- 当前天数
+    local m_nGetday = buffer:ReadInt();
+    CumulativeCostMng.CumulativeDay = m_nGetday;
+    local m_yDataSize = buffer:ReadByte();
+    for Index = 1, m_yDataSize do
+        local acuAwardInfo = DepositAcuAwardContent(buffer);
+        table.insert(CumulativeCostMng.CumulativeDaysRechargeTable, acuAwardInfo);
+    end
+    CumulativeDaysChargePanel.InitInfoOut();
+end
+
+function OnCumulativeDaysChange(protocolId, buffer)
+    -- 累积充值分数
+    local m_nDepositGetExp = buffer:ReadInt();
+    CumulativeCostMng.CumulativeDaysAllGetExp = m_nDepositGetExp;
+    CumulativeDaysChargePanel.InitInfoOut();
+end
+
+function OnGetCumulativeDaysReward(protocolId, buffer)
+    -- 状态
+    local m_nGetState = buffer:ReadInt();
+    CumulativeCostMng.CumulativeDaysRewardState = m_nGetState;
+    CumulativeDaysChargePanel.InitInfoOut();
+end
+
+-- 充值内容信息
+function DepositAcuAwardContent(buffer)
+    local ContentTable = { };
+    ContentTable.AcuAwardID = buffer:ReadInt();
+    ContentTable.AccumulateNum = buffer:ReadInt();
+    ContentTable.ItemNum = buffer:ReadByte();
+    ContentTable.contentTable = { };
+    if ContentTable.ItemNum > 0 then
+        for Index = 1, ContentTable.ItemNum do
+            -- //道具ID;
+            local itemID = buffer:ReadInt();
+            -- //道具数量
+            local itemCount = buffer:ReadInt();
+
+            ItmeInfo = DepositAcuAwardInfo(ContentTable.AcuAwardID, itemID, itemCount)
+            table.insert(ContentTable.contentTable, ItmeInfo);
+        end
+    end
+    return ContentTable;
+end
+
+-- 道具信息
+function DepositAcuAwardInfo(Id, ItemId, count)
+    local acuAwardItem = { };
+    acuAwardItem.ID = Id;
+    acuAwardItem.itemid = ItemId;
+    acuAwardItem.num = count;
+    return acuAwardItem;
+end
+
+-- 服务器回复客户端限时抽奖道具信息 
+function OnTimeLimitDrawInfoBack(protocolId, buffer)
+    _G.TimeLimitDrawVersion = buffer:ReadInt();
+    _G.TimeLimitDrawRewardIndex = buffer:ReadInt();
+    -- 活动开始时间
+    local m_n64StartTime = buffer:ReadInt();
+    CumulativeCostMng.LimitTimeDrawBeginTime = m_n64StartTime;
+    -- 活动结束时间
+    local m_n64EndTime = buffer:ReadInt();
+    CumulativeCostMng.LimitTimeDrawEndTime = m_n64EndTime;
+    -- 是否是因为抽奖时数据过期的原因回复(0:打开界面 1:抽奖时 2:没有变化)
+    local reason = buffer:ReadByte();
+    if reason ~= 2 then 
+        local itemCount = buffer:ReadByte();
+        local tempTable = {};
+        for i = 1, itemCount do
+            tempTable[i] = {};
+            local itemExcelID = buffer:ReadInt();
+            local num = buffer:ReadUInt();
+            tempTable[i].itemExcelID = itemExcelID;
+            tempTable[i].num = num;
+        end
+        --道具数量改为20测试
+--        itemCount=20;
+--        tempTable[15]={};
+--        tempTable[15].itemExcelID = 31301;
+--        tempTable[15].num = 2;
+--        tempTable[16]={};
+--        tempTable[16].itemExcelID = 31301;
+--        tempTable[16].num = 2;
+--        tempTable[17]={};
+--        tempTable[17].itemExcelID = 31301;
+--        tempTable[17].num = 2;
+--        tempTable[18]={};
+--        tempTable[18].itemExcelID = 31301;
+--        tempTable[18].num = 2;
+--        tempTable[19]={};
+--        tempTable[19].itemExcelID = 31301;
+--        tempTable[19].num = 2;
+--        tempTable[20]={};
+--        tempTable[20].itemExcelID = 31301;
+--        tempTable[20].num = 2;
+
+        CumulativeCostMng.LimitTimeDrawTable = tempTable;
+        -- 幸运值
+        local luckyNum = buffer:ReadInt();
+        CumulativeCostMng.LimitTimeDrawLuckyNum = luckyNum;
+        -- 达到幸运值
+        local attainLuckyNum = buffer:ReadInt();
+        CumulativeCostMng.LimitAttainLuckyNum = attainLuckyNum;
+    end
+    SecondWelfarePanel.OpenTimeLimitDrawPanel();
+end
+
+-- 限时抽奖结果
+function OnTimeLimitDrawRewardBack(protocolId, buffer)
+    local itemCount = buffer:ReadByte();
+    local tempTable = {};
+    for i = 1, itemCount do 
+        tempTable[i] = {};
+        local itemExcelID = buffer:ReadInt();
+        local num = buffer:ReadInt();
+        tempTable[i].itemExcelID = itemExcelID;
+        tempTable[i].num = num;
+    end
+    -- 幸运值
+    local luckyNum = buffer:ReadInt();
+    CumulativeCostMng.LimitTimeDrawLuckyNum = luckyNum;
+    TimeLimitDrawPanel.GetDrawReward(tempTable);
+end
+
+-- 限时抽奖记录信息
+function OnTimeLimitDrawRecordBack(protocolId, buffer)
+    local count = buffer:ReadByte();
+    local tempTable = {};
+    for i = 1, count do 
+        tempTable[i] = {};
+        local playerID = buffer:ReadInt();
+        local itemExcelID = buffer:ReadInt();
+        local num = buffer:ReadInt();
+        local time = buffer:ReadInt();
+        local playerName = buffer:ReadStringByByte();
+        tempTable[i].playerID = playerID;
+        tempTable[i].playerName = playerName;
+        tempTable[i].itemExcelID = itemExcelID;
+        tempTable[i].num = num;
+        tempTable[i].time = time;
+    end
+    TimeLimitDrawPanel.OpenRecord(tempTable);
+end
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+-- 领取限时强化统计奖励
+function RequestGetStrengthenReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_STRENGTHEN_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取限时精炼统计奖励
+function RequestGetRefiningReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_FEFINE_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取限时宠物悟性统计奖励
+function RequestGetPetSavvyReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_PET_UNDERSTAND_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取限时宠物洗练统计奖励
+function RequestGetPetQualityRefreshReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_PET_SUCCINCT_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取限时坐骑进阶统计奖励
+function RequestGetRideLevelUpReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_PET_MOUNT_ADVANCE_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取限时累日充值奖励
+function RequestGetCumulativeDaysReward(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_GET_ACCDAYRECHARGE_AWARD);
+    buffer:WriteInt(value);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求限时抽奖界面信息
+function RequestTimelimitDraw()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_LIMITIME_LOTTERY_ITEM_INFO);
+    buffer:WriteInt(_G.TimeLimitDrawVersion);
+    buffer:WriteInt(_G.TimeLimitDrawRewardIndex);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 客户端请求限时抽奖
+function RequestDraw(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_LIMITIME_LOTTERY);
+    buffer:WriteInt(_G.TimeLimitDrawVersion);
+    buffer:WriteInt(_G.TimeLimitDrawRewardIndex);
+    buffer:WriteByte(value); -- 是否是连抽(0:不是 1:是)
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求抽奖记录
+function RequestDrawRecord(value)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_LIMITIME_LOTTERY_RECORD);
+    buffer:WriteInt(value); -- 当前显示的最后一个玩家的ID，第一次请求发送-1
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求领奖
+function RequestGetReward()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_ASK_LIMITIME_LOTTERY_AWARD);
+    buffer:WriteInt(1); -- 随意值 无意义
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

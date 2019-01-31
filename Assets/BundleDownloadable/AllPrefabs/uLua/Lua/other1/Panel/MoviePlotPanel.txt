@@ -1,0 +1,328 @@
+﻿module("MoviePlotPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+--动画剧情内容显示
+local m_AnimationPlotText = "AnimationPlot/Label";
+-- 左边名字
+local m_LeftName = "TextPlot/Left/Name";
+local m_LeftNameLabel = "TextPlot/Left/Name/Label";
+-- 内容显示左边
+local m_LeftText = "TextPlot/Left/Text";
+-- 显示下一条左边
+local m_LeftNext = "TextPlot/Left/Next";
+-- 右边名字
+local m_RightName = "TextPlot/Right/Name";
+local m_RightNameLabel = "TextPlot/Right/Name/Label";
+-- 内容显示右边
+local m_RightText = "TextPlot/Right/Text";
+-- 显示下一条右边
+local m_RightNext = "TextPlot/Right/Next";
+-----------------------------------------按钮路径--------------------------------------
+-- 跳过按钮
+local m_TiaoGuoBtn = "Button-TiaoGuo";
+-- 下一步
+local m_NextBtn = "Button-Next";
+-----------------------------------------Sprite路径------------------------------------
+----------------------------------gameobject所在的路径---------------------------------
+--动画剧情显示界面
+local m_AnimationPlotViewStr = "AnimationPlot";
+--文本剧情显示界面
+local m_TextPlotViewStr = "TextPlot";
+----------------------------------通用的名称路径---------------------------------------
+-----------------------------------引用的对象------------------------------------------
+--当前面板的对象
+local m_PanelObject = nil;
+
+--初始化失败默认情况
+local m_bCreateSuccess = nil;
+
+-- 3d模型是否已经创建标记
+local m_3dIsCreate = nil;
+-- 当前玩家的模型ID
+local m_CurrentModelID = nil;
+-- 位置坐标
+local m_CurModelLocation = nil;
+--当前对话界面信息
+local m_CurDialogInfo = nil;
+--上一次对话框信息
+local m_OldDialogInfo = nil;
+
+--当前剧情类型
+local m_PlotType = 0;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+function Awake()
+    InitAllInfo();
+end
+
+function Start()
+    m_bCreateSuccess = true;
+end
+
+--系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if true == m_bCreateSuccess then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+    if m_CurDialogInfo ~= nil then
+        SetMusic(m_CurDialogInfo,false);
+    end
+    -- 所有剧情
+    Delete3DModel();
+end
+
+-- 销毁
+function OnDestroy()
+    m_PanelObject = nil;
+    m_bCreateSuccess = false;
+    m_3dIsCreate = nil; 
+    m_CurrentModelID = nil;
+    m_CurModelLocation = nil;
+    m_CurDialogInfo = nil;
+    m_OldDialogInfo = nil;
+    m_PlotType = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+
+--初始化所有数据信息
+ function InitAllInfo()
+    -- error("InitAllInfo");
+    InitPanel();
+    InitOnClick();
+    -- 初始化数据
+    InitContent();
+end
+--面板对象
+function InitPanel()
+    m_PanelObject =FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MOVIEPLOTPANEL);
+end
+ --初始化物品点击事件点击事件信息
+function InitOnClick()
+    SetGameObjectEvent(m_TiaoGuoBtn,OnTiaoGuo,m_PanelObject,nil);
+    SetGameObjectEvent(m_NextBtn,OnNext,m_PanelObject,nil);
+end
+-- 开始剧情
+function InitContent()
+    HideView();
+    LuaEventDispatcher.TriggerEvent(MoviePlotEvent.Start);
+end
+
+--显示剧情面板
+function ShowView()
+    m_OldDialogInfo = nil;
+    if m_PlotType == 1 then 
+        SetGameObjectState(m_AnimationPlotViewStr, true, m_PanelObject);
+    end
+    if m_PlotType == 2 then 
+        SetGameObjectState(m_TextPlotViewStr, true, m_PanelObject);
+    end
+end
+
+--关闭剧情面板
+function HideView()
+    SetGameObjectState(m_AnimationPlotViewStr, false, m_PanelObject);
+    SetGameObjectState(m_AnimationPlotText, false, m_PanelObject);
+    SetGameObjectState(m_TextPlotViewStr, false, m_PanelObject);
+end
+
+--显示剧情对话框
+function ShowPlotDialog(dialogInfo)
+    m_CurDialogInfo = dialogInfo;
+    if m_PlotType == 1 then 
+        AnimationPlotDialog(dialogInfo);
+    end
+    if m_PlotType == 2 then 
+        TextPlotDialog(dialogInfo);
+    end
+    ShowView();
+end
+--显示动画剧情
+function AnimationPlotDialog(dialogInfo)
+    local nameText = "";
+    if dialogInfo.IsPlayer == true then
+        nameText = G_UserInfo.RoleAttribute.Name;
+    else
+        local nameTextInfo = CCommonTool.GetTxtData(dialogInfo.ActorNameId);
+        if nil == nameTextInfo then
+            error("剧情中填写的NameId文本中不存在！！！" .. strTextID);
+        else
+            nameText = nameTextInfo.m_str;
+        end
+    end
+    local textContent = "";
+    local textInfo = CCommonTool.GetTxtData(dialogInfo.TextId);
+    if textInfo == nil then
+        error("剧情中填写的TextId文本中不存在！！！" .. dialogInfo.TextId);
+    else
+        textContent = textInfo.m_str;
+    end
+    SetGameObjectState(m_AnimationPlotText, true, m_PanelObject);
+    SetLabelContent(m_AnimationPlotText, nameText..":"..textContent, m_PanelObject);
+end
+
+--显示文本剧情
+function TextPlotDialog(dialogInfo)
+    --1左2右模型的显示
+    if dialogInfo.ModelLocation == 1 then
+        if dialogInfo.IsShowName == false then
+            SetGameObjectState(m_LeftName, false, m_PanelObject);
+            SetGameObjectState(m_RightName, false, m_PanelObject);
+        else
+            SetGameObjectState(m_LeftName, true, m_PanelObject);
+            SetGameObjectState(m_RightName, false, m_PanelObject);
+            if dialogInfo.IsPlayer == true then
+                SetLabelContent(m_LeftNameLabel, G_UserInfo.RoleAttribute.Name, m_PanelObject);
+            else
+                SetLabelTextByID(m_LeftNameLabel, dialogInfo.ActorNameId, m_PanelObject);
+            end
+        end
+         SetGameObjectState(m_LeftText, false, m_PanelObject);
+         SetGameObjectState(m_RightText, false, m_PanelObject);
+         SetGameObjectState(m_LeftNext, false, m_PanelObject);
+         SetGameObjectState(m_RightNext, false, m_PanelObject);
+         -- 设置文本内容
+         local textInfo = CCommonTool.GetTxtData(dialogInfo.TextId);
+         if textInfo == nil then
+             error("txtid does not exist::" .. dialogInfo.TextId);
+         else
+             local textContent = string.gsub(textInfo.m_str, "{0}", G_UserInfo.RoleAttribute.Name);
+             SetLabelContent(m_LeftText, textContent, m_PanelObject);
+         end
+         SetGameObjectState(m_LeftText, true, m_PanelObject);
+         SetGameObjectState(m_LeftNext, true, m_PanelObject);
+    else
+         if dialogInfo.IsShowName == false then
+             SetGameObjectState(m_LeftName, false, m_PanelObject);
+             SetGameObjectState(m_RightName, false, m_PanelObject); 
+         else
+             SetGameObjectState(m_LeftName, false, m_PanelObject);
+             SetGameObjectState(m_RightName, true, m_PanelObject);
+             if dialogInfo.IsPlayer == true then
+                 SetLabelContent(m_RightNameLabel, G_UserInfo.RoleAttribute.Name, m_PanelObject);
+             else
+                SetLabelTextByID(m_RightNameLabel, dialogInfo.ActorNameId, m_PanelObject);
+             end
+         end
+         SetGameObjectState(m_LeftText, false, m_PanelObject);
+         SetGameObjectState(m_RightText, false, m_PanelObject);
+         SetGameObjectState(m_LeftNext, false, m_PanelObject);
+         SetGameObjectState(m_RightNext, false, m_PanelObject);
+         -- 设置文本内容
+         local textInfo = CCommonTool.GetTxtData(dialogInfo.TextId);
+         if textInfo == nil then
+            error("txtid does not exist::" .. dialogInfo.TextId);
+         else
+            local textContent = string.gsub(textInfo.m_str, "{0}", G_UserInfo.RoleAttribute.Name);
+            SetLabelContent(m_RightText, textContent, m_PanelObject);
+         end
+         SetGameObjectState(m_RightText, true, m_PanelObject);
+         SetGameObjectState(m_RightNext, true, m_PanelObject);
+    end
+
+    -- 播放音效
+    SetMusic(dialogInfo,true);
+    -- 创建模型
+    if dialogInfo.IsShowModel == true then 
+        Create3dModle(dialogInfo);
+    end
+end
+
+--隐藏剧情对话框
+function HidePlotDialog()
+    m_CurDialogInfo = nil;
+    HideView();
+end
+
+--是否播放音效
+function SetMusic(dialogInfo,isPlay)
+    if dialogInfo ~= nil then
+        local soundId = -1;
+        if dialogInfo.IsPlaySound == true then
+            if dialogInfo.IsPlayer == true then
+                if dialogInfo.SoundInfos ~= nil then
+                    local index =  G_UserInfo.RoleAttribute.ProID - 1;
+                    if dialogInfo.SoundInfos.Length > index then
+                        soundId = dialogInfo.SoundInfos[index].m_Id;
+                    end
+                end
+            else
+                soundId = dialogInfo.SoundId;
+            end
+            if isPlay == true then
+                G_MusicMng:OnLoadMusic(soundId);
+            else
+                G_MusicMng:StopMusicToId(soundId);
+            end
+        end
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 跳过
+function OnTiaoGuo()
+    SetMusic(m_CurDialogInfo,false);
+    LuaEventDispatcher.TriggerEvent(MoviePlotEvent.End);
+    ClosetPanel();
+end
+-- 下一步
+function OnNext()
+    if m_CurDialogInfo ~= nil then
+        SetMusic(m_CurDialogInfo,false);
+        if m_CurDialogInfo.IsSkip == true then
+            LuaEventDispatcher.TriggerEvent(MoviePlotEvent.Skip);
+        end
+    end
+end
+
+-- 关闭
+function ClosetPanel()
+    SetMusic(m_CurDialogInfo,false);
+    -- 所有剧情
+    Delete3DModel();
+    closePanel(ENUMPANELID.ENUM_PANEL_MOVIEPLOTPANEL);
+end
+
+-- 创建模型
+function Create3dModle(dialogInfo)
+    local modelId = dialogInfo.ModelId;
+    local modelLocation = dialogInfo.ModelLocation;
+    local isCreate = true;
+    if m_OldDialogInfo ~= nil then
+       if m_OldDialogInfo.IsPlayer == true and  m_OldDialogInfo.IsPlayer == dialogInfo.IsPlayer and m_OldDialogInfo.ModelLocation == modelLocationthen then
+            isCreate = false;
+        else
+            if m_OldDialogInfo.ModelId == modelId and m_OldDialogInfo.ModelLocation == modelLocation then
+                isCreate = false;
+            end
+        end
+    end
+    m_OldDialogInfo = nil;
+    if isCreate == true then
+        Delete3DModel();
+        local buffer = ByteBuffer.New();
+        buffer:WriteInt(ENUMPANELID.ENUM_PANEL_MOVIEPLOTPANEL);
+        if dialogInfo.IsPlayer == true then
+            modelId = 100;
+        end
+        buffer:WriteInt(modelId);
+        buffer:WriteInt(modelLocation);
+        G_PanelMng:SetSceneUIdataByLua(buffer);
+        m_OldDialogInfo = dialogInfo;
+    end
+end
+
+-- 删除玩家3d模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_MOVIEPLOTPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+--设置剧情类型
+--@param plotType 剧情类型1.动画剧情2.文本剧情
+function SetPlotType(plotType)
+    m_PlotType = plotType;
+    ShowView();
+end

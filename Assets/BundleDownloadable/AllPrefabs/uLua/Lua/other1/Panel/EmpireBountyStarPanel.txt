@@ -1,0 +1,236 @@
+﻿module("EmpireBountyStarPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 消耗金币数量
+local m_CostMoneyNumStr = "HasStar/Refresh_Button/Label_Cost";
+-----------------------------------------按钮路径--------------------------------------
+-- 无星星刷新运势按钮
+local m_NoStarRefreshButton = "NoStar/Refresh_Button";
+-- 有星星刷新运势按钮
+local m_HaveStarRefreshButton = "HasStar/Refresh_Button";
+-- 有星星接受任务按钮
+local m_HaveStarAcceptTaskButton = "HasStar/AcceptTask_Button";
+-- 关闭界面的按钮
+local m_ClosePanelButton = "CloseButton";
+-----------------------------------------Sprite路径------------------------------------
+-- 消耗金币图标
+local m_CostMoneyIconStr = "HasStar/Refresh_Button/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 有星星的按钮路径
+local m_HasStarStr = "HasStar";
+-- 无星星的按钮路径
+local m_NoStarStr = "NoStar";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具所在的位置
+local m_ItemStr = "Items/Item";
+-- 激活
+local m_Active = "/Active";
+-- 非激活
+local m_Deactive = "/Deactive";
+-- 倍数所在的位置
+local m_RatioLabel = "/Label_Reward/Label_Num";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+
+-- 是否正在循环显示
+local m_IsSelecting = false;
+-- 隔多少秒切换下一张牌
+local m_ChangeSecond = 0.15;
+-- 收到服务器消息多少秒停止
+local m_StopSecond = 2;
+-- 什么时候开始转的
+local m_StartRollTime = 0;
+-- 什么时候停止
+local m_StopTime = 0;
+-- 当前算出来的显示的第几张
+local m_indexCard;
+-- 上一帧显示的是第几张
+local m_lastCard = -1;
+-----------------------------------一些写死的规定--------------------------------------
+-- 有足够金币的颜色
+local m_HasEnoughCoin = "[FFFFFF]";
+-- 没有足够金币的颜色
+local m_NoEnoughCoin = "[D83232]";
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitDataShow();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        m_IsSelecting = false;
+        InitShow();
+    end
+end
+
+function Update()
+    if m_IsSelecting then
+        m_indexCard = math.ceil((Time.time - m_StartRollTime)/m_ChangeSecond);
+        m_indexCard = math.fmod (m_indexCard, 5);
+        m_indexCard = m_indexCard + 1;
+        if m_indexCard ~= m_lastCard then
+            for Index = 1,5 do
+                if Index == m_indexCard then
+                    SetGameObjectState(m_ItemStr..Index..m_Active,true,m_panelObject);
+                    SetGameObjectState(m_ItemStr..Index..m_Deactive,false,m_panelObject);
+                else
+                    SetGameObjectState(m_ItemStr..Index..m_Active,false,m_panelObject);
+                    SetGameObjectState(m_ItemStr..Index..m_Deactive,true,m_panelObject);
+                end
+            end
+            m_lastCard = m_indexCard;
+        end
+        if Time.time >= m_StopTime then
+            if m_indexCard == _G.LogicData_EmpireBountyStarLv then
+                InitShow();
+                m_IsSelecting = false;
+            end
+        end
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_IsSelecting = false;
+    m_StartRollTime = 0;
+    m_StopTime = 0;
+    m_lastCard = -1;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL);
+end
+
+-- 初始化数据显示
+function InitDataShow()
+    for Index = 1,5 do
+        SetLabelContent(m_ItemStr..Index..m_Active..m_RatioLabel,EmpireBountyRewardRatio[Index],m_panelObject);
+        SetLabelContent(m_ItemStr..Index..m_Deactive..m_RatioLabel,EmpireBountyRewardRatio[Index],m_panelObject);
+    end
+    SetSpriteByAtlasID(m_CostMoneyIconStr,CCommonTool.GetImageIDByExcelID(G_ItemToolTipDefine.BINDDIAMOND),m_panelObject,true);
+end
+
+-- 初始化显示
+function InitShow()
+    if _G.LogicData_EmpireBountyStarLv == 0 then
+        SetGameObjectState(m_HasStarStr,false,m_panelObject);
+        SetGameObjectState(m_NoStarStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_HasStarStr,true,m_panelObject);
+        SetGameObjectState(m_NoStarStr,false,m_panelObject);
+        local costMoney = GetRefreshMoney();
+        if costMoney <= G_UserInfo.BindDiamond then
+            SetLabelContent(m_CostMoneyNumStr,m_HasEnoughCoin..costMoney.."[-]",m_panelObject);
+        else
+            SetLabelContent(m_CostMoneyNumStr,m_NoEnoughCoin..costMoney.."[-]",m_panelObject);
+        end
+    end
+    for Index = 1,5 do
+        if Index == _G.LogicData_EmpireBountyStarLv then
+            SetGameObjectState(m_ItemStr..Index..m_Active,true,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index..m_Deactive,false,m_panelObject);
+            SetGameObjectState(m_HaveStarAcceptTaskButton,true,m_panelObject);
+            if _G.LogicData_EmpireBountyStarLv == 5 then
+                SetGameObjectPos(m_HaveStarAcceptTaskButton, Vector3.New(0, -360, 0), m_panelObject);
+                SetGameObjectState(m_HaveStarRefreshButton,false,m_panelObject);
+            else
+                SetGameObjectPos(m_HaveStarAcceptTaskButton, Vector3.New(-213, -360, 0), m_panelObject);
+                SetGameObjectState(m_HaveStarRefreshButton,true,m_panelObject);
+            end
+        else
+            SetGameObjectState(m_ItemStr..Index..m_Active,false,m_panelObject);
+            SetGameObjectState(m_ItemStr..Index..m_Deactive,true,m_panelObject);
+        end
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_NoStarRefreshButton,OnNoStarRefreshClick,m_panelObject);
+    SetGameObjectEvent(m_HaveStarRefreshButton,OnHasStarRefreshClick,m_panelObject);
+    SetGameObjectEvent(m_HaveStarAcceptTaskButton,OnAcceptTaskClick,m_panelObject);
+    SetGameObjectEvent(m_ClosePanelButton,OnCloseClick,m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击测试运势按钮
+function OnNoStarRefreshClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EMPIREBOUNTY_REFRESHSTAR);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+    SetGameObjectState(m_NoStarRefreshButton,false,m_panelObject);
+    SetGameObjectState(m_HaveStarRefreshButton,true,m_panelObject);
+    SetGameObjectState(m_HaveStarAcceptTaskButton,true,m_panelObject);
+end
+
+-- 点击再刷一次按钮
+function OnHasStarRefreshClick()
+    if MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_DIAMOND,math.abs(GetRefreshMoney()),ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL,OnExchangeMoneyCallBack) then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_EMPIREBOUNTY_REFRESHSTAR);
+        buffer:WriteByte(1);
+        G_NetWorkMng:SendMessage(buffer);
+    else
+        log("金钱不够，无法刷星")
+        --ShowSystemFlowTips(5300);
+        return;
+    end
+    SetGameObjectState(m_HaveStarRefreshButton,false,m_panelObject);
+    SetGameObjectState(m_HaveStarAcceptTaskButton,false,m_panelObject);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EMPIREBOUNTY_REFRESHSTAR);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击接取任务按钮
+function OnAcceptTaskClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EMPIREBOUNTY_ACCEPTTASK);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 点击关闭按钮
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL) == 1 and m_bCreateSuccess then
+        m_IsSelecting = true;
+        m_StartRollTime = Time.time;
+        m_StopTime = m_StartRollTime + m_StopSecond;
+    end
+end
+
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EMPIREBOUNTYSTARPANEL) == 1 and m_bCreateSuccess then
+        InitShow();
+    end
+end
+
+function GetRefreshMoney()
+    if StoreManager.GetHaveWeekMemberCard() then
+        return EmpireBountyRefreshStarCostIfWeekCard;
+    else
+        return EmpireBountyRefreshStarCost;
+    end
+end

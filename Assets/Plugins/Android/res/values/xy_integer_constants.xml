@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+   <integer name="xy_input_max_lines">1</integer>
+   <integer name="xy_input_text_max_length">20</integer>
+   <integer name="xy_input_password_max_length">16</integer>
+   <integer name="xy_input_id_max_length">18</integer>
+   <integer name="xy_input_phone_max_length">11</integer>
+   <integer name="xy_input_captcha_max_length">4</integer>
+
+</resources>

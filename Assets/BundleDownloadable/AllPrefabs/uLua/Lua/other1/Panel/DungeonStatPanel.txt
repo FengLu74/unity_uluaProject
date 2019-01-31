@@ -1,0 +1,327 @@
+﻿module('DungeonStatPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'RightTop/InDungeon/DungeonStat';
+---------------------------------------label路径---------------------------------------
+-- 副本倒计时
+local m_LabelTimePath = "Bottom/Label_Time";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 标题-名称
+local m_ButtonNameHeaderPath = "Headers/Button_NameHeader";
+-- 标题-伤害
+local m_ButtonAttackHeaderPath = "Headers/Button_AttackHeader";
+-- 标题-承受
+local m_ButtonHurtHeaderPath = "Headers/Button_HurtHeader";
+-- 标题-治疗
+local m_ButtonCureHeaderPath = "Headers/Button_CureHeader";
+-- 退出副本
+local m_ButtonQuitDungeonPath = "Bottom/Button_QuitDungeon";
+-- 关闭面板
+local m_ButtonClosePath = "Bottom/Button_Close";
+-- 战况统计
+local m_ButtonStatPath = "Bottom/Button_Stat";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+-- 排序箭头-名称
+local m_ButtonNameHeaderArrowPath = "Headers/Button_NameHeader/Arrow";
+-- 排序箭头-伤害
+local m_ButtonAttackHeaderArrowPath = "Headers/Button_AttackHeader/Arrow";
+-- 排序箭头-承受
+local m_ButtonHurtHeaderArrowPath = "Headers/Button_HurtHeader/Arrow";
+-- 排序箭头-治疗
+local m_ButtonCureHeaderArrowPath = "Headers/Button_CureHeader/Arrow";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 列表
+local m_ListPath = "ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 列表
+local m_List = nil;
+-- 副本倒计时
+local m_LabelTime = nil;
+
+-- 排序方法数组
+local m_SortHeaders = nil;
+-- 排序列索引 默认伤害升序排
+local m_SortIndex = 1;
+-- 玩家列表数量
+local m_Players = nil;
+-- TimerProc
+local m_TimerProc = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    --InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        --InitShow();
+    end
+end
+
+function OnDisable()
+    ClearTimer();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+	m_LabelTime = nil;
+    m_SortHeaders = nil;
+    m_Players = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+    m_LabelTime = GetComponent(m_PanelObject, m_LabelTimePath, "UILabel");
+
+    m_SortHeaders = {
+        -- 伤害
+        {
+            name = m_ButtonAttackHeaderArrowPath, 
+            ascFunc = function(m1, m2) return m1.attackValue < m2.attackValue; end, 
+            descFunc = function(m1, m2) return m1.attackValue > m2.attackValue; end, 
+            order = 1
+        },
+        -- 承受
+        {
+            name = m_ButtonHurtHeaderArrowPath, 
+            ascFunc = function(m1, m2) return m1.hurtValue < m2.hurtValue; end, 
+            descFunc = function(m1, m2) return m1.hurtValue > m2.hurtValue; end, 
+            order = 1
+        },
+        -- 治疗
+        {
+            name = m_ButtonCureHeaderArrowPath, 
+            ascFunc = function(m1, m2) return m1.cureValue < m2.cureValue; end,  
+            descFunc = function(m1, m2) return m1.cureValue > m2.cureValue; end,  
+            order = 1
+        }
+    };
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_ButtonNameHeaderPath, OnButtonNameHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonAttackHeaderPath, OnButtonAttackHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonHurtHeaderPath, OnButtonHurtHeaderClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonCureHeaderPath, OnButtonCureHeaderClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+	SetGameObjectEvent(m_ButtonQuitDungeonPath, OnButtonQuitDungeonClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonStatPath, OnButtonStatClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    --m_LabelTime.text = "";
+    InitList();
+end
+
+function InitList()
+    local sortFunc = nil;
+    for i, header in ipairs(m_SortHeaders) do
+        local arrow = child(m_PanelObject, header.name);
+        if i == m_SortIndex then
+            arrow.gameObject:SetActive(true);
+            if header.order == 0 then
+                -- 升序
+                arrow.localRotation = Quaternion.identity;
+                sortFunc = header.ascFunc;
+            else
+                -- 降序
+                arrow.localRotation = Quaternion.Euler(0, 0, 180);
+                sortFunc = header.descFunc;
+            end
+        else
+            arrow.gameObject:SetActive(false);
+        end
+    end
+
+    m_Players = GetPlayers();
+    if sortFunc ~= nil then
+        table.sort(m_Players, sortFunc);
+    end
+
+    -- 填充列表
+    m_List:RemoveAll();
+    for i, data in ipairs(m_Players) do
+        m_List:AddData(data);
+    end
+    m_List:LookAt(0, false);
+end
+
+-- 列表排序
+function SortList(sortIndex)
+    local curHeader = m_SortHeaders[m_SortIndex];
+    local newHeader = m_SortHeaders[sortIndex];
+    if curHeader == newHeader then
+        --curHeader.order = curHeader.order == 1 and 0 or 1;
+        return;
+    else
+        -- 当前表头排序置为升序
+        -- 下次再选中时默认降序
+        curHeader.order = 1;
+        m_SortIndex = sortIndex;
+    end
+    InitList();
+end
+
+function GetPlayers()
+    return m_Players or {};
+end
+
+function AddTimer()
+    ClearTimer();
+    m_TimerProc = Timer.Instance:AddTimer(1, -1, OnTimer);
+end
+
+local m_lastReqTime = 0;
+function OnTimer()
+    local now = os.time();
+    if now - m_lastReqTime >= 3 then
+        m_lastReqTime = now;
+        DungeonProtocol.RequestSyncDungeonDamage();
+    end
+end
+
+function ClearTimer()
+    if m_TimerProc ~= nil then
+        Timer.Instance:StopTimer(m_TimerProc);
+        m_TimerProc = nil;
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 按名称排序
+function OnButtonNameHeaderClick(gameObject)
+    
+end
+
+-- 按伤害排序
+function OnButtonAttackHeaderClick(gameObject)
+    SortList(1);
+end
+
+-- 按承受排序
+function OnButtonHurtHeaderClick(gameObject)
+    SortList(2);
+end
+
+-- 按治疗排序
+function OnButtonCureHeaderClick(gameObject)
+    SortList(3);
+end
+
+-- 列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetProfessionIcon("Sprite_Pro", data.proId, go);
+    SetLabelContent("Label_Name", data.name, go);
+    SetLabelContent("Label_Attack", ParseNumber(data.attackValue), go);
+    SetLabelContent("Label_Hurt", ParseNumber(data.hurtValue), go);
+    SetLabelContent("Label_Cure", ParseNumber(data.cureValue), go);
+end
+
+function ParseNumber(value)
+    if value < 10000 then
+        return string.format("%d", value);
+    else
+        local v = CCommonTool.GetTxtData(1467).m_str;--[[{0}万]]
+        local i, d = math.modf(value / 10000);
+        if d * 10 >= 1 then
+            return string_format(v, string.format("%.1f", value / 10000));
+        else
+            return string_format(v, string.format("%d", value / 10000));
+        end
+    end
+end
+
+
+-- 列表点击
+function OnListViewClick(listView, cell, go)
+    
+end
+
+-- 退出副本
+function OnButtonQuitDungeonClick(gameObject)
+    Hide();
+    Main_RightTop.OnQuitClick();
+end
+
+-- 关闭面板
+function OnButtonCloseClick(gameObject)
+    Hide();
+end
+
+-- 战况统计
+function OnButtonStatClick(gameObject)
+    
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 显示面板
+function Show()
+    if m_CreateSuccess == true then
+        m_PanelObject:SetActive(true);
+        Main_RightTop.SetQuitButtonVisible(false);
+        InitShow();
+        AddTimer();
+        OnTimer();
+    end
+end
+
+-- 隐藏面板
+function Hide()
+    if m_CreateSuccess == true then
+        m_PanelObject:SetActive(false);
+        Main_RightTop.SetQuitButtonVisible(true);
+        ClearTimer();
+    end
+end
+
+-- 面板是否可见
+function GetVisible()
+    if m_CreateSuccess == true then
+        return m_PanelObject.activeSelf;
+    end
+    return false;
+end
+
+-- 更新倒计时
+function UpdateTime(time)
+    if m_CreateSuccess == true then
+        m_LabelTime.text = time;
+    end
+end
+
+-- 收到伤害数据时更新列表
+function OnSyncDamage(players)
+    m_Players = players;
+    if GetVisible() == true then
+        InitList();
+    end
+end

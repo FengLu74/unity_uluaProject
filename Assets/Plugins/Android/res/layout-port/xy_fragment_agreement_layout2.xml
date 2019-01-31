@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@android:color/transparent"
+              android:gravity="center">
+
+    <LinearLayout android:layout_width="300dp"
+                  android:layout_height="400dp"
+                  android:layout_gravity="center"
+                  android:orientation="vertical"
+                  android:background="@drawable/xy_bg_dialog">
+        <RelativeLayout android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/xy_bg_dialog_title">
+            <TextView android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:layout_centerInParent="true"
+                      android:text="@string/xy_sign_agreement_title"
+                      android:textColor="@color/xy_color_c1"
+                      android:textSize="20sp"/>
+
+
+            <ImageButton android:layout_width="wrap_content"
+                         android:layout_height="wrap_content"
+                         android:id="@+id/xy_agreement_back"
+                         android:src="@drawable/xy_btn_back"
+                         android:layout_alignParentLeft="true"
+                         android:layout_centerVertical="true"
+                         android:background="@null"/>
+        </RelativeLayout>
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+              android:background="@color/xy_color_line"/>
+
+
+        <!--<ScrollView-->
+        <!--android:id="@+id/xy_agreement_body_layout"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:padding="15dp"-->
+        <!--android:clipChildren="false"-->
+        <!--android:clipToPadding="false"-->
+        <!--android:background="@null">-->
+
+        <!--<TextView-->
+        <!--android:id="@+id/xy_agreement_body"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:autoLink="web"-->
+        <!--android:textSize="14dp"-->
+        <!--android:textColor="@color/xy_color_c1"/>-->
+        <!--</ScrollView>-->
+        <WebView android:layout_width="match_parent"
+                 android:layout_height="match_parent"
+                 android:layout_weight="1"
+                 android:layout_marginBottom="10dp"
+                 android:id="@+id/xy_agreement_body"/>
+    </LinearLayout>
+
+</LinearLayout>

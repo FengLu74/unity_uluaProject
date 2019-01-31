@@ -1,0 +1,314 @@
+﻿module('RealTimeVoicePanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'LeftMiddle/RealTimeVoicePanel';
+---------------------------------------label路径---------------------------------------
+-- 当前频道名称
+local m_ChannelNamePath = "ChannelName";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 队伍频道按钮
+local m_ButtonTeamChannelPath = "ChannelList/Button_TeamChannel";
+-- 公会频道按钮
+local m_ButtonGuildChannelPath = "ChannelList/Button_GuildChannel";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 开启实时语音按钮
+local m_OpenVoiceButtonPath = "OpenVoiceButton";
+-- 关闭实时语音按钮
+local m_PauseVoiceButtonPath = "PauseVoiceButton";
+-- 间隔线
+local m_SpaceSpritePath = "Background/Space";
+-- 麦克风按钮
+local m_MicButtonPath = "MicButton";
+-- 麦克风图标
+local m_MicIconPath = "MicButton/MicIcon";
+-- 麦克风静音图标
+local m_MicCloseIconPath = "MicButton/MicCloseIcon";
+-- 排序中
+local m_InQueueIconPath = "MicButton/InQueueIcon";
+-- 实时语音动画
+local m_VoiceAniPath = "VoiceAni";
+-- 切换频道按钮
+local m_ChangeButtonPath = "ChangeButton";
+-- 频道列表对象
+local m_ChannelListPath = "ChannelList";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 开启实时语音按钮
+local m_OpenVoiceButton = nil;
+-- 关闭实时语音按钮
+local m_PauseVoiceButton = nil;
+-- 间隔线
+local m_SpaceSprite = nil;
+-- 麦克风按钮
+local m_MicButton = nil;
+-- 麦克风图标
+local m_MicIcon = nil;
+-- 麦克风静音图标
+local m_MicCloseIcon = nil;
+-- 排序中
+local m_InQueueIcon = nil;
+-- 实时语音动画
+local m_VoiceAni = nil;
+-- 切换频道按钮
+local m_ChangeButton = nil;
+-- 频道列表对象
+local m_ChannelList = nil;
+-- 选择频道按钮点击时的时间
+local m_PressFrame = 0;
+-- 频道列表是否可见
+local m_ChannelListVisible = false;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_OpenVoiceButton = nil;
+	m_PauseVoiceButton = nil;
+    m_SpaceSprite = nil;
+	m_MicButton = nil;
+	m_MicIcon = nil;
+	m_MicCloseIcon = nil;
+	m_InQueueIcon = nil;
+	m_VoiceAni = nil;
+	m_ChangeButton = nil;
+	m_ChannelList = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_PanelObject = child(m_PanelObject, m_PanelName);
+    m_OpenVoiceButton = child(m_PanelObject, m_OpenVoiceButtonPath).gameObject;
+    m_PauseVoiceButton = child(m_PanelObject, m_PauseVoiceButtonPath).gameObject;
+    m_SpaceSprite = child(m_PanelObject, m_SpaceSpritePath).gameObject;
+    m_MicButton = child(m_PanelObject, m_MicButtonPath).gameObject;
+    m_MicIcon = child(m_PanelObject, m_MicIconPath).gameObject;
+    m_MicCloseIcon = child(m_PanelObject, m_MicCloseIconPath).gameObject;
+    m_InQueueIcon = child(m_PanelObject, m_InQueueIconPath).gameObject;
+    m_VoiceAni = child(m_PanelObject, m_VoiceAniPath).gameObject;
+    m_ChangeButton = child(m_PanelObject, m_ChangeButtonPath).gameObject;
+    m_ChannelList = child(m_PanelObject, m_ChannelListPath).gameObject;
+    m_ChannelList:SetActive(false);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_OpenVoiceButton).onClick = LuaHelper.OnClick(OnOpenVoiceButtonClick);
+    UIEventListener.Get(m_PauseVoiceButton).onClick = LuaHelper.OnClick(OnPauseVoiceButtonClick);
+    UIEventListener.Get(m_MicButton).onClick = LuaHelper.OnClick(OnMicButtonClick);
+    UIEventListener.Get(m_ChangeButton).onClick = LuaHelper.OnClick(OnChangeButtonClick);
+	SetGameObjectEvent(m_ButtonTeamChannelPath, OnButtonTeamChannelClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonGuildChannelPath, OnButtonGuildChannelClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local isMute = ChatVoiceManager.IsMuted;
+    local channelId = ChatVoiceManager.ChannelId;
+    if isMute == true then
+        ShowMuteState();
+    elseif channelId == CHAT_CHANNEL_ID.CHAT_JOIN_ID then
+        ShowTeamChannel();
+    elseif channelId == CHAT_CHANNEL_ID.CHAT_GUILD_ID then
+        ShowGuildChannel();
+    else
+        ShowMuteState();
+    end
+end
+
+-- 当前静音状态
+function ShowMuteState()
+    m_OpenVoiceButton:SetActive(true);
+    m_PauseVoiceButton:SetActive(false);
+    m_ChangeButton:SetActive(false);
+    m_MicButton:SetActive(false);
+    m_ChannelList:SetActive(false);
+    m_ChannelListVisible = false
+    m_VoiceAni:SetActive(false);
+    m_SpaceSprite:SetActive(false);
+    -- 当前静音
+    SetLabelTextByID(m_ChannelNamePath, 9034, m_PanelObject);
+end
+
+-- 显示队伍频道
+function ShowTeamChannel()
+    m_OpenVoiceButton:SetActive(false);
+    m_PauseVoiceButton:SetActive(true);
+    m_SpaceSprite:SetActive(true);
+    m_ChangeButton:SetActive(true);
+    m_VoiceAni:SetActive(true);
+    m_MicButton:SetActive(not m_ChannelListVisible);
+    m_MicCloseIcon:SetActive(ChatVoiceManager.MicOpened ~= true);
+    SetMicIconGrey();
+    m_InQueueIcon:SetActive(false);
+    -- 队伍频道
+    SetLabelTextByID(m_ChannelNamePath, 9030, m_PanelObject);
+end
+
+-- 显示公会频道
+function ShowGuildChannel()
+    m_OpenVoiceButton:SetActive(false);
+    m_PauseVoiceButton:SetActive(true);
+    m_SpaceSprite:SetActive(true);
+    m_ChangeButton:SetActive(true);
+    m_VoiceAni:SetActive(true);
+    if GuildManager.IsGuildWarTime() then
+        m_MicButton:SetActive(not m_ChannelListVisible and ChatVoiceManager.HasMicRight());
+        m_InQueueIcon:SetActive(false);
+    else
+        m_MicButton:SetActive(not m_ChannelListVisible);
+        m_InQueueIcon:SetActive(false);
+    end
+    SetMicIconGrey();
+    m_MicCloseIcon:SetActive(ChatVoiceManager.MicOpened ~= true);
+    
+    -- 公会频道
+    SetLabelTextByID(m_ChannelNamePath, 9031, m_PanelObject);
+    --[[
+    if GuildManager.IsGuildWarTime() == true then
+        SetLabelTextByID(m_ChannelNamePath, 9033, m_PanelObject);
+    else
+        SetLabelTextByID(m_ChannelNamePath, 9032, m_PanelObject);
+    end
+    ]]
+end
+
+function SetMicIconGrey()
+    if ChatVoiceManager.MicOpened == true then
+        CCommonTool.SetGameObjectGrey(m_MicIcon, false);
+    else
+        CCommonTool.SetGameObjectGreyWithValue(m_MicIcon, true, 1, 0.2, 1, 1);
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 开启实时语音按钮
+function OnOpenVoiceButtonClick(gameObject)
+    local hasTeam = TeamManager.HasTeam();
+    local hasGuild = GuildManager.HasGuild();
+    if hasTeam == true or hasGuild == true then
+        ChatVoiceManager.SetRealTimeVoiceMuteMode(false);
+        InitShow();
+    else
+        ShowSystemFlowTips(8200);
+    end
+end
+
+-- 关闭实时语音按钮
+function OnPauseVoiceButtonClick(gameObject)
+    ChatVoiceManager.SetRealTimeVoiceMuteMode(true);
+    InitShow();
+end
+
+-- 麦克风按钮
+function OnMicButtonClick(gameObject)
+    if ChatVoiceManager.MicOpened == true then
+        ChatVoiceManager.CloseMic();
+    else
+        ChatVoiceManager.OpenMic();
+    end
+    InitShow();
+end
+
+
+-- 切换频道按钮
+function OnChangeButtonClick(gameObject)
+    if m_ChannelListVisible == true then
+        HideChannelList();
+        return;
+    end
+    m_MicButton:SetActive(false);
+    m_ChannelList:SetActive(true);
+    m_ChannelListVisible = true;
+    m_PressFrame = Time.frameCount;
+    if UICamera.onPress == nil then
+        UICamera.onPress = OnUIPress;
+    else
+        UICamera.onPress = LuaDelegateUtil.Remove(UICamera.onPress, OnUIPress);
+        UICamera.onPress = LuaDelegateUtil.Combine(UICamera.onPress, OnUIPress);
+    end
+end
+
+function OnUIPress(go, pressed)
+    if go == child(m_PanelObject, m_ButtonTeamChannelPath).gameObject 
+        or go == child(m_PanelObject, m_ButtonGuildChannelPath).gameObject
+        or go == m_ChangeButton then
+        return;
+    end
+
+    if pressed then
+        if Time.frameCount == m_PressFrame then
+            return;
+        end
+        HideChannelList();
+    end
+end
+
+-- 隐藏频道列表
+function HideChannelList()
+    m_ChannelList:SetActive(false);
+    m_ChannelListVisible = false;
+    UICamera.onPress = LuaDelegateUtil.Remove(UICamera.onPress, OnUIPress);
+    InitShow();
+end
+
+-- 队伍频道按钮
+function OnButtonTeamChannelClick(gameObject)
+    if TeamManager.HasTeam() ~= true then
+        ShowSystemFlowTips(8201);
+    else
+        ChatVoiceManager.JoinTeamRoom();
+    end
+    HideChannelList();
+end
+
+-- 公会频道按钮
+function OnButtonGuildChannelClick(gameObject)
+    if GuildManager.HasGuild() ~= true then
+        ShowSystemFlowTips(8202);
+    else
+        ChatVoiceManager.JoinGuildRoom();
+    end
+    HideChannelList();
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        if m_CreateSuccess == true then
+            InitShow();
+        end
+    end
+end

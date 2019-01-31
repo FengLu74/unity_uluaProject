@@ -1,0 +1,730 @@
+﻿module("PetLearnSkillPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前用的锁定瓶个数
+local m_CurUseLockNumStr = "Label_CurLock";
+-- 解锁与锁定技能按钮文本
+local m_LockButtonLabelStr = "Button_Lock/Label";
+
+-- 同类型低级技能文本
+local m_SameTypeLowSkillLabelStr = "CoverSkillPanel/Label_LowSkill";
+-- 同类型高级技能文本
+local m_SameTypeHighSkillLabelStr = "CoverSkillPanel/Label_HighSkill";
+
+-- 技能名称文本
+local m_SelectSkillNameStr = "SkillContent/Label_Name";
+-- 技能描述文本
+local m_SelectSkillDesStr = "SkillContent/Label_Content";
+
+-- 当前宠物的名称
+local m_CurPetNameStr = "CurPet/Label_Name";
+-- 当前宠物的等级
+local m_CurPetLevelStr = "CurPet/Label_Level";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 低级技能
+local m_LowSkillButtonStr = "Toggle_LowSkill";
+-- 高级技能
+local m_HighSkillButtonStr = "Toggle_HighSkill";
+-- 学习技能按钮
+local m_LearnSkillButtonStr = "Button_LearnSkill";
+-- 锁定技能按钮
+local m_LockSkillButtonStr = "Button_Lock";
+
+-- 同类型返回按钮
+local m_SameTypeCloseButtonStr = "CoverSkillPanel/Button_Cancel";
+-- 同类型确定按钮
+local m_SameTypeOKButtonStr = "CoverSkillPanel/Button_OK";
+-----------------------------------------Sprite路径------------------------------------
+-- 锁定瓶图标
+local m_ItemIconStr = "NeedItem/Sprite_Icon";
+-- 锁定瓶名称
+local m_ItemNameStr = "NeedItem/Label_Name";
+-- 锁定瓶数量
+local m_ItemNumStr = "NeedItem/Label_Num";
+-- 道具
+local m_ButtonItemStr = "NeedItem";
+
+-- 当前宠物品质1
+local m_CurPetQuality1Str = "CurPet/Sprite_Quality1";
+-- 当前宠物品质2
+local m_CurPetQuality2Str = "CurPet/Sprite_Quality2";
+-- 当前宠物图标
+local m_CurPetIconStr = "CurPet/Sprite_Icon";
+
+-- 技能图标
+local m_SkillShowIconStr = "/Sprite_Icon";
+-- 技能锁
+local m_SkillLockStr = "/Sprite_Lock";
+-- 技能遮罩
+local m_SkillMaskStr = "/Sprite_Mask";
+-- 不可覆盖文本
+local m_SkillCannotCoverStr = "/Label_CannotCover";
+-- 覆盖文本
+local m_SkillCoverStr = "/Label_Cover";
+
+-- 相同类型的低级技能图标
+local m_SameTypeLowSkillIconStr = "CoverSkillPanel/Sprite_LowSkillIcon";
+-- 相同类型的高级技能图标
+local m_SameTypeHighSkillIconStr = "CoverSkillPanel/Sprite_HighSkillIcon";
+
+-- 当前选中技能的图标
+local m_CurSelectSkillIconStr = "SkillContent/CurSkill/Sprite_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- 右侧顶部按钮亮的位置
+local m_ActiveStr = "/Active";
+-- 右侧顶部按钮暗的位置
+local m_DeactiveStr = "/Deactive";
+-- 左侧UIListView组件所在的位置
+local m_leftUIListViewCompStr = "SkillList/Grid";
+-- 技能选中对象
+local m_SkillSelectObjStr = "Skills/Sprite_Select";
+-- 技能
+local m_SkillsStr = "Skills/";
+-- 宠物覆盖技能面板
+local m_CoverPetSkillPanel = "CoverSkillPanel";
+
+-- 技能描述所在的位置
+local m_SkillContentStr = "SkillContent";
+-- 无选中技能描述所在的位置
+local m_NoSkillContentStr = "Label_Content";
+----------------------------------通用的名称路径---------------------------------------
+-- 技能图标
+local m_SkillIconStr = "Sprite_Icon";
+-- 技能名称
+local m_SkillNameStr = "Label_Name";
+-- 技能描述
+local m_SkillIntroStr = "Label_Intro";
+-- 个数
+local m_SkillNumsStr = "Label_Num";
+-- 已学
+local m_AlreadyLearnStr = "Label_AlreadyLearn";
+
+-- 当前宠物星级
+local m_CurPetStarsStr = "CurPet/Stars/Star{0}/Sprite";
+-----------------------------------引用的对象------------------------------------------
+-- 宠物技能表数据
+local m_AllPetSkillTableInfo = nil;
+-- 所有的低级技能
+local m_AllLowSkillInfo = {};
+-- 所有的高级技能
+local m_AllHighSkillInfo = {};
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+-- 当前点击的是低级还是高级(低级:0,高级:1)
+local m_curSelectState = 1;
+-- 当前显示的数据
+local m_CurShowTable = {};
+-- 当前选中的信息
+local m_CurSelectData = nil;
+
+-- 技能选中对象
+local m_SkillSelectTrans = nil;
+-- 当前选中的是第几个技能
+local m_SkillSelect = 0;
+-- 当前锁定中的技能
+local m_LockSkillIndexTable = {};
+-- 当前10个栏位的状态
+local m_curSkillPosState = {};
+-- 当前是否有同类的低级的技能
+local m_hasSameTypeLowSkill = false;
+-- 当前锁定瓶数量
+local m_CurHaveLockItemNum = 0;
+
+-- 当前宠物所有的技能信息
+local m_AllSkillInfo = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+
+-- 当前技能数
+local m_curSkillCount = 0;
+-----------------------------------一些写死的规定--------------------------------------
+local ENUM_SKILLSTATE = 
+{
+    TALENTSKILL = 0,
+    NOSKILL = 1,
+    LOCKSKILL = 2,
+    CANLOCKSKILL = 3,
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    DealTableData();
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 读表
+function DealTableData()
+    m_AllPetSkillTableInfo = PetManager.m_AllPetSkillTableInfo;
+    m_AllLowSkillInfo = {};
+    m_AllHighSkillInfo = {};
+    for Index = 1,m_AllPetSkillTableInfo.Count do
+        if m_AllPetSkillTableInfo[Index - 1].SkillType == 0 then
+            table.insert(m_AllLowSkillInfo,m_AllPetSkillTableInfo[Index - 1]);
+        elseif m_AllPetSkillTableInfo[Index - 1].SkillType == 1 then
+            table.insert(m_AllHighSkillInfo,m_AllPetSkillTableInfo[Index - 1]);
+        end
+    end
+end
+
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+    m_SkillSelectTrans = child(m_panelObject, m_SkillSelectObjStr);
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnSkillCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnSkillCloneClick);
+end
+
+function OnSkillCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    if data.HaveNum <= 0 or data.IsHaveSameSkill then
+        local BGWidget = GetComponent(go,"","UISprite");
+        BGWidget.saturationAmount = 0;
+        BGWidget.brightnessAmount = 0.75;
+        local IconWidget = GetComponent(go,m_SkillIconStr,"UISprite");
+        IconWidget.saturationAmount = 0;
+        IconWidget.brightnessAmount = 0.75;
+    else
+        local BGWidget = GetComponent(go,"","UISprite");
+        BGWidget.saturationAmount = 1;
+        BGWidget.brightnessAmount = 1;
+        local IconWidget = GetComponent(go,m_SkillIconStr,"UISprite");
+        IconWidget.saturationAmount = 1;
+        IconWidget.brightnessAmount = 1;
+    end
+    if data.IsHaveSameSkill then
+        SetGameObjectState(m_AlreadyLearnStr,true,go);
+    else
+        SetGameObjectState(m_AlreadyLearnStr,false,go);
+    end
+    local excelID = data.LearnSkillInfo.SkillItemID;
+    SetSpriteByAtlasID(m_SkillIconStr,CCommonTool.GetImageIDByExcelID(excelID),go,true);
+    SetLabelContent(m_SkillNumsStr,data.HaveNum,go);
+end
+
+function IsHaveSkillInPet(petLearnInfo)
+    for Index = 1,PET_ENUM.PET_ALL_SKILL_NUM do
+        if m_AllSkillInfo[Index - 1].SkillID == petLearnInfo.SkillID then
+            return true;
+        end
+        if m_curSelectState == 1 then
+            if m_AllSkillInfo[Index - 1].SkillID == petLearnInfo.MatchSkillID then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+function InitData()
+    if m_isJumpPanelSave then
+        m_curSelectState = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = true;
+    else
+        m_curSelectState = 1;
+    end
+    m_CurSelectData = nil;
+    m_SkillSelect = 0;
+    m_LockSkillIndexTable = {};
+end
+
+-- 初始化显示
+function InitShow()
+    InitLeftContent();
+    InitCurPetInfo();
+    InitCurMatchInfo();
+    InitSkillSelectInfo();
+end
+
+function InitLeftContent()
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_CurSelectPet.CRID);
+        return false;
+    end
+    m_AllSkillInfo = petATT.PetAllSkillInfo;
+    InitTopButtonState();
+    m_leftUIListViewComp:RemoveAll();
+    m_CurShowTable = {};
+    local allTableData;
+    if m_curSelectState == 1 then
+        allTableData = m_AllLowSkillInfo;
+    else
+        allTableData = m_AllHighSkillInfo;
+    end
+    for Index = 1,#allTableData do
+        local data = 
+        {
+            LearnSkillInfo = allTableData[Index],
+            HaveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, allTableData[Index].SkillItemID),
+            IsHaveSameSkill = IsHaveSkillInPet(allTableData[Index]),
+        }
+        m_CurShowTable[Index] = data;
+    end
+    table.sort(m_CurShowTable,SortFunc);
+    for Index = 1,#m_CurShowTable do
+        m_leftUIListViewComp:AddData(m_CurShowTable[Index]);
+        if m_CurShowTable[Index].HaveNum <= 0 then
+            m_leftUIListViewComp:SetDisableByData(m_CurShowTable[Index]);
+        elseif m_CurShowTable[Index].IsHaveSameSkill then
+            m_leftUIListViewComp:SetDisableByData(m_CurShowTable[Index]);
+        end
+    end
+    m_leftUIListViewComp:LookAt(-1,false);
+    m_CurSelectData = nil;
+end
+
+function SortFunc(data1,data2)
+    local leftValue;
+    if data1.IsHaveSameSkill then
+        leftValue = 1;
+    elseif data1.HaveNum >= 1 then
+        leftValue = 2;
+    else
+        leftValue = 0;
+    end
+    local rightValue;
+    if data2.IsHaveSameSkill then
+        rightValue = 1;
+    elseif data2.HaveNum >= 1 then
+        rightValue = 2;
+    else
+        rightValue = 0;
+    end
+    if leftValue == rightValue then
+        return data1.LearnSkillInfo.Id < data2.LearnSkillInfo.Id;
+    else
+        return leftValue > rightValue;
+    end
+end
+
+function InitTopButtonState()
+    if m_curSelectState == 1 then
+        SetGameObjectState(m_LowSkillButtonStr .. m_ActiveStr, true, m_panelObject);
+        SetGameObjectState(m_LowSkillButtonStr .. m_DeactiveStr, false, m_panelObject);
+        SetGameObjectState(m_HighSkillButtonStr .. m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_HighSkillButtonStr .. m_DeactiveStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_LowSkillButtonStr .. m_ActiveStr, false, m_panelObject);
+        SetGameObjectState(m_LowSkillButtonStr .. m_DeactiveStr, true, m_panelObject);
+        SetGameObjectState(m_HighSkillButtonStr .. m_ActiveStr, true, m_panelObject);
+        SetGameObjectState(m_HighSkillButtonStr .. m_DeactiveStr, false, m_panelObject);
+    end
+end
+
+function InitCurPetInfo()
+    SetSpriteApptitude2V04(m_CurPetQuality1Str, m_CurSelectPet:GetAptitudeID(), m_panelObject);
+    SetSpriteApptitudeV04(m_CurPetQuality2Str, m_CurSelectPet:GetAptitudeID(), m_panelObject);
+    SetSpriteByAtlasID(m_CurPetIconStr, m_CurSelectPet:GetImageIdById(), m_panelObject,true);
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_CurSelectPet.CRID);
+        return false;
+    end
+    SetLabelTextByID(m_CurPetNameStr, petMainInfo.NameTextID, m_panelObject);
+    SetLabelContent(m_CurPetLevelStr,"Lv."..petATT.PetLevel,m_panelObject);
+    for Index = 1,petATT.PetStar do
+        SetGameObjectState(string_format(m_CurPetStarsStr,Index),true,m_panelObject);
+    end
+    for Index = petATT.PetStar + 1,10 do
+        SetGameObjectState(string_format(m_CurPetStarsStr,Index),false,m_panelObject);
+    end
+end
+
+function InitCurMatchInfo()
+    if m_CurSelectData == nil then
+        SetGameObjectState(m_SkillContentStr,false,m_panelObject);
+        SetGameObjectState(m_NoSkillContentStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_SkillContentStr,true,m_panelObject);
+        SetGameObjectState(m_NoSkillContentStr,false,m_panelObject);
+        SetSpriteByAtlasID(m_CurSelectSkillIconStr,CCommonTool.GetImageIDByExcelID(m_CurSelectData.LearnSkillInfo.SkillItemID),m_panelObject,true);
+        local petATT = m_CurSelectPet.AllPetAttribute;
+        if petATT == nil then
+            error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_CurSelectPet.CRID);
+            return false;
+        end
+        m_hasSameTypeLowSkill = false;
+        local curSkillType = m_CurSelectData.LearnSkillInfo.SkillType;
+        local curMatchSkillID = m_CurSelectData.LearnSkillInfo.MatchSkillID;
+        if curSkillType == 1 then
+            for Index = 1,PET_ENUM.PET_ALL_SKILL_NUM do
+                if m_AllSkillInfo[Index - 1].SkillID > 0 then
+                    if m_AllSkillInfo[Index - 1].SkillID == curMatchSkillID then
+                        m_hasSameTypeLowSkill = true;
+                        local skillMainInfo = CCommonTool.GetSkillMainData(m_AllSkillInfo[Index - 1].SkillID);
+                        if skillMainInfo ~= nil then
+                            local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                            if skillDataInfo ~= nil then
+                                SetSpriteByAtlasID(m_SameTypeLowSkillIconStr, skillDataInfo.Icon, m_panelObject,true);
+                            end
+                        end
+                        skillMainInfo = CCommonTool.GetSkillMainData(m_CurSelectData.LearnSkillInfo.SkillID);
+                        if skillMainInfo ~= nil then
+                            local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                            if skillDataInfo ~= nil then
+                                SetSpriteByAtlasID(m_SameTypeHighSkillIconStr, skillDataInfo.Icon, m_panelObject,true);
+                            end
+                        end
+                        SetLabelTextByID(m_SameTypeHighSkillLabelStr,CCommonTool.GetNameIDByExcelID(m_CurSelectData.LearnSkillInfo.SkillItemID),m_panelObject);
+                        local lowItemID = GetLowSkillItemIDBySkillID(m_AllSkillInfo[Index - 1].SkillID);
+                        if lowItemID > 0 then
+                            SetLabelTextByID(m_SameTypeLowSkillLabelStr,CCommonTool.GetNameIDByExcelID(lowItemID),m_panelObject);
+                        end
+                        break;
+                    end
+                end
+            end
+        end
+    end
+end
+
+function GetLowSkillItemIDBySkillID(skillID)
+    for Index = 1,#m_AllLowSkillInfo do
+        if m_AllLowSkillInfo[Index].SkillID == skillID then
+            return m_AllLowSkillInfo[Index].SkillItemID;
+        end
+    end
+    return -1;
+end
+
+function InitSkillSelectInfo()
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_CurSelectPet.CRID);
+        return false;
+    end
+    local skillInfo = petATT.PetAllSkillInfo;
+    local path;
+    local curSkillType;
+    local curMatchSkillID;
+    m_curSkillCount = 0;
+    m_curSkillPosState = {};
+    for Index = 1,PET_ENUM.PET_ALL_SKILL_NUM do
+        if skillInfo[Index - 1].SkillID > 0 then
+            m_curSkillCount = m_curSkillCount + 1;
+            if skillInfo[Index - 1].SkillType == 0 then
+                m_curSkillPosState[Index] = ENUM_SKILLSTATE.TALENTSKILL;
+            else
+                local findLockSkill = false;
+                for i = 1,#m_LockSkillIndexTable do
+                    if m_LockSkillIndexTable[i] == Index then
+                        m_curSkillPosState[Index] = ENUM_SKILLSTATE.LOCKSKILL;
+                        findLockSkill = true;
+                        break;
+                    end
+                end
+                if not findLockSkill then
+                    m_curSkillPosState[Index] = ENUM_SKILLSTATE.CANLOCKSKILL;
+                end
+            end
+        else
+            m_curSkillPosState[Index] = ENUM_SKILLSTATE.NOSKILL;
+        end
+    end
+    for Index = 1,#m_curSkillPosState do
+        InitOneSkillShow(Index);
+    end
+    InitLockItemInfo();
+    InitLockNumInfo();
+    InitSkillSelect();
+end
+
+function InitLockItemInfo()
+    SetSpriteByAtlasID(m_ItemIconStr,CCommonTool.GetImageIDByExcelID(PetLockSkillItemID),m_panelObject,true);
+    SetLabelTextByID(m_ItemNameStr,CCommonTool.GetNameIDByExcelID(PetLockSkillItemID),m_panelObject);
+end
+
+function InitLockNumInfo()
+    SetLabelContent(m_CurUseLockNumStr,#m_LockSkillIndexTable.."/"..PetManager.GetMaxPetSkillLockItems(m_curSkillCount),m_panelObject);
+    m_CurHaveLockItemNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, PetLockSkillItemID);
+    SetLabelContent(m_ItemNumStr,m_CurHaveLockItemNum.."/"..#m_LockSkillIndexTable,m_panelObject);
+end
+
+function InitOneSkillShow(skillIndex)
+    path = m_SkillsStr .. skillIndex;
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_CurSelectPet.CRID);
+        return false;
+    end
+    local skillInfo = petATT.PetAllSkillInfo;
+    skillState = m_curSkillPosState[skillIndex];
+    if skillState ~= ENUM_SKILLSTATE.NOSKILL then
+        SetGameObjectState(path..m_SkillShowIconStr,true,m_panelObject);
+        local skillMainInfo = CCommonTool.GetSkillMainData(skillInfo[skillIndex - 1].SkillID);
+        if skillMainInfo ~= nil then
+            local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+            if skillDataInfo ~= nil then
+                SetSpriteByAtlasID(path..m_SkillShowIconStr, skillDataInfo.Icon, m_panelObject,true);
+            end
+        end
+    else
+        SetGameObjectState(path..m_SkillShowIconStr,false,m_panelObject);
+    end
+    if skillState == ENUM_SKILLSTATE.TALENTSKILL then
+        SetGameObjectState(path..m_SkillCannotCoverStr,true,m_panelObject);
+        SetGameObjectState(path..m_SkillLockStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillMaskStr,true,m_panelObject);
+        SetGameObjectState(path..m_SkillCoverStr,false,m_panelObject);
+    elseif skillState == ENUM_SKILLSTATE.NOSKILL then
+        SetGameObjectState(path..m_SkillCannotCoverStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillLockStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillMaskStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillCoverStr,false,m_panelObject);
+    elseif skillState == ENUM_SKILLSTATE.LOCKSKILL then
+        SetGameObjectState(path..m_SkillCannotCoverStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillLockStr,true,m_panelObject);
+        SetGameObjectState(path..m_SkillMaskStr,true,m_panelObject);
+        SetGameObjectState(path..m_SkillCoverStr,false,m_panelObject);
+    elseif skillState == ENUM_SKILLSTATE.CANLOCKSKILL then
+        SetGameObjectState(path..m_SkillCannotCoverStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillLockStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillMaskStr,false,m_panelObject);
+        SetGameObjectState(path..m_SkillCoverStr,false,m_panelObject);
+    end
+end
+
+function InitSkillSelect()
+    if m_SkillSelect <= 0 then
+        SetGameObjectState(m_SkillSelectObjStr,false,m_panelObject);
+        SetGameObjectState(m_SkillContentStr,false,m_panelObject);
+        SetGameObjectState(m_NoSkillContentStr,true,m_panelObject);
+    else
+        if m_curSkillPosState[m_SkillSelect] == ENUM_SKILLSTATE.CANLOCKSKILL then
+            SetLabelTextByID(m_LockButtonLabelStr,1461,m_panelObject);
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_LockSkillButtonStr).gameObject,false);
+        elseif m_curSkillPosState[m_SkillSelect] == ENUM_SKILLSTATE.LOCKSKILL then
+            SetLabelTextByID(m_LockButtonLabelStr,1462,m_panelObject);
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_LockSkillButtonStr).gameObject,false);
+        elseif m_curSkillPosState[m_SkillSelect] == ENUM_SKILLSTATE.TALENTSKILL then
+            SetLabelTextByID(m_LockButtonLabelStr,1461,m_panelObject);
+            CCommonTool.SetGameObjectGrey(child(m_panelObject,m_LockSkillButtonStr).gameObject,true);
+        end
+        SetGameObjectState(m_SkillSelectObjStr,true,m_panelObject);
+        local objTrans = child(m_panelObject,m_SkillsStr .. m_SkillSelect);
+        m_SkillSelectTrans.localPosition = objTrans.localPosition;
+        SetGameObjectState(m_SkillContentStr,true,m_panelObject);
+        SetGameObjectState(m_NoSkillContentStr,false,m_panelObject);
+        local petATT = m_CurSelectPet.AllPetAttribute;
+        if petATT == nil then
+            error("这东西放在了宠物面板，却不是宠物，CRID:::" .. m_CurSelectPet.CRID);
+            return false;
+        end
+        local skillInfo = petATT.PetAllSkillInfo;
+        local info = CCommonTool.GetSkillMainData(skillInfo[m_SkillSelect - 1].SkillID);
+        if info == nil then 
+            error(string_format("skill_main表ID:{0}不存在!", tostring(m_Id)));
+            return;
+        end
+        local skillDataInfo = CCommonTool.GetSkillDateByIndex(info.SonSkill0);
+        if skillDataInfo == nil then 
+            error(string_format("skill_data表ID:{0}不存在!", tostring(info.SonSkill0)));
+            return;
+        end
+        local m_SubId = info.SonSkill0;
+        local nameInfo = CCommonTool.GetSkillNameData(m_SubId);
+        if nameInfo == nil  then
+            error(string_format("skill_name表ID:{0}不存在!", tostring(m_SubId)));
+            return;
+        end
+        SetSpriteByAtlasID(m_CurSelectSkillIconStr, skillDataInfo.Icon, m_panelObject);
+        SetLabelTextByID(m_SelectSkillNameStr, nameInfo.SkillName, m_panelObject);
+        SetLabelTextByID(m_SelectSkillDesStr, nameInfo.Describe, m_panelObject);
+        UIEventListener.Get(child(m_panelObject,m_CurSelectSkillIconStr).gameObject).onClick = nil;
+    end
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_LowSkillButtonStr, OnLowSkillClick, m_panelObject);
+    SetGameObjectEvent(m_HighSkillButtonStr, OnHightSkillClick, m_panelObject);
+    SetGameObjectEvent(m_LearnSkillButtonStr,OnLearnSkillClick, m_panelObject);
+    SetGameObjectEvent(m_LockSkillButtonStr,OnLockClick, m_panelObject);
+    for Index = 1,PET_ENUM.PET_ALL_SKILL_NUM do
+        SetGameObjectEvent(m_SkillsStr .. Index,OnSkillClick,m_panelObject);
+    end
+    SetGameObjectEvent(m_ButtonItemStr,OnItemClick,m_panelObject);
+    SetGameObjectEvent(m_SameTypeCloseButtonStr,OnCancelClick, m_panelObject);
+    SetGameObjectEvent(m_SameTypeOKButtonStr,OnOKLearnSkillClick, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL);
+end
+
+function OnLowSkillClick()
+    m_curSelectState = 1;
+    InitLeftContent();
+    m_CurSelectData = nil;
+    InitCurMatchInfo();
+end
+
+function OnHightSkillClick()
+    m_curSelectState = 2;
+    InitLeftContent();
+    m_CurSelectData = nil;
+    InitCurMatchInfo();
+end
+
+function OnSkillCloneClick(listView, dataIndex)
+    local data = listView:GetData(dataIndex);
+    if data ~= m_CurSelectData and data.HaveNum > 0 and data.IsHaveSameSkill == false then
+        m_CurSelectData = data;
+        InitCurMatchInfo();
+    end
+    SetGameObjectState(m_SkillContentStr,true,m_panelObject);
+    SetGameObjectState(m_NoSkillContentStr,false,m_panelObject);
+    local excelID = data.LearnSkillInfo.SkillItemID;
+    SetSpriteByAtlasID(m_CurSelectSkillIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject);
+    SetLabelTextByID(m_SelectSkillNameStr, CCommonTool.GetNameIDByExcelID(excelID), m_panelObject);
+    SetLabelTextByID(m_SelectSkillDesStr, data.LearnSkillInfo.IntroTextID, m_panelObject);
+    SetItemToolTipsEvent(m_panelObject, m_CurSelectSkillIconStr, ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL, false, excelID);
+end
+
+function OnLearnSkillClick()
+    if m_CurSelectData == nil then
+        ShowSystemFlowTips(7868);
+        return;
+    end
+    if m_hasSameTypeLowSkill then
+        SetGameObjectState(m_CoverPetSkillPanel,true,m_panelObject);
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_LEARN_SKILL);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    for Index = 1,PET_ENUM.PET_LOCK_MAX_ITEMS do
+        if m_LockSkillIndexTable[Index] ~= nil then
+            buffer:WriteByte(m_LockSkillIndexTable[Index]);
+        else
+            buffer:WriteByte(0);
+        end
+    end
+    buffer:WriteInt(m_CurSelectData.LearnSkillInfo.SkillID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+function OnCancelClick()
+    SetGameObjectState(m_CoverPetSkillPanel,false,m_panelObject);
+end
+
+function OnOKLearnSkillClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_LEARN_SKILL);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    for Index = 1,PET_ENUM.PET_LOCK_MAX_ITEMS do
+        buffer:WriteByte(0);
+    end
+    buffer:WriteInt(m_CurSelectData.LearnSkillInfo.SkillID);
+    G_NetWorkMng:SendMessage(buffer);
+    SetGameObjectState(m_CoverPetSkillPanel,false,m_panelObject);
+end
+
+function OnSkillClick(e)
+    selectIndex = tonumber(e.name);
+    if m_curSkillPosState[selectIndex] == ENUM_SKILLSTATE.CANLOCKSKILL or
+        m_curSkillPosState[selectIndex] == ENUM_SKILLSTATE.LOCKSKILL or
+        m_curSkillPosState[selectIndex] == ENUM_SKILLSTATE.TALENTSKILL then
+        m_SkillSelect = selectIndex;
+        InitSkillSelect();
+    end
+end
+
+
+function OnLockClick()
+    if m_SkillSelect > 0 then
+        if m_curSkillPosState[m_SkillSelect] == ENUM_SKILLSTATE.CANLOCKSKILL then
+            if m_CurHaveLockItemNum <= #m_LockSkillIndexTable then
+                if PetLockSkillItemID>0 and CCommonTool.GetQuickToBuyByExcelID(PetLockSkillItemID)~=nil then
+                    MaterialExchangePanel.ShowPanel(PetLockSkillItemID,ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL)  
+                else
+                    ShowSystemFlowTips(7862);
+                end
+                return;
+            end
+            if #m_LockSkillIndexTable >= PetManager.GetMaxPetSkillLockItems(m_curSkillCount) then
+                ShowSystemFlowTips(7863);
+                return;
+            end
+            m_curSkillPosState[m_SkillSelect] = ENUM_SKILLSTATE.LOCKSKILL;
+            table.insert(m_LockSkillIndexTable,m_SkillSelect);
+        elseif m_curSkillPosState[m_SkillSelect] == ENUM_SKILLSTATE.LOCKSKILL then
+            m_curSkillPosState[m_SkillSelect] = ENUM_SKILLSTATE.CANLOCKSKILL;
+            for Index = 1,#m_curSkillPosState do
+                if m_LockSkillIndexTable[Index] == m_SkillSelect then
+                    table.remove(m_LockSkillIndexTable,Index);
+                    break;
+                end
+            end
+        elseif m_curSkillPosState[m_SkillSelect] == ENUM_SKILLSTATE.TALENTSKILL then
+            return;
+        end
+        InitOneSkillShow(m_SkillSelect)
+        m_SkillSelect = 0;
+        InitLockNumInfo();
+        InitSkillSelect();
+    else
+        ShowSystemFlowTips(7869);
+    end
+end
+
+function OnItemClick()
+    GetWayPanel.Show(PetLockSkillItemID,ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnRefresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETSKILLLEARNPANEL) == 1 then
+        m_CurSelectData = nil;
+        m_SkillSelect = 0;
+        m_LockSkillIndexTable = {};
+        InitShow();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_curSelectState;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

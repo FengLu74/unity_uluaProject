@@ -1,0 +1,237 @@
+﻿module("BattleFieldProtocol", package.seeall)
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+function RegisterProtocols()
+    -- 竞技场通知客户端时间到取消匹配
+    network.Register(GMI_STOC_BATTLEFILED_CANCELMATCH, CancelMatchByTimeUp);
+    -- 竞技场通知客户端还有多少时间战斗开始
+    network.Register(GMI_STOC_BATTLEFIELD_PREPARETIME, OnBattleFieldCountDown);
+    -- 竞技场通知客户端跨天重置领取数据
+    network.Register(GMI_STOC_BATTLEFIELD_DAILYRESET, OverDayReset);
+    -- 玩家上线通知客户端竞技场数据
+    network.Register(GMI_STOC_BATTLEFIELD_INITDATA, OnBattleFieldDataInit);
+    -- 竞技场通知玩家结束
+    network.Register(GMI_STOC_BATTLEFIELD_END, BattleFieldEnd);
+    -- 竞技场通知玩家匹配到玩家
+    network.Register(GMI_STOC_BATTLEFIELD_MATCHPLAYER, BattleFieldMatchPlayer);
+    -- 战斗记录数据返回
+    network.Register(GMI_STOC_BATTLEFIELD_RECORDINFO, BattleFieldRecordReturn);
+    -- 每日奖励领取返回
+    network.Register(GMI_STOC_BATTLEFIELD_GETEVERYDAYREWARD_RETURN, OnGetEveryDayRewardReturn);
+    -- 竞技场通知玩家跨赛季
+    network.Register(GMI_STOC_BATTLEFIELD_OVERSEASON_RETURN, OnOverSeasonReturn);
+    -- 竞技场通知玩家竞技货币的更改
+    network.Register(GMI_STOC_BATTLEFIELD_MONEYCHANGE, OnBattleFieldMoneyChange);
+end
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+-- 竞技场通知客户端时间到取消匹配
+function CancelMatchByTimeUp(protocolId,buffer)
+    error("时间到取消匹配");
+    BattleMatchPanel.IsServerNotice = true;
+    closePanel(ENUMPANELID.ENUM_PANEL_BATTLEMATCHPANEL);
+end
+
+-- 竞技场通知客户端还有多少时间战斗开始
+function OnBattleFieldCountDown(protocolId,buffer)
+    local leftTime = buffer:ReadByte();
+    error("竞技场准备剩余时间:::"..leftTime);
+    local panelTable = { };
+    table.insert(panelTable, 1, 0);
+    table.insert(panelTable, 2, 0);
+    table.insert(panelTable, 3, leftTime);
+    table.insert(panelTable, 4, 0);
+    table.insert(panelTable, 5, 0);
+    table.insert(panelTable, 6, 0);
+    table.insert(panelTable, 7, 0);
+
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL) == 1 then
+        DungeonCountDownPanel.functionParameter(panelTable);
+        error("创建倒计时界面1:::"..leftTime);
+    else
+        createPanelExx(ENUMPANELID.ENUM_PANEL_DUNGON_COUNTDOWN_PANEL, panelTable);
+        error("创建倒计时界面2:::"..leftTime);
+    end
+    AddTimerEvent("BattleFieldTotalTimeTimer", leftTime + BattleFieldManager.SecondsBattleFieldFight, Main_RightTop.RoomOverCountDownCallBackOverOut, ETimeShowType.TypeNumberSix, Main_RightTop.RoomOverCountDownCallBackOut);
+end
+
+-- 竞技场通知客户端跨天重置领取数据
+function OverDayReset(protocolId,buffer)
+    BattleFieldManager.SeasonLeftDays = BattleFieldManager.SeasonLeftDays - 1;
+    local curRank = BattleFieldManager.GetCurRank();
+    for Index = 1,BattleFieldManager.BattleFieldRankNum do
+        if Index ~= curRank then
+            BattleFieldManager.IsGetBattleRewardDay[Index] = BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANNOTGET;
+        else
+            BattleFieldManager.IsGetBattleRewardDay[Index] = BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANGETBUTNOTGET;
+        end
+    end
+    BattleRewardPanel.RefreshPanel();
+end
+
+-- 玩家上线通知客户端竞技场数据
+function OnBattleFieldDataInit(protocolId,buffer)
+     local m_nSeasonLeftDays = buffer:ReadInt();
+     BattleFieldManager.SeasonLeftDays = m_nSeasonLeftDays;
+    local m_nCurBattleSeasonScore = buffer:ReadInt();
+    BattleFieldManager.SeasonScore = m_nCurBattleSeasonScore;
+    local m_n64BattleCoin = buffer:ReadInt64();
+    BattleFieldManager.BattleFieldMoney = m_n64BattleCoin;
+    local m_nBattleWinStreak = buffer:ReadInt();
+    local m_nCurBattleSeasonWin = buffer:ReadInt();
+    BattleFieldManager.SeasonWin = m_nCurBattleSeasonWin;
+    local m_nCurBattleSeasonLose = buffer:ReadInt();
+    BattleFieldManager.SeasonFail = m_nCurBattleSeasonLose;
+    local m_nCurBattleSeasonDraw = buffer:ReadInt();
+    BattleFieldManager.SeasonDraw = m_nCurBattleSeasonDraw;
+    local m_nAllBattleSeasonWin = buffer:ReadInt();
+    BattleFieldManager.AllSeasonWin = m_nAllBattleSeasonWin;
+    local m_nAllBattleSeasonLose = buffer:ReadInt();
+    BattleFieldManager.AllSeasonFail = m_nAllBattleSeasonLose;
+    local m_nAllBattleSeasonDraw = buffer:ReadInt();
+    BattleFieldManager.AllSeasonDraw = m_nAllBattleSeasonDraw;
+    local ySizeCount = buffer:ReadByte();
+    BattleFieldManager.IsGetBattleRewardDay = {};
+    local nGetResult;
+    for Index = 1,ySizeCount do
+        nGetResult = buffer:ReadInt();
+        BattleFieldManager.IsGetBattleRewardDay[Index] = nGetResult;
+    end
+end
+
+-- 竞技场通知玩家结束
+function BattleFieldEnd(protocolId,buffer)
+    local battleResultTable = {};
+    local result = buffer:ReadByte();
+    battleResultTable.Result = result;
+    error("战斗结果::"..result);
+    local addScore = buffer:ReadInt();
+    battleResultTable.AddScore = addScore;
+    error("加分:::"..addScore);
+    local opponentGlobalID = buffer:ReadInt();
+    battleResultTable.OpponentGlobalID = opponentGlobalID;
+    error("对手全局ID:::"..opponentGlobalID);
+    local opponentProID = buffer:ReadInt();
+    battleResultTable.OpponentProID = opponentProID;
+    error("对手职业ID:::"..opponentProID);
+    local opponentLevel = buffer:ReadInt();
+    battleResultTable.OpponentLevel = opponentLevel;
+    error("对手等级:::"..opponentLevel);
+    local yStrLen = buffer:ReadByte();
+    error("对手名字长度:::"..yStrLen);
+    local m_wszPlayerName = buffer:ReadString(yStrLen);
+    battleResultTable.OpponentName = m_wszPlayerName;
+    error("对手名字:::"..m_wszPlayerName);
+    local opponentSeasonScore = buffer:ReadInt();
+    error("对手积分:::"..opponentSeasonScore);
+    local opponentFightValue = buffer:ReadInt();
+    error("对手战力:::"..opponentFightValue);
+    local lastRank = BattleFieldManager.GetCurRank();
+    BattleFieldManager.SeasonScore = BattleFieldManager.SeasonScore + addScore;
+    local curRank = BattleFieldManager.GetCurRank();
+    if lastRank ~= curRank then
+        for Index = lastRank+1,curRank do
+            BattleFieldManager.IsGetBattleRewardDay[Index] = BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANGETBUTNOTGET;
+        end
+    end
+    battleResultTable.LastRank = lastRank;
+    battleResultTable.CurRank = curRank;
+    local recordTable = {};
+    recordTable.Result = result;
+    recordTable.AddSeasonScore = addScore;
+    recordTable.OpponentSeasonScore = opponentSeasonScore;
+    recordTable.PlayerName = m_wszPlayerName;
+    recordTable.FightValue = opponentFightValue;
+    if result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_WIN or result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_NOMATCH then
+        BattleFieldManager.SeasonWin = BattleFieldManager.SeasonWin + 1;
+        BattleFieldManager.AllSeasonWin = BattleFieldManager.AllSeasonWin + 1;
+    elseif result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_LOSE then
+        BattleFieldManager.SeasonFail = BattleFieldManager.SeasonFail + 1;
+        BattleFieldManager.AllSeasonFail = BattleFieldManager.AllSeasonFail + 1;
+    elseif result == BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_DRAW then
+        BattleFieldManager.SeasonDraw = BattleFieldManager.SeasonDraw + 1;
+        BattleFieldManager.AllSeasonDraw = BattleFieldManager.AllSeasonDraw + 1;
+    end
+    table.insert(BattleFieldManager.FightRecord,1,recordTable);
+    BattleRewardPanel.RefreshPanel();
+    BattlePanel.RefreshPanel();
+    BattleRecordPanel.RefreshFightRecord();
+    if result ~= BATTLEFIELD_RESULT.BATTLEFIELD_RESULT_NOMATCH then
+        BattleResultPanel.SetData(battleResultTable);
+    else
+        G_TimerMng:RemoveTimeTask("BattleFieldTotalTimeTimer");
+        BattleNoMatchResultPanel.SetData(addScore);
+    end
+    ShopPanel.OnBattleFieldSeasonScoreRefresh();
+end
+
+-- 竞技场通知玩家匹配到玩家
+function BattleFieldMatchPlayer(protocolId,buffer)
+    local dataTable = {};
+    local opponentSeasonScore = buffer:ReadInt();
+    error("敌方积分"..opponentSeasonScore)
+    dataTable.OpponentSeasonScore = opponentSeasonScore;
+    local opponentFightValue = buffer:ReadInt();
+    error("敌方战斗力"..opponentFightValue)
+    dataTable.OpponentFightValue = opponentFightValue;
+    local opponentProID = buffer:ReadInt();
+    error("地方职业"..opponentProID)
+    dataTable.OpponentProID = opponentProID;
+    BattleMatchPanel.SetData(BattleMatchPanel.MatchedPlayer,dataTable);
+end
+
+function BattleFieldRecordReturn(protocolId,buffer)
+    local yCount = buffer:ReadByte();
+    local yStrLen = 0;
+    local recordTable = {};
+    for Index = 1,yCount do
+        recordTable = {};
+        recordTable.Result = buffer:ReadInt();
+        recordTable.AddSeasonScore = buffer:ReadInt();
+        recordTable.OpponentSeasonScore = buffer:ReadInt();
+        yStrLen = buffer:ReadByte();
+        recordTable.PlayerName = buffer:ReadString(yStrLen);
+        recordTable.FightValue = buffer:ReadInt();
+        table.insert(BattleFieldManager.FightRecord,recordTable);
+    end
+    if yCount > 0 then
+        BattlePanel.RefreshFightRecord();
+        BattleRecordPanel.RefreshFightRecord();
+    end
+end
+
+function OnGetEveryDayRewardReturn(protocolId,buffer)
+    local rank = buffer:ReadInt();
+    BattleFieldManager.IsGetBattleRewardDay[rank + 1] = BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_ALREADYGET;
+    BattleRewardPanel.RefreshPanel();
+end
+
+function OnOverSeasonReturn(protocolId,buffer)
+    error("跨赛季了")
+    BattleFieldManager.SeasonScore = BattleFieldManager.BattleFieldInitScore;
+    BattleFieldManager.SeasonRank = 0;
+    BattleFieldManager.SeasonWin = 0;
+    BattleFieldManager.SeasonFail = 0;
+    BattleFieldManager.SeasonDraw = 0;
+    BattleFieldManager.SeasonLeftDays = BattleFieldManager.BattleFieldSeasonLastDays;
+    local curRank = BattleFieldManager.GetCurRank();
+    for Index = 1,BattleFieldManager.BattleFieldRankNum do
+        if Index ~= curRank then
+            BattleFieldManager.IsGetBattleRewardDay[Index] = BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANNOTGET;
+        else
+            BattleFieldManager.IsGetBattleRewardDay[Index] = BATTLEFIELD_GETREWARDSTATE.BATTLEFIELD_GETREWARDSTATE_CANGETBUTNOTGET;
+        end
+    end
+    BattlePanel.RefreshPanel();
+    BattleRewardPanel.RefreshPanel();
+    ShopPanel.OnBattleFieldSeasonScoreRefresh();
+end
+
+function OnBattleFieldMoneyChange(protocolId,buffer)
+    local addMoney = buffer:ReadInt64();
+    error("addMoney:::"..addMoney)
+    local totalMoney = buffer:ReadInt64();
+    BattleFieldManager.BattleFieldMoney = totalMoney;
+    if addMoney > 0 then
+        ShowSystemFlowTips(5508,nil,{addMoney})
+    end
+    error("竞技场货币更新，当前货币:::"..totalMoney);
+end

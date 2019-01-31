@@ -1,0 +1,141 @@
+﻿module("EveryDayTaskProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 更新必做任务列表
+    network.Register(GMI_STOC_UPDATE_DAILY_EVENT_INFO, OnRecieveTaskList);
+    -- 玩家的每日任务信息
+    network.Register(GMI_STOC_EVERYDAY_TASK_UPDAYE, OnEverydayTaskUpdate);
+    -- 每日任务领取奖励后返回
+    network.Register(GMI_STOC_EVERYDAY_TASK_REWARD, OnEverydayTaskReward);
+
+    -- 押镖任务特殊处理
+    network.Register(GMI_STOC_PERSONAL_PROTECT_NPC_OPEN_TASK_PANEL, OnOpenEscortPanel);
+    -- 镖车位置及所在场景
+    network.Register(GMI_STOC_SEND_CAMION_LOCATION, OnGetEscortPos);
+    -- 请求跟随镖车返回
+    network.Register(GMI_STOC_SEND_CAMION_STATE, OnGetFollowState); 
+    -- 通知客户端传送读条，传送到镖车附近
+    network.Register(GMI_STOC_CAMION_FOLLOW_LOADING_CHANGE_ROOM, OnGetFollowTransfer); 
+end
+
+-- 更新必做任务列表
+function OnRecieveTaskList(protocolId, buffer)
+    --error("更新必做任务列表:::");
+    local count = buffer:ReadByte();
+    for i = 1, count do
+        local data = {};
+        data.rewardState = buffer:ReadByte();
+        data.id = buffer:ReadInt(); --任务ID
+        data.value = buffer:ReadInt();--杀怪或者任务道具个数
+        --if data.value > 0 then
+        --    error(string_format("taskId:{0} taskValue:{1}", data.id, data.value));
+        --end
+        EveryDayTaskManager.UpdateTask(data);
+    end
+    EveryDayTaskPanel.Refresh();
+    --RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_DAY, EveryDayTaskManager.HasFinishTask(1));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_WEEK, EveryDayTaskManager.HasFinishTask(2));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_MONTH, EveryDayTaskManager.HasFinishTask(3));
+end
+
+-- 刷新每日任务信息
+function OnEverydayTaskUpdate(protocolId, buffer)
+    -- 发送类型 1 玩家上线时发送 2 每日任务更新时发送
+    local m_yType = buffer:ReadByte();
+    -- 每日的数量
+    local m_wNum = buffer:ReadByte();
+    --RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_DAY, EveryDayTaskManager.HasFinishTask(1));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_WEEK, EveryDayTaskManager.HasFinishTask(2));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_MONTH, EveryDayTaskManager.HasFinishTask(3));
+end
+
+-- 任务奖励领取成功
+function OnEverydayTaskReward(protocolId, buffer)
+    local taskId = buffer:ReadInt();
+    EveryDayTaskPanel.Refresh();
+    --RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_DAY, EveryDayTaskManager.HasFinishTask(1));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_WEEK, EveryDayTaskManager.HasFinishTask(2));
+    RedHintMng.SetRedHintState(CREDHINTENUM.DAILY_TASK_MONTH, EveryDayTaskManager.HasFinishTask(3));
+end
+
+-- 押镖任务结算
+function OnOpenEscortPanel(protocolId, buffer)
+    local taskId = buffer:ReadInt();            -- 任务id
+    local moneyNum = buffer:ReadInt();          -- 银币
+    local corpsMoeny = buffer:ReadInt();        -- 公会资金
+    local npcCRID = buffer:ReadInt();           -- npcCRID
+    local camionHP = buffer:ReadFloat();        -- 镖车血量
+    TaskBeyond3DPanel.OpenTaskPanel(taskId, npcCRID, moneyNum, corpsMoeny);
+end
+
+-- 镖车位置及所在场景
+function OnGetEscortPos(protocolId, buffer)
+    error("镖车位置及所在场景 ::::::::::::::");
+    sceneID = buffer:ReadInt();     -- 镖车所在场景
+    posX = buffer:ReadFloat();      -- 镖车所在x点
+    posZ = buffer:ReadFloat();      -- 镖车所在z点
+    local currentSceneId = G_SceneMng.SceneID;
+    local m_pos = Vector3.New(tonumber(posX), tonumber(0), tonumber(posZ));
+    if sceneID ~= nil and m_pos ~= nil and G_UserInfo:GetCurPlayer() then 
+        G_UserInfo:GetCurPlayer():SetSeekTarget(sceneID, m_pos);
+        Main_MiddleTop.InitCamionFollowing();
+    end
+end
+
+-- 请求跟随镖车返回 0：未跟随镖车状态 1：跟随镖车中
+function OnGetFollowState(protocolId, buffer)
+    local state = buffer:ReadByte();
+    error("请求跟随镖车返回 state:::::::::::::::::::::::::::::::::::::::::::::::::::::::::"..state);
+    local agentPlayer = G_UserInfo:GetCurPlayer();
+    if agentPlayer.AutoMovePath == true and state == 0 then 
+        error("当前正在跟随自动寻路中 state:::::::::::::::::::::::::::::::::::::::::::::::::::::::::"..state);
+        EveryDayTaskManager.changeState = state;
+        return;
+    end
+    if state == 0 then 
+        EveryDayTaskManager.isCamionFollowing = false;
+    else
+        EveryDayTaskManager.isCamionFollowing = true;
+    end
+    EveryDayTaskManager.SetIsStopAutoFight();
+    Main_MiddleTop.InitCamionFollowing();
+end
+
+-- 通知客户端传送读条
+function OnGetFollowTransfer(protocolId, buffer)
+    local transferType = ENUM_BATTLEUNIT_GATHER_TYPE.GATHER_TYPE_TRANSFER3;
+    local duration = CCommonTool.GetDefineInfo(2210):GetFloatContent();
+    CollectBar.BreakTaskSendBar();
+    CollectBar.InitCollectBar(transferType, 0, 0, duration, 0, 0, RequestTransfer);
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求领取必做任务奖励
+-- @param taskId 必做任务ID
+function RequestGetReward(taskId)
+    error("请求领取必做任务奖励"..taskId);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_COMPLETE_EVERY_DAY_QUEST);
+    buffer:WriteInt(taskId);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求跟随或取消跟随镖车 0：取消跟随 1：跟随
+function RequestFollow(id)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_REQUEST_FOLLOW_CAMION);
+    buffer:WriteByte(id);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 请求传送到镖车
+function RequestTransfer()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_CAMION_FOLLOW_CHANGE_ROOM);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

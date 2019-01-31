@@ -1,0 +1,667 @@
+﻿module('GuildWarPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildWarPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 竞价按钮
+local m_BtnBiddingPath = "btn_Bidding";
+-- 放弃竞价按钮
+local m_BtnGiveUpPath = "btn_GiveUp";
+-- 竞价结果
+local m_BtnResultPath = "btn_Result";
+-- 加注释
+local m_BtnClosePath = "Sub_Result/btn_Close";
+-- 加注释
+local m_GuildTipsClosePath = "Sub_CityInfo/GuildTipsPanel/btn_Bg";
+-- 竞标结果关闭按钮路径
+local m_BtnBgPath = "Sub_Result/btn_Bg";
+-- 关闭竞标界面
+local m_auctionBtnBg = "Sub_Auction/btn_Bg";
+-- 加注释
+local m_BackgroundPath = "Sub_Result/btn_Close/Background";
+-- 竞价界面报价
+local m_NewOfferPath = "Sub_Auction/Sub_Content/Sub_NewOffer";
+-- 竞价结果页面
+local m_ResultPath = "Sub_Result";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 提交报价按钮
+local m_BtnSubmitOfferPath = "Sub_Auction/btn_SubmitOffer";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 据点列表
+local m_CityListPath = "Sub_CityList/UIGrid";
+-- 公会列表
+local m_GuildListPath = "Sub_CityInfo/Sub_GuildList/UIGrid";
+-- 竞标结果列表
+local m_ResultListPath = "Sub_Result/Sub_ResultList/UIGrid";
+-- 据点信息
+local m_subCityInfo = "Sub_CityInfo/";
+-- 据点信息背景图片
+local m_subCityBgPath = "Sub_CityInfo/sp_Bg";
+-- 占领据点公会
+local m_occupationGuild = "Sub_CityInfo/btn_OccupationGuild";
+-- 报价panel
+local m_subAuctionPath = "Sub_Auction";
+-- 占领公会路径
+local m_GuildTipsPath = "Sub_CityInfo/GuildTipsPanel";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 据点列表
+local m_CityList = nil;
+-- 公会列表
+local m_GuildList = nil;
+-- 竞标结果列表
+local m_ResultList = nil;
+-- 据点战数据
+local m_TableWar = nil;
+-- 当前选定据点
+local m_currentTerritory = 0;
+-- 当前报价
+local m_newOffer = nil;
+-- 是否第一次打开
+local isFirstOpen = false;
+-- 是否已经占领据点
+local isHaveStrongHold = false;
+-- 占领据点ID
+local ownStrongHold = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitDatas();
+    InitObjects();
+    InitEvents();
+    InitShow();
+    RefreshAuctionData();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_UIGrid = nil;
+	m_UIGrid = nil;
+	m_UIGrid = nil;
+    m_TableWar = nil;
+    m_currentScene = nil;
+    m_currentTerritory = 0;
+    m_newOffer = nil;
+    G_TimerMng:RemoveTimeTask("RequestAuction");
+    G_TimerMng:RemoveTimeTask("GuildWar");
+    isHaveStrongHold = false;
+    ownStrongHold = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL);
+    m_CityList = GetComponent(m_PanelObject, m_CityListPath, "UIListView");
+    m_GuildList = GetComponent(m_PanelObject, m_GuildListPath, "UIListView");
+    m_ResultList = GetComponent(m_PanelObject, m_ResultListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_CityList:SetInitCallback(OnCityListViewInit);
+    m_CityList:SetClickCallback(OnCityListViewClick);
+	SetGameObjectEvent(m_occupationGuild, OnBtnOccupationGuildClick, m_PanelObject);
+    m_GuildList:SetInitCallback(OnGuildListViewInit);
+    m_GuildList:SetClickCallback(OnGuildListViewClick);
+	SetGameObjectEvent(m_GuildTipsClosePath, OnGuildTipsCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnBiddingPath, OnBtnBiddingClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnGiveUpPath, OnBtnGiveUpClick, m_PanelObject);
+    SetGameObjectEvent(m_BtnResultPath, OnBtnResultClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnSubmitOfferPath, OnBtnSubmitOfferClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnBgPath, OnBtnBgClick, m_PanelObject);
+    m_ResultList:SetInitCallback(OnResultListViewInit);
+    m_ResultList:SetClickCallback(OnResultListViewClick);
+	SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_auctionBtnBg, OnAuctionBtnBgClick, m_PanelObject);
+    SetGameObjectEvent(m_NewOfferPath, OnNewOfferClick, m_PanelObject);
+end
+
+-- 初始化数据
+function InitDatas()
+    -- 本地表数据
+    m_TableWar = CCommonTool.GetAllActivityWarInfo();
+    
+end
+
+-- 初始化显示信息
+function InitShow()
+    print("GuildManager.guildAuctionInfo = ",SerializeTable(GuildManager.guildAuctionInfo));
+    if GuildManager.guildAuctionInfo ~= nil then
+        if m_TableWar == nil then return end
+        -- 显示左侧据点列表信息
+        m_CityList:RemoveAll();
+        local StrongHoldInfo = GuildManager.guildAuctionInfo.StrongHoldInfo;
+        for i = 0, m_TableWar.count-1 do
+            local state = StrongHoldInfo[i+1].sceneState;
+            local data = m_TableWar[i];
+            if data and state ~= 0 then 
+                m_CityList:AddData(i);
+                if GuildManager.myGuild ~= nil then
+                    error("GuildManager.myGuild.guildId "..GuildManager.myGuild.guildId );
+                    if GuildManager.guildAuctionInfo[i+1].captureCorpsID == GuildManager.myGuild.guildId then 
+                        error("拥有据点");
+                        isHaveStrongHold = true;
+                        ownStrongHold = data.ID;
+                    end
+                end
+            else
+                --table.remove(GuildManager.guildAuctionInfo, i+1);
+            end
+        end
+        m_CityList:SetSelect(m_currentTerritory,true);
+        onShowCityInfo(m_currentTerritory + 1);
+    end
+end 
+
+-- 显示右侧据点详细信息
+function onShowCityInfo(Index)
+    SetGameObjectState(m_subCityInfo.."lb_Time", false, m_PanelObject);
+    local data = m_TableWar[Index - 1];
+    -- 据点信息
+    SetLabelTextByID(m_subCityInfo.."lb_Name",data.NameID,m_PanelObject);
+    SetLabelTextByID(m_subCityInfo.."lb_Function",data.TextID,m_PanelObject);
+    local guildAuctionInfo = GuildManager.guildAuctionInfo[Index];
+    -- 占领公会信息
+    if guildAuctionInfo.captureCorpsID <= 0 then
+        SetGameObjectState(m_occupationGuild, false, m_PanelObject);
+    else
+        SetGameObjectState(m_occupationGuild, true, m_PanelObject);
+        local guildName = G_GuildMng:GetGuildName(guildAuctionInfo.captureCorpsID);
+        local flagName =  G_GuildMng:GetFlagName(guildAuctionInfo.captureCorpsID);
+        SetLabelContent(m_occupationGuild .."/lb_GuildName",guildName,m_PanelObject);
+        SetLabelContent(m_occupationGuild .."/lb_GuildFlag",flagName,m_PanelObject);
+    end
+    -- 竞价公会列表
+    if guildAuctionInfo.applyCorpsNum <= 0 then
+        m_GuildList:RemoveAll();
+        SetGameObjectState(m_subCityInfo .. "NonSelectBox", true, m_PanelObject);
+    else
+        SetGameObjectState(m_subCityInfo .. "NonSelectBox", false, m_PanelObject);
+        m_GuildList:RemoveAll();
+        for i, v in pairs(guildAuctionInfo.guildInfo) do
+            m_GuildList:AddData(v);
+        end
+    end
+    -- 竞价相关
+    if guildAuctionInfo.selfCorpsCompeteMoney <= 0 then
+        SetGameObjectState(m_subCityInfo .. "lb_PriceData", false, m_PanelObject);
+        SetGameObjectState(m_subCityInfo .. "lb_None", true, m_PanelObject);
+        SetGameObjectPos(m_BtnBiddingPath, Vector3.New(758, -460, 0), m_PanelObject);
+        SetGameObjectState(m_BtnGiveUpPath, false, m_PanelObject);
+    else
+        SetGameObjectState(m_subCityInfo .. "lb_PriceData", true, m_PanelObject);
+        SetGameObjectState(m_subCityInfo .. "lb_None", false, m_PanelObject);
+        SetLabelContent(m_subCityInfo .."lb_PriceData",guildAuctionInfo.selfCorpsCompeteMoney,m_PanelObject);
+        SetGameObjectPos(m_BtnBiddingPath, Vector3.New(455, -460, 0), m_PanelObject);
+        SetGameObjectState(m_BtnGiveUpPath, true, m_PanelObject);
+    end
+    -- 竞价是否结束 1是进行中，2是结束
+    if GuildManager.guildAuctionInfo.biddingState == 1 then
+        SetGameObjectState(m_BtnBiddingPath, true, m_PanelObject);
+        SetGameObjectState(m_BtnGiveUpPath, true, m_PanelObject);
+        SetGameObjectState(m_BtnResultPath, false, m_PanelObject);
+         -- 竞价相关
+        if guildAuctionInfo.selfCorpsCompeteMoney <= 0 then
+            SetGameObjectState(m_subCityInfo .. "lb_PriceData", false, m_PanelObject);
+            SetGameObjectState(m_subCityInfo .. "lb_None", true, m_PanelObject);
+            SetGameObjectPos(m_BtnBiddingPath, Vector3.New(758, -460, 0), m_PanelObject);
+            SetGameObjectState(m_BtnGiveUpPath, false, m_PanelObject);
+        else
+            SetGameObjectState(m_subCityInfo .. "lb_PriceData", true, m_PanelObject);
+            SetGameObjectState(m_subCityInfo .. "lb_None", false, m_PanelObject);
+            SetLabelContent(m_subCityInfo .."lb_PriceData",guildAuctionInfo.selfCorpsCompeteMoney,m_PanelObject);
+            SetGameObjectPos(m_BtnBiddingPath, Vector3.New(455, -460, 0), m_PanelObject);
+            SetGameObjectState(m_BtnGiveUpPath, true, m_PanelObject);
+        end
+    else
+        SetGameObjectState(m_BtnBiddingPath, false, m_PanelObject);
+        SetGameObjectState(m_BtnGiveUpPath, false, m_PanelObject);
+        SetGameObjectState(m_BtnResultPath, true, m_PanelObject);
+    end
+    -- 冷却时间
+    if GuildManager.guildAuctionInfo.CoolingTime <= 0 then
+        SetLabelContent(m_subCityInfo .. "lb_Cooling", "", m_PanelObject);
+        SetGameObjectState(m_subCityInfo .. "lb_Cooling", false, m_PanelObject);
+        SetCUIButtonEnabled(m_BtnBiddingPath, true, m_PanelObject);
+    else
+        SetGameObjectState(m_subCityInfo .. "lb_Cooling", true, m_PanelObject);
+        SetCUIButtonEnabled(m_BtnBiddingPath, false, m_PanelObject);
+        local ishaveTimer = G_TimerMng:GetTimeTask("GuildWar");
+        if ishaveTimer == nil then
+            AddTimerEvent("GuildWar", GuildManager.guildAuctionInfo.CoolingTime, GuildWarCallBackOver, ETimeShowType.TypeNumberFour, CloseCallBack);
+        end
+    end
+end
+
+function RefreshAuctionData()
+     -- 只要该页面打开，三秒请求一次竞拍数据用以实现实时刷新
+    AddTimerEvent("RequestAuction", 3, RefreshAuctionData);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL) == 1 then
+        GuildProtocol.RequestGetWarInfo();
+    end
+end
+------------------------------------------事件方法------------------------------------
+
+-- 据点列表
+function OnCityListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    local data = m_TableWar[data];
+    SetLabelTextByID("lb_Name",data.NameID,go);
+    if index <= 5 and index > 1  then 
+        --SetSpriteContent("sp_Icon", "Activity01AtlasV04", "UI_HDJM_DiTu_001"..index - 1, go, true);
+    else
+        --SetSpriteContent("sp_Icon", "Activity01AtlasV04", "UI_HD_DiTu_101", go, true);
+    end
+    SetSpriteContent("sp_Icon", "Activity01AtlasV04", "UI_HD_DiTu_101", go, true);
+--    SetSpriteByAtlasID("sp_Icon", data.PicId, go, true);
+    local guildAuctionInfo = GuildManager.guildAuctionInfo[index];
+    if guildAuctionInfo == nil then
+        SetGameObjectState("lb_NoneBidders", true, go);
+        SetGameObjectState("lb_NoneHighestPrice", true, go);
+        SetGameObjectState("lb_GuildFlag", false, go);
+        SetGameObjectState("lb_BiddersName", false, go);
+        SetGameObjectState("lb_HighestPriceData", false, go);
+    else
+        if guildAuctionInfo.applyCorpsNum <= 0 then
+            SetGameObjectState("lb_NoneBidders", true, go);
+            SetGameObjectState("lb_NoneHighestPrice", true, go);
+            SetGameObjectState("lb_GuildFlag", false, go);
+            SetGameObjectState("lb_BiddersName", false, go);
+            SetGameObjectState("lb_HighestPriceData", false, go);
+        else
+            SetGameObjectState("lb_NoneBidders", false, go);
+            SetGameObjectState("lb_NoneHighestPrice", false, go);
+            SetGameObjectState("lb_GuildFlag", true, go);
+            SetGameObjectState("lb_BiddersName", true, go);
+            SetGameObjectState("lb_HighestPriceData", true, go);
+            -- 第一个即为出价最高者
+            local guildID = guildAuctionInfo.guildInfo[1].corpsID;
+            local competeMoney = guildAuctionInfo.guildInfo[1].competeMoney;
+            local guildName = G_GuildMng:GetGuildName(guildID);
+            local flagName =  G_GuildMng:GetFlagName(guildID);
+            SetLabelContent("lb_BiddersName", guildName, go);
+            SetLabelContent("lb_GuildFlag", flagName, go);
+            SetLabelContent("lb_HighestPriceData", competeMoney, go);
+        end
+    end
+end
+
+-- 据点列表点击
+function OnCityListViewClick(listView, cell, go)
+    --local index = tonumber(string.sub(cell.name, 6)) + 1;
+    local index = listView:GetData(cell.dataIndex);
+    m_currentTerritory = index;
+    onShowCityInfo(m_currentTerritory + 1);
+    --[[
+    if index <= 5 and index > 1  then 
+        SetSpriteContent(m_subCityBgPath, "Activity01AtlasV04", "UI_HDJM_DiTu_00"..index - 1, m_PanelObject, true);
+    else
+        SetSpriteContent(m_subCityBgPath, "Activity01AtlasV04", "UI_HD_DiTu_101", m_PanelObject, true);
+    end
+    ]]
+    SetSpriteContent(m_subCityBgPath, "Activity01AtlasV04", "UI_HD_DiTu_101", m_PanelObject, true);
+end
+
+-- 公会列表
+function OnGuildListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+    SetLabelContent("lb_Rank", index, go);
+    local guildID = data.corpsID;
+    local guildName = G_GuildMng:GetGuildName(guildID);
+    local flagName =  G_GuildMng:GetFlagName(guildID);
+    SetLabelContent("lb_GuildName", guildName, go);
+    SetLabelContent("lb_GuildFlag", flagName, go);
+    SetLabelContent("lb_PriceData", data.competeMoney, go);
+end
+
+-- 公会列表点击
+function OnGuildListViewClick(listView, cell, go)
+
+end
+
+-- 竞标结果列表
+function OnResultListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetGameObjectState("lb_Time", false, go);
+    local defendCorpsID = data.defendCorpsID;
+    local attackCorpsID = data.attackCorpsID;
+    local sceneID = data.sceneID;
+    SetLabelTextByID("lb_Name",CCommonTool.GetActivityWarInfoIndex(sceneID).NameID, go);
+    local index = sceneID - 62;
+    if index <= 5 and index > 1  then 
+        SetSpriteContent("sp_Bg", "Activity01AtlasV04", "UI_HDJM_DiTu_00"..index - 1, go, true);
+    else
+        SetSpriteContent("sp_Bg", "Activity01AtlasV04", "UI_HD_DiTu_101", go, true);
+    end
+    -- 攻方公会信息
+    if attackCorpsID > 0 then
+        local myGuildName = G_GuildMng:GetGuildName(attackCorpsID);
+        local myGuildLv = G_GuildMng:GetGuildLevel(attackCorpsID);
+        local myGuildFlag = G_GuildMng:GetFlagName(attackCorpsID);
+        local myInfo = CCommonTool.GetGuildInfoByIndex(tonumber(myGuildLv));
+
+        SetLabelContent("Sub_Red/lb_Name", myGuildName, go);
+        SetLabelContent("Sub_Red/lb_GuildFlag", myGuildFlag, go);
+        SetSpriteByAtlasID("Sub_Red/lb_GuildFlag/sp_Flag", myInfo.FlagIconBig, go, true);
+    else
+        SetLabelContent("Sub_Red/lb_Name", "???", go);
+        SetLabelContent("Sub_Red/lb_GuildFlag", "?", go);
+    end
+    -- 守方公会相关信息
+    if defendCorpsID > 0 then
+        local guildName = G_GuildMng:GetGuildName(defendCorpsID);
+        local flagName =  G_GuildMng:GetFlagName(defendCorpsID);
+        local guildLv = G_GuildMng:GetGuildLevel(defendCorpsID);
+        local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+
+        SetLabelContent("Sub_Blue/lb_Name", guildName, go);
+        SetLabelContent("Sub_Blue/lb_GuildFlag", flagName, go);
+        SetSpriteByAtlasID("Sub_Blue/lb_GuildFlag/sp_Flag", info.FlagIconBig, go, true); 
+    else
+        SetLabelContent("Sub_Blue/lb_Name", "???", go);
+        SetLabelContent("Sub_Blue/lb_GuildFlag", "?", go);
+    end      
+end
+
+-- 竞标结果列表点击
+function OnResultListViewClick(listView, cell, go)
+    
+end
+
+-- 点击占领据点公会显示tips
+function OnBtnOccupationGuildClick(gameObject)
+    SetGameObjectState(m_GuildTipsPath, true, m_PanelObject);
+    local guildAuctionInfo = GuildManager.guildAuctionInfo[m_currentTerritory + 1];
+    -- 占领公会信息
+    SetGameObjectState(m_occupationGuild, true, m_PanelObject);
+    local guildName = G_GuildMng:GetGuildName(guildAuctionInfo.captureCorpsID);
+    local flagName =  G_GuildMng:GetFlagName(guildAuctionInfo.captureCorpsID);
+    local guildLv = G_GuildMng:GetGuildLevel(guildAuctionInfo.captureCorpsID);
+    local guildRank = guildAuctionInfo.captureCorpsRank;
+    local guildMember = guildAuctionInfo.captureCorpsMember;
+    local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+    
+    SetLabelContent(m_GuildTipsPath.."/Sub_OccupationGuild/lb_GuildName", guildName, m_PanelObject);
+    SetLabelContent(m_GuildTipsPath.."/Sub_OccupationGuild/lb_GuildFlag", flagName, m_PanelObject);
+    SetSpriteByAtlasID(m_GuildTipsPath.."/Sub_OccupationGuild/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_PanelObject, true);
+    SetLabelContent(m_GuildTipsPath.."/lb_LvData", guildLv, m_PanelObject);
+    SetLabelContent(m_GuildTipsPath.."/lb_MemberData", guildMember, m_PanelObject);
+    SetLabelContent(m_GuildTipsPath.."/lb_RankData", guildRank, m_PanelObject);
+    SetLabelContent(m_GuildTipsPath.."/lb_WangData", guildAuctionInfo.captureCorpsWang, m_PanelObject);
+end
+
+function OnGuildTipsCloseClick(gameObject)
+    SetGameObjectState(m_GuildTipsPath, false, m_PanelObject);
+end
+
+-- 竞价按钮点击显示竞价面板
+function OnBtnBiddingClick(gameObject)
+--    if GuildManager.myGuild == nil then return end
+--    print("工会职位 GuildManager.myGuild.rankLevel = ",GuildManager.myGuild.rankLevel);
+--    if GuildManager.myGuild.rankLevel ~= E_GUILD_RANKLEVEL.LEADER and GuildManager.myGuild.rankLevel ~= E_GUILD_RANKLEVEL.VICE_LEADER then 
+--        ShowSystemFlowTips(7612);
+--        return;
+--    end
+    local sceneID = m_TableWar[m_currentTerritory].ID;
+    if isHaveStrongHold then
+        if ownStrongHold == sceneID then 
+            ShowSystemFlowTips(9504);
+            return
+        end
+        ParameterToMessageTextBox.IsGiveUpStrongHold();
+        return;
+    end
+    GuildProtocol.RequestAuctionCheck(sceneID);
+end
+
+-- 关闭竞标界面
+function OnAuctionBtnBgClick(gameObject)
+    SetGameObjectState(m_subAuctionPath, false, m_PanelObject);
+end
+
+-- 放弃竞价按钮
+function OnBtnGiveUpClick(gameObject)
+    local sceneID = GuildManager.guildAuctionInfo[m_currentTerritory + 1].sceneBattleID;
+    GuildProtocol.RequestAbandonAuction(sceneID);
+end
+
+-- 竞价结果按钮
+function OnBtnResultClick(gameObject)
+    GuildProtocol.RequestAuctionResult();
+end
+
+-- 关闭竞价结果页面
+function OnBtnBgClick(gameObject)
+    SetGameObjectState(m_ResultPath, false, m_PanelObject);
+end
+
+-- 关闭竞价结果页面
+function OnBtnCloseClick(gameObject)
+    SetGameObjectState(m_ResultPath, false, m_PanelObject);
+end
+
+-- 提交报价
+function OnBtnSubmitOfferClick(gameObject)
+    if m_newOffer ~= nil and m_newOffer > 0 then
+        local sceneID = GuildManager.guildAuctionInfo[m_currentTerritory + 1].sceneBattleID;
+        local leftCompeteTimes = GuildManager.guildAuctionInfo[m_currentTerritory + 1].leftCompeteTimes;
+        if leftCompeteTimes < 10 then
+            GuildProtocol.RequestAuction(sceneID, m_newOffer);
+        end
+        SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_NewOffer/Label", 0, m_PanelObject);
+--        SetGameObjectState(m_subAuctionPath, false, m_PanelObject);
+    else
+        ShowSystemFlowTips(GetTextToId(1325), true);
+    end
+end
+
+-- 小键盘相关
+function OnNewOfferClick(gameObject)
+    local data = 
+    {
+        X = 15;
+        Y = -140;
+        Text = 0;
+    };
+    SmallKeyboardPanel.InputCallback = OnNewOfferCallBack;
+    SmallKeyboardPanel.ConfirmCallback = OnNewOfferConfirm;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+
+--小键盘数字按下回调
+--@param data 数据信息
+function OnNewOfferCallBack(data)
+    if data ~= nil then
+        m_newOffer = data.Num;
+        SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_NewOffer/Label", m_newOffer, m_PanelObject);
+    end
+end
+
+--小键盘按下确定回调
+function OnNewOfferConfirm()
+    SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_NewOffer/Label", m_newOffer, m_PanelObject);
+end
+
+-- 显示竞价面板
+function onShowAuction(Index)
+    local data = m_TableWar[Index - 1];
+    SetLabelTextByID(m_subAuctionPath .. "/lb_Title", data.NameID, m_PanelObject);
+    local guildAuctionInfo = GuildManager.guildAuctionInfo[Index];
+    if guildAuctionInfo.selfCorpsCompeteMoney <= 0 then
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Offer/Label", false, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Offer/lb_None", true, m_PanelObject);
+    else
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Offer/Label", true, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Offer/lb_None", false, m_PanelObject);
+
+        SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_Offer/Label", guildAuctionInfo.selfCorpsCompeteMoney, m_PanelObject);
+    end
+    if guildAuctionInfo.applyCorpsNum <= 0 then 
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_HighestPrice/Label", false, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Guild/lb_GuildFlag", false, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Guild/Label", false, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_HighestPrice/lb_None", true, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Guild/lb_None", true, m_PanelObject);
+    else
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_HighestPrice/Label", true, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Guild/lb_GuildFlag", true, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Guild/Label", true, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_HighestPrice/lb_None", false, m_PanelObject);
+        SetGameObjectState(m_subAuctionPath .. "/Sub_Content/Sub_Guild/lb_None", false, m_PanelObject);
+
+        local guildID = guildAuctionInfo.guildInfo[1].corpsID;
+        local competeMoney = guildAuctionInfo.guildInfo[1].competeMoney;
+        local guildName = G_GuildMng:GetGuildName(guildID);
+        local flagName =  G_GuildMng:GetFlagName(guildID);
+        SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_HighestPrice/Label", competeMoney, m_PanelObject);
+        SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_Guild/lb_GuildFlag", flagName, m_PanelObject);
+        SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_Guild/Label", guildName, m_PanelObject);
+    end
+    local guildMoney = GuildManager.myGuild.money;
+    SetLabelContent(m_subAuctionPath .. "/Sub_Content/Sub_GuildGold/Label", guildMoney, m_PanelObject);
+    local MinimumOfferD = data.Gold;
+    SetLabelContent(m_subAuctionPath .. "/Sub_Content/lb_MinimumOfferData", MinimumOfferD, m_PanelObject);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 关闭界面
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL);
+end
+
+-- 竞价冷却时间 计时器每秒回调 
+function CloseCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL) == 1 then
+        SetLabelContent(m_subCityInfo .. "lb_Cooling", string_format(--[[冷却时间：{0}]]GetTextToId(1352),timeTxt), m_PanelObject);
+    end
+end
+
+-- 竞价冷却时间结束回调
+function GuildWarCallBackOver()
+    SetLabelContent(m_subCityInfo .. "lb_Cooling", "", m_PanelObject);
+    SetGameObjectState(m_subCityInfo .. "lb_Cooling", false, m_PanelObject);
+    SetCUIButtonEnabled(m_BtnBiddingPath, true, m_PanelObject);
+end
+
+-- 提交报价之后刷新当前页面竞价公会list及竞价冷却时间等
+function RefreshGuildList(data)
+    SetGameObjectState(m_subAuctionPath, false, m_PanelObject);
+    local isHaveAuction = true;
+    local guildAuctionInfo = GuildManager.guildAuctionInfo[m_currentTerritory + 1];
+    if guildAuctionInfo == nil then guildAuctionInfo = {}; end
+    guildAuctionInfo.selfCorpsCompeteMoney = data.competeMoney;
+    if guildAuctionInfo.guildInfo == nil then guildAuctionInfo.guildInfo = {}; end
+    GuildManager.guildAuctionInfo.CoolingTime = data.coolDownTime;
+    -- 针对自己的竞价对竞价信息表进行添加或修改
+    if guildAuctionInfo.applyCorpsNum <= 0 then
+        guildAuctionInfo.guildInfo[1] = {};
+        guildAuctionInfo.guildInfo[1].corpsID = G_GuildMng.GuildId; 
+        guildAuctionInfo.guildInfo[1].competeMoney = data.competeMoney;
+        
+        guildAuctionInfo.applyCorpsNum = 1;
+        guildAuctionInfo.captureCorpsRank = 0;
+    else
+        local guildInfo = guildAuctionInfo.guildInfo;   
+        for i,v in pairs(guildAuctionInfo.guildInfo) do
+            if v.corpsID == G_GuildMng.GuildId then
+                isHaveAuction = false;
+                v.competeMoney = data.competeMoney;
+            end
+        end
+        if isHaveAuction then
+            local num = #guildAuctionInfo.guildInfo + 1;
+            local temp = {corpsID = G_GuildMng.GuildId, competeMoney = data.competeMoney, };
+            guildAuctionInfo.guildInfo[num] = temp;
+        end
+        table.sort(guildAuctionInfo.guildInfo,function(a, b) return a.competeMoney > b.competeMoney end); -- 按照竞拍价做排序处理
+    end
+    -- 当前场景竞价公会刷新
+    if guildAuctionInfo.sceneBattleID == data.sceneID then
+        InitShow();
+    end
+end
+-- 放弃报价之后刷新当前页面
+function RefreshAfterAbandon()
+    local guildAuctionInfo = GuildManager.guildAuctionInfo[m_currentTerritory + 1];
+    guildAuctionInfo.applyCorpsNum = guildAuctionInfo.applyCorpsNum - 1;
+    guildAuctionInfo.selfCorpsCompeteMoney = 0;
+    local guildInfo = guildAuctionInfo.guildInfo;
+    for i,v in pairs(guildInfo) do
+        if v.corpsID == G_GuildMng.GuildId then
+            table.remove(guildInfo, i);
+        end
+    end
+    InitShow();
+end
+
+-- 显示竞价结果
+function RefreshResult(data)
+    SetGameObjectState(m_ResultPath, true, m_PanelObject); 
+    -- 显示竞价结果
+    m_ResultList:RemoveAll();
+    local AuctionResult = data;
+    if AuctionResult ~= nil then 
+        for i, v in pairs(AuctionResult) do
+            local data = v;
+            m_ResultList:AddData(data);
+        end
+    end 
+end
+
+-- 打开公会领地战界面
+function CreatGuildWarPanel()
+    if m_CreateSuccess then
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL) == 1 then 
+             m_CityList:Refresh();
+             onShowCityInfo(m_currentTerritory + 1);
+            return
+        end
+    end  
+    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL);
+end
+
+-- 打开竞拍界面
+function OnOpenSubAuction()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_PANEL) == 1 then
+        SetGameObjectState(m_subAuctionPath, true, m_PanelObject);
+        SetLabelTextByID(m_subAuctionPath .. "/Sub_Content/Sub_NewOffer/Label", 7017, m_PanelObject);
+        onShowAuction(m_currentTerritory + 1);
+    end
+end
+
+-- 放弃已占领的据点
+function GiveUpStrongHold()
+    if ownStrongHold and ownStrongHold > 0 then
+        GuildProtocol.RequestGiveUp(ownStrongHold);
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+-- 得到服务器放弃占领的据点反馈后，重置数据
+function OnGetGiveUp()
+    isHaveStrongHold = false;
+    ownStrongHold = 0;
+end

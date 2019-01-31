@@ -1,0 +1,548 @@
+﻿module("ArtifactPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 神器名称
+local m_artifactNameStr = "Right/Base/Label_Name";
+-- 神器等级
+local m_artifactLevelStr = "Right/Base/Label_Level";
+
+-- 技能名称
+local m_skillNameStr = "Right/Skill/Label_SkillName";
+-- 技能描述
+local m_skillDesStr = "Right/Skill/Label_SkillDes";
+-- 技能等级
+local m_skillLevelStr = "Right/Skill/Label_Level";
+
+-- 战斗力
+local m_FightValueStr = "Middle/Sprite_FightValue/Label_Value";
+-----------------------------------------按钮路径--------------------------------------
+-- 问号按钮
+local m_detailButtonStr = "Middle/Button_Detail";
+
+-- 激活按钮
+local m_ActiveButtonStr = "Right/HasAttr/NotMaxLevel/Button_Active";
+-- 升级按钮
+local m_LevelUpButtonStr = "Right/HasAttr/NotMaxLevel/Button_LevelUp";
+-----------------------------------------Sprite路径------------------------------------
+-- 技能图标
+local m_skillIconStr = "Right/Skill/Sprite_Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧UIListView组件所在的位置
+local m_leftUIListViewCompStr = "Left/Artifacts/Grid";
+-- 中间背景特效所在的位置
+local m_middleBGEffectStr = "Middle/Effect_BG";
+-- 神器图片所在的位置
+local m_middleArtifactTextureStr = "Middle/Artifact_Texture";
+
+-- 技能
+local m_rightSkillStr = "Right/Skill";
+-- 有属性
+local m_rightHasAttrStr = "Right/HasAttr";
+-- 无属性
+local m_rightNoAttrStr = "Right/NoAttr";
+-- 最大等级
+local m_maxLevelStr = "Right/HasAttr/MaxLevel";
+-- 未达最大等级
+local m_notMaxLevelStr = "Right/HasAttr/NotMaxLevel";
+
+-- 属性
+local m_AttrStr = "Right/HasAttr/AttrPanel/Attrs/Attribute";
+----------------------------------通用的名称路径---------------------------------------
+-- 图标
+local m_cloneIconStr = "Sprite_Icon";
+-- 品质框1
+local m_cloneQuality1Str = "Sprite_Quality";
+-- 品质框2
+local m_cloneQuality2Str = "Sprite_Quality2";
+-- 锁
+local m_cloneLockStr = "Sprite_Lock";
+-- 红点
+local m_cloneRedhintStr = "Sprite_RedHint";
+-- 神器等级
+local m_cloneLevelStr = "Label_Level";
+-- 神器最大等级
+local m_cloneMaxLevelStr = "Label_Max";
+
+-- 孔位
+local m_slotStr = "Middle/Fragment";
+-- 孔位品质
+local m_slotQualityStr = "/Sprite_Quality";
+-- 孔位图标
+local m_slotIconStr = "/Sprite_Icon";
+-- 孔位红点
+local m_slotRedhintStr = "/Sprite_RedHint";
+-- 孔位等级
+local m_slotLevelStr = "/Sprite_Level";
+-- 孔位等级文本
+local m_slotLevelLabelStr = "/Sprite_Level/Label_Level";
+
+-- 属性名称
+local m_AttrNameStr = "/Label";
+-- 属性数值
+local m_AttrValueStr = "/Label-Num";
+
+-- 神器红点位置
+local m_RedHint1Str = "Sprite_RedHint";
+-- 红点位置
+local m_RedHintStr = "/Sprite_RedHint";
+-- 可激活的加号
+local m_ArtifactCanActiveStr = "/Sprite_CanActive";
+-----------------------------------引用的对象------------------------------------------
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+-- 左侧UIListView组件
+local m_leftUIListViewComp = nil;
+-- 左侧展示的所有神器table
+local m_leftShowArtifactTable = { };
+-- 中间背景特效updatecolor脚本所在位置
+local m_middleUpdateColorComp = nil;
+-- 左侧选中序列
+local m_LeftSelect = 1;
+-- 当前选中的数据
+local m_artifactData = nil;
+-- 神器图片所在的位置
+local m_middleArtifactTextureComp = nil;
+-- 当前显示的神器加载的路径位置
+local m_middleArtifactLoadStr = "";
+-- 当前碎片所有属性
+local m_AllAttrTable = { };
+-- 是否可激活(0代表可以.1代表碎片不足,2代表等级不足)
+local m_isCanActive = 0;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+-- 属性排序
+local m_AttrEnumTable = 
+{
+    [1] = 141,  -- 生命
+    [2] = 11,   -- 外攻
+    [3] = 21,   -- 内攻
+    [4] = 31,   -- 外防
+    [5] = 41,   -- 内防
+    [6] = 51,   -- 暴击
+    [7] = 91,   -- 韧性
+    [8] = 71,   -- 命中
+    [9] = 61,   -- 闪避
+    [10] = 244, -- 火攻
+    [11] = 232, -- 火抗
+    [12] = 242, -- 冰攻
+    [13] = 230, -- 冰抗
+    [14] = 246, -- 雷攻
+    [15] = 234, -- 雷抗
+    [16] = 248, -- 风攻
+    [17] = 236, -- 风抗
+    [18] = 250, -- 光攻
+    [19] = 238, -- 光抗
+    [20] = 252, -- 暗攻
+    [21] = 240, -- 暗抗
+}
+
+-- 属性最多显示
+local m_MaxShowAttrCount = 8;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+    UnloadTexture();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+    m_middleUpdateColorComp = GetComponent(m_panelObject, m_middleBGEffectStr, "CParticleUpdateColor");
+    m_middleArtifactTextureComp = GetComponent(m_panelObject, m_middleArtifactTextureStr, "UITexture");
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnArtifactCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnArtifactCloneClick);
+end
+
+function InitData()
+    if m_isJumpPanelSave then
+        m_LeftSelect = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    else
+        m_LeftSelect = 1;
+    end
+end
+
+function InitShow()
+    InitLeftContent();
+    InitMiddleContent();
+    InitRightContent();
+end
+
+function InitOnClick()
+    for Index = 1, 6 do
+        UIEventListener.Get(child(m_panelObject, m_slotStr .. Index).gameObject).onClick = LuaHelper.OnClickWithLuaTable(OnSlotClick, { Index });
+    end
+    SetGameObjectEvent(m_detailButtonStr, OnDetailClick, m_panelObject);
+    SetGameObjectEvent(m_ActiveButtonStr, OnActiveClick, m_panelObject);
+    SetGameObjectEvent(m_LevelUpButtonStr, OnLevelUpClick, m_panelObject);
+end
+
+function InitLeftContent()
+    m_leftShowArtifactTable = { };
+    for k, value in pairs(ArtifactManager.ArtifactTableData) do
+        table.insert(m_leftShowArtifactTable, value);
+    end
+    table.sort(m_leftShowArtifactTable, SortFunc);
+    m_leftUIListViewComp:RemoveAll();
+    for Index = 1, #m_leftShowArtifactTable do
+        m_leftUIListViewComp:AddData(m_leftShowArtifactTable[Index]);
+    end
+    m_leftUIListViewComp:LookAt(m_LeftSelect - 1, true);
+    m_artifactData = m_leftShowArtifactTable[m_LeftSelect];
+end
+
+function SortFunc(data1, data2)
+    return data1.WeightOrder < data2.WeightOrder;
+end
+
+function OnArtifactCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetSpriteByAtlasID(m_cloneIconStr, data.IconID, go);
+    SetSpriteApptitudeV04(m_cloneQuality1Str, data.QualityID, go);
+    SetSpriteApptitude2V04(m_cloneQuality2Str, data.QualityID, go);
+    local artifactLevel = 0;
+    if ArtifactManager.ArtifactData[data.Id] ~= nil then
+        artifactLevel = ArtifactManager.ArtifactData[data.Id];
+    end
+    if artifactLevel == 0 then
+        SetGameObjectState(m_cloneLockStr, true, go);
+        SetGameObjectState(m_cloneLevelStr, false, go);
+        SetGameObjectState(m_cloneMaxLevelStr, false, go);
+    elseif artifactLevel >= data.MaxLevel then
+        SetGameObjectState(m_cloneLockStr, false, go);
+        SetGameObjectState(m_cloneLevelStr, false, go);
+        SetGameObjectState(m_cloneMaxLevelStr, true, go);
+    else
+        SetGameObjectState(m_cloneLockStr, false, go);
+        SetGameObjectState(m_cloneLevelStr, true, go);
+        SetLabelContent(m_cloneLevelStr, "+" .. artifactLevel, go);
+        SetGameObjectState(m_cloneMaxLevelStr, false, go);
+    end
+    SetGameObjectState(m_RedHint1Str, ArtifactManager.IsArtifactCanOperate(data.Id), go);
+end
+
+function InitMiddleContent()
+    if m_artifactData == nil then
+        return;
+    end
+    m_middleUpdateColorComp.m_CurrentIndex = m_artifactData.QualityID - 1;
+    m_middleUpdateColorComp.gameObject:SetActive(false);
+    m_middleUpdateColorComp.gameObject:SetActive(true);
+    m_middleArtifactTextureComp.gameObject:SetActive(false);
+    UnloadTexture();
+    m_middleArtifactLoadStr = m_artifactData.ArtifactUIStr .. ".png";
+    G_ResourceMng:LoadAssetByLua(m_middleArtifactLoadStr, UnityEngine.Texture.GetClassType(), "ArtifactPanel.LoadArtifactPicFinish");
+    if ArtifactManager.ArtifactData[m_artifactData.Id] == nil then
+        CCommonTool.SetGameObjectGrey(m_middleArtifactTextureComp.gameObject, true);
+        SetUIEffect(m_panelObject, m_middleArtifactTextureStr, 0, 1, nil, nil, ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+    else
+        CCommonTool.SetGameObjectGrey(m_middleArtifactTextureComp.gameObject, false);
+        SetUIEffect(m_panelObject, m_middleArtifactTextureStr, m_artifactData.EffectID, 1, nil, nil, ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+    end
+    local allFragsTable = { m_artifactData.Fragment1ID, m_artifactData.Fragment2ID, m_artifactData.Fragment3ID, m_artifactData.Fragment4ID, m_artifactData.Fragment5ID, m_artifactData.Fragment6ID };
+    for Index = 1, 6 do
+        local artifactFragmentInfo = CCommonTool.GetArtifactFragmentInfo(allFragsTable[Index]);
+        if artifactFragmentInfo ~= nil then
+            SetSpriteApptitude2V04(m_slotStr .. Index .. m_slotQualityStr, artifactFragmentInfo.QualityID, m_panelObject);
+            SetSpriteByAtlasID(m_slotStr .. Index .. m_slotIconStr, CCommonTool.GetImageIDByExcelID(artifactFragmentInfo.RelatedItemID), m_panelObject);
+        end
+        if ArtifactManager.ArtifactFragmentData[allFragsTable[Index]] == nil then
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_slotStr .. Index .. m_slotIconStr).gameObject, true);
+            SetGameObjectState(m_slotStr .. Index .. m_slotLevelStr, false, m_panelObject);
+        else
+            CCommonTool.SetGameObjectGrey(child(m_panelObject, m_slotStr .. Index .. m_slotIconStr).gameObject, false);
+            SetGameObjectState(m_slotStr .. Index .. m_slotLevelStr, true, m_panelObject);
+            SetLabelContent(m_slotStr .. Index .. m_slotLevelLabelStr, "+" .. ArtifactManager.ArtifactFragmentData[allFragsTable[Index]], m_panelObject);
+        end
+        SetGameObjectState(m_slotStr .. Index .. m_RedHintStr, ArtifactManager.IsFragCanOperate_LevelUp(allFragsTable[Index]), m_panelObject);
+        SetGameObjectState(m_slotStr .. Index .. m_ArtifactCanActiveStr, ArtifactManager.IsFragCanOperate_Active(allFragsTable[Index]), m_panelObject);
+    end
+end
+
+function UnloadTexture()
+--    if m_middleArtifactLoadStr ~= "" then
+--        G_ResourceMng:UnLoadAssetByLua(m_middleArtifactLoadStr, m_middleArtifactTextureComp.mainTexture);
+--        m_middleArtifactLoadStr = "";
+--    end
+end
+
+function InitRightContent()
+    if m_artifactData == nil then
+        return;
+    end
+    local isActive = false;
+    local artifactLevel = 0;
+    local hasAttr = false;
+    if ArtifactManager.ArtifactData[m_artifactData.Id] == nil then
+        isActive = false;
+        artifactLevel = 1;
+    else
+        isActive = true;
+        artifactLevel = ArtifactManager.ArtifactData[m_artifactData.Id];
+    end
+    local allFragsTable = { m_artifactData.Fragment1ID, m_artifactData.Fragment2ID, m_artifactData.Fragment3ID, m_artifactData.Fragment4ID, m_artifactData.Fragment5ID, m_artifactData.Fragment6ID };
+    for Index = 1, 6 do
+        if ArtifactManager.ArtifactFragmentData[allFragsTable[Index]] ~= nil then
+            hasAttr = true;
+            break;
+        end
+    end
+    m_isCanActive = 0;
+    for Index = 1, 6 do
+        if ArtifactManager.ArtifactFragmentData[allFragsTable[Index]] == nil then
+            m_isCanActive = 1;
+            break;
+        end
+    end
+    if m_isCanActive == 0 then
+        if m_artifactData.UnlockLevel > G_UserInfo.RoleAttribute.Level then
+            m_isCanActive = 2;
+        end
+    end
+    SetLabelTextByID(m_artifactNameStr, m_artifactData.NameTxtID, m_panelObject);
+    if isActive then
+        SetGameObjectState(m_artifactLevelStr, true, m_panelObject);
+        SetLabelContent(m_artifactLevelStr, "+" .. artifactLevel, m_panelObject);
+        CCommonTool.SetGameObjectGrey(child(m_panelObject, m_rightSkillStr).gameObject, false);
+    else
+        SetGameObjectState(m_artifactLevelStr, false, m_panelObject);
+        CCommonTool.SetGameObjectGrey(child(m_panelObject, m_rightSkillStr).gameObject, true);
+    end
+    SetSpriteByAtlasID(m_skillIconStr, m_artifactData.SkillIconID, m_panelObject);
+    SetLabelContent(m_skillLevelStr, artifactLevel, m_panelObject);
+    SetLabelTextByID(m_skillNameStr, m_artifactData.SkillNameID, m_panelObject);
+    m_AllAttrTable = { };
+
+    local paramTable = { artifactLevel * m_artifactData.Attr1AddValue, artifactLevel * m_artifactData.Attr2AddValue, artifactLevel * m_artifactData.Attr3AddValue };
+    paramTable[1] = GetAttrIndexValue(m_artifactData.Attr1ID, paramTable[1]);
+    paramTable[2] = GetAttrIndexValue(m_artifactData.Attr2ID, paramTable[2]);
+    paramTable[3] = GetAttrIndexValue(m_artifactData.Attr3ID, paramTable[3]);
+    SetLabelContent(m_skillDesStr, string_format(CCommonTool.GetTxtData(m_artifactData.SkillDesID).m_str, paramTable[1], paramTable[2], paramTable[3]), m_panelObject);
+    if isActive then
+        m_AllAttrTable[m_artifactData.Attr1ID] = artifactLevel * m_artifactData.Attr1AddValue;
+        m_AllAttrTable[m_artifactData.Attr2ID] = artifactLevel * m_artifactData.Attr2AddValue;
+        m_AllAttrTable[m_artifactData.Attr3ID] = artifactLevel * m_artifactData.Attr3AddValue;
+    end
+    if hasAttr then
+        SetGameObjectState(m_rightHasAttrStr, true, m_panelObject);
+        SetGameObjectState(m_rightNoAttrStr, false, m_panelObject);
+        local attrID = 0;
+        local attrInitValue = 0;
+        local attrAddValue = 0;
+        local attrUnlockLevel = 0;
+        local fragLevel = 0;
+        local fragmentID = 0;
+        for Index = 1, 6 do
+            if ArtifactManager.ArtifactFragmentData[allFragsTable[Index]] ~= nil then
+                fragmentID = allFragsTable[Index];
+                fragLevel = ArtifactManager.ArtifactFragmentData[allFragsTable[Index]];
+                for attrIndex = 1, 5 do
+                    attrUnlockLevel = CCommonTool.GetValueInArtifactFragmentInfo(fragmentID, 6 + 4 *(attrIndex - 1));
+                    attrID = CCommonTool.GetValueInArtifactFragmentInfo(fragmentID, 7 + 4 *(attrIndex - 1));
+                    attrInitValue = CCommonTool.GetValueInArtifactFragmentInfo(fragmentID, 8 + 4 *(attrIndex - 1));
+                    attrAddValue = CCommonTool.GetValueInArtifactFragmentInfo(fragmentID, 9 + 4 *(attrIndex - 1));
+                    if fragLevel >= attrUnlockLevel then
+                        if m_AllAttrTable[attrID] == nil then
+                            m_AllAttrTable[attrID] = 0;
+                        end
+                        m_AllAttrTable[attrID] = attrInitValue + fragLevel * attrAddValue + m_AllAttrTable[attrID];
+                    end
+                end
+            end
+        end
+        local showIndex = 0;
+        for Index = 1, #m_AttrEnumTable do
+            if m_AllAttrTable[m_AttrEnumTable[Index]] ~= nil and showIndex < m_MaxShowAttrCount then
+                showIndex = showIndex + 1;
+                SetGameObjectState(m_AttrStr .. showIndex, true, m_panelObject);
+                SetLabelTextByID(m_AttrStr .. showIndex .. m_AttrNameStr, CCommonTool.GetAttrIndexInfo(m_AttrEnumTable[Index]).TextID, m_panelObject);
+                SetLabelContent(m_AttrStr .. showIndex .. m_AttrValueStr, m_AllAttrTable[m_AttrEnumTable[Index]], m_panelObject);
+            end
+        end
+        for Index = showIndex + 1, m_MaxShowAttrCount do
+            SetGameObjectState(m_AttrStr .. Index, false, m_panelObject);
+        end
+
+        if artifactLevel >= m_artifactData.MaxLevel then
+            SetGameObjectState(m_maxLevelStr, true, m_panelObject);
+            SetGameObjectState(m_notMaxLevelStr, false, m_panelObject);
+        else
+            SetGameObjectState(m_maxLevelStr, false, m_panelObject);
+            SetGameObjectState(m_notMaxLevelStr, true, m_panelObject);
+            if isActive then
+                SetGameObjectState(m_LevelUpButtonStr, true, m_panelObject);
+                SetGameObjectState(m_LevelUpButtonStr .. m_RedHintStr, ArtifactManager.IsArtifactCanOperate_LevelUp(m_artifactData.Id), m_panelObject);
+                SetGameObjectState(m_ActiveButtonStr, false, m_panelObject);
+            else
+                SetGameObjectState(m_LevelUpButtonStr, false, m_panelObject);
+                SetGameObjectState(m_ActiveButtonStr, true, m_panelObject);
+                SetGameObjectState(m_ActiveButtonStr .. m_RedHintStr, ArtifactManager.IsArtifactCanOperate_Active(m_artifactData.Id), m_panelObject);
+            end
+        end
+    else
+        SetGameObjectState(m_rightHasAttrStr, false, m_panelObject);
+        SetGameObjectState(m_rightNoAttrStr, true, m_panelObject);
+    end
+    SetLabelContent(m_FightValueStr, math.floor(CalcFightAbilityMng.CalcFightAbility(m_AllAttrTable, false) + 0.5), m_panelObject);
+    if m_isCanActive == 0 then
+        CCommonTool.SetGameObjectGrey(child(m_panelObject, m_ActiveButtonStr).gameObject, false);
+    else
+        CCommonTool.SetGameObjectGrey(child(m_panelObject, m_ActiveButtonStr).gameObject, true);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnArtifactCloneClick(listView, cell, go)
+    local selectIndex = cell.dataIndex + 1;
+    if selectIndex == m_LeftSelect then
+        return;
+    else
+        m_LeftSelect = selectIndex;
+        m_artifactData = m_leftShowArtifactTable[m_LeftSelect];
+        InitMiddleContent();
+        InitRightContent();
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM["SYSTEM_ARTIFACT"..selectIndex]) == false then 
+--        if selectIndex < 4 then 
+--            local info = CCommonTool.GetSystemOpenInfo(CSYSTEMENUM["SYSTEM_ARTIFACT"..selectIndex]);
+--            ShowSystemFlowTips(2681,nil,{G_MissionMng:GetMissionName(info.Task)});
+--        elseif selectIndex == 4 then
+--            ShowSystemFlowTips(2680,nil,{50});
+--        elseif selectIndex == 5 then
+--            ShowSystemFlowTips(2680,nil,{55});
+--        end
+        ShowSystemFlowTips(2680,nil,{62});
+    end
+end
+
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+end
+
+function OnSlotClick(e, paramTable)
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM["SYSTEM_ARTIFACT"..m_LeftSelect]) == false then 
+--        if m_LeftSelect < 4 then 
+--            local info = CCommonTool.GetSystemOpenInfo(CSYSTEMENUM["SYSTEM_ARTIFACT"..m_LeftSelect]);
+--            ShowSystemFlowTips(2681,nil,{G_MissionMng:GetMissionName(info.Task)});
+--        elseif m_LeftSelect == 4 then 
+--            ShowSystemFlowTips(2680,nil,{50});
+--        elseif m_LeftSelect == 5 then
+--            ShowSystemFlowTips(2680,nil,{55});
+--        end
+        ShowSystemFlowTips(2680,nil,{62});
+    else
+        local slotIndex = paramTable[1];
+        ArtifactFragmentPanel.SetData(m_leftShowArtifactTable[m_LeftSelect].Id, slotIndex);
+        createPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTFRAGMENTPANEL, ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+    end
+end
+
+function OnDetailClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL, 1);
+end
+
+function OnActiveClick()
+    if m_isCanActive == 0 then
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_ARTIFACT_OPERATE);
+        buffer:WriteByte(ARTIFACT_OPERATE_MSG.ARTIFACT_ACTIVE_ARTIFACT);
+        buffer:WriteInt(m_leftShowArtifactTable[m_LeftSelect].Id);
+        G_NetWorkMng:SendMessage(buffer);
+    elseif m_isCanActive == 1 then
+        ShowSystemFlowTips(9084);
+    elseif m_isCanActive == 2 then
+        ShowSystemFlowTips(9085);
+    end
+end
+
+function OnLevelUpClick()
+    ArtifactLevelUpPanel.SetData(m_leftShowArtifactTable[m_LeftSelect].Id);
+    createPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTLEVELUPPANEL, ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function LoadArtifactPicFinish(textureObj, strPath)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL) == 1 then
+        if m_middleArtifactLoadStr == strPath then
+            m_middleArtifactTextureComp.gameObject:SetActive(true);
+            m_middleArtifactTextureComp.mainTexture = textureObj;
+            local artifactData = m_leftShowArtifactTable[m_LeftSelect];
+            m_middleArtifactTextureComp.width = artifactData.UIWidth;
+            m_middleArtifactTextureComp.height = artifactData.UIHeight;
+        else
+            G_ResourceMng:UnLoadAssetByLua(strPath, textureObj);
+        end
+    else
+        G_ResourceMng:UnLoadAssetByLua(strPath, textureObj);
+    end
+end
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ARTIFACTPANEL) == 1 then
+        m_leftUIListViewComp:Refresh();
+        InitMiddleContent();
+        InitRightContent();
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_LeftSelect;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+-- 获神器碎片对应变强分数
+function GetArtifactScore()
+    local m_ArtifactTable = { };
+    for k, value in pairs(ArtifactManager.ArtifactTableData) do
+        table.insert(m_ArtifactTable, value);
+    end
+    table.sort(m_ArtifactTable, SortFunc);
+    local score = 0;
+    for i = 1, 5 do 
+        if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM["SYSTEM_ARTIFACT"..i]) == true then 
+            local m_artifactData = m_ArtifactTable[i];
+            local allFragsTable = { m_artifactData.Fragment1ID, m_artifactData.Fragment2ID, m_artifactData.Fragment3ID, m_artifactData.Fragment4ID, m_artifactData.Fragment5ID, m_artifactData.Fragment6ID };
+            for index = 1, 6 do
+                if ArtifactManager.ArtifactFragmentData[allFragsTable[index]] ~= nil then 
+                    score = score + ArtifactManager.ArtifactFragmentData[allFragsTable[index]] * 5;
+                end
+            end
+            
+        end
+    end
+    return score;
+end

@@ -1,0 +1,132 @@
+﻿module('EatChickenResultPanel', package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 描述文本
+local m_LabelDesStr = "Personal/Label_Des";
+-- 我的排名
+local m_LabelRankNumStr = "Personal/Label_RankNum";
+-- 总数量
+local m_LabelTotalNumStr = "Personal/Label_TotalNum";
+-- 击杀数量
+local m_LabelKillNumStr = "Personal/Label_KillNum";
+-- 积分
+local m_LabelScoreNumStr = "Personal/Label_ScoreNum";
+-- 倒计时文本
+local m_LabelOverStr = "Personal/Label_Over";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClose = "Personal/Button_Leave";
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 胜利背景
+local m_WinBGStr = "Title_Win";
+-- 失败背景
+local m_LoseBGStr = "Title_Lose";
+-- 道具
+local m_ItemTableStr = "Personal/ItemTable/";
+----------------------------------通用的名称路径---------------------------------------
+-- 道具品质
+local m_ItemQualityStr = "/Sprite_Quality";
+-- 道具图标
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 结果数据
+local m_ResultData = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("EatChickenResultTimer");
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EATCHICKENRESULTPANEL);
+end
+
+-- 初始化对象事件
+function InitEvents()
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_ResultData.Result == 1 then
+        SetGameObjectState(m_WinBGStr, true, m_PanelObject);
+        SetGameObjectState(m_LoseBGStr, false, m_PanelObject);
+        SetLabelTextByID(m_LabelDesStr,2320,m_PanelObject);
+    else
+        SetGameObjectState(m_WinBGStr, false, m_PanelObject);
+        SetGameObjectState(m_LoseBGStr, true, m_PanelObject);
+        SetLabelTextByID(m_LabelDesStr,2324,m_PanelObject);
+    end
+    SetLabelContent(m_LabelRankNumStr,m_ResultData.RankOrder,m_PanelObject);
+    SetLabelContent(m_LabelTotalNumStr,"/"..m_ResultData.TotalNum,m_PanelObject);
+    SetLabelContent(m_LabelKillNumStr,m_ResultData.KillNum,m_PanelObject);
+    SetLabelContent(m_LabelScoreNumStr,m_ResultData.Score,m_PanelObject);
+
+    local rewardTable = m_ResultData.RewardTable;
+    for Index = 1,#rewardTable do
+        SetGameObjectState(m_ItemTableStr..Index,true,m_PanelObject);
+        SetSpriteApptitudeV04(m_ItemTableStr..Index..m_ItemQualityStr,CCommonTool.GetAptitudeIDByExcelID(rewardTable[Index].ItemID),m_PanelObject);
+        SetSpriteByAtlasID(m_ItemTableStr..Index..m_ItemIconStr, CCommonTool.GetImageIDByExcelID(rewardTable[Index].ItemID), m_PanelObject, true);
+        SetLabelContent(m_ItemTableStr..Index..m_ItemNumStr,rewardTable[Index].ItemNum,m_PanelObject);
+    end
+    for Index =#rewardTable + 1,5 do
+        SetGameObjectState(m_ItemTableStr..Index,false,m_PanelObject);
+    end
+    G_TimerMng:RemoveTimeTask("EatChickenResultTimer");
+    AddTimerEvent("EatChickenResultTimer", 10, EatChickenCountDownTimerOver, ETimeShowType.TypeNumberSeven, EatChickenCountDownTimerUpdate);
+end
+
+function EatChickenCountDownTimerUpdate(timeStr)
+    SetLabelContent(m_LabelOverStr,"("..timeStr..")",m_PanelObject);
+end
+
+function EatChickenCountDownTimerOver()
+    OnCloseClick();
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonClose, OnCloseClick, m_PanelObject);
+end
+------------------------------------------事件方法------------------------------------
+-- 关闭界面事件
+function OnCloseClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+    buffer:WriteByte(0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetData(data)
+    m_ResultData = data;
+    createPanel(ENUMPANELID.ENUM_PANEL_EATCHICKENRESULTPANEL);
+end

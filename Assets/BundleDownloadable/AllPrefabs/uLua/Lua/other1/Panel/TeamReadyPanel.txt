@@ -1,0 +1,329 @@
+﻿module('TeamReadyPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamReadyPanel';
+---------------------------------------label路径---------------------------------------
+-- 队伍目标
+local m_NamePath = "Content/Name";
+-- 描述信息
+local m_DescPath = "Content/Desc";
+-- 等待状态倒计时
+local m_CountDownPath = "Content/CountDown";
+-- 放弃按钮上的倒计时
+local m_CountDown2Path = "Content/Buttons/GiveupButton/CountDown2";
+-- 自动准备倒计时
+local m_CountDown3Path = "Content/Buttons/ReadyButton/CountDown3";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseButtonPath = "Content/CloseButton";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 队员列表
+local m_MembersPath = "Content/Members";
+-- 按钮父对象
+local m_ButtonsPath = "Content/Buttons";
+-- 放弃按钮
+local m_GiveupButtonPath = "Content/Buttons/GiveupButton";
+-- 准备按钮
+local m_ReadyButtonPath = "Content/Buttons/ReadyButton";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 关闭按钮
+local m_CloseButton = nil;
+-- 队伍目标
+local m_Name = nil;
+-- 描述信息
+local m_Desc = nil;
+-- 等待状态倒计时
+local m_CountDown = nil;
+-- 队员列表
+local m_Members = nil;
+-- 按钮父对象
+local m_Buttons = nil;
+-- 放弃按钮
+local m_GiveupButton = nil;
+-- 放弃按钮上的倒计时
+local m_CountDown2 = nil;
+-- 准备按钮
+local m_ReadyButton = nil;
+-- 自动准备倒计时
+local m_CountDown3 = nil;
+-- 成员列表显示对象数组
+local m_MemberObjects = nil;
+
+-- 队员准备状态数据
+local m_Data = nil;
+local m_SelfIsReady = false;
+local m_TimerEventName = "TeamReadyPanelTimer";
+
+-- 倒计时按钮是否显示在准备按钮上
+local m_ShowReadyButtonTime = false;
+local m_AutoReadyEndTime = 0;
+local m_AutoReadyState = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+-- 自动准备倒计时时间
+AutoReadyTime = 10;
+-- 结束时间和正动准备倒计时时间差值
+DiffReadyTime = 5;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    m_AutoReadyState = 0;
+    m_AutoReadyEndTime = 0;
+    m_ShowReadyButtonTime = false;
+    if m_CreateSuccess then
+        InitShow();
+    end
+    Util.PhoneVibrate();
+end
+
+function OnDisable()
+    error("准备界面已关闭");
+    TryRequestGiveupReady();
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    m_SelfIsReady = false;
+    m_AutoReadyState = 0;
+    m_AutoReadyEndTime = 0;
+    m_ShowReadyButtonTime = false;
+    m_Data = nil;
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_CloseButton = nil;
+	m_Name = nil;
+	m_Desc = nil;
+	m_CountDown = nil;
+	m_Members = nil;
+	m_Buttons = nil;
+	m_GiveupButton = nil;
+	m_CountDown2 = nil;
+	m_ReadyButton = nil;
+    m_CountDown3 = nil;
+    m_MemberObjects = nil;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+    m_CloseButton = child(m_PanelObject, m_CloseButtonPath).gameObject;
+    m_Name = GetComponent(m_PanelObject, m_NamePath, "UILabel");
+    m_Desc = GetComponent(m_PanelObject, m_DescPath, "UILabel");
+    m_CountDown = GetComponent(m_PanelObject, m_CountDownPath, "UILabel");
+    m_Members = GetComponent(m_PanelObject, m_MembersPath, "UIGrid");
+    m_Buttons = child(m_PanelObject, m_ButtonsPath).gameObject;
+    m_GiveupButton = child(m_PanelObject, m_GiveupButtonPath).gameObject;
+    m_CountDown2 = GetComponent(m_PanelObject, m_CountDown2Path, "UILabel");
+    m_ReadyButton = child(m_PanelObject, m_ReadyButtonPath).gameObject;
+    m_CountDown3 = GetComponent(m_PanelObject, m_CountDown3Path, "UILabel");
+
+    m_MemberObjects = {};
+    for i = 1, 4 do
+        table.insert(m_MemberObjects, child(m_Members.gameObject, "Member"..i).gameObject);
+    end
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+    UIEventListener.Get(m_CloseButton).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_GiveupButton).onClick = LuaHelper.OnClick(OnGiveupButtonClick);
+    UIEventListener.Get(m_ReadyButton).onClick = LuaHelper.OnClick(OnReadyButtonClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_Data == nil or m_Data.state ~= 1 or not TeamManager.HasTeam() then
+        error("初始化显示信息时准备界面关闭");
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+        return;
+    end
+
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    local goalInfo, diffIndex = TeamManager.GetTeamGoalInfoByDungeonId(m_Data.dungeonId);
+    if goalInfo ~= nil then
+        m_Name.text = TeamManager.GetTeamGoalName(goalInfo.Id, diffIndex);
+    end
+    m_CloseButton:SetActive(TeamManager.IsLeader());
+
+    -- 成员信息
+    local members = TeamManager.teamMemberList;
+    for i = 1, 4 do
+        local go = m_MemberObjects[i];
+        local data = members[i];
+        if data ~= nil then
+            go:SetActive(true);
+            SetSpriteByAtlasID("Icon", CCommonTool.GetRoleDateInfo(data.proId).HeadRes, go, true);
+            SetLabelContent("Name", data.name, go);
+            SetLabelContent("Level", string_format("Lv.{0}", data.level), go);
+            SetGameObjectState("ReadyIcon", IsReady(data.globalId), go);
+            SetGameObjectState("WaitingAnimation", not IsReady(data.globalId), go);
+        else
+            go:SetActive(false);
+        end
+    end
+    m_Members:Reposition();
+
+    -- 准备状态切换
+    m_SelfIsReady = IsReady(G_UserInfo.GlobalDBID);
+    m_Buttons:SetActive(not m_SelfIsReady);
+    m_CountDown.gameObject:SetActive(m_SelfIsReady);
+    if m_SelfIsReady then
+        m_Desc.text = --[[请等待队友准备完毕]]CCommonTool.GetTxtData(1059).m_str;
+    else
+        m_Desc.text = --[[所有队员确认准备后将传送]]CCommonTool.GetTxtData(1060).m_str;
+    end
+    
+    local isLackTime = false;
+    -- 进入活动的次数不足
+    if ActivityManager.IsLackTimes(m_Data.dungeonId) == 1 then
+        ActivityTimesItemPanel.Show(m_Data.dungeonId);
+        isLackTime = true;
+    end
+    
+    local seconds = m_Data.time - G_TimerMng:GetCurrentSeconds();
+    m_ShowReadyButtonTime = false;
+    -- 次数足够并且结束时间>自动准备倒计时时间时, 执行自动准备倒计时操作
+    if m_SelfIsReady == false and isLackTime == false and seconds - AutoReadyTime >= DiffReadyTime then
+        m_ShowReadyButtonTime  = true;
+        if m_AutoReadyState == 0 then
+            m_AutoReadyEndTime = os.time() + AutoReadyTime;
+            m_AutoReadyState = 1;
+        end
+    end
+    if seconds > 0 then
+        OnTimerUpdate();
+        AddTimerEvent(m_TimerEventName, seconds, OnTimerEnd, nil, OnTimerUpdate);
+    else
+        closePanel(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+    end
+end
+
+function IsReady(globalId)
+    if m_Data == nil then
+        return false;
+    end
+    local teamData = TeamManager.teamData;
+    if teamData.leaderId == globalId then
+        return true;
+    end
+    local globalIds = m_Data.readyGlobalIds;
+    for i, id in ipairs(globalIds) do
+        if id == globalId then
+            return true;
+        end
+    end
+    return false;
+end
+
+function OnTimerUpdate()
+    local seconds = m_Data.time - G_TimerMng:GetCurrentSeconds();
+    if m_SelfIsReady then
+        m_CountDown.text = tostring(seconds);
+    elseif m_ShowReadyButtonTime == true then
+        local s = m_AutoReadyEndTime - os.time();
+        m_CountDown3.text = m_AutoReadyState == 1 and s > 0 and string_format("({0})", s) or "";
+        m_CountDown2.text = "";
+        if m_AutoReadyEndTime > 0 and s <= 0 then
+            m_AutoReadyEndTime = 0;
+            if m_AutoReadyState == 1 then
+                OnReadyButtonClick();
+            end
+        end
+    else
+        m_CountDown2.text = string_format("({0})", seconds);
+        m_CountDown3.text = "";
+    end
+end
+
+-- 倒计时结束
+function OnTimerEnd()
+    m_Data = nil;
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+end
+
+-- 请求放弃准备(如果在准备时间内)
+function TryRequestGiveupReady()
+    if m_Data ~= nil and m_Data.state == 1 then
+        local time = m_Data.time;
+        if time > G_TimerMng:GetCurrentSeconds() then
+            TeamProtocol.RequestTeamReadyState(0);
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    
+end
+
+-- 放弃按钮点击事件
+function OnGiveupButtonClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+end
+
+-- 准备按钮点击事件
+function OnReadyButtonClick(gameObject)
+    -- 进入活动的次数不足
+    if m_Data ~= nil and ActivityManager.IsLackTimes(m_Data.dungeonId) == 1 then
+        ActivityTimesItemPanel.Show(m_Data.dungeonId);
+        return;
+    end
+    TeamProtocol.RequestTeamReadyState(1);
+    m_AutoReadyState = 2;
+end
+
+-- 关闭按钮点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL);
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 队员准备状态改变时刷新界面
+function OnMemberReadyStateChange(data)
+    m_Data = data;
+    local panelId = ENUMPANELID.ENUM_PANEL_TEAM_READY_PANEL;
+    if m_Data.state == 0 then
+        closePanel(panelId);
+    elseif m_Data.state == 1 then
+        -- 如果界面打开,刷新界面
+        if IsOpenPanel(panelId) == 1 then
+            InitShow();
+            return;
+        end
+        -- 只有队长准备时,打开界面
+        -- 其它情况关闭界面时,说明已取消准备, 不再打开界面
+        if m_Data.readyCount == 1 then
+            if IsOpenPanel(panelId) ~= 1 then
+                createPanel(panelId, ENUMPANELID.ENUM_PANEL_TEAMPANEL);
+            end
+        end
+    end
+end

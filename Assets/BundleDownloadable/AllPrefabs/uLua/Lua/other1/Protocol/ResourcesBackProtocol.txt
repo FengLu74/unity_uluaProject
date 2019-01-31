@@ -1,0 +1,103 @@
+﻿module("ResourcesBackProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    --服务器向客户端发送资源找回数据信息
+    network.Register(GMI_STOC_RESOURCES_BACK_DATA, OnResourcesBackData);
+    --服务器向客户端发送资源找回领取结果
+    network.Register(GMI_STOC_GET_RESOURCES_BACK_SUCCEED, OnGetResourcesBackSucceed);
+end
+
+--服务器向客户端发送资源找回数据信息
+function OnResourcesBackData(protocolId, buffer)
+    --error("OnResourcesBackData protocolId : "..protocolId);
+    local size = buffer:ReadInt();
+    --error("size : "..size);
+    local datas = {};
+    for index = 1 , size do
+        local id = buffer:ReadInt();
+        --error("主键ID可找回的活动IDid : "..id);
+        local num = buffer:ReadInt();
+        --error("昨日未完成次数num : "..num);
+        local state = buffer:ReadInt();
+        --error("领取状态state=0(未领取状态): "..state);
+        local coinNum = buffer:ReadInt();
+        --error("读取显示coinNum : "..coinNum);
+        local itemDatas = {};
+        local itemData = 
+        {
+            ItemId = 10000;        
+            ItemNum = coinNum;
+        }
+        table.insert(itemDatas,itemData);
+        local expNum = buffer:ReadInt();
+        --error("读取显示expNum : "..expNum);
+        local itemData = 
+        {
+            ItemId = 40204;
+            ItemNum = expNum;
+        }
+        table.insert(itemDatas,itemData);
+        local objSize=buffer:ReadByte();
+        --error("读取显示道具数量objSize="..objSize);
+        for  i=1,objSize do
+            local objID=buffer:ReadInt();
+            --error("读取显示物品id="..objID);
+            local objNum=buffer:ReadInt();
+            --error("读取显示物品数量="..objNum);
+            local itemData=
+            {
+                ItemId=objID;
+                ItemNum=objNum;
+            }
+            table.insert(itemDatas,itemData);
+        end
+        local data = 
+        {
+            Id = id;
+            Num = num;
+            State = state;
+            ItemDatas = itemDatas;
+        }
+        table.insert(datas,data);
+    end
+    ResourcesBackManager.SetResourcesBackDatas(datas);
+end
+
+--服务器向客户端发送资源找回领取结果
+function OnGetResourcesBackSucceed(protocolId, buffer)
+    --error("OnGetResourcesBackSucceed protocolId : "..protocolId);
+    local result = buffer:ReadByte()
+    --error("服务器向客户端发送资源找回领取结果result : "..result);
+    if result == 1 then
+        local id = buffer:ReadInt();
+        --error("服务器向客户端发送资源找回领取结果id : "..id);
+        local state = buffer:ReadInt();
+        --error("服务器向客户端发送资源找回领取结果state : "..state); 
+        local data = 
+        {
+            Id = id;
+            State = state;
+        }
+        ResourcesBackManager.RefreshResourcesBackDatas(data);
+    end
+end
+-------------------------------------------------------处理接收协议 END-------------------------------------------------------
+
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+--刷新道具信息1.物品的globalId
+function RequestItemInfo(data)
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_RESOURCES_BACK_GET_INFO);
+    local activityId = data.Id; 
+    --error("activityId : "..activityId);
+    buffer:WriteInt(activityId);
+    local getType = data.Type; 
+    --error("getType : "..getType);
+    buffer:WriteByte(getType);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------

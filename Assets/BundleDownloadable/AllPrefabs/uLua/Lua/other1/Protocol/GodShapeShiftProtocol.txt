@@ -1,0 +1,138 @@
+﻿module("GodShapeShiftProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+function RegisterProtocols()
+    -- 玩家上线服务器推送神将数据
+    network.Register(GMI_STOC_SHO_DATA, GodPanelDataInit); 
+    --服务器推送激活神将数据
+    network.Register(GMI_STOC_SEND_CLIENT_SHO_JIHUO,GodJiHuoBack);
+    -- 服务器推送培养神将数据
+    network.Register(GMI_STOC_SEND_CLIENT_SHO_PEIYANG , FosterGod);
+    -- 服务器推送突破进阶神将数据
+    network.Register(GMI_STOC_SEND_CLIENT_SHO_JINJIE , JinJieEquipGodID); 
+    -- 服务器推送装备神将id
+    network.Register(GMI_STOC_SEND_CLIENT_SHO_USE , ChangeEquipGodID); 
+    -- ---------------- 神将大招相关（先暂时写在这里）--------------------------
+    -- server 返回 神将冷却时间
+    --error("服务器返回神将大招冷却时间啦啦啦啦阿拉啦!!!!");
+    network.Register(GMI_STOC_SEND_CLIENT_SHO_COOLDWON , GetGodCDTime); --22854,,
+    -- server 返回 神将变身返回
+    network.Register(GMI_STOC_SEND_CLIENT_SHO_APPEARANCE_RETURN  , GodShapeShiftReturnCustom); --22855,,,
+    -- 请求神将变身
+    --network.Register(GMI_CTOS_LGS_SHO_Appearance  , Request); --12011,,
+end
+-----------------------------------------------------------------------------------
+--初始登录返回
+function GodPanelDataInit(protocolId, buffer)
+	GodShapeShiftManager.ConstructData();
+	local godCount = buffer:ReadByte();   
+	for index=1,godCount do
+		GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index] = {};
+		local id = buffer:ReadInt();                                                                  --神将id
+		GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].Id = id                          
+		--error("[lua] index="..index.."神将变身GodPanelDataInit: ID:--> "..id);
+        GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].CurLvl =  buffer:ReadInt();      --//1-15:神将等阶 初始为0阶，激活后为1阶--》之后可以培养
+		--error("[lua] index="..index.."GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].CurLvl:--> "..GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].CurLvl);
+        GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].CurStage =  buffer:ReadInt();    --//培养等级，最大10级
+		--error("[lua] index="..index.."GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].CurStage:--> "..GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].CurStage);
+        GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].Active =  buffer:ReadByte();     --//神将是否可以培养
+		--error("[lua] index="..index.."GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].Active:--> "..GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos[index].Active);
+
+	end
+	local curEquipGodID = buffer:ReadInt();                                                           --//当前神将ID
+	--error("[lua] 神将变身GodPanelDataInit: curEquipGodID:--> "..curEquipGodID);
+	GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId = curEquipGodID;
+
+end
+--激活神将返回
+function GodJiHuoBack(protocolId,buffer)
+    local god_id = buffer:ReadInt();
+	local player_Gods = GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos;
+	for index=1,#player_Gods do
+		if player_Gods[index].Id == god_id then
+			player_Gods[index].CurLvl = buffer:ReadInt();
+			player_Gods[index].CurStage = buffer:ReadInt();
+			player_Gods[index].Active = buffer:ReadByte();
+		end
+	end
+    local curEquipGodID = buffer:ReadInt();                                                         
+	GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId = curEquipGodID;
+	--error("[lua] 神将变身GodPanelDataInit: curEquipGodID:--> "..curEquipGodID);
+	-- 刷新神将界面
+	GodShapeShiftPanel.RefreshGodShow();
+end
+--培养神将返回
+function FosterGod(protocolId, buffer)
+	local god_id = buffer:ReadInt();
+	--error("[lua]server 返回 FosterGod的id：--> "..god_id);
+	local player_Gods = GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos;
+	for index=1,#player_Gods do
+		if player_Gods[index].Id == god_id then
+			player_Gods[index].CurLvl = buffer:ReadInt();
+			player_Gods[index].CurStage = buffer:ReadInt();
+			player_Gods[index].Active = buffer:ReadByte();
+		end
+	end
+	-- 刷新神将界面
+	GodShapeShiftPanel.RefreshGodShow();
+end
+--突破神将返回
+function JinJieEquipGodID(protocolId, buffer)
+	local god_id = buffer:ReadInt();
+	local player_Gods = GodShapeShiftManager.LogicData_GodPlayerInfo.GodInfos;
+	for index=1,#player_Gods do
+		
+		if player_Gods[index].Id == god_id then
+			player_Gods[index].CurLvl = buffer:ReadInt();
+			player_Gods[index].CurStage = buffer:ReadInt();
+			player_Gods[index].Active = buffer:ReadByte();
+		end
+	end
+	local curEquipGodID = buffer:ReadInt();
+	--error("[lua] server 返回 ActiveEquipGodID，同时装备次神将 id：-->".. curEquipGodID);
+	local curGod =  GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId;
+	local refresh = false;
+	if curGod == 0 and curEquipGodID>0 then    --客户端存储的装备神将和服务器返回的装备神将id不一样？--》使用服务器的？
+		--GodShapeShiftManager.RefreshMain_RightBottom();
+		refresh = true;
+	end
+	
+	GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId = curEquipGodID;
+	GodShapeShiftPanel.RefreshGodShow(1);
+	if refresh then
+		GodShapeShiftManager.RefreshMain_RightBottom();
+	end
+end
+-- 装备神将 
+function ChangeEquipGodID(protocolId, buffer)
+	local god_id = buffer:ReadInt();
+	--error("[lua] 神将变身ChangeEquipGodID 跟换之后的神将id：-->".. god_id);
+	GodShapeShiftManager.LogicData_GodPlayerInfo.CurEquipGodId = god_id;
+	GodShapeShiftPanel.RefreshGodShow(1);
+end
+
+----------------------------------------------------神将大招相关（先暂时写在这里）-------------------------------
+
+function GetGodCDTime(protocolId, buffer)
+	local times = buffer:ReadInt64();
+	local total_time = buffer:ReadInt();
+	local deltaTime = math.floor(times - G_TimerMng:GetCurrentSeconds());
+	GodShapeShiftManager.localGod_DataCdTime = deltaTime;
+	GodShapeShiftManager.localGod_TotalCDTime = total_time;
+	GodShapeShiftManager.SetMain_RightBottm(deltaTime);	
+end
+
+function GodShapeShiftReturnCustom(protocolId, buffer)
+	local m_godId = buffer:ReadInt();
+	local times = buffer:ReadInt64();
+	local total_time = buffer:ReadInt();
+	local deltaTime = math.floor(times - G_TimerMng:GetCurrentSeconds());
+	--error("GodShapeShiftReturnCustom神将变身后id为："..m_godId.."   还有".. deltaTime.." 秒CD");
+	GodShapeShiftManager.localGod_TotalCDTime = total_time;
+	GodShapeShiftManager.localGod_DataCdTime = deltaTime;
+	GodShapeShiftManager.SetMain_RightBottm(deltaTime);	
+	--error("GodShapeShiftReturnCustom神将--total_time："..total_time);
+end
+
+ 

@@ -1,0 +1,229 @@
+﻿module("EveryDayTaskManager", package.seeall)
+
+-- 必做任务列表
+local m_TypeTasks = {};
+local m_TaskDict = nil;
+-- 必做任务服务器数据
+local m_TaskDatas = {};
+-- 当前镖车是否跟随状态
+isCamionFollowing = false;
+-- 镖车跟随时是否禁止自动战斗(仍然是自动战斗状态，但是不走自动战斗逻辑)
+isStopAutoFight = false;
+-- 要改变的状态
+changeState = nil;
+
+-- 初始化任务列表
+function InitTaskInfo()
+    if m_TaskDict == nil then
+        m_TaskDict = {};
+        local list = CCommonTool.GetAllDailyNecessaryInfo();
+        local count = list.Count;
+        for i = 1, count do
+            local info = list[i-1];
+            m_TaskDict[info.Id] = info;
+            local typeId = info.DailyType;
+            if m_TypeTasks[typeId] == nil then
+                m_TypeTasks[typeId] = {};
+            end
+            table.insert(m_TypeTasks[typeId], info);
+        end
+    end
+end
+
+-- 获取任务信息
+-- @param id 任务ID
+function GetTask(id)
+    local info = m_TaskDict[id];
+    if info == nil then
+        error(string_format("每日必做任务ID:{0}数据不存在", id));
+        return nil;
+    end
+    return info;
+end
+
+-- 获取必做任务列表
+-- typeId 1:每日 2:每周 3:每周
+function GetTasksByType(typeId)
+    local list = m_TypeTasks[typeId];
+    if list == nil then
+        error(string_format("每日必做任务类型错误:typeId::{0}", typeId));
+        return {};
+    end
+    table.sort(list, SortFunc);
+    return list;
+end
+
+-- 每日必做任务排序方法
+function SortFunc(t1, t2)
+    local w1 = GetTaskSortWeight(t1.Id);
+    local w2 = GetTaskSortWeight(t2.Id);
+    if w1 ~= w2 then
+        return w1 < w2;
+    end
+    return t1.Id < t2.Id;
+end
+
+-- 获取任务排序权重值
+function GetTaskSortWeight(id)
+    if GetRewardState(id) == 1 then
+        return 3;
+    end
+    if not IsUnlockedTask(id) then
+        return 2;
+    end
+    local value, max = GetTaskProgress(id);
+    if value < max then
+        return 1;
+    else
+        return 0;
+    end
+end
+
+-- 更新必做任务服务器数据
+-- @param data 服务器数据
+function UpdateTask(data)
+    if data == nil or data.id == nil then
+        error(string_format("更新必做任务出错, 数据为nil"));
+        return;
+    end
+    m_TaskDatas[data.id] = data;
+end
+
+-- 获取任务服务器数据
+-- @param id 任务ID
+function GetTaskServerData(id)
+    return m_TaskDatas[id];
+end
+
+-- 任务是否解锁
+-- @param id 任务ID
+function IsUnlockedTask(id)
+    local info = GetTask(id);
+    if info == nil then
+        return false;
+    end
+    local conValue = info.OpenValue1;
+    if info.OpenType == 1  then
+        return G_UserInfo.RoleAttribute.Level >= conValue;
+    elseif info.OpenType == 2  then
+        return G_UserInfo.RoleAttribute.CultivateLv >= conValue;
+    elseif info.OpenType == 3  then
+        return G_MissionMng:IsMissioncomplete(conValue);
+    end
+    return false;
+end
+
+-- 任务领奖状态
+-- @param id 任务ID
+-- return 1:已领奖 0:未领奖
+function GetRewardState(id)
+    local data = GetTaskServerData(id);
+    if data == nil then
+        return 0;
+    end
+    return data.rewardState;
+end
+
+-- 获取任务进度
+-- @param id 任务ID
+function GetTaskProgress(id)
+    local data = GetTaskServerData(id);
+    local info = GetTask(id);
+    local max = info.Num;
+    if data == nil then
+        return 0, max;
+    end
+
+    if GetRewardState(id) == 1 then
+        return max, max;
+    end
+    return math.min(data.value, max), max;
+end
+
+-- 是否有完成的奖励
+-- @param number taskType 任务类型 1:每日 2:每周 3:每月
+function HasFinishTask(taskType)
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EVERYDAY) then
+        return false;
+    end
+    local items = GetTasksByType(taskType);
+    if items == nil then
+        return false;
+    end
+    for i, info in ipairs(items) do
+        local id = info.Id;
+        local unlocked = IsUnlockedTask(id);
+        local gotReward = GetRewardState(id) == 1;
+        local num, maxNum = GetTaskProgress(id);
+        if unlocked and not gotReward and num >= maxNum then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 得到当前镖车跟随状态
+function GetIsCamionFollow()
+    return isCamionFollowing;
+end
+
+-- 停止镖车自动跟随
+function StopCamionFlllow()
+    error("停止镖车自动跟随");
+    isCamionFollowing = false;
+    EveryDayTaskProtocol.RequestFollow(0);
+    -- 猪脚停止移动
+    G_UserInfo:GetCurPlayer().AgentOrderMng:CreateOrderStop();
+end
+
+-- 开启镖车自动跟随
+function RequestCamionFlllow()
+    error("开启镖车自动跟随");
+    isCamionFollowing = true;
+    EveryDayTaskProtocol.RequestFollow(1);
+end
+
+-- 玩家做其他操作时检测当前是否镖车跟随,如果跟随则关掉
+function CheckIsCamionFollow()
+    if isCamionFollowing == true then
+        StopCamionFlllow();
+        Main_MiddleTop.InitCamionFollowing();
+    end
+end
+
+-- 设置镖车跟随时是否禁止自动战斗状态
+function SetIsStopAutoFight()
+    if G_UserInfo:GetCurPlayer() == nil then return end
+    if G_UserInfo:GetCurPlayer().AttackManager.IsAutoFight == true and isCamionFollowing == true then
+        isStopAutoFight = true;
+    else
+        isStopAutoFight = false;
+    end
+end
+
+-- 得到设置镖车跟随时是否禁止自动战斗状态
+function GetIsStopAutoFight()
+    return isStopAutoFight;
+end
+
+-- 改变跟随状态
+function ChangeFollowState()
+    if changeState == nil then return end
+    error(" 改变跟随状态 changeState：：：：：：：：：：：：：："..changeState);
+    if changeState == 0 then 
+        EveryDayTaskManager.isCamionFollowing = false;
+    else
+        EveryDayTaskManager.isCamionFollowing = true;
+    end
+    EveryDayTaskManager.SetIsStopAutoFight();
+    Main_MiddleTop.InitCamionFollowing();
+    changeState = nil;
+end
+
+
+function ClearData()
+    m_TaskDatas = {};
+    isCamionFollowing = false;
+    isStopAutoFight = false;
+    changeState = nil;
+end

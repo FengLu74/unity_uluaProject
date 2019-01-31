@@ -1,0 +1,708 @@
+﻿module("SelectRole", package.seeall)
+---------------------------------------label路径---------------------------------------
+--------------------------------------button路径-------------------------------------
+-- 角色1选择路径
+local toggle1Path = "Content-Right/Toggle-1";
+-- 角色2选择路径
+local toggle2Path = "Content-Right/Toggle-2";
+-- 角色3选择路径
+local toggle3Path = "Content-Right/Toggle-3";
+-- 角色4选择路径
+local toggle4Path = "Content-Right/Toggle-4";
+-- 返回按钮路径
+local buttonFanHuiPath = "Button-Back";
+-- 进入游戏按钮路径
+local buttonJinRuYouXiPath = "Button-Go";
+-- 删除角色按钮路径
+local buttonShanChuPath = "Button-Delete";
+---------------------------------------sprite路径-------------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 角色选择路径
+local togglePath = "Content-Right/Toggle-";
+
+-- 有角色选中状态图片显示
+local activeSpritePath = "/HaveRole/Active/Sprite_Avatar";
+-- 有角色没有选中状态图片显示
+local deactiveSpritePath = "/HaveRole/Deactive/Sprite_Avatar";
+-- 有角色选中状态等角色等级显示
+local activeLevelPath = "/HaveRole/Active/Label_Level";
+-- 有角色没有选中状态角色等级显示
+local deactiveLevelPath = "/HaveRole/Deactive/Label_Level";
+-- 有角色选中状态等角色名字显示
+local activeNamePath = "/HaveRole/Active/Label_Name";
+-- 有角色没有选中状态角色名字显示
+local deactiveNamePath = "/HaveRole/Deactive/Label_Name";
+--------------------------------gameobject所在的路径--------------------------------
+-- 有角色时的激活状态
+local active1Path = "Content-Right/Toggle-1/HaveRole/Active";
+local active2Path = "Content-Right/Toggle-2/HaveRole/Active";
+local active3Path = "Content-Right/Toggle-3/HaveRole/Active";
+local active4Path = "Content-Right/Toggle-4/HaveRole/Active";
+-- 有角色时的未激活状态
+local deactive1Path = "Content-Right/Toggle-1/HaveRole/Deactive";
+local deactive2Path = "Content-Right/Toggle-2/HaveRole/Deactive";
+local deactive3Path = "Content-Right/Toggle-3/HaveRole/Deactive";
+local deactive4Path = "Content-Right/Toggle-4/HaveRole/Deactive";
+-- 有角色时的显示状态
+local haveRole1Path = "Content-Right/Toggle-1/HaveRole";
+local haveRole2Path = "Content-Right/Toggle-2/HaveRole";
+local haveRole3Path = "Content-Right/Toggle-3/HaveRole";
+local haveRole4Path = "Content-Right/Toggle-4/HaveRole";
+-- 无角色时的显示状态
+local labelChuangJian1Path = "Content-Right/Toggle-1/NoRole";
+local labelChuangJian2Path = "Content-Right/Toggle-2/NoRole";
+local labelChuangJian3Path = "Content-Right/Toggle-3/NoRole";
+local labelChuangJian4Path = "Content-Right/Toggle-4/NoRole";
+-- 右侧角色信息
+local RightContent = "Content-Right/Content";
+-- 有角色
+local haveRoelPath = "/HaveRole";
+-- 无角色
+local notRolePathe = "/NoRole";
+--------------------------------------引用的对象--------------------------------------
+local panelGameObject = nil;
+-- 存储角色列表数据
+local m_roleListInfo = { };
+-- 角色拥有数量
+local roleListCount = 0;
+local haveRole = { };
+-- 初始化失败默认情况
+local m_bCreateSuccess = nil;
+-- 删除的角色ID引用
+local deleteRoleId = nil;
+-- 角色ID
+local userId = nil;
+local selectRolePos = nil;
+local isCreateBack = false;
+
+-- 是否收到过列角色ok的消息
+local receivedRoleListOk = false;
+
+-- 是否为第一次创建角色
+FirstCreateRole = false;
+
+--------------------------------BaseLua调用的同名方法-------------------------------
+function Start()
+    OnInit();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess == true then
+        CSDKManager.EventHook("enter-character-view", function() end);
+    end
+end
+
+function OnDestroy()
+    m_roleListInfo = { };
+    isCreateBack = false;
+    m_bCreateSuccess = false;
+    panelGameObject = nil;
+    roleListCount = 0;
+    haveRole = { };
+    deleteRoleId = nil;
+    userId = nil;
+    selectRolePos = nil;
+    receivedRoleListOk = false;
+    G_TimerMng:RemoveTimeTask("WaitingServerLoginResult")
+end
+----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化查找界面控件赋值给相应的变量--
+function OnInit()
+    panelGameObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+
+    SetGameObjectEvent(toggle1Path, Ontoggle1Click, panelGameObject);
+    SetGameObjectEvent(toggle2Path, Ontoggle2Click, panelGameObject);
+    SetGameObjectEvent(toggle3Path, Ontoggle3Click, panelGameObject);
+    SetGameObjectEvent(toggle4Path, Ontoggle4Click, panelGameObject);
+
+    SetGameObjectEvent(buttonFanHuiPath, OnBackClick, panelGameObject);
+    SetGameObjectEvent(buttonShanChuPath, OnDeleteClick, panelGameObject);
+    SetGameObjectEvent(buttonJinRuYouXiPath, OnComeInGameClick, panelGameObject);
+
+    if receivedRoleListOk then
+        DisableToggle();
+        InitRoleListData();
+    end
+end
+-- 初始化显示
+function InitShow()
+    local selectRoleIndex = PlayerPrefs.GetInt(SelectRoleIndex);
+    SetGameObjectState(togglePath ..(selectRoleIndex + 1) .. "/HaveRole/Deactive", false, panelGameObject);
+    SetGameObjectState(togglePath ..(selectRoleIndex + 1) .. "/HaveRole/Active", true, panelGameObject);
+end
+-- 设置Toggle状态
+function DisableToggle()
+    SetGameObjectState(haveRole1Path, false, panelGameObject);
+    SetGameObjectState(haveRole2Path, false, panelGameObject);
+    SetGameObjectState(haveRole3Path, false, panelGameObject);
+    SetGameObjectState(haveRole4Path, false, panelGameObject);
+
+    SetGameObjectState(active1Path, false, panelGameObject);
+    SetGameObjectState(active2Path, false, panelGameObject);
+    SetGameObjectState(active3Path, false, panelGameObject);
+    SetGameObjectState(active4Path, false, panelGameObject);
+
+    SetGameObjectState(deactive1Path, true, panelGameObject);
+    SetGameObjectState(deactive2Path, true, panelGameObject);
+    SetGameObjectState(deactive3Path, true, panelGameObject);
+    SetGameObjectState(deactive4Path, true, panelGameObject);
+
+    SetGameObjectState(labelChuangJian1Path, true, panelGameObject);
+    SetGameObjectState(labelChuangJian2Path, true, panelGameObject);
+    SetGameObjectState(labelChuangJian3Path, true, panelGameObject);
+    SetGameObjectState(labelChuangJian4Path, true, panelGameObject);
+end
+-- 刷新角色数据
+function InitRoleListData()
+    haveRole = { false, false, false, false };
+    if roleListCount > 0 then
+        table.foreach(m_roleListInfo, function(i, v)
+            local roleName = v.RoleName;
+            local roleLevel = v.Level;
+            local roleProNum = v.Pro;
+            local rolePos = v.RolePos;
+            local roleDateInfo = Util.GetRoleData(roleProNum);
+            local txtId = roleDateInfo.Text_id;
+            local txtInfo = Util.GetTxtData(txtId);
+            local roleProName = txtInfo.m_str;
+            haveRole[rolePos + 1] = true;
+            SetGameObjectState(togglePath ..(rolePos + 1) .. haveRoelPath, true, panelGameObject);
+            SetSpriteByAtlasID(togglePath ..(rolePos + 1) .. activeSpritePath, roleDateInfo.HeadRes, panelGameObject, true);
+            SetSpriteByAtlasID(togglePath ..(rolePos + 1) .. deactiveSpritePath, roleDateInfo.HeadRes, panelGameObject, true);
+            SetGameObjectState(togglePath ..(rolePos + 1) .. notRolePathe, false, panelGameObject);
+            SetLabelContent(togglePath ..(rolePos + 1) .. activeNamePath, roleName, panelGameObject);
+            SetLabelContent(togglePath ..(rolePos + 1) .. deactiveNamePath, roleName, panelGameObject);
+            SetLabelContent(togglePath ..(rolePos + 1) .. activeLevelPath, "Lv." .. roleLevel, panelGameObject);
+            SetLabelContent(togglePath ..(rolePos + 1) .. deactiveLevelPath, "Lv." .. roleLevel, panelGameObject);
+        end );
+    end
+    local selectRoleIndex = PlayerPrefs.GetInt(SelectRoleIndex);
+    if haveRole[selectRoleIndex + 1] == false or selectRoleIndex == -1 then
+        for index = 1, 4 do
+            if haveRole[index] == true then
+                PlayerPrefs.SetInt(SelectRoleIndex, index - 1);
+                selectRoleIndex = index - 1;
+                InitShow();
+                break;
+            end
+            PlayerPrefs.SetInt(SelectRoleIndex, -1);
+            selectRoleIndex = -1;
+        end
+    else
+        InitShow();
+    end
+    -- error("SelectPos:::"..PlayerPrefs.GetInt(SelectRoleIndex));
+end
+-- 发送进入游戏协议，创建waitdone面板
+function SendIntoGameMsg()
+    if roleListCount > 0 then
+        local index = PlayerPrefs.GetInt(SelectRoleIndex) + 1;
+        if m_roleListInfo[index] == nil then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SELECTROLEGOIN);
+        else
+            local buffer = ByteBuffer.New();
+            local sroleID = m_roleListInfo[index].RoleID;
+            local suserID = PlayerPrefs.GetString(UserID);
+            local sclientConnectID = m_roleListInfo[index].ClientConnectID;
+            buffer:WriteShort(E_CTON_ENTER_GAME);
+            buffer:WriteUInt(sroleID);
+            buffer:WriteUInt(suserID);
+            buffer:WriteInt(sclientConnectID);
+            local rolePos = index - 1;
+            buffer:WriteByte(rolePos);
+            G_NetWorkMng:SendMessage(buffer);
+            G_SceneMng.LoadOrderMng:SetRoleInfo(m_roleListInfo[index].Level, m_roleListInfo[index].Pro);
+            log("send into game protocal");
+            local message = { };
+            local textContent = CCommonTool.GetTxtData(8033).m_str;
+            table.insert(message, 1, textContent);
+            createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+
+            AddTimerEvent("WaitingServerLoginResult", 20, OnWaitingSeverCallBackOver, ETimeShowType.TypeNumberThree, OnWaitingSeverCallBack);
+        end
+    end
+
+    if roleListCount <= 0 then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_CREATEROLEGOIN);
+    end
+end
+-------------------------------------按钮事件方法-------------------------------------
+
+function SendReport_Start()
+	GameReportManager.AddReportData(9164,true);  -- 選擇角色
+end
+-- 选择第一个角色--
+function Ontoggle1Click()
+    if PlayerPrefs.GetInt(SelectRoleIndex) == 0 then
+        return;
+    end
+    if haveRole[1] == false then
+        CreateRole.SetFirstCreateRoleTrue();
+        CreateRole.OnCreateRoleDragonWorriorClick();
+        CreateAndSelectRoleScene.CreateRoleStart();
+        createPanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+        closePanel(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+        PlayerPrefs.SetInt(CreateRoleIndex, 0);
+    else
+        PlayerPrefs.SetInt(SelectRoleIndex, 0);
+        DisableToggle();
+        InitRoleListData();
+        -- 播放选择角色跳出动画
+        CreateAndSelectRoleScene.SelectRoleStart();
+    end
+    -- error("SelectPos:::"..PlayerPrefs.GetInt(SelectRoleIndex));
+    Debug.Log("select first role");
+	SendReport_Start();
+end
+
+-- 选择第二个角色--
+function Ontoggle2Click()
+    if PlayerPrefs.GetInt(SelectRoleIndex) == 1 then
+        return;
+    end
+    if haveRole[2] == false then
+        CreateRole.SetFirstCreateRoleTrue();
+        CreateRole.OnCreateRoleDragonWorriorClick();
+        CreateAndSelectRoleScene.CreateRoleStart();
+        createPanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+        closePanel(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+        PlayerPrefs.SetInt(CreateRoleIndex, 1);
+    else
+        PlayerPrefs.SetInt(SelectRoleIndex, 1);
+        DisableToggle();
+        InitRoleListData();
+        -- 播放选择角色跳出动画
+        CreateAndSelectRoleScene.SelectRoleStart();
+    end
+    -- error("SelectPos:::"..PlayerPrefs.GetInt(SelectRoleIndex));
+    Debug.Log("select second role");
+	SendReport_Start();
+end
+
+-- 选择第三个角色--
+function Ontoggle3Click()
+    if PlayerPrefs.GetInt(SelectRoleIndex) == 2 then
+        return;
+    end
+    if haveRole[3] == false then
+        CreateRole.SetFirstCreateRoleTrue();
+        CreateRole.OnCreateRoleDragonWorriorClick();
+        CreateAndSelectRoleScene.CreateRoleStart();
+        createPanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+        closePanel(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+        PlayerPrefs.SetInt(CreateRoleIndex, 2);
+    else
+        PlayerPrefs.SetInt(SelectRoleIndex, 2);
+        DisableToggle();
+        InitRoleListData();
+        -- 播放选择角色跳出动画
+        CreateAndSelectRoleScene.SelectRoleStart();
+    end
+    -- error("SelectPos:::"..PlayerPrefs.GetInt(SelectRoleIndex));
+    Debug.Log("select third role");
+	SendReport_Start();
+end
+
+-- 选择第四个角色--
+function Ontoggle4Click()
+    if PlayerPrefs.GetInt(SelectRoleIndex) == 3 then
+        return;
+    end
+    if haveRole[4] == false then
+        CreateRole.SetFirstCreateRoleTrue();
+        CreateRole.OnCreateRoleDragonWorriorClick();
+        CreateAndSelectRoleScene.CreateRoleStart();
+        createPanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+        closePanel(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+        PlayerPrefs.SetInt(CreateRoleIndex, 3);
+    else
+        PlayerPrefs.SetInt(SelectRoleIndex, 3);
+        DisableToggle();
+        InitRoleListData();
+        -- 播放选择角色跳出动画
+        CreateAndSelectRoleScene.SelectRoleStart();
+    end
+    -- error("SelectPos:::"..PlayerPrefs.GetInt(SelectRoleIndex));
+    Debug.Log("select forth role");
+	SendReport_Start();
+end
+-- 返回登录界面--
+function OnBackClick()
+    -- 存储角色列表数据
+    m_roleListInfo = { };
+    _G.roleListInfo = {};
+    error("SelectRole::OnBackClick");
+    CreateAndSelectRoleScene.InitProTable();
+    -- 发送登出消息
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(E_CTON_LOGOUT);
+    G_NetWorkMng:SendMessage(buffer);
+    G_NetWorkMng:Logout();
+
+    createPanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+    closePanel(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+    G_GameMng.CreateSuccessed = false;
+    Constants.ShowVersion = true;
+    error("SelectRole::OnBackClick:::LoginManager.Instance:SetLoginCameraShow();");
+    if LoginManager.Instance ~= nil then
+        LoginManager.Instance:SetLoginCameraShow();
+    end
+    error("SelectRole::OnBackClick:::CreateAndSelectRoleScene.ShutDown() -> Start;");
+    if LoginManager.Instance ~= nil then
+        CreateAndSelectRoleScene.ShutDown();
+    end
+    error("SelectRole::OnBackClick:::CreateAndSelectRoleScene.ShutDown() -> End;");
+
+    --    local message = { };
+    --    local textContent = CCommonTool.GetTxtData(8032).m_str;
+    --    table.insert(message, 1, textContent);
+    --    createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+end
+
+-- 删除角色--
+function OnDeleteClick()
+    local selectRoleIndex = PlayerPrefs.GetInt(SelectRoleIndex);
+    local selectRole = m_roleListInfo[selectRoleIndex + 1];
+    if selectRole == nil then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_PLEASESELECTROLE);
+    else
+        selectRolePos = m_roleListInfo[selectRoleIndex + 1].RolePos;
+        deleteRoleId = m_roleListInfo[selectRoleIndex + 1].RoleID;
+        userId = PlayerPrefs.GetString(UserID);
+        deleteRoleName = m_roleListInfo[selectRoleIndex + 1].RoleName;
+        ParameterToMessageTextBox.DeleteRole(deleteRoleName);
+    end
+    GameReportManager.AddReportData(9174,true);
+end
+
+-- 删除角色确定按钮
+function OnQueDingClick()
+    -- 如果状态为1说明是删除弹出确认
+    Debug.Log("Role ID " .. deleteRoleId);
+    Debug.Log("User ID " .. userId);
+    Debug.Log("Select Role Pos " .. selectRolePos);
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(E_CTON_DELETEROLE);
+    -- 删除角色
+    buffer:WriteInt(deleteRoleId);
+    -- 角色ID
+    buffer:WriteInt(userId);
+    -- 用户ID
+    buffer:WriteByte(selectRolePos);
+    -- 角色在第几位
+    G_NetWorkMng:SendMessage(buffer);
+    local message = { };
+    local textContent = CCommonTool.GetTxtData(8031).m_str;
+    table.insert(message, 1, textContent);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end
+
+-- 进入游戏
+function OnComeInGameClick()
+    SendIntoGameMsg();
+	GameReportManager.AddReportData(9181,true);
+end
+------------------------外部调用的(或内部)更新此界面信息的方法-----------------------
+-- 返回登录界面--
+function OnBackOnLogin()
+    m_roleListInfo = { };
+    _G.roleListInfo = {}
+    -- 重置选择角色栏位的职业信息
+    CreateAndSelectRoleScene.InitProTable();
+    -- 发送登出消息
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(E_CTON_LOGOUT);
+    G_NetWorkMng:SendMessage(buffer);
+    G_NetWorkMng:Logout();
+
+    createPanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+    closePanel(ENUMPANELID.ENUM_PANEL_SELECTROLE)
+    -- 是否发送过创建角色的消息
+    G_GameMng.CreateSuccessed = false;
+    -- 是否显示版本提示
+    Constants.ShowVersion = true;
+    -- 将登陆摄像机打开
+    if LoginManager.Instance ~= nil then
+        LoginManager.Instance:SetLoginCameraShow();
+    end
+    -- 删除事件
+    CreateAndSelectRoleScene.ShutDown();
+end
+-- 等待服务器的每秒的回调
+function OnWaitingSeverCallBack()
+end
+-- 20s过后等待服务器消息的回调
+function OnWaitingSeverCallBackOver()
+    error("服务器未能返回进入游戏成功的消息")
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WAITDONE) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CREATEROLE) == 1 then
+            isCreateBack = false;
+            G_GameMng.CreateSuccessed = false;
+            if roleListCount > 0 then
+                CreateRole.OnReturnSelectRoleClick();
+            else
+                CreateRole.OnBackToLogin();
+            end
+        end
+    end
+end
+-- 获取当前登录用户的角色列表信息--
+function OnListCharacterReturn(buffer)
+    -- 读取名字长度
+    local m_yNameLen = buffer:ReadByte();
+    -- 读取名字
+    local m_wszRoleName = buffer:ReadString(m_yNameLen);
+    -- 去除名字中的空格
+    local nameStr = System.String.New(m_wszRoleName);
+    m_wszRoleName = nameStr:Trim();
+    -- 角色全局ID，数据库ID
+    local m_dwGlobalRoleID = buffer:ReadUInt();
+    -- 用户全局ID, 数据库ID
+    local m_dwGUserID = buffer:ReadUInt();
+    -- 该角色在NGS上的连接ID
+    local m_nClientConnectID = buffer:ReadInt();
+    -- 该角色所在的GS在NGS上的连接ID
+    local m_nGSConnectID = buffer:ReadInt();
+    -- 该角色客户端连接GS的连接ID
+    local m_nClientConnectGSID = buffer:ReadInt();
+    -- 上次所在的场景
+    local m_dwLastScene = buffer:ReadUInt();
+    -- 角色所在的战区ID
+    local m_wZoneID = buffer:ReadShort();
+    -- 角色所在的阵营（国家）的ID,数据库ID
+    local m_wCampID = buffer:ReadShort();
+    -- 等级
+    local m_wLevel = buffer:ReadShort();
+    -- 职业
+    local m_yPro = buffer:ReadByte();
+    -- 性别
+    local m_ySex = buffer:ReadByte();
+    -- 角色的经验
+    local m_n64Exp = buffer:ReadInt64();
+    -- 角色身上的游戏币
+    local m_n64GameMoney = buffer:ReadInt64();
+    -- 角色身上和人民币相关的金币
+    local m_nRealMoney = buffer:ReadInt();
+    -- 头发的颜色ID
+    local m_dwHairColor = buffer:ReadInt();
+    -- 脸型ID
+    local m_bFaceID = buffer:ReadByte();
+    -- 头发ID
+    local m_bHairID = buffer:ReadByte();
+    -- 是否成年
+    local m_yIsAdult = buffer:ReadByte();
+    -- 登录类型
+    local m_yLoginType = buffer:ReadByte();
+    -- 标记
+    local m_dwFlag = buffer:ReadUInt();
+    -- 角色位置
+    local m_yRolePos = buffer:ReadByte();
+    -- IP地址
+    local m_dwRoleIpAddr = buffer:ReadUInt();
+    -- 武器ID
+    local m_dwWeaponID = buffer:ReadUInt();
+    -- 胸甲ID
+    local m_dwBreastplateID = buffer:ReadUInt();
+    -- 头盔ID
+    local m_dwHelmetID = buffer:ReadUInt();
+    -- 翅膀ID
+    local m_dwWingID = buffer:ReadUInt();
+    -- 武器强化等级
+    local m_wWeeponLv = buffer:ReadUShort();
+    -- 胸甲强化等级
+    local m_wBreastplateLv = buffer:ReadUShort();
+    -- 宠物ID
+    local m_dwPetID = buffer:ReadUInt();
+
+    -- 时装发型
+    local m_dwHairStyle = buffer:ReadUInt();
+    -- 时装脸型
+    local m_dwFaceStyle = buffer:ReadUInt();
+    -- 角色创建时间
+    local m_nCreateTime = 0;
+    -- 渠道ID
+    local m_ChannelId = 0;
+    -- 设备ID
+    local m_DeviceId = "";
+    if CSDKManager.sdkName == "xiyou" then
+        m_nCreateTime = buffer:ReadInt();
+        m_ChannelId = buffer:ReadInt();
+        m_DeviceId = buffer:ReadStringByByte();
+    end
+
+    -- 把获取到得角色信息存入table(m_roleListInfo)中
+    local index = m_yRolePos + 1;
+    m_roleListInfo[index] = {
+        RoleName = m_wszRoleName,
+        RoleID = m_dwGlobalRoleID,
+        UserID = m_dwGUserID,
+        ClientConnectID = m_nClientConnectID,
+        GSConnectID = m_nGSConnectID,
+        LastScene = m_dwLastScene,
+        ZoneID = m_wZoneID,
+        CampID = m_wCampID,
+        Level = m_wLevel,
+        Pro = m_yPro,
+        Sex = m_ySex,
+        Exp = m_n64Exp,
+        GameMoney = m_n64GameMoney,
+        RealMoney = m_nRealMoney,
+        HairColorID = m_dwHairColor,
+        FaceID = m_bFaceID,
+        HairID = m_bHairID,
+        WeaponID = m_dwWeaponID,
+        BreastplateID = m_dwBreastplateID,
+        HelmetID = m_dwHelmetID,
+        WingID = m_dwWingID,
+        WeaponLevel = m_wWeeponLv,
+        BreastplateLevel = m_wBreastplateLv,
+        IsAdult = m_yIsAdult,
+        LoginType = m_yLoginType,
+        RolePos = m_yRolePos,
+        Flag = m_dwFlag,
+        RoleIpAddr = m_dwRoleIpAddr,
+
+        FashionHairId = m_dwHairStyle,
+        FashionFaceId = m_dwFaceStyle,
+        CreateTime = m_nCreateTime,
+        ChannelId = m_ChannelId,
+        DeviceId = m_DeviceId,
+    };
+    buffer = nil;
+    _G.roleListInfo = m_roleListInfo;
+    CreateAndSelectRoleScene.AddRoleListInfo(m_roleListInfo);
+    CreateAndSelectRoleScene.SetRoleListInfo(index, m_yPro);
+end
+
+-- 获取当前用户的角色数量--
+function OnListRoleOK(buffer)
+    receivedRoleListOk = true;
+    roleListCount = buffer:ReadShort();
+    if isCreateBack == false then
+        G_TimerMng:RemoveTimeTask("WaitListRoleOK");
+        if m_bCreateSuccess == true then
+            DisableToggle();
+            InitRoleListData();
+        end
+        error("roleListCount? -> " .. tostring(roleListCount));
+        error("G_GameMng:OnListRoleOK"..tostring(G_GameMng.OnListRoleOK));
+        G_GameMng:OnListRoleOK(roleListCount);
+    elseif isCreateBack == true then
+        closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+        DisableToggle();
+        InitRoleListData();
+        SendIntoGameMsg();
+    else
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_GETROLEDATAWRONG);
+    end
+    if roleListCount == 0 and not FirstCreateRole then
+        FirstCreateRole = true;
+    end
+end
+
+-- 播放跳崖动画结束的回调
+function PlayJumpAnimOk()
+end
+-- 角色登录错误返回
+function RoleLoginErrorReturn(buffer)
+    -- 账号ID
+    local m_dwUserID = buffer:ReadUInt();
+    -- 角色ID
+    local m_dwRoleID = buffer:ReadUInt();
+    -- 服务端IP
+    local m_dwGameServerIP = buffer:ReadUInt();
+    -- 服务端端口
+    local m_wGameServerPort = buffer:ReadUInt();
+    -- 服务端返回Code
+    local m_dwEnterGSCheckCode = buffer:ReadUInt();
+    -- 战区ID
+    local m_wZoneID = buffer:ReadUShort();
+    -- 服务端ID
+    local m_wGameServerID = buffer:ReadUShort();
+    -- 返回结果
+    local m_nResult = buffer:ReadInt();
+    -- 连接ID
+    local m_nConnectID = buffer:ReadInt();
+    -- 角色位置
+    local m_yRolePos = buffer:ReadByte();
+
+    local str = "";
+    if m_nResult == 0 then
+        return;
+    elseif m_nResult == 1 then
+        str = CCommonTool.GetTxtData(8022).m_str;
+    elseif m_nResult == 2 then
+        str = CCommonTool.GetTxtData(8023).m_str;
+    elseif m_nResult == 3 then
+        str = CCommonTool.GetTxtData(8024).m_str;
+    elseif m_nResult == 4 then
+        str = CCommonTool.GetTxtData(8025).m_str;
+    elseif m_nResult == 5 then
+        str = CCommonTool.GetTxtData(8026).m_str;
+    elseif m_nResult == 6 then
+        str = CCommonTool.GetTxtData(8027).m_str;
+    elseif m_nResult == 7 then
+        str = CCommonTool.GetTxtData(8028).m_str;
+    elseif m_nResult == 1012 then
+        str = CCommonTool.GetTxtData(8029).m_str;
+    elseif m_nResult == 1015 then
+        str = CCommonTool.GetTxtData(8030).m_str;
+    end
+    error(str)
+    closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    ParameterToMessageTextBox.OnLoginBack(str);
+end
+
+-- 删除角色返回数据--
+function OnDeleteRoleReturn(buffer)
+    buffer:ReadInt();
+    -- 连接ID
+    local deleteReturnRoleId = buffer:ReadUInt();
+    -- 角色ID
+    buffer:ReadUInt();
+    -- 用户ID
+    buffer:ReadByte();
+    -- 角色所在位置
+    local deleteRoleResult = buffer:ReadInt();
+    -- 返回结果
+    if deleteRoleResult == 0 then
+        Debug.Log("Delete Role Ok,ID:" .. deleteReturnRoleId);
+        m_roleListInfo = { };
+        CreateAndSelectRoleScene.InitProTable();
+        -- 存储角色列表数据
+        roleListCount = 0;
+    end
+end
+-- 设置是否是创建人物界面的返回消息
+function SetIsCreateRoleBack(state)
+    isCreateBack = state;
+end
+
+-- 得到rolelistcount值
+function GetRoleListCount()
+    return roleListCount;
+end
+
+-- 请求列角色协议
+function SendChangeRoleMessage()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(E_CTON_LISTCHARACTER);
+    buffer:WriteUInt(STOCTables.LoginReturn.m_dwUserID);
+    -- 用户的ID
+    buffer:WriteByte(255);
+    -- 角色的位置（该战区一共有8个角色ID）
+    buffer:WriteByte(1);
+    -- 是否列出所有角色
+    buffer:WriteShort(STOCTables.LoginReturn.m_wZoneID);
+    -- 角色所在的战区ID
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 因排队造成的返回界面重置一次模型
+function ResetSceneRoles()
+    G_GameMng:OnListRoleOK(roleListCount);
+end

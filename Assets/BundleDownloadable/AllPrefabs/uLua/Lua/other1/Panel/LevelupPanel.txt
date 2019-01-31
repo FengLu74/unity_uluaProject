@@ -1,0 +1,236 @@
+﻿module("LevelupPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 等级奖励面板
+local m_levelRewardPanel = "Rewards";
+----------------------------------gameobject所在的路径---------------------------------
+-- grid对象所在的位置
+local m_rewardLevelGridObjStr = "Rewards/Grid";
+-- item对象所在的位置
+local m_rewardLevelItemObjStr = "Rewards/Item";
+----------------------------------通用的名称路径---------------------------------------
+-- 奖励等级
+local m_rewardLevel = "Label_Level";
+-- 奖励Item
+local m_rewardItem = "Item";
+-- 一个道具的按钮组
+local m_rewardButtons = "Button";
+-- 已领取
+local m_rewardAccepted = "Button/Button_Accepted";
+-- 未领取
+local m_rewardAccept = "Button/Button_Accept";
+-- 不能领取
+local m_rewardNotAccept = "Button/Button_NotAccept";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 等级奖励的表数据
+local m_allRewardLvData = nil;
+-- 等级奖励的所有领取情况
+local m_getRewardState = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+--  等级奖励UIPanel组件
+local m_rewardUIPanelComp = nil;
+--  等级奖励列表
+local m_rewardListView = nil;
+-- 等级奖励Table
+local m_rewardTable = { };
+------------------------------------写死的规定----------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    ValidatePanel();
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面
+    InitAllInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        -- 初始化界面
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_allRewardLvData = nil;
+    m_allRewardLvData = nil;
+    m_panelInitAlready = false;
+    m_getRewardState = nil
+    m_rewardTable = { };
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_LEVEL_UP_PANEL);
+    m_rewardUIPanelComp = GetComponent(m_panelObject, m_levelRewardPanel, "UIPanel");
+    m_rewardListView = GetComponent(m_panelObject, m_rewardLevelGridObjStr, "UIListView");
+    m_rewardListView:SetInitCallback(OnRewardListViewInit);
+    m_rewardListView:SetClickCallback(OnRewardListViewClick);
+end
+
+-- 初始化数据
+function InitData()
+    m_allRewardLvData = CCommonTool.GetRewardLvData();
+    if m_allRewardLvData ~= nil then
+        m_getRewardState = G_RewardMng:GetState(G_RewardMng.RewardLvGetState, m_allRewardLvData.count);
+    end
+end
+
+-- 初始化界面
+function InitAllInfo()
+    InitData();
+    InitRewardList();
+end
+
+-- 初始化等级奖励数据
+function InitRewardList()
+    m_rewardListView:RemoveAll();
+    m_rewardTable = { };
+    local count = 0;
+    if m_allRewardLvData.count <= 0 then
+        error("m_allRewardLvData.count length is 0");
+        return;
+    end
+    for Index = 1, m_allRewardLvData.count do
+        if m_getRewardState[Index - 1] == 0 then
+            count = Index - 1;
+            break;
+        end
+    end
+    for Index = 1, m_allRewardLvData.count do
+        table.insert(m_rewardTable, m_allRewardLvData[Index - 1]);
+    end
+    for i, data in ipairs(m_rewardTable) do
+        m_rewardListView:AddData(data);
+    end
+    m_rewardListView:LookAt(count, false);
+end
+
+function OnRewardListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    SetLabelContent(m_rewardLevel, "Lv." .. data.GetValue, go);
+    -- 角色自身等级
+    local roleLevel = G_UserInfo.RoleAttribute.Level;
+    if roleLevel >= data.GetValue then
+        SetLabelGradientColor("fffee9", "fff7b7", m_rewardLevel, go);
+    else
+        SetLabelGradientColor("ff815f", "ff1f1f", m_rewardLevel, go);
+    end
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(data.RewordId);
+    if rewardInfo ~= nil then
+        -- 获得奖励道具信息
+        local list = rewardInfo:GetAllItem();
+        local count = list.count;
+        local itemData = nil;
+        local path = nil;
+        if count > 4 then
+            error("the rewards item num is more than 5,wrong!!!!!");
+        else
+            -- 设置道具信息
+            for i = 1, count do
+                path = m_rewardItem .. i;
+                SetGameObjectState(path, true, go);
+                itemData = list[i - 1];
+                if itemData.ItemDealType == 3 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+                elseif itemData.ItemDealType == 4 then
+                    itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+                elseif itemData.ItemDealType == 5 then
+                    itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+                end
+                local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+                if m_itemExcelID ~= nil then
+                    SetItemShowByExcelIDV04(go, path, m_itemExcelID, itemData.ItemNum, false, 11, ENUMPANELID.ENUM_LEVEL_UP_PANEL);
+                    SetItemToolTipsEvent(go, path, ENUMPANELID.ENUM_LEVEL_UP_PANEL, false, m_itemExcelID);
+                end
+            end
+            for i = count + 1, 4 do
+                path = m_rewardItem .. i;
+                SetGameObjectState(path, false, go);
+            end
+        end
+        local setPos = false;
+        local Index = cell.dataIndex + 1;
+        if m_getRewardState[cell.dataIndex] == 1 then
+            SetGameObjectState(m_rewardAccepted, true, go);
+            SetGameObjectState(m_rewardAccept, false, go);
+            SetGameObjectState(m_rewardNotAccept, false, go);
+        elseif m_getRewardState[cell.dataIndex] == 0 then
+            if G_UserInfo.RoleAttribute.Level >= data.GetValue then
+                SetGameObjectState(m_rewardButtons, true, go);
+                SetGameObjectState(m_rewardAccepted, false, go);
+                SetGameObjectState(m_rewardAccept, true, go);
+                SetGameObjectState(m_rewardNotAccept, false, go);
+            else
+                SetGameObjectState(m_rewardAccepted, false, go);
+                SetGameObjectState(m_rewardAccept, false, go);
+                SetGameObjectState(m_rewardNotAccept, true, go);
+            end
+        end
+    end
+end
+
+function OnRewardListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local roleLevel = G_UserInfo.RoleAttribute.Level;
+    if go.name == "Button" then
+        local num = cell.dataIndex + 1
+        if m_getRewardState[cell.dataIndex] == 0 and data.GetValue <= roleLevel then
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_REQUEST_SIGNINREWARD_LV);
+            buffer:WriteByte(num);
+            G_NetWorkMng:SendMessage(buffer);
+        elseif data.GetValue > roleLevel then
+            ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_NOTENOUGH_LEVEL);
+        else
+            error("cannot get");
+        end
+    end
+	--福利-等级礼包上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10024);
+	end
+end
+
+function OnCloseClick()
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.CloseWelfarePanel");
+end
+--检测界面是否需要开启
+function ValidatePanel()
+    local data = 
+    {
+        PanelId = ENUMPANELID.ENUM_LEVEL_UP_PANEL;
+    }
+    LuaEventDispatcher.TriggerEvent("WelfarePanel.ValidatePanel",data);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function InitInfoOut()
+    if m_panelInitAlready then
+        InitAllInfo();
+    end
+end
+
+function IsShowRedHintLevelUp()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        return false;
+    end
+    if not G_RewardMng:IsCanShowLevelupRewardRedHint() then
+        return false;
+    end
+    return true;
+end

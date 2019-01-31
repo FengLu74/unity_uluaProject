@@ -1,0 +1,508 @@
+﻿module('SkillConfigPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'SkillConfigPanel';
+---------------------------------------label路径---------------------------------------
+
+-- 技能名称
+local m_NameLabelPath = "SkillInfoPanel/NameLabel";
+-- 技能等级
+local m_LevelLabelPath = "SkillInfoPanel/LevelLabel";
+-- 技能CD
+local m_CDLabelPath = "SkillInfoPanel/CDLabel";
+-- 技能效果
+local m_EffectLabelPath = "SkillInfoPanel/EffectLabel";
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 技能栏1
+local m_Skill1Path = "Skill/Skill1";
+-- 技能栏2
+local m_Skill2Path = "Skill/Skill2";
+-- 技能栏3
+local m_Skill3Path = "Skill/Skill3";
+-- 技能栏4
+local m_Skill4Path = "Skill/Skill4";
+-- 技能信息面板
+local m_SkillInfoPanelPath = "SkillInfoPanel";
+-- 未选中技能的文字说明
+local m_NonSelectContentPath = "NonSelectContent";
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 通用技能列表
+local m_GeneralListPath = "General/ListPanel/generalList";
+-- 天赋技能列表1
+local m_Talent1ListPath = "Talent1/ListPanel/talent1List";
+-- 天赋技能列表2
+local m_Talent2ListPath = "Talent2/ListPanel/talent2List";
+-- 流派1未解锁图标
+local m_Genre1LockIconPath = "GenreLockContent/Genre1LockIcon";
+-- 流派2未解锁图标
+local m_Genre2LockIconPath = "GenreLockContent/Genre2LockIcon";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 通用技能列表
+local m_GeneralList = nil;
+-- 天赋技能列表1
+local m_Talent1List = nil;
+-- 天赋技能列表2
+local m_Talent2List = nil;
+-- 技能栏1
+local m_Skill1 = nil;
+-- 技能栏2
+local m_Skill2 = nil;
+-- 技能栏3
+local m_Skill3 = nil;
+-- 技能栏4
+local m_Skill4 = nil;
+
+-- 4个技能栏显示对象
+local m_SkillObjects = nil;
+-- 当前选中的技能栏ID
+local m_SelectShortcutIndex = 0;
+-- 当前选中的技能栏ID
+local m_SelectId = 0;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitList();
+    InitShow();
+    InitGenreHeaderInfo();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+        InitGenreHeaderInfo();
+    end
+end
+
+function OnDisable()
+    m_SelectId = 0;
+    if m_SkillObjects ~= nil then
+        for i = 1, 4 do
+            local go = m_SkillObjects[i];
+            if go ~= nil then
+                local effect = child(go, "Effect").gameObject;
+                effect:SetActive(false);
+            end
+        end
+    end
+    SkillManager.ClearNewUnlockedTalents();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_GeneralList = nil;
+	m_Talent1List = nil;
+    m_Talent2List = nil;
+	m_Skill1 = nil;
+	m_Skill2 = nil;
+	m_Skill3 = nil;
+	m_Skill4 = nil;
+    m_SelectShortcutIndex = 0;
+    m_SkillObjects = nil;
+    m_SelectId = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_SKILLPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject;
+    m_GeneralList = GetComponent(m_PanelObject, m_GeneralListPath, "UIListView")
+    m_Talent1List = GetComponent(m_PanelObject, m_Talent1ListPath, "UIListView")
+    m_Talent2List = GetComponent(m_PanelObject, m_Talent2ListPath, "UIListView")
+    m_LevelLabel = GetComponent(m_PanelObject, m_LevelLabelPath, "UILabel")
+    m_CDLabel = GetComponent(m_PanelObject, m_CDLabelPath, "UILabel")
+    m_Skill1 = child(m_PanelObject, m_Skill1Path).gameObject;
+    m_Skill2 = child(m_PanelObject, m_Skill2Path).gameObject;
+    m_Skill3 = child(m_PanelObject, m_Skill3Path).gameObject;
+    m_Skill4 = child(m_PanelObject, m_Skill4Path).gameObject;
+    m_SkillObjects = {m_Skill1, m_Skill2, m_Skill3, m_Skill4};
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_GeneralList:SetInitCallback(OnGeneralListViewInit);
+    m_GeneralList:SetClickCallback(OnGeneralListViewClick);
+    m_Talent1List:SetInitCallback(OnTalentListViewInit);
+    m_Talent1List:SetClickCallback(OnTalentListViewClick);
+    m_Talent2List:SetInitCallback(OnTalentListViewInit);
+    m_Talent2List:SetClickCallback(OnTalentListViewClick);
+    UIEventListener.Get(m_Skill1).onClick = LuaHelper.OnClick(OnSkill1Click);
+    UIEventListener.Get(m_Skill2).onClick = LuaHelper.OnClick(OnSkill2Click);
+    UIEventListener.Get(m_Skill3).onClick = LuaHelper.OnClick(OnSkill3Click);
+    UIEventListener.Get(m_Skill4).onClick = LuaHelper.OnClick(OnSkill4Click);
+    SetGameObjectEvent(m_MaskPath, OnMaskClick, m_PanelObject);
+
+end
+
+-- 初始化列表
+function InitList()
+    local skills = nil;
+    skills = SkillManager.generalSkillInfos;
+    for _, skill in ipairs(skills) do
+        m_GeneralList:AddData(skill);
+    end
+    skills = SkillManager.talentSkillInfos;
+    for i, skill in ipairs(skills) do
+        if i <= 2 then
+            m_Talent1List:AddData(skill);
+        else
+            m_Talent2List:AddData(skill);
+        end
+    end
+    --error(SerializeTable(SkillManager.playerSkills));
+end
+
+function InitGenreHeaderInfo()
+    local genreIds = SkillManager.genreIds;
+    local currentGenreId = 0;
+    if SkillManager.playerGenreData ~= nil then
+        currentGenreId = SkillManager.playerGenreData.currentGenreId;
+    end
+    local info = CCommonTool.GetTalentTypeByID(genreIds[1].id);
+    SetLabelTextByID("Talent1/Header/Label_Genre1", info.TypeName, m_PanelObject);
+    CCommonTool.SetGameObjectGrey(child(m_PanelObject, "Talent1/Header/Bg").gameObject, genreIds[1].id ~= currentGenreId);
+
+    info = CCommonTool.GetTalentTypeByID(genreIds[2].id);
+    SetLabelTextByID("Talent2/Header/Label_Genre2", info.TypeName, m_PanelObject);
+    CCommonTool.SetGameObjectGrey(child(m_PanelObject, "Talent2/Header/Bg").gameObject, genreIds[2].id ~= currentGenreId);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_SelectId == 0 then
+        --m_SelectId = GetDefaultId();
+    end
+    RefreshList();
+    if m_SelectId > 0 then
+        InitSkillInfo(m_SelectId);
+    elseif m_SelectShortcutIndex > 0 then
+        local data = SkillManager.shortcutSkills[m_SelectShortcutIndex];
+        InitSkillInfo(data.id);
+    else
+        InitSkillInfo(0);
+    end
+    InitShortcutSkills();
+    SelectShortcutSkill(m_SelectShortcutIndex);
+    InitGenreLockState();
+end
+
+function GetDefaultId()
+    local hasLastId = false;
+    local params = panelParams
+    if panelParams ~= nil then
+        local params = panelParams;
+        panelParams = nil;
+        local selectId = params.selectId;
+        if selectId ~= nil and SkillManager.skillDict[selectId] ~= nil then
+            return selectId;
+        end
+    end
+    return SkillManager.generalSkillInfos[1].id;
+end
+
+function RefreshList()
+    m_GeneralList:Refresh();
+    m_Talent1List:Refresh();
+    m_Talent2List:Refresh();
+end
+
+function InitGenreLockState()
+    local genreIds = SkillManager.genreIds;
+    local needLevel = CCommonTool.GetTalentTypeByID(genreIds[1].id).NendLevel;
+    local locked = needLevel > G_UserInfo.RoleAttribute.Level;
+    SetGameObjectState(m_Genre1LockIconPath, locked, m_PanelObject);
+    m_Talent1List.gameObject:SetActive(not locked);
+
+    needLevel = CCommonTool.GetTalentTypeByID(genreIds[2].id).NendLevel;
+    locked = needLevel > G_UserInfo.RoleAttribute.Level;
+    SetGameObjectState(m_Genre2LockIconPath, locked, m_PanelObject);
+    m_Talent2List.gameObject:SetActive(not locked);
+end
+
+-- 初始化技能栏
+function InitShortcutSkills()
+    for i, go in ipairs(m_SkillObjects) do
+        local data = SkillManager.shortcutSkills[i];
+        local locked = data.locked;
+        local skillId = data.id;
+        SetGameObjectState("Icon", skillId > 0, go);
+        SetGameObjectState("Lock", locked, go);
+        if skillId > 0 then
+            local skillData = SkillManager.GetPlayerSkill(skillId);
+            if skillData ~= nil then
+                local dateInfo = CCommonTool.GetSkillDateByIndex(skillData.subId);
+                local iconId = dateInfo ~= nil and dateInfo.Icon or 0;
+                SetSpriteByAtlasID("Icon", iconId, go, true);
+            else
+                error(string_format("技能栏的技能ID:{0}数据不存在!", skillId));
+            end
+        end
+    end
+end
+
+-- 选中指定技能栏
+function SelectShortcutSkill(index)
+    for i, go in ipairs(m_SkillObjects) do
+        SetGameObjectState("Select", i == index, go);
+    end
+end
+
+-- 初始化技能信息
+function InitSkillInfo(skillId)
+    if skillId == 0 then
+        SetGameObjectState(m_SkillInfoPanelPath, false, m_PanelObject);
+        SetGameObjectState(m_NonSelectContentPath, true, m_PanelObject);
+        return;
+    end
+    SetGameObjectState(m_SkillInfoPanelPath, true, m_PanelObject);
+    SetGameObjectState(m_NonSelectContentPath, false, m_PanelObject);
+
+    local id = skillId;
+    local data = SkillManager.GetSkillData(id);
+    local info = data.info;
+    local playerSkill = SkillManager.GetPlayerSkill(id);
+    local nameInfo = SkillManager.GetSkillNameInfo(playerSkill.subId);
+    local dateInfo = CCommonTool.GetSkillDateByIndex(playerSkill.subId);
+    local level = playerSkill.level;
+    local locked = playerSkill.locked;
+    if nameInfo ~= nil then SetLabelTextByID(m_NameLabelPath, nameInfo.SkillName, m_PanelObject); end
+    m_LevelLabel.text = string_format("Lv.{0}", level);
+    m_CDLabel.text = string_format(CCommonTool.GetTxtData(1991).m_str, dateInfo.BackCd, dateInfo.MpNeed);
+    --m_CDLabel.text = string_format("CD:{0}s  MP:{1}", dateInfo.BackCd, dateInfo.MpNeed);
+    if nameInfo ~= nil then 
+        local desc = CCommonTool.GetTxtData(nameInfo.Describe).m_str;
+        desc = string_format(
+            desc, 
+            NumberToString(nameInfo.Att1Fixed + (level - 1) * nameInfo.Att1Up), 
+            NumberToString(nameInfo.Att2Fixed + (level - 1) * nameInfo.Att2Up), 
+            NumberToString(nameInfo.Att3Fixed + (level - 1) * nameInfo.Att3Up)
+        );
+        SetLabelContent(m_EffectLabelPath, desc, m_PanelObject);
+    end
+end
+
+function NumberToString(number)
+    if math.floor(number) < number then
+        return string.format("%0.1f", number);
+    else
+        return string.format("%d", number);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+function InitListCell(cell, data)
+    local go = cell.gameObject;
+    local info = data.info;
+    local id = data.id;
+    local skillKind = data.skillKind;
+    local skillData = SkillManager.GetPlayerSkill(id);
+    local nameInfo = SkillManager.GetSkillNameInfo(skillData.subId);
+    local dateInfo = CCommonTool.GetSkillDateByIndex(skillData.subId);
+    local equiped = SkillManager.IsEquipedSkill(id);
+    local locked = SkillManager.IsLockedSkill(id);
+    local actived = true;
+    if skillKind == 2 then
+        actived = SkillManager.IsActiveGenre(skillData.talentId);
+    end
+
+    SetSpriteByAtlasID("Icon", dateInfo ~= nil and dateInfo.Icon or 0, go, true);
+    if nameInfo ~= nil then
+        SetLabelTextByID("Name", nameInfo.SkillName, go);
+    end
+    SetLabelContent("Level", string_format("Lv.{0}", skillData.level), go);
+    SetGameObjectState("Equiped", equiped, go);
+    SetGameObjectState("Select", m_SelectId == id, go);
+
+    SetGameObjectState("Lock", actived and locked, go);
+    CCommonTool.SetGameObjectGrey(child(go, "Icon").gameObject, actived and locked);
+    SetGameObjectState("Black", locked or not actived, go);
+
+    if skillKind == 2 then
+        SetGameObjectState("Level", not locked or not actived, go);
+        SetGameObjectState("TalentUnactive", not actived, go);
+        local isNewUnlocked = SkillManager.IsNewUnlockedTalent(skillData.talentId);
+        SetGameObjectState("UnlockEffect", isNewUnlocked, go);
+    end
+end
+
+
+function HandleListViewLick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local skillKind = data.skillKind;
+    if skillKind == 2 then
+        -- 隐藏解锁特效
+        local skillData = SkillManager.GetPlayerSkill(data.id);
+        SkillManager.DeleteNewUnlockedTalent(skillData.talentId);
+        SetGameObjectState("UnlockEffect", false, go);
+    end
+
+    if m_SelectId == data.id then
+        return;
+    end
+    
+    if m_SelectShortcutIndex > 0 then
+        local sourceId = SkillManager.shortcutSkills[m_SelectShortcutIndex].id;
+        local targetId = data.id;
+        DoChangeSkill(sourceId, targetId, m_SelectShortcutIndex);
+    else
+        m_SelectId = data.id;
+        InitShow();
+    end
+end
+
+-- 通用技能列表初始化
+function OnGeneralListViewInit(listView, cell, data)
+    InitListCell(cell, data);
+end
+
+-- 通用技能列表点击事件
+function OnGeneralListViewClick(listView, cell, go)
+    HandleListViewLick(listView, cell, go);
+end
+
+-- 天赋技能列表初始化
+function OnTalentListViewInit(listView, cell, data)
+    InitListCell(cell, data);
+end
+
+-- 天赋技能列表点击事件
+function OnTalentListViewClick(listView, cell, go)
+    HandleListViewLick(listView, cell, go);
+end
+
+-- 技能栏点击处理
+function HandleShortcutClick(index)
+    local data = SkillManager.shortcutSkills[index];
+    if data.locked == true then
+        return;
+    end
+
+    if m_SelectShortcutIndex > 0 then
+        if index == m_SelectShortcutIndex then
+            return;
+        end
+        local sourceId = SkillManager.shortcutSkills[index].id;
+        local targetId = SkillManager.shortcutSkills[m_SelectShortcutIndex].id;
+        DoChangeSkill(sourceId, targetId, index);
+        return;
+    end
+
+    m_SelectId = 0;
+    m_SelectShortcutIndex = index;
+    InitShow();
+end
+
+
+function DoChangeSkill(sourceId, targetId, shortcutIndex)
+    if G_UserInfo.RoleAttribute:GetAttackState() then
+        ShowSystemFlowTips(316);
+        return false;
+    end
+
+    if SkillManager.IsLockedSkill(targetId) then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_SKILLUNLOCK);
+        G_MusicMng:OnLoadMusic(4011);
+        return false;
+    end
+
+    local skillData = SkillManager.GetSkillData(targetId);
+    if skillData.skillKind == 2 then
+        local actived = SkillManager.IsActiveGenre(skillData.talentId);
+        if not actived then
+            ShowSystemFlowTips(5414);
+            return false;
+        end
+    end
+
+    if G_UserInfo:IsCoolingDownSkill(sourceId) or G_UserInfo:IsCoolingDownSkill(targetId) then
+        ShowSystemFlowTips(317);
+        return false;
+    end
+    SkillProtocol.RequestChangeShortcutSkill(shortcutIndex - 1, targetId);
+
+    -- 取消选中
+    m_SelectId = 0;
+    m_SelectShortcutIndex = 0;
+    InitShow();
+    return true;
+end
+
+-- 技能栏1点击事件
+function OnSkill1Click(gameObject)
+    HandleShortcutClick(1);
+end
+
+-- 技能栏2点击事件
+function OnSkill2Click(gameObject)
+    HandleShortcutClick(2);
+end
+
+-- 技能栏3点击事件
+function OnSkill3Click(gameObject)
+    HandleShortcutClick(3);
+end
+
+-- 技能栏4点击事件
+function OnSkill4Click(gameObject)
+    HandleShortcutClick(4);
+end
+
+-- 遮罩点击事件
+function OnMaskClick(gameObject)
+    --取消技能选中
+    if m_SelectId > 0 or m_SelectShortcutIndex > 0 then
+        m_SelectId = 0;
+        m_SelectShortcutIndex = 0;
+        InitShow();
+    end
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新界面
+function Refresh()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+-- 技能栏改变时发送装备技能的位置
+function OnSkillEquipChange(index, skillId)
+    if m_CreateSuccess then
+        local go = m_SkillObjects[index];
+        if go ~= nil then
+            local effect = child(go, "Effect").gameObject;
+            effect:SetActive(false);
+            effect:SetActive(true);
+        end
+    end
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return {selectId = m_SelectId};
+end
+
+function SetJumpCloseData(paramTable)
+    panelParams = paramTable;
+end

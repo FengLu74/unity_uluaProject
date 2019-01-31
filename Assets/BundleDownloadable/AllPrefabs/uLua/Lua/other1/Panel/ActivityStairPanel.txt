@@ -1,0 +1,656 @@
+﻿module('ActivityStairPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityStairPanel';
+---------------------------------------label路径---------------------------------------
+--标题
+local m_TitleNameLabelPath = "Title/Name";
+--描述
+local m_TitleDescLabelPath = "Title/Desc";
+--显示层的Label
+local m_MenuLayerLabelPath = "Content/Left/MenuLayer/Layer/Num";
+--奖励标题Label
+local m_RewardTitleLabelPath = "Content/Centre/Title/Label";
+--挑战记录人物名称
+local m_RecordNameLabelPath = "Content/Right/Content/Record/Name";
+--挑战记录时间
+local m_RecordTimeLabelPath = "Content/Right/Content/Record/Time";
+--挑战次数
+local m_ChallengeNumLabelPath = "Challenge/Num";
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+-- 标题底图
+local m_TitleIconPath = "Title/Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_MaskPath = "Mask";
+-- 加注释
+local m_CloseButtonPath = "Title/CloseButton";
+-- 加注释
+local m_ArrowUpPath = "Content/Left/MenuLayer/ArrowUp";
+-- 加注释
+local m_ArrowDownPath = "Content/Left/MenuLayer/ArrowDown";
+-- 加注释
+local m_ItemsPath = "Content/Centre/Items";
+-- 加注释
+local m_Item1Path = "Content/Centre/Items/Item1";
+-- 加注释
+local m_Item2Path = "Content/Centre/Items/Item2";
+-- 加注释
+local m_Item3Path = "Content/Centre/Items/Item3";
+-- 加注释
+local m_RankButtonPath = "ButtonGrid/RankButton";
+-- 扫荡按钮
+local m_SweepButtonPath = "ButtonGrid/SweepButton";
+-- 加注释
+local m_EnterButtonPath = "EnterButton";
+-- 通过记录
+local m_RecordPath = "Content/Right/Content/Record";
+--显示无通过记录
+local m_NoRecordPath = "Content/Right/Content/NoRecord";
+-- 扫荡奖励面板
+local m_SweepRewardContentPath = "SweepRewardContent";
+-- 扫荡奖励面板关闭按钮
+local m_SweepRewardCloseButtonPath = "SweepRewardContent/ZheZhao";
+-- 扫荡奖励面板关闭按钮
+local m_SweepRewardOkButtonPath = "SweepRewardContent/OkButton";
+------------------------ 天梯类似活动-------------------------
+-- 推荐战斗力
+local m_FightValuePath = "Title/FightValue";
+-- 推荐等级
+local m_LvlPath = "Title/Lvl";
+--可挑战次数
+local m_CountPath = "Title/Count";
+-- 扫荡奖励
+local m_SDPath = "Content/Right/Itemsb/Item1";
+-- 神之试炼特殊--
+local sbsbsbsbsPath = "specialsb";
+local x = 1
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 加注释
+local m_Mask = nil;
+-- 加注释
+local m_CloseButton = nil;
+-- 加注释
+local m_ArrowUp = nil;
+-- 加注释
+local m_ArrowDown = nil;
+-- 加注释
+local m_Items = nil;
+-- 加注释
+local m_Item1 = nil;
+-- 加注释
+local m_Item2 = nil;
+-- 加注释
+local m_Item3 = nil;
+-- 加注释	
+local m_RankButton = nil;
+-- 加注释
+local m_EnterButton = nil;
+
+local m_ItemObjects = nil;
+local m_ItemPaths = nil;
+-----------------------------------一些写死的规定--------------------------------------
+--最小层数
+local m_MinLayer = 1;
+--最大层数
+local m_MaxLayer = 100;
+--当前层
+local m_CurLayer = 1;
+--选择层的Index
+local m_MenuLayerIndex = 1;
+--最多显示的层数
+local m_ShowLayerNum = 10;
+--挑战次数
+local m_ChallengeMaxNum = 3;
+--剩余挑次数
+local m_ResidueChallengeNum = 3;
+--活动Id
+local m_ActivityId = 901;
+
+local m_ArrowUpTwP = nil;
+local m_ArrowDownTwP = nil;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_Mask = nil;
+	m_CloseButton = nil;
+	m_ArrowUp = nil;
+	m_ArrowDown = nil;
+	m_Items = nil;
+	m_Item1 = nil;
+	m_Item2 = nil;
+	m_Item3 = nil;
+	m_RankButton = nil;
+	m_EnterButton = nil;
+    m_ArrowUpTwP = nil;
+    m_ArrowDownTwP = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL);
+    m_Mask = child(m_PanelObject, m_MaskPath).gameObject;
+    m_CloseButton = child(m_PanelObject, m_CloseButtonPath).gameObject;
+    m_ArrowUp = child(m_PanelObject, m_ArrowUpPath).gameObject;
+    m_ArrowDown = child(m_PanelObject, m_ArrowDownPath).gameObject;
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+    m_Item1 = child(m_PanelObject, m_Item1Path).gameObject;
+    m_Item2 = child(m_PanelObject, m_Item2Path).gameObject;
+    m_Item3 = child(m_PanelObject, m_Item3Path).gameObject;
+    m_RankButton = child(m_PanelObject, m_RankButtonPath).gameObject;
+    m_EnterButton = child(m_PanelObject, m_EnterButtonPath).gameObject;
+
+    m_ItemObjects = {m_Item1, m_Item2, m_Item3};
+    m_ItemPaths = {m_Item1Path, m_Item2Path, m_Item3Path};
+
+    -- TweenPosition组件
+    m_ArrowUpTwP = GetComponent(m_PanelObject, m_ArrowUpPath, "TweenPosition");
+    m_ArrowDownTwP = GetComponent(m_PanelObject, m_ArrowDownPath, "TweenPosition");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+    UIEventListener.Get(m_Mask).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_CloseButton).onClick = LuaHelper.OnClick(OnCloseClick);
+    UIEventListener.Get(m_ArrowUp).onClick = LuaHelper.OnClick(OnArrowUpClick);
+    UIEventListener.Get(m_ArrowDown).onClick = LuaHelper.OnClick(OnArrowDownClick);
+    UIEventListener.Get(m_RankButton).onClick = LuaHelper.OnClick(OnRankButtonClick);
+    SetGameObjectEvent(m_SweepButtonPath, OnSweepButtonClick, m_PanelObject);
+    UIEventListener.Get(m_EnterButton).onClick = LuaHelper.OnClick(OnEnterButtonClick);
+    SetGameObjectEvent(m_SweepRewardCloseButtonPath, OnSweepRewardCloseClick, m_PanelObject);
+    SetGameObjectEvent(m_SweepRewardOkButtonPath, OnSweepRewardCloseClick, m_PanelObject);
+    
+    SetGameObjectEvent(sbsbsbsbsPath.."/AddBtn",sbsbsbAddCount,m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetTitleInfo();
+    m_CurLayer = ActivityManager.GetStairActivityLayer(m_ActivityId);
+    SetGameObjectState(m_SweepRewardContentPath, false, m_PanelObject);
+    SetMenuLayerIndex(m_CurLayer);
+
+    if m_ActivityId ~= EACTIVITYID.ACTIVITY_STAIR then
+        SetGameObjectState(m_SweepButtonPath, true, m_PanelObject);
+        SetGameObjectState("Challenge", false, m_PanelObject);
+        local data = ActivityManager.GetStairActivityData(m_ActivityId);
+        SetSweepGrey(data ~= nil and data.state == 1);
+    else
+        SetGameObjectState(m_SweepButtonPath, false, m_PanelObject);
+        SetGameObjectState("Challenge", true, m_PanelObject);
+    end
+
+    local uiTable = GetComponent(m_PanelObject, "ButtonGrid", "UITable");
+    if uiTable ~= nil then
+        uiTable:Reposition();
+    end
+end
+--设置
+function SetTitleInfo()
+    local data = ActivityManager.GetActivity(m_ActivityId);
+    local info = data.info;
+    SetLabelTextByID(m_TitleNameLabelPath, info.Name, m_PanelObject);
+    SetLabelTextByID(m_TitleDescLabelPath, info.Desc, m_PanelObject);
+--    SetSpriteByAtlasID(m_TitleIconPath, info.Icon, m_PanelObject);
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_ActivityId);
+    m_ChallengeMaxNum = maxTimes;
+    SetResidueChallengeNum(usedTimes);
+    -- 只有神之试炼活动显示排行榜按钮
+    m_RankButton:SetActive(m_ActivityId == EACTIVITYID.ACTIVITY_STAIR);
+end
+
+-- 加层
+function AddLayer()
+    m_MenuLayerIndex = m_MenuLayerIndex + 1; 
+    if m_MenuLayerIndex >= m_CurLayer then
+        m_MenuLayerIndex = m_CurLayer;
+    end
+    SetMenuLayerIndex(m_MenuLayerIndex);
+end
+-- 减层
+function MinusLayer()
+    m_MenuLayerIndex = m_MenuLayerIndex - 1; 
+    local layer = m_CurLayer - m_ShowLayerNum;
+    if layer <= m_MinLayer then
+        layer = m_MinLayer;
+    end
+    if m_MenuLayerIndex <= layer then
+        m_MenuLayerIndex = layer;
+    end
+    SetMenuLayerIndex(m_MenuLayerIndex);
+end
+-- 更新层显示效果
+function SetMenuLayerIndex(index)
+    if index <= 1 then index = 1; end
+    m_MenuLayerIndex = index;
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR then
+        ActivityStairProtocol.RequestGetRecord(index);
+    else
+        SetRecord("", -1);
+    end
+    if m_MenuLayerIndex >= m_CurLayer then
+        SetSpriteColor(m_ArrowUpPath, "00000000", m_PanelObject);
+        m_ArrowUpTwP.enabled = false;
+        SetGameObjectPos(m_ArrowUpPath, Vector3.New(0, 60, 0), m_PanelObject);
+    else
+        SetSpriteColor(m_ArrowUpPath, "FFFFFFFF", m_PanelObject);
+        m_ArrowUpTwP.enabled = true;
+    end
+    local layer = m_CurLayer - m_ShowLayerNum;
+    if layer <= m_MinLayer then
+        layer = m_MinLayer;
+    end
+    if m_MenuLayerIndex <= layer then
+        SetSpriteColor(m_ArrowDownPath, "00000000", m_PanelObject);
+        m_ArrowDownTwP.enabled = false;
+        SetGameObjectPos(m_ArrowDownPath, Vector3.New(0, -60, 0), m_PanelObject);
+    else
+        SetSpriteColor(m_ArrowDownPath, "FFFFFFFF", m_PanelObject);
+        m_ArrowDownTwP.enabled = true;
+    end
+    SetLabelContent(m_MenuLayerLabelPath, index, m_PanelObject);
+    SetRewardList(index);
+    RefreshNewDesc();
+end
+
+-- 设置奖励
+function SetRewardList(index)
+    local activityStair = nil;
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR then
+        activityStair = CCommonTool.GetActivityEndlessFBDice(index);
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_BALL then
+        activityStair = CCommonTool.GetActivityJewelInfo(index);
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+        activityStair = CCommonTool.GetActivityGodInfo(index);
+    elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET then
+        --LuaTabel获取
+        activityStair=ActivityPetTable.Get(index); 
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+        --LuaTabel获取
+        activityStair = ActivityMountTable.Get(index);
+    end
+    local rewardItems = nil;
+    local rewardItemNums = nil;
+    local titleText = nil;
+    if index < m_CurLayer then
+        if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR or m_ActivityId == EACTIVITYID.ACTIVITY_BALL  or m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+            rewardItems = activityStair:GetAllItems();
+            rewardItemNums = activityStair:GetAllItemNums();
+        elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+            --LuaTabel获取
+            rewardItems = ActivityManager.GetAllItemsInLuaTable(activityStair);
+            rewardItemNums = ActivityManager.GetAllItemNumsInLuaTable(activityStair);
+        end
+        titleText = GetTextToId(1485);
+    else
+        if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR or m_ActivityId == EACTIVITYID.ACTIVITY_BALL  or m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+            rewardItems = activityStair:GetFirstItems();
+            rewardItemNums = activityStair:GetFirstItemNums();
+        elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+            --LuaTabel获取
+            rewardItems = ActivityManager.GetFirstItemsInLuaTable(activityStair);
+            rewardItemNums =ActivityManager.GetFirstItemNumsInLuaTable(activityStair);
+        end
+
+        titleText = GetTextToId(117);
+    end
+    if titleText ~= nil then
+        SetLabelContent(m_RewardTitleLabelPath, titleText, m_PanelObject);
+    end
+    local count = 0;
+--    if rewardItems ~= nil then
+--        count = rewardItems.count;
+--    end
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR or m_ActivityId == EACTIVITYID.ACTIVITY_BALL  or m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+        if rewardItems ~= nil then
+            count = rewardItems.count;
+        end
+    elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+        if rewardItems ~= nil then
+            count = #rewardItems;
+        end
+    end
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR or m_ActivityId == EACTIVITYID.ACTIVITY_BALL  or m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+        for i, path in ipairs(m_ItemPaths) do
+            if i <= count then
+                local excelId = rewardItems[i - 1];
+                local num = rewardItemNums[i - 1];
+                if num == nil or num <= 0 then
+                    num = 1;
+                end
+                SetItemShowByExcelIDV04(m_PanelObject, path, excelId, num, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL);
+                SetItemToolTipsEvent(m_ItemObjects[i],"",ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL,false,excelId);
+                SetGameObjectState(path, true, m_PanelObject);
+            else
+                SetGameObjectState(path, false, m_PanelObject);
+            end
+        end
+    elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+        for i, path in ipairs(m_ItemPaths) do
+            if i <= count then
+                local excelId = rewardItems[i];
+                local num = rewardItemNums[i];
+                if num == nil or num <= 0 then
+                    num = 1;
+                end
+                SetItemShowByExcelIDV04(m_PanelObject, path, excelId, num, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL);
+                SetItemToolTipsEvent(m_ItemObjects[i],"",ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL,false,excelId);
+                SetGameObjectState(path, true, m_PanelObject);
+            else
+                SetGameObjectState(path, false, m_PanelObject);
+            end
+        end
+    end
+
+    m_Items:Reposition();
+    ReferNewReward();
+end
+-- 设置挑战记录
+function SetRecord(playerName,time)
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR then
+        if time <= 0 then   -- 没有记录
+            SetGameObjectState(m_RecordPath, false, m_PanelObject);
+            SetGameObjectState(m_NoRecordPath, true, m_PanelObject);
+            SetLabelTextByID(m_NoRecordPath, 9002, m_PanelObject);
+        else
+            SetGameObjectState(m_RecordPath, true, m_PanelObject);
+            SetGameObjectState(m_NoRecordPath, false, m_PanelObject);
+            SetLabelContent(m_RecordNameLabelPath, playerName, m_PanelObject);
+            SetLabelContent(m_RecordTimeLabelPath, CaculateTime(time), m_PanelObject);
+        end
+    elseif m_ActivityId == EACTIVITYID.ACTIVITY_BALL or m_ActivityId == EACTIVITYID.ACTIVITY_SHO or  m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT   then
+        local isFighted = ActivityManager.GetLayerFightState(m_ActivityId, m_MenuLayerIndex);
+        SetGameObjectState(m_RecordPath, false, m_PanelObject);
+        SetGameObjectState(m_NoRecordPath, true, m_PanelObject);
+        SetLabelTextByID(m_NoRecordPath, isFighted == true and 9246 or 9247, m_PanelObject);
+    end
+end
+
+-- 设置挑战次数
+function SetResidueChallengeNum(num)
+    m_ResidueChallengeNum = num;
+    SetLabelContent(m_ChallengeNumLabelPath, string_format("{0}/{1}",num,m_ChallengeMaxNum), m_PanelObject);
+
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_ActivityId);
+    SetLabelContent(m_CountPath.."/Label", "[FFFEA2FF]"..remainTimes.."[-]", m_PanelObject);
+    --SetNewDesc();
+    local issbsb = m_ActivityId == EACTIVITYID.ACTIVITY_STAIR;
+    if issbsb then
+
+        SetGameObjectState(sbsbsbsbsPath,true,m_PanelObject);
+        SetLabelContent(sbsbsbsbsPath.."/Fbtimes",remainTimes,m_PanelObject);
+    else
+        SetGameObjectState(sbsbsbsbsPath,false,m_PanelObject);
+    end
+    -- 重置 还是 扫荡
+    local sbsbDatas = nil;
+    if ActivityManager.activityStairData ~=nil then
+        sbsbDatas = ActivityManager.activityStairData[m_ActivityId];  --data.state = buffer:ReadByte();    -- 扫荡状态 1:已扫荡 0:未扫荡
+    end
+    if ActivityManager.activityDict~=nil then
+        local datas = ActivityManager.activityDict[m_ActivityId];
+        if datas~=nil and sbsbDatas~=nil then
+             --[[ 每天可增加的最大次数
+            datas.addMaxTimes = buffer:ReadInt();
+            -- 已使用道具增加的次数
+            datas.timesByUseItem = buffer:ReadInt();
+            ]]
+            if sbsbDatas.state == 0 then
+                IsSaoD = true;
+            else
+                IsSaoD = false;
+            end 
+            local stst1 = (IsSaoD == true and GetTextToId(9245)) or GetTextToId(43005);
+            SetLabelContent(m_SweepButtonPath.."/Label",stst1,m_PanelObject);
+            --[[if datas.timesByUseItem < datas.addMaxTimes then
+                --
+            else
+
+            end
+            ]]
+        end
+    end
+end
+--sb 的想法
+local  IsSaoD  = true;
+
+-- 扫荡
+function OnSweepButtonClick(gameObject)
+    
+    if IsSaoD == false then
+
+        ActivityProtocol.RequestIncreaseActNumData(m_ActivityId,0);
+    else
+
+        if m_ActivityId == EACTIVITYID.ACTIVITY_BALL then
+        ActivityStairProtocol.RequestBallActivity(1);
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+            ActivityStairProtocol.RequestShoActivity(1);
+        elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET then
+            ActivityStairProtocol.RequestPetActivity(1);
+        elseif m_ActivityId==EACTIVITYID.ACTIVITY_MOUNT then
+            ActivityStairProtocol.RequestMountActivity(1);
+        end
+    end
+  
+end
+
+
+
+--神之试炼加号点击事件
+function sbsbsbAddCount()
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_ActivityId);
+    
+    if remainTimes > 0 then
+        error("有次数暂时不能购买！！！");
+        --ShowSystemFlowTips();
+        --次数足够
+    else
+        ActivityTimesItemPanel.Show(m_ActivityId);
+
+    end       
+end
+
+--奖励
+function ReferNewReward()
+
+    local item_id =  0;
+    local item_num =   0;
+    if m_ActivityId~=nil and m_ActivityId>0 then
+        if m_ActivityId == EACTIVITYID.ACTIVITY_PET then  -- 宠物
+            local petData = ActivityPetTable.Get(m_MenuLayerIndex);
+            if petData~=nil then
+               item_id = petData.Item2;
+               item_num = petData.Item2Num;
+            end
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then  -- 坐骑
+
+            local petData = ActivityMountTable.Get(m_MenuLayerIndex);
+            if petData~=nil then
+               item_id = petData.Item2;
+               item_num = petData.Item2Num;
+            end
+
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_STAIR  then -- 神之试炼
+
+            local petData = CCommonTool.GetActivityEndlessFBDice(m_MenuLayerIndex);
+            if petData~=nil then
+               item_id = petData.Item2;
+               item_num = petData.Item2Num;
+            end
+
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_BALL  then  -- 宝珠
+            local petData = CCommonTool.GetActivityJewelInfo(m_MenuLayerIndex);
+            if petData~=nil then
+               item_id = petData.Item2;
+               item_num = petData.Item2Num;
+            end
+        end
+    end
+
+    SetItemShowByExcelIDV04(m_PanelObject, m_SDPath, item_id, item_num, false, 101, ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL);
+    SetItemToolTipsEvent(m_PanelObject,m_SDPath,ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL,false,item_id);
+end
+--- 设置 推荐 战斗力，等级  (级)
+function RefreshNewDesc()   
+    local fight_value = 0;
+    local lvl_value =   0;
+    if m_ActivityId~=nil and m_ActivityId>0 then
+        if m_ActivityId == EACTIVITYID.ACTIVITY_PET then  -- 宠物
+            local petData = ActivityPetTable.Get(m_MenuLayerIndex);
+            if petData~=nil then
+               fight_value = petData.Fight;
+               lvl_value = petData.ActivateLv;
+            end
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then  -- 坐骑
+
+            local petData = ActivityMountTable.Get(m_MenuLayerIndex);
+            if petData~=nil then
+               fight_value = petData.Fight;
+               lvl_value = petData.ActivateLv;
+            end
+
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_STAIR  then -- 神之试炼
+
+            local petData = CCommonTool.GetActivityEndlessFBDice(m_MenuLayerIndex);
+            if petData~=nil then
+               fight_value = petData.Fight;
+               lvl_value = petData.ActivateLv;
+            end
+
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_BALL  then  -- 宝珠
+            local petData = CCommonTool.GetActivityJewelInfo(m_MenuLayerIndex);
+            if petData~=nil then
+               fight_value = petData.Fight;
+               lvl_value = petData.ActivateLv;
+            end
+        end
+
+    end
+
+	if(fight_value > math.floor(G_UserInfo.RoleAttribute.BattlePower)) then
+		SetLabelContent(m_FightValuePath.."/Label", "[FF0000FF]"..fight_value.."[-]", m_PanelObject);
+	else 
+		SetLabelContent(m_FightValuePath.."/Label", "[FFFEA2FF]"..fight_value.."[-]", m_PanelObject);
+	end
+    SetLabelContent(m_LvlPath.."/Label", "[FFFEA2FF]"..lvl_value..GetTextToId(284).."[-]", m_PanelObject);
+end
+
+
+-- 初始化扫荡奖励
+function InitSweepReward(items)
+    SetGameObjectState(m_SweepRewardContentPath, true, m_PanelObject);
+    local basePath = m_SweepRewardContentPath .. "/Items/";
+    for i = 1, 4 do
+        local path = basePath .. "Item" .. i;
+        if i <= #items then
+            SetGameObjectState(path, true, m_PanelObject);
+            SetItemShowByExcelIDV04(m_PanelObject, path, items[i][1], items[i][2], false, 110, ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL);
+            SetItemToolTipsEvent(child(m_PanelObject, path).gameObject,"",ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL,false,items[i][1]);
+        else
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+end
+
+function SetSweepGrey(isGrey)
+    CCommonTool.SetGameObjectGrey(child(m_PanelObject, m_SweepButtonPath).gameObject, isGrey == true);
+end
+
+------------------------------------------事件方法------------------------------------
+-- 关闭按钮
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL);
+end
+
+-- 加层按钮
+function OnArrowUpClick(gameObject)
+    error("OnArrowUpClick");
+    AddLayer();
+end
+
+-- 减层按钮
+function OnArrowDownClick(gameObject)
+    error("OnArrowDownClick");
+    MinusLayer();
+end
+
+-- 排行榜
+function OnRankButtonClick(gameObject)
+    error("OnRankButtonClick");
+    RankPanel.OpenRankPanel(RANK_TYPE.ACTIVITYSTAIR, 0);
+end
+
+
+
+-- 加注释
+function OnEnterButtonClick(gameObject)
+    error("m_MenuLayerIndex::::::"..m_MenuLayerIndex);
+    ActivityManager.SetStairActivityCurLayer(m_ActivityId, m_MenuLayerIndex);
+    if G_SceneMng:IsInFuben() == true and G_SceneMng.ActivityID ~= m_ActivityId then
+        -- 提示:已经在副本中
+        ShowSystemFlowTips(712);
+        return;
+    else
+        ActivityProtocol.RequestEnterActivityStairRoom(m_ActivityId,m_MenuLayerIndex);
+        error("发送了进入副本的消息");
+    end
+end
+
+-- 扫荡界面关闭按钮
+function OnSweepRewardCloseClick(gameObject)
+    SetGameObjectState(m_SweepRewardContentPath, false, m_PanelObject);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function RefreshRecord(data)
+    SetRecord(data.Name,data.Time);
+end
+
+function Open(activityId, causePanelId)
+    if activityId == nil or activityId == 0 then
+        error("Error: 神之试炼UI界面打开时, 活动ID是0");
+        return;
+    end
+    m_ActivityId = activityId;
+    createPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL, causePanelId);
+end
+
+-- 显示扫荡奖励
+function ShowSweepReward(items)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYSTAIRPANEL) == 1 then
+        InitSweepReward(items);
+        SetSweepGrey(true);
+    end
+end
+
+

@@ -1,0 +1,219 @@
+﻿require "Panel/MyFightPowerRankPanel";
+require "Panel/MyPetRankPanel";
+require "Panel/GuildPowerRankPanel";
+require "Panel/GuildDonationRankPanel";
+require "Panel/CampKillRankPanel";
+
+module('LimitTimeActPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'LimitTimeActPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 关闭按钮
+local m_BtnClosePath = "btn_Close";
+-- 查看排行按钮
+local m_BtnCheckRankPath = "btn_CheckRank";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 开启的排行榜列表
+local m_UITopToggleGridPath = "Sub_TopToggle/Sub_Tabs/UIGrid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 开启的排行列表
+local m_UIGrid = nil;
+-- 当前标签
+local m_selectTagNum = 0;
+-- 上一次选择的标签
+local m_lastSelectTagNum = 0;
+-----------------------------------一些写死的规定--------------------------------------
+-- toggles组成的table内容
+local m_toggleTable = {
+    [70] = { nameID = 2401, panelName = "MyFightPowerRankPanel", isFirstOpen = true, luaFileName = MyFightPowerRankPanel,}, 
+    [71] = { nameID = 2402, panelName = "MyPetRankPanel", isFirstOpen = true, luaFileName = MyPetRankPanel }, 
+    [72] = { nameID = 2428, panelName = "GuildPowerRankPanel", isFirstOpen = true, luaFileName = GuildPowerRankPanel, },
+    [73] = { nameID = 2436, panelName = "GuildDonationRankPanel", isFirstOpen = true, luaFileName = GuildDonationRankPanel, }, 
+    [74] = { nameID = 2440, panelName = "CampKillRankPanel", isFirstOpen = true, luaFileName = CampKillRankPanel, }
+};
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    m_toggleTable[m_selectTagNum].luaFileName.OnDisable();
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, false, m_PanelObject);
+    m_toggleTable[m_selectTagNum].isFirstOpen = false;
+    m_selectTagNum = 0;
+    m_lastSelectTagNum = 0;
+    LimitTimeActMng.ClearRankData();
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_UIGrid = nil;
+    for i,v in pairs(m_toggleTable) do
+        v.luaFileName.OnDestroy();
+        v.isFirstOpen = true;
+    end
+    m_selectTagNum = 0;
+    m_lastSelectTagNum = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT);
+    m_UIGrid = GetComponent(m_PanelObject, m_UITopToggleGridPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnCheckRankPath, OnBtnCheckRankClick, m_PanelObject);
+    
+    m_UIGrid:SetInitCallback(OnUIGridViewInit);
+    m_UIGrid:SetClickCallback(OnUIGridViewClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    if LimitTimeActMng.RankOpenInfoData == nil then return end
+    if m_selectTagNum == 0 then
+        m_selectTagNum = LimitTimeActMng.RankOpenInfoData[1].rankType;
+    end
+    SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_PanelObject);
+    if m_selectTagNum ~= m_lastSelectTagNum then
+        m_lastSelectTagNum = m_selectTagNum;
+    end
+    m_UIGrid:RemoveAll();
+    for i, data in ipairs(LimitTimeActMng.RankOpenInfoData) do
+        m_UIGrid:AddData(data);
+        if m_selectTagNum == data.rankType then 
+            m_UIGrid:LookAt(i - 1, true);
+            LimitTimeActMng.ClearRankData();
+            LimitTimeActProtocol.RequestMyRankInfo(data.rankType, 0);
+        end
+    end
+    
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭界面
+function OnBtnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT);
+end
+
+-- 查看排行榜
+function OnBtnCheckRankClick(gameObject)
+    LimitTimeActMng.ClearRankData();
+    LimitTimeActProtocol.RequestRankList(m_selectTagNum, 0, 0, 1, 0);
+end
+
+-- 开启的限时排行榜toggle
+function OnUIGridViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetLabelTextByID("Sprite_Deactive/Label_Name", m_toggleTable[data.rankType].nameID, go);
+    SetLabelTextByID("Sprite_Active/Label_Name", m_toggleTable[data.rankType].nameID, go);
+end
+
+-- 开启的限时排行榜toggle点击
+function OnUIGridViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    m_selectTagNum = data.rankType;
+    if m_selectTagNum ~= m_lastSelectTagNum then
+        SetGameObjectState(m_toggleTable[m_selectTagNum].panelName, true, m_PanelObject);
+        SetGameObjectState(m_toggleTable[m_lastSelectTagNum].panelName, false, m_PanelObject);
+        m_lastSelectTagNum = m_selectTagNum;
+    else
+        return;
+    end
+    LimitTimeActMng.ClearRankData();
+    LimitTimeActProtocol.RequestMyRankInfo(data.rankType, 0);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 设置对应限时活动倒计时
+function SetCountDownTime(sec, content)
+    for i,v in pairs(m_toggleTable) do
+        G_TimerMng:RemoveTimeTask(v.panelName);
+    end
+    if sec ~= nil and sec ~= 0 then
+        SetGameObjectState("lb_Time", true, m_PanelObject);
+        AddTimerEvent(content, sec, CallBackOver, ETimeShowType.TypeNumberNine, CloseCallBack); 
+    else
+        SetLabelContent("lb_Time", GetTextToId(9137), m_PanelObject);
+    end
+end
+
+function CloseCallBack(text)
+     if IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT) == 1 then
+        local str = GetTextToId(2132)..":"..text;
+        SetLabelContent("lb_Time", str, m_PanelObject);
+--        SetLabelContent("lb_Time", string_format(--[[冷却时间：{0}]]GetTextToId(1352),timeTxt), m_PanelObject);
+    end
+end
+
+function CallBackOver()
+    SetGameObjectState("lb_Time", false, m_PanelObject);
+end
+
+-- 打开界面
+function OpenRankPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT) ~= 1 then return end
+    m_toggleTable[m_lastSelectTagNum].luaFileName.OnDisable();
+    m_toggleTable[m_selectTagNum].luaFileName.OnEnable();
+    if m_toggleTable[m_selectTagNum].isFirstOpen == true then
+        m_toggleTable[m_selectTagNum].isFirstOpen = false;
+        m_toggleTable[m_selectTagNum].luaFileName.Start();
+    end
+end
+
+-- 打开排行榜
+function OpenRankList(typeID, data)
+    if  IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT) == 1 and typeID == m_selectTagNum then 
+        m_toggleTable[m_selectTagNum].luaFileName.OpenRankList(data);
+    end
+end
+
+-- 获取路径打开活动界面
+function OnGetWayOpen(rankType)
+    if LimitTimeActMng.RankOpenInfoData == nil then ShowSystemFlowTips(2778); end
+    local isShow = false;
+    for i, data in ipairs(LimitTimeActMng.RankOpenInfoData) do
+        if rankType == data.rankType then 
+            isShow = true;
+            break;
+        end
+    end
+    if isShow == false then 
+        ShowSystemFlowTips(2778);
+    else
+        m_selectTagNum = rankType;
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT) ~= 1 then 
+            createPanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT);
+        else
+            InitShow();
+        end
+    end
+end

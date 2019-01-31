@@ -1,0 +1,923 @@
+﻿module("ExtractRollOverCardPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 花费数量
+local m_moneyCostNum = "Buttons/GetOneButton/ItemInfo/LabelCost";
+-- 再次抽取的次数
+local m_labelNum = "Buttons/GetOneButton/Label/Num";
+-- 一次抽取的道具数量
+local m_oneItemNum = "Card/BG/Item/Label-Cheng/Label-Num";
+-- 一次抽取的道具名字
+local m_oneItemName = "Card/BG/Item/Label-Name";
+-- 翻牌倒计时
+local m_roationTime = "Cards/Label";
+
+-- 此次抽奖花费金额
+local m_curCostNum = "MessagePanel/Others/Label_Cost";
+-- 此次抽奖次数
+local m_curSelectNum = "MessagePanel/Others/Label_Num";
+-----------------------------------------Sprite路径------------------------------------
+-- 花费图标
+local m_moneyCostSprite = "Buttons/GetOneButton/ItemInfo/Sprite";
+-- 一次抽取的道具品质
+local m_oneItemPinZhi = "Card/BG/Item/Sprite-PinZhiYanSe";
+-- 一次抽取的道具图片
+local m_oneItemIcon = "Card/BG/Item/Sprite-DaoJuTuBiao";
+-- 名字
+local m_oneItemName = "Card/BG/Item/Label-Name";
+-- 一次抽取的背景
+local m_oneItemBg = "Card/BG";
+
+-- -- 此次抽奖花费图标
+local m_curCostSprite = "MessagePanel/Others/Label_Cost/Sprite";
+-----------------------------------------按钮路径--------------------------------------
+-- 领取按钮
+local m_receiveButton = "ReceiveButton";
+-- 再来一次
+local m_getOneButton = "Buttons/GetOneButton";
+-- 结束
+local m_backButton = "Buttons/BackButton";
+-- 一键翻开所有的牌
+local m_opanAllCardButton = " OpenAllCardButton";
+
+-- 确认抽奖按钮
+local m_rewardEnser = "MessagePanel/Button-QueDing";
+-- 取消抽奖按钮
+local m_rewardCancle = "MessagePanel/Button-FanHui";
+----------------------------------gameobject所在的路径---------------------------------
+-- 所有按钮
+local m_allButtons = "Buttons";
+-- 二次抽取确认弹板
+local m_messagePanel = "MessagePanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 十连抽grid对象所在的位置
+local m_cardsGridObjStr = "Cards/ItemPanel/UIGrid";
+-- 十连抽item对象所在的位置
+local m_cardsItemObjStr = "Cards/ItemPanel/Card";
+-- 十连抽UIPanel对象所在的位置
+local m_cardsUIPanelCompStr = "Cards/ItemPanel";
+
+-- 一连抽grid对象所在的位置
+local m_oneCardGridObjStr = "Card/ItemPanel/UIGrid";
+-- 一连抽item对象所在的位置
+local m_oneCardItemObjStr = "Card/ItemPanel/Card";
+-- 一连抽UIPanel对象所在的位置
+local m_oneCardUIPanelCompStr = "Card/ItemPanel";
+-- 牌的图片
+local m_cardSprite = "BG";
+-- 道具信息
+local m_itemInfo = "BG/Item";
+-- 多次抽取
+local m_moreTimesStr = "Cards";
+-- 一次抽取
+local m_oneTimeStr = "Card";
+-- 一次抽取的道具信息
+local m_oneItemInfo = "Card/BG/Item";
+-- 翻牌特效
+local m_openCardEffectStr = "BG/OpenEffect";
+-- 钻石抽奖翻牌特效
+local m_stoneCardEffect = "BG/StoneEffect";
+-- 金币抽奖翻牌特效
+local m_coinCardEffect = "BG/CoinEffect";
+
+-- 品质特效
+local m_cardPinZhi = "BG/Pinzhi";
+-- 品质特效橙色
+local m_cardEffectCheng = "BG/Pinzhi/EffectCheng";
+-- 品质特效蓝色
+local m_cradEffectLan = "BG/Pinzhi/EffEctLan";
+-- 品质特效紫色
+local m_cardEffectZi = "BG/Pinzhi/EffectZi";
+
+-- 显示UI特效
+local m_effectShowUI = "Effect";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 当前游戏对象创建成功
+local m_bCreateSuccess = false;
+-- 选择的是第几个
+local m_itemSelectNum = 1;
+-- 十连抽UIPanel组件
+local m_cardsUIPanelComp = nil;
+-- 十连抽牌列表
+local m_cardsListView = nil;
+-- 抽取一次列表
+local m_oneCardListView = nil;
+-- 一连抽UIPanel组件
+local m_oneCardUIPanelComp = nil;
+-- 抽取类型id
+local m_rewardId = 0;
+-- 开始时间
+local m_beginTime = 0;
+--  总牌数
+local m_allCradCount = 0;
+-- 打开的牌数
+local m_openCardCount = 0;
+-- 没有打开的牌数
+local m_notOpenCardCount = 0;
+-- 道具数量
+local m_itemCount = 0;
+-- 翻牌特效
+local m_openCardEffect = nil;
+
+-- 3d摄像机
+local m_3DCamera = nil;
+-- 宝箱特效计时器
+local m_boxEffectTime = nil;
+-- 宝箱特效
+local m_boxEffect = nil;
+-- 3d摄像机组件
+local m_3DCameraComp = nil;
+-- 3DbFxPro
+local m_fxProComp = nil;
+-- beautify
+local m_beautifyComp = nil;
+-- 特效
+local m_effectTime = nil;
+-- 几秒显示翻牌特效
+local m_showOpenCardEffect = nil;
+-- UI摄像机
+local m_UICamera = nil;
+-- 翻牌特效结束
+local m_openCardEffectEnd = nil;
+-- UIFxPro
+local m_UIFxProComp = nil;
+-- 翻牌倒计时
+local m_openCardTime = nil;
+-- 宝箱特效持续时间
+local m_boxEffectContine = nil;
+
+-- 没有打开的卡牌
+local m_cardItemTable = { };
+
+-- 道具品质
+local m_itemPinzhi = nil;
+-- 品质显示路径
+local m_itempath = nil;
+------------------------------------写死的规定------------------------------
+-- 图集
+local m_cardAtlas = "PanelAloneSixAtlasV04";
+-- 金币足够时显示的文本颜色
+local m_enoughColor = "FFFFFF";
+-- 金币不足时显示的文本颜色
+local m_notEnoughColor = "D83232";
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    InitObjects();
+    PlayBoxEffect();
+    OnOneListViewInfoInit();
+    OnListViewInfoInit();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        PlayBoxEffect();
+        OnOneListViewInfoInit();
+        OnListViewInfoInit();
+    end
+end
+
+function OnDisable()
+    -- 恢复3D摄像机参数
+    RecoverCamera();
+    Timer.Instance:StopTimer(m_effectTime);
+    Timer.Instance:StopTimer(m_boxEffectTime);
+    Timer.Instance:StopTimer(m_showOpenCardEffect);
+    Timer.Instance:StopTimer(m_openCardEffectEnd);
+    Timer.Instance:StopTimer(m_boxEffectContine);
+end
+
+function OnDestroy()
+    m_bCreateSuccess = false;
+    m_panelObject = nil;
+    m_allCradCount = 0;
+    m_notOpenCardCount = 0;
+    m_openCardCount = 0;
+    m_rewardId = 0;
+    m_itemCount = 0;
+    m_3DCamera = nil;
+    m_boxEffectTime = nil;
+    m_boxEffect = nil;
+    m_3DCameraComp = nil;
+    m_fxProComp = nil;
+    m_beautifyComp = nil;
+    m_effectTime = nil;
+    m_showOpenCardEffect = nil;
+    m_openCardEffect = nil;
+    m_openCardTime = nil
+    m_UICamera = nil;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+    -- 十连抽组件
+    m_cardsUIPanelComp = GetComponent(m_panelObject, m_cardsUIPanelCompStr, "UIPanel");
+    m_cardsListView = GetComponent(m_panelObject, m_cardsGridObjStr, "UIListView");
+    m_cardsListView:SetInitCallback(OnListViewInit);
+    m_cardsListView:SetClickCallback(OnListViewSelected);
+    -- 抽取一次 组件
+    m_oneCardUIPanelComp = GetComponent(m_panelObject, m_oneCardUIPanelCompStr, "UIPanel");
+    m_oneCardListView = GetComponent(m_panelObject, m_oneCardGridObjStr, "UIListView");
+    m_oneCardListView:SetInitCallback(OnOneListViewInit);
+    m_oneCardListView:SetClickCallback(OnOneListViewSelected);
+
+end
+
+-- 播放宝箱特效
+function PlayBoxEffect()
+    -- 关闭UI界面内容
+    SetGameObjectState(m_moreTimesStr, false, m_panelObject);
+    SetGameObjectState(m_oneTimeStr, false, m_panelObject);
+    SetGameObjectState(m_allButtons, false, m_panelObject);
+    SetGameObjectState(m_receiveButton, false, m_panelObject);
+    SetGameObjectState(m_effectShowUI, false, m_panelObject);
+    SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+    G_UserInfo.PlayerSettingManager:SetCameraEffect(TypeCameraFxPro, false);
+    SetGameObjectState(m_messagePanel, false, m_panelObject);
+    -- 获取UI摄像机
+    m_UICamera = G_SceneMng:GetUICamera();
+    if m_UICamera == nil then
+        error("m_UICamera is nil");
+        return;
+    end
+    -- FxPro
+    m_UIFxProComp = GetComponent(m_UICamera, "", "FxPro");
+    if m_UIFxProComp == nil then
+        error("m_UIFxProComp is nil");
+        return;
+    end
+    -- 获取3D摄像机
+    m_3DCamera = G_PanelMng.M_3dSceneUIManager.Camera3D;
+    if m_3DCamera == nil then
+        error("m_3DCamera is nil");
+        return;
+    end
+    m_3DCamera.enabled = false;
+    m_3DCamera.enabled = true;
+    m_boxEffect = find("SceneUINeedShow/Effect/Effect_ExtractRollOverCard");
+    local camearaBind = find("SceneUINeedShow/Effect/Effect_ExtractRollOverCard/CameraBind");
+    if m_boxEffect == nil or camearaBind == nil then
+        error("m_boxEffect or camearaBind is nil");
+        return;
+    end
+    -- 设置摄像机挂点
+    m_3DCamera.transform.parent = camearaBind.transform;
+    m_3DCamera.transform.localPosition = Vector3.New(0, 0, 0);
+    m_3DCamera.transform.localEulerAngles = Vector3.New(0, 0, 0);
+
+    -- FxPro
+    m_fxProComp = GetComponent(m_3DCamera, "", "FxPro");
+    if m_fxProComp == nil then
+        error("m_fxProComp is nil");
+        return;
+    else
+        m_fxProComp.enabled = false;
+    end
+    -- Beautify
+    m_beautifyComp = GetComponent(m_3DCamera, "", "Beautify");
+    if m_beautifyComp == nil then
+        error("m_beautifyComp is nil");
+        return
+    end
+    m_beautifyComp.enabled = false;
+    m_boxEffect:SetActive(true);
+    -- 关闭场景雾
+    UnityEngine.RenderSettings.fog = false;
+    -- 播放宝箱特效的时间2.35秒
+    m_boxEffectTime = Timer.Instance:AddTimer(2.35, 0, PlayBoxEffectOver);
+end
+
+-- 宝箱特效时间结束回调
+function PlayBoxEffectOver()
+    -- 恢复摄像机挂点
+    if m_3DCamera ~= nil then
+        m_3DCamera.transform.parent = find("SceneUINeedShow").transform;
+    end
+    if m_fxProComp ~= nil then
+        m_fxProComp.enabled = false;
+    end
+    if m_beautifyComp ~= nil then
+        m_beautifyComp.enabled = false;
+    end
+    m_boxEffectContine = Timer.Instance:AddTimer(0.1, 0, CallBackOver)
+    SetGameObjectState(m_effectShowUI, true, m_panelObject);
+    -- 特效的时间0.8秒
+    m_effectTime = Timer.Instance:AddTimer(0.8, 0, PlayEffectOver);
+    Timer.Instance:StopTimer(m_boxEffectTime);
+    -- 显示UI信息
+    SetGameObjectState(m_moreTimesStr, true, m_panelObject);
+    SetGameObjectState(m_oneTimeStr, true, m_panelObject);
+    SetGameObjectState(m_allButtons, true, m_panelObject);
+    SetGameObjectState(m_receiveButton, true, m_panelObject);
+    SetGameObjectState(m_opanAllCardButton, true, m_panelObject);
+    InitAllInfo();
+end
+
+function CallBackOver()
+    if m_boxEffect ~= nil then
+        m_boxEffect:SetActive(false);
+        Timer.Instance:StopTimer(m_boxEffectContine);
+    end
+end
+
+-- 特效时间结束回调
+function PlayEffectOver()
+    -- 关闭特效
+    SetGameObjectState(m_effectShowUI, false, m_panelObject);
+    Timer.Instance:StopTimer(m_effectTime);
+end
+
+-- 恢复3D场景的参数值
+function RecoverCamera()
+    -- 恢复3D摄像机挂点
+    if m_3DCamera ~= nil then
+        m_3DCamera.transform.parent = find("SceneUINeedShow").transform;
+    end
+    if m_fxProComp ~= nil and m_beautifyComp ~= nil and m_beautifyComp ~= nil and m_boxEffect ~= nil then
+        m_fxProComp.enabled = false;
+        m_beautifyComp.enabled = false;
+        m_boxEffect:SetActive(false);
+    end
+    -- 打开场景雾
+    UnityEngine.RenderSettings.fog = true;
+    -- 关闭UI摄像机外发光的效果
+    if m_UIFxProComp ~= nil then
+        m_UIFxProComp.enabled = false;
+    end
+    -- 设置主场景摄像机的fxPro
+    G_UserInfo.PlayerSettingManager:SetCameraEffect(TypeCameraFxPro, true);
+end
+
+-- 初始化的所有数据信息
+function InitAllInfo()
+    -- 初始化按钮事件
+    InitOnClick();
+    -- 初始化显示信息
+    InitAllshow();
+end
+
+-- 初始化抽奖数据
+function OnListViewInfoInit()
+    SetGameObjectState(m_moreTimesStr, false, m_panelObject);
+    m_cardsListView:RemoveAll();
+    m_notOpenCardCount = 0;
+    m_openCardCount = 0;
+    m_allCradCount = GetRewardManger.allItemsNum;
+    local itemInfoTable = GetRewardManger.itemList or { };
+    for i, data in ipairs(itemInfoTable) do
+        m_cardsListView:AddData(data);
+    end
+end
+
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetGameObjectState(m_cardPinZhi, false, go);
+    CardInfo(data, go, cell);
+end
+
+function OnListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if data.itemState ~= 0 then
+        return;
+    end
+    GetRewardProtocol.RequestRewardInfo(data.itemId, data.itemNum);
+    local cardObj = child(cell, m_cardSprite).gameObject;
+    if data.itemState == 0 then
+        CCommonTool.TweenRotationBegin(cardObj, 0.2, 0, cardObj.transform.localEulerAngles, Vector3.New(0, 90, 0));
+        CCommonTool.TweenRotationOnFinishEvent(cardObj, TweenRotationOnFinished, 1, cell.dataIndex);
+        m_notOpenCardCount = m_notOpenCardCount - 1;
+        data.itemState = 1;
+    end
+    if m_notOpenCardCount == 0 then
+        SetGameObjectState(m_receiveButton, true, m_panelObject);
+        SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+    else
+        SetGameObjectState(m_receiveButton, false, m_panelObject);
+        SetGameObjectState(m_opanAllCardButton, true, m_panelObject);
+    end
+end
+
+-- 翻牌多次
+function TweenRotationOnFinished(cardObj, cardNum)
+    if cardNum < 0 then
+        return;
+    end
+    local data = m_cardsListView:GetData(cardNum);
+    local cell = m_cardsListView:GetCell(cardNum);
+    local go = cell.gameObject;
+    SetGameObjectState(m_itemInfo, true, go);
+    CCommonTool.TweenRotationBegin(cardObj, 0.2, 0, cardObj.transform.localEulerAngles, Vector3.New(0, 0, 0));
+    SetItemInfo(data, go, cardObj);
+end
+
+-- 一张牌时的显示
+function OnOneListViewInfoInit()
+    m_oneCardListView:RemoveAll();
+    SetGameObjectState(m_oneTimeStr, false, m_panelObject);
+    m_notOpenCardCount = 0;
+    m_openCardCount = 0;
+    m_allCradCount = GetRewardManger.allItemsNum;
+    local itemInfoTable = GetRewardManger.itemList or { };
+    for i, data in ipairs(itemInfoTable) do
+        m_oneCardListView:AddData(data);
+    end
+end
+
+function OnOneListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetGameObjectState(m_cardPinZhi, false, go);
+    CardInfo(data, go, cell);
+end
+
+function OnOneListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if data.itemState ~= 0 then
+        return;
+    end
+    local cardObj = child(cell, m_cardSprite).gameObject;
+    GetRewardProtocol.RequestRewardInfo(data.itemId, data.itemNum);
+    if data.itemState == 0 then
+        CCommonTool.TweenRotationBegin(cardObj, 0.2, 0, cardObj.transform.localEulerAngles, Vector3.New(0, 90, 0));
+        CCommonTool.TweenRotationOnFinishEvent(cardObj, TweenRotationOneOnFinished, 1, cell.dataIndex);
+        m_notOpenCardCount = m_notOpenCardCount - 1;
+        data.itemState = 1;
+    end
+    if m_notOpenCardCount == 0 then
+        SetGameObjectState(m_receiveButton, true, m_panelObject);
+    else
+        SetGameObjectState(m_receiveButton, false, m_panelObject);
+    end
+    SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+end
+-- 翻牌一次
+function TweenRotationOneOnFinished(cardObj, cardNum)
+    if cardNum < 0 then
+        return;
+    end
+    local data = m_oneCardListView:GetData(cardNum);
+    local cell = m_oneCardListView:GetCell(cardNum);
+    local go = cell.gameObject;
+    SetGameObjectState(m_itemInfo, true, go);
+    CCommonTool.TweenRotationBegin(cardObj, 0.2, 0, cardObj.transform.localEulerAngles, Vector3.New(0, 0, 0));
+    SetItemInfo(data, go, cardObj);
+end
+
+
+-- 设置道具信息
+function SetItemInfo(data, go, obj)
+    if obj.transform.localEulerAngles.y == 0 then
+        return;
+    end
+    Timer.Instance:StopTimer(m_openCardEffectEnd);
+    SetItemShowByExcelIDV04(go, m_itemInfo, data.itemId, data.itemNum, true, 11, ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+    SetItemToolTipsEvent(go, m_itemInfo, ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL, false, data.itemId);
+    -- 道具品质
+    if data.itemId ~= nil then
+        m_itemPinzhi = CCommonTool.GetAptitudeIDByExcelID(data.itemId);
+        -- 品质显示路径
+        m_itempath = go;
+        if m_itempath ~= nil and m_itemPinzhi ~= nil then
+            SetCardEffectByItemPinzhi(m_itemPinzhi, m_itempath);
+        end
+    end
+    local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+    if capsuleTable ~= nil then
+        -- 根据花费类型显示牌 1.绑定金币 2,非绑定金币 3 非绑定钻石 4 绑定钻石
+        if capsuleTable.CostType == 1 or capsuleTable.CostType == 2 then
+            SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_101", go);
+        elseif capsuleTable.CostType == 3 or capsuleTable.CostType == 4 then
+            SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_102", go);
+        end
+        m_openCardEffect = child(go, m_openCardEffectStr).gameObject;
+        m_showOpenCardEffect = Timer.Instance:AddTimer(0.2, 0, StartShowEffect);
+        SetGameObjectState(m_coinCardEffect, false, go);
+        SetGameObjectState(m_stoneCardEffect, false, go);
+    end
+end
+
+-- 开始显示特效
+function StartShowEffect()
+    if m_openCardEffect ~= nil then
+        m_openCardEffect:SetActive(true);
+        m_openCardEffectEnd = Timer.Instance:AddTimer(1, 0, OpenCardEffectOver);
+        -- 关闭UI摄像机外发光的效果
+        if m_UIFxProComp ~= nil then
+            m_UIFxProComp.enabled = false;
+        end
+        Timer.Instance:StopTimer(m_showOpenCardEffect);
+    end
+end
+
+-- 特效显示结束
+function OpenCardEffectOver()
+    Timer.Instance:StopTimer(m_openCardEffectEnd);
+    m_openCardEffect:SetActive(false);
+    -- 关闭UI摄像机外发光的效果
+    if m_UIFxProComp ~= nil then
+        m_UIFxProComp.enabled = false;
+    end
+end
+
+-- 初始化显示信息
+function InitAllshow()
+    local itemCount = GetRewardManger.allItemsNum;
+    local Buttons = child(m_panelObject, m_allButtons).gameObject;
+    if itemCount == 1 then
+        SetGameObjectState(m_moreTimesStr, false, m_panelObject);
+        SetGameObjectState(m_oneTimeStr, true, m_panelObject);
+        SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+    else
+        SetGameObjectState(m_moreTimesStr, true, m_panelObject);
+        SetGameObjectState(m_oneTimeStr, false, m_panelObject);
+        SetGameObjectState(m_opanAllCardButton, true, m_panelObject);
+    end
+    SetGameObjectState(m_receiveButton, false, m_panelObject);
+    SetGameObjectState(m_allButtons, false, m_panelObject);
+
+    if GetRewardManger.rewardId > 0 then
+        local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+        if capsuleTable ~= nil then
+            -- 设置再次抽奖花费金额
+            SetLabelContent(m_moneyCostNum, capsuleTable.CostNum, m_panelObject);
+            -- 再次抽取的次数
+            if itemCount > 0 then
+                SetLabelContent(m_labelNum, itemCount, m_panelObject);
+            end
+            SetCostSpriteAndColor(capsuleTable.CostType, capsuleTable.CostNum)
+        end
+    end
+end
+
+-- 设置花费类型图标 花费金额文本颜色  costType 花费类型 , costNum 花费金额
+function SetCostSpriteAndColor(costType, costNum)
+    -- 设置花费类型图片  花费类型 1.绑定金币 2,非绑定金币 3 非绑定钻石 4 绑定钻石
+    local SpriteId = nil;
+    local labelColor = nil;
+    if costType == 1 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiID):GetIntContent();
+        if G_UserInfo.BindCoin >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    elseif costType == 2 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeJinBiSpriteID):GetIntContent();
+        if G_UserInfo.NotBindCoin >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    elseif costType == 3 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeZuanshiID):GetIntContent();
+        if G_UserInfo.BindDiamond >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    elseif costType == 4 then
+        SpriteId = CCommonTool.GetDefineInfo(EDefineContentID.TypeHongZuanSpriteID):GetIntContent();
+        if G_UserInfo.NotBindDiamond >= costNum then
+            labelColor = m_enoughColor;
+        else
+            labelColor = m_notEnoughColor;
+        end
+    end
+    -- 图标
+    if SpriteId ~= nil then
+        SetSpriteByAtlasID(m_moneyCostSprite, SpriteId, m_panelObject, true);
+    end
+    -- 文本颜色
+    if labelColor ~= nil then
+        SetLabelColor(m_moneyCostNum, labelColor, m_panelObject);
+    end
+end
+-- 初始化按钮事件
+function InitOnClick()
+    SetGameObjectEvent(m_backButton, OnBackClick, m_panelObject);
+    SetGameObjectEvent(m_getOneButton, OnOneButtonClick, m_panelObject);
+    SetGameObjectEvent(m_receiveButton, OnReceiveClick, m_panelObject);
+    SetGameObjectEvent(m_opanAllCardButton, OpenAllCards, m_panelObject);
+
+    SetGameObjectEvent(m_rewardCancle, OnGetRewardCanel, m_panelObject);
+    SetGameObjectEvent(m_rewardEnser, OnGetRewardEnser, m_panelObject);
+
+end
+
+-- 牌的信息
+function CardInfo(data, go, cell)
+    local cardObj = child(go, m_cardSprite).gameObject;
+    local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+    if capsuleTable ~= nil then
+        -- 钻石
+        if data.itemState ~= 1 then
+            if capsuleTable.CostType == 1 or capsuleTable.CostType == 2 then
+                SetGameObjectState(m_coinCardEffect, true, go);
+                SetGameObjectState(m_stoneCardEffect, false, go);
+            elseif capsuleTable.CostType == 3 or capsuleTable.CostType == 4 then
+                -- 金币
+                SetGameObjectState(m_coinCardEffect, false, go);
+                SetGameObjectState(m_stoneCardEffect, true, go);
+            end
+        else
+            SetGameObjectState(m_coinCardEffect, false, go);
+            SetGameObjectState(m_stoneCardEffect, false, go);
+        end
+        -- 根据领取状态显示牌的正反面
+        if data.itemState == 1 then
+            if capsuleTable.CostType == 1 or capsuleTable.CostType == 2 then
+                SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_101", go);
+            elseif capsuleTable.CostType == 3 or capsuleTable.CostType == 4 then
+                SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_102", go);
+            end
+            SetGameObjectState(m_itemInfo, true, go);
+            if data.itemId ~= nil then
+                local itemPinzhi = CCommonTool.GetAptitudeIDByExcelID(data.itemId);
+                SetCardEffectByItemPinzhi(itemPinzhi, go);
+            end
+            m_openCardCount = m_openCardCount + 1;
+        else
+            if capsuleTable.CostType == 1 or capsuleTable.CostType == 2 then
+                SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_001", go);
+            elseif capsuleTable.CostType == 3 or capsuleTable.CostType == 4 then
+                SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_002", go);
+            end
+            SetGameObjectState(m_itemInfo, false, go);
+        end
+        -- 道具信息
+        SetItemShowByExcelIDV04(go, m_itemInfo, data.itemId, data.itemNum, true, 11, ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+        SetItemToolTipsEvent(go, m_itemInfo, ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL, false, data.itemId);
+        -- 没有翻开的卡牌
+        m_notOpenCardCount = m_allCradCount - m_openCardCount;
+        CCommonTool.TweenRotationOnFinishEvent(cardObj, TweenRotationOnFinished, 0, cell.dataIndex);
+        if m_notOpenCardCount == 0 and m_allCradCount > 0 then
+            SetGameObjectState(m_receiveButton, true, m_panelObject);
+        else
+            SetGameObjectState(m_receiveButton, false, m_panelObject);
+        end
+        if m_allCradCount > 1 then
+            if m_notOpenCardCount == 0 and m_allCradCount > 0 then
+                SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+            else
+                SetGameObjectState(m_opanAllCardButton, true, m_panelObject);
+            end
+        end
+        SetGameObjectState(m_openCardEffectStr, false, go);
+    end
+end
+           
+-- 当道具品质是蓝，紫,橙 显示相应颜色卡牌特效
+function SetCardEffectByItemPinzhi(itemPinzhi, path)
+    SetGameObjectState(m_cardPinZhi, true, path);
+    SetGameObjectState(m_cardEffectCheng, false, path);
+    SetGameObjectState(m_cardEffectZi, false, path);
+    SetGameObjectState(m_cradEffectLan, false, path);
+    if itemPinzhi > 0 then
+        if itemPinzhi == 3 then
+            -- 蓝色
+            SetGameObjectState(m_cradEffectLan, true, path);
+        elseif itemPinzhi == 4 then
+            -- 紫色
+            SetGameObjectState(m_cardEffectZi, true, path);
+        elseif itemPinzhi == 5 then
+            -- 橙色
+            SetGameObjectState(m_cardEffectCheng, true, path);
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 领取按钮
+function OnReceiveClick()
+    -- 发送领取信息
+    GetRewardProtocol.RequestReceiveItems();
+    InitAllshow();
+    -- 设置按钮信息
+    SetGameObjectState(m_receiveButton, false, m_panelObject);
+    SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+    SetGameObjectState(m_allButtons, true, m_panelObject);
+end
+
+
+function OpenAllCards()
+    local itemInfoTable = GetRewardManger.itemList or { };
+    m_cardItemTable = { };
+    if #itemInfoTable > 0 then
+        for index = 1, #itemInfoTable do
+            local cell = m_cardsListView:GetCell(index - 1);
+            local data = m_cardsListView:GetData(index - 1);
+            local isOpan = false;
+            if data.itemState ~= 0 then
+                isOpan = true;
+            end
+            if isOpan == false then
+                local cardObj = child(cell, m_cardSprite).gameObject;
+                GetRewardProtocol.RequestRewardInfo(data.itemId, data.itemNum);
+                if data.itemState == 0 then
+                    CCommonTool.TweenRotationBegin(cardObj, 0.2, 0, cardObj.transform.localEulerAngles, Vector3.New(0, 90, 0));
+                    CCommonTool.TweenRotationOnFinishEvent(cardObj, TweenRotationAllCardsOnFinisheds, 1, cell.dataIndex);
+                    m_notOpenCardCount = m_notOpenCardCount - 1;
+                    data.itemState = 1;
+                    if cell ~= nil then
+                        table.insert(m_cardItemTable, cell);
+                    end
+                end
+            end
+        end
+        if m_notOpenCardCount == 0 then
+            SetGameObjectState(m_receiveButton, true, m_panelObject);
+            SetGameObjectState(m_opanAllCardButton, false, m_panelObject);
+            m_showOpenCardEffect = Timer.Instance:AddTimer(1, 0, ShowCardEffect);
+        else
+            SetGameObjectState(m_receiveButton, false, m_panelObject);
+            SetGameObjectState(m_opanAllCardButton, true, m_panelObject);
+        end
+    end
+end
+
+function TweenRotationAllCardsOnFinisheds(cardObj, cardNum)
+    if cardNum < 0 then
+        return;
+    end
+    local data = m_cardsListView:GetData(cardNum);
+    local cell = m_cardsListView:GetCell(cardNum);
+    local go = cell.gameObject;
+    SetGameObjectState(m_itemInfo, true, go);
+    CCommonTool.TweenRotationBegin(cardObj, 0.2, 0, cardObj.transform.localEulerAngles, Vector3.New(0, 0, 0));
+    SetAllCardInfo(data, go, cardObj);
+end
+
+-- 设置道具信息
+function SetAllCardInfo(data, go, obj)
+    if obj.transform.localEulerAngles.y == 0 then
+        return;
+    end
+    SetItemShowByExcelIDV04(go, m_itemInfo, data.itemId, data.itemNum, true, 11, ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+    SetItemToolTipsEvent(go, m_itemInfo, ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL, false, data.itemId);
+    -- 道具品质
+    if data.itemId ~= nil then
+        m_itemPinzhi = CCommonTool.GetAptitudeIDByExcelID(data.itemId);
+        -- 品质显示路径
+        m_itempath = go;
+        if m_itempath ~= nil and m_itemPinzhi ~= nil then
+            SetCardEffectByItemPinzhi(m_itemPinzhi, m_itempath);
+        end
+    end
+    local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+    if capsuleTable ~= nil then
+        -- 根据花费类型显示牌 1.绑定金币 2,非绑定金币 3 非绑定钻石 4 绑定钻石
+        if capsuleTable.CostType == 1 or capsuleTable.CostType == 2 then
+            SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_101", go);
+        elseif capsuleTable.CostType == 3 or capsuleTable.CostType == 4 then
+            SetSpriteContent(m_cardSprite, m_cardAtlas, "UI_PT_ShiLianChou_XiaoKa_102", go);
+        end
+        SetGameObjectState(m_coinCardEffect, false, go);
+        SetGameObjectState(m_stoneCardEffect, false, go);
+    end
+end
+
+-- 开始显示特效
+function ShowCardEffect()
+    if #m_cardItemTable > 0 then
+        for index = 1, #m_cardItemTable do
+            local itemInfo = m_cardItemTable[index];
+            local cell = m_cardsListView:GetCell(itemInfo.dataIndex);
+            if cell ~= nil then
+                local data = m_cardsListView:GetData(itemInfo.dataIndex);
+                local go = cell.gameObject;
+                m_openCardEffect = child(go, m_openCardEffectStr).gameObject
+                m_openCardEffect:SetActive(true);
+            end
+        end
+        if m_UIFxProComp ~= nil then
+            m_UIFxProComp.enabled = false;
+        end
+        m_openCardEffectEnd = Timer.Instance:AddTimer(1, 0, OpenCardEffectBackOver);
+    end
+end
+
+-- 特效显示结束
+function OpenCardEffectBackOver()
+    Timer.Instance:StopTimer(m_openCardEffectEnd);
+    m_openCardEffect:SetActive(false);
+    -- 关闭UI摄像机外发光的效果
+    if m_UIFxProComp ~= nil then
+        m_UIFxProComp.enabled = false;
+    end
+end
+
+-- 再来一次
+function OnOneButtonClick()
+    local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+    if capsuleTable == nil then
+        return;
+    end
+    local costType = nil;
+    local excelId = nil;
+    -- 设置花费类型  花费类型 1.绑定金币 2,非绑定金币 3 绑定钻石 4 非绑定钻石
+    if capsuleTable.CostType == 1 then
+        costType = MONEY_NEW_TYPE.BIND_COIN;
+        excelId = G_ItemToolTipDefine.BINDMONEY;
+    elseif capsuleTable.CostType == 2 then
+        costType = MONEY_NEW_TYPE.NOTBIND_COIN;
+        excelId = G_ItemToolTipDefine.NOTBINDMONEY;
+    elseif capsuleTable.CostType == 3 then
+        costType = MONEY_NEW_TYPE.BIND_DIAMOND;
+        excelId = G_ItemToolTipDefine.BINDDIAMOND;
+    elseif capsuleTable.CostType == 4 then
+        costType = MONEY_NEW_TYPE.NOTBIND_DIAMOND;
+        excelId = G_ItemToolTipDefine.NOTBINDDIAMOND;
+    end
+    local cost = capsuleTable.CostNum;
+    -- 判断背包空格是否足够
+    local needCount = m_allCradCount + 1;
+    if G_BagMng.EmptyCellCount < needCount then
+        ShowSystemFlowTips(103);
+        return;
+    end
+    -- 金额
+    if cost ~= nil then
+        SetLabelContent(m_curCostNum, cost, m_panelObject);
+    end
+    -- 花费类型图片
+    if excelId ~= nil then
+        local iteminfo = CCommonTool.GetItemInfo(excelId);
+        if iteminfo ~= nil then
+            SetSpriteByAtlasID(m_curCostSprite, iteminfo.ImageSmallID, m_panelObject);
+        end
+    end
+
+    -- 判断钱是否够
+    if MoneyExchangePanel.CheckIsEnoughMoney(costType, math.floor(cost), ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL, OnExchangeMoneyCallBack) then
+        if GetRewardManger.allItemsNum == 1 then
+            OnOneListViewInfoInit();
+            GetRewardProtocol.RequestExtractID(capsuleTable.Id);
+        elseif GetRewardManger.allItemsNum > 1 then
+            SetGameObjectState(m_messagePanel, true, m_panelObject);
+            -- OnListViewInfoInit();
+        end
+        if m_itemCount > 0 then
+            SetGameObjectState(m_allButtons, false, m_panelObject);
+        end
+    end
+end
+
+
+-- 抽奖确认按钮
+function OnGetRewardEnser()
+    local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+    if capsuleTable == nil then
+        return;
+    end
+    GetRewardProtocol.RequestExtractID(capsuleTable.Id);
+    if GetRewardManger.allItemsNum > 1 then
+        OnListViewInfoInit();
+    end
+    SetGameObjectState(m_messagePanel, false, m_panelObject);
+end
+
+-- 抽奖取消按钮
+function OnGetRewardCanel()
+    SetGameObjectState(m_messagePanel, false, m_panelObject);
+end
+
+
+function OnExchangeMoneyCallBack()
+    local capsuleTable = CCommonTool.GetCapsuleById(GetRewardManger.rewardId);
+    if capsuleTable == nil then
+        return;
+    end
+    if GetRewardManger.allItemsNum == 1 then
+        GetRewardProtocol.RequestExtractID(capsuleTable.Id);
+        OnOneListViewInfoInit();
+    elseif GetRewardManger.allItemsNum > 1 then
+        SetGameObjectState(m_messagePanel, true, m_panelObject);
+    end
+    if m_itemCount > 0 then
+        SetGameObjectState(m_allButtons, false, m_panelObject);
+    end
+end
+
+-- 结束按钮
+function OnBackClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+   -- GetTreaurePanel.OpenThisPanelByTag(1, 0);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 上次抽奖有未点击的卡牌 
+function UpdateRewardID(id, size)
+    if size > 0 then
+        m_itemCount = size;
+        m_rewardId = id;
+        if m_bCreateSuccess == false then
+            createPanel(ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+        else
+            createPanel(ENUMPANELID.ENUM_PANEL_EXTRACTROLLOVERCARDPANEL);
+            PlayBoxEffect();
+            OnOneListViewInfoInit();
+            OnListViewInfoInit();
+        end
+        m_itemCount = 0;
+    end
+end
+

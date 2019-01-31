@@ -1,0 +1,145 @@
+﻿--[[
+    field=Id, type=int, desc=主键
+    field=Lv, type=int, desc=等级
+    field=MaxLv, type=int, desc=最大等级
+    field=Name, type=int, desc=技能名称
+    field=Describe, type=int, desc=技能描述
+    field=UpDescribe, type=int, desc=提升后描述
+    field=IconID, type=int, desc=图标ID
+    field=BuffId, type=int, desc=BUFF ID
+    field=NeedId, type=int, desc=升级消耗道具ID
+    field=NeedNum, type=int, desc=消耗数量
+    field=SkillLevel, type=int, desc=几率提升
+    field=Fight, type=int, desc=战力
+    field=SkillMain, type=int, desc=技能id
+]]
+module("WingSkillTable", package.seeall)
+local list={
+    {Id=1000,Lv=1,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=1,SkillLevel=0,Fight=500,SkillMain=6263},
+    {Id=1001,Lv=2,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=2,SkillLevel=0,Fight=1000,SkillMain=6263},
+    {Id=1002,Lv=3,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=4,SkillLevel=0,Fight=1500,SkillMain=6263},
+    {Id=1003,Lv=4,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=6,SkillLevel=0,Fight=2000,SkillMain=6263},
+    {Id=1004,Lv=5,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=8,SkillLevel=0,Fight=2500,SkillMain=6263},
+    {Id=1005,Lv=6,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=10,SkillLevel=0,Fight=3000,SkillMain=6263},
+    {Id=1006,Lv=7,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=12,SkillLevel=0,Fight=3500,SkillMain=6263},
+    {Id=1007,Lv=8,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=14,SkillLevel=0,Fight=4000,SkillMain=6263},
+    {Id=1008,Lv=9,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=16,SkillLevel=0,Fight=4500,SkillMain=6263},
+    {Id=1009,Lv=10,MaxLv=10,Name=125170,Describe=125180,UpDescribe=127766,IconID=3451,BuffId=673,NeedId=21368,NeedNum=18,SkillLevel=0,Fight=5000,SkillMain=6263},
+    {Id=2000,Lv=1,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=1,SkillLevel=0,Fight=500,SkillMain=6264},
+    {Id=2001,Lv=2,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=2,SkillLevel=0,Fight=1000,SkillMain=6264},
+    {Id=2002,Lv=3,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=4,SkillLevel=0,Fight=1500,SkillMain=6264},
+    {Id=2003,Lv=4,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=6,SkillLevel=0,Fight=2000,SkillMain=6264},
+    {Id=2004,Lv=5,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=8,SkillLevel=0,Fight=2500,SkillMain=6264},
+    {Id=2005,Lv=6,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=10,SkillLevel=0,Fight=3000,SkillMain=6264},
+    {Id=2006,Lv=7,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=12,SkillLevel=0,Fight=3500,SkillMain=6264},
+    {Id=2007,Lv=8,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=14,SkillLevel=0,Fight=4000,SkillMain=6264},
+    {Id=2008,Lv=9,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=16,SkillLevel=0,Fight=4500,SkillMain=6264},
+    {Id=2009,Lv=10,MaxLv=10,Name=125171,Describe=125181,UpDescribe=127767,IconID=3116,BuffId=674,NeedId=21369,NeedNum=18,SkillLevel=0,Fight=5000,SkillMain=6264},
+    {Id=3000,Lv=1,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=1,SkillLevel=0,Fight=500,SkillMain=6265},
+    {Id=3001,Lv=2,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=2,SkillLevel=0,Fight=1000,SkillMain=6265},
+    {Id=3002,Lv=3,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=4,SkillLevel=0,Fight=1500,SkillMain=6265},
+    {Id=3003,Lv=4,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=6,SkillLevel=0,Fight=2000,SkillMain=6265},
+    {Id=3004,Lv=5,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=8,SkillLevel=0,Fight=2500,SkillMain=6265},
+    {Id=3005,Lv=6,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=10,SkillLevel=0,Fight=3000,SkillMain=6265},
+    {Id=3006,Lv=7,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=12,SkillLevel=0,Fight=3500,SkillMain=6265},
+    {Id=3007,Lv=8,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=14,SkillLevel=0,Fight=4000,SkillMain=6265},
+    {Id=3008,Lv=9,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=16,SkillLevel=0,Fight=4500,SkillMain=6265},
+    {Id=3009,Lv=10,MaxLv=10,Name=125172,Describe=125182,UpDescribe=127768,IconID=3458,BuffId=675,NeedId=21370,NeedNum=18,SkillLevel=0,Fight=5000,SkillMain=6265},
+    {Id=4000,Lv=1,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=1,SkillLevel=0,Fight=500,SkillMain=6266},
+    {Id=4001,Lv=2,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=2,SkillLevel=0,Fight=1000,SkillMain=6266},
+    {Id=4002,Lv=3,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=4,SkillLevel=0,Fight=1500,SkillMain=6266},
+    {Id=4003,Lv=4,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=6,SkillLevel=0,Fight=2000,SkillMain=6266},
+    {Id=4004,Lv=5,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=8,SkillLevel=0,Fight=2500,SkillMain=6266},
+    {Id=4005,Lv=6,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=10,SkillLevel=0,Fight=3000,SkillMain=6266},
+    {Id=4006,Lv=7,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=12,SkillLevel=0,Fight=3500,SkillMain=6266},
+    {Id=4007,Lv=8,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=14,SkillLevel=0,Fight=4000,SkillMain=6266},
+    {Id=4008,Lv=9,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=16,SkillLevel=0,Fight=4500,SkillMain=6266},
+    {Id=4009,Lv=10,MaxLv=10,Name=125173,Describe=125183,UpDescribe=127769,IconID=3464,BuffId=676,NeedId=21371,NeedNum=18,SkillLevel=0,Fight=5000,SkillMain=6266},
+    {Id=5000,Lv=1,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=1,SkillLevel=0,Fight=500,SkillMain=6267},
+    {Id=5001,Lv=2,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=2,SkillLevel=0,Fight=1000,SkillMain=6267},
+    {Id=5002,Lv=3,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=4,SkillLevel=0,Fight=1500,SkillMain=6267},
+    {Id=5003,Lv=4,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=6,SkillLevel=0,Fight=2000,SkillMain=6267},
+    {Id=5004,Lv=5,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=8,SkillLevel=0,Fight=2500,SkillMain=6267},
+    {Id=5005,Lv=6,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=10,SkillLevel=0,Fight=3000,SkillMain=6267},
+    {Id=5006,Lv=7,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=12,SkillLevel=0,Fight=3500,SkillMain=6267},
+    {Id=5007,Lv=8,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=14,SkillLevel=0,Fight=4000,SkillMain=6267},
+    {Id=5008,Lv=9,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=16,SkillLevel=0,Fight=4500,SkillMain=6267},
+    {Id=5009,Lv=10,MaxLv=10,Name=125174,Describe=125184,UpDescribe=127770,IconID=3460,BuffId=677,NeedId=21372,NeedNum=18,SkillLevel=0,Fight=5000,SkillMain=6267},
+    {Id=6000,Lv=1,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=1,SkillLevel=0,Fight=500,SkillMain=6268},
+    {Id=6001,Lv=2,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=2,SkillLevel=0,Fight=1000,SkillMain=6268},
+    {Id=6002,Lv=3,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=4,SkillLevel=0,Fight=1500,SkillMain=6268},
+    {Id=6003,Lv=4,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=6,SkillLevel=0,Fight=2000,SkillMain=6268},
+    {Id=6004,Lv=5,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=8,SkillLevel=0,Fight=2500,SkillMain=6268},
+    {Id=6005,Lv=6,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=10,SkillLevel=0,Fight=3000,SkillMain=6268},
+    {Id=6006,Lv=7,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=12,SkillLevel=0,Fight=3500,SkillMain=6268},
+    {Id=6007,Lv=8,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=14,SkillLevel=0,Fight=4000,SkillMain=6268},
+    {Id=6008,Lv=9,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=16,SkillLevel=0,Fight=4500,SkillMain=6268},
+    {Id=6009,Lv=10,MaxLv=10,Name=125175,Describe=125185,UpDescribe=127771,IconID=3471,BuffId=678,NeedId=21373,NeedNum=18,SkillLevel=0,Fight=5000,SkillMain=6268}
+};
+local map = {[1000]=list[1],[1001]=list[2],[1002]=list[3],[1003]=list[4],[1004]=list[5],[1005]=list[6],[1006]=list[7],[1007]=list[8],[1008]=list[9],[1009]=list[10],[2000]=list[11],[2001]=list[12],[2002]=list[13],[2003]=list[14],[2004]=list[15],[2005]=list[16],[2006]=list[17],[2007]=list[18],[2008]=list[19],[2009]=list[20],[3000]=list[21],[3001]=list[22],[3002]=list[23],[3003]=list[24],[3004]=list[25],[3005]=list[26],[3006]=list[27],[3007]=list[28],[3008]=list[29],[3009]=list[30],[4000]=list[31],[4001]=list[32],[4002]=list[33],[4003]=list[34],[4004]=list[35],[4005]=list[36],[4006]=list[37],[4007]=list[38],[4008]=list[39],[4009]=list[40],[5000]=list[41],[5001]=list[42],[5002]=list[43],[5003]=list[44],[5004]=list[45],[5005]=list[46],[5006]=list[47],[5007]=list[48],[5008]=list[49],[5009]=list[50],[6000]=list[51],[6001]=list[52],[6002]=list[53],[6003]=list[54],[6004]=list[55],[6005]=list[56],[6006]=list[57],[6007]=list[58],[6008]=list[59],[6009]=list[60]};
+
+count = 60;
+Count = 60;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

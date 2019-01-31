@@ -1,0 +1,126 @@
+﻿local Parent = {};
+
+function Parent:Add(eventName, callback)
+	if not self:IsValidName(eventName) then return end
+	if not self:IsValidFunction(callback) then return end
+	if self:IsExist(eventName, callback) then return end
+	local group = self:GetEventGroup(eventName);
+    table.insert(group, {name=eventName, callback=callback});
+end
+
+function Parent:IsValidName(eventName)
+	if not eventName then
+        error("ERROR: event name is nil!");
+        return false;
+    end
+    return true;
+end
+
+function Parent:IsValidFunction(callback)
+	if type(callback) ~= "function" then
+        error("ERROR: callback is not a function!");
+        return false;
+    end
+    return true;
+end
+
+function Parent:IsExist(eventName, callback)
+	local group = self:GetEventGroup(eventName);
+	for i, event in ipairs(group) do
+        if event.callback == callback then
+        	error("ERROR: callback is exist!");
+            return true;
+        end
+    end
+    return false;
+end
+
+function Parent:GetEventGroup(eventName)
+	if not self.eventGroups[eventName] then
+        self.eventGroups[eventName] = {};
+    end
+    return self.eventGroups[eventName];
+end
+
+function Parent:Remove(eventName, callback)
+    if not self:IsValidName(eventName) then return false; end
+	if not self:IsValidFunction(callback) then return false; end
+	if not self:HasEventGroup(eventName) then return false; end
+    local group = self:GetEventGroup(eventName);
+    for i, event in ipairs(group) do
+        if event.callback == callback then
+            table.remove(group, i);
+            return true;
+        end
+    end
+    return false;
+end
+
+function Parent:HasEventGroup(eventName)
+	return self.eventGroups[eventName] ~= nil;
+end
+
+function Parent:RemoveAll(eventName)
+	if not self:IsValidName(eventName) then return end
+	if not self:HasEventGroup(eventName) then return end
+    self.eventGroups[eventName] = nil;
+end
+
+function Parent:Clear()
+    for eventName, eventGroup in pairs(self.eventGroups) do
+    	self.eventGroups[eventName] = nil;
+    end
+end
+
+function Parent:DispatchEvent(eventName, ...)
+    if not self:IsValidName(eventName) then return end
+    if not self:HasEventGroup(eventName) then return end
+    local group = self:GetEventGroup(eventName);
+    for i, event in ipairs(group) do
+        if event.callback ~= nil then
+        	event.callback(eventName, ...);
+        end
+    end
+end
+
+module("Event", package.seeall);
+
+function New()
+    local event = {};
+    event.eventGroups = {};
+    Parent.__index = Parent;
+    Parent.__newindex = function(k, v) error("Error: Event table is read only!!") end
+    setmetatable(event, Parent);
+    return event;
+end
+
+instance = New()
+
+function Add(eventName, callback)
+	instance:Add(eventName, callback);
+end
+
+function Remove(eventName, callback)
+	instance:Remove(eventName, callback);
+end
+
+function DispatchEvent(eventName, ...)
+	instance:DispatchEvent(eventName, ...);
+end
+
+function RemoveAll(eventName)
+	instance:RemoveAll(eventName);
+end
+
+function Clear()
+	instance:Clear();
+end
+
+--[[
+function func1(...) print("func1", ...) end
+function func2(...) print("func2", ...) end
+
+Add(1, func1)
+Add(1, func2)
+]]
+

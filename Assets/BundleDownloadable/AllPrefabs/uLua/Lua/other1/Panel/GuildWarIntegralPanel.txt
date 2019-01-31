@@ -1,0 +1,175 @@
+﻿module('GuildWarIntegralPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildWarIntegralPanel';
+---------------------------------------label路径---------------------------------------
+-- 加注释
+local m_LbMyScoreDataPath = "lb_MyScoreData";
+-- 加注释
+local m_LbMyRankDataPath = "lb_MyRankData";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 加注释
+local m_BtnClosePath = "btn_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 加注释
+local m_BackgroundPath = "btn_Close/Background";
+-- 加注释
+local m_BtnBgPath = "btn_Bg";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 加注释
+local m_ToggleMyPath = "Sub_Top/Sub_Tabs/Toggle_My";
+-- 加注释
+local m_ToggleEnemyPath = "Sub_Top/Sub_Tabs/Toggle_Enemy";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 加注释
+local m_IntegralListPath = "Sub_IntegralList/UIGrid";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 积分列表
+local m_IntegralList = nil;
+-- 标签标记：0：我方， 1：敌方,默认我方
+local m_ToggleFlag = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_IntegralList = nil;
+    m_ToggleFlag = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_WAR_INTEGRAL_PANEL);
+    m_IntegralList = GetComponent(m_PanelObject, m_IntegralListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_BtnClosePath, OnBtnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_BtnBgPath, OnBtnBgClick, m_PanelObject);
+	SetGameObjectEvent(m_ToggleMyPath, OnToggleMyClick, m_PanelObject);
+	SetGameObjectEvent(m_ToggleEnemyPath, OnToggleEnemyClick, m_PanelObject);
+    m_IntegralList:SetInitCallback(OnIntegralListViewInit);
+    m_IntegralList:SetClickCallback(OnIntegralListViewClick);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    -- 默认显示我方积分数据
+    if GuildManager.guildAuctionInfo == nil then return end
+    if GuildManager.guildAuctionInfo.MyScore == nil then return end
+    local MyScore = GuildManager.guildAuctionInfo.MyScore;
+    SetGameObjectState(m_ToggleMyPath.."/Sprite_Active", m_ToggleFlag == 0, m_PanelObject);
+    SetGameObjectState(m_ToggleEnemyPath.."/Sprite_Active", m_ToggleFlag == 1, m_PanelObject)
+    m_IntegralList:RemoveAll();
+    if m_ToggleFlag == 0 then 
+        for i,v in pairs(MyScore) do 
+            m_IntegralList:AddData(v);
+            if G_UserInfo.RoleAttribute.Name == v.playerName then
+                SetLabelContent("lb_MyScoreData", v.playerScore, m_PanelObject);
+                SetLabelContent("lb_MyRankData", i, m_PanelObject);
+            end
+        end
+    elseif m_ToggleFlag == 1 then 
+        if GuildManager.guildAuctionInfo.EnemyScore == nil then return end
+        local EnemyScore = GuildManager.guildAuctionInfo.EnemyScore;
+        m_IntegralList:RemoveAll();
+        for i,v in pairs(EnemyScore) do 
+            m_IntegralList:AddData(v);
+        end
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 关闭按钮点击
+function OnBtnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_INTEGRAL_PANEL);
+end
+
+-- 加注释
+function OnBtnBgClick(gameObject)
+    
+end
+
+-- 我方标签点击
+function OnToggleMyClick(gameObject)
+    if m_ToggleFlag == 0 then return end
+    m_ToggleFlag = 0;
+    SetGameObjectState(m_ToggleMyPath.."/Sprite_Active", true, m_PanelObject);
+    SetGameObjectState(m_ToggleEnemyPath.."/Sprite_Active", false, m_PanelObject);
+
+    if GuildManager.guildAuctionInfo.MyScore == nil then return end
+    local MyScore = GuildManager.guildAuctionInfo.MyScore;
+    m_IntegralList:RemoveAll();
+    for i,v in pairs(MyScore) do 
+        m_IntegralList:AddData(v);
+    end
+end
+
+-- 敌方标签点击
+function OnToggleEnemyClick(gameObject)
+    if m_ToggleFlag == 1 then return end
+    m_ToggleFlag = 1;
+    SetGameObjectState(m_ToggleMyPath.."/Sprite_Active", false, m_PanelObject);
+    SetGameObjectState(m_ToggleEnemyPath.."/Sprite_Active", true, m_PanelObject);
+
+    if GuildManager.guildAuctionInfo.EnemyScore == nil then return end
+    local EnemyScore = GuildManager.guildAuctionInfo.EnemyScore;
+    m_IntegralList:RemoveAll();
+    for i,v in pairs(EnemyScore) do 
+        m_IntegralList:AddData(v);
+    end
+end
+
+-- 显示积分列表
+function OnIntegralListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local index = tonumber(string.sub(cell.name, 6)) + 1;
+
+    SetLabelContent("lb_Rank", index, go);
+    SetLabelContent("lb_Name", data.playerName, go);
+    SetLabelContent("lb_Level", data.playerLv, go);
+    SetLabelContent("lb_FightValue", data.playerFight, go);
+    SetLabelContent("lb_Member", data.playerKillNum, go);
+    SetLabelContent("lb_Weapon", data.playerKillWeapon, go);
+--    SetLabelContent("lb_Integral", data.playerScore, go);
+    SetLabelContent("lb_Building", data.playerDestroy, go);
+end
+
+-- 点击积分列表
+function OnIntegralListViewClick(listView, cell, go)
+    
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------

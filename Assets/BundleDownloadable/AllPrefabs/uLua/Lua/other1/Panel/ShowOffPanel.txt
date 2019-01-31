@@ -1,0 +1,98 @@
+﻿module('ShowOffPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ShowOffPanel';
+-- 关闭按钮路径
+local m_ClosePath = "btn_Close"; 
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+local modelNameStr = "";
+local modelIDNum = 0;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_SHOWOFFPANEL);
+end
+
+-- 初始化对象事件
+function InitEvents()
+    SetGameObjectEvent(m_ClosePath, OnCloseClick, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    UnityEngine.RenderSettings.fog = false;
+    SetLabelContent("lb_Name", modelNameStr, m_PanelObject);
+    LoadModel(modelIDNum);
+end
+
+------------------------------------------事件方法------------------------------------
+-- 关闭按钮 
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_SHOWOFFPANEL);
+    Delete3DModel();
+    UnityEngine.RenderSettings.fog = true;
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 加载模型
+function LoadModel(modelID)
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_SHOWOFFPANEL);
+    buffer:WriteInt(modelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+-- 删除模型
+function Delete3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_SHOWOFFPANEL);
+end
+
+function ShowGetModel(modelID, modelName)
+	--9.23版本暂时先屏蔽，要调整的细节多
+    return;
+	--modelIDNum = modelID;
+    --modelNameStr = modelName;
+    --if IsOpenPanel(ENUMPANELID.ENUM_SHOWOFFPANEL) == 1 then 
+    --    Delete3DModel();     
+    --end
+    --createPanel(ENUMPANELID.ENUM_SHOWOFFPANEL);
+end

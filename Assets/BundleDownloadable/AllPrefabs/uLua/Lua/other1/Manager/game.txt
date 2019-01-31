@@ -1,0 +1,444 @@
+﻿module("LuaGameManager", package.seeall)
+
+-- 初始加载面板--这些面板要预先加载进来，不然有可能第一次创建过程太慢
+function InitPanels()
+    return ENUMPANELID.ENUM_PANEL_ONLOGIN, 
+            ENUMPANELID.ENUM_PANEL_SELECTROLE, 
+            ENUMPANELID.ENUM_PANEL_CREATEROLE, 
+            ENUMPANELID.ENUM_PANEL_COMEINGAME, 
+            ENUMPANELID.ENUM_PANEL_WAITDONE;
+end
+
+-- 初始化完成，进入界面--
+function OnInitOK()
+    local connectionState = G_GameMng.connectionState;
+    if connectionState == 0 then
+        local message = { };
+        table.insert(message, 1, CCommonTool.GetTxtData(8878).m_str);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+    elseif connectionState == 1 then
+        local message = { };
+        table.insert(message, 1, CCommonTool.GetTxtData(8877).m_str);
+        createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+    elseif connectionState == 2 then
+        -- createPanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+        createPanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+    end
+    -- 进入界面之前, 初始化tips事件
+    TipsManager.Init();
+    -- 初始化语音回调
+    ChatVoiceManager.InitVoiceCallback();
+    -- 帧听首次进入游戏事件
+    Event.Add("OnFirstInGame", OnFirstInGame);
+    -- 帧听进入场景事件
+    Event.Add("OnEnterScene", OnEnterScene);
+    -- 角色升级事件
+    Event.Add("OnPlayerLevelUp", OnPlayerLevelUp);
+    -- App退出事件
+    CSDKManager.Call("exitCallback", "", OnAppExit);
+end
+
+-- 切角色/重新登录时清理逻辑数据
+function ClearLogicData()
+    -- 重置聊天界面
+    ChatManager.Reset();
+    -- 主界面聊天数据
+    Main_MiddleBottom.ClearChatRecord();
+    -- 清空公会数据
+    GuildManager.ClearData();
+    -- 清空排行榜数据
+    RankManger.ClearData();
+    -- 清空npc商店限购的数据
+    _G.LogicData_NPCShopLimitBuyTable = { };
+    -- 清空玩家身上坐骑数据
+    _G.LogicData_RideData = { };
+    -- 饮酒活动数据清空
+    _G.LogicData_IsDrinkWinePanelOpen = false;
+    _G.LogicData_CurDrinkItemId = 0;
+    _G.LogicData_CurDrinkPanelState = 0;
+    _G.LogicData_CurLeftDrinkTimes = 0;
+    -- 清空好友数据
+    FriendsData.ClearData();
+    -- 重置成就数据
+    AchieveManager.Clear();
+    -- 重置技能数据
+    SkillManager.ClearData();
+    -- 重置炼金数据
+    _G.LogicData_CurGetCoinBuyTimes = 0;
+    _G.LogicData_GetCoinBuyMaxTimes = 0;
+    _G.LogicData_GetCoinLogTable = { };
+    -- 重置副本通关数据
+    _G.LogicData_PassDungeon = nil;
+    -- 重置追踪任务ID
+    _G.LogicData_CurTraceTaskID = 0;
+    -- 充值主界面提示的队列
+    _G.LogicData_TipsTable = { };
+    -- 主界面提示公会领地战
+    _G.LogicData_TipsWarTable = { };
+    -- 装备管理器数据初始化
+    EquipMng.ClearData();
+    -- 系统解锁重置
+    SystemOpenMng.ClearData();
+    -- 红点系统重置
+    RedHintMng.ClearData();
+    -- 重置活动数据
+    ActivityManager.ClearData();
+    -- 重置组队数据
+    TeamManager.ClearData();
+    -- 帝国悬赏星级重置
+    _G.LogicData_EmpireBountyStarLv = 0;
+    -- 每日必做
+    EveryDayTaskManager.ClearData();
+    -- 自动兑换货币
+    _G.LogicData_IsAutoExchangeMoney = false;
+
+    AuctionManager.Clear();
+    -- 商店数据清空
+    ShopManager.ClearData();
+    -- 魔法熔炉数据清空
+    MagicForgeManager.ClearData();
+    FashionManager.Clear();
+    -- 称号数据
+    TitleManager.Clear();
+
+    _G.LogicData_ResolveData = { };
+    -- 清空邮件数据
+    MailManger.ClearData();
+    -- 限时活动数据
+    _G.LogicData_TimeLimitedActivityData = { };
+    -- 清空宠物管理器数据
+    BattleFieldManager.ClearData();
+    -- 充值补单信息
+    ChargeProtocol.ClearData();
+    -- 首次充值
+    --ChargeRewardManager.ClearData();
+    -- 新3D首充
+    FirstChargeManager.ClearData();
+      -- 福利相关数据
+    WelfareManager.Clear();
+    -- 坐骑副本信息清空
+    _G.LogicData_IsRideDuneonOpen = false;
+    -- 阵营数据清空
+    CampManager.ClearData();
+    -- 边境战场数据
+    BorderWarManager.ClearData();
+    -- 吃鸡数据
+    EatChickenManager.ClearData();
+    -- 清除背包自动解锁Timer
+    BagPanel.ClearAutoUnlockTimer();
+    -- vip数据
+    VipManager.Clear();
+    -- 清除切线数据
+    SceneProtocol.ClearGSLineInfo();
+    -- 清除离线竞技场数据
+    ArenaManager.ClearData();
+    -- 限时活动数据清理
+    LimitTimeActMng.ClearData();
+    -- 限时消耗道具数据
+    CumulativeCostMng.ClearData();
+    -- vip数据
+    VipManager.Clear();
+    -- 限时抽奖数据清理
+    _G.TimeLimitDrawVersion = -1;
+    _G.TimeLimitDrawRewardIndex = -1;
+end
+
+-- 读表结束处理表的数据
+function DealTableData()
+    -- NPCShopPanel.DealTableData();
+    RidePanel.DealTableData();
+    -- 排行榜
+    RankPanel.DealTableData();
+    FriendsData.DealTableData();
+    DungeonManager.DealTableData();
+    -- 红点数据
+    RedHintMng.DealTableData();
+    -- 每日必做任务
+    EveryDayTaskManager.InitTaskInfo();
+    -- 组队
+    TeamManager.InitInfo();
+    -- 商店
+    ShopManager.DealTableData();
+    -- 宠物学习技能
+    PetManager.DealTableData();
+    -- 竞技场
+    BattleFieldManager.DealTableData();
+    -- 宠物捕捉表
+    G_SceneMng:InitPetCaptureData();
+    -- 本地消息推送表
+    NotificationManager.InitData();
+    -- 神器表
+    ArtifactManager.InitArtifactTableData();
+    -- 单个场景下载速度
+    local speed = 2;
+    local con = CCommonTool.GetDefineInfo(6655);
+    if con ~= nil then
+        speed = con:GetIntContent();
+    end
+    Constants.WebBundleSpeed = speed;
+end
+
+-- APP暂停/恢复事件
+function OnApplicationPause(eventName, paused)
+    if NotificationManager ~= nil then
+        NotificationManager.OnApplicationPause(paused);
+    end
+end
+
+-- 首次进入游戏事件
+function OnFirstInGame()
+    ChargeProtocol.CheckUncompletedProduct();
+    --NewPlayerGuideManager.AddGreenHandTimer();            --CheckGreenHandGuide函数中GreenHandLevelLimit这个被注释了，每次调研都会异常
+    ProcessSDKSubmitExtraData();
+    -- 添加背包自动解锁Timer
+    BagPanel.AddAutoUnlockTimer();
+    -- 请求红钻商城数据
+    StoreProtocol.RequestItemList(0);
+    -- 请求蓝钻商城数据
+    StoreProtocol.RequestItemList(1);
+    if Platform == "ios" then
+        -- 获取3D摄像机
+        local Camera3D = G_PanelMng.M_3dSceneUIManager.Camera3D;
+        if Camera3D == nil then
+            error("Camera3D is nil");
+            return;
+        end
+        -- Beautify
+        local beautifyComp = GetComponent(Camera3D, "", "Beautify");
+        if beautifyComp == nil then
+            error("beautifyComp is nil");
+            return
+        end
+        beautifyComp.enabled = false;
+        -- FxPro
+        local fxProComp = GetComponent(Camera3D, "", "FxPro");
+        if fxProComp == nil then
+            error("fxProComp is nil");
+            return;
+        else
+            fxProComp.enabled = false;
+        end
+    end
+    -- IphoneX手机适配下强制不让手机旋转
+    if Constants.ISIos10Resolution == true then
+        Screen.autorotateToLandscapeRight = false;
+    end
+
+    if Constants.branch == "cn" then
+        -- 国内资源如果场景资源没有下载完成, 进入游戏后直接下载
+        local manager = CWebBundleManager.Instance;
+        if manager ~= nil then
+            if manager:IsComplete() ~= true then
+                manager:StartDownload();
+            end
+        end
+    end
+end
+
+function ProcessSDKSubmitExtraData()
+    if CreateRole.IsNewRole == true then
+        CreateRole.IsNewRole = false;
+        -- 角色创建成功后调用该接口
+        Event.DispatchEvent("submitExtraData", "createRole", 2);
+    end
+    -- 玩家成功进入游戏后该接口
+    Event.DispatchEvent("submitExtraData", "firstInGame", 1);
+end
+
+-- 进入场景事件
+function OnEnterScene()
+
+end
+
+-- 角色升级事件
+function OnPlayerLevelUp(eventName, level)
+    -- 玩家升级后有哪些红点需要检测
+    RedHintMng.RedHintCheckByLevelUp();
+    -- 主界面初始化等级信息
+    Main_LeftTop.InitLevelOut();
+    -- 福利界面角色升级后检测
+    WelfareManager.OnCheckUpgrade();
+    -- 主界面进阶信息检测
+    Main_MiddleBottom.InitPlayerCultivate();
+end
+
+-- App退出事件
+function OnAppExit(data)
+    -- 角色退出游戏时调用该接口(包括用户退出游戏、用户注销角色账号)
+    Event.DispatchEvent("submitExtraData", "exit", 4);
+    Timer.Instance:AddTimer(0.2, 0, ExitApp);
+end
+
+-- 退出APP
+function ExitApp()
+    error("app exit!!!!!!");
+    Application.Quit();
+end
+
+function ParseSDKServerList(data)
+    if data == nil then
+        return;
+    end
+    local servers = data.servers;
+    local serverList = {};
+    local groupList = {};
+    local serverDict = {};
+    local categoryList = {};
+    for i, serverData in ipairs(servers) do
+        local categoryname = serverData.categoryname;
+        local categoryindex = i;
+        local categoryData = {
+            categoryname = categoryname,
+            categoryindex = categoryindex,
+            groups = {}
+        };
+        table.insert(categoryList, categoryData);
+        for j, group in ipairs(serverData.groups) do
+            local groupData = {};
+            groupData.name = group.name;
+            groupData.page = group.page;
+            groupData.list = group.list;
+            groupData.categoryindex = categoryindex;
+            groupData.categoryname = categoryname;
+            table.insert(groupList, groupData);
+            table.insert(categoryData.groups, groupData);
+            for _, s in ipairs(group.list) do
+                s.categoryname = categoryname;
+                s.groupname = group.name;
+                s.categoryindex = categoryindex;
+                table.insert(serverList, s);
+                serverDict[s.serverid] = s;
+            end
+        end
+    end
+    _G.sdkServerListInfo = {
+        categoryList = categoryList,
+        serverList = serverList,
+        groupList = groupList,
+        serverDict = serverDict
+    };
+end
+
+-- 获取SDK服务器列表
+function GetSDKServerList()
+    local info = _G.sdkServerListInfo;
+    if info ~= nil then
+        return info.serverList;
+    end
+    return nil;
+end
+
+-- 获取SDK服务器数据配置
+function GetSDKServerData(serverId)
+    -- servername 服务器名称
+    -- iscommend 是否推荐服（1.推荐，0.不推荐）
+    -- type 服务区类型(0.测试服，1.正式服)
+    -- serverid 服务器编号
+    -- status 服务区状态1 维护, 2 正常
+    local info = _G.sdkServerListInfo;
+    if info ~= nil then
+        return info.serverDict[serverId];
+    end
+    return nil;
+end
+
+-- 获取分类数据
+function GetZoneCategoryList()
+    if CSDKManager.sdkName == "xiyou" then
+        local returnTable = _G.sdkServerListInfo.categoryList;
+        table.sort(returnTable,ZoneCategoryOrder);
+        return returnTable;
+    else
+        return {};
+    end
+end
+
+function ZoneCategoryOrder(data1,data2)
+    return data1.categoryindex < data2.categoryindex;
+end
+
+-- 获取战区信息
+function GetZoneInfo()
+    if CSDKManager.sdkName == "xiyou" then
+        local allServerList = _G.sdkServerListInfo.serverList;
+        local zoneInfoTable = loadstring("return " .. Const.m_vZoneInfo);
+        zoneInfoTable = zoneInfoTable();
+        local resultTable = {};
+        for k,v in ipairs(allServerList) do
+            local isFindRealServer = false;
+            for m,n in ipairs(zoneInfoTable) do
+                if v.serverid == n.ZoneID then
+                    v.ZoneID = n.ZoneID;
+                    v.ZoneName = v.servername;
+                    if v.status == 1 then
+                        v.ZoneState = ZONE_ENUM.ZONE_CLOSE;
+                    else
+                        v.ZoneState = n.ZoneState;
+                    end
+                    v.ZoneLine = n.ZoneLine;
+                    if v.iscommend == 0 then
+                        v.ZoneAttrib = n.ZoneAttrib;
+                    else
+                        v.ZoneAttrib = ZONE_ENUM.ZONE_RECOMMEND;
+                    end
+                    v.ChargeType = n.ChargeType;
+                    v.BigZoneID = n.BigZoneID;
+                    v.CurVersion = n.CurVersion;
+                    v.IsRealServer = true;
+                    isFindRealServer = true;
+                    break;
+                end
+            end
+            if isFindRealServer == false then
+                v.ZoneID = v.serverid;
+                v.ZoneName = v.servername;
+                if v.status == 1 then
+                    v.ZoneState = ZONE_ENUM.ZONE_CLOSE;
+                else
+                    v.ZoneState = ZONE_ENUM.ZONE_OPEN;
+                end
+                v.ZoneLine = 0;
+                if v.iscommend == 0 then
+                    v.ZoneAttrib = 0;
+                else
+                    v.ZoneAttrib = ZONE_ENUM.ZONE_RECOMMEND;
+                end
+                v.ChargeType = 1;
+                v.BigZoneID = 0;
+                v.CurVersion = 0;
+                v.IsRealServer = false;
+            end
+            table.insert(resultTable,v);
+        end
+        return resultTable;
+    else
+        local zoneInfoTable = loadstring("return " .. Const.m_vZoneInfo);
+        return zoneInfoTable();
+    end
+end
+
+-- 获取战区个数
+function GetZoneNum()
+    if CSDKManager.sdkName == "xiyou" then
+        local reusltTable = GetZoneInfo()
+        return #reusltTable;
+    else
+        return Const.m_vZoneInfoSize;
+    end
+end
+function IsMycardChannel()
+    return Constants.twChannelId == 3;
+end
+-- 获取服务器配置, 某个功能是否显示
+function IsShowSys(id)
+    local list = _G.Sys_Show_Switch;
+    if list == nil then
+        return false;
+    end
+    for i, v in ipairs(list) do
+        if i == id then
+            return v == 1;
+        end
+    end
+    return false;
+end

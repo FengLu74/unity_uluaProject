@@ -1,0 +1,817 @@
+﻿module("PlayerMailPanel", package.seeall)
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_CloseBtn = "BackGround-General/Button-Close";
+-- 领取按钮
+local m_GetRewardsButton = "Content-MailContent/Button-GetRewards";
+-- 一键领取
+local m_GetAllRewardButton = "Content-MailContent/Button-GetAll";
+-----------------------------------------Label路径--------------------------------------
+-- 邮件内容
+local m_mailContentLabel = "Content-MailContent/Content/Label-NeiRong";
+-- 邮件标题
+local m_contentTitle = "Content-MailContent/Content/Label_Title";
+-- 邮件数量
+local m_mailAllNum = "Content-PlayerMail/MailNum/LabelNum";
+-----------------------------------------Sprite路径--------------------------------------
+-- 领取按钮的背景图片
+local m_rewardSprite = "Content-MailContent/Button-GetRewards/Background";
+
+-- 确定按钮
+local m_continueButton = "MessagePanel/Button-QueDing";
+-- 取消按钮
+local m_backButton = "MessagePanel/Button-FanHui";
+-----------------------------------------通用的名称路径--------------------------------------
+-- 是否是新的邮件资源
+local m_IsNewPath = "Sprite_RedHint";
+local itemPath = "Content-MailContent/Content/Top/Item"
+-- 选择当前邮件
+local m_selectMail = "Sprite_Select";
+-- 未选中状态
+local m_notSelectMail = "Sprite-BG";
+-- 发件人名字
+local sendMailName = "Label_Name";
+-- 邮件标题label
+local m_mailTitle = "/Label_Title"
+-- 邮件日期
+local m_mailTime = "Label_Time";
+-- 剩余时间
+local m_downTime = "Label_InvalidTime";
+-- 按钮名字
+local m_buttonLable1 = "/Label_1";
+-- 显示此道具是套装道具
+local m_spriteSuit = "/Sprite_Suit";
+-- 精炼
+local m_startUp = "/Label-StarNum"
+-- 精炼等级
+local m_startLevel = "/Label-StarNum/Label"
+-----------------------------------------gameobject路径--------------------------------------
+-- 右侧邮件内容面板
+local m_MailContent = "Content-MailContent";
+-- 左侧列表list
+local m_currentList = "Content-PlayerMail/ScrollView-MailList/Grid";
+-- 左侧列表面板
+local m_mailScroll = "Content-PlayerMail/ScrollView-MailList";
+-- 无邮件显示
+local m_notMail = "Label-NotMail";
+-- 邮件数量路径
+local m_mailCountStr = "Content-PlayerMail/MailNum";
+-- 道具位置
+local m_mailItemStr = "Content-MailContent/Content/Top";
+-- 提示面板
+local m_messagePanelStr = "MessagePanel";
+-----------------------------------------引用对象路--------------------------------------
+-- 当前面板的对象
+local m_strPanelObject = nil;
+-- 初始化失败默认情况
+local m_bCreateSuccess = nil;
+-- 当前点击的邮件的信息
+local mailClickInfo = nil;
+-- 左侧选择的是第几个
+local m_leftSelectNum = 1;
+-- 左侧UIPanel组件
+local m_leftUIPanelComp = nil;
+-- 左侧邮件列表
+local m_leftListView = nil;
+-- 领取按钮Sprite组件
+local m_rightSpriteComp = nil;
+-- 邮件table
+local m_mailTable = { };
+-- 邮件内容
+local m_mailContentInfo = nil;
+-- 最大显示邮件数
+local m_maxMailNum = 0;
+-- 新邮件Id
+local m_newMailID = nil;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 道具父对象
+local m_itemParent = nil;
+-- 判断该道具是否为商城购买道具
+local m_isStoreBuy = false;
+-- 判断领取的所有的附件包不包含商城购买的道具
+local m_isHaveStoreBuy = false;
+-- 判断是否是一键领取按钮
+local m_isGetAllMial = false;
+-----------------------------------------写死的规定--------------------------------------
+-- 一键领取的邮件数
+local m_getMailNum = 6;
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    -- 初始化obj
+    InitObjects();
+    -- 初始化信息
+    InitAllInfo();
+    m_bCreateSuccess = true;
+end
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    if true == m_bCreateSuccess then
+        -- 设置左侧选择为第一个
+        m_leftSelectNum = 1;
+        -- 初始化信息
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("MailInvalidTimeShow");
+end
+
+function OnDestroy()
+    mailClickInfo = 0;
+    m_bCreateSuccess = false;
+    m_strPanelObject = nil;
+    m_mailTable = { };
+    m_isStoreBuy = false;
+    m_isHaveStoreBuy = false;
+    m_isGetAllMial = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    -- 面板对象
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAILPANEL);
+    -- 左侧组件
+    m_leftUIPanelComp = GetComponent(m_strPanelObject, m_mailScroll, "UIPanel");
+    m_leftListView = GetComponent(m_strPanelObject, m_currentList, "UIListView");
+    m_leftListView:SetInitCallback(OnLeftListViewInit);
+    m_leftListView:SetClickCallback(OnLeftListViewSelected);
+    -- 领取按钮的sprite、
+    m_rightSpriteComp = GetComponent(m_strPanelObject, m_rewardSprite, "UISprite");
+
+    -- 道具父对象
+    m_itemParent = child(m_strPanelObject, m_BuyPopoverItemStr).gameObject;
+end
+
+-- 初始化信息
+function InitAllInfo()
+    InitData();
+    -- 初始化邮件内容
+    InitMailContent();
+    -- 初始化事件信息
+    InitOnClick();
+    -- 初始化左侧邮件数据
+    InitLeftMailList();
+end
+
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftSelectNum = m_JumpPanelParamsTable[1];
+        m_isJumpPanelSave = false;
+    else
+        m_leftSelectNum = 1;
+    end
+end
+
+-- 初始化事件信息
+function InitOnClick()
+    -- 邮件领取点击事件
+    SetGameObjectEvent(m_GetRewardsButton, OnGetRewardsClick, m_strPanelObject, nil);
+    -- 关闭按钮点击事件
+    SetGameObjectEvent(m_CloseBtn, OnCloseClick, m_strPanelObject, nil);
+    -- 一键领取按钮
+    SetGameObjectEvent(m_GetAllRewardButton, OnGetAllRewardsClick, m_strPanelObject, nil);
+    SetGameObjectEvent(m_continueButton, OnContinueClick, m_strPanelObject);
+    SetGameObjectEvent(m_backButton, OnBackClick, m_strPanelObject);
+end
+
+-- 初始化左侧邮件数据
+function InitLeftMailList()
+    m_mailTable = { };
+    m_leftListView:RemoveAll();
+    local mewMailTable = { };
+    local rewadedMailTable = { };
+    local data = nil;
+    local count = #MailManger.mailTable;
+    local mailNum = 0;
+    -- 置邮件显示的最大数
+    m_maxMailNum = CCommonTool.GetDefineInfo(EDefineContentID.MAX_COUNT_MAIL):GetIntContent();
+    if m_maxMailNum == nil then
+        m_maxMailNum = 10;
+    end
+    -- 邮件排序
+    if count > 0 then
+        for index = 1, count do
+            local time = MailManger.mailTable[index].sendTime;
+            for num = 1, count do
+                local time2 = MailManger.mailTable[num].sendTime;
+                if time > time2 and index ~= num then
+                    data = MailManger.mailTable[index];
+                    MailManger.mailTable[index] = MailManger.mailTable[num];
+                    MailManger.mailTable[num] = data;
+                end
+            end
+        end
+        for index = 1, count do
+            local state = MailManger.mailTable[index].isNewMail;
+            for num = 1, count do
+                local state2 = MailManger.mailTable[num].isNewMail;
+                if state ~= 0 and state2 == 0 then
+                    data = MailManger.mailTable[index];
+                    MailManger.mailTable[index] = MailManger.mailTable[num];
+                    MailManger.mailTable[num] = data;
+                end
+            end
+        end
+    end
+
+    if count > 0 then
+        if count > m_maxMailNum then
+            for index = 1, m_maxMailNum do
+                m_newMailID = MailManger.mailTable[1].mailID
+                table.insert(m_mailTable, MailManger.mailTable[index]);
+            end
+        else
+            for index = 1, count do
+                m_newMailID = MailManger.mailTable[1].mailID
+                table.insert(m_mailTable, MailManger.mailTable[index]);
+            end
+        end
+        SetGameObjectState(m_mailCountStr, true, m_strPanelObject);
+        SetLabelContent(m_mailAllNum, count .. "/" .. m_maxMailNum, m_strPanelObject);
+    else
+        SetGameObjectState(m_mailCountStr, false, m_strPanelObject);
+    end
+    for i, data in ipairs(m_mailTable) do
+        m_leftListView:AddData(data);
+    end
+    m_leftListView:LookAt(0, true);
+end
+
+function OnLeftListViewInit(listView, cell, data)
+    local go = cell.gameObject
+    -- 设置邮件的红点显示
+    if cell.dataIndex == 0 and data.isNewMail ~= 0 then
+        data.isNewMail = 0;
+    end
+    if data.isNewMail == 0 or cell.dataIndex == 0 then
+        SetGameObjectState(m_IsNewPath, false, go);
+    else
+        SetGameObjectState(m_IsNewPath, true, go);
+    end
+    -- 是否含有商城购买的道具
+    if data.mailType == ENUM_MAIL_TYPE.MY_SYS_GAME_SHOP then
+        m_isHaveStoreBuy = true;
+    end
+    -- 邮件标题
+    if data.mailTitle ~= nil then
+        SetLabelContent(m_notSelectMail .. m_mailTitle, data.mailTitle, go);
+        SetLabelContent(m_selectMail .. m_mailTitle, data.mailTitle, go);
+    end
+    -- 发件人
+    if data.Name ~= nil then
+        SetLabelContent(sendMailName, data.Name, go);
+    end
+    if data.sendTime ~= nil then
+        local sendTime = G_TimerMng:GetTime(data.sendTime);
+        -- 发送时间
+        SetLabelContent(m_mailTime, sendTime, go);
+    end
+    -- 剩余时间
+    if data.invalidTime > 0 then
+        local LabelContent = GetComponent(go, m_downTime, "UILabel");
+        AddTimerEvent("MailInvalidTimeShow", data.invalidTime, OnCallOver1, ETimeShowType.TypeNumberNine, OnCallBack1, nil, LabelContent, nil, 2, 2);
+    else
+        SetLabelContent(m_downTime, CCommonTool.GetTxtData(924).m_str, go);
+    end
+    -- 判断本地是否存储
+    local isHave = false;
+    -- 给服务器发送消息获取改邮件的内容
+    if data.mailID == m_newMailID and MailManger.m_IsNewMail == 0 then
+        mailClickInfo = listView:GetData(0);
+        if #MailManger.mailContentTable > 0 then
+            for i = 1, #MailManger.mailContentTable do
+                if MailManger.mailContentTable[i].MailID == data.mailID then
+                    -- 右侧道具信息
+                    OnShowContent(m_leftSelectNum);
+                    isHave = true;
+                    break;
+                end
+            end
+            if isHave == false then
+                local buffer = ByteBuffer.New();
+                buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+                buffer:WriteUShort(E_CTOS_MAILMSG_TYPE.ECMT_REQUESTCONTENT);
+                buffer:WriteUShort(data.mailType);
+                buffer:WriteShort(-1);
+                buffer:WriteString(data.mailID)
+                G_NetWorkMng:SendMessage(buffer);
+                OnShowContent(m_leftSelectNum);
+                return;
+            end
+        else
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+            buffer:WriteUShort(E_CTOS_MAILMSG_TYPE.ECMT_REQUESTCONTENT);
+            buffer:WriteUShort(data.mailType);
+            buffer:WriteShort(-1);
+            buffer:WriteString(data.mailID)
+            G_NetWorkMng:SendMessage(buffer);
+            return;
+        end
+    end
+end
+
+function OnLeftListViewSelected(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local num = cell.dataIndex + 1;
+    if m_leftSelectNum ~= num then
+        m_leftSelectNum = num;
+    end
+    mailClickInfo = data;
+    -- 判断本地是否存储
+    local isHave = false;
+    if #MailManger.mailContentTable > 0 then
+        for index = 1, #MailManger.mailContentTable do
+            if MailManger.mailContentTable[index].MailID == data.mailID then
+                -- 设置内容的显示
+                OnShowContent(m_leftSelectNum);
+                -- 设置邮件的显示功能
+                SetGameObjectState(m_MailContent, true, m_strPanelObject);
+                isHave = true;
+                break;
+            end
+        end
+        if isHave == false then
+            -- 给服务器发送消息获取改邮件的内容
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+            buffer:WriteUShort(E_CTOS_MAILMSG_TYPE.ECMT_REQUESTCONTENT);
+            buffer:WriteUShort(data.mailType);
+            buffer:WriteShort(-1);
+            buffer:WriteString(data.mailID)
+            G_NetWorkMng:SendMessage(buffer);
+        end
+    else
+        -- 给服务器发送消息获取改邮件的内容
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+        buffer:WriteUShort(E_CTOS_MAILMSG_TYPE.ECMT_REQUESTCONTENT);
+        buffer:WriteUShort(data.mailType);
+        buffer:WriteShort(-1);
+        buffer:WriteString(data.mailID)
+        G_NetWorkMng:SendMessage(buffer);
+    end
+    -- 设置红点状态
+    if data.isNewMail ~= 0 then
+        SetGameObjectState(m_IsNewPath, false, go);
+        data.isNewMail = 0;
+    end
+    -- 改邮件是否为商城购买邮件
+    if data.mailType == ENUM_MAIL_TYPE.MY_SYS_GAME_SHOP then
+        m_isStoreBuy = true;
+    else
+        m_isStoreBuy = false;
+    end
+end
+
+-- 初始化邮件内容
+function InitMailContent()
+    -- 设置右侧邮件内容的显示状态
+    if #MailManger.mailTable > 0 then
+        SetGameObjectState(m_MailContent, true, m_strPanelObject);
+        SetGameObjectState(m_notMail, false, m_strPanelObject);
+    else
+        SetGameObjectState(m_MailContent, false, m_strPanelObject);
+        SetGameObjectState(m_notMail, true, m_strPanelObject);
+    end
+    -- 设置右侧邮件道具的显示状态
+    for index = 1, 5 do
+        SetGameObjectState(itemPath .. index, false, m_strPanelObject);
+    end
+    SetGameObjectState(m_messagePanelStr, false, m_strPanelObject);
+end
+
+
+-- 设置邮件内容的显示
+function OnShowContent(index)
+    if #MailManger.mailContentTable <= 0 then
+        error("mailItem is null");
+        return;
+    end
+    -- 设置右侧邮件道具的显示状态
+    for index = 1, 5 do
+        SetGameObjectState(itemPath .. index, false, m_strPanelObject);
+        SetGameObjectState(itemPath .. index .. m_spriteSuit, false, m_strPanelObject);
+        SetGameObjectState(itemPath .. index .. m_startUp, false, m_strPanelObject);
+    end
+    local strPath = nil;
+    local define = nil;
+    local count = 0;
+    local mailContentInfo;
+    if index <= 0 then
+        index = 1;
+        error("index is nil");
+    end
+    for num = 1, #MailManger.mailContentTable do
+        if m_mailTable[index].mailID == MailManger.mailContentTable[num].MailID then
+            mailContentInfo = MailManger.mailContentTable[num];
+            break;
+        end
+    end
+    if mailContentInfo == nil then
+        index = #MailManger.mailContentTable;
+        mailContentInfo = MailManger.mailContentTable[index];
+    end
+    -- 右侧邮件标题
+    if m_mailTable[index].mailTitle ~= nil then
+        SetLabelContent(m_contentTitle, m_mailTable[index].mailTitle, m_strPanelObject);
+    end
+    -- 右侧邮件内容
+    mailContentInfo.MailContent = string.gsub(mailContentInfo.MailContent, "\\n", "\n")
+    SetLabelContent(m_mailContentLabel, mailContentInfo.MailContent, m_strPanelObject);
+    -- 领取按钮显示状态
+    if m_mailTable[index].invalidTime > 0 then
+        m_rightSpriteComp.saturationAmount = 1;
+    else
+        m_rightSpriteComp.saturationAmount = 0.3;
+    end
+    -- 非绑定金币显示
+    if mailContentInfo.MailMoney > 0 then
+        count = count + 1;
+        strPath = itemPath .. count;
+        SetGameObjectState(strPath, true, m_strPanelObject);
+        SetItemShowByExcelIDV04(m_strPanelObject, strPath, G_ItemToolTipDefine.NOTBINDMONEY, mailContentInfo.MailMoney, true);
+        SetItemToolTipsEvent(m_itemParent, strPath, ENUMPANELID.ENUM_PANEL_MAILPANEL, false, G_ItemToolTipDefine.NOTBINDMONEY);
+    end
+    -- 绑定金币显示
+    if mailContentInfo.MailDingMoney > 0 then
+        count = count + 1;
+        strPath = itemPath .. count;
+        SetGameObjectState(strPath, true, m_strPanelObject);
+        SetItemShowByExcelIDV04(m_strPanelObject, strPath, G_ItemToolTipDefine.BINDMONEY, mailContentInfo.MailDingMoney, true);
+        SetItemToolTipsEvent(m_itemParent, strPath, ENUMPANELID.ENUM_PANEL_MAILPANEL, false, G_ItemToolTipDefine.BINDMONEY);
+    end
+    -- 绑定钻石显示
+    if mailContentInfo.MailDingTongBao > 0 then
+        count = count + 1;
+        strPath = itemPath .. count;
+        SetGameObjectState(strPath, true, m_strPanelObject);
+        SetItemShowByExcelIDV04(m_strPanelObject, strPath, G_ItemToolTipDefine.BINDDIAMOND, mailContentInfo.MailDingTongBao, true);
+        SetItemToolTipsEvent(m_itemParent, strPath, ENUMPANELID.ENUM_PANEL_MAILPANEL, false, G_ItemToolTipDefine.BINDDIAMOND);
+    end
+
+    -- 非绑定钻石显示
+    if mailContentInfo.MailTongBao > 0 then
+        count = count + 1;
+        strPath = itemPath .. count;
+        SetGameObjectState(strPath, true, m_strPanelObject);
+        SetItemShowByExcelIDV04(m_strPanelObject, strPath, G_ItemToolTipDefine.NOTBINDDIAMOND, mailContentInfo.MailTongBao, true);
+        SetItemToolTipsEvent(m_itemParent, strPath, ENUMPANELID.ENUM_PANEL_MAILPANEL, false, G_ItemToolTipDefine.NOTBINDDIAMOND);
+    end
+
+    local itemTabel = { };
+    -- 道具显示
+    for index = 1, #MailManger.mailItemTabel do
+        if mailContentInfo.MailID == MailManger.mailItemTabel[index].ID then
+            table.insert(itemTabel, MailManger.mailItemTabel[index]);
+        end
+    end
+    local num = #itemTabel + count;
+    SetGameObjectPos(m_mailItemStr, Vector3.New(-50 - 100 *(num - 1), -205, 0), m_strPanelObject);
+    for Index = 1, #itemTabel do
+        local mailInfo = itemTabel[Index];
+        if mailInfo.itemid ~= nil then
+            itemCof = GetItemConfigByExcelID(mailInfo.itemid);
+            if nil ~= itemCof then
+                strPath = itemPath ..(Index + count);
+                SetGameObjectState(strPath, true, m_strPanelObject);
+                SetItemShowByExcelIDV04(m_strPanelObject, strPath, mailInfo.itemid, mailInfo.num, true);
+                -- 道具类型
+                local tagType = CCommonTool.GetTagTypeByExcelID(mailInfo.itemid);
+                if tagType > 0 then
+                    if tagType == ITEMTAGTYPE.TT_Equip then
+                        local equipInfo = CCommonTool.GetEquipInfo(mailInfo.itemid);
+                        if equipInfo == nil then
+                            return;
+                        end
+                        -- 套装图标
+                        if equipInfo.SuitID > 0 then
+                            SetGameObjectState(strPath .. m_spriteSuit, true, m_strPanelObject);
+                        else
+                            SetGameObjectState(strPath .. m_spriteSuit, false, m_strPanelObject);
+                        end
+                        -- 道具信息
+                        local itemData = ItemAttribute.New(mailInfo.itemid);
+                        -- 精炼星数
+                        if itemData.StarItemLevel > 0 then
+                            SetGameObjectState(strPath .. m_startUp, true, m_strPanelObject);
+                            SetLabelContent(strPath .. m_startLevel, itemData.StarItemLevel, m_strPanelObject);
+                            if ItemInfo.StarItemLevel < 10 then
+                                SetGameObjectPos(strPath .. m_startUp, Vector3.New(30, -56, 0), m_strPanelObject);
+                                SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(14, -56, 0), m_strPanelObject);
+                            else
+                                SetGameObjectPos(strPath .. m_startUp, Vector3.New(20, -56, 0), m_strPanelObject);
+                                SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(4, -56, 0), m_strPanelObject);
+                            end
+                        else
+                            SetGameObjectState(strPath .. m_startUp, false, m_strPanelObject);
+                            SetGameObjectPos(strPath .. m_spriteSuit, Vector3.New(40, -56, 0), m_strPanelObject);
+                        end
+                    else
+                        SetGameObjectState(strPath .. m_spriteSuit, false, m_strPanelObject);
+                        SetGameObjectState(strPath .. m_startUp, false, m_strPanelObject);
+                    end
+                else
+                    error("item id does not exist");
+                end
+                local itemAtt = nil;
+                if mailInfo.itemAttr ~= nil then
+                    itemAtt = mailInfo.itemAttr;
+                    SetItemToolTipsEvent(m_itemParent, strPath, ENUMPANELID.ENUM_PANEL_MAILPANEL, true, itemAtt, false, false);
+                else
+                    -- itemAtt = ItemAttribute.New(mailInfo.itemid);
+                    SetItemToolTipsEvent(m_itemParent, strPath, ENUMPANELID.ENUM_PANEL_MAILPANEL, false, mailInfo.itemid);
+                end
+            else
+                error("maildata does not exist");
+            end
+        end
+    end
+    InitOnClick();
+end
+
+-- 倒计时回调1
+function OnCallBack1(tiemTxt, objLabel)
+    local textContent = CCommonTool.GetTxtData(8049).m_str;
+    local showContent = string_format(textContent, tiemTxt);
+    objLabel.text = showContent;
+end
+
+-- 倒计时回调
+function OnCallOver1()
+end
+
+-- 根据道具ID获取道具或者装备的cof
+function GetItemConfigByExcelID(ExcelID)
+    local itemCof = nil;
+    if ExcelID >= 1000000 and ExcelID <= 3199999 then
+        -- 装备
+        itemCof = CCommonTool.GetEquipInfo(ExcelID);
+    elseif ExcelID >= 10000 and ExcelID <= 99999 then
+        -- 道具
+        itemCof = CCommonTool.GetItemInfo(ExcelID);
+    elseif ExcelID >= 100000 and ExcelID <= 110000 then
+        -- 宠物
+        itemCof = CCommonTool.GetPetMainInfo(ExcelID);
+    end
+    return itemCof;
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 关闭
+function OnCloseClick(e)
+    if m_isOpenMail == true then
+        Start();
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_MAILPANEL);
+end
+-- 领取按钮
+function OnGetRewardsClick()
+    --    if m_isStoreBuy == true or mailClickInfo.mailType == ENUM_MAIL_TYPE.MY_SYS_GAME_SHOP then
+    --        SetGameObjectState(m_messagePanelStr, true, m_strPanelObject);
+    --        m_isGetAllMial = false;
+    --    else
+    --        MailRegister();
+    --    end
+    MailRegister();
+end
+
+-- 一键领取领取按钮
+function OnGetAllRewardsClick()
+    --    if m_isHaveStoreBuy == true then
+    --        m_isGetAllMial = true;
+    --        SetGameObjectState(m_messagePanelStr, true, m_strPanelObject);
+    --    else
+    --        AllMailRegister();
+    --    end
+    AllMailRegister();
+end
+
+-- 确定领取按钮
+function OnContinueClick()
+    if m_isGetAllMial == true then
+        -- 领取所有的附件
+        AllMailRegister();
+    else
+        -- 领取单封附件
+        MailRegister();
+    end
+end
+
+-- 取消按钮
+function OnBackClick()
+    SetGameObjectState(m_messagePanelStr, false, m_strPanelObject);
+end
+-- 领取一封邮件发送的消息
+function MailRegister()
+    if m_leftSelectNum > #MailManger.mailContentTable then
+        m_leftSelectNum = 1;
+    end
+    local mailContentInfo = nil;
+    for num = 1, #MailManger.mailContentTable do
+        if m_mailTable[m_leftSelectNum].mailID == MailManger.mailContentTable[num].MailID then
+            mailContentInfo = MailManger.mailContentTable[num];
+        end
+    end
+    if mailContentInfo == nil or mailClickInfo.invalidTime <= 0 then
+        return;
+    end
+    -- 根据邮件类型向服务器发送消息
+    local titleType = nil;
+    -- 如果大于零 发送领取邮件 否则发送删除邮件
+    if mailContentInfo.ItemNum > 0 or mailContentInfo.MailMoney > 0 or mailContentInfo.MailTongBao > 0 or mailContentInfo.MailDingMoney > 0 or mailContentInfo.MailDingTongBao > 0 then
+        -- 领取附件
+        titleType = E_CTOS_MAILMSG_TYPE.ECMT_GETAFFIX;
+    else
+        -- 删除邮件
+        titleType = E_CTOS_MAILMSG_TYPE.ECMT_DELETEMAIL
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+    buffer:WriteUShort(titleType);
+    buffer:WriteUShort(mailClickInfo.mailType);
+    buffer:WriteShort(-1);
+    buffer:WriteString(mailClickInfo.mailID)
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 领取一封邮件发送的消息
+function AllMailRegister()
+    local count = #MailManger.mailTable;
+    local mailInfo = { };
+    local num = 0;
+    if count > 0 then
+        if count > m_getMailNum then
+            num = m_getMailNum;
+        else
+            num = count;
+        end
+    end
+    for index = 1, num do
+        MailManger.mailTable[index].isNewMail = 0;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+    buffer:WriteUShort(E_CTOS_MAILMSG_TYPE.ECMT_GETAFFIX_ONCE);
+    buffer:WriteUShort(0);
+    buffer:WriteShort(-1);
+    buffer:WriteByte(num);
+    for index = 1, num do
+        buffer:WriteString(MailManger.mailTable[index].mailID)
+    end
+    G_NetWorkMng:SendMessage(buffer);
+    RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_MAIL, PlayerMailPanel.IsShowRedHintMail());
+end
+--------------------------外部调用的方法----------------------
+-- 更新邮件信息
+function OnUpdateMailInfo()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAILPANEL) == 1 then
+        InitAllInfo();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_MAIL, PlayerMailPanel.IsShowRedHintMail());
+end
+ 
+-- 删除邮件
+function DeleteMailReturn(mailId)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAILPANEL) == 1 then
+        -- 删除左侧邮件内容
+        for index = 1, #MailManger.mailTable do
+            if #MailManger.mailTable > 1 then
+                if MailManger.mailTable[index].mailID == mailId then
+                    -- 删除左侧邮件内容
+                    table.remove(MailManger.mailTable, index);
+                    break;
+                end
+            else
+                -- 左侧邮件信息
+                MailManger.mailTable = { }
+            end
+        end
+        -- 删除右侧邮件内容
+        for index = 1, #MailManger.mailContentTable do
+            if #MailManger.mailContentTable > 1 then
+                if MailManger.mailContentTable[index].MailID == mailId then
+                    -- 删除右侧邮件内容
+                    table.remove(MailManger.mailContentTable, index);
+                    break;
+                end
+            else
+                -- 右侧邮件内容
+                MailManger.mailContentTable = { };
+            end
+        end
+        local ItemTabel = { };
+        -- 删除右侧邮件道具信息
+        if #MailManger.mailItemTabel > 0 then
+            for index = 1, #MailManger.mailItemTabel do
+                if MailManger.mailItemTabel[index].ID ~= mailId then
+                    -- 删除道具信息
+                    table.insert(ItemTabel, MailManger.mailItemTabel[index]);
+                end
+            end
+        end
+        if #ItemTabel > 0 then
+            MailManger.mailItemTabel = { };
+            for Index = 1, #ItemTabel do
+                table.insert(MailManger.mailItemTabel, ItemTabel[Index]);
+            end
+        else
+            MailManger.mailItemTabel = { };
+        end
+        InitLeftMailList();
+        InitMailContent();
+        m_leftSelectNum = 1;
+        -- OnShowContent(m_leftSelectNum);
+    end
+end
+
+-- 服务器发送邮件内容
+function OnMailContent(itemNum, moneyNum, stoneNum, money2Num, stone2Num)
+    if itemNum > 0 or moneyNum > 0 or stoneNum > 0 or money2Num > 0 or stone2Num > 0 then
+        -- 设置当前邮件的内容缓存;
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAILPANEL) == 1 then
+            SetLabelTextByID(m_GetRewardsButton .. m_buttonLable1, 646, m_strPanelObject);
+        end
+    else
+        -- 设置按钮为删除
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAILPANEL) == 1 then
+            SetLabelTextByID(m_GetRewardsButton .. m_buttonLable1, 410, m_strPanelObject);
+        end
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAILPANEL) == 1 then
+        if m_bCreateSuccess ~= nil and mailClickInfo ~= nil then
+            OnShowContent(m_leftSelectNum);
+            InitOnClick();
+            SetGameObjectState(m_MailContent, true, m_strPanelObject);
+        end
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.BUTTONGROUP_MAIL, PlayerMailPanel.IsShowRedHintMail());
+end
+
+-- 判断邮件是否领取成功
+function IsMailSuccess(mailState)
+    if mailState == ENUM_MAILITEM_AKEAFFIXSTATE.ESMT_FAILED_TAKEITEM or mailState == ENUM_MAILITEM_AKEAFFIXSTATE.ESMT_FAILED_TAKEBINDMONEY or
+        mailState == ENUM_MAILITEM_AKEAFFIXSTATE.ESMT_FAILED_TAKEMONEY or mailState == ENUM_MAILITEM_AKEAFFIXSTATE.ESMT_FAILED_TAKETONGBAO or
+        mailState == ENUM_MAILITEM_AKEAFFIXSTATE.ESMT_FAILED_TAKEBINDTONGBAO then
+        G_MusicMng:OnLoadMusic(4010);
+    else
+        G_MusicMng:OnLoadMusic(4073);
+    end
+end 
+
+
+-- 是否为系统邮件
+function isSystemMailType(mailType)
+    if ENUM_MAIL_TYPE.MT_SystemMailBegin < mailType and mailType < ENUM_MAIL_TYPE.MT_SystemMailEnd then
+        return true;
+    elseif ENUM_MAIL_TYPE.MT_SystemMailEx_Begin < mailType and mailType < ENUM_MAIL_TYPE.MT_SystemMailEx_End then
+        return true;
+    else
+        return false;
+    end
+end
+
+-- 是否为个人邮件
+function isUserMailType(mailType)
+    if ENUM_MAIL_TYPE.MT_UserMailBegin < mailType and mailType < ENUM_MAIL_TYPE.MT_UserMailEnd then
+        return true;
+    else
+        return false;
+    end
+end
+
+
+-- 是否邮件界面可操作
+function IsShowRedHintMail()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_MAIL) then
+        return false;
+    end
+    if MailManger.m_IsNewMail > 0 then
+        return true;
+    end
+    for Index = 1, #MailManger.mailTable do
+        local mailInfo = MailManger.mailTable[Index].isNewMail;
+        if mailInfo ~= 0 then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_leftSelectNum };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

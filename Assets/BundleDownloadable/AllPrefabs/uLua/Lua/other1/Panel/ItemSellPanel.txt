@@ -1,0 +1,304 @@
+﻿module("ItemSellPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 总价钱
+local m_sellPrice = "Content/TotalPrice/Label";
+-- 单价
+local m_singlePriceStr = "Content/SinglePrice/Label";
+-- 道具出售数量
+local m_sellNumStr = "Content/Num/Button_Num/Label";
+-- 道具类型
+local m_itemType = "Content/Item/Type";
+-----------------------------------------Sprite路径------------------------------------
+-- 道具渐变背景
+local m_ItemQualityBGStr = "Content/Item/Item_BG";
+-- 道具光背景
+local m_ItemLightBGStr = "Content/Item/Item_BG_Light";
+-----------------------------------------button路径------------------------------------
+-- 全部按钮
+local m_strPathOnClickAll = "Content/Num/Button_Max";
+-- 出售按钮
+local m_ChuShou = "Button-ChuShou";
+-- 取消按钮
+local m_QuXiao = "Button-QuXiao";
+-- 出售yes按钮所在的路径
+local m_buttonSellYes = "SellSelect/Button-QueDing";
+-- 出售no按钮所在的路径
+local m_buttonSellNo = "SellSelect/Button-FanHui";
+-- 小键盘按钮：出售数量
+local m_ButtonNum = "Content/Num/Button_Num";
+----------------------------------gameobject所在的路径---------------------------------
+-- 背景遮罩
+local m_zheZhao = "ZheZhao"
+-- 二次确认弹框
+local m_sellSelect = "SellSelect";
+local m_sellSelectState = false;
+-- 出售的物品
+local m_sellItemStr = "Content/Item";
+-----------------------------------引用的对象------------------------------------------
+-- 当前道具CRID
+local m_idItem = nil;
+-- 当前道具数量
+local m_ItemNum = 1;
+-- 当前要售卖的数量
+local m_ItemNumPanel = nil;
+-- 要售卖的单价
+local m_sellOnePrice = nil;
+-- 要售卖道具的excelid
+local m_ExcelID = nil;
+-- 当前面板的对象
+local m_strPanelObject = nil;
+-- 当前面板中item属性
+local prop = nil;
+-- 当前面板中item类型
+local m_ItemTypeByPanelNum = nil;
+-- 初始化失败默认情况
+local m_bCreateSuccess = false;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 当前面板的出售对象
+local m_sellItem = nil; 
+-- 单价对象
+local m_singlePrice = nil;
+
+-- 6种品质的渐变颜色
+local ItemQualityColorTop =
+{
+    [1] = "68655DE6",
+    [2] = "466F39E6",
+    [3] = "343F78E6",
+    [4] = "5E317AE6",
+    [5] = "7E5A26E6",
+    [6] = "751313E6",
+}
+
+-- 6种品质的渐变颜色
+local ItemQualityColorBottom =
+{
+    [1] = "68655D00",
+    [2] = "466F3900",
+    [3] = "343F7800",
+    [4] = "5E317A00",
+    [5] = "7E5A2600",
+    [6] = "75131300",
+}
+
+-- 6种品质的点光颜色
+local ItemQualityLightColor = 
+{
+    [1] = "cdcecc",
+    [2] = "94df82",
+    [3] = "81d4ff",
+    [4] = "b681ff",
+    [5] = "ffe981",
+    [6] = "ff8181",
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 同Unity里面的start，通过baselua挂在界面tag的object下
+function Start()
+    if m_idItem ~= nil then
+        InitObjects();
+        -- 初始化UI内容
+        InitUIContent();
+        -- 初始化点击事件
+        InitClickEvent();
+    end
+    -- 初始化成功
+    m_bCreateSuccess = true;
+end
+-- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+    BagPanel.SetSellPanelState(true);
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_bCreateSuccess = false;
+    m_idItem = nil;
+    m_ItemTypeByPanelNum = nil;
+    m_ExcelID = nil;
+end
+
+-- 通过其他界面的传过来的参数
+function functionParameter(paraTable)
+    -- 设置当前装备ID信息
+    m_idItem = paraTable[1];
+    m_ItemNum = paraTable[2];
+    m_ItemTypeByPanelNum = paraTable[3];
+    if m_bCreateSuccess then
+        InitUIContent();
+        InitClickEvent();
+    end
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+--初始化object对象
+function InitObjects()
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+    m_sellItem = child(m_strPanelObject, m_sellItemStr).gameObject;
+    m_singlePrice = GetComponent(m_strPanelObject, m_singlePriceStr, "UILabel");
+end
+-- 初始化UI内容
+function InitUIContent()
+    -- 面板对象
+    m_strPanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+    prop = G_BagMng:GetGoodsItem(tonumber(m_idItem));
+    m_ExcelID = prop.ExcelID;
+    local temp = child(m_strPanelObject, m_JiaHao).gameObject;
+    -- 重置要售卖的数量
+    if m_isJumpPanelSave then
+        m_isJumpPanelSave = false;
+    else
+        m_ItemNumPanel = 1;
+        -- 关闭二次弹窗确认界面
+        m_sellSelectState = false;
+    end
+    SetGameObjectState(m_sellSelect, m_sellSelectState, m_strPanelObject);
+    -- 重置要售卖的单价
+    m_sellOnePrice = prop:GetSaleValue();
+--    m_singlePrice.txt = m_sellOnePrice;
+    SetLabelContent(m_singlePriceStr, m_sellOnePrice, m_strPanelObject);
+    InitWuPinContent();
+    local tagType = CCommonTool.GetTagTypeByExcelID(m_ExcelID);
+    local itemType = prop:GetItemType();
+    if tagType == ITEMTAGTYPE.TT_Equip then
+        local equipInfo = CCommonTool.GetEquipInfo(m_ExcelID);
+        SetLabelTextByID(m_itemType, equipInfo.TypeTxtID, m_strPanelObject);
+    elseif itemType == ITEMTYPE.IT_Pet then
+        local petInfo = CCommonTool.GetPetMainInfo(m_ExcelID);
+        SetLabelTextByID(m_itemType, petInfo.TypeTxt, m_strPanelObject);
+    else
+        local itemInfo = CCommonTool.GetItemInfo(m_ExcelID);
+        SetLabelTextByID(m_itemType, itemInfo.TypeTxtID, m_strPanelObject);
+    end
+end
+
+
+function InitWuPinContent()
+    SetItemShowByExcelIDV04(m_sellItem,"Prop",m_ExcelID,num,true,339,ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+    local itemQualityID = CCommonTool.GetAptitudeIDByExcelID(m_ExcelID);
+    SetSpriteGradientColor(m_ItemQualityBGStr, ItemQualityColorTop[itemQualityID], ItemQualityColorBottom[itemQualityID], m_strPanelObject);
+    SetSpriteColor(m_ItemLightBGStr, ItemQualityLightColor[itemQualityID], m_strPanelObject);
+    InitAllMoney();
+end
+
+function InitAllMoney()
+    -- 6.设置道具售卖的数量
+    SetLabelContent(m_sellNumStr, m_ItemNumPanel, m_strPanelObject);
+    -- 7.设置获得的铜钱
+    SetLabelContent(m_sellPrice, m_ItemNumPanel * m_sellOnePrice, m_strPanelObject);
+end
+
+-- 初始化点击事件
+function InitClickEvent()
+    -- 初始化关闭按钮
+    SetGameObjectEvent(m_zheZhao, OnCloseClick, m_strPanelObject);
+    SetGameObjectEvent(m_QuXiao, OnCloseClick, m_strPanelObject);
+    -- 初始化全部按钮
+    SetGameObjectEvent(m_strPathOnClickAll, OnClickAll, m_strPanelObject);
+    -- 初始化出售数量按钮
+    SetGameObjectEvent(m_ButtonNum, OnButton_NumClick, m_strPanelObject);
+--    -- 初始化减号按钮
+--    SetGameObjectEvent(m_JianHao, OnClickJian, m_strPanelObject);
+--    -- 初始化加号按钮
+--    SetGameObjectEvent(m_JiaHao, OnClickJia, m_strPanelObject);
+    -- 初始化出售按钮
+    SetGameObjectEvent(m_ChuShou, OnClickChuShou, m_strPanelObject);
+    -- 设置出售二次确认yes按钮事件
+    SetGameObjectEvent(m_buttonSellYes, SellYesClick, m_strPanelObject);
+    -- 设置出售二次确认no按钮事件
+    SetGameObjectEvent(m_buttonSellNo, SellNoClick, m_strPanelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 当前窗口
+function OnCloseClick(e)
+    -- 关闭当前的窗口	
+    BagPanel.SetSellPanelState(false);
+    closePanel(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+end
+
+-- 点击全部按钮事件
+function OnClickAll(e)
+    m_ItemNumPanel = m_ItemNum;
+    InitAllMoney();
+end
+
+-- 点击出售数量按钮事件
+function OnButton_NumClick()
+    local data = 
+    {
+        X = 0;
+        Y = -510;
+        Text = m_singlePriceStr.text;
+    };
+    SmallKeyboardPanel.InputCallback = OnButton_Num;
+    SmallKeyboardPanel.ConfirmCallback = OnButton_NumClickConfirm;
+    createPanelExx(ENUMPANELID.ENUM_PANEL_SMALLKEYBOARDPANEL,data,ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+end
+--小键盘数字按下回调
+--@param data 数据信息
+function OnButton_Num(data)
+    if data ~= nil then
+        m_ItemNumPanel = data.Num;
+        InitAllMoney();
+    end
+end
+--小键盘按下确定回调
+function OnButton_NumClickConfirm()
+    if m_ItemNumPanel > m_ItemNum then 
+        m_ItemNumPanel = m_ItemNum;
+        InitAllMoney();
+    end
+end
+
+-- 点击出售的事件
+function OnClickChuShou()
+    if prop:GetAptitudeID() >= 4 then
+        m_sellSelectState = true;
+        SetGameObjectState(m_sellSelect,true,m_strPanelObject);
+    else
+        local buffer = ByteBuffer.New();
+        buffer:WriteUShort(GMI_CTOS_LGS_NPC_TRADEACTION);
+        buffer:WriteInt(0);
+        buffer:WriteInt(0);
+        buffer:WriteInt(0);
+        buffer:WriteInt(m_ItemTypeByPanelNum);
+        buffer:WriteInt(prop.CRID);
+        buffer:WriteInt(m_ItemNumPanel);
+        G_NetWorkMng:SendMessage(buffer);
+        closePanel(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+        G_MusicMng:OnLoadMusic(4040);
+    end
+end
+
+-- 点击确定出售按钮
+function SellYesClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_NPC_TRADEACTION);
+    buffer:WriteInt(0);
+    buffer:WriteInt(0);
+    buffer:WriteInt(0);
+    buffer:WriteInt(m_ItemTypeByPanelNum);
+    buffer:WriteInt(prop.CRID);
+    buffer:WriteInt(m_ItemNumPanel);
+    G_NetWorkMng:SendMessage(buffer);
+    closePanel(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL);
+    G_MusicMng:OnLoadMusic(4040);
+end
+
+-- 点击取消出售按钮
+function SellNoClick()
+    m_sellSelectState = false;
+    SetGameObjectState(m_sellSelect, false, m_strPanelObject);
+end
+
+-- 打开出售界面
+function OpenItemSellPanel(itemAttr,panelType,causePanelID)
+    if itemAttr ~= nil then
+        m_isJumpPanelSave = true;
+        m_idItem = itemAttr.CRID;
+        m_ItemNum = itemAttr.ItemNum;
+        m_ItemTypeByPanelNum = panelType;
+        createPanelExx(ENUMPANELID.ENUM_PANEL_ITEMSELLPANEL,{m_idItem,m_ItemNum,m_ItemTypeByPanelNum},causePanelID);
+    end
+end

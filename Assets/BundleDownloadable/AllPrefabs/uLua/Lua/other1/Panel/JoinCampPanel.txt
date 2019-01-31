@@ -1,0 +1,243 @@
+﻿module("JoinCampPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 阵营描述
+local m_CampDesStr = "Label_Des";
+-----------------------------------------按钮路径--------------------------------------
+-- 加入阵营
+local m_joinCampbuttonStr = "JoinCamp_Button";
+-- 关闭阵营
+local m_joinCampCloseStr = "Close_Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 随机中间的宝箱图标
+local m_BoxSpriteStr = "/Sprite_Icon";
+
+-- 道具图标Icon
+local m_ItemIconStr = "/Sprite_Icon";
+-- 道具图标品质
+local m_ItemQualityStr = "/Sprite_Apptitude";
+-- 道具数量
+local m_ItemNumStr = "/Label_Num";
+----------------------------------gameobject所在的路径---------------------------------
+-- 联盟在的位置
+local m_UnionStr = "Union";
+-- 部落在的位置
+local m_TribeStr = "Tribe";
+-- 随机所在的位置
+local m_RandomStr = "Random";
+
+-- 奖励道具所在的位置
+local m_RewardItems = "Items";
+----------------------------------通用的名称路径---------------------------------------
+-- 选择的位置
+local m_SelectStr = "/Sprite_Select";
+-- 奖励道具具体所在的位置
+local m_ItemStr = "/Item";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 选择阵营(1是联盟，2是部落，3是随机)
+local m_choiceCampId = 3;
+-- 推荐阵营
+local m_recommendCampId = 1;
+-- 是否锁定阵营（0-不锁定，1-锁定）
+local m_isLock = 0;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 奖励table
+local m_rewardTable = {};
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitAllInfo();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_choiceCampId = 3;
+    m_recommendCampId = 1;
+    m_isLock = 0;
+    m_panelInitAlready = false;
+    m_rewardTable = {};
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_JOIN_UNIT);
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    InitCampInfo();
+    InitSelectInfo();
+end
+
+-- 初始化阵营信息
+function InitCampInfo()
+    SetSpriteByAtlasID(m_RandomStr..m_BoxSpriteStr,313,m_panelObject,true);
+    local m_defineInfo = CCommonTool.GetDefineInfo(EDefineContentID.TypeRecommendCampReward);
+    if m_defineInfo == nil then return end
+    local rewardID = m_defineInfo:GetIntContent();
+    m_rewardTable = GetRewardTable(rewardID);
+    for Index = 1,3 do
+        local path = m_RewardItems..m_ItemStr..Index;
+        if Index > #m_rewardTable then
+            SetGameObjectState(path,false,m_panelObject);
+        else
+            SetGameObjectState(path,true,m_panelObject);
+            SetSpriteByAtlasID(path .. m_ItemIconStr,CCommonTool.GetImageIDByExcelID(m_rewardTable[Index].ExcelID),m_panelObject);
+            SetSpriteApptitudeV04(path .. m_ItemQualityStr, CCommonTool.GetAptitudeIDByExcelID(m_rewardTable[Index].ExcelID), m_panelObject);
+            SetLabelContent(path .. m_ItemNumStr,m_rewardTable[Index].ItemNum,m_panelObject);
+        end
+    end
+    RepositionUITableComp(m_RewardItems,m_panelObject);
+    if m_isLock == 1 then
+        local go = nil;
+        if m_recommendCampId == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then 
+            go = GetComponent(m_panelObject, m_TribeStr..m_ItemIconStr, "UIBasicSprite");
+        else
+            go = GetComponent(m_panelObject, m_UnionStr..m_ItemIconStr, "UIBasicSprite");
+        end
+        go.saturationAmount = 0.1;
+    end
+end
+
+-- 初始化选择状态
+function InitSelectInfo()
+    if m_choiceCampId == 1 then
+        SetGameObjectState(m_UnionStr .. m_SelectStr,true,m_panelObject);
+        SetGameObjectState(m_TribeStr .. m_SelectStr,false,m_panelObject);
+        SetGameObjectState(m_RandomStr .. m_SelectStr,false,m_panelObject);
+        SetLabelTextByID(m_CampDesStr,150001,m_panelObject);
+    elseif m_choiceCampId == 2 then
+        SetGameObjectState(m_UnionStr .. m_SelectStr,false,m_panelObject);
+        SetGameObjectState(m_TribeStr .. m_SelectStr,true,m_panelObject);
+        SetGameObjectState(m_RandomStr .. m_SelectStr,false,m_panelObject);
+        SetLabelTextByID(m_CampDesStr,150002,m_panelObject);
+    elseif m_choiceCampId == 3 then
+        SetGameObjectState(m_UnionStr .. m_SelectStr,false,m_panelObject);
+        SetGameObjectState(m_TribeStr .. m_SelectStr,false,m_panelObject);
+        SetGameObjectState(m_RandomStr .. m_SelectStr,true,m_panelObject);
+        SetLabelTextByID(m_CampDesStr,150000,m_panelObject);
+    end
+end
+
+-- 初始化按钮事件
+function InitOnClick()
+    SetGameObjectEvent(m_joinCampbuttonStr, OnJoinCampClick, m_panelObject);
+    SetGameObjectEvent(m_joinCampCloseStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_UnionStr, OnUnionClick, m_panelObject);
+    SetGameObjectEvent(m_TribeStr, OnTribeClick, m_panelObject);
+    SetGameObjectEvent(m_RandomStr, OnRandomClick, m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 加入阵营
+function OnJoinCampClick()
+    local m_joinCampType = G_UserInfo.RoleAttribute.JoinCampType;
+    if tonumber(m_joinCampType) == ENUM_CAMP_TYPE.ENUM_UNIT_TYPE_NULL then
+        local buffer = ByteBuffer.New();
+        buffer:WriteShort(GMI_CTOS_LGS_ADD_CHANGEUNIT);
+        buffer:WriteByte(1);
+        if m_choiceCampId == 3 then
+            buffer:WriteByte(m_recommendCampId);
+            buffer:WriteByte(2);
+        else
+            buffer:WriteByte(m_choiceCampId);
+            buffer:WriteByte(1);
+        end
+        G_NetWorkMng:SendMessage(buffer);
+    end
+    closePanel(ENUMPANELID.ENUM_PANEL_JOIN_UNIT);
+end
+
+-- 关闭面板
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_JOIN_UNIT);
+end
+
+function OnUnionClick()
+    if CheckIsLock(1) then
+        m_choiceCampId = 1;
+        InitSelectInfo();
+    end
+end
+
+function OnTribeClick()
+    if CheckIsLock(2) then 
+        m_choiceCampId = 2;
+        InitSelectInfo();
+    end
+end
+
+function OnRandomClick()
+    m_choiceCampId = 3;
+    InitSelectInfo();
+end
+
+--检测是否锁定阵营（0-不锁定，1-锁定）
+function CheckIsLock(choiceCampId)
+    if m_isLock == 1 then 
+        if choiceCampId == m_recommendCampId or choiceCampId == 3 then 
+            return true;
+        end
+        ShowSystemFlowTips(2575);
+        return false;
+    end
+    return true;
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 打开进入阵营
+function OpenJoinCampPanel(recommendCampId, isLock)
+    m_recommendCampId = recommendCampId;
+    m_isLock = isLock;
+    m_choiceCampId = 3;
+    createPanel(ENUMPANELID.ENUM_PANEL_JOIN_UNIT);
+end
+
+-- 请求推荐阵营
+function OnGetRecommendCamp()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_GET_RECOMMEND_CAMP);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 加入阵营返回
+function OnJoinCampReturn()
+    AddTimerEvent("CloseJoinCamp", 0.5, CallBack);
+    local tweenScaleComp = nil;
+    local go = nil;
+    local campID = 1;
+    if m_choiceCampId == 3 then
+        campID = m_recommendCampId;
+    else
+        campID = m_choiceCampId;
+    end
+    if campID == ENUM_CAMP_TYPE.ENUM_UNIT_LIANMENG then
+        go = GetComponent(m_panelObject, m_UnionStr..m_ItemIconStr, "UIBasicSprite");
+        tweenScaleComp = GetComponent(m_panelObject,  m_UnionStr..m_ItemIconStr, "TweenScale");
+    else
+        go = GetComponent(m_panelObject, m_TribeStr..m_ItemIconStr, "UIBasicSprite");
+        tweenScaleComp = GetComponent(m_panelObject,  m_TribeStr..m_ItemIconStr, "TweenScale");
+    end
+    if tweenScaleComp ~= nil and go ~= nil then 
+        tweenScaleComp.enabled = true;
+        go.brightnessAmount = 1.6;
+    end
+end
+
+function CallBack()
+    closePanel(ENUMPANELID.ENUM_PANEL_JOIN_UNIT);
+end

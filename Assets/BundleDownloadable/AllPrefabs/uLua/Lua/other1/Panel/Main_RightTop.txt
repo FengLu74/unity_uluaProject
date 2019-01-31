@@ -1,0 +1,459 @@
+﻿module("Main_RightTop", package.seeall)
+-- 当前所在面板名字
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- 场景名称
+local m_sceneNameStr = "RightTop/SceneName/Label-LocName";
+-- 副本倒计时
+local m_countDownLabelStr = "RightTop/InDungeon/Label-Time";
+-- 位面倒计时
+local m_PlaneTimeLabelStr = "RightTop/InDungeon/Plane/Time";
+-- 新功能开启等级
+local m_NewSystemLevel = "RightTop/NewSystemOpen/NotReward/SystemLevel";
+-- 新功能开启名字
+local m_NewSystemName = "RightTop/NewSystemOpen/NotReward/SystemName";
+-----------------------------------------按钮路径--------------------------------------
+-- 战况统计按钮
+local m_ButtonStatStr = "RightTop/InDungeon/Button_Stat";
+-- 离开按钮
+local m_buttonQuitStr = "RightTop/InDungeon/Button_Quit";
+-- 城战积分按钮
+local m_btnGuildWarIntegralStr = "RightTop/btn_GuildWarIntegral";
+-- 领地战退出按钮
+local m_btnGuildWarLeaveStr = "RightTop/btn_LeaveGuildWar";
+-- 开启新功能面板按钮
+local m_btnOpenNewSystemPanel = "RightTop/NewSystemOpen";
+-- 边境战场按钮
+local m_BtnBorderWar = "RightTop/btn_BorderWar";
+-----------------------------------------Sprite路径------------------------------------
+-- 新功能图标
+local m_NewSystemIcon = "RightTop/NewSystemOpen/Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 位面倒计时
+local m_PlaneTimeStr = "RightTop/InDungeon/Plane";
+-- 雷达图所在的位置
+local m_LeiDaTuTextureStr = "RightTop/RadarMap/MapTexture";
+-- 裁剪通道图
+local m_TongDaoPngStr = "AllPrefabs/Textures/RadarMap/UI_ZJM_LeiDaTongDao";
+-- CRadarMap组件所在的位置
+local m_RadarScriptPath = "RightTop/RadarMap";
+-- 副本雷达所在的位置
+local m_DungeonRadarStr = "RightTop/InDungeon";
+-- 副本雷达下只有离开副本按钮
+local m_ButtonForLeaveDungeon="RightTop/ForLeaveDungeon";
+-- 新功能
+local m_NewSystem = "RightTop/NewSystemOpen";
+-- 新功能可以领奖的文本
+local m_CanGetReward = "RightTop/NewSystemOpen/CanReward";
+-- 新功能不可以领奖的文本
+local m_NotGetReward = "RightTop/NewSystemOpen/NotReward";
+-- 新功能面板
+local m_NewSystemPanel = "Middle/DetailsPanel";
+----------------------------------通用的名称路径---------------------------------------
+-- 每个道具下的品质颜色
+local m_itemPinZhiStr = "/Sprite_Apptitude";
+local m_itemPinZhi2Str = "/Sprite_Apptitude2";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+
+local m_PanelData = nil;
+-- 是否领取奖励
+local m_isReward = false;
+-- 当前显示预告系统id
+local m_curSystemId = 0;
+-- 当前显示预告系统等级
+local currentLevel = nil;
+-----------------------------------一些写死的规定--------------------------------------
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    error("主界面开始加载")
+    InitObjects();
+    DungeonStatPanel.Start();
+    InitShow();
+    InitNewSystemOpen();
+    InitOnClick();
+    CheckRestorePanel();
+    m_bCreateSuccess = true;
+    error("主界面加载完毕")
+end
+
+function OnEnable()
+    DungeonStatPanel.OnEnable();
+    if m_bCreateSuccess then
+        InitShow();
+        InitNewSystemOpen();
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("DungeonOrActCountDown");
+    DungeonStatPanel.OnDisable();
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    DungeonStatPanel.OnDestroy();
+    m_bCreateSuccess = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+end
+
+-- 初始化显示信息
+function InitShow()
+    DungeonStatPanel.Hide();
+    SetGameObjectState(m_countDownLabelStr, true, m_panelObject);
+    if IsGuildWarScene(G_SceneMng.SceneID) then 
+        local nameStr = GetTextToId(1493);
+        SetLabelContent(m_countDownLabelStr, nameStr, m_panelObject);
+    else
+        SetLabelContent(m_countDownLabelStr, "", m_panelObject);
+    end
+    SetLabelContent(m_PlaneTimeLabelStr, "", m_panelObject);
+    local sceneID = G_SceneMng.SceneID;
+    if sceneID <= 68 and sceneID >= 63 then
+        SetGameObjectState(m_btnGuildWarIntegralStr, true, m_panelObject);
+        SetGameObjectState(m_btnGuildWarLeaveStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_btnGuildWarIntegralStr, false, m_panelObject);
+        SetGameObjectState(m_btnGuildWarLeaveStr, false, m_panelObject);
+    end
+    if sceneID == 27 or sceneID == 26 then 
+        SetGameObjectState(m_BtnBorderWar, true, m_panelObject);
+    else
+        SetGameObjectState(m_BtnBorderWar, false, m_panelObject);
+    end
+    SetGameObjectState(m_PlaneTimeStr, G_UserInfo.IsPlane == true, m_panelObject);
+    if G_UserInfo.IsPlane == true then
+        if m_PanelData ~= nil then
+            SetGameObjectState(m_buttonQuitStr, false, m_panelObject);
+            SetGameObjectState(m_countDownLabelStr, false, m_panelObject);
+            SetGameObjectState(m_ButtonStatStr, false, m_panelObject);
+            SetGameObjectState(m_RadarScriptPath, false, m_panelObject);
+            SetGameObjectState(m_DungeonRadarStr, true, m_panelObject);
+            local excelId = m_PanelData.ExcelId;
+            local planeInfo = CCommonTool.GetPlaneInfo(excelId);
+            if planeInfo ~= nil then
+                SetLabelTextByID(m_sceneNameStr, planeInfo.NameId, m_panelObject);
+            end
+            local deltaTime = m_PanelData.Time;
+            if deltaTime > 0 then
+                AddTimerEvent("DungeonOrActCountDown", deltaTime, RoomOverCountDownCallBackOver, ETimeShowType.TypeNumberSix, RoomOverCountDownCallBack);
+            end
+        end
+    else
+        local showMap = false;
+        if G_SceneMng:IsInFuben() or EquipBossPanel.IsInEquipBossPanelScene() then
+            showMap = false;
+        else
+            showMap = true;
+        end
+        -- 设置场景的名称
+        local sceneID = G_SceneMng.SceneID;
+        local mapDataInfo = CCommonTool.GetMapdateInfo(sceneID);
+        if mapDataInfo ~= nil then
+            local gsLineInfo = SceneProtocol.gsLineInfo;
+            local nameSet = false;
+            if gsLineInfo.currentGSID > 0 then
+                 -- 切线信息
+                local lineInfo = gsLineInfo.dict[gsLineInfo.currentGSID];
+                if lineInfo ~= nil then
+                    if lineInfo.scenes[sceneID] == true then
+                        local sceneName = CCommonTool.GetTxtData(mapDataInfo.SceneName).m_str;
+                        sceneName = string_format("{0}-{1}", sceneName, lineInfo.gsName);
+                        SetLabelContent(m_sceneNameStr, sceneName, m_panelObject);
+                        nameSet = true;    
+                    end
+                end
+            end
+            if not nameSet then
+                SetLabelTextByID(m_sceneNameStr, mapDataInfo.SceneName, m_panelObject);
+            end
+            if showMap then
+                SetGameObjectState(m_buttonQuitStr, false, m_panelObject);
+                SetGameObjectState(m_ButtonStatStr, false, m_panelObject);
+                SetGameObjectState(m_RadarScriptPath, true, m_panelObject);
+                -- texture小地图的对象
+                local textureObject = child(m_panelObject, m_LeiDaTuTextureStr).gameObject;
+                -- 当前场景雷达图路径
+                local radarMap_Path = mapDataInfo.RadarmapStr;
+                -- cradarmap脚本所在的object
+                local cRadarMapObject = child(m_panelObject, m_RadarScriptPath).gameObject;
+                local tempMap = GetComponent(m_panelObject, m_RadarScriptPath, "CRadarMap");
+                -- 小地图位置调整
+                tempMap.m_vecPosOff = Vector3.New(mapDataInfo.RadarmapX, 0, mapDataInfo.RadarmapY);
+                -- 小地图缩放调整
+                tempMap.m_fMapScale = mapDataInfo.RadarmapScale;
+                -- 小地图其他单位视野调整
+                tempMap.m_dist = mapDataInfo.RadarmapDist;
+                -- 切换小地图
+                G_SceneMng:GetMapManager():SetMapIcon(radarMap_Path, m_TongDaoPngStr, cRadarMapObject, textureObject, SetTextureAndCompInfo);
+                SetGameObjectState(m_DungeonRadarStr, false, m_panelObject);
+                SetGameObjectState(m_ButtonForLeaveDungeon, false, m_panelObject);
+
+            else
+                SetGameObjectState(m_buttonQuitStr, mapDataInfo.IsShowStat ~= 1, m_panelObject);
+                SetGameObjectState(m_ButtonStatStr, mapDataInfo.IsShowStat == 1, m_panelObject);
+                SetGameObjectState(m_RadarScriptPath, false, m_panelObject);
+                SetGameObjectState(m_DungeonRadarStr, true, m_panelObject);
+
+                local sceneID = G_SceneMng.SceneID;
+                local activityID = G_SceneMng.ActivityID;
+                error("right top activityId : " .. activityID);
+                if activityID == ENUM_AOT_ID.AOT_ID_AOTAI_WUXIAN_ACTIVITY or activityID == ENUM_AOT_ID.AOT_ID_ACTIVITY_BALL or activityID == ENUM_AOT_ID.AOT_ID_ACTIVITY_SHO then
+                    local index =  ActivityManager.GetStairActivityCurLayer(activityID);
+                    if index <= 1 then
+                        index = 1;
+                    end
+                    error("right top activityId : " .. index);
+                    local info = ActivityManager.GetStairActivityInfo(activityID, index);
+                    if info ~= nil then
+                        local nameStr = string_format(GetTextToId(954), info.Id);
+                        SetLabelContent(m_sceneNameStr, nameStr, m_panelObject);
+                    else
+                        error("读取无尽炼狱信息失败:::" .. index);
+                    end
+                end
+                local roomTime = G_SceneMng.DungeonOrActOverTime;
+                local deltaTime = math.floor(roomTime - G_TimerMng:GetCurrentSeconds());
+                if deltaTime > 0 then
+                    AddTimerEvent("DungeonOrActCountDown", deltaTime, RoomOverCountDownCallBackOver, ETimeShowType.TypeNumberSix, RoomOverCountDownCallBack);
+                end
+                if EquipBossPanel.IsInEquipBossPanelScene() then
+                    SetGameObjectState(m_ButtonStatStr, false, m_panelObject);
+                    SetGameObjectState(m_RadarScriptPath, false, m_panelObject);
+                    SetGameObjectState(m_DungeonRadarStr, false, m_panelObject);
+                    SetGameObjectState(m_ButtonForLeaveDungeon, true, m_panelObject);
+                else
+                    SetGameObjectState(m_ButtonForLeaveDungeon, false, m_panelObject);
+                end
+            end
+        end
+    end
+    if EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_DungeonRadarStr, false, m_panelObject);
+    end
+
+end
+
+function RoomOverCountDownCallBack(time)
+    SetLabelContent(m_PlaneTimeLabelStr, time, m_panelObject);
+    SetLabelContent(m_countDownLabelStr, time, m_panelObject);
+    DungeonStatPanel.UpdateTime(time);
+end
+
+function RoomOverCountDownCallBackOver()
+    SetLabelContent(m_PlaneTimeLabelStr, "", m_panelObject);
+    SetLabelContent(m_countDownLabelStr, "", m_panelObject);
+    DungeonStatPanel.Hide();
+end
+
+-- 加载图片完毕后执行的事件
+function SetTextureAndCompInfo()
+    -- 小地图实际宽高设置
+    local mapTextureCompoment = GetComponent(m_panelObject, m_LeiDaTuTextureStr, "UITexture");
+    if mapTextureCompoment == nil then
+        return;
+    end
+    local texture = mapTextureCompoment.mainTexture;
+    if texture == nil then
+        return;
+    end
+    --mapTextureCompoment:MakePixelPerfect();
+    local tempMap = GetComponent(m_panelObject, m_RadarScriptPath, "CRadarMap");
+    if tempMap == nil then
+        return;
+    end
+    --图片尺寸缩小一半, 这里再乘回来
+    local size = Vector2.New(texture.width * 2, texture.height * 2);
+    tempMap.m_textureSize = size;
+    -- 根据不同的小地图大小裁剪区域和位置也不一样
+    if size.x == 1024 then
+        tempMap.m_vecUVOff = Vector4.New(0.398, 0.398, 0.205, 0.205);
+    elseif size.x == 512 then
+        tempMap.m_vecUVOff = Vector4.New(0.3, 0.3, 0.4, 0.4);
+    elseif size.x == 256 then
+        tempMap.m_vecUVOff = Vector4.New(0.34, 0.35, 0.33, 0.33);
+    else
+        --tempMap.m_textureSize = Vector2.New(720, 720);
+        --mapTextureCompoment.width = 720;
+        --mapTextureCompoment.height = 720;
+        tempMap.m_vecUVOff = Vector4.New(0.34, 0.35, 0.33, 0.33);
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_RadarScriptPath, OnMapPanelClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonStatStr, OnDungeonStatClick, m_panelObject);
+    SetGameObjectEvent(m_buttonQuitStr, OnQuitClick, m_panelObject);
+    SetGameObjectEvent(m_btnGuildWarIntegralStr, OnGuildWarIntegralClick, m_panelObject);
+    SetGameObjectEvent(m_btnGuildWarLeaveStr, OnGuildWarLeaveClick, m_panelObject);
+    SetGameObjectEvent(m_btnOpenNewSystemPanel, OnOpenNewSystemPanelClick, m_panelObject);
+    SetGameObjectEvent(m_BtnBorderWar, OnBorderWarClick, m_panelObject);
+end
+
+-- 初始化新功能开启信息
+function InitNewSystemOpen()
+    local systemData = CCommonTool.GetAllSystemTrailerInfo();
+    local mapData = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID);
+    local isHave = false;
+    -- 默认关闭新功能预告面板
+    --SetGameObjectState(m_NewSystemPanel, false, m_panelObject);
+    SetGameObjectState(m_NewSystem, false, m_panelObject);
+    if mapData.Category ~= EMapType.MAP_TYPE_YEWAI or m_curSystemId == -1 then
+        SetGameObjectState(m_NewSystem, false, m_panelObject);
+        return;
+    else
+        for index = 1, systemData.Count do
+            local dataInfo = systemData[index - 1];
+            if m_curSystemId == dataInfo.Id then
+                systemInfo = dataInfo;
+                currentLevel = dataInfo.sysytemLevel;
+                isHave = true;
+                break;
+            end
+        end
+        if isHave == false then
+            SetGameObjectState(m_NewSystem, false, m_panelObject);
+            return;
+        else
+            SetGameObjectState(m_NewSystem, true, m_panelObject);
+            if currentLevel > G_UserInfo.RoleAttribute.Level then
+                SetGameObjectState(m_CanGetReward, false, m_panelObject);
+                SetGameObjectState(m_NotGetReward, true, m_panelObject);
+                SetLabelContent(m_NewSystemLevel, string_format(CCommonTool.GetTxtData(1404).m_str, systemInfo.sysytemLevel), m_panelObject);
+                SetLabelTextByID(m_NewSystemName, systemInfo.systemName, m_panelObject);
+            else
+                SetGameObjectState(m_CanGetReward, true, m_panelObject);
+                SetGameObjectState(m_NotGetReward, false, m_panelObject);
+            end
+        end
+        SetSpriteByAtlasID(m_NewSystemIcon, systemInfo.pictureId, m_panelObject, true);
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+-- 点击地图大按钮
+function OnMapPanelClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_WORLDMAPPANEL);
+end
+
+-- 副本战况统计按钮
+function OnDungeonStatClick()
+    -- 位面时不显示
+    if G_UserInfo.IsPlane == true then
+        return;
+    end
+    -- 竞技场不显示
+    if BattleFieldManager.IsInBattleFieldScene() then
+        return;
+    end
+    DungeonStatPanel.Show();
+end
+
+-- 点击离开按钮
+function OnQuitClick()
+    if G_UserInfo.IsPlane == true then
+        ParameterToMessageTextBox.OnPlaneQuitClick();
+    else
+        if G_SceneMng.ActivityID == ENUM_AOT_ID.AOT_ID_AOTAI_WUXIAN_ACTIVITY then
+            ParameterToMessageTextBox.OnEndlessActQuitClick();
+        elseif G_SceneMng.ActivityID == ENUM_AOT_ID.AOT_ID_DUNGEON_HUNT_ACTIVITY then
+            ParameterToMessageTextBox.OnHUNTActQuitClick();
+        elseif IsGuildWarScene(G_SceneMng.SceneID) then 
+            ParameterToMessageTextBox.OnGuildPrepareWarQuitClick();
+        else
+            ParameterToMessageTextBox.OnFuBenQuitClick();
+        end
+    end
+end
+
+-- 点击公会战积分按钮
+function OnGuildWarIntegralClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_INTEGRAL_PANEL);
+    GuildProtocol.RequestScore();
+end
+
+-- 点击公会战离开按钮
+function OnGuildWarLeaveClick()
+    ParameterToMessageTextBox.OnGuildWarQuitClick();
+end
+
+-- 开启新功能详细面板
+function OnOpenNewSystemPanelClick()
+    Main_Middle.UpdateData(m_curSystemId)
+end
+
+-- 点击边境战场按钮
+function OnBorderWarClick()
+    BorderWarProtocol.RequestBorderData();
+end
+
+function CheckRestorePanel()
+    if ActivityManager.needRestorePanel == true and ActivityManager.lastActivityId > 0 then
+        local activityPanelId = ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL;
+        createPanel(activityPanelId);
+
+        ActivityManager.Jump(ActivityManager.lastActivityId, activityPanelId, nil);
+        ActivityManager.needRestorePanel = false;
+        ActivityManager.lastActivityId = 0;
+    end
+    local sceneID = G_SceneMng.SceneID;
+    --local ActivityID = G_SceneMng.ActivityID; --此处无法获取夜间竞技场id   --如果是在当前场景活动中强制跳转到下一个活动，这个id就没有更新--ActivityID == ENUM_AOT_ID.AOT_ID_ARENA or暂时删除
+    local ActivityID =ActivityManager.curActivityId;
+    if  ActivityID and ActivityID>0 and (ActivityID == ENUM_AOT_ID.AOT_ID_BATTLE_FIELD or ActivityID == ENUM_AOT_ID.AOT_ID_BATTLE_FIELD_NIGHT)then 
+        ActivityManager.needRestorePanel = true;
+        ActivityManager.lastActivityId = ActivityID;
+        ActivityManager.curActivityId=0;
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SetPanelData(data)
+    m_PanelData = data;
+    InitShow();
+end
+
+function SetQuitButtonVisible(visible)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        SetGameObjectState(m_countDownLabelStr, visible == true, m_panelObject);
+        SetGameObjectState(m_ButtonStatStr, visible == true, m_panelObject);
+    end
+end
+-- 更新玩家等级
+function UpdateUserLevel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        InitNewSystemOpen();
+    end
+end
+-- 更新功能预告系统
+function UpdateNewSystemData(currentId)
+    m_curSystemId = currentId;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        InitNewSystemOpen();
+    end
+end
+
+function RoomOverCountDownCallBackOut(time)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        if m_bCreateSuccess then
+            RoomOverCountDownCallBack(time);
+        end
+    end
+end
+
+function RoomOverCountDownCallBackOverOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        if m_bCreateSuccess then
+            RoomOverCountDownCallBackOver(time);
+        end
+    end
+end

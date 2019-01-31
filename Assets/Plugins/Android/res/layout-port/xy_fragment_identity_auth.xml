@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/xy_bg_dialog"
+        android:orientation="vertical">
+
+        <include layout="@layout/xyw_fragment_navigation" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="8dp"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:paddingTop="8dp">
+                <TextView
+                    style="@style/xy.label.normal"
+                    android:visibility="gone"
+                    android:id="@+id/xy_identity_auth_desc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    />
+                <FrameLayout
+                    android:id="@+id/xy_identity_auth_fragment_container"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    />
+                <TextView
+                    android:id="@+id/xy_identity_auth_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/xy_common_margin_10dip"
+                    android:gravity="center"
+                    style="@style/xy.label.normal"
+                    android:text="@string/xy_identity_auth_phone"/>
+
+            </LinearLayout>-
+        </ScrollView>
+    </LinearLayout>
+
+</RelativeLayout>

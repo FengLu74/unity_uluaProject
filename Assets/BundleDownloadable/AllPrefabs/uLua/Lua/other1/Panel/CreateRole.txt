@@ -1,0 +1,1174 @@
+﻿module("CreateRole", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+-- 输入的位置
+local inputPath = "Name/Input";
+-- 职业描述路径
+local m_labelProfessionDesStr = "Content-Right/BG/Label_ProfessionDes";
+-- 职业文本
+local m_labelProfessionStr = "Content-Right/BG/Profession";
+-- 天赋1文本
+local m_talent1Name = "Content-Right/BG/Talent1/Label";
+-- 天赋2文本
+local m_talent2Name = "Content-Right/BG/Talent2/Label";
+-- 天赋介绍
+local m_talentContent = "Content-Right/BG/TalentTrend/Label";
+-- 技能名称
+local m_skillName = "SkillPreView/SkillName";
+-- 技能描述
+local m_skillContent = "SkillPreView/SkillName/ProfessionDes";
+-- 文本信息
+local m_labelMessage = "Content-Right/BG/Message";
+-----------------------------------------button路径--------------------------------------
+-- 进入游戏的按钮位置
+local buttonJinRuYouXiPath = "Button-Create";
+-- 技能预览按钮
+local buttonSkillPreview = "Button-SkilPreview";
+-- 时装按钮
+local buttonFashion = "ChangeFace/Button-Fashion";
+-- 随机姓名的按钮位置
+local buttonRandomNamePath = "Name/Button-RandomName";
+-- 返回的按钮位置
+local buttonFanHuiPath = "Button-Back";
+-- 第二个职业按钮选择
+local toggleMagicianPath = "Content-Right/Toggle-FeiLiBa";
+-- 第一个职业按钮选择
+local toggleDragonWorriorPath = "Content-Right/Toggle-DragonWorrior";
+-- 第三个职业按钮选择
+local toggleSpiritPath = "Content-Right/Toggle-Assassin";
+-- 第四个职业按钮选择
+local toggleLoliPath = "Content-Right/Toggle-Loli";
+-- 创建角色按钮路径
+local m_createRoleBtnPath = "ChangeFace/Button-Create";
+-- 返回按钮路径
+local m_backBtnPath = "ChangeFace/Button-Back";
+-- 时装界面返回按钮
+local m_fashionBackBtn = "FashionShow/Button-Back";
+-- 技能界面返回角色选择界面
+local m_talentBackBtn = "SkillPreView/Button-Back";
+-- 脸型选择路径
+local m_faceSelectedPath = "ChangeFace/FaceType/";
+-- 发型选择路径
+local m_hairSelectedPath = "ChangeFace/HairType/";
+-- 发色选择路径
+local m_hairColorSelectedPath = "ChangeFace/HairColor/";
+-- 天赋按钮
+local m_talentBtn = "Content-Right/BG/Talent";
+-----------------------------------------Sprite路径------------------------------------
+-- 天赋1图标
+local m_talent1Icon = "Content-Right/BG/Talent1/Icon";
+-- 天赋2图标
+local m_talent2Icon = "Content-Right/BG/Talent2/Icon";
+-- 天赋流派掌握的难度的图标
+local m_talentHard = "Content-Right/BG/TalentDiff/Active/Sprite";
+-- 技能预览文本描述的背景
+local m_skillTxtBg = "SkillPreView/Bg";
+----------------------------------gameobject所在的路径---------------------------------
+-- 龙战士属性路径
+local m_dragonWorriorProStr = "Content-Right/Content-MoJiao/Content_DragonWorrior";
+-- 魔法师属性路径
+local m_magicianProStr = "Content-Right/Content-MoJiao/Content_Migician";
+-- 时装显示
+local m_fashionItemStr = "FashionShow/ItemGroup/Item";
+-- 技能天赋
+local m_skillTalent = "SkillPreView/Select/Talent";
+-- 天赋名称
+local m_talentName = "/Label";
+-- 技能选择
+local m_talentSelect = "/Sprite_Select";
+-- 天赋图片
+local m_talentIcon = "/Sprite";
+-- 技能
+local m_skillStr = "SkillPreView/TalentType/Skill";
+-- 技能图片
+local m_skilIcon = "/Icon";
+-- 技能倒计时
+local m_skillCDLable = "/Label_CD";
+-- 技能倒计时图片
+local m_skillCDSprite = "/Sprite_CD";
+-- 设置造型的左侧对象
+local m_setSculptStr = "ChangeFace/Select";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 进入游戏按钮
+local buttonJinRuYouXi = nil;
+-- 随机姓名按钮
+local buttonRandomName = nil;
+-- 返回按钮
+local buttonFanHui = nil;
+-- 第二个职业按钮选择
+local toggleWuDang = nil;
+-- 第一个职业按钮选择
+local toggleTangMen = nil;
+-- 第三个职业按钮选择
+local toggleMoJiao = nil;
+-- 默认选择的职业
+local profession = PROFESSION_ID.WARDRAGONWHITE;
+-- 默认选择的状态
+local selectState = 3;
+-- 当前游戏对象创建成功
+local m_bCreateSuccess = false;
+-- 角色是否创建
+local m_isCreated = false;
+-- 脸型索引
+local faceTypeIndex = 0;
+-- 发型索引
+local hairTypeIndex = 0;
+-- 发色索引
+local hairColorIndex = 0;
+-- 脸型id
+local m_faceModelID = 0;
+-- 发型id
+local m_hairModelID = 0;
+-- 发色id
+local m_hairColorModelID = 0;
+-- 模型ID表
+local m_modelIdTable = { };
+-- 发色ID表
+local m_hairColorIdTable = { };
+-- 发型ID表
+local m_hairIdTable = { };
+-- 是否选择了主角
+local m_isSelected = false;
+-- 当前换脸界面右侧的选择
+local m_rightSelect = "FaceType";
+-- 选择流派
+local m_selectTalent = 1;
+-- 天赋技能播放动作
+local m_skillAniName = nil;
+-- 选择技能
+local m_selectIndex = 1;
+-- 上一次选择的技能
+local m_lastSelectIndex = 1;
+-- cd剩余时间
+local m_cdTime = 0;
+-- 点击技能的时间
+local m_startTime = 0;
+-- 技能CD
+local m_skillCD = 0;
+-- 角色选择界面天赋选择
+local m_roleTalentIndex = 1;
+
+-- 是否成功创建了角色
+IsNewRole = false;
+
+-- 是否已上报数据
+IsSubmitExtraData = false;
+
+---------------------------------------写死的规定------------------------------
+-- 时装图片大小
+local m_fashionSize = 138;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    -- 找到obj
+    InitObjects();
+    InitOnClick();
+    -- 右侧职业信息内容
+    SetGameObjectState("Content-Right", true, m_panelObject);
+    SetGameObjectState("Button-Create", true, m_panelObject);
+    SetGameObjectState("Button-SkilPreview", true, m_panelObject);
+    SetGameObjectState("Button-Back", true, m_panelObject);
+    -- 玩家名字输入框
+    SetGameObjectState("Name", false, m_panelObject);
+    -- 脸型、发型面板
+    SetGameObjectState("ChangeFace", false, m_panelObject);
+    -- 时装界面显示
+    SetGameObjectState("FashionShow", false, m_panelObject);
+    -- 技能显示
+    SetGameObjectState("SkillPreView", false, m_panelObject);
+    -- 随机得到默认角色名
+    if Constants.RegionalId ~= 2 then
+        OnRandomNameClick();
+    end
+    local inputCreateRoleName = child(m_panelObject, inputPath).gameObject;
+    local uiinputCreateRoleName = inputCreateRoleName:GetComponent("UIInput");
+    uiinputCreateRoleName.value = "";
+    SetProfessionInfo(PROFESSION_ID.WARDRAGONWHITE);
+    SetDefaultState();
+    m_bCreateSuccess = true;
+end
+function OnEnable()
+    if m_bCreateSuccess then
+        SetGameObjectState("Content-Right", true, m_panelObject);
+        SetGameObjectState("Button-Create", true, m_panelObject);
+        SetGameObjectState("Button-SkilPreview", true, m_panelObject);
+        SetGameObjectState("Button-Back", true, m_panelObject);
+        SetGameObjectState("Name", false, m_panelObject);
+        SetGameObjectState("ChangeFace", false, m_panelObject);
+        SetGameObjectState("SkillPreView", false, m_panelObject);
+        SetGameObjectState("FashionShow", false, m_panelObject);
+        SetGameObjectState("Button", false, m_panelObject);
+        SetProfessionInfo(selectState);
+        -- 播放相应的角色动作
+        CreateAndSelectRoleScene.SetProfession(selectState);
+        CSDKManager.EventHook("create-character-role", function() end);
+    end
+    IsNewRole = false;
+    if SelectRole.FirstCreateRole == true  and not IsSubmitExtraData then
+        SelectRole.FirstCreateRole = false;
+        IsSubmitExtraData = true;
+        -- 游戏没有创角界面时，则在首次进入游戏时调用一次，区分区服
+        --Event.DispatchEvent("submitExtraData", "firstCreateRole", 5);
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("WaitingServerCreateResult")
+end
+
+function OnDestroy()
+    m_bCreateSuccess = false;
+    m_modelIdTable = { };
+    faceTypeIndex = 0;
+    hairTypeIndex = 0;
+    hairColorIndex = 0;
+    m_faceModelID = 0;
+    m_hairModelID = 0;
+    m_hairColorModelID = 0;
+    m_isSelectedHairColorId = 0;
+    selectState = 3;
+    profession = PROFESSION_ID.WARDRAGONWHITE;
+    m_selectTalent = 1;
+    m_skillAniName = nil;
+    m_selectIndex = 1;
+    m_skillCD = 0;
+    m_roleTalentIndex = 1;
+    G_TimerMng:RemoveTimeTask("WaitingServerCreateResult")
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+    selectFaceObj = child(m_panelObject, m_faceSelectedPath .. "Sprite_Select").gameObject;
+    selectHairObj = child(m_panelObject, m_hairSelectedPath .. "Sprite_Select").gameObject;
+    selectColorObj = child(m_panelObject, m_hairColorSelectedPath .. "Sprite_Select").gameObject;
+end
+-- 初始化点击事件
+function InitOnClick()
+    -- 设置细节定制事件
+    SetGameObjectEvent(buttonJinRuYouXiPath, OnDetailSetClick, m_panelObject);
+    -- 技能预览界面
+    SetGameObjectEvent(buttonSkillPreview, OnPreviewClick, m_panelObject);
+    -- 时装按钮
+    SetGameObjectEvent(buttonFashion, OnShowFashionClick, m_panelObject);
+    -- 设置随机名称事件
+    if Constants.RegionalId ~= 2 then
+        SetGameObjectEvent(buttonRandomNamePath, OnRandomNameClick, m_panelObject);
+        SetGameObjectState(buttonRandomNamePath, true, m_panelObject);
+    else
+        SetGameObjectState(buttonRandomNamePath, false, m_panelObject);
+    end
+    -- 设置返回角色选择界面事件
+    SetGameObjectEvent(buttonFanHuiPath, OnReturnSelectRoleClick, m_panelObject);
+    -- 设置职业选择事件
+    SetGameObjectEvent(toggleMagicianPath, OnCreateRoleMagicianClick, m_panelObject);
+    SetGameObjectEvent(toggleDragonWorriorPath, OnCreateRoleDragonWorriorClick, m_panelObject);
+    SetGameObjectEvent(toggleSpiritPath, OnCreateRoleSpiritClick, m_panelObject);
+    SetGameObjectEvent(toggleLoliPath, OnCreateRoleLoliClick, m_panelObject);
+    -- 设置创建角色事件
+    SetGameObjectEvent(m_createRoleBtnPath, OnCreateRoleClick, m_panelObject);
+    -- 设置返回细节定制界面事件
+    SetGameObjectEvent(m_backBtnPath, OnDetailSetBackClick, m_panelObject);
+    -- 时装界面返回细节定制界面
+    SetGameObjectEvent(m_fashionBackBtn, OnDetailSetClick, m_panelObject);
+    -- 技能显示界面返回角色选择界面
+    SetGameObjectEvent(m_talentBackBtn, OnDetailSetBackClick, m_panelObject);
+    -- 设置脸型选择事件
+    for index = 1, 5 do
+        SetGameObjectEvent(m_faceSelectedPath .. index .. "/BG", OnFaceTypeClick, m_panelObject);
+    end
+    -- 设置发型选择事件
+    for index = 1, 5 do
+        SetGameObjectEvent(m_hairSelectedPath .. index .. "/BG", OnHairTypeClick, m_panelObject);
+    end
+    -- 设置发色选择事件
+    for index = 1, 5 do
+        SetGameObjectEvent(m_hairColorSelectedPath .. index .. "/BG", OnHairColorClick, m_panelObject);
+    end
+    SetGameObjectEvent("ChangeFace/Select/FaceType", OnTypeSelectClick, m_panelObject);
+    SetGameObjectEvent("ChangeFace/Select/HairType", OnTypeSelectClick, m_panelObject);
+    SetGameObjectEvent("ChangeFace/Select/HairColor", OnTypeSelectClick, m_panelObject);
+    -- 角色选择天赋点击事件
+    for index = 1, 2 do
+        SetGameObjectEvent(m_talentBtn .. index, OnRoleTalentClick, m_panelObject);
+    end
+    --  时装点击事件
+    for index = 1, 8 do
+        SetGameObjectEvent(m_fashionItemStr .. index, OnFashionClick, m_panelObject);
+    end
+    --  天赋点击事件
+    for index = 1, 2 do
+        SetGameObjectEvent(m_skillTalent .. index, OnTalentClick, m_panelObject);
+    end
+    -- 技能点击事件
+    for index = 1, 4 do
+        SetGameObjectEvent(m_skillStr .. index, OnSkillClick, m_panelObject);
+    end
+end
+-- 设置默认选择状态
+function SetDefaultState()
+    local faceParentObj = child(m_panelObject, m_faceSelectedPath .. "1/BG").gameObject;
+    GetComponent(selectFaceObj, "", "UISprite").depth = GetComponent(faceParentObj, "", "UISprite").depth + 1;
+    selectFaceObj.transform.parent = faceParentObj.transform;
+    selectFaceObj.transform.localPosition = Vector3.zero;
+    faceTypeIndex = 0;
+    local hairParentObj = child(m_panelObject, m_hairSelectedPath .. "1/BG").gameObject;
+    GetComponent(selectHairObj, "", "UISprite").depth = GetComponent(hairParentObj, "", "UISprite").depth + 1;
+    selectHairObj.transform.parent = hairParentObj.transform;
+    selectHairObj.transform.localPosition = Vector3.zero;
+    hairTypeIndex = 0;
+    local colorParentObj = child(m_panelObject, m_hairColorSelectedPath .. "1/BG").gameObject;
+    GetComponent(selectColorObj, "", "UISprite").depth = GetComponent(colorParentObj, "", "UISprite").depth + 1;
+    selectColorObj.transform.parent = colorParentObj.transform;
+    selectColorObj.transform.localPosition = Vector3.zero;
+    hairColorIndex = 0;
+    -- 提示文本
+    SetLabelContent(m_labelMessage, CCommonTool.GetTxtData(2036).m_str, m_panelObject);
+end
+-- 设置所选择职业的信息
+function SetProfessionInfo(index)
+    local professionInfo = CCommonTool.GetCreatRoleInfo(index);
+    if professionInfo ~= nil then
+        SetLabelTextByID(m_labelProfessionDesStr, professionInfo.ProfessionText, m_panelObject);
+        SetLabelTextByID(m_labelProfessionStr, professionInfo.ProfessionName, m_panelObject);
+        -- 天赋
+        SetLabelTextByID(m_talent1Name, professionInfo.Talent1Name, m_panelObject);
+        SetLabelTextByID(m_talent2Name, professionInfo.Talent2Name, m_panelObject);
+        SetLabelTextByID(m_talentContent, professionInfo.Talent1Descirbe, m_panelObject);
+        SetSpriteByAtlasID(m_talent1Icon, professionInfo.Talent1Picture, m_panelObject)
+        SetSpriteByAtlasID(m_talent2Icon, professionInfo.Talent2Picture, m_panelObject)
+        for index = 1, 5 do
+            SetGameObjectState(m_talentHard .. index, false, m_panelObject);
+        end
+        for index = 1, professionInfo.Talent1Hard do
+            SetGameObjectState(m_talentHard .. index, true, m_panelObject);
+        end
+        for index = 1, 2 do
+            SetGameObjectState(m_talentBtn .. index .. "/Selected", false, m_panelObject);
+        end
+        SetGameObjectState(m_talentBtn .. m_roleTalentIndex .. "/Selected", true, m_panelObject);
+    end
+end
+
+-- 第一个toggle选择状态为true
+function SetFirstCreateRoleTrue()
+    selectState = 3;
+    profession = PROFESSION_ID.WARDRAGONWHITE;
+    SetProfessionInfo(selectState);
+    CreateAndSelectRoleScene.SetProfession(selectState);
+    local toggleComp = GetComponent(m_panelObject, toggleDragonWorriorPath, "UIToggle");
+    toggleComp:Set(true, true);
+    toggleComp = GetComponent(m_panelObject, toggleMagicianPath, "UIToggle");
+    toggleComp:Set(false, true);
+    toggleComp = GetComponent(m_panelObject, toggleSpiritPath, "UIToggle");
+    toggleComp:Set(false, true);
+    toggleComp = GetComponent(m_panelObject, toggleLoliPath, "UIToggle");
+    toggleComp:Set(false, true);
+    SetGameObjectState("Button", false, m_panelObject);
+end
+-- 时装信息
+function SetFashionInfo()
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    if professionInfo ~= nil then
+        for index = 1, 8 do
+            SetGameObjectState(m_fashionItemStr .. index .. "/Selected", false, m_panelObject);
+            SetGameObjectState(m_fashionItemStr .. index .. "/Sprite_Apptitude", false, m_panelObject);
+            SetGameObjectState(m_fashionItemStr .. index .. "/Sprite_Icon", false, m_panelObject);
+            SetGameObjectState(m_fashionItemStr .. index .. "/Sprite_Lock", true, m_panelObject);
+            local id = 0;
+            if index == 1 then
+                id = professionInfo.FashionId1;
+            elseif index == 2 then
+                id = professionInfo.FashionId2;
+            elseif index == 3 then
+                id = professionInfo.FashionId3;
+            elseif index == 4 then
+                id = professionInfo.FashionId4;
+            elseif index == 5 then
+                id = professionInfo.FashionId5;
+            elseif index == 6 then
+                id = professionInfo.FashionId6;
+            elseif index == 7 then
+                id = professionInfo.FashionId7;
+            elseif index == 8 then
+                id = professionInfo.FashionId8;
+            end
+            local fashionInfo = CCommonTool.GetFashion(id);
+            SetFashionItem(fashionInfo, index)
+        end
+    end
+end
+
+function SetFashionItem(info, index)
+    if info ~= nil then
+        if info.ItemId > 0 then
+            SetGameObjectState(m_fashionItemStr .. index, true, m_panelObject);
+            SetSpriteByAtlasID(m_fashionItemStr .. index .. "/Sprite_Icon", CCommonTool.GetImageIDByExcelID(info.ItemId), m_panelObject, true);
+            -- 设置图片的大小
+            SetSpriteHeight(m_fashionItemStr .. index .. "/Sprite_Icon", m_fashionSize, m_panelObject);
+            SetSpriteWidth(m_fashionItemStr .. index .. "/Sprite_Icon", m_fashionSize, m_panelObject);
+
+            SetGameObjectState(m_fashionItemStr .. index .. "/Sprite_Icon", true, m_panelObject);
+            SetGameObjectState(m_fashionItemStr .. index .. "/Sprite_Lock", false, m_panelObject);
+            SetGameObjectState(m_fashionItemStr .. index .. "/Sprite_Apptitude", true, m_panelObject);
+        end
+    end
+end
+
+-- 技能预览信息
+function SetSkillPreViewInfo()
+    selectIndex = 1;
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    for index = 1, 2 do
+        SetGameObjectState(m_skillTalent .. index .. "/Sprite_Select", false, m_panelObject)
+    end
+    if professionInfo ~= nil then
+        -- 天赋
+        SetLabelTextByID(m_skillTalent .. "1" .. m_talentName, professionInfo.Talent1Name, m_panelObject);
+        SetLabelTextByID(m_skillTalent .. "2" .. m_talentName, professionInfo.Talent2Name, m_panelObject);
+        -- SetLabelTextByID(m_skillTalent .. "3" .. m_talentName, professionInfo.Talent3Name, m_panelObject);
+        SetSpriteByAtlasID(m_skillTalent .. "1" .. m_talentIcon, professionInfo.Talent1Picture, m_panelObject)
+        SetSpriteByAtlasID(m_skillTalent .. "2" .. m_talentIcon, professionInfo.Talent2Picture, m_panelObject)
+        -- SetSpriteByAtlasID(m_skillTalent .. "3" .. m_talentIcon, professionInfo.Talent3Picture, m_panelObject)
+
+        -- 显示对应的角色模型的服装和武器
+        CreateAndSelectRoleScene.GetSkillModle(selectState, professionInfo.ClothesID, professionInfo.WeaponID);
+    end
+    SetGameObjectState(m_skillTalent .. m_selectTalent .. "/Sprite_Select", true, m_panelObject)
+    SetGameObjectState(m_skillTxtBg, false, m_panelObject);
+end
+
+-- 左侧天赋技能 1、selectIndex表示左侧选择的技能流派
+function SetSkillShow(selectIndex)
+    SetGameObjectState(m_skillTxtBg, false, m_panelObject);
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    for index = 1, 4 do
+        SetGameObjectState(m_skillStr .. index .. m_talentSelect, false, m_panelObject)
+        SetGameObjectState(m_skillStr .. index, false, m_panelObject)
+    end
+    if professionInfo ~= nil then
+        -- 技能
+        for index = 1, 4 do
+            SetGameObjectState(m_skillStr .. index, false, m_panelObject);
+            local id = 0;
+            if index == 1 then
+                if selectIndex == 1 then
+                    id = professionInfo.Talent1Id1;
+                elseif selectIndex == 2 then
+                    id = professionInfo.Talent2Id1;
+                end
+            elseif index == 2 then
+                if selectIndex == 1 then
+                    id = professionInfo.Talent1Id2;
+                elseif selectIndex == 2 then
+                    id = professionInfo.Talent2Id2;
+                end
+            elseif index == 3 then
+                if selectIndex == 1 then
+                    id = professionInfo.Talent1Id3;
+                elseif selectIndex == 2 then
+                    id = professionInfo.Talent2Id3;
+                end
+            elseif index == 4 then
+                if selectIndex == 1 then
+                    id = professionInfo.Talent1Id4;
+                elseif selectIndex == 2 then
+                    id = professionInfo.Talent2Id4;
+                end
+            end
+            local skillInfo = CCommonTool.GetTalentSkillByID(id);
+            SetSkillItem(skillInfo, index)
+        end
+    end
+end
+-- 设置单个技能的信息 1. info表示这个技能信息 2、index：技能索引值
+function SetSkillItem(info, index)
+    if info ~= nil then
+        if info ~= nil then
+            SetGameObjectState(m_skillStr .. index, true, m_panelObject);
+            SetSpriteByAtlasID(m_skillStr .. index .. m_skilIcon, info.TalentPicture, m_panelObject);
+            SetLabelContent(m_skillName, " ", m_panelObject);
+            SetLabelContent(m_skillContent, " ", m_panelObject);
+            SetLabelContent(m_skillStr .. index .. m_skillCDLable, " ", m_panelObject);
+            SetSpriteFillAmountTwo(m_skillStr .. index .. m_skillCDSprite, 0, m_panelObject);
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 创建角色事件--
+function OnCreateRoleClick()
+    local inputCreateRoleName = child(m_panelObject, inputPath).gameObject;
+    local uiinputCreateRoleName = inputCreateRoleName:GetComponent("UIInput");
+    local roleName = uiinputCreateRoleName.value;
+    local m_byteStr = Util.GetStringWidth(roleName)
+    --error("名字的长度::::" .. m_byteStr);
+    -- 判断角色名是否合法
+    if string.find(roleName, "%s") ~= nil or m_byteStr <= 0 then
+        -- 空值
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ROLE_NOT_NAME);
+    elseif string.len(CCommonTool.IsLegitimacyByText(roleName, ENUM_SHILED_AREA.NAME)) > 0 then
+        -- 敏感词
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_ROLENAMEILLEGAL);
+    elseif m_byteStr > G_RoleNameLength then
+        -- 输入的名字长度超长
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ROLE_NAME_LENGTH);
+    else
+        local count = string.find(roleName, " ");
+        if count ~= nil then
+            ShowSystemFlowTips(CCommonTool.GetTxtData(9012).m_str, 0);
+        else
+            SendCreateRoleMsg();
+            G_GameMng.CreateSuccessed = true;
+        end
+    end
+end
+
+--  点击时装事件
+function OnFashionClick(e)
+    local selectIndex = tonumber(string.sub(e.name, 5, string.len(e.name)));
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    for index = 1, 8 do
+        SetGameObjectState(m_fashionItemStr .. index .. "/Selected", false, m_panelObject);
+    end
+    local id = 0;
+    if selectIndex == 1 then
+        id = professionInfo.FashionId1;
+    elseif selectIndex == 2 then
+        id = professionInfo.FashionId2;
+    elseif selectIndex == 3 then
+        id = professionInfo.FashionId3;
+    elseif selectIndex == 4 then
+        id = professionInfo.FashionId4;
+    elseif selectIndex == 5 then
+        id = professionInfo.FashionId5;
+    elseif selectIndex == 6 then
+        id = professionInfo.FashionId6;
+    elseif selectIndex == 7 then
+        id = professionInfo.FashionId7;
+    elseif selectIndex == 8 then
+        id = professionInfo.FashionId8;
+    else
+        error("selectIndex not is exist");
+    end
+    if id > 0 then
+        local fashion = CCommonTool.GetFashion(id);
+        if fashion ~= nil then
+            CreateAndSelectRoleScene.SetChangeEquip(selectState, fashion.ModelresId);
+            SetGameObjectState(m_fashionItemStr .. selectIndex .. "/Selected", true, m_panelObject);
+        end
+    end
+end
+
+--  点击天赋事件
+function OnTalentClick(e)
+    local selectIndex = tonumber(string.sub(e.name, 7, string.len(e.name)));
+    if selectIndex == 3 then
+        return;
+    end
+    if m_selectTalent ~= selectIndex then
+        m_selectTalent = selectIndex
+        m_roleTalentIndex = selectIndex;
+        -- 将上次选择为的天赋界面显示CD时间置为初始状态
+        SetLabelContent(m_skillStr .. m_selectIndex .. m_skillCDLable, " ", m_panelObject);
+        SetSpriteFillAmountTwo(m_skillStr .. m_selectIndex .. m_skillCDSprite, 0, m_panelObject);
+        m_cdTime = 0;
+        G_TimerMng:RemoveTimeTask("SkillShowCountDown");
+        m_skillCD = 0
+    end
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    for index = 1, 2 do
+        SetGameObjectState(m_skillTalent .. index .. "/Sprite_Select", false, m_panelObject);
+    end
+    SetGameObjectState(m_skillTalent .. selectIndex .. "/Sprite_Select", true, m_panelObject);
+    SetSkillShow(m_selectTalent);
+    -- 隐藏所有的召唤兽
+    CreateAndSelectRoleScene.CloseAllSummon()
+    -- 关闭之前的技能特效
+    CreateAndSelectRoleScene.SetCreateRoleEffectsOff();
+    -- 角色恢复战斗准备状态
+    CreateAndSelectRoleScene.SetSkillRoleIdle();
+end
+
+-- 技能点击事件
+function OnSkillClick(e)
+    local selectIndex = tonumber(string.sub(e.name, 6, string.len(e.name)));
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    for index = 1, 4 do
+        SetGameObjectState(m_skillStr .. index .. "/Sprite_Select", false, m_panelObject);
+    end
+    if m_selectIndex ~= selectIndex then
+        G_TimerMng:RemoveTimeTask("SkillShowCountDown");
+        m_lastSelectIndex = m_selectIndex;
+        m_selectIndex = selectIndex;
+        SetLabelContent(m_skillStr .. m_lastSelectIndex .. m_skillCDLable, " ", m_panelObject);
+        SetSpriteFillAmountTwo(m_skillStr .. m_lastSelectIndex .. m_skillCDSprite, 0, m_panelObject);
+        m_cdTime = 0;
+    end
+    if m_cdTime == 0 then
+        -- 隐藏所有的召唤兽
+        CreateAndSelectRoleScene.CloseAllSummon();
+        -- 关闭之前的技能特效
+        CreateAndSelectRoleScene.SetCreateRoleEffectsOff();
+        SetGameObjectState(m_skillTxtBg, true, m_panelObject);
+        SetGameObjectState(m_skillStr .. selectIndex .. "/Sprite_Select", true, m_panelObject);
+        SetSpriteFillAmountTwo(m_skillStr .. m_selectIndex .. m_skillCDSprite, 1, m_panelObject);
+        -- 天赋流派Id
+        local id = 0;
+        -- 技能Id
+        local skillId = 0;
+        -- 技能文本描述Id
+        local skillTxtId = 0;
+        for index = 1, 4 do
+            if selectIndex == 1 then
+                if m_selectTalent == 1 then
+                    id = professionInfo.Talent1Id1;
+                    skillId = professionInfo.Skill1Id1;
+                    skillTxtId = professionInfo.Skill1Txt1;
+                elseif m_selectTalent == 2 then
+                    id = professionInfo.Talent2Id1;
+                    skillId = professionInfo.Skill2Id1;
+                    skillTxtId = professionInfo.Skill2Txt1;
+                end
+            elseif selectIndex == 2 then
+                if m_selectTalent == 1 then
+                    id = professionInfo.Talent1Id2;
+                    skillId = professionInfo.Skill1Id2;
+                    skillTxtId = professionInfo.Skill1Txt2;
+                elseif m_selectTalent == 2 then
+                    id = professionInfo.Talent2Id2;
+                    skillId = professionInfo.Skill2Id2;
+                    skillTxtId = professionInfo.Skill2Txt2;
+                end
+            elseif selectIndex == 3 then
+                if m_selectTalent == 1 then
+                    id = professionInfo.Talent1Id3;
+                    skillId = professionInfo.Skill1Id3;
+                    skillTxtId = professionInfo.Skill1Txt3;
+                elseif m_selectTalent == 2 then
+                    id = professionInfo.Talent2Id3;
+                    skillId = professionInfo.Skill2Id3;
+                    skillTxtId = professionInfo.Skill2Txt3;
+                end
+            elseif selectIndex == 4 then
+                if m_selectTalent == 1 then
+                    id = professionInfo.Talent1Id4;
+                    skillId = professionInfo.Skill1Id4;
+                    skillTxtId = professionInfo.Skill1Txt4;
+                elseif m_selectTalent == 2 then
+                    id = professionInfo.Talent2Id4;
+                    skillId = professionInfo.Skill2Id4;
+                    skillTxtId = professionInfo.Skill2Txt4;
+                end
+            end
+        end
+        local skillInfo = CCommonTool.GetTalentSkillByID(id);
+        local skilData = CCommonTool.GetSkillDateByIndex(skillId);
+        if skillInfo ~= nil then
+            SetLabelTextByID(m_skillName, skillInfo.TalentName, m_panelObject);
+        end
+        if skillTxtId ~= 0 then
+            SetLabelTextByID(m_skillContent, skillTxtId, m_panelObject);
+        end
+        if skilData ~= nil then
+            CreateAndSelectRoleScene.SetRoleSkillEffect(selectState, skilData)
+            m_skillAniName = skilData.PlayAction;
+        end
+        m_skillCD = CCommonTool.GetDefineInfo(6208):GetIntContent();
+        -- 根据角色的不同显示不同的技能动作
+        CreateAndSelectRoleScene.CreateRoleShowSkill(selectState, m_skillAniName);
+        -- 技能CD
+        AddTimerEvent("SkillShowCountDown", m_skillCD, SkillCallBackOver, ETimeShowType.TypeNumberSeven, CloseCallBack);
+        m_startTime = Time.time;
+        Timer.Instance:AddTimer(0.1, 40, UpdateLoadingBar);
+        GameReportManager.AddReportData(9175,true);
+    end
+end
+function UpdateLoadingBar()
+    local timeTxt = Time.time - m_startTime;
+    local time = m_skillCD - timeTxt;
+    if m_skillCD > 0 then
+        SetSpriteFillAmountTwo(m_skillStr .. m_selectIndex .. m_skillCDSprite, time / m_skillCD, m_panelObject);
+    else
+        SetSpriteFillAmountTwo(m_skillStr .. m_selectIndex .. m_skillCDSprite, 0, m_panelObject);
+    end
+end
+
+-- 倒计时结束回调
+function SkillCallBackOver()
+    G_TimerMng:RemoveTimeTask("SkillShowCountDown");
+    m_cdTime = 0
+    SetLabelContent(m_skillStr .. m_selectIndex .. m_skillCDLable, " ", m_panelObject);
+    SetSpriteFillAmountTwo(m_skillStr .. m_selectIndex .. m_skillCDSprite, 0, m_panelObject);
+end
+
+-- 每秒倒计时回调
+function CloseCallBack(timeTxt)
+    SetLabelContent(m_skillStr .. m_selectIndex .. m_skillCDLable, timeTxt, m_panelObject);
+    m_cdTime = timeTxt;
+end
+
+-- 细节定制按钮事件
+function OnDetailSetClick()
+    if m_isSelected == false then
+        selectState = 3;
+    end
+    for index = 1, 5 do
+        for subType = 0, 3 do
+            SetGameObjectState(m_faceSelectedPath .. index .. "/Sprite_" .. subType, false, m_panelObject);
+            SetGameObjectState(m_hairSelectedPath .. index .. "/Sprite_" .. subType, false, m_panelObject);
+        end
+    end
+    SetGameObjectState("Content-Right", false, m_panelObject);
+    SetGameObjectState("Button-Create", false, m_panelObject);
+    SetGameObjectState("Button-SkilPreview", false, m_panelObject);
+    SetGameObjectState("Button-Back", false, m_panelObject);
+    SetGameObjectState("Name", true, m_panelObject);
+    SetGameObjectState("ChangeFace", true, m_panelObject);
+    SetGameObjectState("SkillPreView", false, m_panelObject);
+    SetGameObjectState("FashionShow", false, m_panelObject);
+    local toggleComp = GetComponent(m_panelObject, "ChangeFace/Select/FaceType", "UIToggle");
+    toggleComp:Set(true, true);
+    m_rightSelect = "FaceType";
+    CreateAndSelectRoleScene.DetailSetClick(profession);
+    local tagShow = 0;
+    if profession == PROFESSION_ID.WARDRAGONWHITE then
+        tagShow = 1;
+    elseif profession == PROFESSION_ID.FEILIBA then
+        tagShow = 2;
+    elseif profession == PROFESSION_ID.ASSASSIN then
+        tagShow = 0;
+    elseif profession == PROFESSION_ID.LOLI then
+        tagShow = 3;
+    end
+    for index = 1, 5 do
+        SetGameObjectState(m_faceSelectedPath .. index .. "/Sprite_" .. tagShow, true, m_panelObject);
+        SetGameObjectState(m_hairSelectedPath .. index .. "/Sprite_" .. tagShow, true, m_panelObject);
+    end
+    --   默认显示模型ID
+    SetModelID();
+    local professionInfo = CCommonTool.GetPartnerInfo(selectState);
+    if professionInfo ~= nil then
+        CreateAndSelectRoleScene.SetChangeEquip(selectState, professionInfo.CuirassModelID);
+    end
+    CSDKManager.EventHook("create-character-skin", function() end);
+end
+
+-- 技能预览界面
+function OnPreviewClick()
+    if m_selectTalent ~= m_roleTalentIndex then
+        m_selectTalent = m_roleTalentIndex;
+    end
+    SetGameObjectState("Content-Right", false, m_panelObject);
+    SetGameObjectState("Button-Create", false, m_panelObject);
+    SetGameObjectState("Button-SkilPreview", false, m_panelObject);
+    SetGameObjectState("Button-Back", false, m_panelObject);
+    SetGameObjectState("Name", false, m_panelObject);
+    SetGameObjectState("ChangeFace", false, m_panelObject);
+    SetGameObjectState("SkillPreView", true, m_panelObject);
+    SetGameObjectState("FashionShow", false, m_panelObject);
+    SetModelID();
+    CreateAndSelectRoleScene.TalentSkillSetClick(profession);
+    SetSkillShow(m_selectTalent);
+    SetSkillPreViewInfo();
+    -- // 设置阴影高端状态(在技能预览场景强制开启高端状态)
+    G_UserInfo.PlayerSettingManager:SetShadowHighState(true);
+    CreateAndSelectRoleScene.CreatRoleSkillPreview(true)
+end
+
+-- 时装预览按钮
+function OnShowFashionClick()
+    SetGameObjectState("Content-Right", false, m_panelObject);
+    SetGameObjectState("Button-Create", false, m_panelObject);
+    SetGameObjectState("Button-SkilPreview", false, m_panelObject);
+    SetGameObjectState("Button-Back", false, m_panelObject);
+    SetGameObjectState("Name", false, m_panelObject);
+    SetGameObjectState("ChangeFace", false, m_panelObject);
+    SetGameObjectState("SkillPreView", false, m_panelObject);
+    SetGameObjectState("FashionShow", true, m_panelObject);
+    SetModelID();
+    SetFashionInfo();
+    CreateAndSelectRoleScene.FashionSetClick(profession);
+end
+
+--  点击角色选择界面天赋
+function OnRoleTalentClick(e)
+    local selectIndex = tonumber(string.sub(e.name, 7, string.len(e.name)));
+    local professionInfo = CCommonTool.GetCreatRoleInfo(selectState);
+    if m_roleTalentIndex ~= selectIndex then
+        m_roleTalentIndex = selectIndex;
+    end
+    for index = 1, 5 do
+        SetGameObjectState(m_talentHard .. index, false, m_panelObject);
+    end
+    for index = 1, 2 do
+        SetGameObjectState(m_talentBtn .. index .. "/Selected", false, m_panelObject);
+    end
+    local describe = nil;
+    local count = 0;
+    if professionInfo ~= nil then
+        if selectIndex == 1 then
+            describe = professionInfo.Talent1Descirbe;
+            count = professionInfo.Talent1Hard;
+        elseif selectIndex == 2 then
+            describe = professionInfo.Talent2Descirbe;
+            count = professionInfo.Talent2Hard;
+        else
+            error("selectIndex not is exist");
+        end
+        -- 天赋
+        SetLabelTextByID(m_talentContent, describe, m_panelObject);
+        for index = 1, count do
+            SetGameObjectState(m_talentHard .. index, true, m_panelObject);
+        end
+        SetGameObjectState(m_talentBtn .. m_roleTalentIndex .. "/Selected", true, m_panelObject);
+    end
+end
+
+-- 细节定制返回按钮事件
+function OnDetailSetBackClick()
+    -- m_roleTalentIndex = 1;
+    OnEnable();
+    SetDefaultState();
+    SetModelID();
+    CreateAndSelectRoleScene.DetailSetBackClick();
+    -- // 设置阴影高端状态(在技能预览场景强制开启高端状态)
+    G_UserInfo.PlayerSettingManager:SetShadowHighState(false);
+    -- 模型显示默认的服装和武器
+    local professionInfo = CCommonTool.GetPartnerInfo(selectState);
+    if professionInfo ~= nil then
+        CreateAndSelectRoleScene.GetSkillModle(selectState, professionInfo.CuirassModelID, professionInfo.WeaponModelID);
+    end
+    -- 隐藏所有的召唤兽
+    CreateAndSelectRoleScene.CloseAllSummon();
+    -- 关闭之前的技能特效
+    CreateAndSelectRoleScene.SetCreateRoleEffectsOff();
+end
+
+-- 点击脸型  
+function OnFaceTypeClick(e)
+    GetComponent(selectFaceObj, "", "UISprite").depth = GetComponent(e, "", "UISprite").depth + 1;
+    selectFaceObj.transform.parent = e.transform;
+    selectFaceObj.transform.localPosition = Vector3.zero;
+    faceTypeIndex = tonumber(e.transform.parent.name) -1;
+    local modelID = G_SceneMng.IndividuationMng:GetHeadResID(selectState, faceTypeIndex);
+    CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+    GameReportManager.AddReportData(9177,true);
+end
+-- 点击发型
+function OnHairTypeClick(e)
+    GetComponent(selectHairObj, "", "UISprite").depth = GetComponent(e, "", "UISprite").depth + 1;
+    selectHairObj.transform.parent = e.transform;
+    selectHairObj.transform.localPosition = Vector3.zero;
+    hairTypeIndex = tonumber(e.transform.parent.name) -1;
+    local modelID = G_SceneMng.IndividuationMng:GetHairResID(selectState, hairTypeIndex);
+    CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+    modelID = G_SceneMng.IndividuationMng:GetHairColorResID(selectState, hairTypeIndex, hairColorIndex);
+    CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+    GameReportManager.AddReportData(9178,true);
+end
+-- 点击发色
+function OnHairColorClick(e)
+    GetComponent(selectColorObj, "", "UISprite").depth = GetComponent(e, "", "UISprite").depth + 1;
+    selectColorObj.transform.parent = e.transform;
+    selectColorObj.transform.localPosition = Vector3.zero;
+    hairColorIndex = tonumber(e.transform.parent.name) -1;
+    local modelID = G_SceneMng.IndividuationMng:GetHairColorResID(selectState, hairTypeIndex, hairColorIndex);
+    CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+    GameReportManager.AddReportData(9179,true);
+end
+-- 发送创建角色消息
+function SendCreateRoleMsg()
+    local inputCreateRoleName = child(m_panelObject, inputPath).gameObject;
+    local uiinputCreateRoleName = inputCreateRoleName:GetComponent("UIInput");
+    local roleName = uiinputCreateRoleName.value;
+    local buffer = ByteBuffer.New();
+    -- 创建角色
+    buffer:WriteShort(E_CTON_CREATEROLE);
+    local nameStr = System.String.New(roleName);
+    -- error(nameStr:Trim())
+    -- 角色名
+    buffer:WriteStringByByte(roleName);
+    -- 角色ID
+    buffer:WriteInt(0);
+    local userId = PlayerPrefs.GetString(UserID);
+    -- 用户ID
+    buffer:WriteInt(userId);
+    -- 该角色在NGS上的连接ID
+    buffer:WriteInt(0);
+    -- 该角色所在的GS在NGS上的连接ID
+    buffer:WriteInt(0);
+    -- 该角色所在的GS上的连接ID
+    buffer:WriteInt(-1);
+    -- 上次所在的场景ID
+    buffer:WriteInt(-1);
+    -- 角色所在的战区ID
+    buffer:WriteShort(PlayerPrefs.GetInt(SelectZoneId));
+    -- 角色所在的阵营（国家）的ID,数据库ID,用这个表示GS的ID 暂时当作
+    buffer:WriteShort(0);
+    -- 等级
+    buffer:WriteShort(1);
+    -- 职业
+    buffer:WriteByte(profession);
+    -- 性别
+    buffer:WriteByte(0);
+    -- 角色的经验
+    buffer:WriteInt64(1);
+    -- 角色身上的游戏币
+    buffer:WriteInt64(0);
+    -- 角色仓库中的游戏钱
+    buffer:WriteInt(0);
+    -- 头发的颜色ID
+    buffer:WriteInt(hairColorIndex);
+    -- 脸型ID
+    buffer:WriteByte(faceTypeIndex);
+    -- 头发ID
+    buffer:WriteByte(hairTypeIndex);
+    -- 是否成年人了，默认成年的
+    buffer:WriteByte(3);
+    -- 登录的类型0，PC客户端，网页，手机
+    buffer:WriteByte(0);
+    -- 一些标记
+    buffer:WriteInt(0);
+    -- 角色在第几位
+    local createRoleIndex = PlayerPrefs.GetInt(CreateRoleIndex);
+    buffer:WriteByte(createRoleIndex);
+    Debug.Log("创建第" .. createRoleIndex .. "个角色");
+    -- 角色进入游戏的时候的IP地址，NGS发送给GS使用
+    buffer:WriteUInt(0);
+    -- 武器ID
+    buffer:WriteUInt(0);
+    -- 胸甲ID
+    buffer:WriteUInt(0);
+    -- 头盔ID
+    buffer:WriteUInt(0);
+    -- 翅膀ID
+    buffer:WriteUInt(0);
+    --武器强化等级
+    buffer:WriteShort(0);
+    --胸甲强化等级
+    buffer:WriteShort(0);
+    --宠物ID
+    buffer:WriteUInt(0);
+    --发型ID
+    buffer:WriteUInt(0);
+    --脸型ID
+    buffer:WriteUInt(0);
+    --创建时间
+    buffer:WriteInt(0);
+
+
+    local masterId = CSDKManager.GetInt("getMasterId", "");
+    local deviceId = CSDKManager.GetString("getDeviceId", "");
+    buffer:WriteInt(masterId);
+    -- 渠道ID
+    buffer:WriteStringByByte(deviceId);
+    -- 设备ID
+
+    G_NetWorkMng:SendMessage(buffer);
+    AddTimerEvent("WaitingServerCreateResult", 20, OnWaitingSeverCallBackOver, ETimeShowType.TypeNumberThree, OnWaitingSeverCallBack);
+    local message = { };
+    table.insert(message, 1, CCommonTool.GetTxtData(8960).m_str);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+    GameReportManager.AddReportData(9173,true);
+end
+-- 返回角色列表--
+function OnReturnSelectRoleClick()
+    CreateAndSelectRoleScene.SetCreateRoleEffectsOff();
+    CreateAndSelectRoleScene.StopCreateRoleAnim();
+    if SelectRole.GetRoleListCount() == 0 then
+        SelectRole.OnBackClick();
+        closePanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+    else
+        CreateAndSelectRoleScene.SelectRoleStart();
+        createPanel(ENUMPANELID.ENUM_PANEL_SELECTROLE);
+        closePanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+    end
+end
+-- 选择女主角--
+function OnCreateRoleMagicianClick()
+    m_isSelected = true;
+    m_roleTalentIndex = 1;
+    if selectState ~= 2 then
+        profession = PROFESSION_ID.FEILIBA;
+        selectState = 2;
+        SetProfessionInfo(selectState);
+        CreateAndSelectRoleScene.CreateRoleClickBack(profession);
+        SetModelID();
+    end
+end
+-- 选择龙战士--
+function OnCreateRoleDragonWorriorClick()
+    m_isSelected = true;
+    m_roleTalentIndex = 1;
+    if selectState ~= 3 then
+        profession = PROFESSION_ID.WARDRAGONWHITE;
+        selectState = 3;
+        SetProfessionInfo(selectState);
+        CreateAndSelectRoleScene.CreateRoleClickBack(profession);
+        SetModelID();
+    end
+end
+-- 选择刺客--
+function OnCreateRoleSpiritClick()
+    m_isSelected = true;
+    m_roleTalentIndex = 1;
+    if selectState ~= 1 then
+        profession = PROFESSION_ID.ASSASSIN;
+        selectState = 1;
+        SetProfessionInfo(selectState);
+        CreateAndSelectRoleScene.CreateRoleClickBack(profession);
+        -- SetModelID();
+    end
+end
+-- 选择萝莉--
+function OnCreateRoleLoliClick()
+    m_isSelected = true;
+    m_roleTalentIndex = 1;
+    if selectState ~= 4 then
+        profession = PROFESSION_ID.LOLI;
+        selectState = 4;
+        SetProfessionInfo(selectState);
+        CreateAndSelectRoleScene.CreateRoleClickBack(profession);
+        SetModelID();
+    end
+end
+-- 设置角色模型id
+function SetModelID()
+    local individuationMng = G_SceneMng.IndividuationMng;
+    if nil ~= individuationMng then
+        -- 发型
+        local modelID = individuationMng:GetHairResID(selectState, hairTypeIndex);
+        CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+        -- 脸型
+        modelID = individuationMng:GetHeadResID(selectState, faceTypeIndex);
+        CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+        -- 发色
+        modelID = individuationMng:GetHairColorResID(selectState, hairTypeIndex, hairColorIndex);
+        CreateAndSelectRoleScene.SetModelStyle(selectState, modelID);
+    end
+end
+-- 随机角色名单击事件
+function OnRandomNameClick()
+    -- 先通过时间随机得到一个随机种子
+    math.randomseed(os.time());
+    -- 随机出姓
+    local xing = math.random(RandomRoleNameData.Xing.StartId, RandomRoleNameData.Xing.EndId);
+    local xingStr = CCommonTool.GetRandomNameData(xing).m_str;
+    -- 随机出名
+    local ming = math.random(RandomRoleNameData.NanMing_Shuang.StartId, RandomRoleNameData.NanMing_Shuang.EndId);
+    local mingStr = CCommonTool.GetRandomNameData(ming).m_str;
+    local randomRoleName = xingStr .. mingStr;
+    local inputCreateRoleName = child(m_panelObject, inputPath).gameObject;
+    local uiinputCreateRoleName = inputCreateRoleName:GetComponent("UIInput");
+    uiinputCreateRoleName.value = randomRoleName;
+end
+
+function OnTypeSelectClick(e)
+    if e.name ~= m_rightSelect then
+        m_rightSelect = e.name;
+        -- local playTweenComp = GetComponent(e, "", "UIPlayTween");
+        -- playTweenComp:Play(true);
+    end
+end
+
+function OnBackClick()
+    SelectRole.OnBackClick();
+    closePanel(ENUMPANELID.ENUM_PANEL_CREATEROLE);
+end
+
+function OnBackToLogin()
+    CreateAndSelectRoleScene.StopCreateRoleAnim();
+    CreateAndSelectRoleScene.SetCreateRoleEffectsOff();
+    OnBackClick();
+end
+
+-- 输入文本change事件
+function OnInputChange()
+    local inputCreateRoleName = child(m_panelObject, inputPath).gameObject;
+    local uiinputCreateRoleName = inputCreateRoleName:GetComponent("UIInput");
+    local value = System.String.New(uiinputCreateRoleName.value);
+    local m_byteStr = CCommonTool.GetStringChineseLength(uiinputCreateRoleName.value);
+    if m_byteStr > G_RoleNameLength then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ROLE_NAME_LENGTH);
+    elseif uiinputCreateRoleName.value == " " then
+
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 等待服务器的每秒的回调
+function OnWaitingSeverCallBack()
+end
+-- 20s过后等待服务器消息的回调
+function OnWaitingSeverCallBackOver()
+    error("服务器未能返回创建角色成功的消息")
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_WAITDONE) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+        if IsOpenPanel(ENUMPANELID.ENUM_PANEL_CREATEROLE) == 1 then
+            isCreateBack = false;
+            G_GameMng.CreateSuccessed = false;
+            CreateRole.OnBackToLogin();
+        end
+    end
+end
+-- 创建角色返回消息处理
+function OnCreateRoleReturn(buffer)
+    G_TimerMng:RemoveTimeTask("WaitingServerCreateResult")
+    createRoleResult = buffer:ReadShort();
+    local str = nil;
+    if createRoleResult == 0 then
+        --        SetGameObjectState("Content-Right", false, m_panelObject);
+        --        SetGameObjectState("Button-Create", false, m_panelObject);
+        --        SetGameObjectState("Button-SkilPreview", false, m_panelObject);
+        --        SetGameObjectState("Button-Back", false, m_panelObject);
+        --        SetGameObjectState("Name", false, m_panelObject);
+        --        SetGameObjectState("ChangeFace", false, m_panelObject);
+        SelectRole.SetIsCreateRoleBack(true);
+        CreateAndSelectRoleScene.CreateRoleGoIntoGame(profession);
+        local createRoleIndex = PlayerPrefs.GetInt(CreateRoleIndex);
+        PlayerPrefs.SetInt(SelectRoleIndex, createRoleIndex);
+        IsNewRole = true;
+        return;
+    elseif createRoleResult == 1 then
+        str = CCommonTool.GetTxtData(8959).m_str;
+    elseif createRoleResult == 2 then
+        str = CCommonTool.GetTxtData(8958).m_str;
+    elseif createRoleResult == 1000 then
+        str = CCommonTool.GetTxtData(8957).m_str;
+    elseif createRoleResult == 1006 then
+        str = CCommonTool.GetTxtData(8956).m_str;
+    elseif createRoleResult == 1007 then
+        str = CCommonTool.GetTxtData(8955).m_str;
+    elseif createRoleResult == 1008 then
+        str = CCommonTool.GetTxtData(8954).m_str;
+    elseif createRoleResult == -1 then
+        str = CCommonTool.GetTxtData(8953).m_str;
+    elseif createRoleResult == -2 then
+        str = CCommonTool.GetTxtData(8952).m_str;
+    elseif createRoleResult == -3 then
+        str = CCommonTool.GetTxtData(8951).m_str;
+    elseif createRoleResult == -7 then
+        str = CCommonTool.GetTxtData(8950).m_str;
+    elseif createRoleResult == -8 then
+        str = CCommonTool.GetTxtData(8949).m_str;
+    elseif createRoleResult == -11 then
+        str = CCommonTool.GetTxtData(8948).m_str;
+    elseif createRoleResult == -12 then
+        str = CCommonTool.GetTxtData(8947).m_str;
+    elseif createRoleResult == -13 then
+        str = CCommonTool.GetTxtData(8946).m_str;
+    elseif createRoleResult == -14 then
+        str = CCommonTool.GetTxtData(8945).m_str;
+    else
+        str = CCommonTool.GetTxtData(8944).m_str .. createRoleResult;
+    end
+    error(str);
+    closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+    ParameterToMessageTextBox.OnCreateBack(str);
+end
+-- 创建角色错误返回
+function BackInit()
+    CreateAndSelectRoleScene.CreateRoleStart();
+    closePanel(ENUMPANELID.ENUM_PANEL_MESSAGETEXTBOX);
+end

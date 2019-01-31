@@ -1,0 +1,251 @@
+﻿module("PetIntroPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 宠物名称
+local m_PetNameStr = "Right/Intro/Label_Name";
+-- 携带等级
+local m_PetSetOutLevelStr = "Right/Intro/Label_Level";
+-- 宠物类型
+local m_PetFightTypeStr = "Right/Intro/Label_Type";
+-- 宠物获得方式
+local m_PetGetStr = "Right/Label_Get";
+-----------------------------------------按钮路径--------------------------------------
+-- 获得方式按钮
+local m_GetButtonStr = "Right/Button_Get";
+-----------------------------------------Sprite路径------------------------------------
+-- 技能图标
+local m_SkillIconStr = "Right/Skills/{0}/Sprite_Icon";
+-- 宠物类型图标
+local m_PetFightTypeIconStr = "Right/Intro/Sprite_FightType";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧UIListView组件所在的位置
+local m_leftUIListViewCompStr = "Left/PetsList/Grid";
+-- 是否变异
+local m_PetIsVarietyStr = "Right/Intro/Variety";
+----------------------------------通用的名称路径---------------------------------------
+-- 宠物图标
+local m_IconStr = "Sprite_Icon";
+-- 图标品质
+local m_QualityStr = "Sprite_Quality";
+-- 资质成长值
+local m_QualityNumStr = "Right/Qualitys/{0}/Label_CurValue";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 是否读取过表
+local m_IsReadTable = false;
+-- 宠物图鉴数据表内容
+local m_PetIntroTableData = nil;
+-- 左侧选择的是第几个
+local m_LeftSelect = 1;
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitData();
+    InitObjects();
+    InitEvents();
+    InitShowData();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitShowData();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_IsReadTable = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    if not m_IsReadTable then
+        m_PetIntroTableData = CCommonTool.GetAllPetIntroductionInfo();
+        m_IsReadTable = true;
+    end
+end
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETINTROPANEL);
+    m_leftUIListViewComp = GetComponent(m_panelObject, m_leftUIListViewCompStr, "UIListView");
+end
+
+function InitEvents()
+    m_leftUIListViewComp:SetInitCallback(OnPetCloneInit);
+    m_leftUIListViewComp:SetClickCallback(OnPetCloneClick);
+end
+
+function InitShowData()
+    if m_isJumpPanelSave then
+        m_LeftSelect = m_JumpPanelParamsTable[1];
+    else
+        m_LeftSelect = 1;
+    end
+end
+
+-- 初始化显示
+function InitShow()
+    InitLeftContent();
+    InitMiddleContent();
+    InitRightContent();
+    Hide3DModel();
+    LoadModel();
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_GetButtonStr,OnGetClick,m_panelObject);
+end
+
+function InitLeftContent()
+    m_leftUIListViewComp:RemoveAll();
+    for Index = 1,m_PetIntroTableData.Count do
+        m_leftUIListViewComp:AddData(m_PetIntroTableData[Index - 1]);
+    end
+    m_leftUIListViewComp:LookAt(m_LeftSelect - 1,true);
+end
+
+-- 左侧宠物初始化
+function OnPetCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local petIntroInfo = data;
+    SetSpriteByAtlasID(m_IconStr, CCommonTool.GetImageIDByExcelID(petIntroInfo.PetID), go);
+    SetSpriteApptitudeV04(m_QualityStr, CCommonTool.GetAptitudeIDByExcelID(petIntroInfo.PetID), go);
+end
+
+function InitMiddleContent()
+    local petIntroInfo = m_PetIntroTableData[m_LeftSelect - 1];
+    if petIntroInfo == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(petIntroInfo.PetID);
+    if petMainInfo == nil then
+        return;
+    end
+    SetLabelTextByID(m_PetNameStr,petMainInfo.NameTextID,m_panelObject);
+    if petMainInfo.IsVariety == 1 then
+        SetGameObjectState(m_PetIsVarietyStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_PetIsVarietyStr,false,m_panelObject);
+    end
+    SetLabelContent(m_PetSetOutLevelStr,petMainInfo.NeedLv,m_panelObject);
+    SetLabelTextByID(m_PetFightTypeStr,petMainInfo.FightTypeID,m_panelObject);
+    SetSpriteByAtlasID(m_PetFightTypeIconStr,petMainInfo.FightTypeIconID,m_panelObject);
+end
+
+function InitRightContent()
+    local petIntroInfo = m_PetIntroTableData[m_LeftSelect - 1];
+    if petIntroInfo == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(petIntroInfo.PetID);
+    if petMainInfo == nil then
+        return;
+    end
+    local petAttrInfo = CCommonTool.GetPetAttrInfo(petMainInfo.RoleAttrID);
+--    SetLabelContent(string_format(m_QualityNumStr,1),petAttrInfo.LifeQualityMin.."-"..petAttrInfo.LifeQualityMax,m_panelObject);
+--    SetLabelContent(string_format(m_QualityNumStr,2),petAttrInfo.AttackQualityMin.."-"..petAttrInfo.AttackQualityMax,m_panelObject);
+--    SetLabelContent(string_format(m_QualityNumStr,3),petAttrInfo.DefenceQualityMin.."-"..petAttrInfo.DefenceQualityMax,m_panelObject);
+--    SetLabelContent(string_format(m_QualityNumStr,4),petAttrInfo.AngerQualityMin.."-"..petAttrInfo.AngerQualityMax,m_panelObject);
+--    SetLabelContent(string_format(m_QualityNumStr,5),petAttrInfo.AgileQualityMin.."-"..petAttrInfo.AgileQualityMax,m_panelObject);
+    SetLabelContent(string_format(m_QualityNumStr,1),petAttrInfo.LifeQualityMax,m_panelObject);
+    SetLabelContent(string_format(m_QualityNumStr,2),petAttrInfo.AttackQualityMax,m_panelObject);
+    SetLabelContent(string_format(m_QualityNumStr,3),petAttrInfo.DefenceQualityMax,m_panelObject);
+    SetLabelContent(string_format(m_QualityNumStr,4),petAttrInfo.AngerQualityMax,m_panelObject);
+    SetLabelContent(string_format(m_QualityNumStr,5),petAttrInfo.AgileQualityMax,m_panelObject);
+
+    for Index = 1,5 do
+        local skillID = CCommonTool.GetValueInPetSkillInfo(petMainInfo.SkillID,1+3*(Index - 1));
+        if skillID == 0 then
+            SetGameObjectState(string_format(m_SkillIconStr,Index), false, m_panelObject);
+        else
+            SetGameObjectState(string_format(m_SkillIconStr,Index), true, m_panelObject);
+            local skillMainInfo = CCommonTool.GetSkillMainData(skillID);
+            if skillMainInfo ~= nil then
+                local skillDataInfo = CCommonTool.GetSkillDateByIndex(skillMainInfo.SonSkill0);
+                if skillDataInfo ~= nil then
+                    SetSpriteByAtlasID(string_format(m_SkillIconStr,Index), skillDataInfo.Icon, m_panelObject);
+                    local go = child(m_panelObject,string_format(m_SkillIconStr,Index)).gameObject;
+                    TipsManager.SkillTips(go, skillID, skillMainInfo.SonSkill0, 0, true);
+                end
+            end
+        end
+    end
+    
+
+    SetLabelTextByID(m_PetGetStr,petIntroInfo.IntroductionID,m_panelObject);
+end
+
+function LoadModel()
+    local petIntroInfo = m_PetIntroTableData[m_LeftSelect - 1];
+    if petIntroInfo == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(petIntroInfo.PetID);
+    if petMainInfo == nil then
+        return;
+    end
+    local modelID = petMainInfo.AdultModelID;
+    local buffer = ByteBuffer.New();
+    buffer:WriteInt(ENUMPANELID.ENUM_PANEL_PETINTROPANEL);
+    buffer:WriteInt(modelID);
+    G_PanelMng:SetSceneUIdataByLua(buffer);
+end
+
+function Hide3DModel()
+    G_PanelMng:SetSceneUIObjNotShowByLua(ENUMPANELID.ENUM_PANEL_PETINTROPANEL);
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETINTROPANEL);
+end
+
+function OnGetClick(e)
+    local petIntroInfo = m_PetIntroTableData[m_LeftSelect - 1];
+    if petIntroInfo == nil then
+        return;
+    end
+    GetWayPanel.Show(petIntroInfo.PetID,ENUMPANELID.ENUM_PANEL_PETINTROPANEL);
+end
+
+-- 点击宠物
+function OnPetCloneClick(listView, cell, go)
+    local selectIndex = cell.dataIndex + 1;
+    if selectIndex == m_LeftSelect then
+        return;
+    else
+        m_LeftSelect = cell.dataIndex + 1;
+        InitMiddleContent();
+        InitRightContent();
+        Hide3DModel();
+        LoadModel();
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local jumpParamsTable = { };
+    jumpParamsTable[1] = m_LeftSelect;
+    return jumpParamsTable;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end

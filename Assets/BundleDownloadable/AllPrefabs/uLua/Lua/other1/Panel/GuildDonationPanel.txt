@@ -1,0 +1,200 @@
+﻿module('GuildDonationPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'GuildDonationPanel';
+---------------------------------------label路径---------------------------------------
+-- 捐献次数
+local m_LabelTimesPath = "Label_Times";
+-- 捐献标题
+local m_LabelTitlePath = "Label_Title";
+-- 公会资金增加
+local m_LabelGuildMoneyPath = "Label_GuildMoney";
+-- 个人贡献增加
+local m_LabelContributionPath = "Label_Contribution";
+-- 捐献数量
+local m_MoneyCountPath = "Money_Count";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonClosePath = "Button_Close";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+-- 捐献图标
+local m_IconPath = "Icon";
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 红钻捐献
+local m_Item1Path = "Item1";
+-- 捐献按钮
+local m_ButtonDonatePath = "Button_Donate";
+-- 蓝钻捐献
+local m_Item2Path = "Item2";
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 捐献次数
+local m_LabelTimes = nil;
+-- 红钻捐献
+local m_Item1 = nil;
+-- 蓝钻捐献
+local m_Item2 = nil;
+
+local m_allInfo = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_LabelTimes = nil;
+	m_Item1 = nil;
+	m_Item2 = nil;
+    m_allInfo = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_GUILD_DONATION);
+    m_LabelTimes = GetComponent(m_PanelObject, m_LabelTimesPath, "UILabel");
+    m_Item1 = child(m_PanelObject, m_Item1Path).gameObject;
+    m_Item2 = child(m_PanelObject, m_Item2Path).gameObject;
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+	SetGameObjectEvent(m_ButtonClosePath, OnButtonCloseClick, m_PanelObject);
+    SetGameObjectEvent("Item1/"..m_ButtonDonatePath, OnButtonDonate1Click, m_PanelObject);
+    SetGameObjectEvent("Item2/"..m_ButtonDonatePath, OnButtonDonate2Click, m_PanelObject);
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_allInfo = CCommonTool.GetAllGuildDonationInfo();
+    local donationTimes = GuildManager.donationValue;
+    m_LabelTimes.text = string_format(--[[今日剩余捐献次数:{0}]]CCommonTool.GetTxtData(1128).m_str, donationTimes);
+    local itemObjects = {m_Item1, m_Item2};
+    for i = 1, 2 do
+        local info = m_allInfo[i-1];
+        local item = itemObjects[i];
+        SetLabelTextByID(m_LabelTitlePath, info.Txt, item);
+        SetLabelContent(m_LabelGuildMoneyPath, info.Reward1, item);
+        SetLabelContent(m_LabelContributionPath, info.Reward2, item);
+        CCommonTool.SetGameObjectGrey(child(item, m_ButtonDonatePath).gameObject, donationTimes == 0);
+        local hasValue = GetSelfMoneyCount(info.MoneyType);
+        SetLabelContent(m_MoneyCountPath, info.UpgradeNeed, item);
+        SetGameObjectState("Effect", false, item);
+    end
+end
+
+function GetSelfMoneyCount(moneyType)
+    if moneyType == 1 then
+        return G_UserInfo.NotBindDiamond;
+    elseif moneyType == 2 then
+        return G_UserInfo.BindDiamond;
+    elseif moneyType == 3 then
+        return G_UserInfo.BindCoin;
+    end
+    return 0;
+end
+
+--function GetMoneyIconId(moneyType)
+--    if moneyType == 1 then
+--        return G_ItemToolTipDefine.NOTBINDDIAMOND;
+--    elseif moneyType == 2 then
+--        return G_ItemToolTipDefine.BINDDIAMOND;
+--    end
+--    return 0;
+--end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_DONATION);
+end
+
+-- 关闭按钮
+function OnButtonCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_GUILD_DONATION);
+end
+
+-- 红钻捐献按钮
+function OnButtonDonate1Click(gameObject)
+    SetGameObjectState("Effect", false, m_Item1);
+    local info = m_allInfo[0];
+    RequestDonate(info);
+end
+
+function RequestDonate(info)
+    local donationTimes = GuildManager.donationValue;
+    if donationTimes == 0 then
+        ShowSystemFlowTips(4090);
+        return;
+    end
+    local hasValue = GetSelfMoneyCount(info.MoneyType);
+    if hasValue < info.UpgradeNeed then
+        if info.MoneyType == 1 then
+            ShowSystemFlowTips(4110);
+            return;
+        elseif info.MoneyType == 2 then
+            ShowSystemFlowTips(4100);
+            return;
+        elseif info.MoneyType == 3 then
+            ShowSystemFlowTips(4111);
+            return;
+        end
+    end
+    GuildProtocol.RequestDonate(info.Id);
+end
+
+-- 蓝钻捐献按钮
+function OnButtonDonate2Click(gameObject)
+    SetGameObjectState("Effect", false, m_Item2);
+    local info = m_allInfo[1];
+    RequestDonate(info);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_DONATION) == 1 then
+        InitShow();
+    end
+end
+
+function OnGuildDonation(donationType)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_DONATION) == 1 then
+        if m_allInfo[0].Id == donationType then
+            SetGameObjectState("Effect", true, m_Item1);
+        elseif m_allInfo[1].Id == donationType then
+            SetGameObjectState("Effect", true, m_Item2);
+        end
+    end
+end

@@ -1,0 +1,552 @@
+﻿
+module("SinhaengStarPanel", package.seeall)
+
+-------------------------------------神行星魂界面------------------------------------------------------
+
+------------------------------------面板路径-------------------------------------------------------
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+--panel
+local m_panelStr1 = "SinhaengStarPanel";
+--
+local m_midEffectStr = "SinhaengStarPanel/SevenStar/effects";
+-- 中部属性图标
+local m_midIconStr = "SinhaengStarPanel/SevenStar/item";
+-- 属性信息
+local m_attrStr = "SinhaengStarPanel/Right/Attr";
+-- 总属性属性
+local m_totalStr = "SinhaengStarPanel/Right/Total";
+-- 共鸣界面
+local m_gMStr = "SinhaengStarPanel/ResonatePanel";
+---------------------------------------------------------------属性信息界面路径----------------------------------------
+-- 属性名称
+local m_attrNameStr = "SinhaengStarPanel/Right/Attr/Name";
+--属性等级
+local m_attrLvlStr = "SinhaengStarPanel/Right/Attr/Lv";
+-- 激活的属性值
+local m_activeAttrStr = "SinhaengStarPanel/Right/Attr/activeAttr";
+-- 升星后的属性值
+local m_startsAttrStr = "SinhaengStarPanel/Right/Attr/lvlAttr";
+-- 星星组
+local m_starTranStr = "SinhaengStarPanel/Right/Attr/starTran";
+-- 未满级
+local m_notMaxLvl = "SinhaengStarPanel/Right/Attr/NotMaxLvl";
+-- 满级
+local m_maxLvl = "SinhaengStarPanel/Right/Attr/MaxLvl";
+-- 经验条
+local m_expLabelStr = "SinhaengStarPanel/Right/Attr/NotMaxLvl/Progress"
+-- 消耗道具组
+local m_costItemStr = "SinhaengStarPanel/Right/Attr/NotMaxLvl/Item1"
+-- btn
+local m_lvlBtnStr = "SinhaengStarPanel/Right/Attr/NotMaxLvl/Button_BreachOne"
+--lab
+local m_lvlBtnLabStr = "SinhaengStarPanel/Right/Attr/NotMaxLvl/Button_BreachOne/Label"
+---------------------------------------------------------------总属性界面路径--------------------------------------
+local m_totalAStr = "SinhaengStarPanel/Right/Total/Attrs/Attribute";
+-- 星魂激活lab
+local m_activeNumLabStr = "SinhaengStarPanel/Right/Total/Active/Label_Cur";
+-----------------------------------------------------------------共鸣界面路径--------------------------------
+-- 当前命名等级
+local m_curgmLvl = "SinhaengStarPanel/ResonatePanel/CurLevel/Label_Name";
+-- 当前共鸣属性组
+local m_curgmAttr = "SinhaengStarPanel/ResonatePanel/CurLevel/Attr";
+-- 下级共鸣等级
+local m_nextgmLvl = "SinhaengStarPanel/ResonatePanel/NextLevel/Label_Name";
+-- 下级共鸣属性组
+local m_nextgmAttr = "SinhaengStarPanel/ResonatePanel/NextLevel/Attr";
+--
+local m_nextxxxgmAttr = "SinhaengStarPanel/ResonatePanel/NextLevel";
+-- 共鸣按钮
+local m_gmBtnStr = "SinhaengStarPanel/SpriteBtn";
+--
+local m_bgTextureStr = "SinhaengStarPanel/bg/Texture";
+-----------------------------------引用的对象---------------------------------------------------------------------
+local curAttrCostTab = nil;
+--选中的属性button第几个
+local m_curAttrIndex = -1;     -- 默认显示总属性
+-- 道具是否足够
+local m_CoinIsEnough = false;
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 战力达到一千
+local m_FightValue1 = 1000;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+local tabIndex = 3;
+
+------------------------------------BaseLua调用的同名方法-----------------------------------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitShow();
+    end
+end
+function OnDisable()
+    m_curAttrIndex = -1;
+    m_CoinIsEnough  = false;
+    curAttrCostTab = nil
+    if m_panelObject~=nil then
+        --m_panelObject:SetActive(false);
+        SetGameObjectState(m_panelStr1,false,m_panelObject);
+    end
+end
+
+function OnDestroy()
+    curSkillCostTab = nil;
+    m_CoinIsEnough  = false;
+    m_curAttrIndex = -1;
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-- object
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_SINHAENGPANEL);
+    m_panelObject = child(m_panelObject,m_PanelStr1).gameObject;
+end
+-- 事件
+function InitEvents()  
+    --升阶
+    SetGameObjectEvent(m_lvlBtnStr,lvlStateUpClick,m_panelObject);
+    for i=1,7 do
+        SetGameObjectEvent(m_midIconStr..i.."/bg1",OnClickItems,m_panelObject);
+    end
+    --显示共鸣
+    SetGameObjectEvent(m_gmBtnStr,OnClickGm,m_panelObject);
+    -- 隐藏共鸣
+    SetGameObjectEvent(m_gMStr.."/Close_Shade",closegMPanel,m_panelObject);
+    SetGameObjectEvent(m_gMStr.."/Button_Close",closegMPanel,m_panelObject);
+    -- 显示总属性
+    SetGameObjectEvent(m_bgTextureStr,showTotalClick,m_panelObject);
+end
+function showTotalClick()
+    m_curAttrIndex = -1;
+    SetMidEffect();
+    InitRightContent();
+end
+function OnClickGm()
+    ShowMContent();
+end
+function closegMPanel()
+    SetGameObjectState(m_gMStr,false,m_panelObject);
+end
+function OnClickItems(e)
+    --error(e.transform.parent.name);
+    local Index = tonumber(string.sub(e.transform.parent.name, 5, string.len(e.transform.parent.name)));
+    m_curAttrIndex = Index;
+    SetMidEffect();
+    InitRightContent();
+end
+function lvlStateUpClick()
+    if m_CoinIsEnough == false then
+        -- 消耗品不足
+        ShowSystemFlowTips(9771);
+        return;
+    end
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    local types = 0;
+    if m_playerStars[m_curAttrIndex].level <=0 then
+        types = 6;
+    else
+        types = 5;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SINHAENG_OPER);
+    buffer:WriteByte(types);
+    buffer:WriteInt(m_playerStars[m_curAttrIndex].types);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+function InitShow()
+    SetGameObjectState(m_panelStr1,true,m_panelObject);
+    --默认关闭共鸣
+    SetGameObjectState(m_gMStr,false,m_panelObject);
+    InitMidContent();
+    InitRightContent();
+end
+function SetMidEffect()
+    local canfind = false;
+    for i=1,7 do
+        if i == m_curAttrIndex then
+            local m_transform = child(m_panelObject,m_midIconStr .. i).gameObject.transform;
+            SetGameObjectPos(m_midEffectStr,Vector3.New(m_transform.localPosition.x, m_transform.localPosition.y, 0),m_panelObject);
+            canfind = true;
+            break;
+        end
+    end
+    if canfind == true then
+        SetGameObjectState(m_midEffectStr,true,m_panelObject);
+    else
+        SetGameObjectState(m_midEffectStr,false,m_panelObject);
+    end
+end
+function InitMidContent()
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    SetMidEffect();
+    --SetGameObjectState(m_midIconStr..index.."/effect",index==m_curAttrIndex,m_panelObject);
+    for index=1,# m_playerStars do
+        -- 设置图标
+        local icon = DavidsAttrTable.Get(m_playerStars[index].types).ItemId--*1000+m_playerStars[index].level).ItemId;
+        SetSpriteByAtlasID(m_midIconStr..index.."/icon", icon, m_panelObject,true);
+        SetGameObjectState(m_midIconStr..index.."/suo",true,m_panelObject);
+        local suo = child(m_panelObject,m_midIconStr..index.."/suo");
+        local state = getMidItemState(index);
+        local tweenScaleComp = GetComponent(m_panelObject, m_midIconStr..index.."/suo", "TweenRotation");
+        if state == 1 then
+            local canShake = checkItemShake(index);   -- 是否可以晃动
+            if canShake == true then
+                tweenScaleComp.enabled = true;
+            else
+                tweenScaleComp.enabled = false;
+                suo.localEulerAngles = Vector3.zero;
+            end
+            SetGameObjectState(m_midIconStr..index.."/suo",true,m_panelObject);
+        else
+            tweenScaleComp.enabled = false;
+            SetGameObjectState(m_midIconStr..index.."/suo",false,m_panelObject);
+        end
+    end
+    --InitgMContent();
+end
+function InitRightContent()
+    --error("m_curAttrIndex：："..m_curAttrIndex);
+    local ShowAttr = m_curAttrIndex>0 and true or false;
+    SetGameObjectState(m_attrStr,ShowAttr,m_panelObject);
+    SetGameObjectState(m_totalStr,ShowAttr == false,m_panelObject);
+    if ShowAttr == true then
+        local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+        local m_attrCfg = DavidsAttrTable.Get(m_playerStars[m_curAttrIndex].types);
+        local curLvlCfg = DavidsPeiyangTable.Get(m_playerStars[m_curAttrIndex].types*1000+m_playerStars[m_curAttrIndex].level);
+        if curLvlCfg == nil or m_attrCfg== nil then
+            return;
+        end
+        -- 设置属性名称，icon，等级
+        SetLabelContent(m_attrNameStr,CCommonTool.GetAttrNameByAttrID(m_attrCfg.Id),m_panelObject);
+        SetSpriteByAtlasID(m_attrStr.."/Icon", m_attrCfg.ItemId, m_panelObject,true);
+        SetLabelContent(m_attrStr.."/Lv","Lv."..m_playerStars[m_curAttrIndex].level,m_panelObject);
+        -- 设置激活属性或升星属性  
+        SetLabelContent(m_activeAttrStr.."/attr_name",CCommonTool.GetAttrNameByAttrID(m_attrCfg.Id)..":",m_panelObject);
+        OnNumberShow(m_activeAttrStr.."/attr_value",getAttrValue(m_playerStars[m_curAttrIndex],true));
+        --SetLabelContent(m_activeAttrStr.."/attr_value",getAttrValue(m_playerStars[m_curAttrIndex]),m_panelObject);
+        if m_playerStars[m_curAttrIndex].level <=0 then
+            SetGameObjectState(m_startsAttrStr,false,m_panelObject);
+            SetLabelContent(m_lvlBtnLabStr,GetTextToId(679),m_panelObject);
+        else
+            SetGameObjectState(m_startsAttrStr,true,m_panelObject);
+            SetLabelContent(m_startsAttrStr.."/attr_name",CCommonTool.GetAttrNameByAttrID(m_attrCfg.Id)..":",m_panelObject);
+            OnNumberShow(m_startsAttrStr.."/attr_value",getAttrValue(m_playerStars[m_curAttrIndex],true)+curLvlCfg.ValueAttr1);
+            --SetLabelContent(m_startsAttrStr.."/attr_value",getAttrValue(m_playerStars[m_curAttrIndex]),m_panelObject);
+            SetLabelContent(m_startsAttrStr.."/attr_value_next",curLvlCfg.ValueAttr1,m_panelObject);
+            SetLabelContent(m_lvlBtnLabStr,GetTextToId(9214),m_panelObject);
+        end
+        -- 设置星级，
+        for i=1,5 do
+            if m_playerStars[m_curAttrIndex].star_lvl >=i then
+                SetGameObjectState(m_starTranStr.."/Sprite"..i,true,m_panelObject);
+                SetGameObjectState(m_starTranStr.."/Sprite"..i.."_",false,m_panelObject);
+            else
+                SetGameObjectState(m_starTranStr.."/Sprite"..i,false,m_panelObject);
+                SetGameObjectState(m_starTranStr.."/Sprite"..i.."_",true,m_panelObject);
+            end
+        end
+        -- 进度条,消耗品
+        if m_playerStars[m_curAttrIndex].star_lvl >=5 and m_playerStars[m_curAttrIndex].level >=10 then
+            SetGameObjectState(m_notMaxLvl,false,m_panelObject);
+            SetGameObjectState(m_maxLvl,true,m_panelObject);
+        else
+            SetGameObjectState(m_notMaxLvl,true,m_panelObject);
+            SetGameObjectState(m_maxLvl,false,m_panelObject);
+            --进度条
+            local has_exp = m_playerStars[m_curAttrIndex].exp;
+            local need_exp = nil;
+            if m_playerStars[m_curAttrIndex].level <=0 then
+                need_exp = 1;
+            else
+                need_exp = curLvlCfg.IntenMaxExp;
+            end
+ 
+            SetLabelContent(m_expLabelStr.."/label",has_exp.."/"..need_exp,m_panelObject);
+            SetSpriteFillAmount(m_expLabelStr.."/processBar",has_exp / need_exp,m_panelObject);              
+            local cost_table = getcostTabs(m_curAttrIndex);
+            for X_I=1,#cost_table do
+                SetSpriteApptitudeV04(m_costItemStr .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(cost_table[X_I].excelID), m_panelObject);
+                SetSpriteApptitude2V04(m_costItemStr .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(cost_table[X_I].excelID), m_panelObject);
+                SetSpriteByAtlasID(m_costItemStr .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(cost_table[X_I].excelID), m_panelObject, true);
+                SetItemToolTipsEvent(m_panelObject, m_costItemStr, ENUMPANELID.ENUM_SINHAENGPANEL, false, cost_table[X_I].excelID);
+                local itemAttr = ItemAttribute.New(cost_table[X_I].excelID);
+                SetLabelContent(m_costItemStr.."/Label_Name",itemAttr:GetItemName(),m_panelObject);
+                SetGameObjectState(m_costItemStr,true,m_panelObject);
+                if cost_table[X_I].Type == 1 then
+                    local hasNum = GetBindAndNotNumById(cost_table[X_I].excelID);
+                    SetLabelContent(m_costItemStr.. m_itemNumStr, hasNum .. "/" .. cost_table[X_I].Num, m_panelObject);
+                    --error("hasNum:"..hasNum.." cost_table::"..cost_table[X_I].Num);
+                    if hasNum < cost_table[X_I].Num then
+                        SetLabelColor(m_costItemStr .. m_itemNumStr, "D83232", m_panelObject);
+                        SetGameObjectState(m_costItemStr .. m_itemGetsWay, true, m_panelObject);
+                        SetGameObjectEvent(m_costItemStr .. m_itemGetsWay,GetItemWayClick,m_panelObject);
+                        m_CoinIsEnough = false;
+                    else
+                        m_CoinIsEnough = true;
+                        SetLabelColor(m_costItemStr.. m_itemNumStr, "B2B2B2FF", m_panelObject);
+                        SetGameObjectState(m_costItemStr .. m_itemGetsWay, false, m_panelObject);
+                    end
+                end
+            end        
+        end
+    else
+        local hasPyTab ,hasLen= getHasPyAttr();--SinhaengPanelManager.getStarTabDatas();
+        for index=1,7 do
+            if index<=#hasPyTab then
+                SetGameObjectState(m_totalStr.."/Attrs/Attribute"..index,true,m_panelObject);
+                SetSpriteByAtlasID(m_totalStr.."/Attrs/Attribute"..index.."/Icon",hasPyTab[index].IconId,m_panelObject,true);
+                SetLabelContent(m_totalStr.."/Attrs/Attribute"..index.."/Label",CCommonTool.GetAttrNameByAttrID(hasPyTab[index].Type),m_panelObject);
+                OnNumberShow(m_totalStr.."/Attrs/Attribute"..index.."/Label_Num",hasPyTab[index].Value);
+                --SetLabelContent(,hasPyTab[index].Value,m_panelObject);
+            else
+                SetGameObjectState(m_totalStr.."/Attrs/Attribute"..index,false,m_panelObject);
+            end
+        end
+        SetLabelContent(m_activeNumLabStr,hasLen.."/"..7,m_panelObject);
+    end
+    -- 设置小红点显示
+    SinhaengPanel.SetLeftTabRedShow(tabIndex,starCanShowRed());
+end
+-- 得到已经培养的属性组
+function getHasPyAttr()
+   local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+   local newAttrTab = {};
+   local index = 0 ;
+   for i=1,#m_playerStars do
+        if getAttrValue(m_playerStars[i]) >0 then
+            index = index+1;
+        end
+        newAttrTab[i] = {};
+        newAttrTab[i].Type = m_playerStars[i].types;
+        newAttrTab[i].Value = getAttrValue(m_playerStars[i]);
+        newAttrTab[i].IconId = DavidsAttrTable.Get(m_playerStars[i].types).ItemId;        
+   end
+   --error("已经培养的属性组长度：："..index);
+   return newAttrTab,index;
+end
+--是否可以显示小红点
+function starCanShowRed()
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    for i=1,#m_playerStars do
+        local cost_table = getcostTabs(i);
+        if cost_table[1].Num <= GetBindAndNotNumById(cost_table[1].excelID) and m_playerStars[i].level<10 then
+            return true;
+        end
+    end
+    return false;
+end
+function GetItemWayClick()
+    local cost_table = getcostTabs(m_curAttrIndex);
+    if cost_table[1] ~=nil then
+        GetWayPanel.Show(cost_table[1].excelID,ENUMPANELID.ENUM_SINHAENGPANEL);
+    end
+end
+function getcostTabs(index)
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    local pyCfg = m_playerStars[index];
+    local curLvlCfg = nil ;
+    if pyCfg.level <=0 then
+        curLvlCfg = DavidsAttrTable.Get(pyCfg.types);
+    else
+        curLvlCfg = DavidsPeiyangTable.Get(pyCfg.types*1000+pyCfg.level);
+    end
+    local cost_table = 
+    {
+        [1] ={Type = 1,excelID = curLvlCfg.IntenItem1ID,Num =curLvlCfg.IntenItem1Num }
+    }
+    return cost_table;
+end
+function getAttrValue(pyCfg,show)
+    local curLvlCfg = DavidsPeiyangTable.Get(pyCfg.types*1000+pyCfg.level);
+    local Values = 0;
+    for index=0, pyCfg.level-1 do
+        local temp_pycfg = DavidsPeiyangTable.Get(pyCfg.types*1000+ index);
+        if temp_pycfg ~=nil then
+            Values = Values + temp_pycfg.TypeAttr1+10*temp_pycfg.ValueAttr1;
+        end
+    end
+
+    local base_value = 0;
+    if show~=nil then
+        base_value =  curLvlCfg.TypeAttr1 ;
+    else
+        base_value = pyCfg.level >0 and curLvlCfg.TypeAttr1 or 0;
+    end
+    
+    Values = Values+ base_value +pyCfg.star_lvl*curLvlCfg.ValueAttr1;
+    return Values;
+end
+-- 共鸣
+function ShowMContent()
+    SetGameObjectState(m_gMStr,true,m_panelObject);
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    local lvlTab = {};
+    for index = 1, # m_playerStars do
+        table.insert(lvlTab,m_playerStars[index].level);
+    end
+    table.sort( lvlTab, function(a,b)
+         return a<b;
+    end);
+    local gm_lvl = lvlTab[1];
+    true_lvl = gm_lvl==0 and 1 or gm_lvl;
+    SetLabelContent(m_curgmLvl,string_format(GetTextToId(9186),true_lvl),m_panelObject);
+    local color3 = (gm_lvl==0 and "807F7EFF") or "DDEEFFFF";
+    SetLabelColor(m_curgmLvl, color3, m_panelObject);
+    local gMTab =  getCurgMAttr(true_lvl);
+    --当前的
+    for i=1,#gMTab do
+        SetLabelContent(m_curgmAttr..i.."/Label_Name",CCommonTool.GetAttrNameByAttrID(gMTab[i].Type),m_panelObject);
+        SetLabelContent(m_curgmAttr..i.."/Label_Value",gMTab[i].Value,m_panelObject);
+        local color1 = (gm_lvl==0 and "807F7EFF") or "FFFCD1FF";
+        --local color2 = (gm_lvl==0 and "807F7EFF") or "89C05AFF";
+        SetLabelColor(m_curgmAttr..i.."/Label_Name", color1, m_panelObject);
+        SetLabelColor(m_curgmAttr..i.."/Label_Value", color1, m_panelObject);
+    end
+    --下阶的
+    if gm_lvl >= DavidsResonateTable.Count then
+        SetGameObjectState(m_nextxxxgmAttr,false,m_panelObject);
+    else
+        SetGameObjectState(m_nextxxxgmAttr,true,m_panelObject);
+        SetLabelContent(m_nextgmLvl,string_format(GetTextToId(9186),true_lvl+1),m_panelObject);
+        local next_tab = getCurgMAttr(true_lvl+1);
+        for i=1,4 do
+             SetLabelContent(m_nextgmAttr..i.."/Label_Name",CCommonTool.GetAttrNameByAttrID(next_tab[i].Type),m_panelObject);
+             SetLabelContent(m_nextgmAttr..i.."/Label_Value",next_tab[i].Value,m_panelObject);
+        end
+    end
+end
+function getCurgMAttr(index)
+    local tabs = {}
+    if DavidsResonateTable.Get(index) ~=nil then
+        for i=1, 4 do
+            tabs[i] = {};
+            if i == 1 then
+                tabs[i].Type = DavidsResonateTable.Get(index).Attr1;
+                tabs[i].Value = DavidsResonateTable.Get(index).AttrValue1;
+            elseif i == 2 then
+               tabs[i].Type = DavidsResonateTable.Get(index).Attr2;
+                tabs[i].Value = DavidsResonateTable.Get(index).AttrValue2;
+            elseif i ==3 then
+                tabs[i].Type = DavidsResonateTable.Get(index).Attr3;
+                tabs[i].Value = DavidsResonateTable.Get(index).AttrValue3;
+            elseif i ==4 then
+                tabs[i].Type = DavidsResonateTable.Get(index).Attr4;
+                tabs[i].Value = DavidsResonateTable.Get(index).AttrValue4;
+            end
+        end
+    end
+    return tabs;
+end
+function getMidItemState(index)
+    local state = -1;
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    if m_playerStars[index] ~= nil then
+        if m_playerStars[index].level <=0 then
+            state = 1;           -- 未解锁
+        elseif m_playerStars[index].level >=10 then
+            state = 3;              -- 满级
+        else 
+            state = 2;
+        end
+    end
+    return state;
+end
+function checkItemShake(index)
+    local m_playerStars = SinhaengPanelManager.getStarTabDatas();
+    local t_lvl = m_playerStars[index].level;
+    if m_playerStars[index] ~= nil then
+        local costCfg = nil;
+        if t_lvl <=0 then
+            costCfg = DavidsAttrTable.Get(m_playerStars[index].types);
+        else
+            costCfg = DavidsPeiyangTable.Get(m_playerStars[index].types*1000+true_lvl);
+        end
+        
+        if costCfg == nil then
+            error("神行【星魂】培养属性id::"..m_playerStars[index].types.." error");
+            return;
+        end
+        local cost_id = costCfg.IntenItem1ID;
+        local cost_num = costCfg.IntenItem1Num;
+        local has = GetBindAndNotNumById(cost_id);
+        return has >=cost_num;
+    end
+    return false;
+end
+
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    panelParams.tabIndex = tabIndex;
+    panelParams.attrIndex = m_curAttrIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+   
+end
+-- 数字显示方式
+function OnNumberShow(path, num)
+    local value1 = nil;
+    local value2 = nil;
+    local value = nil;
+    num = tonumber(num);
+    if num >= m_FightValue1 then
+        value1 = math.floor(num / m_FightValue1);
+        value2 = num - value1 * m_FightValue1;
+        if value1 >= m_FightValue1 then
+            local value3 = math.floor(value1 / m_FightValue1);
+            local value4 = value1 - value3 * m_FightValue1;
+            if OnValueShow(value4) == 0 then
+                value = value3 .. "," .. "000";
+            else
+                value = value3 .. "," .. OnValueShow(value4);
+            end
+        else
+            value = value1;
+        end
+        if OnValueShow(value2) == 0 then
+            SetLabelContent(path, value .. "," .. "000", m_panelObject);
+        else
+            SetLabelContent(path, value .. "," .. OnValueShow(value2), m_panelObject);
+        end
+    else
+        SetLabelContent(path, num, m_panelObject);
+    end
+end
+
+function OnValueShow(value)
+    local num = nil;
+    if value >= 100 then
+        num = value;
+    elseif value >= 10 then
+        num = "0" .. value;
+    elseif value >= 1 then
+        num = "00" .. value;
+    else
+        num = 0;
+    end
+    return num;
+end

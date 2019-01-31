@@ -1,0 +1,1301 @@
+﻿module("Equip_StarUp", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 名称所在的位置
+local m_AttrPanelAttrNameStr = "/Label_Name";
+-- 当前属性数值
+local m_AttrPanelAttrCurValueStr = "/Label_CurValue";
+-- 升级后属性数值
+local m_AttrPanelAttrStarUpValueStr = "/Label_StarUpValue";
+-- 升级后增加属性数值
+local m_AttrPanelAttrStarUpAddValueStr = "/Label_StarUpAddValue";
+-----------------------------------------按钮路径--------------------------------------
+-- 基础属性详细按钮点击
+local m_AttrDetailButtonStr = "StarUpPanel/Middle/Bottom/HasItem/ShowDetail_Button";
+-- 精炼按钮
+local m_StarLvButtonStr = "StarUpPanel/Middle/Bottom/HasItem/NotMaxLevel/StarLv_Button";
+
+-- 详细属性面板关闭按钮
+local m_CloseDetailAttrPanelStr = "StarUpPanel/ShowDetailPanel/Close_Button";
+
+-- 系统说明按钮
+local m_SystemExlpainStr = "StarUpPanel/Middle/Button";
+-----------------------------------------Sprite路径------------------------------------
+-- 中间上部装备图标信息
+local m_MiddleTopEquipIconStr = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/Sprite_Icon";
+-- 中间上部品质图标信息
+local m_MiddleTopEquipApptitudeStr = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/Sprite_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopEquipApptitude3Str = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/Sprite_Apptitude2";
+-- 中间上部装备图标信息
+local m_MiddleTopEquipApptitude2Str = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/Sprite_Equip_Apptitude";
+local m_MiddleTopEquipStep2Str = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/lb_Equip_Apptitude";
+-- 中间上部装备当前星级信息
+local m_MiddleTopEquipStarLv2Str = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/Label_StarNum";
+-- 中间上部装备套装
+local m_MiddleTopEquipSuitStr = "StarUpPanel/Middle/Top/HasItem/MaxStarLevel/CurItem/Sprite_Suit";
+
+-- 中间上部装备当前图标信息
+local m_MiddleTopCurEquipIconStr = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/Sprite_Icon";
+-- 中间上部品质当前图标信息
+local m_MiddleTopCurEquipApptitudeStr = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/Sprite_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopCurEquipApptitude3Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/Sprite_Apptitude2";
+-- 中间上部装备当前图标信息
+local m_MiddleTopCurEquipApptitude2Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/Sprite_Equip_Apptitude";
+local m_MiddleTopCurEquipStep2Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/lb_Equip_Apptitude";
+-- 中间上部装备当前星级信息
+local m_MiddleTopCurEquipStarLv2Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/Label_StarNum";
+-- 中间上部装备套装
+local m_MiddleTopCurEquipSuitStr = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/CurItem/Sprite_Suit";
+
+-- 中间上部装备下一级图标信息
+local m_MiddleTopNextEquipIconStr = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/Sprite_Icon";
+-- 中间上部品质下一级图标信息
+local m_MiddleTopNextEquipApptitudeStr = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/Sprite_Apptitude";
+-- 中间上部装备品质图标信息
+local m_MiddleTopNextEquipApptitude3Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/Sprite_Apptitude2";
+-- 中间上部装备下一级图标信息
+local m_MiddleTopNextEquipApptitude2Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/Sprite_Equip_Apptitude";
+local m_MiddleTopNextEquipStep2Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/lb_Equip_Apptitude";
+-- 中间上部装备下一级星级信息
+local m_MiddleTopNextEquipStarLv2Str = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/Label_StarNum";
+-- 中间上部装备套装
+local m_MiddleTopNextEquipSuitStr = "StarUpPanel/Middle/Top/HasItem/NotMaxStarLevel/NextItem/Sprite_Suit";
+----------------------------------gameobject所在的路径---------------------------------
+-- 左侧装备的listView组件所在的位置
+local m_leftEquipListViewCompStr = "StarUpPanel/Left/ItemPanel/Grid";
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewCompStr = "StarUpPanel/Right/ItemPanel/Grid";
+ 
+-- 中间上部有装备的显示
+local m_MiddleTopHasEquipContentStr = "StarUpPanel/Middle/Top/HasItem";
+-- 中间上部没有装备的显示
+local m_MiddleTopNoEquipContentStr = "StarUpPanel/Middle/Top/NoItem";
+
+-- 中间上部有装备达到最大星的显示
+local m_MaxStarLvStr = "/MaxStarLevel";
+-- 中间上部有装备没达到最大星的显示
+local m_NotMaxStarLvStr = "/NotMaxStarLevel";
+
+-- 中间下部有装备的显示
+local m_MiddleBottomHasEquipContentStr = "StarUpPanel/Middle/Bottom/HasItem";
+-- 中间下部没有装备的显示
+local m_MiddleBottomNoEquipContentStr = "StarUpPanel/Middle/Bottom/NoItem";
+
+-- 中间下方有装备的未达最大等级所在的位置
+local m_HasItemNotMaxLevelStr = "/NotMaxLevel";
+-- 中间下方有装备的达到最大等级所在的位置
+local m_HasItemMaxLevelStr = "/MaxLevel";
+
+-- 当前战斗力
+local m_CurFightValueStr = "/Attrs/FightValue/Label_CurValue";
+-- 精炼后战斗力
+local m_StarUpFightValueStr = "/Attrs/FightValue/Label_StarUpValue";
+-- 精炼加的战斗力
+local m_StarUpAddFigshtValueStr = "/Attrs/FightValue/Label_StarUpAddValue";
+-- 当前基础属性加成百分比
+local m_CurBaseAttrStr = "/Attrs/BaseAttr/Label_CurValue";
+-- 精炼后基础属性加成百分比
+local m_StarUpBaseAttrStr = "/Attrs/BaseAttr/Label_StarUpValue";
+-- 精炼加的基础属性加成百分比
+local m_StarUpAddBaseAttrStr = "/Attrs/BaseAttr/Label_StarUpAddValue";
+
+-- 有随即属性
+local m_HaveRandEffStr = "/Attrs/RandEffAttr/HasAttr";
+-- 没有随即属性
+local m_NoRandEffStr = "/Attrs/RandEffAttr/NoAttr";
+
+-- 当前随即属性加成百分比
+local m_CurRandAttrStr = "/Label_CurValue";
+-- 精炼后随即属性加成百分比
+local m_StarUpRandAttrStr = "/Label_StarUpValue";
+-- 精炼加的随即属性加成百分比
+local m_StarUpAddRandAttrStr = "/Label_StarUpAddValue";
+
+-- 精炼成功概率
+local m_StarUpProbabilityStr = "/Probability/Label_Intro";
+
+-- 详细属性面板所在的位置
+local m_DetailAttrPanel = "StarUpPanel/ShowDetailPanel";
+-- 详细属性中的基础属性标头位置
+local m_BaseAttrTitleStr = "/BaseAttrTitle";
+-- 详细属性中的附加属性标头位置
+local m_RandEffAttrTitleStr = "/RandEffTitle";
+-- 详细属性中的附加属性标头无属性位置
+local m_RandEffAttrTitleNoAttrStr = "/NoAttr";
+-- 详细属性中的附加属性标头有属性位置
+local m_RandEffAttrTitleHasAttrStr = "/HasAttr";
+-- 详细属性中的基础属性位置
+local m_BaseAttrDetailStr = "/BaseAttrs";
+-- 详细属性中的附加属性位置
+local m_RandEffAttrDetailStr = "/RandEffAttrs";
+-- 详细属性最大等级位置
+local m_DetailAttrMaxLevelStr = "/MaxLevel";
+-- 详细属性未达最大等级位置
+local m_DetailAttrNotMaxLevelStr = "/NotMaxLevel";
+-- 详细属性的共用位置
+local m_DetaiBaselAttrsStr = "/BaseAttr";
+-- 详细属性的共用位置
+local m_DetaiRandEffAttrsStr = "/RandAttr";
+
+
+-- 右侧所在位置
+local m_RightContentStr = "StarUpPanel/Right";
+
+-- 装备精炼成功率UItable组件
+local m_curStarUpSuccessUITableCompStr = "StarUpPanel/Middle/Bottom/HasItem/NotMaxLevel/Probability";
+
+-- 装备精炼成功的特效
+local m_EquipSuccessEffStr = "StarUpPanel/Middle/Top/Effect_Success";
+-- 装备精炼失败的特效
+local m_EquipFailEffStr = "StarUpPanel/Middle/Top/Effect_Fail";
+-- 装备精炼进行中的特效
+local m_EquipCycleEffStr = "StarUpPanel/Middle/Top/Effect_Cycle";
+-- 装备精炼点击的特效
+local m_EquipClickEffStr = "StarUpPanel/Middle/Top/Effect_Click";
+----------------------------------通用的名称路径---------------------------------------
+-- 装备图标
+local m_EquipIconSpriteStr = "Item/Sprite_Icon";
+-- 装备品质图标
+local m_EquipApptitudeSpriteStr = "Item/Sprite_Apptitude";
+-- 装备品质图标
+local m_EquipApptitudeSprite2Str = "Item/Sprite_Equip_Apptitude";
+local m_EquipStep2Str = "Item/lb_Equip_Apptitude";
+local m_EquipAppTitude2SpriteStr = "Item/Sprite_Apptitude2";
+-- 装备可精炼的红点提示
+local m_EquipCanOperateStr = "Sprite_RedHint";
+-- 装备名称文本的路径
+local m_EquipNameLabelStr = "Label_Name";
+-- 装备战斗力所在的文本路径
+local m_EquipFightValueStr = "Label_FightValue";
+-- 已装备所在的路径
+local m_EquipIsOnStr = "Equiped";
+-- 装备星级所在的位置
+local m_EquipStarLabelStr = "Item/Label_StarNum";
+local m_EquipStarStr = "Item/Label_StarNum/Label";
+-- 套装
+local m_EquipSuitStr = "Item/Sprite_Suit";
+
+
+-- 装备非本职业
+local m_NotSameProStr = "Item/Sprite_Other";
+-- 装备等级不到
+local m_NotReachLevelStr = "Item/Sprite_LvDown";
+
+-- 精炼消耗道具所在的位置
+local m_StarUpNeedItemStr = "Item";
+-- 精炼消耗数量所在的位置
+local m_StarUpNeedNumStr = "Label_Need";
+-- 精炼消耗加号所在的位置
+local m_StarUpNeedItemAddStr = "Item/Sprite_Mask";
+-- 精炼消耗获取按钮的文本所在的位置
+local m_StarUpNeedBuyLabelStr = "Buy_Button/Label";
+-- 精炼等级加号的位置
+local m_StarUpLevelAdd = "/Label";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+-- 左侧装备选择的是第几个
+local m_leftEquipSelect = -1;
+-- 左侧装备的listView组件
+local m_leftEquipListViewComp = nil;
+-- 右侧UIListView组件所在的位置
+local m_RightItemListViewComp = nil;
+-- 当前可以精炼的装备list
+local m_CanStarUpEquipsList = nil;
+-- 当前装备如果要洗练的话是否材料充足
+local m_curEquipCanForceItemEnough = true;
+-- 当前装备如果要洗练的话是否银币充足
+local m_curEquipCanStarUpCoinEnough = 0;
+-- 装备精炼成功率UItable组件
+local m_curStarUpSuccessUITableComp = nil;
+-- 当前需要选中的精炼的道具
+local m_SelectedItem = nil;
+
+-- 是否是跳转界面的设置
+local m_isJumpPanelSave = false;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+-- 详细属性界面是否开启
+m_DetailPanelIsOpen = false;
+
+-- 装备精炼成功的特效
+local m_EquipSuccessEff = nil;
+-- 装备精炼失败的特效
+local m_EquipFailEff = nil;
+-- 装备精炼进行中的特效
+local m_EquipCycleEff = nil;
+-- 装备精炼点击的特效
+local m_EquipClickEff = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够精练的颜色
+local m_CanStarUpColor = "[DDEEFF]";
+-- 不够精练的颜色
+local m_CannotStarUpColor = "[D83232]";
+-- 通用装备职业id
+local m_commonProId = 255;
+-- 消耗道具excelid 
+local m_ItemDataID = -1;
+-- 属性品质枚举
+ENUM_ATTR_APPTITUDE =
+{
+    NORMAL = 1,
+    -- 普通
+    GOOD = 2,
+    -- 优秀
+    EPIC = 3,-- 史诗
+}
+-- 属性品质颜色枚举
+ENUM_ATTR_APPTITUDE_COLOR =
+{
+    NORMAL = "E8E8D9",
+    -- 普通
+    GOOD = "39ACF5",
+    -- 优秀
+    EPIC = "C337FE",-- 史诗
+}
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitData();
+    InitEffectsShow();
+    InitShow();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitData();
+        InitEffectsShow();
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_leftEquipListViewComp = nil;
+    m_RightItemListViewComp = nil;
+    m_curEquipCanForceItemEnough = true;
+    m_curEquipCanStarUpCoinEnough = 0;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化数据
+function InitData()
+    if m_isJumpPanelSave then
+        m_leftEquipSelect = m_JumpPanelParamsTable[1];
+        m_DetailPanelIsOpen = m_JumpPanelParamsTable[2];
+        m_isJumpPanelSave = false;
+    else
+        m_leftEquipSelect = 0;
+        m_DetailPanelIsOpen = false;
+    end
+end
+
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    m_leftEquipListViewComp = GetComponent(m_panelObject, m_leftEquipListViewCompStr, "UIListView");
+    m_RightItemListViewComp = GetComponent(m_panelObject, m_RightItemListViewCompStr, "UIListView");
+    m_curStarUpSuccessUITableComp = GetComponent(m_panelObject, m_curStarUpSuccessUITableCompStr, "UITable");
+    m_EquipSuccessEff = child(m_panelObject, m_EquipSuccessEffStr).gameObject;
+    m_EquipFailEff = child(m_panelObject, m_EquipFailEffStr).gameObject;
+    m_EquipCycleEff = child(m_panelObject, m_EquipCycleEffStr).gameObject;
+    m_EquipClickEff = child(m_panelObject, m_EquipClickEffStr).gameObject;
+end
+
+-- 初始化事件
+function InitEvents()
+    m_leftEquipListViewComp:SetInitCallback(OnEquipCloneInit);
+    m_leftEquipListViewComp:SetClickCallback(OnEquipCloneClick);
+    m_RightItemListViewComp:SetInitCallback(OnNeedItemCloneInit);
+    m_RightItemListViewComp:SetClickCallback(OnNeedItemClick);
+end
+
+-- 初始化显示信息
+function InitShow()
+    SetGameObjectState(m_DetailAttrPanel, m_DetailPanelIsOpen, m_panelObject);
+    InitLeft();
+    InitMiddle();
+    InitRight();
+end
+
+-- 初始化左侧的显示
+function InitLeft()
+    m_CanStarUpEquipsList = G_BagMng:GetEquipWithStarLv();
+    m_leftEquipListViewComp:RemoveAll();
+    if m_leftEquipSelect >= m_CanStarUpEquipsList.Count then
+        m_leftEquipSelect = 0;
+    end
+    for Index = 1, m_CanStarUpEquipsList.Count do
+        m_leftEquipListViewComp:AddData(m_CanStarUpEquipsList[Index - 1]);
+        if m_SelectedItem and m_CanStarUpEquipsList[Index - 1] == m_SelectedItem then
+            m_leftEquipSelect = Index - 1;
+            m_SelectedItem = nil;
+        end
+    end
+    m_leftEquipListViewComp:LookAt(m_leftEquipSelect, true);
+end
+
+-- 初始化中间的显示
+function InitMiddle()
+    InitMiddleTop();
+    InitMiddleBottom();
+    InitDetailShowPanel();
+end
+
+-- 初始化中间上部的显示
+function InitMiddleTop()
+    if m_CanStarUpEquipsList.Count > 0 then
+        SetGameObjectState(m_MiddleTopHasEquipContentStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleTopNoEquipContentStr, false, m_panelObject);
+        local itemAttr = m_CanStarUpEquipsList[m_leftEquipSelect];
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        if itemAttr.StarItemLevel < equipInfo.StarMax then
+            SetGameObjectState(m_MiddleTopHasEquipContentStr .. m_MaxStarLvStr, false, m_panelObject);
+            SetGameObjectState(m_MiddleTopHasEquipContentStr .. m_NotMaxStarLvStr, true, m_panelObject);
+
+            SetSpriteByAtlasID(m_MiddleTopCurEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+            SetSpriteApptitudeV04(m_MiddleTopCurEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+            SetSpriteApptitude2V04(m_MiddleTopCurEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--            SetSpriteEquipApptitudeV04(m_MiddleTopCurEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+            SetGameObjectState(m_MiddleTopCurEquipApptitude2Str, false, m_panelObject);
+            SetLabelContent(m_MiddleTopCurEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+            SetLabelColor(m_MiddleTopCurEquipStep2Str, "91e464", m_panelObject);
+            if itemAttr:GetEquipInfo().SuitID > 0 then
+                SetGameObjectState(m_MiddleTopCurEquipSuitStr, true, m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopCurEquipSuitStr, false, m_panelObject);
+            end
+            if itemAttr.StarItemLevel <= 0 then
+                SetGameObjectState(m_MiddleTopCurEquipStarLv2Str, false, m_panelObject);
+                SetGameObjectPos(m_MiddleTopCurEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopCurEquipStarLv2Str, true, m_panelObject);
+                SetLabelContent(m_MiddleTopCurEquipStarLv2Str, itemAttr.StarItemLevel, m_panelObject);
+                if itemAttr.StarItemLevel < 10 then
+                    SetGameObjectPos(m_MiddleTopCurEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopCurEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+                else
+                    SetGameObjectPos(m_MiddleTopCurEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopCurEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+                end
+            end
+            SetSpriteByAtlasID(m_MiddleTopNextEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+            SetSpriteApptitudeV04(m_MiddleTopNextEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+            SetSpriteApptitude2V04(m_MiddleTopNextEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--            SetSpriteEquipApptitudeV04(m_MiddleTopNextEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+            SetGameObjectState(m_MiddleTopNextEquipApptitude2Str, false, m_panelObject);
+            SetLabelContent(m_MiddleTopNextEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+            SetLabelColor(m_MiddleTopNextEquipStep2Str, "91e464", m_panelObject);
+            SetLabelContent(m_MiddleTopNextEquipStarLv2Str, itemAttr.StarItemLevel + 1, m_panelObject);
+            SetGameObjectState(m_MiddleTopNextEquipStarLv2Str, true, m_panelObject);
+            if itemAttr:GetEquipInfo().SuitID > 0 then
+                SetGameObjectState(m_MiddleTopNextEquipSuitStr, true, m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopNextEquipSuitStr, false, m_panelObject);
+            end
+            if itemAttr.StarItemLevel + 1 < 10 then
+                SetGameObjectPos(m_MiddleTopNextEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                SetGameObjectPos(m_MiddleTopNextEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+            else
+                SetGameObjectPos(m_MiddleTopNextEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                SetGameObjectPos(m_MiddleTopNextEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+            end
+        else
+            SetSpriteByAtlasID(m_MiddleTopEquipIconStr, CCommonTool.GetImageIDByExcelID(excelID), m_panelObject, true);
+            SetSpriteApptitudeV04(m_MiddleTopEquipApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+            SetSpriteApptitude2V04(m_MiddleTopEquipApptitude3Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+--            SetSpriteEquipApptitudeV04(m_MiddleTopEquipApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), m_panelObject);
+            SetGameObjectState(m_MiddleTopEquipApptitude2Str, false, m_panelObject);
+            SetLabelContent(m_MiddleTopEquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), m_panelObject);
+            SetLabelColor(m_MiddleTopEquipStep2Str, "91e464", m_panelObject);
+            SetGameObjectState(m_MiddleTopHasEquipContentStr .. m_MaxStarLvStr, true, m_panelObject);
+            SetGameObjectState(m_MiddleTopHasEquipContentStr .. m_NotMaxStarLvStr, false, m_panelObject);
+            if itemAttr:GetEquipInfo().SuitID > 0 then
+                SetGameObjectState(m_MiddleTopEquipSuitStr, true, m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopEquipSuitStr, false, m_panelObject);
+            end
+            if itemAttr.StarItemLevel <= 0 then
+                SetGameObjectState(m_MiddleTopEquipStarLv2Str, false, m_panelObject);
+                SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(49, -48, 0), m_panelObject);
+            else
+                SetGameObjectState(m_MiddleTopEquipStarLv2Str, true, m_panelObject);
+                SetLabelContent(m_MiddleTopEquipStarLv2Str, itemAttr.StarItemLevel, m_panelObject);
+                if itemAttr.StarItemLevel < 10 then
+                    SetGameObjectPos(m_MiddleTopEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-13, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(24, -48, 0), m_panelObject);
+                else
+                    SetGameObjectPos(m_MiddleTopEquipStarLv2Str .. m_StarUpLevelAdd, Vector3.New(-25, 1, 0), m_panelObject);
+                    SetGameObjectPos(m_MiddleTopEquipSuitStr, Vector3.New(12, -48, 0), m_panelObject);
+                end
+            end
+        end
+
+    else
+        SetGameObjectState(m_MiddleTopHasEquipContentStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleTopNoEquipContentStr, true, m_panelObject);
+    end
+end
+
+-- 初始化中间下部的显示
+function InitMiddleBottom()
+    if m_CanStarUpEquipsList.Count > 0 then
+        local itemAttr = m_CanStarUpEquipsList[m_leftEquipSelect];
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        local equipMakeInfo = CCommonTool.GetEquipMakeDataByID(equipInfo.SortStar * 100 + itemAttr.StarItemLevel);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        if equipMakeInfo == nil then
+            error("装备升星消耗信息表不存在，ID为::::" ..(equipInfo.SortStar * 100 + itemAttr.StarItemLevel));
+            return;
+        end
+        if itemAttr.StarItemLevel < equipInfo.StarMax then
+            SetGameObjectState(m_MiddleBottomHasEquipContentStr .. m_HasItemNotMaxLevelStr, true, m_panelObject);
+            SetGameObjectState(m_MiddleBottomHasEquipContentStr .. m_HasItemMaxLevelStr, false, m_panelObject);
+            local path = m_MiddleBottomHasEquipContentStr .. m_HasItemNotMaxLevelStr;
+            local curFightValue = CaculateStarUpFightValue(itemAttr, false);
+            local NextFightValue = CaculateStarUpFightValue(itemAttr, true);
+            local addFightValue = NextFightValue - curFightValue;
+            SetLabelContent(path .. m_CurFightValueStr, curFightValue, m_panelObject);
+            SetLabelContent(path .. m_StarUpFightValueStr, NextFightValue, m_panelObject);
+            SetLabelContent(path .. m_StarUpAddFigshtValueStr, addFightValue, m_panelObject);
+
+            local curBasePercent = equipInfo.BaseAttrAddPercent / 100 * itemAttr.StarItemLevel;
+            local nextBasePercent = equipInfo.BaseAttrAddPercent / 100 *(itemAttr.StarItemLevel + 1);
+            local addBasePercent = nextBasePercent - curBasePercent;
+            SetLabelContent(path .. m_CurBaseAttrStr, curBasePercent .. "%", m_panelObject);
+            SetLabelContent(path .. m_StarUpBaseAttrStr, nextBasePercent .. "%", m_panelObject);
+            SetLabelContent(path .. m_StarUpAddBaseAttrStr, addBasePercent .. "%", m_panelObject);
+
+            if EquipIsHaveRandEff(itemAttr) then
+                SetGameObjectState(path .. m_HaveRandEffStr, true, m_panelObject);
+                SetGameObjectState(path .. m_NoRandEffStr, false, m_panelObject);
+                local curRanEffPercent = equipInfo.RandEffAddPercent / 100 * itemAttr.StarItemLevel;
+                local nextRanEffPercent = equipInfo.RandEffAddPercent / 100 *(itemAttr.StarItemLevel + 1);
+                local addRandEffPercent = nextRanEffPercent - curRanEffPercent;
+                SetLabelContent(path .. m_HaveRandEffStr .. m_CurRandAttrStr, curRanEffPercent .. "%", m_panelObject);
+                SetLabelContent(path .. m_HaveRandEffStr .. m_StarUpRandAttrStr, nextRanEffPercent .. "%", m_panelObject);
+                SetLabelContent(path .. m_HaveRandEffStr .. m_StarUpAddRandAttrStr, addRandEffPercent .. "%", m_panelObject);
+            else
+                SetGameObjectState(path .. m_HaveRandEffStr, false, m_panelObject);
+                SetGameObjectState(path .. m_NoRandEffStr, true, m_panelObject);
+            end
+            SetLabelTextByID(path .. m_StarUpProbabilityStr, equipMakeInfo.Txt, m_panelObject);
+            m_curStarUpSuccessUITableComp:Reposition();
+        else
+            SetGameObjectState(m_MiddleBottomHasEquipContentStr .. m_HasItemNotMaxLevelStr, false, m_panelObject);
+            SetGameObjectState(m_MiddleBottomHasEquipContentStr .. m_HasItemMaxLevelStr, true, m_panelObject);
+            local path = m_MiddleBottomHasEquipContentStr .. m_HasItemMaxLevelStr;
+            local curFightValue = CaculateStarUpFightValue(itemAttr, false);
+            SetLabelContent(path .. m_CurFightValueStr, curFightValue, m_panelObject);
+
+            local curBasePercent = equipInfo.BaseAttrAddPercent / 100 * itemAttr.StarItemLevel;
+            SetLabelContent(path .. m_CurBaseAttrStr, curBasePercent .. "%", m_panelObject);
+
+            if EquipIsHaveRandEff(itemAttr) then
+                SetGameObjectState(path .. m_HaveRandEffStr, true, m_panelObject);
+                SetGameObjectState(path .. m_NoRandEffStr, false, m_panelObject);
+                local curRanEffPercent = equipInfo.RandEffAddPercent / 100 * itemAttr.StarItemLevel;
+                SetLabelContent(path .. m_HaveRandEffStr .. m_CurRandAttrStr, curRanEffPercent .. "%", m_panelObject);
+            else
+                SetGameObjectState(path .. m_HaveRandEffStr, false, m_panelObject);
+                SetGameObjectState(path .. m_NoRandEffStr, true, m_panelObject);
+            end
+        end
+        SetGameObjectState(m_MiddleBottomHasEquipContentStr, true, m_panelObject);
+        SetGameObjectState(m_MiddleBottomNoEquipContentStr, false, m_panelObject);
+    else
+        SetGameObjectState(m_MiddleBottomHasEquipContentStr, false, m_panelObject);
+        SetGameObjectState(m_MiddleBottomNoEquipContentStr, true, m_panelObject);
+    end
+end
+
+-- 初始化详细变化属性面板
+function InitDetailShowPanel()
+    if m_CanStarUpEquipsList.Count > 0 then
+        local itemAttr = m_CanStarUpEquipsList[m_leftEquipSelect];
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        local baseAttrPercent = equipInfo.BaseAttrAddPercent / 10000;
+        local randEffAttrPercent = equipInfo.RandEffAddPercent / 10000;
+        SetLabelContent(m_DetailAttrPanel .. m_BaseAttrTitleStr .. m_CurRandAttrStr,(baseAttrPercent * 100 * itemAttr.StarItemLevel) .. "%", m_panelObject);
+        if itemAttr.StarItemLevel < equipInfo.StarMax then
+            SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrTitleStr .. m_DetailAttrNotMaxLevelStr, true, m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrTitleStr .. m_DetailAttrNotMaxLevelStr .. m_StarUpRandAttrStr,(baseAttrPercent * 100 *(itemAttr.StarItemLevel + 1)) .. "%", m_panelObject);
+
+            -- 基础属性
+            SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr, true, m_panelObject);
+            SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr, false, m_panelObject);
+            local attrCurValue = equipInfo.Attr1Value *(1 + baseAttrPercent * itemAttr.StarItemLevel);
+            local attrNextValue = equipInfo.Attr1Value *(1 + baseAttrPercent *(itemAttr.StarItemLevel + 1));
+            local AddValue = attrNextValue - attrCurValue;
+            attrCurValue = GetAttrIndexValue(equipInfo.Attr1, attrCurValue);
+            attrNextValue = GetAttrIndexValue(equipInfo.Attr1, attrNextValue);
+            AddValue = GetAttrIndexValue(equipInfo.Attr1, AddValue);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "1" .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(equipInfo.Attr1), m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "1" .. m_AttrPanelAttrCurValueStr, attrCurValue, m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "1" .. m_AttrPanelAttrStarUpValueStr, attrNextValue, m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "1" .. m_AttrPanelAttrStarUpAddValueStr, AddValue, m_panelObject);
+            attrCurValue = equipInfo.Attr2Value *(1 + baseAttrPercent * itemAttr.StarItemLevel);
+            attrNextValue = equipInfo.Attr2Value *(1 + baseAttrPercent *(itemAttr.StarItemLevel + 1));
+            AddValue = attrNextValue - attrCurValue;
+            attrCurValue = GetAttrIndexValue(equipInfo.Attr2, attrCurValue);
+            attrNextValue = GetAttrIndexValue(equipInfo.Attr2, attrNextValue);
+            AddValue = GetAttrIndexValue(equipInfo.Attr2, AddValue);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "2" .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(equipInfo.Attr2), m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "2" .. m_AttrPanelAttrCurValueStr, attrCurValue, m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "2" .. m_AttrPanelAttrStarUpValueStr, attrNextValue, m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "2" .. m_AttrPanelAttrStarUpAddValueStr, AddValue, m_panelObject);
+            if equipInfo.Attr3 > 0 then
+                attrCurValue = equipInfo.Attr3Value *(1 + baseAttrPercent * itemAttr.StarItemLevel);
+                attrNextValue = equipInfo.Attr3Value *(1 + baseAttrPercent *(itemAttr.StarItemLevel + 1));
+                AddValue = attrNextValue - attrCurValue;
+                attrCurValue = GetAttrIndexValue(equipInfo.Attr3, attrCurValue);
+                attrNextValue = GetAttrIndexValue(equipInfo.Attr3, attrNextValue);
+                AddValue = GetAttrIndexValue(equipInfo.Attr3, AddValue);
+                SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "3" .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(equipInfo.Attr3), m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "3" .. m_AttrPanelAttrCurValueStr, attrCurValue, m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "3" .. m_AttrPanelAttrStarUpValueStr, attrNextValue, m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "3" .. m_AttrPanelAttrStarUpAddValueStr, AddValue, m_panelObject);
+                SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "3", true, m_panelObject);
+            else
+                SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiBaselAttrsStr .. "3", false, m_panelObject);
+            end
+
+            -- 附加属性
+            SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrNotMaxLevelStr, true, m_panelObject);
+            SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrMaxLevelStr, false, m_panelObject);
+            SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr .. m_DetailAttrNotMaxLevelStr, true, m_panelObject);
+            if EquipIsHaveRandEff(itemAttr) then
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr, true, m_panelObject);
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleNoAttrStr, false, m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr .. m_CurRandAttrStr,(randEffAttrPercent * 100 * itemAttr.StarItemLevel) .. "%", m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr .. m_DetailAttrNotMaxLevelStr .. m_StarUpRandAttrStr,(randEffAttrPercent * 100 *(itemAttr.StarItemLevel + 1)) .. "%", m_panelObject);
+                local itemEquipAttrList = itemAttr.AllEquipAttribute;
+                if itemEquipAttrList == nil then
+                    return;
+                end
+                local equipRandomAttrClass = itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+                if equipRandomAttrClass == nil then
+                    return;
+                end
+                local allEquipRandomAttrs = equipRandomAttrClass.EquipRandomAttrs;
+                if allEquipRandomAttrs == nil then
+                    return;
+                end
+                local attrID = 0;
+                local curValue = 0;
+                local nextValue = 0;
+                local addValue = 0;
+                local ratio = 0;
+                local groupID = 0;
+
+                for Index = 1, allEquipRandomAttrs.Count do
+                    if Index > 5 then
+                        -- 超过显示条目不显示
+                        return;
+                    end
+                    local path = m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiRandEffAttrsStr .. Index;
+                    if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 then
+                        SetGameObjectState(path, true, m_panelObject);
+                        attrID = allEquipRandomAttrs[Index - 1].EffectRandomAttrID;
+                        groupID = allEquipRandomAttrs[Index - 1].EffectRandomGroupID;
+                        curValue = allEquipRandomAttrs[Index - 1].EffectRandomAttrValue *(1 + randEffAttrPercent * itemAttr.StarItemLevel);
+                        nextValue = allEquipRandomAttrs[Index - 1].EffectRandomAttrValue *(1 + randEffAttrPercent *(itemAttr.StarItemLevel + 1));
+                        addValue = nextValue - curValue;
+                        ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                        local apptitude = GetNameApptitude(groupID);
+                        if apptitude == ENUM_ATTR_APPTITUDE.NORMAL then
+                            SetLabelColor(path .. m_AttrPanelAttrNameStr, ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                        elseif apptitude == ENUM_ATTR_APPTITUDE.GOOD then
+                            SetLabelColor(path .. m_AttrPanelAttrNameStr, ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                        elseif apptitude == ENUM_ATTR_APPTITUDE.EPIC then
+                            SetLabelColor(path .. m_AttrPanelAttrNameStr, ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                        else
+                            error("附加效果组ID的百位不为1,2,3，说好的123呢，%>_<%" .. groupID);
+                        end
+                        SetLabelContent(path .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrID), m_panelObject);
+                        local showValue;
+                        local nextShowValue;
+                        local addShowValue;
+                        if ratio < 1 then
+                            showValue = string.format("%0.1f", curValue * 100);
+                            nextShowValue = string.format("%0.1f", nextValue * 100);
+                            addShowValue = string.format("%0.1f", addValue * 100);
+                            SetLabelContent(path .. m_AttrPanelAttrCurValueStr, showValue .. "%", m_panelObject);
+                            SetLabelContent(path .. m_AttrPanelAttrStarUpValueStr, nextShowValue .. "%", m_panelObject);
+                            SetLabelContent(path .. m_AttrPanelAttrStarUpAddValueStr, addShowValue .. "%", m_panelObject);
+                        else
+                            showValue = curValue;
+                            nextShowValue = nextValue;
+                            addShowValue = addValue;
+                            SetLabelContent(path .. m_AttrPanelAttrCurValueStr, math.floor(showValue), m_panelObject);
+                            SetLabelContent(path .. m_AttrPanelAttrStarUpValueStr, math.floor(nextShowValue), m_panelObject);
+                            SetLabelContent(path .. m_AttrPanelAttrStarUpAddValueStr, math.floor(nextShowValue) - math.floor(showValue), m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(path, false, m_panelObject);
+                    end
+                end
+                for Index = allEquipRandomAttrs.Count + 1, 5 do
+                    SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiRandEffAttrsStr .. Index, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr, false, m_panelObject);
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleNoAttrStr, true, m_panelObject);
+                for Index = 1, 5 do
+                    SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrNotMaxLevelStr .. m_DetaiRandEffAttrsStr .. Index, false, m_panelObject);
+                end
+            end
+        else
+            SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrTitleStr .. m_DetailAttrNotMaxLevelStr, false, m_panelObject);
+
+            SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrNotMaxLevelStr, false, m_panelObject);
+            SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr, true, m_panelObject);
+            local attrCurValue = equipInfo.Attr1Value *(1 + baseAttrPercent * itemAttr.StarItemLevel);
+            attrCurValue = GetAttrIndexValue(equipInfo.Attr1, attrCurValue);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "1" .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(equipInfo.Attr1), m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "1" .. m_AttrPanelAttrCurValueStr, attrCurValue, m_panelObject);
+
+            attrCurValue = equipInfo.Attr2Value *(1 + baseAttrPercent * itemAttr.StarItemLevel);
+            attrCurValue = GetAttrIndexValue(equipInfo.Attr2, attrCurValue);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "2" .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(equipInfo.Attr2), m_panelObject);
+            SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "2" .. m_AttrPanelAttrCurValueStr, attrCurValue, m_panelObject);
+            if equipInfo.Attr3 > 0 then
+                attrCurValue = equipInfo.Attr3Value *(1 + baseAttrPercent * itemAttr.StarItemLevel);
+                attrCurValue = GetAttrIndexValue(equipInfo.Attr3, attrCurValue);
+                SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "3" .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(equipInfo.Attr3), m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "3" .. m_AttrPanelAttrCurValueStr, attrCurValue, m_panelObject);
+                SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "3", true, m_panelObject);
+            else
+                SetGameObjectState(m_DetailAttrPanel .. m_BaseAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiBaselAttrsStr .. "3", false, m_panelObject);
+            end
+            -- 达到最大等级，附加属性处理
+            SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrNotMaxLevelStr, false, m_panelObject);
+            SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrMaxLevelStr, true, m_panelObject);
+            SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr .. m_DetailAttrNotMaxLevelStr, false, m_panelObject);
+            if EquipIsHaveRandEff(itemAttr) then
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr, true, m_panelObject);
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleNoAttrStr, false, m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr .. m_CurRandAttrStr,(randEffAttrPercent * 100 * itemAttr.StarItemLevel) .. "%", m_panelObject);
+                SetLabelContent(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr .. m_DetailAttrNotMaxLevelStr .. m_StarUpRandAttrStr,(randEffAttrPercent * 100 *(itemAttr.StarItemLevel + 1)) .. "%", m_panelObject);
+                local itemEquipAttrList = itemAttr.AllEquipAttribute;
+                if itemEquipAttrList == nil then
+                    return;
+                end
+                local equipRandomAttrClass = itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+                if equipRandomAttrClass == nil then
+                    return;
+                end
+                local allEquipRandomAttrs = equipRandomAttrClass.EquipRandomAttrs;
+                if allEquipRandomAttrs == nil then
+                    return;
+                end
+                local attrID = 0;
+                local curValue = 0;
+                local nextValue = 0;
+                local addValue = 0;
+                local ratio = 0;
+                local groupID = 0;
+
+                for Index = 1, allEquipRandomAttrs.Count do
+                    if Index > 5 then
+                        -- 超过显示条目不显示
+                        return;
+                    end
+                    local path = m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiRandEffAttrsStr .. Index;
+                    if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 then
+                        SetGameObjectState(path, true, m_panelObject);
+                        attrID = allEquipRandomAttrs[Index - 1].EffectRandomAttrID;
+                        groupID = allEquipRandomAttrs[Index - 1].EffectRandomGroupID;
+                        curValue = allEquipRandomAttrs[Index - 1].EffectRandomAttrValue *(1 + randEffAttrPercent * itemAttr.StarItemLevel);
+                        ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                        local apptitude = GetNameApptitude(groupID);
+                        if apptitude == ENUM_ATTR_APPTITUDE.NORMAL then
+                            SetLabelColor(path .. m_AttrPanelAttrNameStr, ENUM_ATTR_APPTITUDE_COLOR.NORMAL, m_panelObject);
+                        elseif apptitude == ENUM_ATTR_APPTITUDE.GOOD then
+                            SetLabelColor(path .. m_AttrPanelAttrNameStr, ENUM_ATTR_APPTITUDE_COLOR.GOOD, m_panelObject);
+                        elseif apptitude == ENUM_ATTR_APPTITUDE.EPIC then
+                            SetLabelColor(path .. m_AttrPanelAttrNameStr, ENUM_ATTR_APPTITUDE_COLOR.EPIC, m_panelObject);
+                        else
+                            error("附加效果组ID的百位不为1,2,3，说好的123呢，%>_<%" .. groupID);
+                        end
+                        SetLabelContent(path .. m_AttrPanelAttrNameStr, CCommonTool.GetAttrNameByAttrID(attrID), m_panelObject);
+                        local showValue;
+                        local nextShowValue;
+                        local addShowValue;
+                        if ratio < 1 then
+                            showValue = string.format("%0.1f", curValue * 100);
+                            SetLabelContent(path .. m_AttrPanelAttrCurValueStr, showValue .. "%", m_panelObject);
+                        else
+                            showValue = curValue;
+                            SetLabelContent(path .. m_AttrPanelAttrCurValueStr, math.floor(showValue), m_panelObject);
+                        end
+                    else
+                        SetGameObjectState(path, false, m_panelObject);
+                    end
+                end
+                for Index = allEquipRandomAttrs.Count + 1, 5 do
+                    SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiRandEffAttrsStr .. Index, false, m_panelObject);
+                end
+            else
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleHasAttrStr, false, m_panelObject);
+                SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrTitleStr .. m_RandEffAttrTitleNoAttrStr, true, m_panelObject);
+                for Index = 1, 5 do
+                    SetGameObjectState(m_DetailAttrPanel .. m_RandEffAttrDetailStr .. m_DetailAttrMaxLevelStr .. m_DetaiRandEffAttrsStr .. Index, false, m_panelObject);
+                end
+            end
+        end
+    else
+    end
+end
+
+-- 得到此属性的品质（取附加效果组的百位，1为普通，2为优秀，3为史诗）
+function GetNameApptitude(groupID)
+    return math.fmod(math.modf(groupID / 100), 10);
+end
+
+-- 判断装备是否有附加属性
+function EquipIsHaveRandEff(itemAttr)
+    if itemAttr == nil then
+        return false;
+    end
+    local itemEquipAttrList = itemAttr.AllEquipAttribute;
+    if itemEquipAttrList == nil then
+        return false;
+    end
+    local equipRandomAttrClass = itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+    if equipRandomAttrClass == nil then
+        return false;
+    end
+    local allEquipRandomAttrs = equipRandomAttrClass.EquipRandomAttrs;
+    if allEquipRandomAttrs == nil then
+        return false;
+    end
+    for Index = 1, allEquipRandomAttrs.Count do
+        if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 and allEquipRandomAttrs[Index - 1].EffectRandomAttrValue > 0 then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_StarLvButtonStr, OnStarLvClick, m_panelObject);
+    SetGameObjectEvent(m_AttrDetailButtonStr, OnDetailAttrDetailClick, m_panelObject);
+    SetGameObjectEvent(m_CloseDetailAttrPanelStr, OnCloseDetailAttrPanelClick, m_panelObject);
+    SetGameObjectEvent(m_SystemExlpainStr, OnExplainClick, m_panelObject);
+end
+
+function InitEffectsShow()
+    m_EquipSuccessEff:SetActive(false);
+    m_EquipFailEff:SetActive(false);
+    m_EquipCycleEff:SetActive(false);
+    m_EquipClickEff:SetActive(false);
+end
+
+-- 初始化右侧的消耗显示
+function InitRight()
+    if m_CanStarUpEquipsList.Count > 0 then
+        SetGameObjectState(m_RightContentStr, true, m_panelObject);
+        local itemAttr = m_CanStarUpEquipsList[m_leftEquipSelect];
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        local equipMakeInfo = CCommonTool.GetEquipMakeDataByID(equipInfo.SortStar * 100 + itemAttr.StarItemLevel);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        if equipMakeInfo == nil then
+            error("装备升星消耗信息表不存在，ID为::::" ..(equipInfo.SortStar * 100 + itemAttr.StarItemLevel));
+            return;
+        end
+        local needItemTable = GetNeedItems(equipMakeInfo);
+        m_curEquipCanForceItemEnough = true;
+        m_curEquipCanStarUpCoinEnough = 0;
+        m_RightItemListViewComp:RemoveAll();
+        for k, v in ipairs(needItemTable) do
+            m_RightItemListViewComp:AddData(v);
+        end
+        m_RightItemListViewComp:LookAt(-1, false);
+    else
+        SetGameObjectState(m_RightContentStr, false, m_panelObject);
+    end
+end
+
+-- 得到装备洗练需要的道具的table
+function GetNeedItems(equipMakeInfo)
+    local resultTable = { };
+    if equipMakeInfo == nil then
+        return resultTable;
+    end
+    if equipMakeInfo.MoneyNeed > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+        itemTable.ItemNum = equipMakeInfo.MoneyNeed;
+        table.insert(resultTable, itemTable);
+    end
+    if equipMakeInfo.Item1 > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipMakeInfo.Item1;
+        itemTable.ItemNum = equipMakeInfo.Num1;
+        table.insert(resultTable, itemTable);
+    end
+    if equipMakeInfo.Item2 > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipMakeInfo.Item2;
+        itemTable.ItemNum = equipMakeInfo.Num2;
+        table.insert(resultTable, itemTable);
+    end
+    if equipMakeInfo.Item3 > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipMakeInfo.Item3;
+        itemTable.ItemNum = equipMakeInfo.Num3;
+        table.insert(resultTable, itemTable);
+    end
+    if equipMakeInfo.Item4 > 0 then
+        local itemTable = { };
+        itemTable.ExcelID = equipMakeInfo.Item4;
+        itemTable.ItemNum = equipMakeInfo.Num4;
+        table.insert(resultTable, itemTable);
+    end
+    return resultTable;
+end
+
+-- 左侧装备信息初始化
+function OnEquipCloneInit(listView, cell, data)
+    local go = cell.gameObject;
+    local itemAttr = data;
+    if itemAttr ~= nil then
+        local excelID = itemAttr.ExcelID;
+        local equipInfo = CCommonTool.GetEquipInfo(excelID);
+        if equipInfo == nil then
+            error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+            return;
+        end
+        SetSpriteByAtlasID(m_EquipIconSpriteStr, CCommonTool.GetImageIDByExcelID(excelID), go, true);
+        SetSpriteApptitudeV04(m_EquipApptitudeSpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+--        SetSpriteEquipApptitudeV04(m_EquipApptitudeSprite2Str, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        SetGameObjectState(m_EquipApptitudeSprite2Str, false, go);
+        SetLabelContent(m_EquipStep2Str, GetTextToId(CCommonTool.GetEquipStep(excelID) + 2999), go);
+        SetLabelColor(m_EquipStep2Str, "91e464", go);
+        SetSpriteApptitude2V04(m_EquipAppTitude2SpriteStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        if itemAttr:GetEquipInfo().ProID == G_UserInfo.RoleAttribute.ProID or itemAttr:GetEquipInfo().ProID == m_commonProId then
+            SetGameObjectState(m_NotSameProStr, false, go);
+            if itemAttr:GetEquipInfo().NeedLv > G_UserInfo.RoleAttribute.Level then
+                SetGameObjectState(m_NotReachLevelStr, true, go);
+            else
+                SetGameObjectState(m_NotReachLevelStr, false, go);
+            end
+        else
+            SetGameObjectState(m_NotReachLevelStr, false, go);
+            SetGameObjectState(m_NotSameProStr, true, go);
+        end
+        -- 套装图标
+        if itemAttr:GetEquipInfo().SuitID > 0 then
+            SetGameObjectState(m_EquipSuitStr, true, go);
+        else
+            SetGameObjectState(m_EquipSuitStr, false, go);
+        end
+        if itemAttr.StarItemLevel <= 0 then
+            SetGameObjectState(m_EquipStarLabelStr, false, go);
+            SetGameObjectPos(m_EquipSuitStr, Vector3.New(-85, -48, 0), go);
+        else
+            SetGameObjectState(m_EquipStarLabelStr, true, go);
+            SetLabelContent(m_EquipStarLabelStr, itemAttr.StarItemLevel, go);
+            if itemAttr.StarItemLevel < 10 then
+                SetGameObjectPos(m_EquipStarStr, Vector3.New(-14, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-109, -48, 0), go);
+            else
+                SetGameObjectPos(m_EquipStarStr, Vector3.New(-25, 1, 0), go);
+                SetGameObjectPos(m_EquipSuitStr, Vector3.New(-120, -48, 0), go);
+            end
+        end
+        SetItemIconEffect(go, m_EquipIconSpriteStr, excelID, 11);
+        SetLabelTextByID(m_EquipNameLabelStr, CCommonTool.GetNameIDByExcelID(excelID), go);
+        SetLabelPinZhi(m_EquipNameLabelStr, CCommonTool.GetAptitudeIDByExcelID(excelID), go);
+        if itemAttr.PanelPos == ENUM_UI_PANEL.UI_PANEL_EQUIP_PLAYSELF then
+            SetGameObjectState(m_EquipIsOnStr, true, go);
+        else
+            SetGameObjectState(m_EquipIsOnStr, false, go);
+        end
+        local fightValue = CaculateStarUpFightValue(itemAttr, false);
+        SetLabelContent(m_EquipFightValueStr, fightValue, go);
+        SetGameObjectState(m_EquipCanOperateStr, IsCanEquipStarUp(itemAttr), go);
+    else
+        error("EquipRandEff OnEquipCloneInit itemattr 不存在");
+    end
+end
+
+-- 计算装备随即属性的战斗力
+function CaculateStarUpFightValue(itemAttr, isNextLevel, isOtherPlayer)
+    if itemAttr == nil then
+        return 0;
+    end
+    local excelID = itemAttr.ExcelID;
+    local equipInfo = CCommonTool.GetEquipInfo(excelID);
+    local basePercent = equipInfo.BaseAttrAddPercent / 10000;
+    local randPercent = equipInfo.RandEffAddPercent / 10000;
+    local fightTable = { };
+    if equipInfo == nil then
+        error("装备表中不存在ID为:::" .. excelID .. "的装备信息");
+        return 0;
+    end
+    if equipInfo.Attr1 > 0 then
+        if isNextLevel then
+            AddFightValueTable(fightTable, equipInfo.Attr1, equipInfo.Attr1Value *(1 + basePercent *(itemAttr.StarItemLevel + 1)));
+        else
+            AddFightValueTable(fightTable, equipInfo.Attr1, equipInfo.Attr1Value *(1 + basePercent * itemAttr.StarItemLevel));
+        end
+    end
+    if equipInfo.Attr2 > 0 then
+        if isNextLevel then
+            AddFightValueTable(fightTable, equipInfo.Attr2, equipInfo.Attr2Value *(1 + basePercent *(itemAttr.StarItemLevel + 1)));
+        else
+            AddFightValueTable(fightTable, equipInfo.Attr2, equipInfo.Attr2Value *(1 + basePercent * itemAttr.StarItemLevel));
+        end
+    end
+    if equipInfo.Attr3 > 0 then
+        if isNextLevel then
+            AddFightValueTable(fightTable, equipInfo.Attr3, equipInfo.Attr3Value *(1 + basePercent *(itemAttr.StarItemLevel + 1)));
+        else
+            AddFightValueTable(fightTable, equipInfo.Attr3, equipInfo.Attr3Value *(1 + basePercent * itemAttr.StarItemLevel));
+        end
+    end
+
+    if EquipIsHaveRandEff(itemAttr) then
+        local itemEquipAttrList = itemAttr.AllEquipAttribute;
+        if itemEquipAttrList == nil then
+            return 0;
+        end
+        local equipRandomAttrClass = itemEquipAttrList[ENUM_ITEM_EFFECT_TYPE.ENUM_ITEM_EFFECT_TYPE_RANDOM_EFFECT];
+        if equipRandomAttrClass == nil then
+            return 0;
+        end
+        local allEquipRandomAttrs = equipRandomAttrClass.EquipRandomAttrs;
+        if allEquipRandomAttrs == nil then
+            return 0;
+        end
+        for Index = 1, allEquipRandomAttrs.Count do
+            if allEquipRandomAttrs[Index - 1].EffectRandomAttrID > 0 then
+                local attrID = allEquipRandomAttrs[Index - 1].EffectRandomAttrID;
+                local ratio = CCommonTool.GetAttrIndexInfo(attrID).Ratio;
+                if ratio == 0 then
+                    ratio = 1;
+                end
+                if isNextLevel then
+                    AddFightValueTable(fightTable, attrID, allEquipRandomAttrs[Index - 1].EffectRandomAttrValue / ratio *(1 + randPercent *(itemAttr.StarItemLevel + 1)));
+                else
+                    AddFightValueTable(fightTable, attrID, allEquipRandomAttrs[Index - 1].EffectRandomAttrValue / ratio *(1 + randPercent * itemAttr.StarItemLevel));
+                end
+            end
+        end
+    end
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, isOtherPlayer) + 0.5);
+    return curFightValue;
+end
+
+-- 对战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end
+
+-- 右侧道具初始化
+function OnNeedItemCloneInit(listView, cell, data)
+    local itemTable = data;
+    local go = cell.gameObject;
+    SetItemShowByExcelIDV04(go, m_StarUpNeedItemStr, itemTable.ExcelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    if itemTable.ExcelID == G_ItemToolTipDefine.BINDMONEY then
+        SetLabelTextByID(m_StarUpNeedBuyLabelStr, 923, go);
+        if itemTable.ItemNum <= G_UserInfo.BindCoin then
+            SetLabelContent(m_StarUpNeedNumStr, m_CanStarUpColor .. itemTable.ItemNum, go);
+        else
+            m_curEquipCanStarUpCoinEnough = itemTable.ItemNum;
+            SetLabelContent(m_StarUpNeedNumStr, m_CannotStarUpColor .. itemTable.ItemNum, go);
+        end
+        SetGameObjectState(m_StarUpNeedItemAddStr,false,go);
+    else
+        SetLabelTextByID(m_StarUpNeedBuyLabelStr, 923, go);
+        local bagNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable.ExcelID);
+		m_ItemDataID = itemTable.ExcelID;
+        if itemTable.ItemNum <= bagNum then
+            SetLabelContent(m_StarUpNeedNumStr, m_CanStarUpColor .. bagNum .. "/" .. itemTable.ItemNum, go);
+            SetGameObjectState(m_StarUpNeedItemAddStr,false,go);
+        else
+            m_curEquipCanForceItemEnough = false;
+            SetLabelContent(m_StarUpNeedNumStr, m_CannotStarUpColor .. bagNum .. "[-]/" .. m_CanStarUpColor .. itemTable.ItemNum, go);
+            SetGameObjectState(m_StarUpNeedItemAddStr,true,go);
+        end
+    end
+end
+
+-- 获取通过attrIndex表配置的参数获取增加角色的属性值,加法直接返回值，乘法计算百分比
+-- 计算百分比时浮点数取小数点后两位，整数取整
+function GetAttrIndexValue(attrIndex, attrValue)
+    local m_attrIndexData = CCommonTool.GetAttrIndexInfo(attrIndex);
+    local m_attrValue = 0;
+    if m_attrIndexData == nil then
+        error("精炼：attrIndex配置错误:" .. attrIndex);
+    else
+        m_attrValue = attrValue * m_attrIndexData.Ratio;
+        if m_attrIndexData.Ratio >= 1 then
+            local m_formatNum = string.format("%1d", m_attrValue);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum;
+            else
+                m_attrValue = string.format("%1d", m_attrValue);
+            end
+        end
+        if m_attrIndexData.Ratio < 1 then
+            local m_formatNum = string.format("%0.1f", m_attrValue * 100);
+            local m_quyuNum = tonumber(m_formatNum) % 1;
+            if m_quyuNum > 0 then
+                m_attrValue = m_formatNum .. "%";
+            else
+                m_attrValue = string.format("%1d", m_attrValue * 100) .. "%";
+            end
+        end
+    end
+    return m_attrValue;
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击装备
+function OnEquipCloneClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local itemAttr = data;
+    if itemAttr == m_CanStarUpEquipsList[m_leftEquipSelect] then
+        return;
+    else
+        m_leftEquipSelect = cell.dataIndex;
+        InitMiddle();
+        InitRight();
+    end
+	--锻造-精炼上报
+	if Constants.branch == "cn" then
+		local button_id = 10246+tonumber(cell.dataIndex);
+		ReportManager.RequestReportPanel(button_id);
+	end
+end
+
+-- 点击道具
+function OnNeedItemClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    local data = listView:GetData(cell.dataIndex);
+    local itemTable = data;
+    if itemTable.ExcelID == G_ItemToolTipDefine.BINDMONEY then
+        MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    else
+        GetWayPanel.Show(itemTable.ExcelID, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+    end
+end
+
+-- 基础属性详细信息点击
+function OnDetailAttrDetailClick()
+    m_DetailPanelIsOpen = true;
+    SetGameObjectState(m_DetailAttrPanel, true, m_panelObject);
+
+end
+
+-- 关闭基础详细信息界面
+function OnCloseDetailAttrPanelClick()
+    m_DetailPanelIsOpen = false;
+    SetGameObjectState(m_DetailAttrPanel, false, m_panelObject);
+end
+
+-- 精炼按钮点击
+function OnStarLvClick()
+    if not EquipMng.CanClickEquipStarUpButton then
+        log("正在等待服务器升星返回的消息，无法继续点击")
+        ShowSystemFlowTips(7320);
+        return;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTARUP) then
+        log("装备升星系统还没解锁");
+        ShowSystemFlowTips(7321);
+        return;
+    end
+    if G_UserInfo:GetCurPlayer() == nil then
+        log("主角不存在无法升星");
+        ShowSystemFlowTips(7322);
+        return;
+    end
+    if not G_UserInfo:GetCurPlayer().IsAlive then
+        log("主角死亡无法升星");
+        ShowSystemFlowTips(7323);
+        return;
+    end
+	if not MoneyExchangePanel.CheckIsEnoughMoney(MONEY_NEW_TYPE.BIND_COIN, math.abs(m_curEquipCanStarUpCoinEnough), ENUMPANELID.ENUM_PANEL_EQUIPPANEL, OnExchangeMoneyCallBack) then
+        log("银币不足，无法升星");
+		MoneyExchangePanel.ShowPanel(MONEY_EXCHANGE_TYPE.BIND_MONEY, false, nil, ENUMPANELID.ENUM_PANEL_EQUIPPANEL);
+        --ShowSystemFlowTips(7324);
+        return;
+    end
+    if not m_curEquipCanForceItemEnough then
+        log("材料不足，无法升星");
+		if m_ItemDataID>0 and  CCommonTool.GetQuickToBuyByExcelID(m_ItemDataID)~=nil then
+            
+            MaterialExchangePanel.ShowPanel(m_ItemDataID,ENUMPANELID.ENUM_PANEL_EQUIPPANEL)
+            return;    
+        else
+             ShowSystemFlowTips(7325);
+            return;
+        end  
+    end
+    EquipMng.CanClickEquipStarUpButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EQUIP_STAR_LV);
+    buffer:WriteUInt(m_CanStarUpEquipsList[m_leftEquipSelect].CRID);
+    G_NetWorkMng:SendMessage(buffer);
+    m_EquipCycleEff:SetActive(true);
+    m_EquipClickEff:SetActive(false);
+    m_EquipClickEff:SetActive(true);
+end
+
+-- 兑换钱币完成回调
+function OnExchangeMoneyCallBack()
+    EquipMng.CanClickEquipStarUpButton = false;
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_EQUIP_STAR_LV);
+    buffer:WriteUInt(m_CanStarUpEquipsList[m_leftEquipSelect].CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-- 系统说明面板
+function OnExplainClick()
+    SystemExplainPanel.SetData(ENUMPANELID.ENUM_PANEL_EQUIPPANEL, 5);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function SuccessRefreshEquipStarUpPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_DetailPanelIsOpen = false;
+        SetGameObjectState(m_DetailAttrPanel, false, m_panelObject);
+        m_EquipCycleEff:SetActive(false);
+        m_EquipSuccessEff:SetActive(false);
+        m_EquipSuccessEff:SetActive(true);
+        m_leftEquipListViewComp:Refresh();
+        InitMiddle();
+        InitDetailShowPanel();
+        m_RightItemListViewComp:Refresh();
+    end
+    RedHintMng.SetRedHintState(CREDHINTENUM.EQUIP_STARUP, Equip_StarUp.IsShowRedHintEquipStarUp());
+end
+
+function FailRefreshEquipStarUpPanel()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_DetailPanelIsOpen = false;
+        SetGameObjectState(m_DetailAttrPanel, false, m_panelObject);
+        m_EquipCycleEff:SetActive(false);
+        m_EquipFailEff:SetActive(false);
+        m_EquipFailEff:SetActive(true);
+        m_leftEquipListViewComp:Refresh();
+        m_RightItemListViewComp:Refresh();
+    end
+end
+
+function ErrorHandle()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_EquipCycleEff:SetActive(false);
+        InitShow();
+    end
+end
+
+function OnBindMoneyChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_EQUIPPANEL) == 1 and m_bCreateSuccess then
+        m_leftEquipListViewComp:Refresh();
+        m_RightItemListViewComp:Refresh();
+    end
+end
+
+-- 打开精炼界面并选中道具
+function SelectItem(itemAttr)
+    m_SelectedItem = itemAttr;
+    EquipPanel.OpenThisPanelByTag(5);
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    return { m_leftEquipSelect, m_DetailPanelIsOpen };
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_isJumpPanelSave = true;
+    m_JumpPanelParamsTable = paramTable;
+end
+
+-- 精炼红点显示
+function IsShowRedHintEquipStarUp()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if not SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EQUIPSTARUP) then
+        return false;
+    end
+    canStarUpEquipsList = G_BagMng:GetEquipWithStarLv();
+    for Index = 1, canStarUpEquipsList.Count do
+        if IsCanEquipStarUp(canStarUpEquipsList[Index - 1]) then
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 是否可以进行精炼操作
+function IsCanEquipStarUp(itemAttr)
+    if itemAttr == nil then
+        return false;
+    end
+    local excelID = itemAttr.ExcelID;
+    local equipInfo = CCommonTool.GetEquipInfo(excelID);
+    local equipMakeInfo = CCommonTool.GetEquipMakeDataByID(equipInfo.SortStar * 100 + itemAttr.StarItemLevel);
+    local needItemTable = GetNeedItems(equipMakeInfo);
+    if equipInfo == nil or equipMakeInfo == nil then
+        return false;
+    end
+    if itemAttr.StarItemLevel >= equipInfo.StarMax then
+        return false;
+    end
+    if #needItemTable > 0 then
+        for Index = 1, #needItemTable do
+            if needItemTable[Index].ExcelID == G_ItemToolTipDefine.BINDMONEY then
+                if G_UserInfo.BindCoin < needItemTable[Index].ItemNum then
+                    return false;
+                end
+            else
+                local hasNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, needItemTable[Index].ExcelID);
+                if hasNum < needItemTable[Index].ItemNum then
+                    return false;
+                end
+            end
+        end
+    end
+    return true;
+end

@@ -1,0 +1,444 @@
+﻿
+module("SinhaengPanelContent", package.seeall)
+
+-------------------------------------神行内容界面界面------------------------------------------------------
+-- 该界面
+local m_PanelStr1 = "SinhaengContentPanel";
+--神行战斗力
+local m_godFightStr = "Foster/Middle/top/FightValue";
+--神行属性组
+local m_godAttrTabStr = "Foster/Middle/Attrs";
+-- 神行星星
+local m_godStarStr = "Foster/Middle/top/starTran/Sprite";
+-- 神行经验条
+local m_godExpProcessStr = "Foster/Bottom/NotMaxLevel/Progress/Sprite1";
+-- 神行经验文字
+local m_godExpLabStr = "Foster/Bottom/NotMaxLevel/Progress/process";
+-- 消耗的道具
+local m_godCostStr = "Foster/Bottom/NotMaxLevel/Items";
+------------------------------------button-------------------------------------------------
+--升阶10次
+local m_godLvlUpTenStr = "Foster/Bottom/NeedBreach/Button_BreachTen";
+--升阶一次
+local m_godLvlUpOneStr = "Foster/Bottom/NeedBreach/Button_BreachOne";
+--全满
+local m_godMaxStr = "Foster/Bottom/MaxLevel";
+-- 要培养
+local m_godFonster1Str = "Foster/Bottom/NeedBreach";
+--
+local m_godFonster2Str = "Foster/Bottom/NotMaxLevel";
+-- 道具的品质
+local m_itemApptitudeStr = "/Sprite_Apptitude";
+-- 道具的品质2
+local m_itemApptitude2Str = "/Sprite_Apptitude2";
+-- 道具的图标
+local m_itemIconStr = "/Sprite_Icon";
+-- 道具的数量
+local m_itemNumStr = "/Label_Num";
+-- 道具的获取方式
+local m_itemGetsWay = "/Sprite_Mask";
+-----------------------------------引用的对象---------------------------------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 消耗是否足够
+local m_CoinIsEnough = false;
+-- 神行第一個頁簽
+local tabIndex = 1;
+-- 战力达到一千
+local m_FightValue1 = 1000;
+-- 跳转界面的设置参数
+local m_JumpPanelParamsTable = { };
+------------------------------------BaseLua调用的同名方法-----------------------------------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    Objects();
+    Events();
+    Show();
+    m_panelInitAlready = true;
+end
+function OnEnable()
+    if m_panelInitAlready == true then
+        Show();
+    end
+end
+function OnDisable()
+    m_CoinIsEnough = false;
+    if m_panelObject~=nil then
+         m_panelObject:SetActive(false);   
+    end
+end
+function OnDestroy() 
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+    m_CoinIsEnough = false;
+end
+-- object
+function Objects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_SINHAENGPANEL);--技能界面
+    m_panelObject = child(m_panelObject,m_PanelStr1).gameObject;
+
+end
+-- 事件
+function Events()  
+    SetGameObjectEvent(m_godLvlUpTenStr,OnFonsterClick,m_panelObject);
+    SetGameObjectEvent(m_godLvlUpOneStr,OnFonsterClick,m_panelObject);
+end
+-- show
+function Show()
+    m_panelObject:SetActive(true);
+    --階數，星級，經驗
+    local stage_lvl,star_lvl,exp = SinhaengPanelManager.getPlayerGodData();
+    local isMaxStageLvl = stage_lvl >= SinhaengMainTable.Count ;
+    local isMaxStarLvl = star_lvl >= 10;
+--设置属性组
+    local attr_tabs = getAttrTabsByIndex(stage_lvl,star_lvl);
+    if attr_tabs == nil or #attr_tabs <=0 then
+        return;
+    end
+    for index=1,#attr_tabs do
+         -- 设置属性名称
+        local attrIds = attr_tabs[index].attrId;
+        SetSpriteByAtlasID(m_godAttrTabStr.."/"..index.."/Attr_Sprite", attr_tabs[index].pictureId, m_panelObject, true);
+        if index == #attr_tabs then
+            local need_lvl = SinhaengPanelManager.getMinState();
+            local txt1 = string_format(GetTextToId(9321),need_lvl);
+            if stage_lvl < need_lvl then
+                SetLabelContent(m_godAttrTabStr.."/"..index.."/Attr_Name",CCommonTool.GetAttrNameByAttrID(attrIds)..txt1,m_panelObject); 
+                SetGameObjectState(m_godAttrTabStr.."/"..index.."/Add",false,m_panelObject);
+                SetGameObjectState(m_godAttrTabStr.."/"..index.."/Attr_Value",false,m_panelObject);
+            else
+                SetGameObjectState(m_godAttrTabStr.."/"..index.."/Add",isMaxStageLvl==false,m_panelObject);
+                SetGameObjectState(m_godAttrTabStr.."/"..index.."/Attr_Value",true,m_panelObject);
+                SetLabelContent(m_godAttrTabStr.."/"..index.."/Attr_Name",CCommonTool.GetAttrNameByAttrID(attrIds),m_panelObject); 
+
+                SetLabelContent(m_godAttrTabStr.."/"..index.."/Attr_Value",attr_tabs[index].attrValue,m_panelObject);
+                SetLabelContent(m_godAttrTabStr.."/"..index.."/Add/Label_AddValue",MatrixPanelContent.getRadio(attr_tabs[index].attrAdd),m_panelObject);
+            end                        
+        else
+           
+            SetLabelContent(m_godAttrTabStr.."/"..index.."/Attr_Name",CCommonTool.GetAttrNameByAttrID(attrIds),m_panelObject);
+            -- 设置属性值 = value * star_lvl
+            OnNumberShow(m_godAttrTabStr.."/"..index.."/Attr_Value",attr_tabs[index].attrValue);
+            if isMaxStageLvl == false then
+                SetGameObjectState(m_godAttrTabStr.."/"..index.."/Add",true,m_panelObject);
+                SetLabelContent(m_godAttrTabStr.."/"..index.."/Add/Label_AddValue",attr_tabs[index].attrAdd,m_panelObject);
+            else
+                SetGameObjectState(m_godAttrTabStr.."/"..index.."/Add",false,m_panelObject);
+            end
+        end
+        
+    end
+--设置战斗力
+    local fight_Value = CalcFightValue(attr_tabs);
+    OnNumberShow(m_godFightStr,fight_Value);
+--设置星星
+    for i=1,10 do
+        if star_lvl>=i then
+            SetGameObjectState(m_godStarStr..i,true,m_panelObject);
+            SetGameObjectState(m_godStarStr..i.."_",false,m_panelObject);
+        
+        else
+            SetGameObjectState(m_godStarStr..i.."_",true,m_panelObject);
+            SetGameObjectState(m_godStarStr..i,false,m_panelObject);
+        end
+    end
+-- 当前状态
+    local content_state = getCurContentState();
+    if content_state == 2 then
+        SetGameObjectState(m_godFonster1Str,false,m_panelObject);
+        SetGameObjectState(m_godFonster2Str,false,m_panelObject)
+        SetGameObjectState(m_godMaxStr,true,m_panelObject)
+    else
+        SetGameObjectState(m_godFonster1Str,true,m_panelObject);
+        SetGameObjectState(m_godFonster2Str,true,m_panelObject)
+        SetGameObjectState(m_godMaxStr,false,m_panelObject)
+        --设置经验条
+        local total_exp = SinhaengAdvanceTable.Get(stage_lvl).IntenMaxExp;
+        SetLabelContent(m_godExpLabStr,exp.."/"..total_exp,m_panelObject);
+        SetSpriteFillAmount(m_godExpProcessStr,exp / total_exp,m_panelObject);              
+        --设置消耗品
+        local cost_table = getCostItem(stage_lvl);
+        for X_I=1,#cost_table do
+            SetSpriteApptitudeV04(m_godCostStr.."/Item" .. X_I .. m_itemApptitudeStr, CCommonTool.GetAptitudeIDByExcelID(cost_table[X_I].excelID), m_panelObject);
+            SetSpriteApptitude2V04(m_godCostStr.."/Item".. X_I .. m_itemApptitude2Str, CCommonTool.GetAptitudeIDByExcelID(cost_table[X_I].excelID), m_panelObject);
+            SetSpriteByAtlasID(m_godCostStr.."/Item" .. X_I .. m_itemIconStr, CCommonTool.GetImageIDByExcelID(cost_table[X_I].excelID), m_panelObject, true);
+            SetItemToolTipsEvent(m_panelObject, m_godCostStr .."/Item".. X_I, ENUMPANELID.ENUM_SINHAENGPANEL, false, cost_table[X_I].excelID);
+            local itemAttr = ItemAttribute.New(cost_table[X_I].excelID);
+            SetLabelContent(m_godCostStr.."/Item" .. X_I.."/Label_Name",itemAttr:GetItemName(),m_panelObject);
+            SetGameObjectState(m_godCostStr.."/Item" .. X_I,true,m_panelObject);
+            if cost_table[X_I].Type == 1 then
+                local hasNum = GetBindAndNotNumById(cost_table[X_I].excelID);
+                SetLabelContent(m_godCostStr .."/Item".. X_I .. m_itemNumStr, hasNum .. "/" .. cost_table[X_I].Num, m_panelObject);
+                if hasNum < cost_table[X_I].Num then
+                    SetLabelColor(m_godCostStr.."/Item" .. X_I .. m_itemNumStr, "D83232", m_panelObject);
+                    SetGameObjectState(m_godCostStr .."/Item".. X_I .. m_itemGetsWay, true, m_panelObject);
+                    SetGameObjectEvent(m_godCostStr .."/Item".. X_I .. m_itemGetsWay,GetItemWayClick,m_panelObject);
+                    m_CoinIsEnough = false;
+                else
+                    m_CoinIsEnough = true;
+                    SetLabelColor(m_godCostStr .."/Item".. X_I .. m_itemNumStr, "B2B2B2FF", m_panelObject);
+                    SetGameObjectState(m_godCostStr .."/Item".. X_I .. m_itemGetsWay, false, m_panelObject);
+                end
+            end
+        end
+    end
+    -- 设置小红点显示
+    SinhaengPanel.SetLeftTabRedShow(tabIndex,godsCanShowRed());
+end
+--- 得到道具途径click
+function GetItemWayClick(e)
+    local Index = string.sub(e.transform.name, 5, string.len(e.transform.name));
+    local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+    local cost_table = getCostItem(stage_lvl);
+    if cost_table[Index] ~=nil then
+        GetWayPanel.Show(cost_table[Index].excelID,ENUMPANELID.ENUM_SINHAENGPANEL);
+    end
+end
+--培养状态
+function getCurContentState()
+    local state = -1;
+    local stage_lvl,star_lvl,exp = SinhaengPanelManager.getPlayerGodData();
+    local isMaxStageLvl = stage_lvl >= SinhaengMainTable.Count ;
+    local isMaxStarLvl = star_lvl >= 10;
+    if isMaxStageLvl == true and isMaxStarLvl == true then
+        state =2;   -- 全满
+    else
+        state = 1; -- 未满
+    end
+    return state;
+end
+function getCostItem(stage_lvl)
+    if SinhaengAdvanceTable.Get(stage_lvl) == nil then
+        return;
+    end
+    local cost_table =
+    {
+        [1] = { Type = 1,excelID =SinhaengAdvanceTable.Get(stage_lvl).IntenItem1ID, Num = SinhaengAdvanceTable.Get(stage_lvl).IntenItem1Num },
+    };
+    --error(#cost_table.."type:"..cost_table[1].Type.."  id::"..cost_table[1].excelID);
+    return cost_table;
+end
+-- 升階事件
+function OnFonsterClick(e)
+    if m_CoinIsEnough == false then
+        -- 消耗品不足
+        ShowSystemFlowTips(9771);
+        return;
+    end
+    local name = string.sub(e.transform.name, 14, string.len(e.transform.name));
+    local Count = 1;
+    if name == "Ten" then
+        Count = 10;
+    elseif name == "One" then
+        Count = 1;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SINHAENG_OPER);
+    buffer:WriteByte(1);
+    buffer:WriteInt(Count);
+    G_NetWorkMng:SendMessage(buffer);
+    G_MusicMng:OnLoadMusic(4010);
+end
+--计算战斗力
+function CalcFightValue(attr_table)
+    local  fightTable = {};
+    for index=1,# attr_table-1 do
+        AddFightValueTable(fightTable,attr_table[index].attrId,attr_table[index].attrValue);
+    end
+    --屬性的战力
+    local curFightValue = math.floor(CalcFightAbilityMng.CalcFightAbility(fightTable, false) + 0.5);
+    
+    --技能战力
+    local addSkillValue = 0;
+    local playSkillTable = SinhaengPanel.getPlayerSkillTab();
+    for i=1, #playSkillTable do
+        if playSkillTable[i].lvl <=0  then    -- 0级
+            addSkillValue = addSkillValue + 0;
+        else
+            addSkillValue = addSkillValue + SinhaengSkillTable.Get(playSkillTable[i].skillIndex).Fight;
+        end
+    end
+    return curFightValue + addSkillValue;
+end
+-- 得到屬性組根據階數
+function getAttrTabsByIndex(stage_lvl,star_lvl)
+    if stage_lvl <=0 then
+        return;
+    end
+    --暫定為5條屬性
+    local attr_table = {};
+    local curJeweCfg = SinhaengMainTable.Get(stage_lvl);
+    for i=1,6 do
+        attr_table[i] = {};
+
+        if i == 1 then
+            attr_table[i].attrId = curJeweCfg.ActivateAttr1;
+            attr_table[i].attrValue = curJeweCfg.TypeAttr1+(curJeweCfg.ValueAttr1*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+            attr_table[i].attrAdd =  curJeweCfg.ValueAttr1;
+            attr_table[i].pictureId = curJeweCfg.PicAttr1;
+        elseif i ==2 then
+            attr_table[i].attrId = curJeweCfg.ActivateAttr2;
+            attr_table[i].attrValue =  curJeweCfg.TypeAttr2+(curJeweCfg.ValueAttr2*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+            attr_table[i].attrAdd =  curJeweCfg.ValueAttr2;
+            attr_table[i].pictureId = curJeweCfg.PicAttr2;
+        elseif i ==3 then
+            attr_table[i].attrId = curJeweCfg.ActivateAttr3;
+            attr_table[i].attrValue = curJeweCfg.TypeAttr3+(curJeweCfg.ValueAttr3*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+            attr_table[i].attrAdd =  curJeweCfg.ValueAttr3;
+            attr_table[i].pictureId = curJeweCfg.PicAttr3;
+        elseif i == 4 then
+            attr_table[i].attrId = curJeweCfg.ActivateAttr4;
+            attr_table[i].attrValue = curJeweCfg.TypeAttr4+(curJeweCfg.ValueAttr4*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+            attr_table[i].attrAdd =  curJeweCfg.ValueAttr4;
+            attr_table[i].pictureId = curJeweCfg.PicAttr4;
+        elseif i == 5 then
+            attr_table[i].attrId = curJeweCfg.ActivateAttr5;
+            attr_table[i].attrValue = curJeweCfg.TypeAttr4+(curJeweCfg.ValueAttr4*star_lvl)+GetBeforeStateValue(stage_lvl,i);
+            attr_table[i].attrAdd =  curJeweCfg.ValueAttr5;
+            attr_table[i].pictureId = curJeweCfg.PicAttr5;
+        elseif i ==6 then
+            attr_table[i].attrId = curJeweCfg.ActivateAttr6;
+            attr_table[i].attrValue = getLzValue();
+            attr_table[i].attrAdd =  curJeweCfg.ValueAttr6;
+            attr_table[i].pictureId = curJeweCfg.PicAttr6;
+        end
+    end
+    return attr_table;
+end
+function getLzValue()
+    --階數，星級，經驗
+    local nums = 0;
+    local stage_lvl,star_lvl,exp = SinhaengPanelManager.getPlayerGodData();
+    for i=1, stage_lvl-1 do
+        local sinaCfg = SinhaengMainTable.Get(i);
+        nums = nums+sinaCfg.TypeAttr6+10*sinaCfg.ValueAttr6;
+    end
+    nums = nums +SinhaengMainTable.Get(stage_lvl).TypeAttr6+star_lvl*SinhaengMainTable.Get(stage_lvl).ValueAttr6;
+    --error("stage_lvl::"..stage_lvl.." nums::"..nums);
+    local attrInfos = CCommonTool.GetAttrIndexInfo(SinhaengMainTable.Get(stage_lvl).ActivateAttr6);
+    local radio = 1;
+    if attrInfos~=nil then
+        radio = tonumber(attrInfos.Ratio);
+        radio = radio <=0 and 0.001 or radio;
+    else
+        radio = 0.001;
+    end
+    local vals= string.format("%0.1f", nums*radio*100);
+    vals = vals.."%";
+    return vals;
+end
+function GetBeforeStateValue(stage_lvl,index)
+    local totalValue = 0;
+    for i=1, stage_lvl - 1 do
+        if index == 1 then
+            totalValue = totalValue + SinhaengMainTable.Get(i).TypeAttr1 +( SinhaengMainTable.Get(i).ValueAttr1*10 );
+        elseif index == 2 then
+            totalValue = totalValue + SinhaengMainTable.Get(i).TypeAttr2 +( SinhaengMainTable.Get(i).ValueAttr2*10 );
+        elseif index == 3 then
+            totalValue = totalValue + SinhaengMainTable.Get(i).TypeAttr3 +( SinhaengMainTable.Get(i).ValueAttr3*10 );
+        elseif index == 4 then
+            totalValue = totalValue + SinhaengMainTable.Get(i).TypeAttr4 +( SinhaengMainTable.Get(i).ValueAttr4*10 );
+        elseif index == 5 then
+            totalValue = totalValue + SinhaengMainTable.Get(i).TypeAttr5 +( SinhaengMainTable.Get(i).ValueAttr5*10 );
+        end
+    end
+    return totalValue;
+end
+
+-- 跳转界面获取数据
+function GetJumpCloseData()
+    local panelParams = {};
+    panelParams.tabIndex = tabIndex;
+    return panelParams;
+end
+
+-- 跳转界面设置数据
+function SetJumpCloseData(paramTable)
+    m_JumpPanelParamsTable = paramTable;
+    if m_JumpPanelParamsTable == nil then
+        return;
+    end
+end
+-- 计算小红点
+function godsCanShowRed()
+    local cur_state = getCurContentState();
+    if cur_state == 2 then  -- 全满级
+        return false;
+    elseif cur_state == 1 then
+        local stage_lvl = SinhaengPanelManager.getPlayerGodData();
+        error("stage_lvlstage_lvlstage_lvlstage_lvl::"..stage_lvl);
+        local cost_table = getCostItem(stage_lvl);
+        local is_Enough = true;
+        for index =1,#cost_table do
+            local hasNum = GetBindAndNotNumById(cost_table[index].excelID);
+            if hasNum < cost_table[index].Num then
+                is_Enough = false;
+                break;
+            end
+        end
+        return is_Enough;
+    end
+    return false;
+end
+-------------------------------------------------------------外部调用--------------------------------------------------
+-- 数字显示方式
+function OnNumberShow(path, num)
+    local value1 = nil;
+    local value2 = nil;
+    local value = nil;
+    num = tonumber(num);
+    if num >= m_FightValue1 then
+        value1 = math.floor(num / m_FightValue1);
+        value2 = num - value1 * m_FightValue1;
+        if value1 >= m_FightValue1 then
+            local value3 = math.floor(value1 / m_FightValue1);
+            local value4 = value1 - value3 * m_FightValue1;
+            if OnValueShow(value4) == 0 then
+                value = value3 .. "," .. "000";
+            else
+                value = value3 .. "," .. OnValueShow(value4);
+            end
+        else
+            value = value1;
+        end
+        if OnValueShow(value2) == 0 then
+            SetLabelContent(path, value .. "," .. "000", m_panelObject);
+        else
+            SetLabelContent(path, value .. "," .. OnValueShow(value2), m_panelObject);
+        end
+    else
+        SetLabelContent(path, num, m_panelObject);
+    end
+end
+
+function OnValueShow(value)
+    local num = nil;
+    if value >= 100 then
+        num = value;
+    elseif value >= 10 then
+        num = "0" .. value;
+    elseif value >= 1 then
+        num = "00" .. value;
+    else
+        num = 0;
+    end
+    return num;
+end
+------------------------------------------------
+function NumberToString(number)
+    if math.floor(number) < number then
+        return string.format("%0.1f", number);
+    else
+        return string.format("%d", number);
+    end
+end
+-- 战斗力计算table中添加属性
+function AddFightValueTable(fightTable, attrIndex, attrValue)
+    if fightTable[attrIndex] ~= nil then
+        fightTable[attrIndex] = fightTable[attrIndex] + attrValue;
+    else
+        fightTable[attrIndex] = attrValue;
+    end
+end

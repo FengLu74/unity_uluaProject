@@ -1,0 +1,404 @@
+﻿module("ComeInGame", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 战区名称
+local m_ZoneNameLabelStr = "Content/ZoneName";
+-----------------------------------------按钮路径--------------------------------------
+-- 更改大区按钮
+local m_ChangeZoneButton = "Content";
+-- 进入游戏按钮
+local m_EnterGameButton = "Button-Enter";
+----------------------------------gameobject所在的路径---------------------------------
+-- 维护状态
+local m_defendState = "Content/ServerDefendState";
+-- 流畅状态
+local m_fluencyState = "Content/ServerFluencyState";
+-- 爆满状态
+local m_busyState = "Content/ServerBusyState";
+-- 拥挤状态
+local m_crowdState = "Content/ServerCrowdState";
+-- 提示消息
+local m_messageStr = "MessageTextBox";
+----------------------------------一些写死的规定---------------------------------------
+-- 当前服务器3个状态的对应变量
+local m_curServerStateTable = { [1] = m_defendState, [2] = m_busyState, [3] = m_fluencyState, [4] = m_crowdState }
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local panelGameObject = nil;
+-- 战区信息
+local m_vZoneInfo = { };
+local m_vZoneLineInfo = { };
+local m_wLineInfoSize = nil;
+-- 最大战区数
+local maxZoneCount = 10;
+
+local alreadyInitAnimation = false;
+local m_zoneId = nil;
+
+local m_CreateSuccess = false;
+
+------------------------------------BaseLua调用的同名方法------------------------------
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化点击事件
+    InitOnClick();
+    -- 初始化所有信息
+    InitAllInfo();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess == true then
+        InitAllInfo();
+    end
+end
+
+function OnDestroy()
+    m_CreateSuccess = false;
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    panelGameObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    -- 点击换区按钮事件
+    SetGameObjectEvent(m_ChangeZoneButton, OnChangeZone, panelGameObject);
+    -- 点击进入游戏按钮事件
+    SetGameObjectEvent(m_EnterGameButton, OnIntoGameClick, panelGameObject);
+end
+
+-- 初始化所有信息
+function InitAllInfo()
+    if CSDKManager.sdkName == "xiyou" then
+        if _G.sdkServerListInfo == nil then
+            return;
+        end
+    end
+    -- 初始化获取技能动画配置表数据
+    if not alreadyInitAnimation then
+        alreadyInitAnimation = true;
+        CCommonTool.GetSkillAnimationTable(SkillAnimationData);
+    end
+    -- 获取接收到得战区列表
+    local realZoneInfo = LuaGameManager.GetZoneInfo();
+    m_vZoneInfo = { };
+    local bigZoneId = 1;
+    for k, v in ipairs(realZoneInfo) do
+        if m_vZoneInfo[bigZoneId] == nil then
+            m_vZoneInfo[bigZoneId] = { };
+        end
+        v.BigZoneID = bigZoneId;
+        table.insert(m_vZoneInfo[bigZoneId], v);
+        local intNum, floatNum = math.modf(k / maxZoneCount);
+        if floatNum == 0 then
+            bigZoneId = bigZoneId + 1;
+        end
+
+    end
+    -- 获取接收到的战线列表
+    local zoneLineInfo = Const.m_vZoneLineInfo;
+    local zoneLineInfoTwo = loadstring("return " .. zoneLineInfo);
+    m_vZoneLineInfo = zoneLineInfoTwo();
+    m_wLineInfoSize = Const.m_vZoneLineInfoSize;
+    OnInitData();
+end
+
+-- 更新选择的战区数据--
+function OnInitData()
+    -- 获取大区ID，如果为空返回0
+    local bigzoneid = PlayerPrefs.GetInt(BigZoneId, 0);
+    -- 上次登录的战区是否存在
+    local isExist = false;
+    local newZoneStateTable = { };
+    local isRecoomend = false;
+    local newZoneId = nil;
+    local newBigZoneId = nil;
+    local newZoneName = nil;
+    local newZoneState = nil;
+
+    if m_vZoneInfo[bigzoneid] == nil then
+        bigzoneid = 0;
+    end
+
+    if bigzoneid == 0 then
+        for k, v in ipairs(m_vZoneInfo) do
+            for d, g in ipairs(m_vZoneInfo[k]) do
+                if bit:IsEnumFlagOpen(g.ZoneState, ZONE_ENUM.ZONE_HIDE) == false then
+                    if bit:IsEnumFlagOpen(g.ZoneAttrib, ZONE_ENUM.ZONE_RECOMMEND) == true then
+                        PlayerPrefs.SetInt(SelectZoneId, g.ZoneID);
+                        PlayerPrefs.SetString(SelectZoneName, g.ZoneName);
+                        PlayerPrefs.SetInt(BigZoneId, g.BigZoneID);
+                        caculateBinary(g.ZoneState, newZoneStateTable, 1);
+                        isRecoomend = true;
+                        break;
+                    end
+                    newZoneId = g.ZoneID;
+                    newBigZoneId = g.BigZoneID;
+                    newZoneName = g.ZoneName;
+                end
+                if isRecoomend == true then
+                    break;
+                end
+            end
+        end
+        if isRecoomend == false then
+            PlayerPrefs.SetInt(SelectZoneId, newZoneId);
+            PlayerPrefs.SetString(SelectZoneName, newZoneName);
+            PlayerPrefs.SetInt(BigZoneId, newBigZoneId);
+        end
+    end
+    bigzoneid = PlayerPrefs.GetInt(BigZoneId);
+    local selectzoneid = PlayerPrefs.GetInt(SelectZoneId);
+    if selectzoneid <= 0 then
+        Debug.Log("选区出现错误");
+    end
+    for k, v in ipairs(m_vZoneInfo) do
+        for d, g in ipairs(m_vZoneInfo[k]) do
+            newZoneStateTable = { };
+            if bit:IsEnumFlagOpen(g.ZoneState, ZONE_ENUM.ZONE_HIDE) == false then
+                if g.ZoneName == PlayerPrefs.GetString(SelectZoneName) then
+                    local zoneStateTable = { };
+                    caculateBinary(g.ZoneState, zoneStateTable, 1);
+                    if zoneStateTable[1] == 0 then
+                        -- 这是维护状态
+                        RefreshRightContent(1);
+                    elseif zoneStateTable[1] == 1 then
+                        -- 这是开启状态
+                        if zoneStateTable[2] == 1 then
+                            -- 这是繁忙状态
+                            RefreshRightContent(4);
+                        elseif zoneStateTable[3] == 1 then
+                            -- 这是爆满状态
+                            RefreshRightContent(2);
+                        elseif (zoneStateTable[2] == 0 or zoneStateTable[2] == nil) and(zoneStateTable[3] == 0 or zoneStateTable[3] == nil) then
+                            -- 这是流畅状态
+                            RefreshRightContent(3);
+                        else
+                            -- 其他的默认全是繁忙状态
+                            RefreshRightContent(4);
+                        end
+                    end
+                    isExist = true;
+                    break;
+                end
+                newZoneId = g.ZoneID;
+                newBigZoneId = g.BigZoneID;
+                newZoneName = g.ZoneName;
+                newZoneState = g.ZoneState
+            end
+        end
+        if isExist == true then
+            break;
+        end
+    end
+    if isExist == false then
+        newZoneStateTable = { };
+        if newZoneId ~= nil then
+            PlayerPrefs.SetInt(SelectZoneId, newZoneId);
+        end
+        if newZoneName ~= nil then
+            PlayerPrefs.SetString(SelectZoneName, newZoneName);
+        end
+        if newBigZoneId ~= nil then
+            PlayerPrefs.SetInt(BigZoneId, newBigZoneId);
+        end
+        if newZoneState ~= nil then
+            caculateBinary(newZoneState, newZoneStateTable, 1);
+        end
+        if newZoneStateTable[1] == 0 then
+            -- 这是维护状态
+            RefreshRightContent(1);
+        elseif newZoneStateTable[1] == 1 then
+            -- 这是开启状态
+            if newZoneStateTable[2] == 1 then
+                -- 这是繁忙状态
+                RefreshRightContent(4);
+            elseif newZoneStateTable[3] == 1 then
+                -- 这是爆满状态
+                RefreshRightContent(2);
+            elseif (newZoneStateTable[2] == 0 or newZoneStateTable[2] == nil) and(newZoneStateTable[3] == 0 or newZoneStateTable[3] == nil) then
+                -- 这是流畅状态
+                RefreshRightContent(3);
+            else
+                -- 其他的默认全是繁忙状态
+                RefreshRightContent(4);
+            end
+        end
+    end
+    GameReportManager.AddReportData(9165,true);
+    SetLabelContent(m_ZoneNameLabelStr, PlayerPrefs.GetString(SelectZoneName), panelGameObject);
+end
+
+-- 根据type的数值将其转换为二进制存成table
+function caculateBinary(num, resultTable, count)
+    local mod = math.fmod(num, 2);
+    local times = math.floor(num / 2);
+    table.insert(resultTable, count, mod);
+    if times > 0 then
+        caculateBinary(times, resultTable, count + 1);
+    else
+        return resultTable;
+    end
+end
+
+-- 设置所选服务器的状态
+function RefreshRightContent(slelctServer)
+    for Index = 1, #m_curServerStateTable do
+        if slelctServer == Index then
+            SetGameObjectState(m_curServerStateTable[Index], true, panelGameObject);
+        else
+            SetGameObjectState(m_curServerStateTable[Index], false, panelGameObject);
+        end
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 进入游戏按钮事件
+function OnIntoGameClick()
+    if m_wLineInfoSize == nil then
+        return;
+    end
+    local ngsip = nil;
+    local ngsport = nil;
+    for i = 1, m_wLineInfoSize do
+        if m_vZoneLineInfo[i].ZoneID == PlayerPrefs.GetInt(SelectZoneId) then
+            ngsip = m_vZoneLineInfo[i].IP;
+            ngsport = m_vZoneLineInfo[i].Port;
+            break;
+        end
+    end
+    -- 所选战区不存在
+    if ngsport == nil then
+        ParameterToMessageTextBox.SelectserverNotHave();
+        return;
+    end
+    local zoneStateTable = { };
+    local m_bigzoneId = PlayerPrefs.GetInt(BigZoneId);
+    for k, v in ipairs(m_vZoneInfo) do
+        for d, g in ipairs(m_vZoneInfo[k]) do
+            if g.ZoneName == PlayerPrefs.GetString(SelectZoneName) then
+                m_zoneId = d;
+                break;
+            end
+        end
+    end
+    local zoneInfo = m_vZoneInfo[m_bigzoneId][m_zoneId];
+    caculateBinary(zoneInfo.ZoneState, zoneStateTable, 1);
+    if zoneStateTable[1] == 0 then
+        ParameterToMessageTextBox.ServerIsUnderMaintenance();
+        return;
+    end
+    -- 获取当前选择战区对应的地址端口信息
+    Constants.SocketPort = ngsport;
+    Constants.SocketAddress = ngsip;
+    SelectServer.SaveMyZone(zoneInfo.ZoneName);
+    -- createPanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+    -- closePanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+    ConnectNGS();
+
+    _G.currentServer = {
+        serverId = tostring(PlayerPrefs.GetInt(SelectZoneId)),
+        serverName = PlayerPrefs.GetString(SelectZoneName),
+        bigZoneId = tostring(PlayerPrefs.GetInt(BigZoneId)),
+    };
+	GameReportManager.AddReportData(9167, true);
+end
+
+-- 点击换区按钮事件
+function OnChangeZone()
+    SelectServer.OnUnCompressZLSInfo(m_vZoneInfo, m_vZoneLineInfo);
+    createPanel(ENUMPANELID.ENUM_PANEL_SELECTSERVER);
+    closePanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+end
+
+-- 返回进入游戏界面，隐藏当前登陆界面
+function OnBackClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_ONLOGIN);
+    closePanel(ENUMPANELID.ENUM_PANEL_COMEINGAME);
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 链接NGS
+function ConnectNGS()
+    ShowWaitingPanel();
+    Const.ngsPort = Constants.SocketPort;
+    G_NetWorkMng:Logout();
+    G_NetWorkMng:SendConnect();
+    GameReportManager.AddReportData(9168, true);
+end
+
+-- 显示WaingPanel
+function ShowWaitingPanel()
+    local message = { };
+    table.insert(message, 1, CCommonTool.GetTxtData(8098).m_str);
+    createPanelExx(ENUMPANELID.ENUM_PANEL_WAITDONE, message);
+    AddTimerEvent("WaitListRoleOK", 20, WaitListRoleOKTimerCallBack);
+end
+
+function WaitListRoleOKTimerCallBack()
+    closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+end
+
+-- 隐藏WaingPanel
+function HideWaitingPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_WAITDONE);
+end
+
+-- 用户登录
+function OnConnectNGS()
+    error("连接NGS返回, 请求帐号登录: OnLogin.LoginUser");
+    if CSDKManager.useThirdLogin == true then
+        if CSDKManager.isLogined == true then
+            if CSDKManager.sdkName == "nextmv" then
+                local selectZoneId = PlayerPrefs.GetInt(SelectZoneId);
+                local loginParams = CSDKManager.GetGameLoginParams();
+                local userId = loginParams[0];
+                local userToken = loginParams[1];
+
+                if userToken == nil then
+                    error("get userToken failed!!!");
+                    return;
+                end
+                PlayerPrefs.SetString("AccountName", userId);
+                LoginProtocol.RequestLoginByNextmv(userToken, selectZoneId);
+            elseif CSDKManager.sdkName == "xiyou" then
+                local selectZoneId = PlayerPrefs.GetInt(SelectZoneId);
+                local loginParams = CSDKManager.GetGameLoginParams();
+                local sid = loginParams[0];
+                local userToken = loginParams[1];
+                --local servers = loginParams[2];
+                if userToken == nil then
+                    error("get userToken failed!!!");
+                    CSDKManager.onTtRegister_XY("xiyou",false);
+                    return;
+                end
+                PlayerPrefs.SetString("AccountName", sid);
+
+                if CSDKManager.IsXiYouAndTouTiao == true then
+                    CSDKManager.onTtLogin_XY("xiyou",true); 
+                end
+
+                LoginProtocol.RequestLoginByXiYou(userToken, selectZoneId);
+                GameReportManager.AddReportData(9171, true);
+            end
+        else
+            HideWaitingPanel();
+            OnBackClick();
+        end
+    else
+        LoginProtocol.RequestLogin(
+        lua_LoginUser.account,
+        lua_LoginUser.password,
+        PlayerPrefs.GetInt(SelectZoneId));
+    end
+end
+
+function OnLoginFail()
+    HideWaitingPanel();
+    OnBackClick();
+end

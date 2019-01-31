@@ -1,0 +1,93 @@
+﻿--[[
+    field=ID, type=int, desc=主键ID
+    field=Type, type=byte, desc=化灵共鸣等级
+    field=NameID, type=int, desc=名称文本ID
+    field=Attr1, type=int, desc=属性种类1 
+    field=AttrValue1, type=int, desc=属性值1
+    field=Attr2, type=int, desc=属性种类2
+    field=AttrValue2, type=int, desc=属性值2
+    field=Attr3, type=int, desc=属性种类3
+    field=AttrValue3, type=int, desc=属性值3
+    field=Attr4, type=int, desc=属性种类4
+    field=AttrValue4, type=int, desc=属性值4
+]]
+module("WingSpiritResonateTable", package.seeall)
+local list={
+    {ID=1,Type=1,NameID=74241,Attr1=11,AttrValue1=200,Attr2=21,AttrValue2=200,Attr3=11,AttrValue3=200,Attr4=21,AttrValue4=200},
+    {ID=2,Type=2,NameID=74242,Attr1=11,AttrValue1=600,Attr2=21,AttrValue2=600,Attr3=11,AttrValue3=600,Attr4=21,AttrValue4=600},
+    {ID=3,Type=3,NameID=74243,Attr1=11,AttrValue1=1160,Attr2=21,AttrValue2=1160,Attr3=11,AttrValue3=1160,Attr4=21,AttrValue4=1160},
+    {ID=4,Type=4,NameID=74244,Attr1=11,AttrValue1=1880,Attr2=21,AttrValue2=1880,Attr3=11,AttrValue3=1880,Attr4=21,AttrValue4=1880},
+    {ID=5,Type=5,NameID=74245,Attr1=11,AttrValue1=2760,Attr2=21,AttrValue2=2760,Attr3=11,AttrValue3=2760,Attr4=21,AttrValue4=2760},
+    {ID=6,Type=6,NameID=74246,Attr1=11,AttrValue1=3720,Attr2=21,AttrValue2=3720,Attr3=11,AttrValue3=3720,Attr4=21,AttrValue4=3720},
+    {ID=7,Type=7,NameID=74247,Attr1=11,AttrValue1=4760,Attr2=21,AttrValue2=4760,Attr3=11,AttrValue3=4760,Attr4=21,AttrValue4=4760},
+    {ID=8,Type=8,NameID=74248,Attr1=11,AttrValue1=5880,Attr2=21,AttrValue2=5880,Attr3=11,AttrValue3=5880,Attr4=21,AttrValue4=5880},
+    {ID=9,Type=9,NameID=74249,Attr1=11,AttrValue1=7040,Attr2=21,AttrValue2=7040,Attr3=11,AttrValue3=7040,Attr4=21,AttrValue4=7040},
+    {ID=10,Type=10,NameID=74250,Attr1=11,AttrValue1=8240,Attr2=21,AttrValue2=8240,Attr3=11,AttrValue3=8240,Attr4=21,AttrValue4=8240}
+};
+local map = {[1]=list[1],[2]=list[2],[3]=list[3],[4]=list[4],[5]=list[5],[6]=list[6],[7]=list[7],[8]=list[8],[9]=list[9],[10]=list[10]};
+
+count = 10;
+Count = 10;
+
+function Get(id)
+    return map[id];
+end
+
+function GetAll()
+    return list;
+end
+
+function Filter(action)
+    local results = {};
+    if type(action) == "function" then
+        for i, data in ipairs(list) do
+            if action(data) == true then
+                table.insert(results, data)
+            end
+        end
+    end
+    return results;
+end
+
+function Find(cond)
+    local result = nil;
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                result = data;
+                break;
+            end
+        end
+    end
+    return result;
+end
+
+function FindAll(cond)
+    local results = {};
+    if type(cond) == "table" then
+        for i, data in ipairs(list) do
+            local find = false;
+            for k, v in pairs(data) do
+                if cond[k] ~= nil then
+                    find = cond[k] == v;
+                    if not find then
+                        break;
+                    end
+                end
+            end
+            if find == true then
+                table.insert(results, data);
+            end
+        end
+    end
+    return results;
+end

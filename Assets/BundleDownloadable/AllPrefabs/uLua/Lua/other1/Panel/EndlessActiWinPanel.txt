@@ -1,0 +1,350 @@
+﻿module("EndlessActiWinPanel", package.seeall)
+-- 查看排行榜按钮
+local m_RankButtonPath = "Content/Buttons/Button-Rank";
+-- 退出按钮
+local m_NormalQuitButtonPath = "Content/Buttons/Normal/Button-Quit";
+-- 再来一次
+local m_NormalContinueButtonPath = "Content/Buttons/Normal/Button_Continue";
+-- 下一层按钮 
+local m_NormalNextButtonPath = "Content/Buttons/Normal/Button_Next";
+-- 退出按钮
+local m_SpecialQuitButtonPath = "Content/Buttons/Special/Button-Quit";
+-- 再来一次
+local m_SpecialContinueButtonPath = "Content/Buttons/Special/Button_Continue";
+-- 下一层按钮 
+local m_SpecialNextButtonPath = "Content/Buttons/Special/Button_Next";
+-- 下一层倒计时 
+local m_TimePath = "Content/Buttons/Special/Button_Next/Time";
+--离开倒计时
+local m_levelTimeStr = "Content/Buttons/Special/Button-Quit/Time";
+-- 显示按钮状态
+local m_NormalPath = "Content/Buttons/Normal";
+local m_SpecialPath = "Content/Buttons/Special";
+--  通关奖励标题
+local m_DropRewardTitlePath = "Content/DropReward/Title";
+-- 本层奖励道具
+local m_Item1Path = "Content/DropReward/Grid/Item1";
+-- 本层奖励道具
+local m_Item2Path = "Content/DropReward/Grid/Item2";
+-- 本层奖励道具
+local m_Item3Path = "Content/DropReward/Grid/Item3";
+-- 本层奖励道具
+local m_Item4Path = "Content/DropReward/Grid/Item4";
+-- 本层奖励道具
+local m_Item5Path = "Content/DropReward/Grid/Item5";
+-- 通过时间
+local m_TimeValueLabelPath = "Content/Time/Value";
+-- 通过描述
+local m_TimeDescLabelPath = "Content/Time/Desc";
+-- 剩余次数
+local m_NumLabelPath = "Content/Buttons/Num/Value";
+-----------------------------------引用的对象------------------------------------------
+-- 当前面板的对象
+local m_PanelObject = nil;
+-- 初始化失败默认情况
+local m_bCreateSuccess = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+-- 是否是最后一层  1:代表最后一层
+local m_IsLast = 0;
+-- 结束时间
+local m_EndTime = 0;
+local m_ItemPaths = nil;
+--活动Id
+local m_ActivityId = 901;
+-- 当前是否首次通关
+local m_IsFirstPass = true;
+
+function Start()
+    InitAllInfo();
+    m_bCreateSuccess = true;
+end
+
+---- 系统函数,游戏对象在激活的时候使用
+function OnEnable()
+end
+
+-- 初始化背包的所有数据信息
+function InitAllInfo()
+    -- 初始化管理器
+    InitObjects();
+    -- 初始化点击事件
+    InitOnClick();
+    -- 初始化游戏内容
+    InitContent();
+end
+function OnDisable()
+    G_TimerMng:RemoveTimeTask("LevelGodAndBallFb");
+end
+-- 界面删除的时候调用
+function OnDestroy()
+    m_bCreateSuccess = nil;
+    G_TimerMng:RemoveTimeTask("EndlessActiWinPanelTimer");
+    G_TimerMng:RemoveTimeTask("LevelGodAndBallFb");
+end
+
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化管理器
+function InitObjects()
+    -- 面板对象
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+    m_ItemPaths = {m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path};
+end
+
+-- 初始化物品点击事件点击事件信息
+function InitOnClick()
+    SetGameObjectEvent(m_RankButtonPath, OnRankButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_NormalContinueButtonPath, OnContinueButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_NormalQuitButtonPath, OnQuitButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_NormalNextButtonPath, OnNextButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_SpecialQuitButtonPath, OnQuitButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_SpecialNextButtonPath, OnNextButtonClick, m_PanelObject);
+    SetGameObjectEvent(m_SpecialContinueButtonPath, OnContinueButtonClick, m_PanelObject);
+end
+
+function closetPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+end
+
+-- 初始化游戏内容
+function InitContent()
+    --SetGameObjectState(m_levelTimeStr,false,m_PanelObject);
+    m_ActivityId = G_SceneMng.ActivityID;
+    if m_ActivityId ~= EACTIVITYID.ACTIVITY_BALL and m_ActivityId ~= EACTIVITYID.ACTIVITY_SHO and m_ActivityId ~= EACTIVITYID.ACTIVITY_STAIR and m_ActivityId ~= EACTIVITYID.ACTIVITY_PET and m_ActivityId ~= EACTIVITYID.ACTIVITY_MOUNT  then  
+        error("当前活动ID错误, 可能已经被传副本, 强制关闭界面");
+        closetPanel();
+        return;
+    end
+
+    local curIndex = ActivityManager.GetStairActivityCurLayer(m_ActivityId);
+    local endIndex = ActivityManager.GetStairActivityLayer(m_ActivityId);
+    error("当前活动m_ActivityId="..m_ActivityId.."_curIndex"..curIndex.."_endIndex="..endIndex);
+    SetRewardList(curIndex,endIndex,m_ActivityId);
+
+    if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR then
+        local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_ActivityId);
+        local remainTimeStr = string_format(GetTextToId(1546),remainTimes);
+        SetLabelContent(m_NumLabelPath, remainTimeStr, m_PanelObject);
+        SetGameObjectState(m_NormalPath, remainTimes > 0, m_PanelObject);
+        SetGameObjectState(m_SpecialPath, remainTimes <= 0, m_PanelObject);
+        SetGameObjectState(m_RankButtonPath, true, m_PanelObject);
+        SetGameObjectState(m_NormalContinueButtonPath, true, m_PanelObject);
+        SetGameObjectState(m_SpecialContinueButtonPath, true, m_PanelObject);
+        SetGameObjectState(m_SpecialNextButtonPath, false, m_PanelObject);
+        
+    else
+        SetLabelContent(m_NumLabelPath, "", m_PanelObject);
+        SetGameObjectState(m_NormalPath, false, m_PanelObject);
+        SetGameObjectState(m_SpecialPath, true, m_PanelObject);
+        SetGameObjectState(m_RankButtonPath, false, m_PanelObject);
+        SetGameObjectState(m_SpecialContinueButtonPath, false, m_PanelObject);
+        SetGameObjectState(m_SpecialNextButtonPath, curIndex < 100, m_PanelObject);
+        if curIndex < 100 then
+            AddTimerEvent("EndlessActiWinPanelTimer", 5, OnTimerOver, 7, OnTimerUpdate);
+        end
+    end
+    
+    local uiTable = GetComponent(m_PanelObject, "Content/Buttons/Normal", "UITable");
+    if uiTable ~= nil then uiTable:Reposition(); end
+    local uiTable = GetComponent(m_PanelObject, "Content/Buttons/Special", "UITable");
+    if uiTable ~= nil then uiTable:Reposition(); end
+end
+
+-- 倒计时结束进入下一层
+function OnTimerOver()
+    OnNextButtonClick();
+end
+
+function OnTimerUpdate(second)
+    SetLabelContent(m_TimePath, second, m_PanelObject);
+    
+end
+
+-- 设置奖励
+function SetRewardList(curIndex,endIndex,m_ActivityId)
+    local activityStair = ActivityManager.GetStairActivityInfo(m_ActivityId, curIndex);
+    local activateTime = activityStair.ActivateTime;
+    local residueTime = activateTime - m_EndTime;
+    SetLabelContent(m_TimeValueLabelPath, CaculateTime(m_EndTime), m_PanelObject);
+    if residueTime >= 0 then--通过
+        local remainText = string_format("[91E464FF]{0}[-]",GetTextToId(1547));
+        local remainTimeStr = string_format(remainText,residueTime);
+        SetLabelContent(m_TimeDescLabelPath, remainTimeStr, m_PanelObject);
+    else--失败
+        local remainText = string_format("[FF3D3DFF]{0}[-]",GetTextToId(1548));
+        local remainTimeStr = string_format(remainText,math.abs(residueTime));
+        SetLabelContent(m_TimeDescLabelPath, remainTimeStr, m_PanelObject);
+    end
+    local rewardItems = nil;
+    local rewardItemNums = nil;
+    local rewardTitleText = nil;
+    --通过当前挑战层次判断是否是第一次挑战
+    if  m_ActivityId == EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+        if m_IsFirstPass == true then
+            --LuaTabel获取
+            rewardItems = ActivityManager.GetFirstItemsInLuaTable(activityStair);
+            rewardItemNums =ActivityManager.GetFirstItemNumsInLuaTable(activityStair);
+            --[首次奖励：]
+            rewardTitleText = GetTextToId(1581);
+        else
+            --LuaTabel获取
+            rewardItems = ActivityManager.GetAllItemsInLuaTable(activityStair);
+            rewardItemNums = ActivityManager.GetAllItemNumsInLuaTable(activityStair);
+            rewardTitleText = GetTextToId(1491);
+        end
+    else
+        --error("m_ActivityId="..m_ActivityId.."**Id="..activityStair.Id);
+        if m_IsFirstPass == true then
+            rewardItems = activityStair:GetFirstItems();
+            --error("m_ActivityId="..m_ActivityId.."**FirstItem1="..activityStair.FirstItem1);
+            rewardItemNums = activityStair:GetFirstItemNums();
+            --[首次奖励：]
+            rewardTitleText = GetTextToId(1581);
+        else
+            rewardItems = activityStair:GetAllItems();
+            rewardItemNums = activityStair:GetAllItemNums();
+            rewardTitleText = GetTextToId(1491);
+        end
+    end
+    if rewardTitleText ~= nil then
+        SetLabelContent(m_DropRewardTitlePath, rewardTitleText, m_PanelObject);
+    end
+    local count = 0;
+--    if rewardItems ~= nil then
+--        count = rewardItems.count;
+--    end
+    if m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+        if rewardItems ~= nil then
+            count = #rewardItems;
+            error("count="..count);
+        end
+    else
+        if rewardItems ~= nil then
+            count = rewardItems.count;
+            error("count="..count);
+        end
+    end
+    for i, path in ipairs(m_ItemPaths) do
+        if i <= count then
+            local excelId = 0;
+            local itemNum = 0;
+            if m_ActivityId==EACTIVITYID.ACTIVITY_PET or m_ActivityId == EACTIVITYID.ACTIVITY_MOUNT then
+                excelId = rewardItems[i];
+                itemNum = rewardItemNums[i];
+            else
+                excelId = rewardItems[i - 1];
+                itemNum = rewardItemNums[i - 1];
+            end
+            error("excelId="..excelId.."_itemNum"..itemNum);
+            if itemNum == nil or itemNum <= 0 then
+                itemNum = 1;
+            end
+            SetItemShowByExcelIDV04(m_PanelObject, path, excelId, itemNum, false, ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+            SetItemToolTipsEvent(m_PanelObject,path,ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL,false,excelId);
+            SetGameObjectState(path, true, m_PanelObject);
+        else
+            SetGameObjectState(path, false, m_PanelObject);
+        end
+    end
+    SetGameObjectState(m_NormalPath, residueTime >= 0, m_PanelObject);
+    SetGameObjectState(m_SpecialPath, residueTime < 0, m_PanelObject);
+    if m_IsLast == 1 then
+        SetGameObjectState(m_NormalPath, false, m_PanelObject);
+        SetGameObjectState(m_SpecialPath, true, m_PanelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 查看排行榜
+function OnRankButtonClick()
+    error("OnRankButtonClick");
+    RankPanel.OpenRankPanel(RANK_TYPE.ACTIVITYSTAIR, 0);
+end
+-- 离开副本
+function OnQuitButtonClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_FUBEN_LEAVE_INFO);
+    G_NetWorkMng:SendMessage(buffer);
+end 
+-- 再来一次
+function OnContinueButtonClick()
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_ActivityId);
+    if remainTimes > 0 then
+        closePanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+        local curIndex = ActivityManager.GetStairActivityCurLayer(m_ActivityId);
+        ActivityProtocol.RequestEnterActivityStairRoom(m_ActivityId, curIndex);
+    else
+        ShowSystemFlowTips(6021);
+    end
+end 
+-- 进入下一层
+function OnNextButtonClick()
+    local remainTimes, usedTimes, maxTimes = ActivityManager.GetActivityTimes(m_ActivityId);
+    if remainTimes > 0 or m_ActivityId ~= EACTIVITYID.ACTIVITY_STAIR then
+        local curIndex = ActivityManager.GetStairActivityCurLayer(m_ActivityId);
+        ActivityManager.SetStairActivityCurLayer(m_ActivityId, curIndex + 1);
+        error("点击进入下一层" .. (curIndex + 1));
+        --点击完不立即关闭
+        --closePanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+        if m_ActivityId == EACTIVITYID.ACTIVITY_STAIR then
+            closePanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+            ActivityStairProtocol.RequestStairActivity(0);
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_BALL then
+            ActivityStairProtocol.RequestBallActivity(0);
+        elseif m_ActivityId == EACTIVITYID.ACTIVITY_SHO then
+            ActivityStairProtocol.RequestShoActivity(0);
+        elseif m_ActivityId==EACTIVITYID.ACTIVITY_PET then
+            ActivityStairProtocol.RequestPetActivity(0);
+        elseif m_ActivityId==EACTIVITYID.ACTIVITY_MOUNT then
+            ActivityStairProtocol.RequestMountActivity(0);
+        end
+    else
+        --[活动次数已用尽，请等待下次机会。]
+        ShowSystemFlowTips(6021);
+    end
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 传递参数
+function RefreshEndlessVitory(activityId, index, islast,time,isFirstPass)
+    -- 当前可挑战的最高层
+    local endLayer = tonumber(index);
+    ActivityManager.SetStairActivityLayer(activityId, endLayer);
+    error("endLayer : "..endLayer);
+    -- 是否是最后一层
+    m_IsLast = islast;
+    error("m_IsLast : "..m_IsLast);
+    -- 结束时间
+    m_EndTime = time;
+    error("m_EndTime : "..m_EndTime);
+    --  是否首次通关
+    m_IsFirstPass = isFirstPass;
+end
+function functionParameter(table)
+
+end
+function SetPanelState(actid,state)
+    --error("活动id:"..actid.." 状态:"..state)
+    if actid == EACTIVITYID.ACTIVITY_BALL or actid == EACTIVITYID.ACTIVITY_SHO or actid == EACTIVITYID.ACTIVITY_PET or actid == EACTIVITYID.ACTIVITY_MOUNT then
+        if state == 1 then
+            closetPanel();
+        else
+            --等级不足
+            SetLabelContent(m_TimePath,"",m_PanelObject);
+            --开始计时
+            --SetGameObjectState(m_levelTimeStr,true,m_PanelObject);
+            --SetLabelContent(m_levelTimeStr,30,m_PanelObject);
+           AddTimerEventsLevel();
+        end
+    end
+end
+function AddTimerEventsLevel()
+    G_TimerMng:RemoveTimeTask("LevelGodAndBallFb");
+    AddTimerEvent("LevelGodAndBallFb", 30, OnGodsCdCallOver, ETimeShowType.TypeNumberSeven, OnGodsCdUpdate);
+end
+function OnGodsCdCallOver()
+    OnQuitButtonClick();
+end
+function OnGodsCdUpdate(timeTxt)
+    --SetLabelContent(m_levelTimeStr,timeTxt,m_PanelObject);
+end

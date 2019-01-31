@@ -1,0 +1,82 @@
+﻿module("AchieveFinishPanel", package.seeall)
+
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+local m_panelInitAlready = false;
+local achieveId = nil;
+local duration = 0;
+local timerdata = nil;
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    -- 初始化object对象
+    InitObjects();
+    -- 初始化界面所有信息
+    InitAllInfo();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready == true then
+        InitAllInfo();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化object对象
+function InitObjects()
+    -- 面板对象
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACHIEVEFINISH);
+    duration = CCommonTool.GetDefineInfo(3105):GetIntContent();
+end
+
+function CloseThisPanel()
+    closePanel(ENUMPANELID.ENUM_PANEL_ACHIEVEFINISH);
+    -- 回调特效播放结束
+    G_UserInfo:CallPlayAchieveFinishEffect();
+end
+
+-- 初始化界面所有信息
+function InitAllInfo()
+    local info = AchieveManager.GetAchieveInfo(achieveId);
+    SetLabelContent("Label_Value", info.PointNum, m_panelObject);
+    SetLabelTextByID("Label_Desc", info.DescribeId, m_panelObject);
+    SetLabelContent("Label_Value", info.PointNum, m_panelObject);
+    
+    ClearTimer();
+    timerdata = Timer.Instance:AddTimer(duration, 0, CloseThisPanel);
+end
+
+function ClearTimer()
+    if timerdata ~= nil then
+        Timer.Instance:StopTimer(timerdata);
+        timerdata = nil;
+    end
+end
+
+--------------------------------------按钮事件方法------------------------------------
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnAchieveFinish(id)
+    achieveId = id;
+    createPanel(ENUMPANELID.ENUM_PANEL_ACHIEVEFINISH);
+end

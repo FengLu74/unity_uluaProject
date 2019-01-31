@@ -1,0 +1,280 @@
+﻿module('ActivityBossPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'ActivityBossPanel';
+---------------------------------------label路径---------------------------------------
+-- BOSS名称
+local m_NamePath = "Info/Name";
+-- 描述
+local m_DescPath = "Info/Desc";
+-- 刷新时间
+local m_RefreshTimePath = "Info/RefreshTime";
+-- 推荐方式
+local m_JoinTypePath = "Info/JoinType";
+
+-----------------------------------------按钮路径--------------------------------------
+-- 前往按钮
+local m_JumpButtonPath = "Info/JumpButton";
+
+-----------------------------------------Sprite路径------------------------------------
+
+----------------------------------gameobject所在的路径---------------------------------
+-- 信息面板
+local m_InfoPath = "Info";
+-- 奖励1
+local m_Item1Path = "Info/Items/Item1";
+-- 奖励2
+local m_Item2Path = "Info/Items/Item2";
+-- 奖励3
+local m_Item3Path = "Info/Items/Item3";
+-- 奖励4
+local m_Item4Path = "Info/Items/Item4";
+-- 奖励5
+local m_Item5Path = "Info/Items/Item5";
+
+----------------------------------通用的名称路径---------------------------------------
+-- 世界BOSS列表
+local m_ListPath = "ListPanel/List";
+-- 展示奖励Grid
+local m_ItemsPath = "Info/Items";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- BOSS列表
+local m_List = nil;
+-- 信息面板
+local m_Info = nil;
+-- 刷新时间
+local m_RefreshTime = nil;
+-- 展示奖励
+local m_Items = nil;
+-- 奖励1
+local m_Item1 = nil;
+-- 奖励2
+local m_Item2 = nil;
+-- 奖励3
+local m_Item3 = nil;
+-- 奖励4
+local m_Item4 = nil;
+-- 奖励5
+local m_Item5 = nil;
+
+-- 奖励路径数组 
+local m_ItemPaths = nil;
+-- 奖励GameObject数组
+local m_ItemObjects = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- Timer事件名称
+local m_TimerEventName = "ActivityDailyPanelTimer";
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    ActivityProtocol.RequestBossList();
+    InitShow();
+    InitList();
+    AddTimerEvent(m_TimerEventName, 100000, nil, nil, OnTimerEvent);
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        ActivityProtocol.RequestBossList();
+        InitShow();
+        AddTimerEvent(m_TimerEventName, 100000, nil, nil, OnTimerEvent);
+    end
+end
+
+function OnDisable()
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+end
+
+function OnDestroy()
+    G_TimerMng:RemoveTimeTask(m_TimerEventName);
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+    m_List = nil;
+    m_Info = nil;
+    m_RefreshTime = nil;
+    m_Items = nil;
+    m_Item1 = nil;
+    m_Item2 = nil;
+    m_Item3 = nil;
+    m_Item4 = nil;
+    m_Item5 = nil;
+    m_ItemPaths = nil;
+    m_ItemObjects = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+    m_PanelObject = child(m_PanelObject, m_PanelName).gameObject
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView")
+    m_Info = child(m_PanelObject, m_InfoPath).gameObject;
+    m_RefreshTime = GetComponent(m_PanelObject, m_RefreshTimePath, "UILabel")
+    m_Items = GetComponent(m_PanelObject, m_ItemsPath, "UIGrid");
+    m_Item1 = child(m_PanelObject, m_Item1Path).gameObject;
+    m_Item2 = child(m_PanelObject, m_Item2Path).gameObject;
+    m_Item3 = child(m_PanelObject, m_Item3Path).gameObject;
+    m_Item4 = child(m_PanelObject, m_Item4Path).gameObject;
+    m_Item5 = child(m_PanelObject, m_Item5Path).gameObject;
+
+    m_ItemPaths = { m_Item1Path, m_Item2Path, m_Item3Path, m_Item4Path, m_Item5Path };
+    m_ItemObjects = { m_Item1, m_Item2, m_Item3, m_Item4, m_Item5 };
+end
+
+-- 初始化对象事件
+function InitEvents()
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetSelectChangedCallback(OnListViewSelected);
+    SetGameObjectEvent(m_JumpButtonPath, OnJumpButtonClick, m_PanelObject);
+
+end
+
+-- 初始化列表
+function InitList()
+    local items = ActivityManager.GetWorldBosses();
+    for _, data in ipairs(items) do
+        m_List:AddData(data);
+    end
+    m_List:LookAt(0, true);
+end
+
+-- 初始化显示信息
+function InitShow()
+    m_List:Refresh();
+end
+
+-- 每秒刷新事件
+function OnTimerEvent()
+    m_List:Refresh();
+end
+
+-- 初始化BOSS信息
+function InitBossInfo()
+    local data = m_List:GetData(m_List.selectedIndex);
+    local info = data.info;
+    SetLabelTextByID(m_NamePath, info.Name, m_PanelObject);
+    SetLabelTextByID(m_DescPath, info.Desc, m_PanelObject);
+    SetLabelTextByID(m_JoinTypePath, info.JoinType, m_PanelObject);
+    m_RefreshTime.text = ActivityManager.GetWorldBossRefreshTimes(data.id);
+
+    -- 获得奖励道具信息
+    local list = CCommonTool.GetRewardShowItemIds(info.RewardshowId);
+    local count = list.count;
+    for i, path in ipairs(m_ItemPaths) do
+        local itemObject = m_ItemObjects[i];
+        if i <= count then
+            local excelId = list[i - 1];
+            SetItemShowByExcelIDV04(m_PanelObject, path, excelId, 1, false, 11, ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+            itemObject:SetActive(true);
+            SetItemToolTipsEvent(itemObject, "", ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL, false, excelId);
+        else
+            itemObject:SetActive(false);
+        end
+    end
+    m_Items:Reposition();
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- BOSS列表初始化
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    local level = G_UserInfo.RoleAttribute.Level;
+    local info = data.info;
+    local state = data.state;
+    SetLabelTextByID("Name", info.Name, go);
+    SetLabelTextByID("SceneName", info.SceneName, go);
+    SetSpriteByAtlasID("Bg", info.Icon, go, true);
+    if level < info.MinLevel then
+        SetLabelContent("Level", "[FF0000]" .. string_format(
+        --[[ {0}级 ]]
+        CCommonTool.GetTxtData(8056).m_str, info.MinLevel), go);
+    else
+        SetLabelContent("Level", string_format(
+        --[[ {0}级 ]]
+        CCommonTool.GetTxtData(8056).m_str, info.MinLevel), go);
+    end
+    local seconds, opening = ActivityManager.GetWorldBossRefreshTime(data.id);
+    if opening then
+        local bossRefreshed = opening and data.state == 1 and data.maxHp > 0;
+        SetGameObjectState("PBarContent", bossRefreshed, go);
+        SetGameObjectState("RefreshTime", false, go);
+        if bossRefreshed then
+            SetLabelContent("PBarContent/Hp", CCommonTool.GetTxtData(2009).m_str .. " " .. string_format("{0}/{1}", math.floor(data.hp), math.floor(data.maxHp)), go);
+            local pbar = GetComponent(go, "PBarContent/PBar", "UIProgressBar");
+            pbar.value = data.hp / data.maxHp;
+        end
+    else
+        SetGameObjectState("PBarContent", false, go);
+        SetGameObjectState("RefreshTime", true, go);
+        SetLabelContent("RefreshTime", GetTimeString(seconds), go);
+    end
+	--活动-黑暗军团上报
+	if Constants.branch == "cn" then
+		ReportManager.RequestReportPanel(10194);
+	end
+end
+
+function GetTimeString(seconds)
+    local h = math.floor(seconds / 3600);
+    local m = math.floor((seconds - h * 3600) / 60);
+    local s = seconds - h * 3600 - m * 60;
+    local normalColor = "fffab6";
+    local timeColor = "fffab6";
+    if seconds <= 300 then
+        timeColor = "fd3939";
+    elseif seconds <= 1800 then
+        timeColor = "ff984c";
+    end
+    if h <= 0 then
+        return string_format(CCommonTool.GetTxtData(953).m_str, normalColor, timeColor, string.format("%02d", m), string.format("%02d", s));
+    else
+        return string_format(CCommonTool.GetTxtData(899).m_str, normalColor, timeColor, string.format("%02d", h), string.format("%02d", m));
+    end
+end
+
+-- BOSS列表选中事件
+function OnListViewSelected(listView)
+    InitBossInfo();
+end
+
+-- 前往按钮点击事件
+function OnJumpButtonClick(gameObject)
+    local data = m_List:GetData(m_List.selectedIndex);
+    local info = data.info;
+    if G_UserInfo.RoleAttribute.Level < info.MinLevel then
+        ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_ACTIVITY_LEVEL, nil, {info.MinLevel});
+        return;
+    end
+    JumpManager.WorldBossTransfer(data.id, function(jumpType, success) 
+        closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL); 
+    end);
+    --SceneProtocol.RequestWorldBossTransfer(data.id, true);
+    --closePanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL);
+end
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+function Refresh()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+-- BOSS刷新时, 如果界面打开, 请求刷新BOSS血量
+function OnBossStateChange()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_ACTIVITYPANEL) == 1 then
+        if m_CreateSuccess then
+            InitShow();
+            ActivityProtocol.RequestBossList();
+        end
+    end
+end

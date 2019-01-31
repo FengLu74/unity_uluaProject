@@ -1,0 +1,120 @@
+﻿module('TeamApplyPanel', package.seeall)
+-- 当前所在面板名字
+local m_PanelName = 'TeamApplyPanel';
+---------------------------------------label路径---------------------------------------
+
+-----------------------------------------按钮路径--------------------------------------
+-- 清空按钮
+local m_ClearButtonPath = "Content/ClearButton";
+
+-----------------------------------------Sprite路径------------------------------------
+-- 遮罩
+local m_MaskPath = "Mask";
+
+----------------------------------gameobject所在的路径---------------------------------
+
+----------------------------------通用的名称路径---------------------------------------
+-- 申请列表
+local m_ListPath = "Content/ListPanel/List";
+
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_PanelObject = nil;
+-- 是否创建成功
+local m_CreateSuccess = false;
+-- 申请列表
+local m_List = nil;
+
+-----------------------------------一些写死的规定--------------------------------------
+
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    m_CreateSuccess = true;
+end
+
+function OnEnable()
+    if m_CreateSuccess then
+        InitShow();
+    end
+end
+
+function OnDisable()
+    
+end
+
+function OnDestroy()
+    m_PanelObject = nil;
+    m_CreateSuccess = false;
+	m_List = nil;
+
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_PanelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_TEAM_APPLY_PANEL);
+    m_List = GetComponent(m_PanelObject, m_ListPath, "UIListView");
+
+end
+
+-- 初始化对象事件
+function InitEvents()
+	SetGameObjectEvent(m_MaskPath, OnCloseClick, m_PanelObject);
+    m_List:SetInitCallback(OnListViewInit);
+    m_List:SetClickCallback(OnListViewClick);
+	SetGameObjectEvent(m_ClearButtonPath, OnClearButtonClick, m_PanelObject);
+    SetGameObjectEvent("CloseButton", OnCloseClick, m_PanelObject);
+
+end
+
+-- 初始化显示信息
+function InitShow()
+    local items = TeamManager.inviteAndApplyList;
+    m_List:RemoveAll();
+    for i, item in ipairs(items) do
+        m_List:AddData(item);
+    end
+end
+
+------------------------------------------事件方法------------------------------------
+
+-- 遮罩点击事件
+function OnCloseClick(gameObject)
+    closePanel(ENUMPANELID.ENUM_PANEL_TEAM_APPLY_PANEL);
+end
+
+-- 申请列表初始化事件
+function OnListViewInit(listView, cell, data)
+    local go = cell.gameObject;
+    SetSpriteByAtlasID("Icon", CCommonTool.GetRoleDateInfo(data.proId).HeadRes, go, true);
+    SetLabelContent("Name", data.name, go);
+    SetLabelContent("Level", data.level, go);
+    SetCampIcon("CampIcon", data.campType, go);
+    SetLabelContent("FightPower", string_format(--[[战斗力 {0}]]CCommonTool.GetTxtData(994).m_str, data.fightPower), go);
+end
+
+-- 申请列表点击事件
+function OnListViewClick(listView, cell, go)
+    local data = listView:GetData(cell.dataIndex);
+    if go.name == "Button" then
+        TeamProtocol.RequestAgreeApply(data.id);
+    end
+end
+
+-- 清空按钮点击事件
+function OnClearButtonClick(gameObject)
+    TeamProtocol.RequestClearApplyList();
+end
+
+
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+
+-- 刷新界面
+function Refresh()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_TEAM_APPLY_PANEL) == 1 then
+        InitShow();
+    end
+end

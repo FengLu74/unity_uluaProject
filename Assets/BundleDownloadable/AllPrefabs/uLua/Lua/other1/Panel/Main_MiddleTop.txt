@@ -1,0 +1,1539 @@
+﻿module("Main_MiddleTop", package.seeall)
+-- 当前所在面板名字
+local panelName = "Main";
+---------------------------------------label路径---------------------------------------
+-- boss名字所在的位置
+local m_BossNameStr = "MiddleTop/BossHud/Content/Label_Name";
+-- boss等级所在的位置
+local m_BossLevelStr = "MiddleTop/BossHud/Content/Label_Level";
+-- boss血条数所在的位置
+local m_BossTimesNumStr = "MiddleTop/BossHud/Content/Label_Time";
+
+-- 副本倒计时描述文本
+local m_DungeonCountDownLabel = "MiddleTop/DungeonCountDown/Label_Time";
+
+-- 吃鸡倒计时文本ID
+local m_EatChickenTxtLabelStr = "MiddleTop/EatChicken/Label_Text";
+-- 吃鸡倒计时时间
+local m_EatChickenTimeLabelStr = "MiddleTop/EatChicken/Label_Time";
+
+-- 吃鸡击杀人数
+local m_EatChickenKillNumStr = "RightTop/EatChicken/StasticData/Label_KillNum";
+-- 吃鸡剩余人数
+local m_EatChickenLeftNumStr = "RightTop/EatChicken/StasticData/Label_LeftNum";
+-- 吃鸡积分
+local m_EatChickenScoreNumStr = "RightTop/EatChicken/ScoreData/Label_Num";
+-----------------------------------------按钮路径--------------------------------------
+-- 点击商城按钮
+local m_ButtonStore = "RightTop/ButtonGroup/Button_Store";
+-- 点击限时礼包按钮
+local m_ButtonLimitTimeGiftBag = "RightTop/ButtonGroup/Button_LimitTimeGiftBag";
+-- 点击福利按钮
+local m_ButtonReward = "RightTop/ButtonGroup/Button_Reward";
+-- 点击新手基金按钮
+local m_ButtonGrowFund1 = "RightTop/ButtonGroup/Button_GrowFund";
+-- 点击排行按钮
+local m_ButtonRank = "RightTop/ButtonGroup/Button_Rank";
+-- 点击活动按钮
+local m_ButtonActivity = "RightTop/ButtonGroup/Button_Activity";
+-- 点击拍卖按钮
+local m_ButtonAuction = "RightTop/ButtonGroup/Button_Auction";
+-- 点击邮件按钮
+local m_ButtonMail = "RightTop/ButtonGroup/Button_Mail";
+-- 点击礼包按钮
+local m_ButtonPack = "RightTop/ButtonGroup/Button_Pack";
+-- 点击每日按钮
+local m_ButtonEveryDay = "RightTop/ButtonGroup/Button_EveryDay";
+-- 点击商店按钮
+local m_ButtonShop = "RightTop/ButtonGroup/Button_Shop";
+-- 点击变强按钮
+local m_ButtonStronger = "RightTop/ButtonGroup/Button_Stronger";
+-- 点击宝藏按钮
+local m_ButtonTreaure = "RightTop/ButtonGroup/Button_Treaure";
+-- 七日福利按钮
+local m_Button_SevenDaysWelfare = "RightTop/ButtonGroup/Button_SevenDaysWelfare";
+-- 限时排行榜活动按钮
+local m_ButtonLimitTimeRank = "RightTop/ButtonGroup/Button_LimitTimeRank"
+-- 第二福利按钮
+local m_ButtonSecondReward= "RightTop/ButtonGroup/Button_SecondReward"
+--BossLobby大厅按钮
+local m_ButtonBossLobby= "RightTop/ButtonGroup/Button_BossLobby"
+-- Vip按钮
+local m_ButtonVip = "LeftTop/Button_Vip";
+
+-- 领地战准备场景退出按钮
+local m_ButtonAssignment = "MiddleTop/GuildWarTips/btn_Assignment";
+local m_ButtonExit = "MiddleTop/GuildWarTips/btn_Exit";
+-- 右上角领地战地图点击可寻路
+local m_GuildWarMapTextureStr = "RightTop/Sub_GuildWarMap/sp_BG/Texture";
+
+-- 吃鸡地图按钮
+local m_ButtonEatChickenMapStr = "RightTop/EatChicken/MapData/Panel/Button_Map";
+-- 吃鸡积分按钮
+local m_ButtonEatChickenScoreStr = "RightTop/EatChicken/ScoreData";
+-- 离开副本按钮
+local m_ButtonEatChickenLeaveStr = "RightTop/EatChicken/Button_Leave";
+-- 多人boss的离开副本按钮
+local m_ButtonForLeaveDungeonStr = "RightTop/ForLeaveDungeon/ReviveButton";
+
+-- 首充提示关闭
+local m_BtnFirstChargeClose = "RightTop/ButtonGroup/FirstChargeTips/ZheZhao";
+-- 首充提示跳转
+local m_BtnFirstCharge = "RightTop/ButtonGroup/FirstChargeTips/btn_Bg";
+
+
+
+-----------------------------------------Sprite路径------------------------------------
+-- boss血条第一个所在的位置
+local m_BossHpBannerOneStr = "MiddleTop/BossHud/Content/Sprite_Banner1";
+-- boss血条第一个动画所在的位置
+local m_BossHpBannerOneTweenStr = "MiddleTop/BossHud/Content/Sprite_Banner1/Sprite_Banner1Tween";
+-- boss血条第二个所在的位置
+local m_BossHpBannerTwoStr = "MiddleTop/BossHud/Content/Sprite_Banner2";
+-- boss血条第二个动画所在的位置
+local m_BossHpBannerTwoTweenStr = "MiddleTop/BossHud/Content/Sprite_Banner2/Sprite_Banner2Tween";
+-- 领地战管理Tips背景底
+local m_GuildWarTipsBgStr = "MiddleTop/GuildWarTips/sp_Bg/sp_BgDi";
+-- 点击的地点
+local m_clickSpriteStr = "RightTop/Sub_GuildWarMap/sp_BG/sp_Click";
+-- 目标寻路点
+local m_TargetPosStr = "RightTop/Sub_GuildWarMap/sp_BG/sp_Target";
+
+-- 吃鸡箭头
+local m_EatChickenArrowStr = "RightTop/EatChicken/MapData/Panel/Anchor/Sprite_Self";
+-- 七日奖励领取图标
+local m_itemIcon = "/sp_Icon";
+----------------------------------gameobject所在的路径---------------------------------
+-- bossHp所在的位置
+local m_bossHud = "MiddleTop/BossHud";
+-- boss霸体值的UIProgressBarComp所在的位置
+local m_BossNotHitProBarCompStr = "MiddleTop/BossHud/Content/Sprite_NotHitNum";
+
+-- 副本倒计时所在的位置
+local m_DungeonCountDownStr = "MiddleTop/DungeonCountDown";
+-- 跟随队长中所在位置
+local m_TeamFollowingStr = "TeamFollowing";
+-- 镖车跟随特效位置
+local m_CamionFollowingStr = "CamionFollowing";
+
+-- 吃鸡时间信息
+local m_EatChickenStr = "MiddleTop/EatChicken";
+-- 吃鸡地图信息
+local m_EatChickenMapStr = "RightTop/EatChicken";
+-- 吃鸡小地图
+local m_EatChickenMapTextureCompStr = "RightTop/EatChicken/MapData/Panel/Texture_Map";
+-- 吃鸡小地图anchor位置
+local m_EatChickenAnchorStr = "RightTop/EatChicken/MapData/Panel/Anchor";
+-- 吃鸡当前圈
+local m_EatChickenCurCircleStr = "/Circle_Cur";
+-- 吃鸡下一圈
+local m_EatChickenNextCircleStr = "/Circle_Next";
+----------------------------------通用的名称路径---------------------------------------
+-- 按钮组所在的位置
+local m_ButtonGroupStr = "RightTop/ButtonGroup/";
+-- 公会战tips位置
+local m_GuildWarTipsStr = "MiddleTop/GuildWarTips"
+-- 公会战公会信息
+local m_GuildWarInfoStr = "MiddleTop/GuildWarInfo"
+-- 右上角摄像机矫正按钮
+local m_CameraAngle = "RightTop/CameraAngle";
+-- 右上角场景名字
+local m_SceneName = "RightTop/SceneName";
+-- 右上角摄小地图
+local m_RadarMap = "RightTop/RadarMap";
+-- 右上角隐藏和现实主界面按钮
+local m_HideAndShowMainPanel = "RightTop/ShowAndHide";
+-- 右上角新系统开启
+local m_NewSystemOpen = "RightTop/NewSystemOpen";
+-- 右上角领地战地图
+local m_GuildWarMapStr = "RightTop/Sub_GuildWarMap";
+-- 右上角领地战地图Texture
+local m_mapTextureStr = "RightTop/Sub_GuildWarMap/sp_BG/Texture";
+-- 领地战地图上代表自己的箭头
+local m_SpriteSelfStr = "RightTop/Sub_GuildWarMap/sp_MainPlayer";
+
+-- 首充提示
+local m_FirstChargeStr = "RightTop/ButtonGroup/FirstChargeTips";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 是否创建成功
+local m_bCreateSuccess = false;
+
+-- boss霸体值的UIProgressBarComp
+local m_BossNotHitProBarComp = nil;
+-- boss当前血量的UIProgressBarComp
+local m_BossCurHpProBarComp = nil;
+-- 当前是否有boss头像的显示
+local m_IsShowBossHud = false;
+
+-- 是否正在显示副本倒计时
+local m_IsShowDungeonCountDown = false;
+
+-- 是否可以再次点击邮件了
+local m_canClickMail = true;
+
+-- 是否更新领地战地图ui
+local m_isRefreshMap = false;
+-- 领地战地图信息
+local m_AllMapData = { };
+-- 是否可显示GuildWarTip
+local m_isShowGuildWarTip = false;
+-- 显示GuildWarTip数据
+local m_ShowGuildWarTipData = nil;
+-- 是否显示GuildWarInfo
+local m_isShowGuildWarInfo = false;
+-- 显示GuildWarInfo数据
+local m_ShowGuildWarInfoData = nil;
+-- 公会战敌我双方积分,及个人战绩
+local myScore = nil;
+local enemyScore = nil;
+local killNum = nil;
+local supNum = nil;
+local deathNum = nil;
+-- 当前场景的地图信息
+local m_mapDataInfo = nil;
+-- 当前地图的缩放
+local m_mapScale = 1;
+-- 小地图偏移信息
+local m_vecPosOff = nil;
+-- 玩家自己
+local m_PlayerSelfObject = nil;
+-- 当前场景ID
+local m_sceneID = nil;
+-- 小地图上代表玩家的箭头
+local m_SpriteSelf = nil;
+-- 地图内点击的地点对象引用
+local m_clickSprite = nil;
+-- 地图内目标寻路点对象引用
+local m_TargetPos = nil;
+-- 是否正在寻路
+local m_isSeekRoad = false;
+-- 是否初始化领地战小地图
+m_isInitMap = false;
+
+-- 吃鸡小地图
+local m_EatChickenMapTextureComp = nil;
+-- 更新吃鸡地图玩家所在位置计时器
+local m_EatChickenPosTimer = nil;
+
+-- 主界面按鈕
+local showTable = { };
+
+-- 首充提示次数
+FirsChargeTag = 1;
+-- 是否显示首充
+isShowFirstCharge = false;
+m_isShowFirstCharge = false;
+-----------------------------------一些写死的规定--------------------------------------
+-- 设置邮件按钮状态的事件
+local SETMAILBUTTONSTATEEVENT = "SetMailButtonState";
+-- 副本结束等待时间
+local m_WaitTime = 6;
+
+-- 红色，白色
+local colorRed = "FF4B4B";
+local colorWhite = "FFFFFF";
+-- 领地战地图更新时间
+local m_RefreshTime = 0.1;
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitShow();
+    InitEatChickenMap();
+    InitOnClick();
+    m_bCreateSuccess = true;
+end
+
+function OnEnable()
+    if m_bCreateSuccess then
+        InitShow();
+        InitResourceScore();
+    end
+end
+
+function OnDisable()
+    if IsObjectActive(m_panelObject, m_FirstChargeStr) then 
+        m_isShowFirstCharge = true;
+    end
+end
+
+function OnDestroy()
+    G_TimerMng:RemoveTimeTask("MainPanelDungeonCountDown");
+    m_panelObject = nil;
+    m_bCreateSuccess = false;
+    m_BossNotHitProBarComp = nil;
+    m_BossCurHpProBarComp = nil;
+    m_IsShowBossHud = false;
+    m_IsShowDungeonCountDown = false;
+    G_TimerMng:RemoveTimeTask("GuildWartip");
+    G_TimerMng:RemoveTimeTask("MainGuildWarInfo");
+    m_isShowGuildWarTip = false;
+    m_isShowGuildWarInfo = false;
+    m_ShowGuildWarTipData = nil;
+    m_ShowGuildWarInfoData = nil;
+    myScore = nil;
+    enemyScore = nil;
+    killNum = nil;
+    supNum = nil;
+    deathNum = nil;
+    m_mapDataInfo = nil;
+    m_mapScale = 1;
+    m_PlayerSelfObject = nil;
+    m_sceneID = nil;
+    m_vecPosOff = nil;
+    m_SpriteSelf = nil;
+    m_clickSprite = nil;
+    m_TargetPos = nil;
+    m_isRefreshMap = false;
+    m_AllMapData = { };
+    if m_EatChickenPosTimer ~= nil then
+        Timer.Instance:StopTimer(m_EatChickenPosTimer);
+        m_EatChickenPosTimer = nil;
+    end
+    showTable = { };
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_MAIN);
+    m_BossNotHitProBarComp = GetComponent(m_panelObject, m_BossNotHitProBarCompStr, "UIProgressBar");
+    m_BossCurHpProBarComp = GetComponent(m_panelObject, m_BossHpBannerTwoStr, "UIProgressBar");
+    -- 点击的地点
+    m_clickSprite = child(m_panelObject, m_clickSpriteStr).gameObject;
+    -- 目标寻路点
+    m_TargetPos = child(m_panelObject, m_TargetPosStr).gameObject;
+    m_EatChickenMapTextureComp = GetComponent(m_panelObject,m_EatChickenMapTextureCompStr,"UITexture");
+    Set_AccumulateChargeView();
+end
+
+-- 初始化显示信息
+function InitShow()
+    if m_isShowFirstCharge == true then 
+        InitFirstChargeShow();
+        m_isShowFirstCharge = false;
+    end
+    ShowBossHud();
+    if not m_IsShowBossHud then
+        InitButtonGroupsShow();
+    end
+    InitDungeonCountDownShow();
+    InitTeamFollowing();
+    InitCamionFollowing();
+    --InitSevenDaysWelfare();
+
+    if m_isShowGuildWarTip then
+        ShowGuildWarTip(m_ShowGuildWarTipData);
+    end
+    -- 公会战场景时或者在吃鸡场景时隐藏右上角ui元素
+    if m_isShowGuildWarInfo or EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_ButtonGroupStr, false, m_panelObject);
+        SetGameObjectState(m_CameraAngle, false, m_panelObject);
+        SetGameObjectState(m_SceneName, false, m_panelObject);
+        SetGameObjectState(m_RadarMap, false, m_panelObject);
+        SetGameObjectState(m_HideAndShowMainPanel, false, m_panelObject);
+        SetGameObjectState(m_NewSystemOpen, false, m_panelObject);
+    else
+        SetGameObjectState(m_ButtonGroupStr, true, m_panelObject);
+        SetGameObjectState(m_CameraAngle, true, m_panelObject);
+        SetGameObjectState(m_SceneName, true, m_panelObject);
+        SetGameObjectState(m_RadarMap, true, m_panelObject);
+        SetGameObjectState(m_HideAndShowMainPanel, true, m_panelObject);
+    end
+    SetGameObjectState(m_GuildWarMapStr, m_isShowGuildWarInfo, m_panelObject);
+    if m_isShowGuildWarInfo then
+        
+        InitMapInfo();
+        CheckRefreshMap();
+        ShowGuildWarInfo(m_ShowGuildWarInfoData);
+        SetGameObjectPos(m_bossHud, Vector3.New(4, -206, 0), m_panelObject);
+    else
+        SetGameObjectPos(m_bossHud, Vector3.New(4, -73, 0), m_panelObject);
+        SetGameObjectState(m_GuildWarInfoStr, false, m_panelObject);
+    end
+    -- 更新领地战地图ui信息
+    if m_isRefreshMap and #m_AllMapData > 0 then
+        for i, v in pairs(m_AllMapData) do
+            RefreshMapFunc(v);
+        end
+        m_isRefreshMap = false;
+        m_AllMapData = { };
+    end
+    if m_isInitMap then
+        error("进入战场时初始化领地战地图");
+        print("GuildManager.guildAuctionInfo.mapData = ", SerializeTable(GuildManager.guildAuctionInfo.mapData));
+        m_isInitMap = false;
+        for i, v in pairs(GuildManager.guildAuctionInfo.mapData) do
+            RefreshMapFunc(v);
+        end
+    end
+    if EatChickenManager.IsInEatChickenScene() then
+        SetGameObjectState(m_EatChickenStr,true,m_panelObject);
+        SetGameObjectState(m_EatChickenMapStr,true,m_panelObject);
+        InitEatChickenContent();
+    else
+        SetGameObjectState(m_EatChickenStr,false,m_panelObject);
+        SetGameObjectState(m_EatChickenMapStr,false,m_panelObject);
+    end
+
+    if isShowFirstCharge == true then 
+        InitFirstChargeShow();
+        isShowFirstCharge = false;
+    end
+    AddFirstChargeTimer();
+    -- vip等级
+    InitVipLv();
+end
+
+function InitVipLv()
+    if VipManager.MyVipData ~= nil then 
+        SetLabelContent(m_ButtonVip.."/lb_LV", VipManager.MyVipData.vipLv, m_panelObject);
+        local state = CheckVipRed();
+--        SetGameObjectState(m_ButtonVip.."/Sprite_RedHint", state, m_panelObject);
+        RedHintMng.SetRedHintState(CREDHINTENUM.VIP_REWARD, CheckVipRed());
+    end
+end
+-- 检测vip红点
+function CheckVipRed()
+    if G_UserInfo:GetCurPlayer() == nil then
+        return false;
+    end
+    if VipManager.MyVipData ~= nil then 
+        if VipManager.MyVipData.vipLv == 0 then 
+            return true;
+        end
+        local m_vipRewardState = G_RewardMng:GetState(VipManager.MyVipData.vipRewardTake, 13);
+        for i = 1, VipManager.MyVipData.vipLv do 
+            if m_vipRewardState[i] == 0 then
+                return true;
+            end
+        end
+        local m_everyDayvipRewardState = VipManager.MyVipData.vipEveryDayReward;
+        if m_everyDayvipRewardState == 0 then 
+            return true;
+        end
+    end
+    return false;
+end
+
+-- 添加首次充值提示计时器
+function AddFirstChargeTimer()
+    if ChargeRewardManager.GetChargeState() == true then
+        if FirstChargeManager.FirstChargeTakeGoldState <= 1 then
+            local ishaveTimer = G_TimerMng:GetTimeTask("FirstChargeTip");
+            if ishaveTimer == nil and FirsChargeTag < 5 then
+                local time = CCommonTool.GetDefineInfo(6659 + FirsChargeTag):GetIntContent();
+                AddTimerEvent("FirstChargeTip", time, callBackOverFunc);
+            end
+        else
+            FirsChargeTag = 1;
+            isShowFirstCharge = false;
+        end
+    end
+    
+end
+
+function callBackOverFunc()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then 
+        InitFirstChargeShow();
+        AddFirstChargeTimer();
+    else
+        isShowFirstCharge = true;
+    end
+end
+
+function InitFirstChargeShow()
+    --error("MainMiddleTop.lua___InitFirstChargeShow");
+    FirsChargeTag = FirsChargeTag + 1;
+    if ChargeRewardManager.GetChargeState() == true then
+        if FirstChargeManager.FirstChargeTakeGoldState <= 1 then
+            SetGameObjectState(m_FirstChargeStr, true, m_panelObject);
+            local obj = child(m_panelObject,m_ButtonPack);
+            local pos = Vector3.New(obj.localPosition.x - 40, obj.localPosition.y - 45, 0);
+            SetGameObjectPos(m_FirstChargeStr, pos, m_panelObject);
+            local chargeRewardData = FirstChargeManager.GetChargeRewardDatas(ENUM_TAKE_GOLD_OP_TYPE.TAKE_GOLD_OP_FIRST);
+            if chargeRewardData ~= nil then
+                local length = GetTableLength(chargeRewardData.RewardInfos);
+                if length >= 1 then
+                    local rewardInfo = chargeRewardData.RewardInfos[1];
+                    local length1 = GetTableLength(rewardInfo.ItemInfos);
+                    local itemData = rewardInfo.ItemInfos[1];
+                    itemData.ItemId = CCommonTool.GetProfessionItemId(itemData.ItemId);
+                    SetSpriteByAtlasID(m_FirstChargeStr.."/sp_Icon", CCommonTool.GetImageIDByExcelID(itemData.ItemId), m_panelObject, true);
+                    SetItemIconEffect(m_panelObject, m_FirstChargeStr.."/sp_Icon", itemData.ItemId, 21, ENUMPANELID.ENUM_PANEL_MAIN);
+                    local EffectTrans = child(m_panelObject, m_FirstChargeStr.."/sp_Icon/EffectParent/effect_ui_beibaozb_cheng");
+                    if EffectTrans ~= nil then
+                        EffectTrans.localScale = Vector3.New(2,2,2);
+                    end
+                end
+            end
+        else
+            FirsChargeTag = 1;
+            isShowFirstCharge = false;
+        end
+    end
+end
+
+function TimerReSet()
+    FirsChargeTag = 1;
+    isShowFirstCharge = false;
+    m_isShowFirstCharge = false;
+end
+
+function InitEatChickenMap()
+    if EatChickenManager.IsInEatChickenScene() then
+        local currentSceneMapInfo = CCommonTool.GetMapdateInfo(G_SceneMng.SceneID);
+        G_ResourceMng:LoadAssetByLua(currentSceneMapInfo.RadarmapStr..".png", UnityEngine.Texture.GetClassType(), "Main_MiddleTop.LoadEatChickenMapOver");
+        SetGameObjectPos(m_EatChickenAnchorStr,Vector3.New(EatChickenManager.MapData.xOffset,EatChickenManager.MapData.yOffset,0),m_panelObject);
+        m_EatChickenPosTimer = Timer.Instance:AddTimer(0.2, -1, UpdatePlayerPos);
+    end
+end
+
+function UpdatePlayerPos()
+    local selfAgent = G_UserInfo:GetCurPlayer();
+    if selfAgent ~= nil and m_bCreateSuccess then
+        local pos = selfAgent.GameObject.transform.localPosition;
+        local rot = selfAgent.GameObject.transform.eulerAngles;
+        SetGameObjectPos(m_EatChickenArrowStr,Vector3.New(pos.x*EatChickenManager.MapData.scale,pos.z*EatChickenManager.MapData.scale,0),m_panelObject);
+        SetGameObjectRot(m_EatChickenArrowStr,Vector3.New(0,0,-rot.y),m_panelObject);
+    end
+end
+
+-- 初始化点击事件
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonStore, OnStoreClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonLimitTimeGiftBag, OnLimitTimeGiftBagClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonReward, OnRewardClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonGrowFund1, OnGrowFund1Click, m_panelObject);
+    SetGameObjectEvent(m_ButtonRank, OnRankClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonActivity, OnActivityClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonAuction, OnAuctionClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonMail, OnMailClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonPack, OnPackClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonEveryDay, OnEveryDayClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonShop, OnShopClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonStronger, OnStrongerClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonTreaure, OnTreaureClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonLimitTimeRank, OnLimitTimeRankClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonSecondReward, OnSecondRewardClick, m_panelObject);
+    SetGameObjectEvent(m_Button_SevenDaysWelfare, OnWelfareClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonVip, OnVipClick, m_panelObject)
+
+    SetGameObjectEvent(m_BtnFirstChargeClose, OnBtnFirstChargeCloseClick, m_panelObject);
+    SetGameObjectEvent(m_BtnFirstCharge, OnBtnFirstChargeClick, m_panelObject);
+    
+    SetGameObjectEvent(m_ButtonExit, OnExitClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonAssignment, OnAssignmentClick, m_panelObject);
+    -- 暂时屏蔽领地战地图寻路功能
+    SetGameObjectEvent(m_GuildWarMapTextureStr, OnGuildWarMapTextureClick, m_panelObject);
+
+    SetGameObjectEvent(m_ButtonEatChickenMapStr, OnEatChickenMapClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonEatChickenScoreStr, OnEatChickenScoreClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonEatChickenLeaveStr, OnEatChickenLeaveClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonForLeaveDungeonStr,OnForLeaveDungeonClick,m_panelObject);
+    SetGameObjectEvent(m_ButtonBossLobby,OnBossLobbyClick,m_panelObject);
+end
+-- 初始化领地战地图所需信息
+function InitMapInfo()
+    -- 隐藏目标点
+    if m_isSeekRoad == false then
+        m_TargetPos:SetActive(false);
+    end
+    m_vecPosOff = Vector3.New(-180, 0, -180);
+    m_sceneID = G_SceneMng.SceneID;
+    -- 得到当前场景的地图信息
+    m_mapDataInfo = CCommonTool.GetMapdateInfo(m_sceneID);
+    if G_UserInfo:GetCurPlayer() ~= nil then
+        m_PlayerSelfObject = G_UserInfo:GetCurPlayer().GameObject.transform;
+    end
+    m_SpriteSelf = child(m_panelObject, m_SpriteSelfStr).gameObject;
+    local UITextureComponent = GetComponent(m_panelObject, m_mapTextureStr, "UITexture");
+    if UITextureComponent == nil or m_mapDataInfo == nil or nil == UITextureComponent.mainTexture then
+        return;
+    end
+    m_mapScale = m_mapDataInfo.RadarmapScale * UITextureComponent.width / UITextureComponent.mainTexture.width;
+    --    m_mapScale = 0.96;
+    --    m_vecPosOff = Vector3.New(m_mapDataInfo.ScenemapX, 0, m_mapDataInfo.ScenemapY);
+
+    --    m_vecPosOff = Vector3.New(174,0,175);
+end
+
+-- 显示bossHud
+function ShowBossHud()
+    local isShowBossHud = false;
+    if G_SceneMng.CurrentBossAgent == nil then
+        isShowBossHud = false;
+        SetGameObjectState(m_bossHud, false, m_panelObject);
+    else
+        InitBossHud(G_SceneMng.CurrentBossAgent.MonsterAttribute);
+        SetGameObjectState(m_bossHud, true, m_panelObject);
+    end
+    if m_IsShowBossHud ~= isShowBossHud then
+        m_IsShowBossHud = isShowBossHud;
+        InitButtonGroupsShow();
+    end
+end
+-- 隐藏bossHud
+function HideBossHud()
+    SetGameObjectState(m_bossHud, false, m_panelObject);
+end
+
+-- 初始化boss血条
+function InitBossHud(monsterAttribute)
+    local nameString = CCommonTool.GetTxtData(monsterAttribute.MapNpc.NpcName).m_str;
+    SetLabelContent(m_BossNameStr, nameString, m_panelObject);
+    SetLabelColor(m_BossNameStr, colorRed, m_panelObject);
+    local labelNameObj = GetComponent(m_panelObject, m_BossNameStr, "UILabel");
+    local labelLevelObj = GetComponent(m_panelObject, m_BossLevelStr, "UILabel");
+    local count = CCommonTool.GetStringLength(nameString);
+    count = count - 4;
+    labelLevelObj.transform.localPosition = labelNameObj.transform.localPosition + Vector3.New(-130 - count * 20, 2, 0)
+    SetLabelContent(m_BossLevelStr, "Lv." .. monsterAttribute.Level, m_panelObject);
+    m_BossNotHitProBarComp.value = monsterAttribute.NotHitNum / monsterAttribute.MonsterInfo.HitConstant;
+    -- 血量和血条数
+    UpdateBossHp(monsterAttribute);
+    -- 设置领地战塔的名字颜色
+    local towerGuildID = monsterAttribute.GuildId;
+    local myGuildID = G_UserInfo.RoleAttribute.GuildId;
+    if towerGuildID > 0 and myGuildID > 0 then
+        if towerGuildID == myGuildID then
+            SetLabelColor(m_BossNameStr, colorWhite, m_panelObject);
+        else
+            SetLabelColor(m_BossNameStr, colorRed, m_panelObject);
+        end
+    end
+end
+
+-- 更新boss血量信息
+function UpdateBossHp(monsterAttribute)
+    local curHp = math.modf(monsterAttribute.Health);
+    local maxHp = math.modf(monsterAttribute.MaxHealth);
+    local bannerNum = monsterAttribute.MonsterInfo.ValueHp;
+    local CurrentBannerNum, currentValue = math.modf(curHp /(maxHp / bannerNum));
+    if CurrentBannerNum < 0 then
+        CurrentBannerNum = 0;
+        currentValue = 0;
+    end
+    if currentValue == 0 then
+    else
+        CurrentBannerNum = CurrentBannerNum + 1;
+    end
+    SetLabelContent(m_BossTimesNumStr, CurrentBannerNum, m_panelObject);
+    if currentValue == 0 and CurrentBannerNum ~= 0 then
+        currentValue = 1;
+    end
+    if CurrentBannerNum <= 1 then
+        SetGameObjectState(m_BossHpBannerOneStr, false, m_panelObject);
+        SetSpriteColor32(m_BossHpBannerTwoStr, G_BossBannerColor[1] .. G_BossBannerColor.FullAlpha, m_panelObject);
+        SetSpriteColor32(m_BossHpBannerTwoTweenStr, G_BossBannerColor[1] .. G_BossBannerColor.HalfAlpha, m_panelObject);
+    else
+        SetGameObjectState(m_BossHpBannerOneStr, true, m_panelObject);
+        local mod1 = math.fmod(CurrentBannerNum - 1, 5);
+        if mod1 == 0 then
+            mod1 = 5;
+        end
+        local mod2 = math.fmod(CurrentBannerNum, 5);
+        if mod2 == 0 then
+            mod2 = 5;
+        end
+        SetSpriteColor32(m_BossHpBannerOneStr, G_BossBannerColor[mod1] .. G_BossBannerColor.FullAlpha, m_panelObject);
+        SetSpriteColor32(m_BossHpBannerOneTweenStr, G_BossBannerColor[mod1] .. G_BossBannerColor.HalfAlpha, m_panelObject);
+        SetSpriteColor32(m_BossHpBannerTwoStr, G_BossBannerColor[mod2] .. G_BossBannerColor.FullAlpha, m_panelObject);
+        SetSpriteColor32(m_BossHpBannerTwoTweenStr, G_BossBannerColor[mod2] .. G_BossBannerColor.HalfAlpha, m_panelObject);
+    end
+    m_BossCurHpProBarComp.value = currentValue;
+end
+
+-- 设置档位-- 根据档位设置图标和名称
+function Set_AccumulateChargeView()
+
+    if m_panelObject==nil then
+        return;
+    end
+    local data  = ChargeRewardManager.AccumulateRewardDatas;
+    if data==nil then
+        error("[lua]-->ChargeRewardManager.AccumulateRewardDatas值为空")
+        return;
+    end
+    local dsposData  = ChargeRewardManager.DepositAcuAwardState
+    if dsposData==nil then
+        error("[lua]-->ChargeRewardManager.DepositAcuAwardState值为空")
+        return;
+    end
+	local tables = {}; -- 满足档位的
+	for i = 1 ,#data do
+		if  ChargeRewardManager.AccumulateMoneyNum >= data[i].AccumulateNum then
+			table.insert(tables,data[i]);
+		end
+	end
+    local index = -1;
+    for i=1,#tables do
+        local id = tables[i].Id;
+        local buttonState = ChargeRewardManager.GetAccumulateRewardState(id);
+        if buttonState == 1 then
+            index = i;
+        end
+    end
+    --error("[lua]->Set_AccumulateChargeView..index"..index);
+	if index>=0 and index<=#ChargeAccumulateStage then  -- 得到当前档位
+        index = (index<#ChargeAccumulateStage and index+1) or index
+		local items = ChargeAccumulateStage[index];
+		if items.txtId~=nil and items.itemId~=nil then
+			local txt = GetTextToId(items.txtId);
+			local itemid = items.itemId;
+			--SetLabelContent(m_ButtonPack,txt,m_panelObject);
+            if index ==3 then -- 根据职业进行转换
+                itemid = CCommonTool.GetProfessionItemId(itemid);
+            end
+			SetSpriteByAtlasID(m_ButtonPack,CCommonTool.GetImageIDByExcelID(itemid),m_panelObject,true);
+		end
+	end
+end
+
+-- 初始化按钮组的解锁信息和位置信息
+function InitButtonGroupsShow()
+    showTable = { };
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_STORE) then
+        table.insert(showTable, m_ButtonStore);
+    else
+        SetGameObjectState(m_ButtonStore, false, m_panelObject);
+    end
+
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        table.insert(showTable, m_ButtonReward);
+    else
+        SetGameObjectState(m_ButtonReward, false, m_panelObject);
+    end
+
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_RANK) then
+        table.insert(showTable, m_ButtonRank);
+    else
+        SetGameObjectState(m_ButtonRank, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_ACTIVITY) then
+        table.insert(showTable, m_ButtonActivity);
+    else
+        SetGameObjectState(m_ButtonActivity, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_AUCTION) then
+        table.insert(showTable, m_ButtonAuction);
+    else
+        SetGameObjectState(m_ButtonAuction, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_MAIL) then
+        table.insert(showTable, m_ButtonMail);
+    else
+        SetGameObjectState(m_ButtonMail, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_EVERYDAY) then
+        table.insert(showTable, m_ButtonEveryDay);
+    else
+        SetGameObjectState(m_ButtonEveryDay, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_SCORESTORE) then
+        table.insert(showTable, m_ButtonShop);
+    else
+        SetGameObjectState(m_ButtonShop, false, m_panelObject);
+    end
+    if G_UserInfo.RoleAttribute.Level >= StrongerStartLv then
+        table.insert(showTable, m_ButtonStronger);
+    else
+        SetGameObjectState(m_ButtonStronger, false, m_panelObject);
+    end
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_TREAURE) then
+        table.insert(showTable, m_ButtonTreaure);
+    else
+        SetGameObjectState(m_ButtonTreaure, false, m_panelObject);
+        -- table.insert(showTable, m_ButtonTreaure);
+    end
+    if LimitTimeActMng.RankOpenInfoData ~= nil and #LimitTimeActMng.RankOpenInfoData > 0 then 
+        table.insert(showTable, m_ButtonLimitTimeRank);
+    else
+        SetGameObjectState(m_ButtonLimitTimeRank, false, m_panelObject);
+    end
+    if WelfareManager.IsUnlockSecondWelfare() then
+        table.insert(showTable, m_ButtonSecondReward);
+    else
+        SetGameObjectState(m_ButtonSecondReward, false, m_panelObject);
+    end
+    -- if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_PACKS) then
+    if ChargeRewardManager.GetChargeState() == true then
+
+        if Constants.branch == "cn" then
+            SetGameObjectState(m_ButtonPack, true, m_panelObject);
+        end
+        table.insert(showTable,m_ButtonPack);
+    else
+        SetGameObjectState(m_ButtonPack, false, m_panelObject);
+    end
+--    table.insert(showTable,m_ButtonVip);
+    if  SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_GROWFUND1)  then
+        table.insert(showTable, m_ButtonGrowFund1);
+    else
+        SetGameObjectState(m_ButtonGrowFund1, false, m_panelObject);
+    end
+    if  SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_LIMITTIMEGIFTBAG) then
+        table.insert(showTable, m_ButtonLimitTimeGiftBag);
+    else
+        SetGameObjectState(m_ButtonLimitTimeGiftBag, false, m_panelObject);
+    end
+    --[[if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) and WelfareManager.EveryDayData ~= -1 and WelfareManager.IsCloseSevenDaysAct() == true then 
+        table.insert(showTable, m_Button_SevenDaysWelfare);
+    else
+        SetGameObjectState(m_Button_SevenDaysWelfare, false, m_panelObject);
+    end--]]
+	SetGameObjectState(m_Button_SevenDaysWelfare, false, m_panelObject);
+    --boss大厅
+    InitBossLobby();
+    -------------
+    local cnLeftOffsetPos=-100; --国服图标整体向左移动
+    for k, v in pairs(showTable) do
+        if k > 5 and m_IsShowBossHud then
+            SetGameObjectState(v, false, m_panelObject);
+            SetGameObjectState(m_FirstChargeStr, false, m_panelObject);
+        else
+			if v == m_ButtonPack then --判断是否为1元首充按钮
+				local pos = Vector3.New(G_MainButtonsPos[k].x+cnLeftOffsetPos, G_MainButtonsPos[k].y-16, 0);
+				SetGameObjectPos(v, pos, m_panelObject);
+				SetGameObjectState(v, true, m_panelObject);
+			else
+				local pos = Vector3.New(G_MainButtonsPos[k].x+cnLeftOffsetPos, G_MainButtonsPos[k].y, 0);
+				SetGameObjectPos(v, pos, m_panelObject);
+				SetGameObjectState(v, true, m_panelObject);
+			end
+        end
+    end
+    local obj = child(m_panelObject,m_ButtonPack);
+    local pos = Vector3.New(obj.localPosition.x - 40, obj.localPosition.y - 45, 0);
+    SetGameObjectPos(m_FirstChargeStr, pos, m_panelObject);
+end
+
+-- 初始化副本倒计时的显示
+function InitDungeonCountDownShow()
+    if m_IsShowDungeonCountDown then
+        SetGameObjectState(m_DungeonCountDownStr, true, m_panelObject);
+    else
+        SetGameObjectState(m_DungeonCountDownStr, false, m_panelObject);
+    end
+end
+
+-- 设置邮件按钮点击事件
+function SetMailButtonStateFalse()
+    m_canClickMail = false;
+    AddTimerEvent(SETMAILBUTTONSTATEEVENT, 2, MailButtonUnlock, ETimeShowType.TypeNumberFour);
+end
+
+function MailButtonUnlock()
+    m_canClickMail = true;
+end
+
+function InitTeamFollowing()
+    local isFollowing = TeamManager.IsTeamFollowing();
+    SetGameObjectState(m_TeamFollowingStr, isFollowing, m_panelObject);
+    if isFollowing and G_UserInfo.AutoSeekEffectIsOn then
+        G_UserInfo.AutoSeekEffectIsOn = false;
+    end
+end
+
+-- 初始化跟随镖车特效
+function InitCamionFollowing()
+    local isCamionFollowing = EveryDayTaskManager.GetIsCamionFollow();
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if isCamionFollowing == IsObjectActive(m_panelObject, m_CamionFollowingStr) then return end
+        SetGameObjectState(m_CamionFollowingStr, isCamionFollowing, m_panelObject);
+    end
+end
+
+function InitEatChickenContent()
+    InitEatChickenTimeContent();
+    InitEatChickenStasticContent();
+end
+
+function InitEatChickenTimeContent()
+    SetLabelTextByID(m_EatChickenTxtLabelStr,EatChickenManager.nTxtID,m_panelObject);
+    -- 设置地图圈情况
+    local scale = EatChickenManager.MapData.scale;
+    if EatChickenManager.bShowCurCircle then
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,true,m_panelObject);
+        SetGameObjectPos(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,Vector3.New(EatChickenManager.fCurSecurityPosX*scale,EatChickenManager.fCurSecurityPosZ*scale,0),m_panelObject);
+        SetGameObjectScale(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,Vector3.New(EatChickenManager.fCurSecurityRadius*scale/50,EatChickenManager.fCurSecurityRadius*scale/50,0),m_panelObject);
+    else
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenCurCircleStr,false,m_panelObject);
+    end
+    if EatChickenManager.bShowNextCircle then
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,true,m_panelObject);
+        SetGameObjectPos(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,Vector3.New(EatChickenManager.fNextSecurityPosX*scale,EatChickenManager.fNextSecurityPosZ*scale,0),m_panelObject);
+        SetGameObjectScale(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,Vector3.New(EatChickenManager.fNextSecurityRadius*scale/50,EatChickenManager.fNextSecurityRadius*scale/50,0),m_panelObject);
+    else
+        SetGameObjectState(m_EatChickenAnchorStr..m_EatChickenNextCircleStr,false,m_panelObject);
+    end
+end
+
+function UpdateEatChickenTime(timeStr)
+    SetLabelContent(m_EatChickenTimeLabelStr,timeStr,m_panelObject);
+end
+
+function InitEatChickenStasticContent()
+    SetLabelContent(m_EatChickenKillNumStr,EatChickenManager.wKillPlayerNum,m_panelObject);
+    SetLabelContent(m_EatChickenLeftNumStr,EatChickenManager.wAllPlayerNum - EatChickenManager.wDeadPlayerNum,m_panelObject);
+    SetLabelContent(m_EatChickenScoreNumStr,EatChickenManager.wActivityScore,m_panelObject);
+end
+
+-- 初始化七日福利显示
+function InitSevenDaysWelfare()
+    if SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_REWARD) then
+        --SetGameObjectState(m_Button_SevenDaysWelfare, true, m_panelObject); 
+        SetGameObjectState(m_Button_SevenDaysWelfare, false, m_panelObject);
+    else
+        SetGameObjectState(m_Button_SevenDaysWelfare, false, m_panelObject);
+    end
+    if WelfareManager.EveryDayData == -1 then 
+        SetGameObjectState(m_Button_SevenDaysWelfare, false, m_panelObject); 
+        return;
+    end
+    if WelfareManager.IsCloseSevenDaysAct() == false then 
+        SetGameObjectState(m_Button_SevenDaysWelfare, false, m_panelObject); 
+    end
+    -- 调整按钮位置
+    if #showTable >= 6 then 
+        SetGameObjectPos(m_Button_SevenDaysWelfare,Vector3.New(-310,-46,0),m_panelObject);
+    end
+    local rewardLoginData = nil;
+    local isCurDay = true;
+    local rewardDay = 1;
+    local m_EveryDayLoginState = G_RewardMng:GetState(G_RewardMng.EveryDayLoginState, 7);
+    local m_EveryDayGetState = G_RewardMng:GetState(G_RewardMng.EveryDayRewardGetState, 7);
+    for index = 1, 7 do 
+        if m_EveryDayLoginState[index - 1] == 1 and m_EveryDayGetState[index - 1] == 0 then 
+            rewardDay = index;
+            isCurDay = true;
+            break;
+        elseif m_EveryDayLoginState[index - 1] == 1 and  m_EveryDayGetState[index - 1] == 1 and  m_EveryDayLoginState[index] == 0 then
+            rewardDay = index + 1;
+            isCurDay = false;
+            break;
+        end
+    end
+    rewardLoginData = CCommonTool.GetRewardLogin(rewardDay);
+    if rewardLoginData.RewordId <= 0 or rewardLoginData.RewordId == nil then
+        error("rewardLoginData.RewordId is null");
+        return;
+    end
+    local rewardInfo = CCommonTool.GetRewardInfoByIndex(rewardLoginData.RewordId);
+    local list = rewardInfo:GetAllItem();
+    local count = list.count;
+    local itemData = nil;
+    itemData = list[0];
+    if itemData.ExcelID > 0 then
+        if itemData.ItemDealType == 3 then
+            itemData.ExcelID = G_ItemToolTipDefine.BINDMONEY;
+        elseif itemData.ItemDealType == 4 then
+            itemData.ExcelID = G_ItemToolTipDefine.BINDDIAMOND;
+        elseif itemData.ItemDealType == 5 then
+            itemData.ExcelID = G_ItemToolTipDefine.NOTBINDMONEY;
+        end
+        local m_itemExcelID = CCommonTool.GetProfessionItemId(itemData.ExcelID);
+        SetItemShowByExcelIDV04(m_panelObject, m_Button_SevenDaysWelfare .. m_itemIcon, m_itemExcelID, 1, true, 11, ENUMPANELID.ENUM_PANEL_MAIN);
+        SetLabelContent(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name", GetTextToId(SevenDaysRewardName[rewardDay]), m_panelObject);
+        SetGameObjectState(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Sprite_Apptitude2", false, m_panelObject);
+        SetGameObjectState(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Sprite_Apptitude", false, m_panelObject);
+    end
+    if isCurDay == true then 
+        SetLabelContent(m_Button_SevenDaysWelfare.."/Label", GetTextToId(2337), m_panelObject);
+    else
+        SetLabelContent(m_Button_SevenDaysWelfare.."/Label", GetTextToId(2338), m_panelObject);
+    end
+
+    local m_Label = GetComponent(m_panelObject, m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name", "UILabel");
+    if m_Label ~= nil then
+     if m_Label.width > 98 then 
+            SetLabelContent(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name", "", m_panelObject);
+            CCommonTool.SetWidgetPivot(m_Label, ENUM_PIVOT.Right);
+            SetGameObjectPos(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name",Vector3.New(47,-51,0),m_panelObject);
+            SetLabelContent(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name", GetTextToId(SevenDaysRewardName[rewardDay]), m_panelObject);
+        else
+            SetLabelContent(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name", "", m_panelObject);
+            CCommonTool.SetWidgetPivot(m_Label, ENUM_PIVOT.Center);
+            SetGameObjectPos(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name",Vector3.New(0,-51,0),m_panelObject);
+            SetLabelContent(m_Button_SevenDaysWelfare .. m_itemIcon .. "/Label_Name", GetTextToId(SevenDaysRewardName[rewardDay]), m_panelObject);
+        end
+    end
+
+    local m_Label = GetComponent(m_panelObject, m_Button_SevenDaysWelfare .. "/Label", "UILabel");
+    if m_Label ~= nil then
+        if m_Label.width > 76 then 
+            SetLabelContent(m_Button_SevenDaysWelfare .. "/Label", "", m_panelObject);
+            CCommonTool.SetWidgetPivot(m_Label, ENUM_PIVOT.Right);
+            SetGameObjectPos(m_Button_SevenDaysWelfare .. "/Label",Vector3.New(44,-80,0),m_panelObject);
+        else
+            SetLabelContent(m_Button_SevenDaysWelfare ..  "/Label", "", m_panelObject);
+            CCommonTool.SetWidgetPivot(m_Label, ENUM_PIVOT.Center);
+            SetGameObjectPos(m_Button_SevenDaysWelfare .. "/Label",Vector3.New(0,-80,0),m_panelObject);
+        end
+        if isCurDay == true then 
+            SetLabelContent(m_Button_SevenDaysWelfare.."/Label", GetTextToId(2337), m_panelObject);
+        else
+            SetLabelContent(m_Button_SevenDaysWelfare.."/Label", GetTextToId(2338), m_panelObject);
+        end
+    end
+end
+-- 初始化Boss大厅显示
+function InitBossLobby()
+    if  SystemOpenMng.IsSystemUnlock(CSYSTEMENUM.SYSTEM_BOSSLOBBY) then
+        SetGameObjectState(m_ButtonBossLobby, true, m_panelObject); 
+    else
+        SetGameObjectState(m_ButtonBossLobby, false, m_panelObject);
+    end
+    -- 调整按钮位置
+    SetGameObjectPos(m_ButtonBossLobby,Vector3.New(190,-100,0),m_panelObject);
+end
+--------------------------------------按钮事件方法------------------------------------
+-- 点击商城按钮
+function OnStoreClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_PLAYER_STORE_PANEL);
+end
+-- 点击限时礼包按钮
+function OnLimitTimeGiftBagClick()
+    --台湾直购礼包不用
+    StorePanel.openStoreGiftBagMenu();
+end
+-- 点击福利按钮
+function OnRewardClick()
+    createPanel(ENUMPANELID.ENUM_WELFARE_PANEL);
+end
+-- 点击新手基金按钮
+function OnGrowFund1Click()
+    --createPanel(ENUMPANELID.ENUM_WELFARE_PANEL);
+    local index=0;
+    local info=CCommonTool.GetAllGrowFund1Info();
+    --基金最大等级
+    local maxLv=info[info.Count-1].Level;
+    if G_UserInfo.RoleAttribute.Level<=maxLv then
+        index=WelfareManager.GetWelfareMenuIndex(WelfareType.WT_GrowFund1);
+    else
+        index=WelfareManager.GetWelfareMenuIndex(WelfareType.WT_GrowFund2);
+    end
+    WelfarePanel.OpenPanel(index,ENUMPANELID.ENUM_PANEL_MAIN);
+
+end
+-- 点击排行按钮
+function OnRankClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_RANKPANEL);
+end
+-- 点击活动按钮
+function OnActivityClick()
+    ActivityPanel.OpenThisPanelByTag(1);
+    WorldBossActiPanel.Delete3DModel();
+end
+-- 点击BOSS大厅按钮
+function OnBossLobbyClick()
+    BossLobbyPanel.OpenThisPanelByTag(1);
+    --WorldBossActiPanel.Delete3DModel();
+    ForLeaveDungeonPanel.MoveButton(1);
+end
+-- 点击拍卖按钮
+function OnAuctionClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_AUCTIONPANEL);
+end
+-- 点击邮件按钮
+function OnMailClick()
+    if m_canClickMail == true then
+        SetMailButtonStateFalse();
+        if MailManger.m_IsNewMail > 0 then
+            -- 刷新邮件
+            local buffer = ByteBuffer.New();
+            buffer:WriteUShort(GMI_CTOS_LGS_MAIL);
+            buffer:WriteUShort(3);
+            buffer:WriteUShort(1);
+            buffer:WriteUShort(0);
+            G_NetWorkMng:SendMessage(buffer);
+        end
+        createPanel(ENUMPANELID.ENUM_PANEL_MAILPANEL);
+    else
+        ShowSystemFlowTips(1006);
+    end
+end
+
+-- 点击礼包按钮
+function OnPackClick()
+    -- ShowSystemFlowTips(ENUM_SYS_FLOWTIPS_EVENT.ENUM_EVENT_NOTMADE);
+    --createPanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+    local firstChargeState = FirstChargeManager.FirstChargeTakeGoldState;
+    --error("此处点击礼包按钮firstChargeState == "..firstChargeState);
+    if firstChargeState == 2 then             --Accumulate充值购买其他
+        createPanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+    else                                      --充值/领取
+        createPanel(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    end 
+end
+
+-- 点击每日按钮
+function OnEveryDayClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_EVERYDAYPANEL);
+end
+-- 点击商店按钮
+function OnShopClick()
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_SHOP_RECORD);
+    buffer:WriteByte(1);
+    G_NetWorkMng:SendMessage(buffer);
+end
+-- 点击变强按钮
+function OnStrongerClick()
+    createPanel(ENUMPANELID.ENUM_GET_STRONG_PANEL);
+end
+
+-- 点击宝藏按钮
+function OnTreaureClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_TRAEUREPANEL);
+end
+
+-- 点击七日福利按钮
+function OnWelfareClick()
+    createPanel(ENUMPANELID.ENUM_WELFARE_PANEL);
+end
+
+-- 点击vip按钮
+function OnVipClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_VIP);
+end
+
+-- 点击限时排行榜活动按钮
+function OnLimitTimeRankClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_LIMITTIMEACT);
+end
+
+-- 点击第二福利按钮
+function OnSecondRewardClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_SECONDWELFARE);
+end
+
+-- 点击领地战退出按钮
+function OnExitClick()
+    GuildProtocol.RequestExitScene();
+end
+-- 点击领地战管理按钮
+function OnAssignmentClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+end
+-- 
+function OnGuildWarMapTextureClick()
+    if TeamManager.IsTeamFollowing() == true then
+        ShowSystemFlowTips(8052);
+        return;
+    end
+    -- 将点击的物体放在鼠标点击的位置
+    m_clickSprite.transform.position = UICamera.mainCamera:ScreenToWorldPoint(Input.mousePosition);
+    local localPosX = m_clickSprite.transform.localPosition.x - 160;
+    local localPosY = m_clickSprite.transform.localPosition.y - 160;
+    -- 要去的x坐标点
+    local goPosX =(localPosX + 340) / m_mapScale;
+    -- 要去的Z坐标点
+    local goPosZ =(localPosY + 340) / m_mapScale;
+    local targetPos = Vector3.New(goPosX, 0, goPosZ);
+    print("要寻路的点 targetPos = ", targetPos, "localPosition = ", m_clickSprite.transform.localPosition, "m_mapScale = ", m_mapScale);
+    -- 判断是否可以去
+    if G_UserInfo:GetCurPlayer():IsCanGoToTarget(targetPos) == true then
+        -- 执行寻路并设置目标点
+        m_TargetPos.transform.localPosition = m_clickSprite.transform.localPosition;
+
+        G_UserInfo:GetCurPlayer():SetMovePathwithNoTarget(m_sceneID, targetPos);
+        if m_TargetPos ~= nil then
+            m_TargetPos:SetActive(true);
+        end
+        m_isSeekRoad = true;
+    else
+        Logger.Log("cannot go to the pos that your click");
+    end
+end
+
+function OnEatChickenMapClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_EATCHICKENMAPPANEL);
+end
+
+function OnEatChickenScoreClick()
+    createPanel(ENUMPANELID.ENUM_PANEL_EATCHICKENRANKPANEL);
+end
+
+function OnEatChickenLeaveClick()
+    ParameterToMessageTextBox.OnFuBenQuitClick();
+end
+function OnForLeaveDungeonClick()
+    DungeonQuitPanel.OnLeaveDungeonClick();
+end
+
+function OnBtnFirstChargeCloseClick()
+    SetGameObjectState(m_FirstChargeStr, false, m_panelObject);
+end 
+
+function OnBtnFirstChargeClick()
+    SetGameObjectState(m_FirstChargeStr, false, m_panelObject);
+    local First= FirstChargeManager.FirstChargeTakeGoldState;
+    if First==2 then
+        createPanel(ENUMPANELID.ENUM_CHARGE_REWAR_PANEL);
+    else
+        createPanel(ENUMPANELID.ENUM_FIRST_CHARGE_PANEL);
+    end
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+-- 显示bossHud信息
+function ShowBossHudOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        ShowBossHud();
+    end
+end
+-- 隐藏bossHud信息
+function HideBossHudOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        HideBossHud();
+    end
+end
+
+-- 更新目标血量
+function OnUpdateTargetHp(baseAttribute, isBossHud)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        if isBossHud then
+
+            UpdateBossHp(baseAttribute);
+        else
+            Main_MiddleBottom.OnUpdateTargetHp(baseAttribute);
+        end
+    end
+end
+
+-- 更新boss的霸体值
+function RefreshBossHudNotHitNum(percent)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        m_BossNotHitProBarComp.value = percent;
+    end
+end
+
+-- 副本结束倒计时处理
+function DugeonCountDown()
+    -- m_WaitTime = 6;
+    -- Timer.Instance:AddTimer(1,m_WaitTime,DugeonCountDownCallBack,false);
+    -- Timer.Instance:AddTimer(m_WaitTime,1,DugeonCountDownCallBackOver,false);
+    AddTimerEvent("MainPanelDungeonCountDown", m_WaitTime, DugeonCountDownCallBackOver, ETimeShowType.TypeNumberFive, DugeonCountDownCallBack, nil, nil);
+    m_IsShowDungeonCountDown = true;
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= nil then
+        SetLabelContent(m_DungeonCountDownLabel, m_WaitTime, m_panelObject);
+        SetGameObjectState(m_DungeonCountDownStr, true, m_panelObject);
+    end
+end
+
+-- 副本倒计时每秒回调
+function DugeonCountDownCallBack(time)
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= nil then
+        SetGameObjectState(m_DungeonCountDownStr, true, m_panelObject);
+        SetLabelContent(m_DungeonCountDownLabel, time, m_panelObject);
+    end
+end
+
+-- 副本倒计时回调结束
+function DugeonCountDownCallBackOver()
+    m_IsShowDungeonCountDown = false;
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= nil then
+        SetGameObjectState(m_DungeonCountDownStr, false, m_panelObject);
+    end
+    createPanelExx(ENUMPANELID.ENUM_PANEL_FIGHTWINPANEL, _G.LogicData_PassDungeon);
+end
+
+-- 无尽天梯结束倒计时
+function EndlessActiEndCountDown()
+    m_IsShowDungeonCountDown = true;
+    AddTimerEvent("MainPanelEndlessActiEndCountDown", 3, EndlessActiEndCountDownBackOver, ETimeShowType.TypeNumberFive, EndlessActiEndCountDownCallBack, nil, nil);
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= nil then
+        SetLabelContent(m_DungeonCountDownLabel, 3, m_panelObject);
+        SetGameObjectState(m_DungeonCountDownStr, true, m_panelObject);
+    end
+end
+-- 无尽天梯倒计时回调结束
+function EndlessActiEndCountDownBackOver()
+    m_IsShowDungeonCountDown = false;
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= nil then
+        SetGameObjectState(m_DungeonCountDownStr, false, m_panelObject);
+    end
+    createPanel(ENUMPANELID.ENUM_PANEL_ENDLESSACTWINPANEL);
+end
+
+-- 副本倒倒计时每秒回调
+function EndlessActiEndCountDownCallBack(time)
+    if G_PanelMng:GetPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= nil then
+        SetLabelContent(m_DungeonCountDownLabel, time, m_panelObject);
+    end
+end
+
+-- 系统解锁刷新按钮显示
+function InitButtonGroupsShowOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitButtonGroupsShow();
+    end
+end
+
+-- 显示公会领地战管理tips
+function ShowGuildWarTip(data)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 then
+        m_isShowGuildWarTip = true;
+        m_ShowGuildWarTipData = data;
+        return;
+    end
+    if data then
+        local currentTime = G_TimerMng:GetCurrentSeconds();
+        if currentTime < data.time then
+            local time = data.time - currentTime;
+            SetGameObjectState(m_GuildWarTipsStr, true, m_panelObject);
+            local ishaveTimer = G_TimerMng:GetTimeTask("GuildWar");
+            if ishaveTimer == nil then
+                AddTimerEvent("GuildWartip", time, GuildWartipCallBackOver, ETimeShowType.TypeNumberFour, UpdateCallBack);
+            end
+            if data.isWang == 1 then
+                SetGameObjectState(m_ButtonAssignment, true, m_panelObject);
+                SetSpriteHeight(m_GuildWarTipsBgStr, 199, m_panelObject);
+            else
+                SetGameObjectState(m_ButtonAssignment, false, m_panelObject);
+                SetSpriteHeight(m_GuildWarTipsBgStr, 122, m_panelObject);
+            end
+        end
+    end
+end
+-- 倒计时结束回调
+function GuildWartipCallBackOver()
+    m_isShowGuildWarTip = false;
+    m_ShowGuildWarTipData = nil;
+    SetGameObjectState(m_GuildWarTipsStr, false, m_panelObject);
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL) == 1 then
+        closePanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL);
+    end
+end
+-- 倒计时每秒回调
+function UpdateCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        SetLabelContent(m_GuildWarTipsStr .. "/lb_Time", timeTxt, m_panelObject);
+    end
+
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_GUILD_WAR_ASSIGNMENT_PANEL) == 1 then
+        GuildWarAssignmentPanel.RefreshTime(timeTxt);
+    end
+end
+
+-- 更新跟随队长特效
+function InitTeamFollowingOut()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_bCreateSuccess then
+        InitTeamFollowing();
+    end
+end
+
+-- 在公会战场景时显示公会战相关ui
+function ShowGuildWarInfo(data)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) ~= 1 and data ~= nil then
+        m_isShowGuildWarInfo = true;
+        m_ShowGuildWarInfoData = data;
+        data.towerData.aDType = data.aDType;
+        Main_LeftMiddle.InitGuildWarLeft(data.towerData);
+        return;
+    end
+    if data then
+        error("do ShowGuildWarInfo");
+        local currentTime = G_TimerMng:GetCurrentSeconds();
+        if currentTime < data.time then
+            local time = data.time - currentTime;
+            SetGameObjectState(m_GuildWarInfoStr, true, m_panelObject);
+            local ishaveTimer = G_TimerMng:GetTimeTask("MainGuildWarInfo");
+            if ishaveTimer == nil then
+                AddTimerEvent("MainGuildWarInfo", time, GuildWarInfoCallBackOver, ETimeShowType.TypeNumberFour, GuildWarInfoCallBack);
+            end
+        end
+        local myGuildID = data.guildID;
+        local enemyGuildID = data.enemyGuildID;
+        -- 我方公会信息
+        local myGuildName = G_GuildMng:GetGuildName(myGuildID);
+        local myGuildLv = G_GuildMng:GetGuildLevel(myGuildID);
+        local myGuildFlag = G_GuildMng:GetFlagName(myGuildID);
+        local myInfo = CCommonTool.GetGuildInfoByIndex(tonumber(myGuildLv));
+        local path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Defend";
+        SetLabelContent(path .. "/lb_Name", myGuildName, m_panelObject);
+        SetLabelContent(path .. "/lb_GuildFlag", myGuildFlag, m_panelObject);
+        SetSpriteByAtlasID(path .. "/lb_GuildFlag/sp_Flag", myInfo.FlagIconBig, m_panelObject, true);
+        SetLabelContent(path .. "/lb_Score", data.score, m_panelObject);
+        -- 敌方公会相关信息
+        if enemyGuildID > 0 then
+            local guildName = G_GuildMng:GetGuildName(enemyGuildID);
+            local flagName = G_GuildMng:GetFlagName(enemyGuildID);
+            local guildLv = G_GuildMng:GetGuildLevel(enemyGuildID);
+            local info = CCommonTool.GetGuildInfoByIndex(tonumber(guildLv));
+            local path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Attack";
+            SetLabelContent(path .. "/lb_Name", guildName, m_panelObject);
+            SetLabelContent(path .. "/lb_GuildFlag", flagName, m_panelObject);
+            SetSpriteByAtlasID(path .. "/lb_GuildFlag/sp_Flag", info.FlagIconBig, m_panelObject, true);
+            SetLabelContent(path .. "/lb_Score", data.enemyScore, m_panelObject);
+        else
+            SetLabelTextByID("Sub_Blue/lb_Name", 162322, m_panelObject);
+            SetLabelTextByID("Sub_Blue/lb_GuildFlag", 162323, m_panelObject);
+        end
+        local path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Score";
+        SetLabelContent(path .. "/lb_KillNum", data.kill, m_panelObject);
+        SetLabelContent(path .. "/lb_DeathNum", data.death, m_panelObject);
+        SetLabelContent(path .. "/lb_SupNum", data.sup, m_panelObject);
+    end
+end
+-- 倒计时结束回调
+function GuildWarInfoCallBackOver()
+    m_isShowGuildWarInfo = false;
+    m_ShowGuildWarInfoData = nil;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        SetGameObjectState(m_GuildWarInfoStr, false, m_panelObject);
+    end
+end
+-- 倒计时每秒回调
+function GuildWarInfoCallBack(timeTxt)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        SetLabelContent(m_GuildWarInfoStr .. "/Sub_Content/lb_TimeData", timeTxt, m_panelObject);
+        local num = tonumber(string.sub(timeTxt, 1));
+        local num2 = tonumber(string.sub(timeTxt, 2));
+        if num == 0 and num2 < 3 then
+            SetLabelColor(m_GuildWarInfoStr .. "/Sub_Content/lb_TimeData", "FF0000", m_panelObject);
+        else
+            SetLabelColor(m_GuildWarInfoStr .. "/Sub_Content/lb_TimeData", "FFFFFF", m_panelObject);
+        end
+    end
+end
+-- 更新公会战积分
+function RefreshGuildWarScore(guildID, resourceScore)
+    if GuildManager.myGuild == nil then return end
+    local myGuildID = GuildManager.myGuild.guildId;
+    local path = "";
+    if myGuildID == guildID then
+        path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Defend"
+        myScore = resourceScore;
+    else
+        path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Attack"
+        enemyScore = resourceScore;
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        SetLabelContent(path .. "/lb_Score", resourceScore, m_panelObject);
+    end
+end
+-- 更新个人战绩
+function RefreshFightScore(kill, sup, death)
+    killNum = kill;
+    supNum = sup;
+    deathNum = death;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        local path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Score";
+        SetLabelContent(path .. "/lb_KillNum", kill, m_panelObject);
+        SetLabelContent(path .. "/lb_DeathNum", death, m_panelObject);
+        SetLabelContent(path .. "/lb_SupNum", sup, m_panelObject);
+    end
+end
+
+function InitResourceScore()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and m_isShowGuildWarInfo then
+        if myScore and enemyScore then
+            SetLabelContent(m_GuildWarInfoStr .. "/Sub_Content/Sub_Defend/lb_Score", myScore, m_panelObject);
+            SetLabelContent(m_GuildWarInfoStr .. "/Sub_Content/Sub_Attack/lb_Score", enemyScore, m_panelObject);
+        end
+        if killNum and supNum and deathNum then
+            local path = m_GuildWarInfoStr .. "/Sub_Content/Sub_Score";
+            SetLabelContent(path .. "/lb_KillNum", killNum, m_panelObject);
+            SetLabelContent(path .. "/lb_DeathNum", deathNum, m_panelObject);
+            SetLabelContent(path .. "/lb_SupNum", supNum, m_panelObject);
+        end
+    end
+end
+
+-- 0.1秒检测一次是否更新领地战地图
+function CheckRefreshMap()
+    if m_isShowGuildWarInfo then
+        G_TimerMng:CallLuaFuncAfterTime(m_panelObject, "RefreshGuildWarMap", m_RefreshTime);
+    end
+end
+
+-- 更新领地战地图自己的位置
+function DrawMapPosision()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 and IsObjectActive(m_panelObject, m_RadarMap) then
+        SetGameObjectState(m_RadarMap, not m_isShowGuildWarInfo, m_panelObject);
+        --        if m_PlayerSelfObject == nil then
+        --            InitMapInfo();
+        --            error("获取不到主角对象 m_PlayerSelfObject == nil");
+        --            return;
+        --        end
+        --        local m_fPosX = m_PlayerSelfObject.transform.position.x * m_mapScale + m_vecPosOff.x;
+        --        local m_fPosY = m_PlayerSelfObject.transform.position.z * m_mapScale + m_vecPosOff.z;
+        --        print("更新的自己位置 m_fPosX = ",m_fPosX,"m_fPosY = ",m_fPosY);
+        --        m_SpriteSelf.transform.localPosition = Vector3.New(m_fPosX, m_fPosY, 0);
+        --        m_SpriteSelf.transform.localRotation = Quaternion.Euler(0, 0, - m_PlayerSelfObject.transform.eulerAngles.y);
+    end
+end
+
+-- 更新寻路时的绿色标记点状态
+function RefreshTargetState()
+    m_isSeekRoad = false;
+    if m_isShowGuildWarInfo then
+        -- 隐藏目标点
+        if m_TargetPos ~= nil then
+            m_TargetPos:SetActive(false);
+        end
+    end
+end
+
+-- 更新领地战地图上的ui元素状态
+function RefreshGuildWarMapState()
+    local mapData = GuildManager.guildAuctionInfo.GuildWarMapInfo;
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        RefreshMapFunc(mapData);
+    else
+        m_isRefreshMap = true;
+        table.insert(m_AllMapData, #m_AllMapData + 1, mapData);
+    end
+end
+
+function RefreshMapFunc(data)
+    -- 1,2,3是守方塔  4,5,6是攻方塔  7,8,9,10是四个资源点（守方上资源，守方下资源，攻方上资源，攻方下资源）11是中心资源点 12是中立BOSS
+    -- 塔两种状态（0死亡 1:活着）  资源点（0：死亡 1：活着）  中心资源点（0：未归属 1：归属守方 2：归属敌方）
+    if data == nil then return end
+    print("RefreshMapFunc data = ", SerializeTable(data));
+    if data.resourcePos <= 3 and data.resourcePos > 0 then
+        SetGameObjectState("RightTop/Sub_GuildWarMap/Sub_Blue/sp_Tower" .. data.resourcePos, data.resourceState == 1, m_panelObject);
+    elseif data.resourcePos <= 6 and data.resourcePos > 3 then
+        SetGameObjectState("RightTop/Sub_GuildWarMap/Sub_Red/sp_Tower" .. data.resourcePos - 3, data.resourceState == 1, m_panelObject);
+    elseif data.resourcePos <= 10 and data.resourcePos > 6 then
+        local path = "RightTop/Sub_GuildWarMap/Sub_Resource/sp_Resource";
+        CCommonTool.SetGameObjectGrey(child(m_panelObject, path .. data.resourcePos - 6).gameObject, data.resourceState == 0);
+    elseif data.resourcePos == 11 then
+        SetSpriteContent("RightTop/Sub_GuildWarMap/Sub_Resource/sp_Resource5", "PanelAloneTwoAtlasV04", "UI_DT_ZiYuanDian_Da_" .. 100 + data.resourceState, m_panelObject, true);
+    elseif data.resourcePos == 12 then
+        SetGameObjectState("RightTop/Sub_GuildWarMap/Sub_Red/sp_Boss", data.resourceState == 2, m_panelObject);
+        SetGameObjectState("RightTop/Sub_GuildWarMap/Sub_Blue/sp_Boss", data.resourceState == 1, m_panelObject);
+    end
+end
+
+function UpdateEatChickenTimeContent()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        InitEatChickenTimeContent();
+    end
+end
+
+function UpdateEatChickenTimeStr(timeStr)
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        UpdateEatChickenTime(timeStr);
+    end
+end
+
+function UpdateEatChickenStasticContent()
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        InitEatChickenStasticContent();
+    end
+end
+
+function LoadEatChickenMapOver(textureObj, strPath)
+--    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_MAIN) == 1 then
+        m_EatChickenMapTextureComp.mainTexture = textureObj;
+--    else
+--        G_ResourceMng:UnLoadAssetByLua(strPath, textureObj);
+--    end
+end
+function RefreshFirstPanel()
+    error("in");
+    SetGameObjectState(m_ButtonPack, false, m_panelObject);
+end

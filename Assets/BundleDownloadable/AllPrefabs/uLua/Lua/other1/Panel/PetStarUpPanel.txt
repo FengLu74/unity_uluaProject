@@ -1,0 +1,379 @@
+﻿module("PetStarUpPanel", package.seeall)
+---------------------------------------label路径---------------------------------------
+-- 当前的星级
+local m_CurStarLevelStr = "/Label_BeforeLevel";
+-- 提升后的星级
+local m_AfterStarLevelStr = "/Label_AfterLevel";
+
+-- 当前战斗力
+local m_CurFightValueStr = "/FightValue/Label_CurValue";
+-- 下一战斗力
+local m_NextFightValueStr = "/FightValue/Label_NextValue";
+-- 增加战斗力
+local m_NextAddValueStr = "/FightValue/Label_AddValue";
+-----------------------------------------按钮路径--------------------------------------
+-- 关闭按钮
+local m_ButtonCloseStr = "Close_Button";
+-- 升星按钮
+local m_ButtonStarUpStr = "NotMaxStar/Button_StarUp";
+-----------------------------------------Sprite路径------------------------------------
+-- 宠物图标
+local m_PetIconStr = "PetItem/Sprite_Icon";
+-- 宠物品质
+local m_PetQualityStr = "PetItem/Sprite_Quality";
+----------------------------------gameobject所在的路径---------------------------------
+-- 到了最大星级
+local m_MaxStarStr = "MaxStar";
+-- 未到最大星级
+local m_NotMaxStarStr = "NotMaxStar";
+-- 属性所在的位置
+local m_ContentAttrStr = "/Content/AllAttr/Attr";
+-- 需求道具
+local m_PetNeedItemsStr = "NeedItems/";
+-- 成功的特效
+local m_SuccessEffStr = "Effect_Success";
+-- 失败的特效
+local m_FailEffStr = "Effect_Fail";
+----------------------------------通用的名称路径---------------------------------------
+-- 属性名称
+local m_AttrNameStr = "/Label_Name";
+-- 属性数值
+local m_AttrValueStr = "/Label_CurValue";
+-- 变化后数值
+local m_ChangeValueStr = "/Label_ForceValue";
+-- 增长数值
+local m_AddValueStr = "/Label_ForceAddValue";
+
+-- 道具
+local m_ItemStr = "/Item";
+-- 使用按钮
+local m_UseButtonStr = "/Button";
+-- 道具加号
+local m_ItemAddSpriteStr = "/Sprite_Add";
+-- 道具加的数值
+local m_ItemAddValueStr = "/Label_Add";
+-----------------------------------引用的对象------------------------------------------
+-- 面板对象
+local m_panelObject = nil;
+-- 面板是否初始化完成
+local m_panelInitAlready = false;
+-- 当前操作的宠物道具
+m_CurSelectPet = nil;
+-- 右侧需求的道具
+local m_PetStarUpNeedItems = {};
+-- 成功的特效
+local m_SuccessEff = nil;
+-- 失败的特效
+local m_FailEff = nil;
+-----------------------------------一些写死的规定--------------------------------------
+-- 够的颜色
+local m_CanDecomposeColor = "DDEEFF";
+-- 不够的颜色
+local m_CannotDecomposeColor = "D83232";
+------------------------------------BaseLua调用的同名方法------------------------------
+-- 初始化的内容放在start方法中
+function Start()
+    InitObjects();
+    InitEvents();
+    InitShow();
+    InitOnClick();
+    m_panelInitAlready = true;
+end
+
+function OnEnable()
+    if m_panelInitAlready then
+        InitShow();
+    end
+end
+
+function OnDisable()
+end
+
+function OnDestroy()
+    m_panelObject = nil;
+    m_panelInitAlready = false;
+end
+-----------------------------------本lua文件自调用方法--------------------------------
+-- 初始化obj
+function InitObjects()
+    m_panelObject = FindPanelObjWithPanelID(ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL);
+    m_SuccessEff = GetComponent(m_panelObject, m_SuccessEffStr,"ParticleSystem");
+    m_FailEff = child(m_panelObject, m_FailEffStr,"ParticleSystem");
+end
+
+function InitEvents()
+end
+
+-- 初始化显示
+function InitShow()
+    InitLeft();
+    InitRight();
+end
+
+function InitLeft()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    SetSpriteByAtlasID(m_PetIconStr, m_CurSelectPet:GetImageIdById(), m_panelObject);
+    SetSpriteApptitudeV04(m_PetQualityStr, m_CurSelectPet:GetAptitudeID(), m_panelObject);
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    local allPath = "";
+    local isMaxStar = false;
+    if petATT.PetStar >= PET_ENUM.PET_MAX_STAR_NUM then
+        SetGameObjectState(m_MaxStarStr,true,m_panelObject);
+        SetGameObjectState(m_NotMaxStarStr,false,m_panelObject);
+        allPath = m_MaxStarStr;
+        isMaxStar = true;
+    else
+        SetGameObjectState(m_MaxStarStr,false,m_panelObject);
+        SetGameObjectState(m_NotMaxStarStr,true,m_panelObject);
+        allPath = m_NotMaxStarStr;
+        SetLabelContent(allPath..m_AfterStarLevelStr,petATT.PetStar + 1,m_panelObject);
+        SetLabelContent(allPath..m_NextFightValueStr,math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,1,false) + 0.5),m_panelObject);
+        SetLabelContent(allPath..m_NextAddValueStr,math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,1,false) - CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,1,true) + 0.5),m_panelObject);
+    end
+    SetLabelContent(allPath..m_CurStarLevelStr,petATT.PetStar,m_panelObject);
+    SetLabelContent(allPath..m_CurFightValueStr,math.floor(CalcFightAbilityMng.CalcPetFightAbility(m_CurSelectPet,1,true) + 0.5),m_panelObject);
+
+    local m_AttrStr = allPath..m_ContentAttrStr;
+    local attrIndex = 0;
+    local personClass = PetManager.ChangePetItemIntoCLGPerson(m_CurSelectPet,1);
+    local personClassNext = nil;
+    if not isMaxStar then
+        personClassNext = PetManager.ChangePetItemIntoCLGPerson(m_CurSelectPet,1,false);
+    end
+    -- 生命
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[1]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(1)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(1)..m_AttrValueStr,math.floor(personClass:GetMaxHp()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(1)..m_ChangeValueStr,math.floor(personClassNext:GetMaxHp()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(1)..m_AddValueStr,math.floor(personClassNext:GetMaxHp() - personClass:GetMaxHp()),m_panelObject);
+    end
+
+    -- 外攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[2]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(2)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(2)..m_AttrValueStr,math.floor(personClass:GetAp()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(2)..m_ChangeValueStr,math.floor(personClassNext:GetAp()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(2)..m_AddValueStr,math.floor(personClassNext:GetAp() - personClass:GetAp()),m_panelObject);
+    end
+
+    -- 内攻
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[3]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(3)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(3)..m_AttrValueStr,math.floor(personClass:GetMap()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(3)..m_ChangeValueStr,math.floor(personClassNext:GetMap()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(3)..m_AddValueStr,math.floor(personClassNext:GetMap() - personClass:GetMap()),m_panelObject);
+    end
+
+    -- 魔法
+--    attrIndex = 151;
+--    SetLabelTextByID(m_AttrStr..tostring(4)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+--    SetLabelContent(m_AttrStr..tostring(4)..m_AttrValueStr,math.floor(personClass:GetMaxMp()),m_panelObject);
+--    if not isMaxStar then
+--        SetLabelContent(m_AttrStr..tostring(4)..m_ChangeValueStr,math.floor(personClassNext:GetMaxMp()),m_panelObject);
+--        SetLabelContent(m_AttrStr..tostring(4)..m_AddValueStr,math.floor(personClassNext:GetMaxMp() - personClass:GetMaxMp()),m_panelObject);
+--    end
+
+    -- 外防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[5]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(4)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(4)..m_AttrValueStr,math.floor(personClass:GetDp()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(4)..m_ChangeValueStr,math.floor(personClassNext:GetDp()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(4)..m_AddValueStr,math.floor(personClassNext:GetDp() - personClass:GetDp()),m_panelObject);
+    end
+
+    -- 内防
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[6]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(5)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(5)..m_AttrValueStr,math.floor(personClass:GetMdp()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(5)..m_ChangeValueStr,math.floor(personClassNext:GetMdp()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(5)..m_AddValueStr,math.floor(personClassNext:GetMdp() - personClass:GetMdp()),m_panelObject);
+    end
+
+    -- 暴击
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[7]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(6)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(6)..m_AttrValueStr,math.floor(personClass:GetAc()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(6)..m_ChangeValueStr,math.floor(personClassNext:GetAc()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(6)..m_AddValueStr,math.floor(personClassNext:GetAc() - personClass:GetAc()),m_panelObject);
+    end
+
+    -- 命中
+    attrIndex = CCommonTool.GetDefineInfo(G_AtrTable1[8]):GetIntContent();
+    SetLabelTextByID(m_AttrStr..tostring(7)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(7)..m_AttrValueStr,math.floor(personClass:GetAh()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(7)..m_ChangeValueStr,math.floor(personClassNext:GetAh()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(7)..m_AddValueStr,math.floor(personClassNext:GetAh() - personClass:GetAh()),m_panelObject);
+    end
+
+    -- 韧性
+    attrIndex = 91;
+    SetLabelTextByID(m_AttrStr..tostring(8)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(8)..m_AttrValueStr,math.floor(personClass:GetDc()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(8)..m_ChangeValueStr,math.floor(personClassNext:GetDc()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(8)..m_AddValueStr,math.floor(personClassNext:GetDc() - personClass:GetDc()),m_panelObject);
+    end
+
+    -- 闪避
+    attrIndex = 61;
+    SetLabelTextByID(m_AttrStr..tostring(9)..m_AttrNameStr, CCommonTool.GetAttrIndexInfo(attrIndex).TextID, m_panelObject);
+    SetLabelContent(m_AttrStr..tostring(9)..m_AttrValueStr,math.floor(personClass:GetDh()),m_panelObject);
+    if not isMaxStar then
+        SetLabelContent(m_AttrStr..tostring(9)..m_ChangeValueStr,math.floor(personClassNext:GetDh()),m_panelObject);
+        SetLabelContent(m_AttrStr..tostring(9)..m_AddValueStr,math.floor(personClassNext:GetDh() - personClass:GetDh()),m_panelObject);
+    end
+end
+
+function InitRight()
+    if m_CurSelectPet == nil then
+        return;
+    end
+    local petATT = m_CurSelectPet.AllPetAttribute;
+    if petATT == nil then
+        return;
+    end
+    local petMainInfo = CCommonTool.GetPetMainInfo(m_CurSelectPet.ExcelID);
+    if petMainInfo == nil then
+        return;
+    end
+    local petStarUpInfo = CCommonTool.GetPetStarUpInfo(petMainInfo.StarUpID + petATT.PetStar);
+    if petStarUpInfo == nil then
+        return;
+    end
+    m_PetStarUpNeedItems = {};
+    for Index = 1,5 do
+        local itemTable = {};
+        itemTable.ExcelID = CCommonTool.GetValueInPetStarUpInfo(petMainInfo.StarUpID + petATT.PetStar,2*(Index - 1) + 3);
+        itemTable.ItemNum = CCommonTool.GetValueInPetStarUpInfo(petMainInfo.StarUpID + petATT.PetStar,2*(Index - 1) + 4);
+        table.insert(m_PetStarUpNeedItems,itemTable);
+        if itemTable.ExcelID > 0 then
+            SetItemShowByExcelIDV04(m_panelObject,m_PetNeedItemsStr..Index..m_ItemStr,itemTable.ExcelID,1,true,nil,ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL);
+            SetGameObjectState(m_PetNeedItemsStr..Index,true,m_panelObject);
+            local haveNum = G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, itemTable.ExcelID);
+            SetLabelContent(m_PetNeedItemsStr..Index..m_ItemAddValueStr,haveNum.. "/" ..itemTable.ItemNum,m_panelObject);
+            if haveNum >= itemTable.ItemNum then
+                SetGameObjectState(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemAddSpriteStr,false,m_panelObject);
+                SetLabelColor(m_PetNeedItemsStr..Index..m_ItemAddValueStr,m_CanDecomposeColor,m_panelObject);
+            else
+                SetGameObjectState(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemAddSpriteStr,true,m_panelObject);
+                SetLabelColor(m_PetNeedItemsStr..Index..m_ItemAddValueStr,m_CannotDecomposeColor,m_panelObject);
+            end
+        else
+            SetGameObjectState(m_PetNeedItemsStr..Index,false,m_panelObject);
+        end
+    end
+    
+end
+
+function InitOnClick()
+    SetGameObjectEvent(m_ButtonCloseStr, OnCloseClick, m_panelObject);
+    SetGameObjectEvent(m_ButtonStarUpStr, OnStarUpClick, m_panelObject);
+    for Index = 1,PET_ENUM.PET_STAR_UP_NEED_MAX_ITEMNUM do
+        SetGameObjectEvent(m_PetNeedItemsStr..Index..m_UseButtonStr, OnNeedItemClick, m_panelObject);
+    end
+
+    for Index = 1,PET_ENUM.PET_STAR_UP_NEED_MAX_ITEMNUM do
+        SetGameObjectEvent(m_PetNeedItemsStr..Index.. m_ItemStr .. m_ItemAddSpriteStr, OnNeedItemGetClick, m_panelObject);
+    end
+end
+--------------------------------------按钮事件方法------------------------------------
+function OnCloseClick()
+    closePanel(ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL);
+end
+
+function OnNeedItemClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.name, 1, string.len(e.transform.parent.name)));
+    GetWayPanel.Show(m_PetStarUpNeedItems[selectIndex].ExcelID,ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL);
+end
+
+function OnNeedItemGetClick(e)
+    local selectIndex = tonumber(string.sub(e.transform.parent.parent.name, 1, string.len(e.transform.parent.parent.name)));
+    GetWayPanel.Show(m_PetStarUpNeedItems[selectIndex].ExcelID,ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL);
+end
+
+function OnStarUpClick()
+    if G_UserInfo.RoleAttribute.Level < PetCanStarUpLevel then
+        ShowSystemFlowTips(9072);
+        error("等级不足，无法升星");
+        return;
+    end
+    local lack_Mat = false;
+    local checkItem = {};
+    for Index = 1,#m_PetStarUpNeedItems do
+        if m_PetStarUpNeedItems[Index].ExcelID > 0 then
+            if checkItem[m_PetStarUpNeedItems[Index].ExcelID] == nil then
+                checkItem[m_PetStarUpNeedItems[Index].ExcelID] = m_PetStarUpNeedItems[Index].ItemNum;
+            else
+                checkItem[m_PetStarUpNeedItems[Index].ExcelID] = m_PetStarUpNeedItems[Index].ItemNum + checkItem[m_PetStarUpNeedItems[Index].ExcelID];
+            end
+        else
+            break;
+        end
+    end
+    for k,v in pairs(checkItem) do
+        if G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, k) < v then
+            lack_Mat = true
+            break;
+        end
+    end
+    if lack_Mat then
+        if CheckLackMat(checkItem) == true then
+            return;
+        else
+            ShowSystemFlowTips(9069);
+            error("材料不足，无法升星");
+        end
+        return;
+    end
+    local buffer = ByteBuffer.New();
+    buffer:WriteUShort(GMI_CTOS_LGS_PET_OPERATE);
+    buffer:WriteByte(PET_ITEM_OPERATE_MSG.PET_STARUP);
+    buffer:WriteInt(m_CurSelectPet.CRID);
+    G_NetWorkMng:SendMessage(buffer);
+end
+--检查缺少的材料是否可以快捷购买
+function CheckLackMat(datas)
+    local lack_data = {};
+     for k,v in pairs(datas) do
+        local item_quick = CCommonTool.GetQuickToBuyByExcelID(k);
+        if G_BagMng:GetExcelItemNum(ENUM_UI_PANEL.UI_PANEL_ITEM_ITEM, k) < v  and item_quick~=nil then
+            table.insert(lack_data,k);
+        end
+    end
+    if #lack_data < 0 or #lack_data==0 then
+        return false;
+    end 
+    
+    table.sort(lack_data);
+    MaterialExchangePanel.ShowPanel(lack_data[#lack_data],ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL)
+    return true;
+end
+--------------------------外部调用的(或内部)更新此界面信息的方法----------------------
+function OnRefresh(result)
+    if result == 1 then
+        ShowSystemFlowTips(9071);
+        G_MusicMng:OnLoadMusic(4012);
+        m_SuccessEff:Play();
+        error("升星成功")
+    else
+        ShowSystemFlowTips(9070);
+        G_MusicMng:OnLoadMusic(4013);
+        m_FailEff:Play();
+        error("升星失败")
+    end
+    if IsOpenPanel(ENUMPANELID.ENUM_PANEL_PETSTARUPPANEL) == 1 then
+        InitShow();
+    end
+end

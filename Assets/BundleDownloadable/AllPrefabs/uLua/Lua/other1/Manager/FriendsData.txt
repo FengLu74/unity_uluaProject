@@ -1,0 +1,985 @@
+﻿module("FriendsData", package.seeall)
+
+--最近列表
+LIST_TYPE_RECENT = 0
+--好友列表
+LIST_TYPE_FRIEND = 1
+--仇人列表
+LIST_TYPE_ENEMY = 2
+--黑名单列表
+LIST_TYPE_BLACK = 3
+--推荐列表
+LIST_TYPE_RECOMMEND = 4
+--申请列表
+LIST_TYPE_APPLY = 5
+--礼物列表
+LIST_TYPE_GIFT = 6
+
+--关系-好友
+RELATION_FRIEND = 1
+--关系-仇人
+RELATION_ENEMY = 2
+--关系-黑色单
+RELATION_BLACK = 3
+----关系-陌生人
+RELATION_STRANGER = 4
+
+--数量上限
+--好友上限
+MAX_COUNT_FRIEND = 100
+--仇人上限
+MAX_COUNT_ENEMY = 50
+--黑名单上限
+MAX_COUNT_BLACK = 50
+--最近列表上限
+MAX_COUNT_RECENT = 50
+--击杀记录上限
+MAX_COUNT_KILLRECORD = 20
+--聊天记录上限
+MAX_COUNT_CHATRECORDS = 50;
+--每日赠送礼物数量上限
+MAX_COUNT_GIVE_GIFT = 20;
+--每日领取礼物数量上限
+MAX_COUNT_GET_GIFT = 20;
+
+--好友数据
+friendList = {}
+--好友数据字典
+friendDict = {};
+--最近列表数据
+recentList = {}
+--仇人数据
+enemyList = {}
+--黑名单数据
+blackList = {}
+--推荐数据
+recommendList = {}
+--申请列表数据
+applyList = {}
+--记录仇人的仇恨记录
+enemyHateDict = {}
+--礼物列表
+giftList = {};
+--离线消息列表
+leaveWordsList = {};
+--查找结果
+searchResult = nil;
+
+--本地存储的最近联系人
+recentLocalDict = nil;
+
+--本地新仇人记录
+enemyLocalDict = nil;
+
+--复仇宣言内容
+declareValueDict = {};
+--今日送出礼物数量
+givedGiftCount = 0;
+--今日领取礼物数量
+getGiftCount = 0;
+
+--读表结束处理表的数据
+function DealTableData()
+    --好友上限
+    MAX_COUNT_FRIEND = getMaxCount(EDefineContentID.MAX_COUNT_FRIEND);
+    --仇人上限
+    MAX_COUNT_ENEMY = getMaxCount(EDefineContentID.MAX_COUNT_ENEMY);
+    --黑名单上限
+    MAX_COUNT_BLACK = getMaxCount(EDefineContentID.MAX_COUNT_BLACK);
+    --最近列表上限
+    MAX_COUNT_RECENT = getMaxCount(EDefineContentID.MAX_COUNT_RECENT);
+    --击杀记录上限
+    MAX_COUNT_KILLRECORD = getMaxCount(EDefineContentID.MAX_COUNT_KILLRECORD);
+    --聊天记录上限
+    MAX_COUNT_CHATRECORDS = getMaxCount(EDefineContentID.MAX_COUNT_CHATRECORDS);
+    --每日赠送礼物数量上限
+    MAX_COUNT_GIVE_GIFT = getMaxCount(EDefineContentID.MAX_COUNT_GIVE_GIFT);
+    --每日领取礼物数量上限
+    MAX_COUNT_GET_GIFT = getMaxCount(EDefineContentID.MAX_COUNT_GET_GIFT);
+end
+
+function getMaxCount(ID)
+    if ID == nil then return end
+    local info = CCommonTool.GetDefineInfo(ID);
+    if info then return info:GetIntContent(); end
+end
+--好友列表排序
+function SortFriendList(f1, f2)
+    if f1.onlineState and f2.onlineState then
+        if f1.onlineState ~= f2.onlineState then
+            return f1.onlineState > f2.onlineState;
+        end
+    end
+    if f1.friendliness ~= f2.friendliness then
+        return f1.friendliness > f2.friendliness;
+    end
+    if f1.level ~= f2.level then
+        return f1.level > f2.level;
+    end
+    return f1.guid < f2.guid;
+end
+
+-- 仇人列表排序
+function SortEnemyList(f1, f2)
+    if f1.onlineState and f2.onlineState then
+        if f1.onlineState ~= f2.onlineState then
+            return f1.onlineState > f2.onlineState;
+        end
+    end
+    local record1 = GetHateRecord(f1.guid);
+    local record2 = GetHateRecord(f2.guid);
+    if record1 and record2 then
+        if record1.hateValue ~= record2.hateValue then
+            return record1.hateValue > record2.hateValue;
+        end
+    end
+    if f1.level ~= f2.level then
+        return f1.level > f2.level;
+    end
+    return f1.guid < f2.guid;
+end
+
+--礼物列表排序
+function SortGiftList(f1, f2)
+    if f1.friendliness ~= f2.friendliness then
+        return f1.friendliness > f2.friendliness;
+    end
+    local friend1 = GetFriend(f1.guid);
+    local friend2 = GetFriend(f2.guid);
+    if friend1 and friend2 and friend1.level ~= friend2.level then
+        return friend1.level > friend2.level;
+    end
+    return f1.guid < f2.guid;
+end
+
+--最近联系人列表排序
+function SortByRecentTime(f1, f2)
+    if f1.recentTime and f2.recentTime then
+        return f1.recentTime > f2.recentTime;
+    end
+    return false;
+end
+
+--更新列表数据(最近/好友/仇人/黑色单/推荐/申请)
+function RefreshList(listType, list)
+    if listType == LIST_TYPE_RECENT then
+        SyncLocalRecentList(list);
+    elseif listType == LIST_TYPE_FRIEND then
+        friendList = list;
+        friendDict = {};
+        for i, data in ipairs(friendList) do
+            friendDict[data.guid] = data;
+        end
+        table.sort(friendList, SortFriendList);
+    elseif listType == LIST_TYPE_ENEMY then
+        SyncEnemyList(list);
+        table.sort(enemyList, SortEnemyList);
+    elseif listType == LIST_TYPE_RECOMMEND then
+        recommendList = list;
+    elseif listType == LIST_TYPE_APPLY then
+        applyList = list;
+    elseif listType == LIST_TYPE_BLACK then
+        blackList = list;
+    elseif listType == LIST_TYPE_GIFT then
+        giftList = list;
+        table.sort(giftList, SortGiftList);
+    end
+end
+
+--有人申请自己为好友时, 加入到申请列表
+function ApplyFriend(data)
+    if not data or data.guid == 0 then return end
+    DeleteIfExist(applyList, data.guid);
+    table.insert(applyList, data);
+end
+
+--添加单个好友
+function AddFriend(data)
+    if data.guid == 0 then return end
+    local exist = IsExist(friendList, data.guid);
+    if not exist then
+        table.insert(friendList, data);
+        table.sort(friendList, SortFriendList);
+        friendDict[data.guid] = data;
+    end
+    DeleteIfExist(recommendList, data.guid);
+    DeleteIfExist(applyList, data.guid);
+end
+
+-- 添加单个礼物
+function AddGift(gift)
+    DeleteGift(gift.giftId);
+    table.insert(giftList, gift);
+    table.sort(giftList, SortGiftList);
+end
+
+-- 删除礼物
+function DeleteGift(giftId)
+    for i, data in ipairs(giftList) do
+        if data.giftId == giftId then
+            table.remove(giftList, i);
+            break;
+        end
+    end
+end
+
+function GetGift(giftId)
+    for i, data in ipairs(giftList) do
+        if data.giftId == giftId then
+            return data;
+        end
+    end
+    return nil;
+end
+
+-- 删除礼物
+function DeleteGiftByGuid(guid)
+    local count = #giftList
+    for i = count, 1, -1 do
+        local data = giftList[i];
+        if data.guid == guid then
+            table.remove(giftList, i);
+        end
+    end
+end
+
+--拉黑好友
+function BlackFriend(data)
+    DeleteIfExist(recommendList, data.guid);
+    DeleteIfExist(applyList, data.guid);
+    DeleteIfExist(friendList, data.guid);
+    friendDict[data.guid] = nil;
+    DeleteGiftByGuid(data.guid);
+    DeleteIfExist(enemyList, data.guid);
+    DeleteIfExist(blackList, data.guid);
+    DeleteIfExist(recentList, data.guid);
+    --删除本地聊系人记录
+    local localDict = ReadLocalRecent();
+    if localDict[data.guid] then
+        localDict[data.guid] = nil;
+    end
+    --删除本地仇人记录
+    localDict = ReadLocalEnemy();
+    if localDict[data.guid] then
+        localDict[data.guid] = nil;
+    end
+    table.insert(blackList, data);
+    SaveContent();
+end
+
+--删除好友
+function DeleteFriend(guid)
+    friendDict[guid] = nil;
+    DeleteGiftByGuid(guid);
+    return DeleteIfExist(friendList, guid);
+end
+
+--设置复仇宣言
+function SetDeclareValue(value)
+    if not declareValueDict then
+        declareValueDict = {};
+    end
+    declareValueDict[G_UserInfo.GlobalDBID] = value;
+end
+
+--获取复仇宣言
+function GetDeclareValue()
+    local guid = G_UserInfo.GlobalDBID;
+    if not declareValueDict then
+        declareValueDict = {};
+    end
+    if not declareValueDict[guid] then
+        --设置为默认
+        declareValueDict[guid] = GetTextToId(11300);
+    end
+    return declareValueDict[guid];
+end
+
+--同步仇人列表
+function SyncEnemyList(list)
+    enemyList = list or {};
+    local localDict = ReadLocalEnemy();
+    for guid, data in pairs(localDict) do
+        local exist = false;
+        for i, v in ipairs(enemyList) do
+            if v.guid == data.guid then
+                exist = true;
+                break;
+            end
+        end
+        if not exist then
+            localDict[guid] = nil;
+        end
+    end
+    SaveContent();
+end
+
+--添加仇人
+function AddEnemy(data)
+    DeleteIfExist(friendList, data.guid);
+    friendDict[data.guid] = nil;
+    DeleteGiftByGuid(data.guid);
+    DeleteIfExist(blackList, data.guid);
+    DeleteIfExist(enemyList, data.guid);
+    table.insert(enemyList, data);
+    table.sort(enemyList, SortEnemyList);
+end
+
+--添加单个仇人的击杀记录
+function AddEnemyHateRecord(data)
+    local guid = data.guid;
+    enemyHateDict[guid] = data;
+    local dict = ReadLocalEnemy();
+    if not dict[guid] then
+        dict[guid] = {guid=guid, count=0};
+    end
+    dict[guid].count = dict[guid].count + 1;
+    SaveContent();
+end
+
+--删除仇人
+function DeleteEnemy(guid)
+    DeleteIfExist(enemyList, guid);
+    if enemyHateDict[guid] ~= nil then
+        enemyHateDict[guid] = nil;
+    end
+    local dict = ReadLocalEnemy();
+    dict[guid] = nil;
+    SaveContent();
+end
+
+--仇人击杀记录
+function RefreshHiteList(list)
+    if not list then return end
+    enemyHateDict = {}
+    for i, v in ipairs(list) do
+        enemyHateDict[v.guid] = v;
+    end
+end
+
+--本地未读的仇人记录
+function ReadLocalEnemy()
+    ReadContent();
+    return enemyLocalDict[G_UserInfo.GlobalDBID];
+end
+
+--清除本地新的仇人
+function ClearEnemyRedHint(guid)
+    local dict = ReadLocalEnemy();
+    if dict[guid] then
+        dict[guid] = nil;
+    end
+end
+
+--是否为新仇人
+function IsNewEnemy(guid)
+    local dict = ReadLocalEnemy();
+    if dict[guid] then
+        return true;
+    end
+    return false;
+end
+
+-- 获取仇恨值
+function GetEnemyHateValue(guid)
+    local record = GetHateRecord(guid)
+    if record then return record.hateValue end
+    return 0;
+end
+
+
+--添加最近联系人
+function AddRecent(data)
+    local time = os.time();
+    data.recentTime = time;
+    local localRecent = GetLocalRecent(data.guid);
+    if not localRecent then
+        local dict = ReadLocalRecent();
+        local clone = {};
+        for k, v in pairs(data) do
+            clone[k] = v;
+        end
+        clone.onlineState=0;
+        clone.unread  = 0;
+        dict[data.guid] = clone;
+        localRecent = dict[data.guid];
+    end
+    localRecent.recentTime = time;
+    localRecent.records = localRecent.records or {};
+    DeleteIfExist(recentList, data.guid);
+    table.insert(recentList, 1, data);
+end
+
+--本地存储的联系人
+function GetLocalRecent(guid)
+    local dict = ReadLocalRecent();
+    return dict[guid];
+end
+
+--同步最近联系人到本地
+function SyncLocalRecentList(list)
+    list = list or {};
+    recentList = {};
+    local localDict = ReadLocalRecent();
+    if #list ~= 0 then
+        for i, data in pairs(localDict) do
+            data.onlineState = 0;
+            for i, sdata in ipairs(list) do
+                if sdata.guid == data.guid then
+                    data.guid = sdata.guid; 
+                    data.profession = sdata.profession;
+                    data.headIcon = sdata.headIcon;
+                    data.level = sdata.level; 
+                    data.fightPower = sdata.fightPower;
+                    data.vipLevel = sdata.vipLevel; 
+                    data.unionId = sdata.unionId;
+                    data.isSendGift = sdata.isSendGift;
+                    data.name = sdata.name;
+                    data.onlineState = sdata.onlineState;
+                    break;
+                end
+            end
+            table.insert(recentList, data);
+        end
+    else
+        for i, data in pairs(localDict) do
+            data.onlineState = 0;
+            table.insert(recentList, data);
+        end
+    end
+    table.sort(recentList, SortByRecentTime);
+end
+
+-- 实时更新好友状态 :包括好友列表跟最近列表
+function RefreshFriendsState(guid, state)
+    for i,v in pairs(friendList) do
+        if v.guid == guid then
+            if state == 1 then 
+                v.onlineState = 1;
+            elseif state == 2 then
+                v.onlineState = 0;
+            end
+        end
+    end
+    table.sort(friendList, SortFriendList);
+    for i,v in pairs(recentList) do
+        if v.guid == guid then
+            if state == 1 then 
+                v.onlineState = 1;
+            elseif state == 2 then
+                v.onlineState = 0;
+            end
+        end
+    end
+end
+
+-- 实时更新仇人状态
+function RefreshEnemiesState(guid, state)
+    for i,v in pairs(enemyList) do
+        if v.guid == guid then
+            if state == 1 then 
+                v.onlineState = 1;
+            elseif state == 2 then
+                v.onlineState = 0;
+            end
+        end
+    end
+    table.sort(enemyList, SortEnemyList);
+end
+--过滤最近联系人, 7天后失效
+function RemoveInvilidRecent(dict)
+    if not dict then return end
+    local now = os.time();
+    for guid, data in pairs(dict) do
+        if data then
+            local time = data.recentTime;
+            if not time or type(data.recentTime) ~= "number" then
+                time = 0;
+            end
+            if now - time > 680400 then
+                dict[guid] = nil;
+            end
+        end
+    end
+end
+
+--获取最近联系人guids
+function GetRecentGuids()
+    local list = ReadLocalRecent();
+    local t = {};
+    local values = {};
+    for i, v in pairs(list) do
+        table.insert(t, v.guid);
+        table.insert(values, " " .. v.guid);
+    end
+    print(table.concat(values, "\t"));
+    return t;
+end
+
+--添加聊天记录
+--@param guid   聊天对象GUID
+--@param srcId  发言人ID
+--@param msgData    聊天内容 {msg=message, msgType=0, url="", seconds=1};
+function AddChatRecord(guid, srcId, msgData)
+    local localRecent = GetLocalRecent(guid);
+    if not localRecent then
+        local data = {guid = guid, };
+        AddRecent(data);
+        localRecent = GetLocalRecent(guid);
+    end
+    if not localRecent.records then
+        localRecent.records = {};
+    end
+    if not localRecent.unread then
+        localRecent.unread = 1;
+    else
+        localRecent.unread = localRecent.unread + 1;
+    end
+    table.insert(localRecent.records, {srcId=srcId, time=os.time(), msgData=msgData});
+    local count = #localRecent.records;
+    if count > MAX_COUNT_CHATRECORDS then
+        repeat
+            table.remove(localRecent.records, 1);
+            count = #localRecent.records;
+        until count <= MAX_COUNT_CHATRECORDS;
+    end
+    SaveContent();
+end
+
+--获取指定玩家的聊天记录
+function GetChatRecord(guid)
+    local localRecent = GetLocalRecent(guid);
+    return (localRecent and localRecent.records) or {};
+end
+
+--清除某人的聊天记录的红点
+function ClearChatRedHint(guid)
+    local localRecent = GetLocalRecent(guid);
+    if localRecent then
+        localRecent.unread = 0;
+    end
+end
+
+--是否有未读的消息
+function HasUnreadRecord(guid)
+    local localRecent = GetLocalRecent(guid);
+    if not localRecent then return false end
+    if not localRecent.unread then return false end
+    return localRecent.unread > 0;
+end
+
+--读取本地联系人
+function ReadLocalRecent()
+    ReadContent();
+    return recentLocalDict[G_UserInfo.GlobalDBID];
+end
+
+----------------------保存文件内容----------------------
+function SaveContent()
+    local saveTable  = {};
+    saveTable.recents = {};
+    saveTable.enemys = {};
+
+    local dict = ReadLocalRecent();
+    for i, data in pairs(dict) do
+        local t = {};
+        for k, v in pairs(data) do
+            if k == "records" then
+                t.records = {};
+                local count = #v;
+                if count > 0 then
+                    --最多保存50条聊天记录
+                    local maxCount = MAX_COUNT_CHATRECORDS;
+                    local start = (count <= maxCount and 1) or (count - maxCount + 1);
+                    for j = start, count do
+                        local record = v[j];
+                        table.insert(t.records, record);
+                    end
+                end
+            else
+                t[k] = v;
+            end
+        end
+        saveTable.recents[data.guid] = t;
+    end
+
+    --新的仇人
+    dict = ReadLocalEnemy();
+    for i, data in pairs(dict) do
+        saveTable.enemys[data.guid] = {guid=data.guid,count=(data.count or 0)};
+    end
+
+    local stringValue = SerializeTable(saveTable);
+    stringValue = "local t = " .. stringValue .. " return t";
+    local result, errMsg = pcall(WriteFile, GetFilePath(), stringValue);
+    if not result then
+        error("FriendsData.SaveContent::" .. errMsg);
+    else
+        print(stringValue);
+    end
+end
+
+----------------------读取文件内容----------------------
+function ReadContent()
+    local guid = G_UserInfo.GlobalDBID;
+    if not recentLocalDict then
+        recentLocalDict = {}
+    end
+    if not enemyLocalDict then
+        enemyLocalDict = {};
+    end
+    if recentLocalDict[guid] then
+        return;
+    end
+    
+    local data = nil;
+    local result, value = pcall(ReadFile, GetFilePath());
+    if result then
+        local result, f = pcall(loadstring, value);
+        if result and type(f)=="function" then data = f(); end
+    else
+        Logger.Log("ReadContent: read failed."..value);
+    end
+    if not data then
+        data = {};
+        data.recents = {};
+        data.enemys = {};
+    end
+    RemoveInvilidRecent(data.recents);
+    recentLocalDict[guid] = data.recents;
+    enemyLocalDict[guid] = data.enemys;
+end
+
+--好友系统相关数据存储路径
+function GetFilePath()
+    local fullName = AssetPath.GetLocalFilePath("friendslog/role_"..G_UserInfo.GlobalDBID..".txt");
+    fullName = string.gsub(fullName, "//", "/");
+    print(fullName);
+    return fullName;
+end
+
+--写文件
+function WriteFile(filename, value)
+--    local file = assert(io.open(filename, "w"));
+--    file:write(value);
+--    file:close();
+    FileTool.WriteString(filename, value);
+end
+
+--读文件
+function ReadFile(filename)
+--    local file = assert(io.open(filename, "r"));
+--    local value = file:read("*a");
+--    file:close();
+--    return value;
+    return FileTool.ReadString(filename);
+end
+
+--列表查找
+function IsExist(list, guid)
+    for i, v in ipairs(list) do
+        if v.guid == guid then
+            return true;
+        end
+    end
+    return false
+end
+
+--从列表中删除
+function DeleteIfExist(list, guid)
+    for i, v in ipairs(list) do
+        if v.guid == guid then
+            table.remove(list, i);
+            return true;
+        end
+    end
+    return false
+end
+
+--获取列表中的数据
+function GetData(list, guid)
+    for i, v in ipairs(list) do
+        if v.guid == guid then
+            return i, v;
+        end
+    end
+    return -1, nil
+end
+
+--清空列表
+function ClearList(listType)
+    if listType == LIST_TYPE_FRIEND then
+        friendList = {};
+        friendDict = {};
+    elseif listType == LIST_TYPE_ENEMY then
+        enemyList = {};
+    elseif listType == LIST_TYPE_RECOMMEND then
+        recommendList = {};
+    elseif listType == LIST_TYPE_APPLY then
+        applyList = {};
+    elseif listType == LIST_TYPE_BLACK then
+        blackList = {};
+    elseif listType == LIST_TYPE_GIFT then
+        giftList = {};
+    end
+end
+
+function ClearData()
+    friendList = {}
+    friendDict = {};
+    recentList = {}
+    enemyList = {}
+    blackList = {}
+    recommendList = {}
+    applyList = {}
+    enemyHateDict = {}
+    giftList = {};
+    searchResult = nil;
+    recentLocalDict = nil;
+    enemyLocalDict = nil;
+    declareValueDict = {};
+    givedGiftCount = 0;
+    getGiftCount = 0;
+    leaveWordsList = {};
+end
+
+-------------------------------UI调用-----------------------------
+--通用标签获取list数据
+function GetListByTabIndex(tabIndex)
+    if tabIndex == FriendsPanel.TAB_RECENT then
+        return recentList;
+    elseif tabIndex == FriendsPanel.TAB_FRIEND then
+        return friendList;
+    elseif tabIndex == FriendsPanel.TAB_GIFT then
+        return giftList;
+    elseif tabIndex == FriendsPanel.TAB_ENEMY then
+        return enemyList;
+    elseif tabIndex == FriendsPanel.TAB_BLACK then
+        return blackList;
+    end
+end
+
+--获取好友关系
+function GetRelation(guid)
+    if IsExist(friendList, guid) then
+        return RELATION_FRIEND;
+    elseif IsExist(enemyList, guid) then
+        return RELATION_ENEMY;
+    elseif IsExist(blackList, guid) then
+        return RELATION_BLACK;
+    else
+        return RELATION_STRANGER;
+    end
+end
+
+-- 是否为好友
+-- @param globalId 玩家ID
+function IsFriend(globalId)
+    local relation = GetRelation(globalId);
+    return relation == RELATION_FRIEND;
+end
+
+--获取仇恨记录
+function GetHateRecord(guid)
+    return enemyHateDict[guid]
+end
+
+--列否已达上限
+function IsReachLimit(listType)
+    if listType == LIST_TYPE_FRIEND then
+        return #friendList >= MAX_COUNT_FRIEND;
+    elseif listType == LIST_TYPE_ENEMY then
+        return #enemyList >= MAX_COUNT_ENEMY;
+    elseif listType == LIST_TYPE_RECENT then
+        return #recentList >= MAX_COUNT_RECENT
+    end
+    return false
+end
+
+--是否有申请加好友的信息
+function HasApplyFriend()
+    return #applyList > 0;
+end
+
+--是否有新的仇人
+function HasNewEnemy()
+    local dict = ReadLocalEnemy();
+    if dict then
+        for guid, data in pairs(dict) do
+            if data then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+--是否有新的聊天记录
+function HasNewChat()
+    local dict = ReadLocalRecent();
+    if dict then
+        for guid, data in pairs(dict) do
+            if data and data.unread ~= nil and data.unread > 0 then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+--好友列表中是否有新的聊天记录
+function HasNewChatInFriendList()
+    local dict = ReadLocalRecent();
+    if dict then
+        for guid, data in pairs(dict) do
+            if data and data.unread ~= nil and data.unread > 0 then
+                local index, f = GetData(friendList, data.guid);
+                if f then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
+end
+
+-- 获取所有好友的GUID
+-- onlyOnline true:只包含在线好友
+function GetAllFriend(onlyOnline)
+    local items = {};
+    for i, v in ipairs(friendList) do
+        if onlyOnline == true then
+            if v.onlineState == 1 then
+                table.insert(items, v);
+            end
+        else
+            table.insert(items, v);
+        end
+    end
+    return items;
+end
+
+function GetFriend(guid)
+    return friendDict[guid];
+end
+
+function GetFriendlinessInfo(value)
+    local all = CCommonTool.GetAllFriendlinessInfo();
+    if all == nil then return nil; end
+    for i = all.Count - 1, 0, -1 do
+        local info = all[i];
+        if info.NeedValue <= value then
+            return info;
+        end
+    end
+    return nil;
+end
+
+-- 是否可领取礼物
+function CanGetGift()
+    return getGiftCount < MAX_COUNT_GET_GIFT and #giftList > 0;
+end
+
+-- 该好友是否已经送过礼物
+function IsGivedGift(data)
+    local isSendGift = data.isSendGift;
+    return isSendGift % 2 == 1;
+end
+
+-- 是否有离线信息
+function IsHaveOffLineInfo()
+    return #leaveWordsList > 0;
+end
+------------------------------------测试数据------------------------------------
+
+
+--测试数据
+function TestData(count, guidStart)
+    if not guidStart then guidStart = 100 end
+    local list = {}
+    for i = 1, count do
+        local profession = math.floor(math.random(1, 3));
+        local guid = guidStart + i--math.random(100, 200);
+        table.insert(list, {
+            guid = guid,
+            profession = profession, 
+            headIcon = CCommonTool.GetRoleDateInfo(profession).HeadRes, 
+            level = math.random(1, 60), 
+            fightPower = math.random(100, 20000), 
+            vipLevel = math.random(0, 15), 
+            unionId = math.random(3608, 3609), 
+            addTime = math.random(100, 200000), 
+            recentTime = math.random(os.time()-10000, os.time()),
+            name = GetTextToId(8918)..guid, 
+            friendliness = math.random(0, 1000),
+            onlineState = math.random(1,2)-1,
+            isSendGift = math.random(0,1),
+            friendliness = math.random(0, 1000)
+        });
+    end
+    table.sort(list, SortFriendList);
+    return list;
+end
+
+function InitTestData()
+    ReadContent();
+    friendList = TestData(100, 100);
+    friendDict = {}
+    for i, data in ipairs(friendList) do
+        friendDict[data.guid] = data;
+    end
+    enemyList = TestData(100, 200);
+    blackList = TestData(100, 300);
+    recentList = TestData(100, 100);
+    applyList = TestData(5, 500);
+    
+    for i, data in ipairs(recentList) do
+        AddRecent(data);
+    end
+
+    local dict = ReadLocalEnemy();
+
+    for i, v in ipairs(enemyList) do
+        local guid = v.guid;
+        if math.random(1,2) == 1 then
+            dict[guid] = {guid=guid,count=1};
+        end
+        enemyHateDict[guid] = {
+            guid = guid,
+            guildId = 0,
+            fightPower = 100,
+            guildName = "guildName",
+            hateValue = 100,
+            sceneId = 8,
+            posX = 100,
+            posZ = 200,
+            records = {
+                [1] = {
+                    recordType = math.random(1,2),
+                    time = math.random(os.time()-1000, os.time()),
+                    sceneId = 9,
+                    posX = 120,
+                    posZ = 220
+                },
+                [2] = {
+                    recordType = math.random(1,2),
+                    time = math.random(os.time()-1000, os.time()),
+                    sceneId = 9,
+                    posX = 120,
+                    posZ = 220
+                }
+            }
+        };
+
+        local giftFriendList = TestData(20, 100);
+        giftList = {};
+        for i, v in ipairs(giftFriendList) do
+            table.insert(giftList, {
+                guid = v.guid, 
+                giftId = i, 
+                friendData = v,
+                giftItemId=math.random(1, 10)
+            });
+        end
+    end
+end

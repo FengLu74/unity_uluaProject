@@ -1,0 +1,93 @@
+﻿module("TitleProtocol", package.seeall)
+
+-------------------------------------------------------处理接收协议 START-------------------------------------------------------
+
+-- 称号操作类型
+local OPERATE = 
+{
+    OP_ADD = 1,
+    OP_REMOVE = 2,
+    OP_EQUIP = 3,
+    SET_ATTR = 4,
+    SET_TIME = 5,
+    REPLACE_FORCE = 6,
+};
+
+function RegisterProtocols()
+    -- 称号列表数据
+    network.Register(GMI_STOC_PRAISE_NAME_DATA, OnTitleList);
+    -- 称号操作协议
+    network.Register(GMI_STOC_PRAISE_NAME_OPERATE, OnTitleOperate);
+end
+
+-- 称号列表数据
+function OnTitleList(protocolId, buffer)
+    log("称号列表数据::");
+    local curTitleId = buffer:ReadInt();
+    local count = buffer:ReadByte();
+    local titles = {};
+    for i = 1, count do
+        local title = {};
+        title.id = buffer:ReadInt();
+        title.titleId = title.id;
+        title.expireTime = buffer:ReadInt();
+        title.info = TitleManager.GetTitleInfo(title.id);
+        if title.info ~= nil then
+            table.insert(titles, title);
+        else
+            error("服务器发送的称号ID不存在::"..tostring(title.id));
+        end
+    end
+    TitleManager.titleList = titles;
+    TitleManager.currentTitleId = curTitleId;
+end
+
+-- 货币兑换的结果
+function OnTitleOperate(protocolId, buffer)
+    local op = buffer:ReadInt();
+    local param1 = buffer:ReadInt();
+    local param2 = buffer:ReadInt();
+    local curTitleId = buffer:ReadInt();
+    if op == OPERATE.OP_ADD then
+        local titleId = buffer:ReadInt();
+        local expireTime = buffer:ReadInt();
+        TitleManager.AddTitle(titleId, expireTime);
+        NewTitlePanel.OpenNewTitlePanel(titleId);
+        log("获取新称号: " .. titleId);
+    elseif op == OPERATE.OP_REMOVE then
+        local titleId = buffer:ReadInt();
+        TitleManager.RemoveTitle(titleId);
+        log("删除称号: " .. titleId);
+    elseif op == OPERATE.SET_TIME then
+        local titleId = buffer:ReadInt();
+        local expireTime = buffer:ReadInt();
+        TitleManager.UpdateTitleExpireTime(titleId, expireTime);
+        log("更新称号时间: " .. titleId);
+    elseif op == OPERATE.OP_EQUIP then
+        if curTitleId == 0 then
+            log("称号已卸下");
+        else 
+            log("称号已装备!");
+        end
+    end
+    TitleManager.EquipTitle(curTitleId);
+    TitlePanel.Refresh();
+    RoleBeyond3DPanel.UpdateTitleName();
+end
+
+-------------------------------------------------------处理接收协议 END -------------------------------------------------------
+-------------------------------------------------------处理协议请求 START-------------------------------------------------------
+
+-- 请求装备称号
+-- @param titleId 称号ID
+-- @param isEquip true->装备 false->卸下
+function RequestEquipTitle(titleId, isEquip)
+    local buffer = ByteBuffer.New();
+    buffer:WriteShort(GMI_CTOS_LGS_REQ_PRAISE_NAME_EQUIP);
+    buffer:WriteUInt(titleId);
+    buffer:WriteUInt(isEquip == true and 1 or 0);
+    G_NetWorkMng:SendMessage(buffer);
+end
+
+-------------------------------------------------------处理协议请求 END-------------------------------------------------------
+
